@@ -7,7 +7,8 @@ require('dotenv').config();
 const photoRoutes = require('./routes/photos');
 const orderRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
-const clientRoutes = require('./routes/client'); // NOVA LINHA
+const clientRoutes = require('./routes/client');
+const configRoutes = require('./routes/config'); // NOVA LINHA
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,7 +25,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api/photos', photoRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/client', clientRoutes); // NOVA LINHA
+app.use('/api/client', clientRoutes);
+app.use('/api/config', configRoutes); // NOVA LINHA
 
 // Rota principal
 app.get('/', (req, res) => {
