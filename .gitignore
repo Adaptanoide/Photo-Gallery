@@ -1,0 +1,20 @@
+# Arquivos de ambiente e credenciais
+.env
+*.env
+credentials.json
+firebase-credential*.json
+
+# Dependências
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Outros
+.vscode/

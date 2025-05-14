@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css">
+  <!-- Biblioteca Medium Zoom para zoom de alta qualidade -->
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script>
+
+  <!-- Estilos para o novo visualizador -->
+  <style>
+    /* Estilo para loader de alta resolução */
+    .highres-loader {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      z-index: 10;
+    }
+
+    .highres-loader .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--color-gold);
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    /* Zoom personalizado */
+    .zoom-img {
+      transition: transform 0.3s ease;
+      cursor: zoom-in;
+    }
+
+    /* Container de imagem no lightbox */
+    .lightbox-img-wrapper {
+      transition: all 0.3s ease;
+    }
+
+    /* Estilos para loader de texto */
+    .loader-text {
+      font-size: 14px;
+      font-weight: 400;
+      color: white;
+    }
+
+    /* Melhorias na UI de zoom */
+    .medium-zoom-overlay {
+      z-index: 990;
+    }
+    .medium-zoom-image--opened {
+      z-index: 991;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to Our Gallery</h1>
+    </div>
+
+    <!-- Main content -->
+    <div id="content" class="gallery">
+      <div class="empty-message">Loading our exquisite collection...</div>
+    </div>
+  </div>
+
+  <!-- Cart Panel -->
+  <div id="cart-panel" class="cart-panel">
+    <h3>Selected Items: <span id="cart-count">0</span></h3>
+    <button class="btn btn-gold" onclick="showCart()">View Selection</button>
+  </div>
+
+  <!-- Cart Modal -->
+  <div id="cart-modal" class="modal cart-modal">
+    <div class="modal-content">
+      <h2>Your Selection</h2>
+      <div id="cart-items-container">
+        <div id="cart-items">
+          <!-- Cart items will be added here -->
+        </div>
+      </div>
+
+      <!-- Criar novo container para o total FORA da área de scroll -->
+      <div id="cart-total-container"></div>
+
+      <div class="luxury-divider"></div>
+
+      <h3>Complete Your Order</h3>
+      <p>Your order will be submitted under the name registered with your access code.</p>
+
+      <div class="form-group">
+        <label for="observations">Special Instructions (optional)</label>
+        <textarea id="observations" class="form-control"
+          placeholder="Add any special requirements or comments"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 15px;">
+        <button class="btn btn-secondary" onclick="closeModal('cart-modal')">Cancel</button>
+        <button class="btn btn-gold" onclick="submitOrder()">Submit Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="success-modal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+      <h2 style="padding-bottom: 0; margin-bottom: 10px;">Thank You For Your Order</h2>
+      <p>Your selection has been submitted to our sales team. A representative will contact you shortly to discuss your
+        selected premium hides.</p>
+
+      <div class="success-actions">
+        <button class="btn btn-gold action-button" onclick="returnToLogin()">
+          Return to Login
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox for photo viewing -->
+  <div id="lightbox" class="lightbox">
+    <div class="lightbox-content">
+      <div class="lightbox-close" onclick="closeLightbox()">&times;</div>
+      <div class="return-to-cart" onclick="returnToCart()">← Return to Selection</div>
+
+      <div class="lightbox-img-container">
+        <!-- The iframe will be inserted here by JavaScript -->
+        <div class="lightbox-nav">
+          <button class="nav-left" onclick="navigatePhotos(-1)">&lt;</button>
+          <button class="nav-right" onclick="navigatePhotos(1)">&gt;</button>
+        </div>
+      </div>
+
+      <div class="lightbox-info">
+        <p id="lightbox-name">Product Name</p>
+      </div>
+
+      <div class="lightbox-controls">
+        <!-- Cart Icon with Count -->
+        <div class="cart-icon">
+          <div class="icon"></div>
+          <div id="lightbox-cart-count" class="count">0</div>
+        </div>
+
+        <button id="lightbox-add-btn" class="btn btn-gold" onclick="addRemoveLightbox()">
+          Add to Selection
+        </button>
+        <button class="btn btn-secondary" onclick="closeLightbox()">
+          Back to Gallery
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loader -->
+  <div id="loader" class="loader">
+    <div class="loader-content">
+      <div class="spinner"></div>
+      <p>Loading exquisite leathers...</p>
+    </div>
+  </div>
+
+  <!-- Customer Code Entry Modal -->
+  <div id="code-entry-modal" class="modal" style="display: block;"> <!-- Start visible -->
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <h2>Welcome</h2>
+      <p>Please enter your access code to view our premium leather collection.</p>
+
+      <div class="form-group">
+        <input type="text" id="access-code" class="form-control"
+          style="font-size: 24px; text-align: center; letter-spacing: 5px;" placeholder="0000" maxlength="4"
+          pattern="[0-9]*">
+      </div>
+
+      <button class="btn btn-gold" style="width: 100%;" onclick="accessGallery()">Enter Gallery</button>
+
+      <div style="margin-top: 20px; font-size: 14px;">
+        <a href="#" onclick="event.preventDefault(); showAdminLogin()">Admin Access</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div id="admin-login-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <h2>Admin Access</h2>
+      <div class="form-group">
+        <label for="admin-email">Email</label>
+        <input type="email" id="admin-email" class="form-control" placeholder="Enter admin email">
+      </div>
+      <div class="form-group">
+        <label for="admin-password">Password</label>
+        <input type="password" id="admin-password" class="form-control" placeholder="Enter password">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 15px;">
+        <button class="btn btn-secondary" onclick="closeModal('admin-login-modal')">Cancel</button>
+        <button class="btn btn-gold" onclick="adminLogin()">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel Modal with Tabs -->
+  <div id="admin-panel-modal" class="modal">
+    <div class="modal-content">
+      <!-- Logout button at the top right -->
+      <button class="btn btn-secondary logout-top-right" onclick="adminLogout()">Logout</button>
+
+      <button class="mobile-close-btn" onclick="adminLogout()" style="display: none;">×</button>
+
+      <h2>Admin Panel</h2>
+
+      <!-- Tab Navigation -->
+      <div class="admin-tabs">
+        <button class="tab-button active" onclick="switchTab('customer-codes')">Customer Management</button>
+        <button class="tab-button" onclick="switchTab('order-management')">Order Management</button>
+        <button class="tab-button" onclick="switchTab('price-management')">Price Management</button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Customer Codes Tab -->
+        <div id="customer-codes" class="tab-pane active">
+          <div class="admin-section">
+            <h3>Generate New Customer Code</h3>
+            <div class="form-group">
+              <label for="customer-name">Customer Name</label>
+              <input type="text" id="customer-name" class="form-control" placeholder="Enter customer name">
+            </div>
+            <button class="btn btn-gold" onclick="generateCustomerCode()">Generate Code</button>
+            <div id="generated-code" style="margin-top: 15px; font-size: 24px; text-align: center; display: none;">
+              <p>New Code: <span id="new-code"></span></p>
+              <p style="font-size: 14px;">Share this code with your customer</p>
+            </div>
+          </div>
+
+          <div class="luxury-divider"></div>
+
+          <div class="admin-section">
+            <h3>Active Customer Codes</h3>
+            <div id="active-codes-container"
+              style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; padding: 10px;">
+              <div id="active-codes-list">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Management Tab -->
+        <div id="order-management" class="tab-pane">
+          <div class="admin-section">
+            <h3>Order Management</h3>
+
+            <div class="form-group">
+              <label for="order-status">Select Order Status to View</label>
+              <select id="order-status" class="form-control" onchange="loadOrderFolders(this.value)">
+                <option value="waiting">Waiting Payment</option>
+                <option value="paid">Paid/Sold</option>
+              </select>
+            </div>
+
+            <div id="order-folders-container"
+              style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; padding: 10px;">
+              <div id="order-folders-list">
+                <p>Select a status to view orders</p>
+              </div>
+            </div>
+
+            <!-- Keep this hidden - it's used by the JavaScript functions -->
+            <input type="hidden" id="order-folder" class="form-control">
+
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary" onclick="refreshFolderList()">Refresh List</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nova aba de gerenciamento de preços -->
+        <div id="price-management" class="tab-pane">
+          <div class="admin-section">
+            <h3>Category Price Management</h3>
+            <p>Manage prices for all product categories (leaf folders containing photos).</p>
+
+            <div id="category-price-container" class="category-price-container">
+              <div class="loading-folders">Loading categories...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden footer div (replaced by top-right logout button) -->
+    <div class="admin-footer" style="display: none;"></div>
+  </div>
+  </div>
+
+  <!-- Custom Notification Toast -->
+  <div id="custom-toast"
+    style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px; max-width: 500px; background-color: var(--color-dark); color: white; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); overflow: hidden;">
+    <div id="toast-header" style="padding: 12px 20px; display: flex; align-items: center;">
+      <div id="toast-icon" style="margin-right: 12px; font-size: 18px;">✓</div>
+      <div id="toast-title" style="font-weight: 600; font-family: 'Playfair Display', serif;">Success</div>
+      <button onclick="hideToast()"
+        style="margin-left: auto; background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 0 0 15px;">&times;</button>
+    </div>
+    <div id="toast-progress" style="height: 3px; width: 100%; background-color: var(--color-gold);"></div>
+    <div id="toast-body" style="padding: 15px 20px;">Message here</div>
+  </div>
+
+  <!-- Custom Confirmation Dialog -->
+  <div id="custom-confirm" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <h2 id="confirm-title">Confirmation</h2>
+      <p id="confirm-message" style="margin-bottom: 25px;">Are you sure you want to proceed?</p>
+
+      <div style="display: flex; justify-content: center; gap: 15px;">
+        <button id="confirm-cancel" class="btn btn-secondary" onclick="handleConfirmResponse(false)">Cancel</button>
+        <button id="confirm-ok" class="btn btn-gold" onclick="handleConfirmResponse(true)">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Category Access Modal -->
+  <div id="category-access-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; width: 90%;">
+      <h2>Edit Access for <span id="customer-name-title"></span></h2>
+      <p>Configure which categories this customer can access and set custom prices.</p>
+
+      <div class="global-actions">
+        <button class="btn btn-gold" onclick="authorizeAllCategories()">Authorize All</button>
+        <button class="btn btn-secondary" onclick="clearAllCategories()">Clear All</button>
+      </div>
+
+      <div class="table-filter">
+        <input type="text" id="category-access-filter" class="form-control" placeholder="Filter categories..."
+          onkeyup="filterAccessCategories()">
+        <div class="filter-stats">Showing <span id="access-displayed-count">0</span> of <span
+            id="access-total-count">0</span> categories</div>
+      </div>
+
+      <div class="category-access-container">
+        <table class="category-access-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Access</th>
+              <th>Category</th>
+              <th style="width: 100px;">Photos</th>
+              <th style="width: 120px;">Default Price</th>
+              <th style="width: 120px;">Custom Price</th>
+              <th style="width: 120px;">Min Quantity</th>
+              <th style="width: 120px;">Discount %</th>
+            </tr>
+          </thead>
+          <tbody id="category-access-list">
+            <!-- Categories will be added here dynamically -->
+            <tr>
+              <td colspan="6" class="loading-text">Loading categories...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('category-access-modal')">Cancel</button>
+        <button class="btn btn-gold" onclick="saveCustomerCategoryAccess()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div id="order-details-modal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <h2>Order Details</h2>
+      <div id="order-loading" class="loading-message">Loading order details...</div>
+      
+      <div id="order-details-content" style="display: none;">
+        <div class="order-info">
+          <p><strong>Order:</strong> <span id="order-name"></span></p>
+          <p><strong>Client:</strong> <span id="order-client"></span></p>
+          <p><strong>Date:</strong> <span id="order-date"></span></p>
+        </div>
+        
+        <div class="luxury-divider"></div>
+        
+        <div class="category-summary">
+          <h3>Items by Category</h3>
+          <div id="category-breakdown" class="category-breakdown">
+            <!-- Categories will be inserted here dynamically -->
+          </div>
+        </div>
+        
+        <div class="luxury-divider"></div>
+        
+        <div class="order-totals">
+          <div class="order-total-row">
+            <span><strong>Total Items:</strong></span>
+            <span id="total-items"></span>
+          </div>
+          <div class="order-total-row">
+            <span><strong>Total Amount:</strong></span>
+            <span id="total-amount"></span>
+          </div>
+        </div>
+        
+        <div id="order-comments-section" style="display: none;">
+          <div class="luxury-divider"></div>
+          <h3>Client Comments</h3>
+          <div id="order-comments" class="order-comments"></div>
+        </div>
+        
+        <div class="luxury-divider"></div>
+        
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
+          <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <!-- App Scripts -->
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/api-client.js"></script>
+  <script src="/js/gallery-modified.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/lightbox.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/price-manager.js"></script>
+</body>
+
+</html>
