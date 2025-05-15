@@ -138,11 +138,15 @@ function accessGallery() {
     document.getElementById('code-entry-modal').style.display = 'block';
     
     // Check if admin is already logged in
-    auth.onAuthStateChanged(function(user) {
-      if (user) {
-        // Admin is logged in, hide entry screen and show admin panel
-        closeModal('code-entry-modal');
-        loadAdminPanel();
+    document.addEventListener('firebaseReady', function() {
+      if (typeof auth !== 'undefined') {
+        auth.onAuthStateChanged(function(user) {
+          if (user) {
+            // Admin is logged in, hide entry screen and show admin panel
+            closeModal('code-entry-modal');
+            loadAdminPanel();
+          }
+        });
       }
     });
     

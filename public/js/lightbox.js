@@ -77,6 +77,8 @@ function openLightbox(index, fromCart = false) {
   imgElement.style.maxHeight = '100%';
   imgElement.style.objectFit = 'contain';
   imgElement.dataset.zoomSrc = getDirectImageUrl(photo.id); // URL para versão de alta qualidade
+  imgElement.dataset.photoId = photo.id; // Adicionar ID da foto para referência
+  imgElement.title = "Clique para ampliar. Use a roda do mouse para controlar o zoom."; // Dica visual
   
   // Adicionar imagem ao container
   imgContainer.appendChild(imgElement);
@@ -86,6 +88,13 @@ function openLightbox(index, fromCart = false) {
   loader.className = 'highres-loader';
   loader.innerHTML = '<div class="spinner"></div><div class="loader-text">Carregando alta resolução...</div>';
   imgContainer.appendChild(loader);
+  
+  // Adicionar indicador de zoom
+  const zoomIndicator = document.createElement('div');
+  zoomIndicator.className = 'zoom-indicator';
+  zoomIndicator.textContent = 'Use a roda do mouse para zoom';
+  zoomIndicator.style.display = 'none';
+  imgContainer.appendChild(zoomIndicator);
   
   // Configure other information (price, name, etc)
   let nameText = photo.name;
@@ -206,8 +215,8 @@ function preloadAdjacentImages() {
 
 // Função para obter URL de imagem direta do Google Drive
 function getDirectImageUrl(fileId) {
-  // Usar URL de thumbnail de alta resolução que funciona, em vez da URL direta que causa erros
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2048`;
+  // Usar nossa nova API de imagens otimizadas em vez da URL direta do Google Drive
+  return `/api/orders/highres-image/${fileId}?quality=92`; // Aumentar qualidade para 92
 }
 
 // Função para inicializar o zoom
@@ -215,82 +224,190 @@ function initializeZoom(imgId) {
   const img = document.getElementById(imgId);
   if (!img) return;
   
-  // Inicializar a biblioteca de zoom (Medium Zoom)
-  if (typeof mediumZoom === 'function') {
-    try {
-      const zoom = mediumZoom(`#${imgId}`, {
-        margin: 30,
-        background: 'rgba(0,0,0,0.9)',
-        scrollOffset: 0
-      });
-      
-      // Adicionar evento ao erro de zoom
-      img.addEventListener('error', function() {
-        console.log('Erro na imagem de zoom, revertendo para imagem original');
-        zoom.close();
-      });
-      
-    } catch (e) {
-      console.error('Erro ao inicializar Medium Zoom:', e);
-      // Fallback para zoom nativo se o Medium Zoom falhar
-      initializeNativeZoom(img);
-    }
-  } else {
-    // Fallback: implementar zoom nativo (mais simples)
-    initializeNativeZoom(img);
-  }
+  // Vamos usar direto o zoom nativo para maior controle e simplicidade
+  initializeNativeZoom(img);
 }
 
 // Função de fallback para zoom nativo
 function initializeNativeZoom(img) {
+  // Estado inicial
   let scale = 1;
   let panning = false;
   let pointX = 0;
   let pointY = 0;
   let start = { x: 0, y: 0 };
   
+  // Função para aplicar transformação
   function setTransform() {
     img.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+    
+    // Se estiver em zoom, mudar o cursor para indicar que pode arrastar
+    if (scale > 1) {
+      img.style.cursor = 'grab';
+    } else {
+      img.style.cursor = 'zoom-in';
+    }
   }
   
-  img.onmousedown = function(e) {
-    e.preventDefault();
-    start = { x: e.clientX - pointX, y: e.clientY - pointY };
-    panning = true;
-  }
-  
-  img.onmouseup = function(e) {
-    panning = false;
-  }
-  
-  img.onmousemove = function(e) {
-    e.preventDefault();
-    if (!panning) return;
-    pointX = (e.clientX - start.x);
-    pointY = (e.clientY - start.y);
+  // Função para centralizar corretamente a imagem
+  function centerImageOnPoint(targetScale) {
+    // Obter dimensões do container e da imagem
+    const imgRect = img.getBoundingClientRect();
+    const containerRect = img.parentElement.getBoundingClientRect();
+    
+    // Calcular o centro da imagem visível
+    const centerX = imgRect.width / 2;
+    const centerY = imgRect.height / 2;
+    
+    // Calcular a diferença entre o centro do container e o centro da imagem
+    const offsetX = (containerRect.width - imgRect.width) / 2;
+    const offsetY = (containerRect.height - imgRect.height) / 2;
+    
+    // Calcular quanto a imagem vai crescer
+    const growthFactor = targetScale - 1;
+    
+    // Ajustar o ponto X e Y para manter o centro no zoom
+    pointX = -centerX * growthFactor + offsetX * targetScale;
+    pointY = -centerY * growthFactor + offsetY * targetScale;
+    
+    // Aplicar a transformação
+    scale = targetScale;
     setTransform();
   }
   
-  img.onwheel = function(e) {
-    e.preventDefault();
-    const xs = (e.clientX - pointX) / scale;
-    const ys = (e.clientY - pointY) / scale;
-    const delta = -e.deltaY * 0.01;
-    
-    scale = Math.min(Math.max(1, scale + delta), 5);
-    
-    pointX = e.clientX - xs * scale;
-    pointY = e.clientY - ys * scale;
-    
-    setTransform();
-  }
-  
-  // Adicionar dblclick para reset do zoom
-  img.ondblclick = function() {
+  // Centralizar a imagem em tamanho normal
+  function resetZoom() {
     scale = 1;
     pointX = 0;
     pointY = 0;
     setTransform();
+  }
+  
+  // Evento de clique do mouse (para arrastar a imagem)
+  img.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    if (scale > 1) {
+      start = { x: e.clientX - pointX, y: e.clientY - pointY };
+      panning = true;
+      img.style.cursor = 'grabbing';
+    }
+  });
+  
+  // Soltar o botão do mouse
+  img.addEventListener('mouseup', function(e) {
+    panning = false;
+    if (scale > 1) {
+      img.style.cursor = 'grab';
+    } else {
+      img.style.cursor = 'zoom-in';
+    }
+  });
+  
+  // Sair do elemento com o mouse
+  img.addEventListener('mouseleave', function(e) {
+    panning = false;
+  });
+  
+  // Movimento do mouse para arrastar
+  img.addEventListener('mousemove', function(e) {
+    e.preventDefault();
+    if (!panning) return;
+    
+    pointX = (e.clientX - start.x);
+    pointY = (e.clientY - start.y);
+    setTransform();
+  });
+  
+  // Evento de roda do mouse para zoom
+  img.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    
+    // Se estamos no nível de zoom normal, use o método de centralização
+    if (Math.abs(scale - 1) < 0.05) {
+      // Determinar direção e aplicar zoom mais suave
+      const delta = -e.deltaY * 0.001; // Sensibilidade reduzida
+      
+      // Aplicar zoom com limites mais baixos
+      const newScale = Math.min(Math.max(1, scale + delta * 5), 2.5);
+      
+      // Se estamos aumentando o zoom do nível normal
+      if (newScale > 1) {
+        centerImageOnPoint(newScale);
+      }
+    } else {
+      // Já estamos com algum zoom, fazer ajustes finos
+      
+      // Obter coordenadas da imagem
+      const rect = img.getBoundingClientRect();
+      
+      // Calcular a posição do mouse em relação à imagem
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Calcular ponto de referência antes do zoom
+      const x = (mouseX - pointX) / scale;
+      const y = (mouseY - pointY) / scale;
+      
+      // Determinar fator de zoom (mais suave)
+      const delta = -e.deltaY * 0.0008;
+      
+      // Aplicar zoom com limite
+      const prevScale = scale;
+      scale = Math.min(Math.max(1, scale + delta * scale), 2.5);
+      
+      // Se voltamos ao zoom normal
+      if (Math.abs(scale - 1) < 0.05) {
+        resetZoom();
+      } else {
+        // Ajustar posição para manter foco no ponto
+        pointX = e.clientX - rect.left - x * scale;
+        pointY = e.clientY - rect.top - y * scale;
+        setTransform();
+      }
+    }
+    
+    // Atualizar indicador de zoom
+    updateZoomIndicator();
+  }, { passive: false });
+  
+  // Função para atualizar o indicador de zoom
+  function updateZoomIndicator() {
+    const zoomIndicator = document.querySelector('.zoom-indicator');
+    if (zoomIndicator) {
+      if (scale > 1.05) {
+        zoomIndicator.style.display = 'block';
+        zoomIndicator.textContent = `Zoom: ${Math.round(scale * 100)}%`;
+      } else {
+        zoomIndicator.style.display = 'none';
+      }
+    }
+  }
+  
+  // Adicionar dblclick para centralizar zoom
+  img.addEventListener('dblclick', function(e) {
+    if (scale > 1.05) {
+      // Se já tiver zoom, voltar ao normal
+      resetZoom();
+    } else {
+      // Aplicar zoom médio centralizado
+      centerImageOnPoint(2);
+    }
+    
+    // Atualizar indicador
+    updateZoomIndicator();
+  });
+  
+  // Definir estado inicial
+  setTransform();
+  
+  // Adicionar um indicador de nível de zoom se não existir
+  let zoomIndicator = document.querySelector('.zoom-indicator');
+  if (!zoomIndicator) {
+    zoomIndicator = document.createElement('div');
+    zoomIndicator.className = 'zoom-indicator';
+    zoomIndicator.textContent = 'Zoom: 100%';
+    zoomIndicator.style.display = 'none';
+    img.parentElement.appendChild(zoomIndicator);
   }
 }
 

@@ -218,7 +218,7 @@ function renderCategoryPriceTable() {
           </button>
           <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Salvar</button>
           <button class="action-btn rename-btn" onclick="renameCategory('${folder.id}', '${folder.name}')">Renomear</button>
-          <button class="action-btn delete-btn" onclick="deleteCategory('${folder.id}', '${folder.name}')">Excluir</button>
+          <button class="btn btn-danger trash-button" onclick="deleteCategory('${folder.id}', '${folder.name}')">🗑️</button>
         </td>
       </tr>
     `;
@@ -274,7 +274,7 @@ function loadMoreRows() {
           </button>
           <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Salvar</button>
           <button class="action-btn rename-btn" onclick="renameCategory('${folder.id}', '${folder.name}')">Renomear</button>
-          <button class="action-btn delete-btn" onclick="deleteCategory('${folder.id}', '${folder.name}')">Excluir</button>
+          <button class="btn btn-danger trash-button" onclick="deleteCategory('${folder.id}', '${folder.name}')">🗑️</button>
         </td>
       </tr>
     `;

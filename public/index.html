@@ -61,6 +61,7 @@
     .medium-zoom-overlay {
       z-index: 990;
     }
+
     .medium-zoom-image--opened {
       z-index: 991;
     }
@@ -168,8 +169,27 @@
   <!-- Loader -->
   <div id="loader" class="loader">
     <div class="loader-content">
-      <div class="spinner"></div>
-      <p>Loading exquisite leathers...</p>
+      <div class="luxury-loader">
+        <!-- Mensagem que troca -->
+        <div class="loader-message-container">
+          <div class="message-item active">Curating premium hides for you...</div>
+          <div class="message-item">Selecting exquisite leathers...</div>
+          <div class="message-item">Preparing your exclusive collection...</div>
+          <div class="message-item">Revealing nature's finest textures...</div>
+        </div>
+        
+        <!-- Título -->
+        <div class="loader-title">Sunshine Cowhides</div>
+        <div class="loader-subtitle">Gallery</div>
+        
+        <!-- ÚNICA linha dourada -->
+        <div class="golden-line"></div>
+        
+        <!-- Barra de progresso -->
+        <div class="loader-progress">
+          <div class="progress-bar"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -201,10 +221,12 @@
         <label for="admin-email">Email</label>
         <input type="email" id="admin-email" class="form-control" placeholder="Enter admin email">
       </div>
-      <div class="form-group">
-        <label for="admin-password">Password</label>
-        <input type="password" id="admin-password" class="form-control" placeholder="Enter password">
-      </div>
+      <form id="admin-password-form" onsubmit="event.preventDefault(); adminLogin();">
+        <div class="form-group">
+          <label for="admin-password">Password</label>
+          <input type="password" id="admin-password" class="form-control" placeholder="Enter password">
+        </div>
+      </form>
       <div style="display: flex; justify-content: flex-end; gap: 15px;">
         <button class="btn btn-secondary" onclick="closeModal('admin-login-modal')">Cancel</button>
         <button class="btn btn-gold" onclick="adminLogin()">Login</button>
@@ -383,25 +405,25 @@
     <div class="modal-content" style="max-width: 800px;">
       <h2>Order Details</h2>
       <div id="order-loading" class="loading-message">Loading order details...</div>
-      
+
       <div id="order-details-content" style="display: none;">
         <div class="order-info">
           <p><strong>Order:</strong> <span id="order-name"></span></p>
           <p><strong>Client:</strong> <span id="order-client"></span></p>
           <p><strong>Date:</strong> <span id="order-date"></span></p>
         </div>
-        
+
         <div class="luxury-divider"></div>
-        
-        <div class="category-summary">
-          <h3>Items by Category</h3>
-          <div id="category-breakdown" class="category-breakdown">
-            <!-- Categories will be inserted here dynamically -->
-          </div>
+
+        <!-- Cabeçalho centralizado para categorias -->
+        <h3 class="section-title">Items by Category</h3>
+
+        <div id="category-breakdown" class="category-breakdown">
+          <!-- Categorias serão inseridas aqui dinamicamente -->
         </div>
-        
+
         <div class="luxury-divider"></div>
-        
+
         <div class="order-totals">
           <div class="order-total-row">
             <span><strong>Total Items:</strong></span>
@@ -412,38 +434,36 @@
             <span id="total-amount"></span>
           </div>
         </div>
-        
+
         <div id="order-comments-section" style="display: none;">
           <div class="luxury-divider"></div>
           <h3>Client Comments</h3>
           <div id="order-comments" class="order-comments"></div>
         </div>
-        
+
         <div class="luxury-divider"></div>
-        
+
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
           <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+      <!-- Firebase SDK -->
+      <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <!-- App Scripts -->
-  <script src="/js/firebase-config.js"></script>
-  <script src="/js/utils.js"></script>
-  <script src="/js/api-client.js"></script>
-  <script src="/js/gallery-modified.js"></script>
-  <script src="/js/cart.js"></script>
-  <script src="/js/lightbox.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/admin.js"></script>
-  <script src="/js/price-manager.js"></script>
+      <!-- App Scripts -->
+      <script src="/js/firebase-config.js"></script>
+      <script src="/js/utils.js"></script>
+      <script src="/js/api-client.js"></script>
+      <script src="/js/gallery-modified.js"></script>
+      <script src="/js/cart.js"></script>
+      <script src="/js/lightbox.js"></script>
+      <script src="/js/auth.js"></script>
+      <script src="/js/admin.js"></script>
+      <script src="/js/price-manager.js"></script>
 </body>
 
 </html>

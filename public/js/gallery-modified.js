@@ -256,6 +256,53 @@ function renderCategoryPhotos(container, photos) {
   }, 50);
 }
 
+// Substitua a função de animação de mensagens por esta versão mais confiável
+function animateLoaderMessages() {
+  // Obter todas as mensagens
+  const messages = document.querySelectorAll('.loader-messages .message');
+  
+  // Se não há mensagens, retornar
+  if (!messages || messages.length === 0) return;
+  
+  // Garantir que apenas a primeira mensagem está ativa inicialmente
+  messages.forEach(msg => msg.classList.remove('active'));
+  messages[0].classList.add('active');
+  
+  let currentIndex = 0;
+  
+  // Criar uma função de transição
+  function transitionToNextMessage() {
+    // Remover classe active da mensagem atual
+    messages[currentIndex].classList.remove('active');
+    
+    // Avançar para próxima mensagem
+    currentIndex = (currentIndex + 1) % messages.length;
+    
+    // Adicionar classe active à próxima mensagem
+    messages[currentIndex].classList.add('active');
+  }
+  
+  // Iniciar a transição automática
+  return setInterval(transitionToNextMessage, 1000);
+}
+
+// Quando o documento carregar, inicializar animações
+document.addEventListener('DOMContentLoaded', function() {
+  // Armazenar o intervalo para poder limpar depois
+  window.messageInterval = animateLoaderMessages();
+});
+
+// Modificar a função hideLoader para limpar o intervalo
+function hideLoader() {
+  document.getElementById('loader').style.display = 'none';
+  
+  // Limpar o intervalo de transição de mensagens
+  if (window.messageInterval) {
+    clearInterval(window.messageInterval);
+    window.messageInterval = null;
+  }
+}
+
 // NOVA FUNÇÃO: Verificar se uma categoria ficou vazia e ocultá-la
 function checkEmptyCategory(containerId) {
   const container = document.getElementById(containerId);

@@ -86,16 +86,16 @@ function loadActiveCodes() {
         const formattedDate = date.toLocaleDateString();
 
         html += `<tr>
-          <td style="padding: 8px;">${data.code}</td>
-          <td style="padding: 8px;">${data.customerName || 'Anonymous'}</td>
-          <td style="padding: 8px;">${formattedDate}</td>
-          <td style="padding: 8px; text-align: center;">
-            <div class="action-buttons-container" style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-              <button class="btn btn-gold action-btn" style="background-color: #D4AF37; color: #212529; margin: 2px; min-width: 90px;" onclick="editCustomerAccess('${data.code}', '${data.customerName || 'Anonymous'}')">Edit Access</button>
-              <button class="btn btn-danger action-btn" style="background-color: #A52A2A; color: white; margin: 2px; min-width: 90px;" onclick="deleteCustomerCode('${data.code}', '${data.customerName || 'Anonymous'}')">Delete</button>
-            </div>
-          </td>
-        </tr>`;
+        <td style="padding: 8px;">${data.code}</td>
+        <td style="padding: 8px;">${data.customerName || 'Anonymous'}</td>
+        <td style="padding: 8px;">${formattedDate}</td>
+        <td style="padding: 8px; text-align: center;">
+          <div class="action-buttons-container" style="display: flex; justify-content: center; gap: 8px; flex-direction: row; flex-wrap: nowrap;">
+            <button class="btn btn-gold action-btn" style="background-color: #D4AF37; color: #212529;" onclick="editCustomerAccess('${data.code}', '${data.customerName || 'Anonymous'}')">Edit Access</button>
+            <button class="btn btn-danger action-btn trash-button" style="width: 36px !important; min-width: 36px !important; padding: 6px 0px;" onclick="deleteCustomerCode('${data.code}', '${data.customerName || 'Anonymous'}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
       });
 
       html += '</table>';
@@ -189,28 +189,30 @@ function loadOrderFolders(status, retryCount = 0) {
       folders.forEach(folder => {
         const date = new Date(folder.dateCreated);
         const formattedDate = date.toLocaleDateString();
-
+      
         // Different action buttons based on current status
         let actionButtons = '';
         if (status === 'waiting') {
           actionButtons = `
-            <button class="btn btn-secondary" style="padding: 4px 8px; margin-right: 5px;" 
+            <button class="btn btn-secondary" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="viewOrderDetails('${folder.id}', '${folder.name}')">View Details</button>
-            <button class="btn btn-gold" style="padding: 4px 8px;" 
+            <button class="btn btn-gold" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="moveOrderToSold('${folder.id}', '${folder.name}')">Mark as Sold</button>
           `;
         } else if (status === 'paid') {
           actionButtons = `
-            <button class="btn btn-secondary" style="padding: 4px 8px;" 
+            <button class="btn btn-secondary" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="viewOrderDetails('${folder.id}', '${folder.name}')">View Details</button>
           `;
         }
-
+      
         html += `<tr>
           <td style="padding: 8px;">${folder.name}</td>
           <td style="padding: 8px;">${formattedDate}</td>
-          <td style="padding: 8px; white-space: nowrap;">
-            ${actionButtons}
+          <td style="padding: 8px; text-align: right;">
+            <div class="button-container" style="display: flex; flex-wrap: nowrap; gap: 5px; justify-content: flex-end;">
+              ${actionButtons}
+            </div>
           </td>
         </tr>`;
       });
@@ -832,16 +834,13 @@ async function viewOrderDetails(folderId, folderName) {
         categoryElement.className = 'category-item';
         
         categoryElement.innerHTML = `
-          <div class="category-header">
-            <h4>${category.name} (${category.items.length} items)</h4>
-            <div class="category-total">Total: $${categoryTotal.toFixed(2)}</div>
-          </div>
-          <div class="category-photos">
-            ${category.items.map(item => `
-              <div class="category-photo" title="${item.name}">
-                <img src="https://drive.google.com/thumbnail?id=${item.id}&sz=w100-h100" alt="${item.name}">
-              </div>
-            `).join('')}
+          <div class="category-summary">
+            <div class="category-name">
+              <strong>${category.name}</strong> (${category.items.length} items)
+            </div>
+            <div class="category-total">
+              Total: $${categoryTotal.toFixed(2)}
+            </div>
           </div>
         `;
         

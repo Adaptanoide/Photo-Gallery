@@ -299,37 +299,6 @@ button[onclick="adminLogout()"]:hover {
   left: 0;
 }
 
-/* Loader */
-.loader {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.9);
-  z-index: 400;
-  backdrop-filter: blur(5px);
-}
-
-.loader-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top-color: var(--color-gold);
-  animation: spin 1s ease-in-out infinite;
-  margin: 0 auto 15px auto;
-}
-
 /* Empty Message */
 .empty-message {
   text-align: center;
@@ -1852,10 +1821,13 @@ input:checked+.toggle-slider:before {
 
 /* Estilos para container de botões na tabela de clientes */
 .action-buttons-container {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   justify-content: center;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .action-buttons-container .action-btn {
@@ -1871,9 +1843,11 @@ input:checked+.toggle-slider:before {
   display: flex;
   flex-direction: column;
   max-height: 90vh;
-  overflow-x: hidden; /* Impede o scroll horizontal */
+  overflow-x: hidden;
+  /* Impede o scroll horizontal */
   position: relative;
-  padding-bottom: 80px; /* Espaço para os botões fixos */
+  padding-bottom: 80px;
+  /* Espaço para os botões fixos */
 }
 
 #category-access-modal .category-access-container {
@@ -1894,7 +1868,7 @@ input:checked+.toggle-slider:before {
   right: 0;
   background: white;
   padding: 15px 20px;
-  border-top: 1px solid rgba(0,0,0,0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: flex-end;
   gap: 15px;
@@ -1921,7 +1895,7 @@ input:checked+.toggle-slider:before {
   .action-buttons-container {
     flex-direction: row;
   }
-  
+
   .action-buttons-container .action-btn {
     font-size: 0.8rem;
     padding: 4px 8px;
@@ -1971,102 +1945,104 @@ input:checked+.toggle-slider:before {
   }
 }
 
-  /* Order Details Modal Styles */
-  .order-info {
-    background-color: var(--color-cream);
-    padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-  }
+/* Order Details Modal Styles */
+.order-info {
+  background-color: var(--color-cream);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
 
-  .category-breakdown {
-    max-height: 400px;
-    overflow-y: auto;
-    margin: 15px 0;
-  }
+.category-breakdown {
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 15px 0;
+}
 
-  .category-item {
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 6px;
-    padding: 15px;
-    margin-bottom: 15px;
-    background-color: #fff;
-  }
+.category-item {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #fff;
+}
 
-  .category-header {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-  }
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
 
+.category-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.category-photo {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.category-photo img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+}
+
+.order-total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 1.1em;
+}
+
+.order-total-row:last-child {
+  font-size: 1.3em;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.order-comments {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+  font-style: italic;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .category-photos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    margin-top: 15px;
-  }
-
-  .category-photo {
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 4px;
-    overflow: hidden;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   }
 
   .category-photo img {
-    width: 100%;
-    height: 80px;
-    object-fit: cover;
+    height: 60px;
   }
-
-  .order-total-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 1.1em;
-  }
-
-  .order-total-row:last-child {
-    font-size: 1.3em;
-    font-weight: 600;
-    color: var(--color-dark);
-  }
-
-  .order-comments {
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 6px;
-    margin-top: 10px;
-    white-space: pre-wrap;
-    font-style: italic;
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 25px;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .category-photos {
-      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    }
-    
-    .category-photo img {
-      height: 60px;
-    }
-  }
+}
 
 /* Estilos para o visualizador OpenSeadragon */
 .openseadragon-container {
   background-color: #000 !important;
 }
+
 .navigator {
   border: 1px solid var(--color-gold) !important;
 }
+
 .openseadragon-canvas {
   outline: none !important;
 }
@@ -2095,4 +2071,428 @@ input:checked+.toggle-slider:before {
   border-radius: 50%;
   border-top-color: var(--color-gold);
   animation: spin 1s ease-in-out infinite;
+}
+
+/* Estilos para o visualizador medium-zoom */
+.medium-zoom-overlay {
+  z-index: 990;
+  background: rgba(0, 0, 0, 0.95) !important;
+}
+
+.medium-zoom-image--opened {
+  z-index: 991;
+}
+
+/* Animação de transição de zoom mais suave */
+.medium-zoom-image {
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1) !important;
+}
+
+/* Indicador visual para zoom */
+.zoom-indicator {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #000;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 992;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.medium-zoom-image--opened+.zoom-indicator {
+  opacity: 1;
+}
+
+/* Melhorar o estilo do indicador de zoom */
+.zoom-indicator {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 992;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Adicione este código ao final do arquivo main.css */
+#category-access-modal .category-access-table th,
+#category-access-modal .category-access-table td {
+  padding: 8px 5px;
+  white-space: normal;
+}
+
+#category-access-modal .category-access-table input {
+  width: 100%;
+  min-width: 60px;
+  box-sizing: border-box;
+}
+
+/* Ajustar tamanhos específicos das colunas */
+#category-access-modal .category-access-table th:nth-child(5),
+#category-access-modal .category-access-table td:nth-child(5),
+#category-access-modal .category-access-table th:nth-child(6),
+#category-access-modal .category-access-table td:nth-child(6),
+#category-access-modal .category-access-table th:nth-child(7),
+#category-access-modal .category-access-table td:nth-child(7) {
+  width: 90px;
+}
+
+/* Adicione este código ao final do arquivo main.css */
+#order-folders-list table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#order-folders-list table th:nth-child(1),
+#order-folders-list table td:nth-child(1) {
+  width: 40%;
+}
+
+#order-folders-list table th:nth-child(2),
+#order-folders-list table td:nth-child(2) {
+  width: 20%;
+}
+
+#order-folders-list table th:nth-child(3),
+#order-folders-list table td:nth-child(3) {
+  width: 40%;
+}
+
+/* Remover scroll horizontal */
+#order-folders-container {
+  overflow-x: hidden;
+}
+
+/* Adicione este código ao final do arquivo main.css */
+.trash-icon {
+  font-size: 16px;
+  color: var(--color-danger);
+}
+
+.price-table .delete-btn {
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.price-table .delete-btn:hover {
+  background-color: rgba(165, 42, 42, 0.1);
+  border-radius: 4px;
+}
+
+/* Adicione este código ao final do arquivo main.css */
+.trash-button {
+  background-color: var(--color-danger) !important;
+  color: white !important;
+  border: none;
+  border-radius: 4px;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding: 0 !important;
+  margin-left: 5px;
+}
+
+.trash-button:hover {
+  background-color: #8B0000 !important;
+}
+
+/* Garantir alinhamento correto nas células da tabela */
+#active-codes-list td {
+  vertical-align: middle;
+}
+
+#active-codes-list .btn-gold {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Ajuste específico para a tabela de preços */
+.price-table .trash-button {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* Remover estilos antigos que possam conflitar */
+.price-table .delete-btn {
+  display: none;
+}
+
+/* Ajuste alinhamento dos botões de ação em pedidos */
+#order-folders-list td:last-child {
+  text-align: right;
+}
+
+#order-folders-list .button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+/* Novo estilo simplificado para detalhes do pedido */
+.category-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.category-item {
+  background-color: #fff;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0 15px;
+}
+
+.order-total-row {
+  font-size: 1.1em;
+  padding: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.order-total-row:last-child {
+  font-size: 1.3em;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+/* Esconder elementos antigos que não são mais necessários */
+.category-photos {
+  display: none;
+}
+
+/* Estilos para o cabeçalho de seção centralizado */
+.section-title {
+  text-align: center;
+  margin: 20px 0;
+  font-family: 'Playfair Display', serif;
+  color: var(--color-dark);
+  font-size: 1.5rem;
+}
+
+/* Estilos para as categorias em largura total */
+.category-breakdown {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.category-item {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+/* Assegurar que os itens usem a largura total */
+#order-details-content {
+  width: 100%;
+}
+
+/* Melhorar o estilo dos totais */
+.order-totals {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: var(--color-cream);
+  border-radius: 6px;
+}
+
+.order-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+}
+
+.order-total-row:last-child {
+  font-size: 1.3em;
+  font-weight: 600;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 10px;
+  margin-top: 5px;
+}
+
+/* Aumentar largura do modal e corrigir scroll horizontal */
+#order-details-modal .modal-content {
+  max-width: 800px !important; /* Aumentar de 600px para 800px */
+  width: 95% !important;
+  overflow-x: hidden !important; /* Prevenir scroll horizontal */
+}
+
+/* Garantir que o conteúdo respeite os limites do modal */
+#order-details-content {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Melhorar layout para itens com nomes longos */
+.category-summary {
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+
+.category-name {
+  flex: 1;
+  min-width: 250px;
+  padding-right: 15px;
+  word-break: break-word; /* Permite quebra de linha em palavras longas */
+}
+
+.category-total {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Ajustar largura dos itens da categoria */
+#category-breakdown {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.category-item {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Remover controles de scroll na parte inferior */
+.modal-content::-webkit-scrollbar-corner {
+  display: none;
+}
+
+/* Melhorar exibição dos totais */
+.order-totals {
+  background-color: var(--color-cream);
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+/* ==================== LOADER COMPLETO - SUBSTITUI VERSÕES ANTERIORES ==================== */
+.loader {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #212529 0%, #36454F 100%);
+  z-index: 999;
+  backdrop-filter: blur(10px);
+}
+
+.loader-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.luxury-loader {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Área das mensagens */
+.loader-message-container {
+  height: 30px;
+  margin-bottom: 30px;
+  width: 280px;
+  position: relative;
+}
+
+.loader-message-container .message-item {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  top: 0;
+  color: white;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.loader-message-container .message-item.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Título e subtítulo */
+.loader-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--color-gold);
+  font-size: 2.2rem;
+  letter-spacing: 1px;
+  line-height: 1.2;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.loader-subtitle {
+  font-family: 'Playfair Display', serif;
+  color: var(--color-gold);
+  font-size: 2rem;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  line-height: 1.2;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+/* Linha dourada - ÚNICA */
+.golden-line {
+  width: 0;
+  height: 2px;
+  background-color: var(--color-gold);
+  margin: 10px 0 20px 0;
+  animation: extend-line 2s ease-in-out forwards;
+}
+
+@keyframes extend-line {
+  0% { width: 0; }
+  100% { width: 200px; }
+}
+
+/* Barra de progresso */
+.loader-progress {
+  width: 150px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-top: 10px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--color-gold);
+  border-radius: 3px;
+  animation: loading 5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 0%; }
 }
