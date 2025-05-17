@@ -228,17 +228,28 @@ function loadCategoryPhotos(categoryId) {
     });
 }
 
-// Renderizar fotos para a categoria
+// Renderizar fotos para a categoria - FUNÇÃO MODIFICADA
 function renderPhotosForCategory(categoryPhotos) {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = '';
-
+  
   if (!categoryPhotos || categoryPhotos.length === 0) {
     contentDiv.innerHTML = '<div class="empty-message">No photos in this category.</div>';
     return;
   }
-
-  // Cria o container da seção
+  
+  // ADIÇÃO: Criar um título único para a categoria
+  const categoryName = getCurrentCategoryName();
+  
+  const categoryHeader = document.createElement('div');
+  categoryHeader.className = 'category-title-container';
+  categoryHeader.innerHTML = `
+    <h2>${categoryName}</h2>
+    <div class="category-divider"></div>
+  `;
+  contentDiv.appendChild(categoryHeader);
+  
+  // Criar o container da seção
   const sectionContainer = document.createElement('div');
   sectionContainer.id = `category-section-main`;
   sectionContainer.className = 'category-section';
@@ -246,12 +257,12 @@ function renderPhotosForCategory(categoryPhotos) {
   sectionContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
   sectionContainer.style.gap = '30px';
   sectionContainer.style.width = '100%';
-
+  
   contentDiv.appendChild(sectionContainer);
-
-  // Renderiza as fotos
+  
+  // Renderizar as fotos
   renderCategoryPhotos(sectionContainer, categoryPhotos);
-
+  
   // Se temos muitas fotos, adicionar botão para carregar mais
   if (categoryPhotos.length >= 20) {
     const loadMoreBtn = document.createElement('div');
@@ -263,9 +274,25 @@ function renderPhotosForCategory(categoryPhotos) {
     `;
     sectionContainer.appendChild(loadMoreBtn);
   }
-
+  
   // Atualizar botões do carrinho
   setTimeout(updateButtonsForCartItems, 100);
+}
+
+// ADIÇÃO: Função auxiliar para obter o nome da categoria atual
+function getCurrentCategoryName() {
+  if (!activeCategory) return 'All Items';
+  
+  const activeItem = document.querySelector('.category-item.active');
+  if (activeItem) {
+    const text = activeItem.textContent.trim();
+    // Remover contadores entre parênteses
+    return text.replace(/\s*\(\d+\)\s*$/, '');
+  }
+  
+  // Fallback
+  const category = categories.find(cat => cat.id === activeCategory);
+  return category ? category.name : 'All Items';
 }
 
 // Atualizar registro de fotos e renderizar
@@ -347,30 +374,29 @@ function highlightActiveCategory(categoryId) {
   }
 }
 
-// Atualizar cabeçalho da categoria atual
+// Atualizar cabeçalho da categoria atual - FUNÇÃO MODIFICADA
 function updateCurrentCategoryHeader(categoryId) {
+  // MUDANÇA: Não mostrar header separado, deixar apenas o título da galeria
   const headerDiv = document.getElementById('current-category-header');
-
-  if (!headerDiv) return;
-
-  // Se for a categoria "All Items" ou nenhuma
-  if (!categoryId) {
-    headerDiv.innerHTML = '<h2>All Items</h2>';
-    return;
+  
+  if (headerDiv) {
+    headerDiv.style.display = 'none'; // Esconder completamente
   }
-
-  // Encontrar nome da categoria
-  const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
-
-  if (categoryItem) {
-    headerDiv.innerHTML = `<h2>${categoryItem.textContent.trim()}</h2>`;
-  } else {
-    // Se não encontrou no menu, buscar na lista global
-    const category = categories.find(cat => cat.id === categoryId);
-    if (category) {
-      headerDiv.innerHTML = `<h2>${category.name}</h2>`;
-    } else {
-      headerDiv.innerHTML = '<h2>Selected Category</h2>';
+  
+  // ADIÇÃO: Atualizar o título principal da galeria
+  const mainCategoryTitle = document.querySelector('.category-title-container h2');
+  if (mainCategoryTitle) {
+    // Se for All Items ou nenhuma categoria específica
+    if (!categoryId || categoryId === document.querySelector('.category-item[data-category-id] .active')?.getAttribute('data-category-id')) {
+      const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+      if (categoryItem) {
+        const categoryText = categoryItem.textContent.trim();
+        // Remover contadores entre parênteses para um visual mais limpo
+        const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
+        mainCategoryTitle.textContent = cleanCategoryName;
+      } else {
+        mainCategoryTitle.textContent = 'All Items';
+      }
     }
   }
 }
@@ -874,4 +900,99 @@ function renderPhotosByCategory(photosByCategory) {
 
   // Atualizar botões do carrinho
   setTimeout(updateButtonsForCartItems, 100);
+}
+
+// Função para melhorar o comportamento do sidebar sticky
+function initializeStickysidebar() {
+  const sidebar = document.querySelector('.category-sidebar');
+  const categoriesMenu = document.querySelector('.categories-menu');
+  
+  if (!sidebar || !categoriesMenu) return;
+  
+  // Detectar quando o usuário está rolando dentro do menu de categorias
+  let scrollTimeout;
+  categoriesMenu.addEventListener('scroll', function() {
+    this.classList.add('scrolling');
+    
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      this.classList.remove('scrolling');
+    }, 150);
+  });
+  
+  // Ajustar altura do sidebar baseado na viewport
+  function adjustSidebarHeight() {
+    const viewportHeight = window.innerHeight;
+    const sidebarTop = sidebar.getBoundingClientRect().top;
+    const maxHeight = viewportHeight - sidebarTop - 40; // 40px de margem
+    
+    sidebar.style.maxHeight = `${maxHeight}px`;
+    categoriesMenu.style.maxHeight = `${maxHeight - 120}px`; // Subtraindo espaço do header e search
+  }
+  
+  // Ajustar na inicialização e quando redimensionar a janela
+  adjustSidebarHeight();
+  window.addEventListener('resize', adjustSidebarHeight);
+  
+  // Observar mudanças no DOM que possam afetar o layout
+  const resizeObserver = new ResizeObserver(adjustSidebarHeight);
+  resizeObserver.observe(document.body);
+}
+
+// Chamar a função quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+  // Aguardar um pouco para garantir que todos os elementos foram carregados
+  setTimeout(initializeStickysidebar, 100);
+  
+  // Configurar pesquisa de categorias (se ainda não estiver configurado)
+  setupCategorySearch();
+});
+
+// Melhorar a função de pesquisa existente
+function setupCategorySearch() {
+  const searchInput = document.getElementById('category-search-input');
+  
+  if (!searchInput) return;
+  
+  // Limpar pesquisa com ESC
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      this.value = '';
+      this.dispatchEvent(new Event('input'));
+    }
+  });
+  
+  // Adicionar indicador de resultados
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const categoryItems = document.querySelectorAll('.category-item');
+    let visibleCount = 0;
+    
+    categoryItems.forEach(item => {
+      const categoryName = item.textContent.trim().toLowerCase();
+      
+      if (categoryName.includes(searchTerm)) {
+        item.style.display = 'block';
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+    
+    // Mostrar feedback visual se não encontrar resultados
+    const categoriesMenu = document.querySelector('.categories-menu');
+    let noResultsMsg = categoriesMenu.querySelector('.no-results-message');
+    
+    if (visibleCount === 0 && searchTerm.length > 0) {
+      if (!noResultsMsg) {
+        noResultsMsg = document.createElement('div');
+        noResultsMsg.className = 'no-results-message category-loading';
+        noResultsMsg.textContent = 'Nenhuma categoria encontrada';
+        categoriesMenu.appendChild(noResultsMsg);
+      }
+      noResultsMsg.style.display = 'block';
+    } else if (noResultsMsg) {
+      noResultsMsg.style.display = 'none';
+    }
+  });
 }

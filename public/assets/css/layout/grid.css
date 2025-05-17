@@ -5,7 +5,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 30px;
-  margin-top: 30px;
+  margin-top: 20px; /* REDUÇÃO: Era 30px */
+  padding: 0; /* ADIÇÃO: Garantir sem padding */
 }
 
 /* Layout em grade para categorias */
@@ -28,7 +29,7 @@
 /* Título da categoria + linha divisória */
 .category-title-container {
   width: 100%;
-  margin: 40px 0 20px 0;
+  margin: 20px 0 30px 0; /* MUDANÇA: Reduzindo margem superior */
   grid-column: 1 / -1;
   position: relative;
 }
@@ -39,7 +40,7 @@
 
 .category-title-container h2 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.8rem;
+  font-size: 2rem; /* AUMENTO: Era 1.8rem */
   color: var(--color-dark);
   margin: 0;
   padding: 0;
@@ -49,9 +50,9 @@
 
 .category-title-container .category-divider {
   width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, var(--color-gold) 0%, var(--color-gold) 70%, transparent 100%);
-  margin-top: 8px;
+  height: 2px; /* AUMENTO: Era 1px */
+  background: linear-gradient(90deg, var(--color-gold) 0%, var(--color-gold) 50%, transparent 100%);
+  margin-top: 10px; /* AUMENTO: Era 8px */
   border-bottom: none;
 }
 
@@ -60,6 +61,7 @@
   .gallery {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
+    margin-top: 15px;
   }
   
   .category-section {
@@ -69,6 +71,22 @@
   }
   
   .category-title-container {
-    margin: 30px 0 15px 0;
+    margin: 15px 0 20px 0;
+  }
+  
+  .category-title-container h2 {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  
+  .category-section {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
   }
 }

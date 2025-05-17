@@ -1,21 +1,30 @@
 /* Sidebar para navegação de categorias */
 .catalog-layout {
   display: flex;
-  gap: 30px;
+  gap: 0; /* MUDANÇA: Removendo gap */
   width: 100%;
   margin-top: 20px;
+  position: relative;
+  height: auto;
 }
 
 .category-sidebar {
-  width: 250px;
+  width: 280px; /* AUMENTO: De 250px para 280px */
   flex-shrink: 0;
   background-color: white;
-  border-radius: 8px;
-  box-shadow: var(--shadow-soft);
+  border-radius: 0 8px 8px 0; /* MUDANÇA: Arredondamento só na direita */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* MUDANÇA: Sombra só na direita */
   padding: 20px;
-  max-height: 80vh;
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+  max-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
+  z-index: 10;
+  /* IMPORTANTE: Para colar na lateral esquerda */
+  margin-left: 0;
+  border-left: none;
 }
 
 .category-sidebar h3 {
@@ -38,6 +47,7 @@
 
 .category-search {
   margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .category-search input {
@@ -51,8 +61,10 @@
 .categories-menu {
   overflow-y: auto;
   flex-grow: 1;
-  max-height: 60vh; /* Limitar altura para evitar rolagem muito longa */
-  padding-right: 5px; /* Espaço para a barra de rolagem */
+  max-height: calc(100vh - 200px);
+  padding-right: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gold) rgba(0, 0, 0, 0.05);
 }
 
 .categories-menu::-webkit-scrollbar {
@@ -69,26 +81,37 @@
   border-radius: 10px;
 }
 
+.categories-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold-light);
+}
+
 .category-item {
-  padding: 10px 12px;
-  margin-bottom: 5px;
-  border-radius: 4px;
+  padding: 12px 15px; /* AUMENTO: Mais padding */
+  margin-bottom: 8px; /* AUMENTO: Mais espaço entre itens */
+  border-radius: 6px; /* AUMENTO: Mais arredondamento */
   cursor: pointer;
   transition: var(--transition-smooth);
   font-weight: 500;
-  display: block; /* Garantir que está visível */
-  background-color: rgba(255, 255, 255, 0.5); /* Dar um pouco mais de contraste */
+  display: block;
+  background-color: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.05);
+  /* MELHORIA: Melhor formatação do texto */
+  word-wrap: break-word;
+  line-height: 1.4;
 }
 
 .category-item:hover {
   background-color: rgba(0, 0, 0, 0.05);
+  transform: translateX(5px); /* AUMENTO: Mais movimento */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .category-item.active {
   background-color: var(--color-gold);
   color: var(--color-dark);
   font-weight: 600;
+  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.4); /* MELHORIA: Sombra mais pronunciada */
+  transform: translateX(5px);
 }
 
 .category-loading {
@@ -101,43 +124,72 @@
 .content-area {
   flex-grow: 1;
   overflow: hidden;
+  min-width: 0;
+  padding-left: 30px; /* ADIÇÃO: Espaço entre sidebar e conteúdo */
+  padding-right: 20px; /* ADIÇÃO: Padding direito */
 }
 
+/* CORREÇÃO: Remover duplicação de títulos */
 .current-category-header {
-  margin-bottom: 20px;
+  display: none; /* MUDANÇA: Esconder o header duplicado */
 }
 
-.current-category-header h2 {
-  font-family: 'Playfair Display', serif;
-  color: var(--color-dark);
-  margin: 0;
-  position: relative;
-  display: inline-block;
-}
-
-.current-category-header h2:after {
-  content: "";
-  position: absolute;
-  width: 40px;
-  height: 3px;
-  background-color: var(--color-gold);
-  bottom: -8px;
-  left: 0;
+/* ADIÇÃO: Estilo para o título único da categoria */
+.category-title-container:first-child {
+  margin-top: 0;
+  padding-top: 0;
 }
 
 /* Adaptação para dispositivos móveis */
 @media (max-width: 768px) {
   .catalog-layout {
     flex-direction: column;
+    gap: 20px;
   }
   
   .category-sidebar {
     width: 100%;
-    max-height: none;
+    position: relative;
+    max-height: 250px;
     margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-soft);
+    margin-left: 15px;
+    margin-right: 15px;
+    width: calc(100% - 30px);
   }
   
   .categories-menu {
-    max-height: 200px;
+    max-height: 180px;
   }
+  
+  .content-area {
+    order: 2;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+/* ADIÇÃO: Efeitos visuais melhorados */
+.category-sidebar:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Melhorar a aparência quando está rolando */
+.categories-menu.scrolling {
+  background: 
+    linear-gradient(white 30%, rgba(255,255,255,0)),
+    linear-gradient(rgba(255,255,255,0), white 70%) 0 100%,
+    radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.1), rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.1), rgba(0,0,0,0)) 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+  background-attachment: local, local, scroll, scroll;
 }
