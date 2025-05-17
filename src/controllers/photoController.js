@@ -189,10 +189,13 @@ exports.getCategories = async (req, res) => {
     // Se for um cliente, obter suas configurações de acesso
     const accessResult = await mongoService.getCustomerCategoryAccess(customerCode);
     console.log("getCategories - Dados de acesso do cliente:", accessResult);
+    console.log("getCategories - Dados de acesso completos:", JSON.stringify(accessResult));
+    console.log("getCategories - Dados de acesso do cliente:", accessResult);
     
     if (!accessResult.success) {
-      console.log("getCategories - Falha ao obter acesso, retornando apenas All Items");
-      return res.status(200).json(filteredCategories.filter(category => category.isAll)); 
+      console.log("getCategories - Falha ao obter acesso, retornando todas categorias por padrão");
+      // Retornar todas as categorias filtradas, não apenas All Items
+      return res.status(200).json(filteredCategories); 
     }
     
     const accessData = accessResult.data || {};

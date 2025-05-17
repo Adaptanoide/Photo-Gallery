@@ -8,7 +8,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/assets/css/main-modular.css">
   <!-- Biblioteca Medium Zoom para zoom de alta qualidade -->
   <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script>
 
@@ -74,9 +74,32 @@
       <h1>Welcome to Our Gallery</h1>
     </div>
 
-    <!-- Main content -->
-    <div id="content" class="gallery">
-      <div class="empty-message">Loading our exquisite collection...</div>
+    <!-- Nova estrutura com menu lateral e conteúdo -->
+    <div class="catalog-layout">
+      <!-- Menu lateral de categorias -->
+      <div class="category-sidebar">
+        <h3>Categories</h3>
+        <div class="category-search">
+          <input type="text" id="category-search-input" placeholder="Search categories...">
+        </div>
+        <div id="categories-menu" class="categories-menu">
+          <!-- Categorias serão carregadas aqui -->
+          <div class="category-loading">Loading categories...</div>
+        </div>
+      </div>
+
+      <!-- Conteúdo principal -->
+      <div class="content-area">
+        <!-- Indicador de categoria atual -->
+        <div id="current-category-header" class="current-category-header">
+          <h2>All Items</h2>
+        </div>
+        
+        <!-- Área de conteúdo (galeria) -->
+        <div id="content" class="gallery">
+          <div class="empty-message">Loading our exquisite collection...</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -459,6 +482,7 @@
       <script src="/js/auth.js"></script>
       <script src="/js/admin.js"></script>
       <script src="/js/price-manager.js"></script>
+      <script src="/js/sidebar.js"></script>
 </body>
 
 </html>

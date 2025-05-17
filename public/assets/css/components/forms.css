@@ -1,0 +1,138 @@
+/* Forms - Sunshine Cowhides */
+/* Estilos para formulários e campos de entrada */
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--color-dark);
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  font-family: 'Montserrat', sans-serif;
+  transition: var(--transition-smooth);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+}
+
+textarea.form-control {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Inputs específicos */
+.price-input,
+.quantity-input,
+.discount-input {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  font-family: 'Montserrat', sans-serif;
+  text-align: center;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked+.toggle-slider {
+  background-color: var(--color-gold);
+}
+
+input:checked+.toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* Filtros de tabela */
+.table-filter {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-filter input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.filter-stats {
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: var(--color-taupe);
+  text-align: right;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+  .toggle-switch {
+    width: 40px;
+    height: 20px;
+  }
+
+  .toggle-slider:before {
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  input:checked+.toggle-slider:before {
+    transform: translateX(20px);
+  }
+
+  .price-input,
+  .quantity-input,
+  .discount-input {
+    padding: 4px;
+    font-size: 0.9em;
+  }
+}

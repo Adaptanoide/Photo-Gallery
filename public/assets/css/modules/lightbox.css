@@ -1,0 +1,291 @@
+/* Lightbox - Sunshine Cowhides */
+/* Estilos para o visualizador de fotos em tela cheia */
+
+/* Container principal */
+.lightbox {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 300;
+  transition: var(--transition-smooth);
+}
+
+.lightbox-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+/* Container da imagem */
+.lightbox-img-container {
+  position: relative;
+  width: 85%;
+  height: 75vh;
+  background: white;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Botão de fechar */
+.lightbox-close {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  color: white;
+  font-size: 35px;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: var(--transition-smooth);
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+/* Controles */
+.lightbox-controls {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+  align-items: center;
+}
+
+.lightbox-controls button {
+  margin: 0 5px;
+}
+
+/* Informações da foto */
+.lightbox-info {
+  color: white;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.lightbox-info p {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* Cart Icon */
+.cart-icon {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+  position: relative;
+  color: white;
+}
+
+.cart-icon .icon {
+  position: relative;
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.cart-icon .icon:before {
+  content: "🛒";
+}
+
+.cart-icon .count {
+  background-color: var(--color-gold);
+  color: var(--color-dark);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Botões de navegação */
+.lightbox-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lightbox-nav button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  color: white;
+  transition: var(--transition-smooth);
+}
+
+.lightbox-nav button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav .nav-left {
+  left: 30px;
+}
+
+.lightbox-nav .nav-right {
+  right: 30px;
+}
+
+/* Return to cart button */
+.return-to-cart {
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: none;
+}
+
+.return-to-cart:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Notificações e loaders */
+.highres-loader {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  z-index: 10;
+}
+
+.highres-loader .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--color-gold);
+  animation: spin 1s ease-in-out infinite;
+}
+
+.loader-text {
+  font-size: 14px;
+  font-weight: 400;
+  color: white;
+}
+
+.lightbox-notification {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(33, 37, 41, 0.8);
+  border: 1px solid var(--color-gold);
+  border-radius: 8px;
+  padding: 10px 15px;
+  color: white;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  z-index: 100;
+}
+
+.end-notification {
+  background-color: rgba(212, 175, 55, 0.2);
+  padding: 15px 20px;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Zoom styles */
+.zoom-img {
+  transition: transform 0.3s ease;
+  cursor: zoom-in;
+}
+
+.lightbox-img-wrapper {
+  transition: all 0.3s ease;
+}
+
+.zoom-indicator {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 992;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+  .lightbox-img-container {
+    width: 95%;
+    height: 60vh;
+  }
+
+  .lightbox-nav button {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .lightbox-nav .nav-left {
+    left: 15px;
+  }
+
+  .lightbox-nav .nav-right {
+    right: 15px;
+  }
+
+  .return-to-cart {
+    top: 15px;
+    left: 15px;
+    padding: 8px 15px;
+    font-size: 12px;
+  }
+}

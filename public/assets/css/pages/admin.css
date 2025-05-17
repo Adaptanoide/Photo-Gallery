@@ -1,0 +1,147 @@
+/* Admin - Sunshine Cowhides */
+/* Estilos específicos para o painel de administração */
+
+/* Bulk actions */
+.bulk-actions {
+  background: var(--color-cream);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.bulk-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bulk-form .form-control {
+  width: auto;
+  flex: 1;
+  min-width: 120px;
+}
+
+.global-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+/* Folder Management */
+.folder-structure-container {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  margin: 15px 0;
+}
+
+.folder-path-breadcrumb {
+  padding: 10px 0;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.path-folder {
+  color: var(--color-gold);
+  cursor: pointer;
+}
+
+.path-folder:hover {
+  text-decoration: underline;
+}
+
+.current-folder {
+  font-weight: 600;
+}
+
+.folder-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.folder-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: var(--transition-smooth);
+}
+
+.folder-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.folder-info {
+  display: flex;
+  align-items: center;
+}
+
+.folder-icon {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+.folder-name {
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+.folder-name:hover {
+  color: var(--color-gold);
+}
+
+.file-count-badge {
+  background-color: var(--color-gold);
+  color: var(--color-dark);
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  margin-right: 15px;
+}
+
+.folder-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.loading-folders {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-taupe);
+}
+
+.empty-folder-message {
+  padding: 30px;
+  text-align: center;
+  color: var(--color-taupe);
+  font-style: italic;
+}
+
+.folder-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.folder-up-icon {
+  margin-right: 5px;
+  font-weight: bold;
+}
+
+#back-button {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+  .bulk-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bulk-form .form-control {
+    width: 100%;
+  }
+}

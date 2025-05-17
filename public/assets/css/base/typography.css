@@ -1,0 +1,60 @@
+/* Typography - Sunshine Cowhides */
+/* Definições tipográficas e estilos de texto */
+
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 1.8rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.3rem;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  text-align: center;
+  margin: 20px 0;
+  font-family: 'Playfair Display', serif;
+  color: var(--color-dark);
+  font-size: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+  }
+  
+  h4 {
+    font-size: 1.1rem;
+  }
+}

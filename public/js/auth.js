@@ -95,6 +95,9 @@ function accessGallery() {
       
       // Load categories explicitly as non-admin
       loadCategories(false);
+      
+      // ADICIONAR ESTA LINHA: Carregar o menu de categorias após definir o código
+      loadCategoriesMenu();
     })
     .catch((error) => {
       hideLoader();

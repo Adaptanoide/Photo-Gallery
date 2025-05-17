@@ -1,0 +1,208 @@
+/* Tables - Sunshine Cowhides */
+/* Estilos para tabelas do sistema */
+
+/* Estilo base para tabelas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+th {
+  background-color: var(--color-cream);
+  text-align: left;
+}
+
+/* Tabela de preços */
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.price-table th {
+  position: sticky;
+  top: 0;
+  background-color: var(--color-cream);
+  z-index: 10;
+  padding: 12px 8px;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.price-table tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.price-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.price-table tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.price-table td {
+  padding: 12px 8px;
+  vertical-align: middle;
+}
+
+/* Definição de larguras de coluna */
+.price-table th:first-child,
+.price-table td:first-child {
+  width: 40px;
+  text-align: center;
+}
+
+.price-table th:nth-child(2),
+.price-table td:nth-child(2) {
+  width: 40%;
+  text-align: left;
+}
+
+.price-table th:nth-child(3),
+.price-table td:nth-child(3) {
+  width: 100px;
+  text-align: center;
+}
+
+.price-table th:nth-child(4),
+.price-table td:nth-child(4) {
+  width: 120px;
+  text-align: center;
+}
+
+.price-table th:last-child,
+.price-table td:last-child {
+  width: 200px;
+  text-align: center;
+}
+
+/* Tabela de acesso a categorias */
+.category-access-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.category-access-table th {
+  position: sticky;
+  top: 0;
+  background-color: var(--color-cream);
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.category-access-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  vertical-align: middle;
+}
+
+.category-access-table tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.category-access-table .category-name {
+  font-weight: 500;
+}
+
+.category-access-table .default-price {
+  color: var(--color-taupe);
+  font-size: 0.9em;
+}
+
+.category-access-table .file-count {
+  text-align: center;
+  color: var(--color-taupe);
+  font-size: 0.9em;
+}
+
+#category-access-modal .category-access-table th:nth-child(1),
+#category-access-modal .category-access-table td:nth-child(1) {
+  width: 80px;
+}
+
+#category-access-modal .category-access-table th:nth-child(2),
+#category-access-modal .category-access-table td:nth-child(2) {
+  width: 40%;
+}
+
+#category-access-modal .category-access-table th:nth-child(n+3),
+#category-access-modal .category-access-table td:nth-child(n+3) {
+  width: 120px;
+}
+
+#category-access-modal .category-access-table th:nth-child(5),
+#category-access-modal .category-access-table td:nth-child(5),
+#category-access-modal .category-access-table th:nth-child(6),
+#category-access-modal .category-access-table td:nth-child(6),
+#category-access-modal .category-access-table th:nth-child(7),
+#category-access-modal .category-access-table td:nth-child(7) {
+  width: 90px;
+}
+
+/* Tabela de pedidos */
+#order-folders-list table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#order-folders-list table th:nth-child(1),
+#order-folders-list table td:nth-child(1) {
+  width: 40%;
+}
+
+#order-folders-list table th:nth-child(2),
+#order-folders-list table td:nth-child(2) {
+  width: 20%;
+}
+
+#order-folders-list table th:nth-child(3),
+#order-folders-list table td:nth-child(3) {
+  width: 40%;
+}
+
+#order-folders-list td:last-child {
+  text-align: right;
+}
+
+#order-folders-list .button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .price-table {
+    font-size: 0.9em;
+  }
+
+  .price-table th,
+  .price-table td {
+    padding: 8px 4px;
+  }
+
+  .price-table .action-btn {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+    margin: 1px;
+  }
+  
+  .category-access-table {
+    font-size: 0.9em;
+  }
+
+  .category-access-table th,
+  .category-access-table td {
+    padding: 8px 4px;
+  }
+}
