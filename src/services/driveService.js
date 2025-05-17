@@ -70,7 +70,7 @@ async function getPhotos(folderId = FOLDER_ID) {
       id: file.id,
       name: file.name,
       folderId: folderId, // Adicionar o ID da pasta para uso posterior
-      thumbnail: `https://drive.google.com/thumbnail?id=${file.id}&sz=w300-h300`,
+      thumbnail: `/api/orders/thumbnail/${file.id}`, // URL para o novo endpoint de thumbnail
       embedUrl: `https://drive.google.com/file/d/${file.id}/preview`,
       viewUrl: `https://drive.google.com/file/d/${file.id}/view?usp=sharing`
     }));
@@ -82,30 +82,33 @@ async function getPhotos(folderId = FOLDER_ID) {
   }
 }
 
-// NOVA FUNÇÃO: Obter fotos com cache
+// Obter fotos com cache
 async function getPhotosCached(folderId = FOLDER_ID) {
   try {
+    console.log(`[driveService] Buscando fotos em cache para pasta ${folderId}`);
+    
     // Verificar cache
     const cacheAge = CACHE.photosCacheTimestamp[folderId] ? 
         (Date.now() - CACHE.photosCacheTimestamp[folderId]) : null;
     
     // Cache válido (menos de 10 minutos)
     if (CACHE.photosCache[folderId] && cacheAge < 10 * 60 * 1000) {
-      console.log(`Serving photos for folder ${folderId} from memory cache`);
+      console.log(`[driveService] Servindo ${CACHE.photosCache[folderId].length} fotos do cache para pasta ${folderId}`);
       return CACHE.photosCache[folderId];
     }
     
     // Buscar fotos do Google Drive
-    console.log(`Cache miss for folder ${folderId}, fetching from Google Drive`);
+    console.log(`[driveService] Cache miss para pasta ${folderId}, buscando do Google Drive`);
     const photos = await getPhotos(folderId);
     
     // Armazenar em cache
     CACHE.photosCache[folderId] = photos;
     CACHE.photosCacheTimestamp[folderId] = Date.now();
     
+    console.log(`[driveService] Armazenadas ${photos.length} fotos em cache para pasta ${folderId}`);
     return photos;
   } catch (error) {
-    console.error('Erro ao obter fotos (cached):', error);
+    console.error('[driveService] Erro ao obter fotos (cached):', error);
     return [];
   }
 }
@@ -670,6 +673,7 @@ async function checkFolderHasFiles(folderId) {
 
 
 // Obter todas as pastas folha com otimização
+// Obter todas as pastas folha com otimização
 async function getAllLeafFoldersOptimized(rootFolderId, includeEmptyFolders = false) {
   try {
     const drive = await getDriveInstance();
@@ -792,7 +796,7 @@ async function getAllLeafFoldersOptimized(rootFolderId, includeEmptyFolders = fa
           // Contar imagens
           const fileCount = fileResponse.data.files.length;
           
-          // MODIFICADO: Incluir pastas vazias se includeEmptyFolders for true
+          // MODIFICADO: Incluir pastas vazias apenas se includeEmptyFolders for true
           if (includeEmptyFolders || fileCount > 0) {
             // Construir o caminho completo da pasta
             const path = await buildFolderPath(folder.id, folderMap);
@@ -802,7 +806,7 @@ async function getAllLeafFoldersOptimized(rootFolderId, includeEmptyFolders = fa
               name: folder.name,
               path: path,
               fullPath: path.join(' → '),
-              fileCount: fileCount
+              fileCount: fileCount // Garantir que fileCount está sendo definido corretamente
             });
           }
         } catch (error) {

@@ -18,4 +18,10 @@ router.get('/details', orderController.getOrderDetails);
 // Rota para servir imagens em alta resolução
 router.get('/highres-image/:fileId', orderController.getHighResImage);
 
+// Rota para servir thumbnails
+router.get('/thumbnail/:fileId', orderController.getThumbnail);
+
+// CDE
+router.post('/confirm-payment', orderController.confirmPaymentFromCDE);
+
 module.exports = router;

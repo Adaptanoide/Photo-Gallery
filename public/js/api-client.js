@@ -8,7 +8,15 @@ const apiClient = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      return await response.json();
+      
+      const result = await response.json();
+      
+      // Se login bem sucedido, salvar no localStorage
+      if (result.success) {
+        localStorage.setItem('adminLoggedIn', 'true');
+      }
+      
+      return result;
     } catch (error) {
       console.error('API error:', error);
       return { success: false, message: error.message };
@@ -243,4 +251,51 @@ const apiClient = {
       };
     }
   },
+  
+  // NOVAS FUNÇÕES PARA SUBSTITUIR O FIREBASE
+  
+  // Salvar seleções do cliente no MongoDB
+  saveCustomerSelections: async function(customerCode, items) {
+    try {
+      const response = await fetch('/api/client/selections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: customerCode,
+          items: items
+        })
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('API error:', error);
+      return { success: false, message: error.message };
+    }
+  },
+
+  // Obter dados do cliente do MongoDB
+  getCustomerData: async function(customerCode) {
+    try {
+      const response = await fetch(`/api/db/customerCodes/${customerCode}`);
+      if (!response.ok) {
+        throw new Error('Customer code not found');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('API error:', error);
+      return { success: false, message: error.message };
+    }
+  },
+  
+  // Encerrar a sessão do administrador
+  adminLogout: function() {
+    localStorage.removeItem('adminLoggedIn');
+    return Promise.resolve({ success: true });
+  },
+  
+  // Verificar estado de login do administrador
+  isAdminLoggedIn: function() {
+    return localStorage.getItem('adminLoggedIn') === 'true';
+  }
 };

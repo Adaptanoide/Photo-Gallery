@@ -130,18 +130,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Check if admin is already logged in
-  document.addEventListener('firebaseReady', function() {
-    if (typeof auth !== 'undefined') {
-      auth.onAuthStateChanged(function (user) {
-        if (user) {
-          // Admin is logged in, hide entry screen and show admin panel
-          closeModal('code-entry-modal');
-          loadAdminPanel();
-        }
-      });
-    }
-  });
+  // MODIFICAÇÃO: Verificar se admin está logado usando localStorage
+  const isAdminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
+  if (isAdminLoggedIn) {
+    closeModal('code-entry-modal');
+    loadAdminPanel();
+  }
 });
 
 // Função para detectar suporte a WebP

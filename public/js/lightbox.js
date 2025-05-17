@@ -156,6 +156,89 @@ function openLightbox(index, fromCart = false) {
   
   // Pré-carregar imagens adjacentes
   preloadAdjacentImages();
+  
+  // Verificar se precisamos carregar mais fotos
+  checkAndLoadMorePhotos();
+}
+
+// NOVA FUNÇÃO: Verificar se precisamos carregar mais fotos
+function checkAndLoadMorePhotos() {
+  // Se estamos perto do fim das fotos carregadas (últimas 5 fotos)
+  if (currentPhotoIndex >= photos.length - 5) {
+    // Identificar a categoria atual
+    const currentPhoto = photos[currentPhotoIndex];
+    if (!currentPhoto) return;
+    
+    const categoryId = currentPhoto.folderId;
+    if (!categoryId) return;
+    
+    // Verificar se já temos fotos suficientes carregadas nesta categoria
+    const photosInCategory = photos.filter(p => p.folderId === categoryId).length;
+    
+    // Carregar mais fotos se necessário
+    fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${photosInCategory}&limit=50`)
+      .then(response => response.json())
+      .then(data => {
+        const morePhotos = data.photos || [];
+        const pagination = data.pagination || {};
+        
+        if (morePhotos.length === 0) return;
+        
+        // Registrar novas fotos e adicionar ao array global
+        morePhotos.forEach(photo => {
+          photoRegistry[photo.id] = photo;
+        });
+        
+        // Adicionar ao array global
+        photos = photos.concat(morePhotos);
+        
+        // Mostrar notificação discreta
+        if (pagination.hasMore) {
+          showLoadMoreNotification(pagination.remaining);
+        } else if (pagination.remaining === 0) {
+          showEndOfCategoryNotification();
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao carregar mais fotos no lightbox:', error);
+      });
+  }
+}
+
+// NOVAS FUNÇÕES: Notificações no lightbox
+function showLoadMoreNotification(remaining) {
+  const notification = document.createElement('div');
+  notification.className = 'lightbox-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span>Mais ${remaining} fotos disponíveis</span>
+    </div>
+  `;
+  document.querySelector('.lightbox-content').appendChild(notification);
+  
+  // Remover após alguns segundos
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 500);
+  }, 3000);
+}
+
+function showEndOfCategoryNotification() {
+  const notification = document.createElement('div');
+  notification.className = 'lightbox-notification end-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span>Fim da categoria. Deseja ver sua seleção?</span>
+      <button class="btn btn-sm btn-gold" onclick="returnToCart()">Ver Seleção</button>
+    </div>
+  `;
+  document.querySelector('.lightbox-content').appendChild(notification);
+  
+  // Remover após alguns segundos
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 500);
+  }, 8000);
 }
 
 // Função para pré-carregar imagens adjacentes
@@ -477,6 +560,9 @@ function navigatePhotos(direction) {
       openLightbox(newIndex, false);
     }
   }
+  
+  // Verificar se precisamos carregar mais fotos
+  checkAndLoadMorePhotos();
 }
 
 // Return to cart view
@@ -589,4 +675,84 @@ function addRemoveLightbox() {
 // Update the cart count in the lightbox
 function updateLightboxCartCount() {
   document.getElementById('lightbox-cart-count').innerText = cartIds.length;
+}
+
+// NOVA FUNÇÃO: Verificar se precisamos carregar mais fotos
+function checkAndLoadMorePhotos() {
+  // Se estamos perto do fim das fotos carregadas (últimas 5 fotos)
+  if (currentPhotoIndex >= photos.length - 5) {
+    // Identificar a categoria atual
+    const currentPhoto = photos[currentPhotoIndex];
+    if (!currentPhoto) return;
+    
+    const categoryId = currentPhoto.folderId;
+    if (!categoryId) return;
+    
+    // Verificar se já temos fotos suficientes carregadas nesta categoria
+    const photosInCategory = photos.filter(p => p.folderId === categoryId).length;
+    
+    // Carregar mais fotos se necessário
+    fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${photosInCategory}&limit=50`)
+      .then(response => response.json())
+      .then(data => {
+        const morePhotos = data.photos || [];
+        const pagination = data.pagination || {};
+        
+        if (morePhotos.length === 0) return;
+        
+        // Registrar novas fotos e adicionar ao array global
+        morePhotos.forEach(photo => {
+          photoRegistry[photo.id] = photo;
+        });
+        
+        // Adicionar ao array global
+        photos = photos.concat(morePhotos);
+        
+        // Mostrar notificação discreta
+        if (pagination.hasMore) {
+          showLoadMoreNotification(pagination.remaining);
+        } else if (pagination.remaining === 0) {
+          showEndOfCategoryNotification();
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao carregar mais fotos no lightbox:', error);
+      });
+  }
+}
+
+// Adicionar estas duas funções para notificações
+function showLoadMoreNotification(remaining) {
+  const notification = document.createElement('div');
+  notification.className = 'lightbox-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span>Mais ${remaining} fotos disponíveis</span>
+    </div>
+  `;
+  document.querySelector('.lightbox-content').appendChild(notification);
+  
+  // Remover após alguns segundos
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 500);
+  }, 3000);
+}
+
+function showEndOfCategoryNotification() {
+  const notification = document.createElement('div');
+  notification.className = 'lightbox-notification end-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span>Fim da categoria. Deseja ver sua seleção?</span>
+      <button class="btn btn-sm btn-gold" onclick="returnToCart()">Ver Seleção</button>
+    </div>
+  `;
+  document.querySelector('.lightbox-content').appendChild(notification);
+  
+  // Remover após alguns segundos
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 500);
+  }, 8000);
 }

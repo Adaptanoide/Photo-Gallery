@@ -1,13 +1,16 @@
 // controllers/adminController.js
-const { db, admin } = require('../config/firebase');
-const firebaseService = require('../services/firebaseService');
 const driveService = require('../services/driveService');
+const mongoService = require('../services/mongoService');
+const CategoryPrice = require('../models/categoryPrice');
+const CustomerCode = require('../models/customerCode');
+const CategoryAccess = require('../models/categoryAccess');
+const Admin = require('../models/admin');
 
 // Admin login
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const result = await firebaseService.verifyAdminCredentials(email, password);
+    const result = await mongoService.verifyAdminCredentials(email, password);
     res.status(result.success ? 200 : 401).json(result);
   } catch (error) {
     console.error('Login error:', error);
@@ -22,7 +25,7 @@ exports.login = async (req, res) => {
 exports.generateCustomerCode = async (req, res) => {
   try {
     const { customerName } = req.body;
-    const result = await firebaseService.generateCustomerCode(customerName);
+    const result = await mongoService.generateCustomerCode(customerName);
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Error generating code:', error);
@@ -36,7 +39,7 @@ exports.generateCustomerCode = async (req, res) => {
 // Get active codes
 exports.getActiveCodes = async (req, res) => {
   try {
-    const result = await firebaseService.getActiveCodes();
+    const result = await mongoService.getActiveCodes();
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Error getting codes:', error);
@@ -59,7 +62,7 @@ exports.deleteCustomerCode = async (req, res) => {
       });
     }
     
-    const result = await firebaseService.deleteCustomerCode(code);
+    const result = await mongoService.deleteCustomerCode(code);
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Erro ao deletar código:', error);
@@ -141,19 +144,18 @@ exports.getLeafFolders = async function(req, res) {
 // Obter preços de todas as categorias
 exports.getCategoryPrices = async function(req, res) {
   try {
-    const snapshot = await db.collection('categoryPrices').get();
-    
-    const prices = [];
-    snapshot.forEach(doc => {
-      prices.push({
-        folderId: doc.id,
-        ...doc.data()
-      });
-    });
+    // Usar o modelo do Mongoose em vez do Firestore
+    const prices = await CategoryPrice.find();
     
     res.status(200).json({
       success: true,
-      prices: prices
+      prices: prices.map(price => ({
+        folderId: price.folderId,
+        price: price.price,
+        name: price.name,
+        path: price.path || '',
+        updatedAt: price.updatedAt
+      }))
     });
   } catch (error) {
     console.error('Error getting category prices:', error);
@@ -187,15 +189,18 @@ exports.setCategoryPrice = async function(req, res) {
       });
     }
     
-    // Salvar preço no Firestore
-    const priceRef = db.collection('categoryPrices').doc(folderId);
-    await priceRef.set({
-      folderId: folderId,
-      name: folderInfo.name,
-      price: parseFloat(price),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      path: req.body.path || ''  // Caminho opcional
-    }, { merge: true });
+    // Atualizar ou criar no MongoDB
+    await CategoryPrice.findOneAndUpdate(
+      { folderId },
+      {
+        folderId: folderId,
+        name: folderInfo.name,
+        price: parseFloat(price),
+        updatedAt: new Date(),
+        path: req.body.path || ''
+      },
+      { upsert: true }
+    );
     
     res.status(200).json({
       success: true,
@@ -222,60 +227,50 @@ exports.bulkUpdatePrices = async function(req, res) {
       });
     }
     
-    // Obter preços atuais
-    const batch = db.batch();
+    // Carregar os preços atuais usando MongoDB
+    const allPrices = await CategoryPrice.find({
+      folderId: { $in: folderIds }
+    });
     
-    // Processar os folderIds em grupos, porque o Firestore tem limite "in" de 10 itens
-    const chunkSize = 10;
-    let allCurrentPrices = {};
+    // Criar um mapa de ID da pasta para preço
+    const priceMap = {};
+    allPrices.forEach(price => {
+      priceMap[price.folderId] = price.price || 0;
+    });
     
-    for (let i = 0; i < folderIds.length; i += chunkSize) {
-      const chunk = folderIds.slice(i, i + chunkSize);
-      const pricesSnapshot = await db.collection('categoryPrices')
-        .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
-        .get();
-      
-      pricesSnapshot.forEach(doc => {
-        allCurrentPrices[doc.id] = doc.data().price || 0;
-      });
-    }
+    // Atualizar cada preço individualmente
+    const updatePromises = [];
     
-    // Atualizar cada pasta
     for (const folderId of folderIds) {
-      const priceRef = db.collection('categoryPrices').doc(folderId);
-      
-      // Obter informações da pasta se não existe ainda no Firestore
-      if (!allCurrentPrices[folderId]) {
-        const folderInfo = await driveService.getFolderInfo(folderId);
-        if (folderInfo.success) {
-          allCurrentPrices[folderId] = 0; // Preço inicial
-        } else {
-          continue; // Pular este folder se não encontrar informações
-        }
-      }
+      // Obter o preço atual
+      let currentPrice = priceMap[folderId] || 0;
       
       // Calcular novo preço
       let newPrice = 0;
       if (type === 'fixed') {
         newPrice = parseFloat(value);
       } else if (type === 'percentage') {
-        const currentPrice = allCurrentPrices[folderId] || 0;
-        // Ajuste percentual: +10% seria value=10, -10% seria value=-10
         newPrice = currentPrice * (1 + parseFloat(value) / 100);
       }
       
       // Arredondar para 2 casas decimais e garantir valor não negativo
       newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
       
-      // Adicionar à operação em lote
-      batch.set(priceRef, {
-        price: newPrice,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+      // Atualizar no MongoDB (ou criar se não existir)
+      const updatePromise = CategoryPrice.findOneAndUpdate(
+        { folderId },
+        {
+          price: newPrice,
+          updatedAt: new Date()
+        },
+        { upsert: true, new: true }
+      );
+      
+      updatePromises.push(updatePromise);
     }
     
-    // Executar todas as atualizações em uma única transação
-    await batch.commit();
+    // Aguardar todas as atualizações
+    await Promise.all(updatePromises);
     
     res.status(200).json({
       success: true,
@@ -302,7 +297,7 @@ exports.getCustomerCategoryAccess = async (req, res) => {
       });
     }
     
-    const result = await firebaseService.getCustomerCategoryAccess(code);
+    const result = await mongoService.getCustomerCategoryAccess(code);
     
     if (result.success) {
       res.status(200).json(result);
@@ -331,7 +326,7 @@ exports.saveCustomerCategoryAccess = async (req, res) => {
       });
     }
     
-    const result = await firebaseService.saveCustomerCategoryAccess(code, categoryAccessData);
+    const result = await mongoService.saveCustomerCategoryAccess(code, categoryAccessData);
     
     if (result.success) {
       res.status(200).json(result);

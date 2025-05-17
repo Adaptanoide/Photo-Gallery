@@ -70,9 +70,10 @@ function loadActiveCodes() {
   const codesList = document.getElementById('active-codes-list');
   codesList.innerHTML = 'Loading...';
 
-  db.collection('customerCodes').orderBy('createdAt', 'desc').get()
-    .then((snapshot) => {
-      if (snapshot.empty) {
+  fetch('/api/admin/codes')
+    .then(response => response.json())
+    .then(result => {
+      if (!result.success || !result.codes || result.codes.length === 0) {
         codesList.innerHTML = '<p>No active codes found.</p>';
         return;
       }
@@ -80,9 +81,8 @@ function loadActiveCodes() {
       let html = '<table style="width: 100%; border-collapse: collapse;">';
       html += '<tr><th style="text-align: left; padding: 8px;">Code</th><th style="text-align: left; padding: 8px;">Customer</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: center; padding: 8px;">Actions</th></tr>';
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const date = data.createdAt ? data.createdAt.toDate() : new Date();
+      result.codes.forEach(data => {
+        const date = data.createdAt ? new Date(data.createdAt) : new Date();
         const formattedDate = date.toLocaleDateString();
 
         html += `<tr>
@@ -105,6 +105,7 @@ function loadActiveCodes() {
       codesList.innerHTML = `<p>Error loading codes: ${error.message}</p>`;
     });
 }
+
 // Generate new customer code
 function generateCustomerCode() {
   const customerName = document.getElementById('customer-name').value.trim();
@@ -114,25 +115,29 @@ function generateCustomerCode() {
     return;
   }
 
-  // Generate a random 4-digit code
-  const code = Math.floor(1000 + Math.random() * 9000).toString();
-
-  db.collection('customerCodes').doc(code).set({
-    code: code,
-    customerName: customerName,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    items: []
+  // Usar a API REST para gerar código
+  fetch('/api/admin/code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ customerName })
   })
-    .then(() => {
-      document.getElementById('new-code').textContent = code;
-      document.getElementById('generated-code').style.display = 'block';
-      document.getElementById('customer-name').value = '';
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('new-code').textContent = data.code;
+        document.getElementById('generated-code').style.display = 'block';
+        document.getElementById('customer-name').value = '';
 
-      // Show notification
-      showToast(`New customer code ${code} has been generated successfully`, 'success');
+        // Show notification
+        showToast(`New customer code ${data.code} has been generated successfully`, 'success');
 
-      // Refresh the list of codes
-      loadActiveCodes();
+        // Refresh the list of codes
+        loadActiveCodes();
+      } else {
+        showToast('Error generating code: ' + data.message, 'error');
+      }
     })
     .catch((error) => {
       showToast('Error generating code: ' + error.message, 'error');
@@ -327,30 +332,6 @@ function moveOrderToSold(folderId, folderName) {
           if (result.success) {
             showToast(`Order "${folderName}" successfully marked as sold!`, 'success');
 
-            // If we have file IDs, clean up Firebase data
-            if (result.fileIds && result.fileIds.length > 0) {
-              // Get all customer codes
-              db.collection('customerCodes').get().then((snapshot) => {
-                snapshot.forEach(doc => {
-                  const customerData = doc.data();
-                  if (customerData.items && customerData.items.length > 0) {
-                    // Remove the sold file IDs from customer selections
-                    const updatedItems = customerData.items.filter(itemId =>
-                      !result.fileIds.includes(itemId)
-                    );
-
-                    // Only update if there was a change
-                    if (updatedItems.length !== customerData.items.length) {
-                      db.collection('customerCodes').doc(doc.id).update({
-                        items: updatedItems,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                      });
-                    }
-                  }
-                });
-              });
-            }
-
             // Refresh the folder list
             loadOrderFolders('waiting');
           } else {
@@ -384,30 +365,6 @@ function updateOrderStatus() {
 
       if (result.success) {
         alert('Order status updated successfully. Files moved to appropriate folder.');
-
-        // If status is 'paid', clean up Firebase data
-        if (status === 'paid' && result.fileIds && result.fileIds.length > 0) {
-          // Get all customer codes
-          db.collection('customerCodes').get().then((snapshot) => {
-            snapshot.forEach(doc => {
-              const customerData = doc.data();
-              if (customerData.items && customerData.items.length > 0) {
-                // Remove the sold file IDs from customer selections
-                const updatedItems = customerData.items.filter(itemId =>
-                  !result.fileIds.includes(itemId)
-                );
-
-                // Only update if there was a change
-                if (updatedItems.length !== customerData.items.length) {
-                  db.collection('customerCodes').doc(doc.id).update({
-                    items: updatedItems,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                  });
-                }
-              }
-            });
-          });
-        }
 
         // Refresh the folder list
         loadOrderFolders(status);
@@ -516,8 +473,12 @@ async function loadCustomerCategoryData(code) {
       if (!categoryAccessData.categoryAccess) {
         categoryAccessData.categoryAccess = [];
       }
+      
+      // Log para depuração
+      console.log("Configurações de acesso obtidas:", JSON.stringify(categoryAccessData));
     } else {
       categoryAccessData = { categoryAccess: [] };
+      console.warn("Erro ao obter configurações de acesso, usando objeto vazio");
     }
 
     // Renderizar a tabela de categorias
@@ -638,6 +599,8 @@ function filterAccessCategories() {
 
 // Atualizar configuração de acesso para uma categoria
 function updateCategoryAccess(categoryId, enabled) {
+  console.log(`Atualizando acesso para categoria ${categoryId}: ${enabled ? 'habilitada' : 'desabilitada'}`);
+  
   // Procurar configuração existente
   const accessIndex = categoryAccessData.categoryAccess.findIndex(item => item.categoryId === categoryId);
 
@@ -763,6 +726,20 @@ async function saveCustomerCategoryAccess() {
   showLoader();
 
   try {
+    // Verificar se há pelo menos um item habilitado para evitar bloqueio total
+    const habilitados = categoryAccessData.categoryAccess.filter(item => item.enabled === true);
+    if (habilitados.length === 0 && categoryAccessData.categoryAccess.length > 0) {
+      showToast("Aviso: Todas as categorias foram desabilitadas. O cliente não verá nenhum conteúdo.", "warning");
+    }
+    
+    console.log("Salvando configurações de acesso:", categoryAccessData);
+    
+    // Limpar cache antes de salvar para garantir dados atualizados após salvamento
+    await fetch('/api/client/clear-cache', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
     // ALTERADO: Usando editingCustomerCode em vez de currentCustomerCode
     const result = await apiClient.saveCustomerCategoryAccess(
       editingCustomerCode,

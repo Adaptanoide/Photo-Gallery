@@ -258,10 +258,9 @@ function showRemovedNotification(photoName) {
   }, 2000);
 }
 
-// Submit order
+// MODIFIED: Submit order function - replace Firebase doc.get() 
 function submitOrder() {
   const comments = document.getElementById('observations').value.trim();
-  let customerName = ''; // Will be filled from Firebase
   
   if (!currentCustomerCode) {
     alert('Session error. Please refresh the page and try again.');
@@ -275,18 +274,19 @@ function submitOrder() {
   
   showLoader();
   
-  // Get customer name from Firebase
-  db.collection('customerCodes').doc(currentCustomerCode).get()
-    .then((doc) => {
-      if (doc.exists) {
-        customerName = doc.data().customerName || 'Unknown Customer';
-        
-        // Now process the order with the retrieved name
-        processOrder(customerName, comments);
-      } else {
-        hideLoader();
-        alert('Error: Customer information not found. Please contact support.');
+  // MODIFIED: Get customer name from MongoDB instead of Firebase
+  fetch(`/api/db/customerCodes/${currentCustomerCode}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to retrieve customer information');
       }
+      return response.json();
+    })
+    .then(doc => {
+      const customerName = doc.customerName || 'Unknown Customer';
+      
+      // Now process the order with the retrieved name
+      processOrder(customerName, comments);
     })
     .catch((error) => {
       hideLoader();
@@ -331,124 +331,121 @@ function processOrder(customerName, comments) {
   });
 }
 
-// MELHORADO: Sistema robusto para salvar seleções do cliente no Firebase
+// MODIFIED: Save customer selections - replace Firebase update()
 function saveCustomerSelections() {
   if (!currentCustomerCode) return;
   
-  // Se estamos no meio de restaurar seleções, não sobrescrever o Firebase
+  // If we're in the middle of restoring selections, don't overwrite
   if (!selectionRestorationComplete && selectionRestorationAttempts > 0) {
-    console.log("Ignorando salvamento durante restauração de seleções");
+    console.log("Ignoring save during selection restoration");
     return;
   }
   
-  console.log(`Salvando ${cartIds.length} itens no Firebase`);
+  console.log(`Saving ${cartIds.length} items to MongoDB`);
   
-  // Implementar retry em caso de falha
+  // Implement retry logic for API call
   function attemptSave(retryCount = 0) {
-    db.collection('customerCodes').doc(currentCustomerCode).update({
-      items: cartIds,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => {
-      console.log("Seleções salvas com sucesso no Firebase");
-      // Não mostrar toast a cada salvamento para não irritar o usuário
-    })
-    .catch((error) => {
-      console.error("Erro ao salvar seleções:", error);
-      
-      // Retry lógico em caso de erro (até 3 tentativas)
-      if (retryCount < 3) {
-        console.log(`Tentando novamente (${retryCount + 1}/3)...`);
-        setTimeout(() => attemptSave(retryCount + 1), 1000 * (retryCount + 1));
-      } else {
-        showToast("Não foi possível salvar suas seleções. Verifique sua conexão.", "error");
-      }
-    });
+    // MODIFIED: Use API endpoint instead of Firebase
+    apiClient.saveCustomerSelections(currentCustomerCode, cartIds)
+      .then(() => {
+        console.log("Selections saved successfully");
+      })
+      .catch((error) => {
+        console.error("Error saving selections:", error);
+        
+        // Retry logic (up to 3 attempts)
+        if (retryCount < 3) {
+          console.log(`Retrying (${retryCount + 1}/3)...`);
+          setTimeout(() => attemptSave(retryCount + 1), 1000 * (retryCount + 1));
+        } else {
+          showToast("Unable to save your selections. Please check your connection.", "error");
+        }
+      });
   }
   
-  // Iniciar processo de salvamento
+  // Start the save process
   attemptSave();
 }
 
-// COMPLETAMENTE REESCRITA: Função de carregamento de seleções do cliente
+// MODIFIED: Load customer selections - replace Firebase doc.get()
 function loadCustomerSelections(code) {
   if (!code) return;
   
-  // Mostrar indicador de carregamento no painel do carrinho (se visível)
-  updateCartPanelMessage("Restaurando sua seleção anterior...");
+  // Show loading indicator in cart panel (if visible)
+  updateCartPanelMessage("Restoring your previous selection...");
   
-  // Reset dos contadores e flags
+  // Reset counters and flags
   selectionRestorationAttempts = 0;
   pendingSelections = [];
   selectionRestorationComplete = false;
   
-  // Registrar evento para quando carregamento completo terminar
+  // Register event for when gallery loading completes
   document.addEventListener('galleryLoadingComplete', onGalleryLoadingComplete, { once: true });
   
-  // Função principal de carregamento
+  // Main loading function
   function attemptLoadSelections() {
-    console.log(`Tentativa ${selectionRestorationAttempts + 1} de restaurar seleções do usuário`);
+    console.log(`Attempt ${selectionRestorationAttempts + 1} to restore user selections`);
     
-    // Verificar número máximo de tentativas (12 tentativas = 1 minuto)
+    // Check maximum attempts (12 attempts = 1 minute)
     if (selectionRestorationAttempts >= 12) {
-      console.warn("Número máximo de tentativas alcançado. Algumas seleções podem não ter sido restauradas.");
+      console.warn("Maximum number of attempts reached. Some selections may not have been restored.");
       finishRestorationProcess();
       return;
     }
     
     selectionRestorationAttempts++;
     
-    // Carregar do Firebase
-    db.collection('customerCodes').doc(code).get()
-      .then((doc) => {
-        if (doc.exists && doc.data().items) {
-          // Obter IDs salvos
-          const savedItems = doc.data().items || [];
-          console.log(`${savedItems.length} itens encontrados no Firebase`);
-          
-          // Se não há itens salvos, finalizar processo
-          if (savedItems.length === 0) {
-            finishRestorationProcess();
-            return;
-          }
-          
-          // Separar os itens em disponíveis e pendentes
-          const availableItems = [];
-          pendingSelections = [];
-          
-          savedItems.forEach(itemId => {
-            // Verificar se a foto já está disponível
-            if (getPhotoById(itemId)) {
-              availableItems.push(itemId);
-            } else {
-              // Guardar para verificação futura
-              pendingSelections.push(itemId);
-            }
-          });
-          
-          console.log(`${availableItems.length} itens disponíveis, ${pendingSelections.length} pendentes`);
-          
-          // Atualizar o carrinho com os itens já disponíveis
-          cartIds = [...availableItems];
-          updateCartCounter();
-          updateButtonsForCartItems();
-          
-          // Se ainda há itens pendentes e algumas categorias não foram carregadas
-          if (pendingSelections.length > 0 && !allCategoriesLoaded()) {
-            // Agendar próxima verificação
-            setTimeout(attemptLoadSelections, 5000); // Verificar a cada 5 segundos
+    // MODIFIED: Load from MongoDB instead of Firebase
+    fetch(`/api/db/customerCodes/${code}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to retrieve customer data');
+        }
+        return response.json();
+      })
+      .then(doc => {
+        const savedItems = doc.items || [];
+        console.log(`${savedItems.length} items found in database`);
+        
+        // If no saved items, finish process
+        if (savedItems.length === 0) {
+          finishRestorationProcess();
+          return;
+        }
+        
+        // Separate items into available and pending
+        const availableItems = [];
+        pendingSelections = [];
+        
+        savedItems.forEach(itemId => {
+          // Check if photo is already available
+          if (getPhotoById(itemId)) {
+            availableItems.push(itemId);
           } else {
-            // Concluir o processo
-            finishRestorationProcess();
+            // Store for future checks
+            pendingSelections.push(itemId);
           }
+        });
+        
+        console.log(`${availableItems.length} items available, ${pendingSelections.length} pending`);
+        
+        // Update cart with available items
+        cartIds = [...availableItems];
+        updateCartCounter();
+        updateButtonsForCartItems();
+        
+        // If there are still pending items and some categories haven't loaded
+        if (pendingSelections.length > 0 && !allCategoriesLoaded()) {
+          // Schedule next check
+          setTimeout(attemptLoadSelections, 5000); // Check every 5 seconds
         } else {
-          // Documento não existe ou não tem itens
+          // Complete the process
           finishRestorationProcess();
         }
       })
       .catch(error => {
         console.error("Error loading customer selections:", error);
-        // Em caso de erro, tentar novamente em 5 segundos
+        // On error, try again in 5 seconds
         setTimeout(attemptLoadSelections, 5000);
       });
   }

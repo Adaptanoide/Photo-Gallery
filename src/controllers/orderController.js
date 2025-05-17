@@ -1,6 +1,5 @@
 // controllers/orderController.js
-const { db, admin } = require('../config/firebase');
-const firebaseService = require('../services/firebaseService');
+const mongoService = require('../services/mongoService');
 const driveService = require('../services/driveService');
 const emailService = require('../services/emailService');
 const { google } = require('googleapis');
@@ -9,6 +8,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const sharp = require('sharp');
+const CustomerCode = require('../models/customerCode');
+const Order = require('../models/order');
+const CategoryPrice = require('../models/categoryPrice');
 
 // Constantes para otimização de imagem
 const CACHE_DIR = path.join(__dirname, '../cache/optimized');
@@ -23,7 +25,6 @@ try {
 } catch (error) {
   console.error('Erro ao criar diretório de cache:', error);
 }
-
 
 // NOVO: Cache em memória para referências rápidas
 const imageCache = {};
@@ -41,7 +42,7 @@ exports.submitOrder = async (req, res) => {
     }
 
     // Verificar código do cliente
-    const customer = await firebaseService.verifyCustomerCode(code);
+    const customer = await mongoService.verifyCustomerCode(code);
 
     if (!customer.success) {
       return res.status(400).json({
@@ -50,36 +51,40 @@ exports.submitOrder = async (req, res) => {
       });
     }
 
-    // MODIFICAÇÃO: Registrar o pedido no Firebase imediatamente
-    const orderId = `order_${Date.now()}`;
-    await db.collection('orders').doc(orderId).set({
+    // MODIFICADO: Registrar o pedido no MongoDB e obter o ID gerado
+    const orderDoc = await Order.create({
       customerCode: code,
       customerName: customer.customerName,
       photoIds: photoIds,
       comments: comments,
       status: 'processing',
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: new Date()
     });
 
-    // MODIFICAÇÃO: Atualizar cliente para indicar processamento em andamento
-    const docRef = db.collection('customerCodes').doc(code);
-    await docRef.update({
-      orderInProgress: true,
-      orderDate: admin.firestore.FieldValue.serverTimestamp(),
-      orderStatus: 'processing'
-    });
+    // Usar o ID gerado pelo MongoDB
+    const orderId = orderDoc._id;
 
-    // MODIFICAÇÃO: Limpar seleções do cliente imediatamente
-    await firebaseService.saveCustomerSelections(code, []);
+    // Atualizar cliente para indicar processamento em andamento
+    await CustomerCode.findOneAndUpdate(
+      { code },
+      {
+        orderInProgress: true,
+        orderDate: new Date(),
+        orderStatus: 'processing'
+      }
+    );
 
-    // MODIFICAÇÃO: Responder ao cliente rapidamente
+    // Limpar seleções do cliente imediatamente
+    await mongoService.saveCustomerSelections(code, []);
+
+    // Responder ao cliente rapidamente
     res.status(200).json({
       success: true,
       message: 'Seu pedido foi recebido e está sendo processado',
       orderId: orderId
     });
 
-    // MODIFICAÇÃO: Continuar o processamento após responder ao cliente
+    // Continuar o processamento após responder ao cliente
     processOrderInBackground(
       customer.customerName,
       code,
@@ -157,14 +162,49 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
     );
 
     if (result.success) {
-      // Atualizar status do cliente no Firebase
-      const docRef = db.collection('customerCodes').doc(customerCode);
-      await docRef.update({
-        orderInProgress: false,
-        orderCompleted: true,
-        orderDate: admin.firestore.FieldValue.serverTimestamp(),
-        orderStatus: 'waiting_payment'
-      });
+      // AQUI: Envio de dados para o CDE após criar pasta e mover arquivos
+      try {
+        console.log("Enviando dados do pedido para o sistema CDE...");
+        
+        // Criar objeto de dados para enviar ao CDE
+        const cdeOrderData = {
+          orderId: orderId,
+          customerName: customerName,
+          customerCode: customerCode,
+          folderName: result.folderName,
+          folderId: result.folderId,
+          status: 'waiting_payment',
+          orderDate: new Date().toISOString(),
+          photosByCategory: photosByCategory,
+          totalPhotos: photoIds.length,
+          comments: comments
+        };
+        
+        // Enviar para o serviço de integração com CDE
+        const cdeResult = await cdeIntegrationService.sendOrderToCDE(cdeOrderData);
+        
+        if (cdeResult.success) {
+          console.log("Dados enviados com sucesso para o sistema CDE:", cdeResult.status);
+        } else {
+          console.error("Falha ao enviar dados para o CDE, mas continuando o processamento:", cdeResult.error);
+          // Continua o processamento mesmo com falha no CDE
+        }
+      } catch (cdeError) {
+        // Captura erros específicos da integração com CDE
+        console.error("Erro na integração com CDE, mas continuando o processamento:", cdeError);
+        // Continua o processamento mesmo com erro
+      }
+
+      // Atualizar status do cliente no MongoDB
+      await CustomerCode.findOneAndUpdate(
+        { code: customerCode },
+        {
+          orderInProgress: false,
+          orderCompleted: true,
+          orderDate: new Date(),
+          orderStatus: 'waiting_payment'
+        }
+      );
 
       // Preparar dados para o email
       console.log("Preparando para enviar e-mail de confirmação...");
@@ -190,25 +230,34 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
         console.error("Falha ao enviar e-mail:", emailResult.message);
       }
 
-      // Atualizar status do pedido no Firebase quando concluído
-      await db.collection('orders').doc(orderId).update({
-        status: 'waiting_payment',
-        processedAt: admin.firestore.FieldValue.serverTimestamp(),
-        folderName: result.folderName,
-        folderId: result.folderId
-      });
+      // Atualizar status do pedido no MongoDB quando concluído
+      await Order.findByIdAndUpdate(
+        orderId,
+        {
+          status: 'waiting_payment',
+          processedAt: new Date(),
+          folderName: result.folderName,
+          folderId: result.folderId
+        }
+      );
 
       console.log(`Processamento em segundo plano concluído para pedido ${orderId}`);
     } else {
       // Falha no processamento
-      await db.collection('orders').doc(orderId).update({
-        status: 'failed',
-        error: result.message || 'Falha ao processar arquivos'
-      });
+      await Order.findByIdAndUpdate(
+        orderId,
+        {
+          status: 'failed',
+          error: result.message || 'Falha ao processar arquivos'
+        }
+      );
 
-      await db.collection('customerCodes').doc(customerCode).update({
-        orderInProgress: false
-      });
+      await CustomerCode.findOneAndUpdate(
+        { code: customerCode },
+        {
+          orderInProgress: false
+        }
+      );
 
       console.error(`Falha no processamento em segundo plano para pedido ${orderId}:`, result.message);
     }
@@ -217,14 +266,20 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
 
     // Atualizar status com erro
     try {
-      await db.collection('orders').doc(orderId).update({
-        status: 'failed',
-        error: error.message
-      });
+      await Order.findByIdAndUpdate(
+        orderId,
+        {
+          status: 'failed',
+          error: error.message
+        }
+      );
 
-      await db.collection('customerCodes').doc(customerCode).update({
-        orderInProgress: false
-      });
+      await CustomerCode.findOneAndUpdate(
+        { code: customerCode },
+        {
+          orderInProgress: false
+        }
+      );
     } catch (updateError) {
       console.error('Erro ao atualizar status do pedido com falha:', updateError);
     }
@@ -263,10 +318,14 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Se pedido foi marcado como pago, remover os IDs dos arquivos das seleções dos clientes
     if (result.success && status === 'paid' && result.fileIds && result.fileIds.length > 0) {
-      // Esta parte precisaria buscar todos os clientes e remover os IDs vendidos
-      // de suas seleções, o que seria uma operação complexa no Firebase
-      // Aqui apenas simulamos com um log
+      // Implementar em MongoDB
       console.log(`Arquivos marcados como vendidos: ${result.fileIds.join(', ')}`);
+      
+      // Atualizar todas as seleções de clientes para remover esses arquivos
+      await CustomerCode.updateMany(
+        { items: { $in: result.fileIds } },
+        { $pull: { items: { $in: result.fileIds } } }
+      );
     }
 
     res.status(200).json(result);
@@ -321,8 +380,7 @@ exports.getOrderDetails = async (req, res) => {
 
       // Para cada arquivo, adicionar informações básicas
       for (const file of filesResponse.data.files) {
-        // Tentar obter preço do arquivo (do Firebase ou de metadados)
-        // Aqui estamos usando um preço padrão como fallback
+        // Tentar obter preço do arquivo (do MongoDB ou de metadados)
         const price = await getItemPrice(file.id, categoryName) || 99.99;
 
         items.push({
@@ -339,18 +397,13 @@ exports.getOrderDetails = async (req, res) => {
       });
     }
 
-    // 4. Buscar comentários do pedido do Firebase
+    // 4. Buscar comentários do pedido do MongoDB
     let comments = '';
     try {
-      // Tentar encontrar pedido no Firestore com esse folderId
-      const orderSnapshot = await db.collection('orders')
-        .where('folderId', '==', folderId)
-        .limit(1)
-        .get();
-
-      if (!orderSnapshot.empty) {
-        const orderData = orderSnapshot.docs[0].data();
-        comments = orderData.comments || '';
+      // Tentar encontrar pedido no MongoDB com esse folderId
+      const order = await Order.findOne({ folderId });
+      if (order) {
+        comments = order.comments || '';
       }
     } catch (commentError) {
       console.error('Error fetching order comments:', commentError);
@@ -378,14 +431,10 @@ exports.getOrderDetails = async (req, res) => {
 // Função auxiliar para obter preço de um item
 async function getItemPrice(fileId, categoryName) {
   try {
-    // Primeiro, tenta buscar o preço da categoria no Firestore
-    const categorySnapshot = await db.collection('categoryPrices')
-      .where('name', '==', categoryName)
-      .limit(1)
-      .get();
+    // Primeiro, tenta buscar o preço da categoria no MongoDB
+    const categoryData = await CategoryPrice.findOne({ name: categoryName });
 
-    if (!categorySnapshot.empty) {
-      const categoryData = categorySnapshot.docs[0].data();
+    if (categoryData) {
       return categoryData.price || 99.99;
     }
 
@@ -398,7 +447,6 @@ async function getItemPrice(fileId, categoryName) {
 };
 
 // Função para servir imagens do Google Drive em alta resolução com cache
-// SUBSTITUIR completamente a função getHighResImage no arquivo orderController.js
 exports.getHighResImage = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -520,5 +568,179 @@ exports.getHighResImage = async (req, res) => {
     if (!res.headersSent) {
       res.status(500).send('Error retrieving image');
     }
+  }
+};
+
+// Função para servir thumbnails através do seu próprio servidor
+exports.getThumbnail = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    
+    if (!fileId) {
+      return res.status(400).send('File ID is required');
+    }
+    
+    // Criar nomes de arquivo para cache
+    const cacheFilename = `thumb_${fileId}`;
+    const cachePath = path.join(CACHE_DIR, cacheFilename);
+    const metadataPath = `${cachePath}.meta`;
+    
+    // Verificar cache
+    if (fs.existsSync(cachePath)) {
+      // Verificar se temos metadados
+      let etag = '';
+      if (fs.existsSync(metadataPath)) {
+        try {
+          const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+          etag = metadata.etag || '';
+          
+          // Verificar se o cliente já tem a versão em cache (ETag)
+          const clientETag = req.headers['if-none-match'];
+          if (clientETag && clientETag === etag) {
+            // O cliente já tem esta versão
+            return res.status(304).end(); // Not Modified, economiza banda
+          }
+        } catch (metaError) {
+          console.error('Error reading metadata:', metaError);
+          // Continua sem metadados
+        }
+      }
+      
+      console.log(`Serving thumbnail from cache: ${fileId}`);
+      
+      // Definir headers
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
+      
+      // Adicionar ETag se existir
+      if (etag) {
+        res.setHeader('ETag', etag);
+      }
+      
+      // Enviar do cache
+      fs.createReadStream(cachePath).pipe(res);
+      return;
+    }
+    
+    // Obter a imagem do Google Drive
+    const drive = await getDriveInstance();
+    
+    // Verificar se é uma imagem
+    try {
+      const fileMetadata = await drive.files.get({
+        fileId: fileId,
+        fields: 'mimeType,name'
+      });
+      
+      if (!fileMetadata.data.mimeType.startsWith('image/')) {
+        return res.status(400).send('Not an image file');
+      }
+      
+      console.log(`Processing thumbnail for: ${fileMetadata.data.name}`);
+    } catch (error) {
+      console.error(`Error getting file metadata: ${error.message}`);
+      return res.status(404).send('File not found or not accessible');
+    }
+    
+    // Obter o conteúdo da imagem
+    try {
+      const response = await drive.files.get({
+        fileId: fileId,
+        alt: 'media'
+      }, {
+        responseType: 'arraybuffer'
+      });
+      
+      // Redimensionar para thumbnail usando sharp
+      const thumbnail = await sharp(Buffer.from(response.data))
+        .resize({
+          width: 300,
+          height: 300,
+          fit: 'cover'
+        })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      
+      // Gerar ETag (hash MD5 do conteúdo)
+      const etag = crypto.createHash('md5').update(thumbnail).digest('hex');
+      
+      // Criar objeto de metadados
+      const metadata = {
+        etag: etag,
+        created: new Date().toISOString(),
+        mimeType: 'image/jpeg',
+        fileId: fileId
+      };
+      
+      // Salvar imagem e metadados no cache
+      fs.writeFileSync(cachePath, thumbnail);
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+      
+      // Definir cabeçalhos
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
+      res.setHeader('ETag', etag);
+      
+      // Enviar a imagem
+      res.send(thumbnail);
+    } catch (error) {
+      console.error(`Error processing thumbnail: ${error.message}`);
+      res.status(500).send('Error retrieving thumbnail');
+    }
+  } catch (error) {
+    console.error('Error serving thumbnail:', error);
+    res.status(500).send('Error retrieving thumbnail');
+  }
+};
+
+// Adicionar em orderController.js
+exports.confirmPaymentFromCDE = async (req, res) => {
+  try {
+    const { orderId, securityToken } = req.body;
+    
+    // Validar token de segurança para garantir que apenas o CDE pode chamar
+    if (securityToken !== process.env.CDE_SECURITY_TOKEN) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Acesso não autorizado' 
+      });
+    }
+    
+    // Buscar o pedido no MongoDB
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido não encontrado'
+      });
+    }
+    
+    // Atualizar status usando função existente
+    const result = await driveService.updateOrderStatus('paid', order.folderId);
+    
+    if (result.success) {
+      // Atualizar no MongoDB
+      await Order.findByIdAndUpdate(orderId, {
+        status: 'paid',
+        paidAt: new Date()
+      });
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Pedido confirmado como pago'
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: result.message || 'Erro ao atualizar status'
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao confirmar pagamento:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao processar confirmação: ' + error.message
+    });
   }
 };

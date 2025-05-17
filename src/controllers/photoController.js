@@ -1,51 +1,60 @@
+// photoController.js
 const driveService = require('../services/driveService');
-const { db } = require('../config/firebase');
-const firebaseService = require('../services/firebaseService');
+const mongoService = require('../services/mongoService');
+const CategoryPrice = require('../models/categoryPrice');
+const CustomerCode = require('../models/customerCode');
+const CategoryAccess = require('../models/categoryAccess');
 // Adicionar acesso à constante FOLDER_ID
 const { FOLDER_ID } = process.env;
 
 // Obter fotos
 exports.getPhotos = async (req, res) => {
   try {
-    console.log("getPhotos - Requisição recebida:", {
-      query: req.query,
-      categoryId: req.query.category_id,
-      customerCode: req.query.customer_code
-    });
+    // Log detalhado para depuração
+    console.log("===== REQUISIÇÃO DE FOTOS =====");
+    console.log("Query params:", req.query);
     
     const categoryId = req.query.category_id || null;
     const customerCode = req.query.customer_code;
+    const limit = parseInt(req.query.limit) || 50; // Padrão: 50 fotos
+    const offset = parseInt(req.query.offset) || 0;
+    
+    console.log(`Parâmetros de paginação: limit=${limit}, offset=${offset}`);
     
     // MODIFICADO: Obter todas as fotos da categoria (usando cache)
-    const photos = await driveService.getPhotosCached(categoryId);
+    const allPhotos = await driveService.getPhotosCached(categoryId);
     
     // Garantir que photos é um array, mesmo se a resposta for null/undefined
-    const photosArray = Array.isArray(photos) ? photos : [];
+    const photosArray = Array.isArray(allPhotos) ? allPhotos : [];
     
     console.log(`getPhotos - Obtidas ${photosArray.length} fotos da categoria ${categoryId}`);
     
     // Se não for um cliente, retornar fotos sem preços
     if (!customerCode) {
-      return res.status(200).json(photosArray);
+      // Aplicar paginação
+      const paginatedPhotos = photosArray.slice(offset, offset + limit);
+      return res.status(200).json(paginatedPhotos);
     }
     
     // Obter preços padrão das categorias
-    const categoryPricesSnapshot = await db.collection('categoryPrices').get();
+    const categoryPricesData = await CategoryPrice.find();
     const categoryPrices = {};
     
-    categoryPricesSnapshot.forEach(doc => {
-      categoryPrices[doc.id] = doc.data().price || 0;
+    categoryPricesData.forEach(price => {
+      categoryPrices[price.folderId] = price.price || 0;
     });
     
     console.log(`getPhotos - Obtidos preços para ${Object.keys(categoryPrices).length} categorias`);
     
     // Obter configurações de acesso do cliente
-    const accessResult = await firebaseService.getCustomerCategoryAccess(customerCode);
+    const accessResult = await mongoService.getCustomerCategoryAccess(customerCode);
     console.log("getPhotos - Dados de acesso do cliente:", accessResult);
     
     if (!accessResult.success) {
       console.log("getPhotos - Falha ao obter acesso, retornando todas as fotos sem preços");
-      return res.status(200).json(photosArray); // Retornar fotos sem preços se houver erro
+      // Aplicar paginação mesmo em caso de erro
+      const paginatedPhotos = photosArray.slice(offset, offset + limit);
+      return res.status(200).json(paginatedPhotos);
     }
     
     const accessData = accessResult.data || {};
@@ -82,8 +91,14 @@ exports.getPhotos = async (req, res) => {
       console.log(`getPhotos - Filtradas de ${photosArray.length} para ${filteredPhotos.length} fotos autorizadas para All Items`);
     }
     
+    // IMPORTANTE: Aplicar paginação explicitamente antes de retornar
+    const totalFiltered = filteredPhotos.length;
+    const paginatedFiltered = filteredPhotos.slice(offset, offset + limit);
+    
+    console.log(`Total de fotos: ${totalFiltered}, Retornando: ${paginatedFiltered.length} (offset ${offset}, limit ${limit})`);
+    
     // Adicionar informações de preço às fotos
-    const photosWithPrice = filteredPhotos.map(photo => {
+    const photosWithPrice = paginatedFiltered.map(photo => {
       const categoryFolderId = photo.folderId || categoryId;
       
       // Preço padrão da categoria
@@ -112,6 +127,7 @@ exports.getPhotos = async (req, res) => {
     
     console.log(`getPhotos - Retornando ${photosWithPrice.length} fotos com preços para o cliente ${customerCode}`);
     res.status(200).json(photosWithPrice);
+
   } catch (error) {
     console.error('Erro ao obter fotos:', error);
     res.status(500).json({
@@ -135,7 +151,7 @@ exports.getCategories = async (req, res) => {
     const useLeafFolders = !isAdmin && customerCode; // Use folhas para clientes
     
     // Obter todas as categorias
-    const categories = await driveService.getFolderStructure(isAdmin, useLeafFolders);
+    let categories = await driveService.getFolderStructure(isAdmin, useLeafFolders);
     
     // Garantir que categories é um array
     const categoriesArray = Array.isArray(categories) ? categories : [];
@@ -146,7 +162,7 @@ exports.getCategories = async (req, res) => {
     const adminFolderNames = ['Waiting Payment', 'Sold', 'Developing'];
     
     // Filtrar pastas administrativas para todos os usuários
-    const filteredCategories = categoriesArray.filter(category => {
+    let filteredCategories = categoriesArray.filter(category => {
       // Sempre manter "All Items" para todos
       if (category.isAll) return true;
       
@@ -155,11 +171,10 @@ exports.getCategories = async (req, res) => {
       
       // Para clientes regulares, verificar adicionalmente:
       if (!isAdmin) {
-        // Apenas incluir categorias com fotos
-        if (category.isLeaf && category.fileCount && category.fileCount > 0) {
-          return true;
-        } else if (category.isLeaf) {
-          return false; // Não mostrar categorias folha vazias para clientes
+        // MODIFICAÇÃO: Verificação mais robusta - excluir categorias sem fotos
+        if (!category.fileCount || category.fileCount <= 0) {
+          console.log(`Excluindo categoria ${category.name} por não conter fotos (count=${category.fileCount})`);
+          return false;
         }
       }
       
@@ -172,7 +187,7 @@ exports.getCategories = async (req, res) => {
     }
     
     // Se for um cliente, obter suas configurações de acesso
-    const accessResult = await firebaseService.getCustomerCategoryAccess(customerCode);
+    const accessResult = await mongoService.getCustomerCategoryAccess(customerCode);
     console.log("getCategories - Dados de acesso do cliente:", accessResult);
     
     if (!accessResult.success) {
@@ -191,13 +206,16 @@ exports.getCategories = async (req, res) => {
       accessMap[item.categoryId] = item.enabled;
     });
     
-    // Filtrar categorias que o cliente tem acesso
+    // Filtrar categorias que o cliente tem acesso E que têm fotos
     const accessFilteredCategories = filteredCategories.filter(category => {
       // Categoria "All Items" sempre habilitada
       if (category.isAll) return true;
       
-      // MODIFICAÇÃO: Se não tiver configuração específica, NEGAR por padrão
-      if (accessMap[category.id] === undefined) return false;
+      // MODIFICAÇÃO: Verificação redundante para garantir que a categoria tem arquivos
+      if (!category.fileCount || category.fileCount === 0) return false;
+      
+      // CORREÇÃO: Se não tiver configuração específica, PERMITIR por padrão
+      if (accessMap[category.id] === undefined) return true;
       
       // Usar configuração de acesso
       return accessMap[category.id];
@@ -227,27 +245,33 @@ exports.getClientInitialData = async (req, res) => {
       });
     }
     
+    // LOG DE DIAGNÓSTICO
+    console.log(`===== DEBUG: getClientInitialData para código ${code} =====`);
+    
     // 1. Verificar código do cliente
-    const customer = await firebaseService.verifyCustomerCode(code);
+    const customer = await mongoService.verifyCustomerCode(code);
     
     if (!customer.success) {
+      console.log(`Cliente não encontrado: ${code}`);
       return res.status(400).json({
         success: false,
         message: 'Invalid customer code'
       });
     }
     
+    console.log(`Cliente verificado: ${customer.customerName}`);
+    
     // 2. Obter configurações de acesso em paralelo
-    const accessPromise = firebaseService.getCustomerCategoryAccess(code);
+    const accessPromise = mongoService.getCustomerCategoryAccess(code);
     
     // 3. Obter preços das categorias em paralelo
-    const pricesPromise = db.collection('categoryPrices').get();
+    const pricesPromise = CategoryPrice.find();
     
     // 4. Obter pastas folha em paralelo (com cache)
     const foldersPromise = driveService.getAllLeafFoldersCached();
     
     // Aguardar todas as promessas
-    const [accessResult, pricesSnapshot, foldersResult] = await Promise.all([
+    const [accessResult, pricesData, foldersResult] = await Promise.all([
       accessPromise, pricesPromise, foldersPromise
     ]);
     
@@ -256,42 +280,80 @@ exports.getClientInitialData = async (req, res) => {
     
     // Criar mapa de acesso
     const accessMap = {};
-    accessData.categoryAccess.forEach(item => {
-      accessMap[item.categoryId] = item;
-    });
+    if (accessData.categoryAccess && Array.isArray(accessData.categoryAccess)) {
+      accessData.categoryAccess.forEach(item => {
+        if (item && item.categoryId) {
+          accessMap[item.categoryId] = item;
+        }
+      });
+      
+      console.log("Mapa de acesso criado com sucesso, contendo as seguintes configurações:", 
+        Object.keys(accessMap).map(key => ({
+          id: key,
+          enabled: accessMap[key].enabled
+        }))
+      );
+    } else {
+      console.log("AVISO: Não há configurações de acesso ou o formato é inválido:", accessData);
+    }
+    
+    // LOG: Mostrar dados brutos de acesso para depuração
+    console.log("Dados brutos de acesso:", JSON.stringify(accessData));
     
     // Processar preços
     const categoryPrices = {};
-    pricesSnapshot.forEach(doc => {
-      categoryPrices[doc.id] = doc.data();
+    pricesData.forEach(price => {
+      categoryPrices[price.folderId] = {
+        folderId: price.folderId,
+        name: price.name,
+        price: price.price,
+        path: price.path || ''
+      };
     });
     
     // Filtrar pastas permitidas
     const folders = foldersResult.success ? foldersResult.folders : [];
+    console.log(`Total de pastas encontradas: ${folders.length}`);
     
     // Lista explícita de pastas administrativas (nomes exatos)
-    const adminFolderNames = ['Waiting Payment', 'Sold', 'Developing'];
+    const adminFolderNames = ["Waiting Payment", "Sold", "Developing"];
     
     // MODIFICADO: Filtrar pastas administrativas e pastas sem fotos
     const allowedCategories = folders.filter(folder => {
       // Verificar se é uma pasta administrativa (pelo nome)
       if (adminFolderNames.includes(folder.name)) {
+        console.log(`Categoria ${folder.name} excluída por ser administrativa`);
         return false;
       }
       
-      // Verificar se tem uma configuração de acesso e se está habilitada
+      // CORREÇÃO CRÍTICA: Verificar se tem uma configuração de acesso e se está habilitada
       const access = accessMap[folder.id];
-      if (access && access.enabled === false) {
-        return false;
+      
+      // Verificação robusta do objeto de acesso
+      if (access) {
+        console.log(`Verificando acesso para ${folder.name}: access.enabled=${access.enabled}`);
+        
+        // AQUI ESTÁ O BUG: precisamos verificar se é EXPLICITAMENTE false
+        if (access.enabled === false) {
+          console.log(`Categoria ${folder.name} negada explicitamente`);
+          return false;
+        }
+      } else {
+        console.log(`Sem configuração de acesso para ${folder.name}, permitindo por padrão`);
       }
       
-      // NOVO: Verificar se tem fotos (fileCount > 0)
+      // MODIFICADO: Verificação mais robusta para fileCount
       if (!folder.fileCount || folder.fileCount <= 0) {
+        console.log(`Excluindo categoria ${folder.name} por estar vazia (fileCount=${folder.fileCount})`);
         return false;
       }
       
+      // CORREÇÃO: Por padrão, permitir acesso (incluir a categoria)
       return true;
     });
+    
+    console.log(`Categorias permitidas após filtragem: ${allowedCategories.length}`);
+    allowedCategories.forEach(cat => console.log(`- ${cat.name}`));
     
     // Obter previews para as primeiras 4 categorias (limite para carga inicial)
     const previews = {};
@@ -299,10 +361,12 @@ exports.getClientInitialData = async (req, res) => {
     
     // Limitamos a 4 categorias ou menos para a carga inicial rápida
     const categoriesToPreload = allowedCategories.slice(0, 4);
+    console.log(`Pré-carregando ${categoriesToPreload.length} categorias`);
     
     for (const category of categoriesToPreload) {
       const promise = driveService.getPhotosCached(category.id)
         .then(photos => {
+          console.log(`Obtidas ${photos.length} fotos para categoria ${category.name}`);
           // Processar preços para as fotos
           const photosWithPrice = photos.map(photo => {
             const defaultPrice = categoryPrices[category.id] ? categoryPrices[category.id].price || 0 : 0;
@@ -348,6 +412,8 @@ exports.getClientInitialData = async (req, res) => {
       }))
     ];
     
+    console.log(`Total de ${categories.length} categorias sendo retornadas ao cliente`);
+    
     // Retornar todos os dados combinados
     return res.status(200).json({
       success: true,
@@ -384,6 +450,31 @@ exports.clearCache = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao limpar cache: ' + error.message
+    });
+  }
+};
+
+// Nova função para salvar seleções do cliente
+exports.saveCustomerSelections = async (req, res) => {
+  try {
+    const { code, items } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer code is required'
+      });
+    }
+    
+    // Usar mongoService para salvar
+    const result = await mongoService.saveCustomerSelections(code, items || []);
+    
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error('Error saving customer selections:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error saving customer selections: ' + error.message
     });
   }
 };
