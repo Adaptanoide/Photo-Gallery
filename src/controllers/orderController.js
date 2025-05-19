@@ -16,7 +16,7 @@ const Order = require('../models/order');
 const CategoryPrice = require('../models/categoryPrice');
 
 // Constantes para otimização de imagem
-const CACHE_DIR = path.join(__dirname, '../cache/optimized');
+const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
 const DEFAULT_QUALITY = 90;
 const MAX_WIDTH = 2048;
 
