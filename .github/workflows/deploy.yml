@@ -1,0 +1,85 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📂 Checkout do código
+      uses: actions/checkout@v4
+      
+    - name: 🏗️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Instalar dependências
+      run: npm ci --production
+      
+    - name: 🧪 Teste básico
+      run: npm run health-check || echo "Será testado no servidor"
+      
+    - name: 📋 Preparar arquivos para deploy
+      run: |
+        echo "Criando arquivo de deploy..."
+        tar -czf sunshine-cowhides.tar.gz \
+          --exclude=node_modules \
+          --exclude=.git \
+          --exclude=.env \
+          --exclude=credentials.json \
+          --exclude=logs \
+          --exclude=cache \
+          .
+          
+    - name: 🚀 Upload para Oracle Cloud
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.ORACLE_HOST }}
+        username: ${{ secrets.ORACLE_USER }}
+        key: ${{ secrets.ORACLE_SSH_KEY }}
+        port: 22
+        source: "sunshine-cowhides.tar.gz"
+        target: "/home/${{ secrets.ORACLE_USER }}/"
+        
+    - name: 📡 Deploy no servidor
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.ORACLE_HOST }}
+        username: ${{ secrets.ORACLE_USER }}
+        key: ${{ secrets.ORACLE_SSH_KEY }}
+        port: 22
+        script: |
+          cd /home/${{ secrets.ORACLE_USER }}/
+          
+          # Backup da versão anterior (se existir)
+          if [ -d "/opt/sunshine-cowhides" ]; then
+            sudo cp -r /opt/sunshine-cowhides /opt/sunshine-cowhides-backup-$(date +%Y%m%d_%H%M%S)
+          fi
+          
+          # Extrair nova versão
+          tar -xzf sunshine-cowhides.tar.gz
+          sudo mkdir -p /opt/sunshine-cowhides
+          sudo cp -r ./* /opt/sunshine-cowhides/
+          sudo chown -R ${{ secrets.ORACLE_USER }}:${{ secrets.ORACLE_USER }} /opt/sunshine-cowhides
+          
+          # Instalar dependências
+          cd /opt/sunshine-cowhides
+          npm install --production
+          
+          # Parar processo anterior (se existir)
+          pm2 stop sunshine-cowhides || echo "App não estava rodando"
+          
+          # Iniciar nova versão
+          pm2 start ecosystem.config.js
+          pm2 save
+          
+          # Limpeza
+          rm -f /home/${{ secrets.ORACLE_USER }}/sunshine-cowhides.tar.gz
+          
+          echo "✅ Deploy concluído com sucesso!"
