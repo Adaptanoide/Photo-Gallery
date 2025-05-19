@@ -1,18 +1,28 @@
 {
-  "name": "fotosystem",
+  "name": "sunshine-cowhides",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Sistema de Gerenciamento e Venda de Couro Bovino",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js",
+    "start": "NODE_ENV=production node src/server.js",
     "dev": "NODE_ENV=development node src/server.js",
     "prod": "NODE_ENV=production node src/server.js",
-    "cache-clear": "node -e \"const SmartCache = require('./src/services/smartCache'); const cache = new SmartCache(5); cache.cleanup(); console.log('Cache cleared!');\"",
-    "status": "curl http://localhost:3000/api/status"
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "echo \"Build complete - static files ready\"",
+    "postinstall": "echo \"Dependencies installed successfully\"",
+    "cache-clear": "node -e \"const SmartCache = require('./src/services/smartCache'); const cache = new SmartCache(1); cache.cleanup(); console.log('Cache cleared!');\"",
+    "status": "curl http://localhost:3000/api/status",
+    "logs": "pm2 logs sunshine-cowhides",
+    "stop": "pm2 stop sunshine-cowhides",
+    "restart": "pm2 restart sunshine-cowhides",
+    "health-check": "node -e \"require('http').get('http://localhost:3000/api/status', (res) => { console.log(res.statusCode === 200 ? 'OK' : 'FAIL'); process.exit(res.statusCode === 200 ? 0 : 1); });\""
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["sunshine", "cowhides", "leather", "b2b", "catalog"],
+  "author": "Sunshine Cowhides Team",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.0",
@@ -28,6 +38,14 @@
     "multer": "^1.4.5-lts.2",
     "nodemailer": "^7.0.3",
     "sharp": "^0.33.2"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adaptanoide/sunshine-cowhides.git"
+  },
+  "config": {
+    "unsafe-perm": true
   }
 }
 

@@ -21,3 +21,8 @@ Thumbs.db
 
 # Arquivos com configurações sensíveis
 public/js/firebase-config.js
+
+# Cache e arquivos temporários
+cache/
+logs/
+*.pid
