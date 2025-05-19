@@ -8,6 +8,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const sharp = require('sharp');
+const SmartCache = require('../services/smartCache');
+const smartCache = new SmartCache(5); // 5GB limite
+const { imageQueue, fileQueue } = require('../services/queueService');
 const CustomerCode = require('../models/customerCode');
 const Order = require('../models/order');
 const CategoryPrice = require('../models/categoryPrice');
@@ -153,12 +156,13 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
       }
     }
 
-    // ALTERAÇÃO: Usar nova função que processa arquivos com categorias
-    console.log("Processando arquivos com separação por categoria...");
-    const result = await driveService.processOrderFilesWithCategories(
-      customerName,
-      photosByCategory,
-      'waiting'
+    // Usar fila para operações de arquivo
+    const result = await fileQueue.add(() =>
+      driveService.processOrderFilesWithCategories(
+        customerName,
+        photosByCategory,
+        'waiting'
+      )
     );
 
     if (result.success) {
@@ -446,6 +450,49 @@ async function getItemPrice(fileId, categoryName) {
   }
 };
 
+// NOVA: Função otimizada para processamento de imagem com fila
+const processImageEfficiently = async (inputBuffer, options = {}) => {
+  const { width = 1024, quality = 80, format = 'jpeg' } = options;
+  
+  // Verificar tamanho do arquivo antes
+  if (inputBuffer.length > 15 * 1024 * 1024) { // 15MB limite
+    console.log('Image too large for optimization, serving original');
+    return inputBuffer;
+  }
+  
+  try {
+    const sharpInstance = sharp(inputBuffer, {
+      limitInputPixels: 268402689, // ~16K x 16K max
+      sequentialRead: true,
+      density: 72 // Reduzir DPI para economizar processamento
+    });
+    
+    let processor = sharpInstance
+      .resize(width, null, { 
+        withoutEnlargement: true,
+        fastShrinkOnLoad: true // Otimização importante para CPU
+      });
+    
+    // Escolher formato baseado no tamanho
+    if (format === 'webp' && inputBuffer.length < 5 * 1024 * 1024) {
+      // WebP apenas para imagens menores
+      processor = processor.webp({ quality, effort: 2 }); // effort 2 = balanceado
+    } else {
+      // JPEG para economizar CPU
+      processor = processor.jpeg({ quality, progressive: true });
+    }
+    
+    const optimized = await processor.toBuffer();
+    
+    console.log(`✅ Image optimized: ${inputBuffer.length} → ${optimized.length} bytes`);
+    return optimized;
+    
+  } catch (error) {
+    console.error('Image optimization failed:', error);
+    return inputBuffer; // Fallback para original
+  }
+};
+
 // Função para servir imagens do Google Drive em alta resolução com cache
 exports.getHighResImage = async (req, res) => {
   try {
@@ -455,18 +502,28 @@ exports.getHighResImage = async (req, res) => {
       return res.status(400).send('File ID is required');
     }
     
+    // Constantes locais (caso não estejam definidas globalmente)
+    const DEFAULT_QUALITY = 90;
+    const MAX_WIDTH = 2048;
+    const CACHE_DIR = path.join(__dirname, '../cache/optimized');
+    
+    // Garantir que o diretório de cache existe
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+    
     // Determinar formato baseado no suporte do navegador
     const acceptHeader = req.headers.accept || '';
     const supportsWebP = acceptHeader.includes('image/webp');
     const format = supportsWebP ? 'webp' : 'jpeg';
     const quality = parseInt(req.query.quality) || DEFAULT_QUALITY;
     
-    // Criar nomes de arquivo para cache
+    // Criar nomes de arquivo para cache (CORRIGIDO: definir antes de usar)
     const cacheFilename = `${fileId}_${format}_q${quality}`;
     const cachePath = path.join(CACHE_DIR, cacheFilename);
     const metadataPath = cachePath + '.json';
     
-    // Verificar cache
+    // Verificar cache existente
     if (fs.existsSync(cachePath) && fs.existsSync(metadataPath)) {
       try {
         // Ler metadados do cache
@@ -486,6 +543,7 @@ exports.getHighResImage = async (req, res) => {
     }
     
     // Se não estiver em cache, buscar do Google Drive
+    const { getDriveInstance } = require('../config/google.drive');
     const drive = await getDriveInstance();
     
     // Obter metadados do arquivo primeiro
@@ -506,7 +564,7 @@ exports.getHighResImage = async (req, res) => {
       fileId: fileId,
       alt: 'media'
     }, {
-      responseType: 'arraybuffer'  // Importante para processar a imagem
+      responseType: 'arraybuffer'
     });
     
     // Otimizar a imagem com sharp
@@ -514,6 +572,7 @@ exports.getHighResImage = async (req, res) => {
     let optimizedBuffer;
     
     try {
+      const sharp = require('sharp');
       let sharpInstance = sharp(Buffer.from(response.data))
         .resize({
           width: MAX_WIDTH,

@@ -1,30 +1,34 @@
 /* Sidebar para navegação de categorias */
 .catalog-layout {
   display: flex;
-  gap: 0; /* MUDANÇA: Removendo gap */
+  gap: 0;
   width: 100%;
-  margin-top: 20px;
+  margin-top: 0;
   position: relative;
-  height: auto;
+  /* CORREÇÃO: Altura fixa para eliminar espaço inferior */
+  min-height: 100vh;
 }
 
 .category-sidebar {
-  width: 280px; /* AUMENTO: De 250px para 280px */
+  width: 280px;
   flex-shrink: 0;
   background-color: white;
-  border-radius: 0 8px 8px 0; /* MUDANÇA: Arredondamento só na direita */
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* MUDANÇA: Sombra só na direita */
+  border-radius: 0 8px 8px 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  position: sticky;
-  top: 20px;
-  height: fit-content;
-  max-height: calc(100vh - 40px);
+  /* CORREÇÃO: Posicionamento fixo para ocupar toda altura da tela */
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   z-index: 10;
-  /* IMPORTANTE: Para colar na lateral esquerda */
   margin-left: 0;
   border-left: none;
+  /* CORREÇÃO: Garantir que não há espaço vazio */
+  box-sizing: border-box;
 }
 
 .category-sidebar h3 {
@@ -61,10 +65,14 @@
 .categories-menu {
   overflow-y: auto;
   flex-grow: 1;
-  max-height: calc(100vh - 200px);
+  /* CORREÇÃO: Usar altura calculada para preencher totalmente */
+  height: calc(100vh - 140px);
   padding-right: 5px;
   scrollbar-width: thin;
   scrollbar-color: var(--color-gold) rgba(0, 0, 0, 0.05);
+  /* CORREÇÃO: Remover margin/padding que cria espaço vazio */
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .categories-menu::-webkit-scrollbar {
@@ -86,23 +94,22 @@
 }
 
 .category-item {
-  padding: 12px 15px; /* AUMENTO: Mais padding */
-  margin-bottom: 8px; /* AUMENTO: Mais espaço entre itens */
-  border-radius: 6px; /* AUMENTO: Mais arredondamento */
+  padding: 12px 15px;
+  margin-bottom: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: var(--transition-smooth);
   font-weight: 500;
   display: block;
   background-color: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  /* MELHORIA: Melhor formatação do texto */
   word-wrap: break-word;
   line-height: 1.4;
 }
 
 .category-item:hover {
   background-color: rgba(0, 0, 0, 0.05);
-  transform: translateX(5px); /* AUMENTO: Mais movimento */
+  transform: translateX(5px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -110,7 +117,7 @@
   background-color: var(--color-gold);
   color: var(--color-dark);
   font-weight: 600;
-  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.4); /* MELHORIA: Sombra mais pronunciada */
+  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.4);
   transform: translateX(5px);
 }
 
@@ -125,13 +132,17 @@
   flex-grow: 1;
   overflow: hidden;
   min-width: 0;
-  padding-left: 30px; /* ADIÇÃO: Espaço entre sidebar e conteúdo */
-  padding-right: 20px; /* ADIÇÃO: Padding direito */
+  /* CORREÇÃO: Margem para compensar a sidebar fixa */
+  margin-left: 280px;
+  padding-left: 30px;
+  padding-right: 20px;
+  /* CORREÇÃO: Altura mínima para evitar espaço vazio */
+  min-height: 100vh;
 }
 
 /* CORREÇÃO: Remover duplicação de títulos */
 .current-category-header {
-  display: none; /* MUDANÇA: Esconder o header duplicado */
+  display: none;
 }
 
 /* ADIÇÃO: Estilo para o título único da categoria */
@@ -145,11 +156,15 @@
   .catalog-layout {
     flex-direction: column;
     gap: 20px;
+    /* CORREÇÃO: Remover altura fixa em mobile */
+    min-height: auto;
   }
   
   .category-sidebar {
-    width: 100%;
+    /* CORREÇÃO: Em mobile, não é fixo */
     position: relative;
+    width: 100%;
+    height: auto;
     max-height: 250px;
     margin-bottom: 20px;
     border-radius: 8px;
@@ -161,12 +176,15 @@
   
   .categories-menu {
     max-height: 180px;
+    height: 180px;
   }
   
   .content-area {
     order: 2;
+    margin-left: 0;
     padding-left: 15px;
     padding-right: 15px;
+    min-height: auto;
   }
 }
 

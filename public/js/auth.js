@@ -53,7 +53,7 @@ function adminLogout() {
   }
 }
 
-// Access gallery with code
+// ENCONTRE a função accessGallery() e ADICIONE melhor tratamento de erro:
 function accessGallery() {
   const code = document.getElementById('access-code').value.trim();
   
@@ -64,22 +64,25 @@ function accessGallery() {
   
   showLoader();
   
-  // NOVO: Limpar cache no servidor
-  fetch('/api/client/clear-cache', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  }).catch(err => console.error("Erro ao limpar cache:", err));
-
-  // NOVO: Verificar código usando API MongoDB em vez de Firebase
+  // ADICIONE este console.log para debug:
+  console.log(`Attempting to validate customer code: ${code}`);
+  
+  // Verificar código usando API MongoDB em vez de Firebase
   fetch(`/api/db/customerCodes/${code}`)
     .then(response => {
+      console.log(`Response status: ${response.status}`); // ADICIONE este log
       if (!response.ok) {
-        throw new Error('Invalid code');
+        if (response.status === 404) {
+          throw new Error('INVALID_CODE');
+        }
+        throw new Error(`Server error: ${response.status}`);
       }
       return response.json();
     })
     .then(doc => {
       hideLoader();
+      
+      console.log(`Customer validated: ${doc.customerName}`); // ADICIONE este log
       
       // Code exists and is valid
       localStorage.removeItem('isAdmin');
@@ -93,15 +96,18 @@ function accessGallery() {
       // Show the main content
       document.querySelector('.container').style.display = 'block';
       
-      // Load categories explicitly as non-admin
-      loadCategories(false);
-      
-      // ADICIONAR ESTA LINHA: Carregar o menu de categorias após definir o código
-      loadCategoriesMenu();
+      // MODIFICAÇÃO: Chamar a nova função de inicialização
+      initializeGallery();
     })
     .catch((error) => {
       hideLoader();
-      alert('Invalid code. Please check your code and try again.');
+      console.error('Login error:', error); // ADICIONE este log
+      
+      if (error.message === 'INVALID_CODE') {
+        alert('Invalid code. Please check your code and try again.');
+      } else {
+        alert('Connection error. Please try again later.');
+      }
     });
 }
 

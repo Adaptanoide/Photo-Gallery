@@ -1,10 +1,10 @@
 // Variáveis globais para o menu de categorias
 let activeCategory = null;
 let categoriesLoaded = {};
-let categoriesQueue = [];
 let isLoadingCategory = false;
+let categoryPhotoCache = {};
 
-// Carregar categorias no menu lateral
+// Carregar categorias no menu lateral - VERSÃO CORRIGIDA
 function loadCategoriesMenu() {
   const menuContainer = document.getElementById('categories-menu');
 
@@ -35,47 +35,44 @@ function loadCategoriesMenu() {
       // Limpar o menu
       menuContainer.innerHTML = '';
 
+      // NOVA LINHA: Tornar as categorias acessíveis globalmente para o lightbox
+      window.categories = data.categories || [];
+      
       // Usar as categorias dos dados iniciais
       categories = data.categories || [];
 
       console.log(`Total de categorias encontradas: ${categories.length}`);
 
-      // Adicionar categoria "All Items" primeiro
-      const allItemsCategory = categories.find(cat => cat.isAll);
-      if (allItemsCategory) {
-        menuContainer.innerHTML += `
-          <div class="category-item active" data-category-id="${allItemsCategory.id}">
-            All Items
-          </div>
-        `;
+      // Inicializar sem categoria ativa inicialmente
+      activeCategory = null;
 
-        // Definir como categoria ativa inicialmente
-        activeCategory = allItemsCategory.id;
-        console.log(`Categoria All Items adicionada: ${allItemsCategory.id}`);
-      }
-
-      // Adicionar as outras categorias - MODIFICADO: remover filtro de fileCount
+      // Filtrar apenas categorias reais (não All Items)
       const specificCategories = categories.filter(cat => !cat.isAll);
       console.log(`Categorias específicas encontradas: ${specificCategories.length}`);
 
-      specificCategories.forEach(category => {
+      // Marcar a primeira categoria como ativa se existir
+      if (specificCategories.length > 0) {
+        activeCategory = specificCategories[0].id;
+      }
+
+      specificCategories.forEach((category, index) => {
+        const isActive = index === 0 ? 'active' : ''; // Primeira categoria ativa
+        
         menuContainer.innerHTML += `
-          <div class="category-item" data-category-id="${category.id}">
+          <div class="category-item ${isActive}" data-category-id="${category.id}">
             ${category.name} ${category.fileCount ? `(${category.fileCount})` : ''}
           </div>
         `;
-
+        
         console.log(`Categoria adicionada: ${category.name} (ID: ${category.id})`);
-
-        // Adicionar à fila de carregamento em background
-        categoriesQueue.push(category.id);
       });
 
       // Adicionar event listeners aos itens do menu
       setupCategoryClickHandlers();
 
-      // Começar a carregar a primeira categoria em background
-      loadNextCategoryInBackground();
+      // NÃO carregamos mais automaticamente em background
+      // O usuário deve selecionar uma categoria manualmente
+      console.log(`${categories.length} categorias carregadas no sidebar`);
     })
     .catch(error => {
       console.error('Error loading categories:', error);
@@ -86,24 +83,14 @@ function loadCategoriesMenu() {
 // Adicionar event listeners para itens de categoria
 function setupCategoryClickHandlers() {
   const categoryItems = document.querySelectorAll('.category-item');
-
+  
   categoryItems.forEach(item => {
-    item.addEventListener('click', function () {
+    item.addEventListener('click', function() {
       const categoryId = this.getAttribute('data-category-id');
-      const categoryText = this.textContent.trim();
-
-      console.log(`Clicou na categoria: ${categoryId}, texto: ${categoryText}`);
-
-      // Tratamento especial para "All Items"
-      if (categoryText.includes('All Items')) {
-        console.log("Clicou em All Items - Carregando todos os itens");
-
-        // Sempre force o refresh ao clicar em All Items
-        loadAllItems(true);
-        return;
-      }
-
-      // Para outras categorias, continuar normalmente
+      
+      console.log(`Clicou na categoria: ${categoryId}`);
+      
+      // Carregar categoria se for diferente da ativa
       if (categoryId && categoryId !== activeCategory) {
         loadCategoryPhotos(categoryId);
       }
@@ -111,28 +98,11 @@ function setupCategoryClickHandlers() {
   });
 }
 
-// Carregar fotos de uma categoria específica
-// Carregar fotos de uma categoria específica
+// Carregar fotos de uma categoria específica - VERSÃO COM PAGINAÇÃO
 function loadCategoryPhotos(categoryId) {
   showLoader();
 
   console.log(`Iniciando carregamento da categoria: ${categoryId}`);
-
-  // NOVO: Verificar se estamos lidando com All Items (pelo texto ou ID undefined)
-  const isAllItems = categoryId === undefined ||
-    categories.find(cat => cat.id === categoryId)?.isAll === true ||
-    document.querySelector(`.category-item[data-category-id="${categoryId}"]`)?.textContent.trim() === 'All Items';
-
-  // Se for All Items mas o ID estiver indefinido, usar o ID correto
-  if (isAllItems && (categoryId === undefined || categoryId === 'undefined')) {
-    const allCat = categories.find(cat => cat.isAll);
-    if (allCat) {
-      categoryId = allCat.id;
-      console.log(`Corrigindo ID para All Items: ${categoryId}`);
-    }
-  }
-
-  console.log(`Carregando categoria: ${categoryId}, isAllItems: ${isAllItems}`);
 
   // Definir categoria ativa
   activeCategory = categoryId;
@@ -143,81 +113,54 @@ function loadCategoryPhotos(categoryId) {
   // Atualizar cabeçalho da categoria atual
   updateCurrentCategoryHeader(categoryId);
 
-  // Limpar conteúdo atual
+  // Limpar conteúdo atual e mostrar feedback melhorado
   const contentDiv = document.getElementById('content');
-  contentDiv.innerHTML = '<div class="empty-message">Loading category...</div>';
-
-  // Se for "All Items", sempre buscar da API para evitar problemas de cache
-  if (isAllItems) {
-    console.log("Carregando categoria All Items diretamente da API");
-
-    // Para "All Items", usamos a API de dados iniciais que traz todos os previews
-    fetch(`/api/client/initial-data?code=${currentCustomerCode}`)
-      .then(response => response.json())
-      .then(data => {
-        if (!data.success) {
-          contentDiv.innerHTML = '<div class="empty-message">Error loading data.</div>';
-          hideLoader();
-          return;
-        }
-
-        // Obter previews de todas as categorias
-        let allPhotos = [];
-        for (const catId in data.previews) {
-          const catPhotos = data.previews[catId] || [];
-          console.log(`Adicionando ${catPhotos.length} fotos da categoria ${catId}`);
-          allPhotos = allPhotos.concat(catPhotos);
-        }
-
-        console.log(`Total de ${allPhotos.length} fotos encontradas para All Items`);
-
-        // Se não encontrou fotos, tentar fazer uma busca direta
-        if (allPhotos.length === 0) {
-          fetch(`/api/photos?customer_code=${currentCustomerCode}`)
-            .then(response => response.json())
-            .then(photos => {
-              console.log(`Busca direta encontrou ${photos.length} fotos`);
-              // Atualizar o cache
-              categoriesLoaded[categoryId] = photos;
-              // Renderizar as fotos
-              renderPhotosForCategory(photos);
-            })
-            .catch(err => console.error("Erro na busca direta:", err));
-        } else {
-          // Atualizar o cache
-          categoriesLoaded[categoryId] = allPhotos;
-          // Renderizar as fotos
-          renderPhotosForCategory(allPhotos);
-        }
-
-        hideLoader();
-      })
-      .catch(error => {
-        console.error(`Error loading All Items:`, error);
-        contentDiv.innerHTML = '<div class="empty-message">Error loading category.</div>';
-        hideLoader();
-      });
-
-    return;
-  }
+  contentDiv.innerHTML = `
+    <div class="loading-category" style="text-align: center; padding: 60px 40px; background: white; border-radius: 10px; margin-top: 30px; box-shadow: var(--shadow-soft);">
+      <div class="loading-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(212, 175, 55, 0.3); border-radius: 50%; border-top-color: var(--color-gold); animation: spin 1s ease infinite; margin: 0 auto 20px;"></div>
+      <h3 style="color: var(--color-dark); margin-bottom: 10px; font-family: 'Playfair Display', serif;">Loading Category</h3>
+      <p style="color: var(--color-taupe);">Please wait while we load the products...</p>
+    </div>
+  `;
 
   // Verificar se já temos os dados desta categoria em cache
-  if (categoriesLoaded[categoryId]) {
-    console.log(`Using cached data for category: ${categoryId}`);
-    renderPhotosForCategory(categoriesLoaded[categoryId]);
+  if (categoryPhotoCache[categoryId]) {
+    console.log(`Using cached photos for category: ${categoryId}`);
+    // CORREÇÃO: Extrair apenas o array de fotos do cache
+    const cachedData = categoryPhotoCache[categoryId];
+    const photosArray = cachedData.photos || cachedData;
+    
+    // CORREÇÃO CRÍTICA: Atualizar array global e registro de fotos
+    photos = [...photosArray]; // Atualizar array global
+    photosArray.forEach(photo => {
+      photoRegistry[photo.id] = photo; // Atualizar registro
+    });
+    
+    renderPhotosForCategory(photosArray, categoryId);
     hideLoader();
     return;
   }
 
-  // Carregar fotos da categoria
-  fetch(`/api/photos?category_id=${categoryId || ''}&customer_code=${currentCustomerCode}`)
+  // CORREÇÃO: Carregar fotos com limite inicial
+  const INITIAL_LOAD_LIMIT = 20; // Carregar apenas 20 fotos inicialmente
+  
+  fetch(`/api/photos?category_id=${categoryId || ''}&customer_code=${currentCustomerCode}&limit=${INITIAL_LOAD_LIMIT}&offset=0`)
     .then(response => response.json())
     .then(photos => {
-      // Armazenar em cache
-      categoriesLoaded[categoryId] = photos;
+      // Armazenar APENAS as fotos carregadas no cache (não todas)
+      categoryPhotoCache[categoryId] = {
+        photos: photos || [],
+        totalLoaded: photos.length || 0,
+        hasMore: (photos.length || 0) >= INITIAL_LOAD_LIMIT
+      };
+      
+      console.log(`Loaded ${photos.length} photos for category: ${categoryId}`);
 
       // Atualizar o registro global e renderizar
-      updatePhotoRegistryAndRender(photos);
+      updatePhotoRegistryAndRender(photos || []);
+
+      // Renderizar com informação se há mais fotos
+      renderPhotosForCategory(photos || [], categoryId);
 
       hideLoader();
     })
@@ -228,8 +171,8 @@ function loadCategoryPhotos(categoryId) {
     });
 }
 
-// Renderizar fotos para a categoria - FUNÇÃO MODIFICADA
-function renderPhotosForCategory(categoryPhotos) {
+// FUNÇÃO CORRIGIDA: Renderizar fotos para a categoria com paginação
+function renderPhotosForCategory(categoryPhotos, categoryId) {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = '';
   
@@ -238,45 +181,115 @@ function renderPhotosForCategory(categoryPhotos) {
     return;
   }
   
-  // ADIÇÃO: Criar um título único para a categoria
-  const categoryName = getCurrentCategoryName();
-  
-  const categoryHeader = document.createElement('div');
-  categoryHeader.className = 'category-title-container';
-  categoryHeader.innerHTML = `
-    <h2>${categoryName}</h2>
-    <div class="category-divider"></div>
-  `;
-  contentDiv.appendChild(categoryHeader);
-  
-  // Criar o container da seção
-  const sectionContainer = document.createElement('div');
-  sectionContainer.id = `category-section-main`;
-  sectionContainer.className = 'category-section';
-  sectionContainer.style.display = 'grid';
-  sectionContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
-  sectionContainer.style.gap = '30px';
-  sectionContainer.style.width = '100%';
-  
-  contentDiv.appendChild(sectionContainer);
-  
-  // Renderizar as fotos
-  renderCategoryPhotos(sectionContainer, categoryPhotos);
-  
-  // Se temos muitas fotos, adicionar botão para carregar mais
-  if (categoryPhotos.length >= 20) {
-    const loadMoreBtn = document.createElement('div');
-    loadMoreBtn.className = 'load-more-btn';
-    loadMoreBtn.innerHTML = `
-      <button class="btn btn-secondary" onclick="loadMoreForCategory('${activeCategory}', ${categoryPhotos.length})">
-        Ver mais fotos
-      </button>
-    `;
-    sectionContainer.appendChild(loadMoreBtn);
+  // RESTAURAR: Criar título da categoria
+  if (activeCategory) {
+    const categoryItem = document.querySelector(`.category-item[data-category-id="${activeCategory}"]`);
+    if (categoryItem) {
+      const categoryText = categoryItem.textContent.trim();
+      const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
+      
+      // Criar container para título e linha divisória
+      const titleContainer = document.createElement('div');
+      titleContainer.className = 'category-title-container';
+      titleContainer.innerHTML = `
+        <h2>${cleanCategoryName}</h2>
+        <div class="category-divider"></div>
+      `;
+      contentDiv.appendChild(titleContainer);
+    }
   }
   
-  // Atualizar botões do carrinho
-  setTimeout(updateButtonsForCartItems, 100);
+  // Criar o container da seção com aplicação forçada de estilos
+  const sectionContainer = document.createElement('div');
+  sectionContainer.id = 'category-section-main';
+  sectionContainer.className = 'category-section';
+
+  // FORÇAR estilos de grid diretamente no elemento
+  sectionContainer.style.cssText = `
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 30px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    grid-auto-flow: row !important;
+  `;
+
+  // Aplicar estilos no container pai também
+  contentDiv.style.cssText = `
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+  `;
+
+  contentDiv.appendChild(sectionContainer);
+  
+  // Renderizar as fotos usando a função existente
+  renderCategoryPhotos(sectionContainer, categoryPhotos);
+  
+  // NOVO: Verificar se há mais fotos para carregar
+  const categoryCache = categoryPhotoCache[categoryId];
+  if (categoryCache && categoryCache.hasMore) {
+    // Fazer uma requisição rápida para saber quantas fotos há no total
+    fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&limit=1&offset=1000`)
+      .then(response => response.json())
+      .then(data => {
+        // Se retornou dados, significa que há mais fotos do que esperávamos
+        // Vamos estimar o total baseado na categoria
+        const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+        let totalPhotos = 50; // Estimativa padrão
+        
+        if (categoryItem) {
+          const text = categoryItem.textContent;
+          const match = text.match(/\((\d+)\)/);
+          if (match) {
+            totalPhotos = parseInt(match[1]);
+          }
+        }
+        
+        const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
+        const nextBatchSize = Math.min(30, remainingPhotos); // Carregar máximo 30 por vez
+        
+        // Criar botão "More +XX photos"
+        if (remainingPhotos > 0) {
+          const loadMoreBtn = document.createElement('div');
+          loadMoreBtn.className = 'load-more-btn modern';
+          loadMoreBtn.style.gridColumn = '1 / -1';
+          loadMoreBtn.innerHTML = `
+            <button class="btn-load-more" onclick="loadMorePhotosForCategory('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
+              More +${nextBatchSize} photos
+            </button>
+          `;
+          sectionContainer.appendChild(loadMoreBtn);
+        }
+      })
+      .catch(error => {
+        console.log('Could not determine total photos, using default button');
+        // Fallback: botão padrão
+        const loadMoreBtn = document.createElement('div');
+        loadMoreBtn.className = 'load-more-btn modern';
+        loadMoreBtn.style.gridColumn = '1 / -1';
+        loadMoreBtn.innerHTML = `
+          <button class="btn-load-more" onclick="loadMorePhotosForCategory('${categoryId}', ${categoryCache.totalLoaded}, 30)">
+            More +30 photos
+          </button>
+        `;
+        sectionContainer.appendChild(loadMoreBtn);
+      });
+  }
+  
+  // Forçar atualização do layout
+  setTimeout(() => {
+    // Verificar se o grid foi aplicado corretamente
+    const computedStyle = window.getComputedStyle(sectionContainer);
+    console.log('Grid aplicado:', computedStyle.display, computedStyle.gridTemplateColumns);
+    
+    // Atualizar botões do carrinho
+    updateButtonsForCartItems();
+  }, 100);
 }
 
 // ADIÇÃO: Função auxiliar para obter o nome da categoria atual
@@ -295,7 +308,7 @@ function getCurrentCategoryName() {
   return category ? category.name : 'All Items';
 }
 
-// Atualizar registro de fotos e renderizar
+// Atualizar registro de fotos e renderizar - VERSÃO CORRIGIDA
 function updatePhotoRegistryAndRender(newPhotos) {
   if (!Array.isArray(newPhotos)) return;
 
@@ -304,59 +317,14 @@ function updatePhotoRegistryAndRender(newPhotos) {
     photoRegistry[photo.id] = photo;
   });
 
-  // Adicionar ao array global
-  photos = photos.concat(newPhotos);
+  // MODIFICAÇÃO: Não concatenar, mas substituir o array de fotos
+  // para evitar misturar fotos de categorias diferentes
+  photos = [...newPhotos];
+
+  console.log(`Updated photo registry with ${newPhotos.length} photos from current category`);
 
   // Renderizar
   renderPhotosForCategory(newPhotos);
-}
-
-// Carregar próxima categoria em background
-function loadNextCategoryInBackground() {
-  // Se já estamos carregando ou não há mais categorias na fila, retornar
-  if (isLoadingCategory || categoriesQueue.length === 0) {
-    return;
-  }
-
-  // Marcar como carregando
-  isLoadingCategory = true;
-
-  // Pegar próxima categoria da fila
-  const nextCategoryId = categoriesQueue.shift();
-
-  console.log(`Background loading category: ${nextCategoryId}`);
-
-  // Carregar fotos da categoria em background
-  fetch(`/api/photos?category_id=${nextCategoryId}&customer_code=${currentCustomerCode}`)
-    .then(response => response.json())
-    .then(categoryPhotos => {
-      // Armazenar em cache
-      if (Array.isArray(categoryPhotos) && categoryPhotos.length > 0) {
-        categoriesLoaded[nextCategoryId] = categoryPhotos;
-
-        // Registrar fotos no índice global
-        categoryPhotos.forEach(photo => {
-          photoRegistry[photo.id] = photo;
-        });
-
-        console.log(`Background loaded category: ${nextCategoryId} with ${categoryPhotos.length} photos`);
-      }
-
-      // Marcar como não carregando
-      isLoadingCategory = false;
-
-      // Continuar com a próxima categoria
-      loadNextCategoryInBackground();
-    })
-    .catch(error => {
-      console.error(`Error background loading category ${nextCategoryId}:`, error);
-
-      // Marcar como não carregando
-      isLoadingCategory = false;
-
-      // Continuar com a próxima categoria
-      loadNextCategoryInBackground();
-    });
 }
 
 // Destacar categoria ativa no menu
@@ -487,183 +455,6 @@ function inspectCategoryDom() {
 
 // Chamar após um tempo para garantir que o DOM foi atualizado
 setTimeout(inspectCategoryDom, 3000);
-
-// Função para carregar todos os itens (All Items)
-function loadAllItems(forceRefresh = true) {
-  showLoader();
-  
-  // Encontrar a categoria All Items
-  const allItemsCategory = categories.find(cat => cat.isAll);
-  const allItemsId = allItemsCategory ? allItemsCategory.id : null;
-  
-  console.log(`Carregando All Items com ID: ${allItemsId}, forceRefresh: ${forceRefresh}`);
-  
-  // Marcar item no menu como ativo
-  highlightActiveCategory(allItemsId);
-  
-  // Atualizar cabeçalho
-  updateCurrentCategoryHeader(allItemsId);
-  activeCategory = allItemsId;
-  
-  // Limpar conteúdo atual
-  const contentDiv = document.getElementById('content');
-  contentDiv.innerHTML = '<div class="empty-message">Loading all items...</div>';
-  
-  // NOVA ABORDAGEM: Verificar se temos categorias previamente carregadas
-  const loadedCategoryIds = Object.keys(categoriesLoaded).filter(id => id !== allItemsId);
-  
-  if (loadedCategoryIds.length > 0) {
-    console.log(`Encontradas ${loadedCategoryIds.length} categorias previamente carregadas`);
-    
-    // Preparar objeto para armazenar fotos por categoria
-    const photosByCategory = {};
-    
-    // Preencher com as categorias já carregadas
-    loadedCategoryIds.forEach(catId => {
-      // Encontrar o nome da categoria
-      const categoryInfo = categories.find(cat => cat.id === catId);
-      const categoryName = categoryInfo ? categoryInfo.name : 'Categoria ' + catId;
-      
-      photosByCategory[catId] = {
-        name: categoryName,
-        photos: categoriesLoaded[catId]
-      };
-    });
-    
-    // Renderizar as fotos organizadas por categoria
-    renderPhotosByCategory(photosByCategory);
-    
-    // Adicionar botão para recarregar o catálogo completo
-    const reloadBtn = document.createElement('div');
-    reloadBtn.className = 'reload-btn';
-    reloadBtn.style.textAlign = 'center';
-    reloadBtn.style.marginTop = '30px';
-    reloadBtn.style.marginBottom = '40px';
-    reloadBtn.innerHTML = `
-      <button class="btn btn-gold" onclick="loadAllPhotosFromAPI()">
-        Atualizar Catálogo Completo
-      </button>
-    `;
-    contentDiv.appendChild(reloadBtn);
-    
-    hideLoader();
-    return;
-  }
-  
-  // Se não temos categorias carregadas, usar a abordagem de carregamento completo
-  loadAllPhotosFromAPI();
-}
-
-// Função para carregar mais fotos no All Items
-function loadMoreAllItems(offset) {
-  console.log(`Carregando mais itens para All Items a partir do offset ${offset}`);
-
-  // Mostrar feedback de carregamento
-  const loadMoreBtn = document.querySelector('.load-more-btn');
-  if (loadMoreBtn) {
-    loadMoreBtn.innerHTML = `
-      <div class="loading-indicator">
-        <svg class="circular" viewBox="25 25 50 50">
-          <circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="4" stroke-miterlimit="10"/>
-        </svg>
-        <p>Carregando mais fotos exquisitas...</p>
-      </div>
-    `;
-  }
-
-  // Parâmetro para evitar cache
-  const cacheParam = `&nocache=${Date.now()}`;
-
-  // Fazer requisição para obter mais fotos com flag para forçar retorno
-  fetch(`/api/photos?customer_code=${currentCustomerCode}&offset=${offset}&limit=50${cacheParam}&force_all=true`)
-    .then(response => response.json())
-    .then(newPhotos => {
-      if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
-        if (loadMoreBtn) {
-          // Se não recebemos mais fotos, sugerir carregar todas
-          loadMoreBtn.innerHTML = `
-            <button class="btn btn-gold" onclick="loadAllPhotosFromAPI()">
-              Carregar Galeria Completa
-            </button>
-          `;
-        }
-        return;
-      }
-
-      console.log(`Carregadas mais ${newPhotos.length} fotos para All Items`);
-
-      // Registrar novas fotos
-      newPhotos.forEach(photo => {
-        photoRegistry[photo.id] = photo;
-      });
-
-      // Adicionar ao array global
-      photos = photos.concat(newPhotos);
-
-      // Adicionar ao cache
-      const allItemsCategory = categories.find(cat => cat.isAll);
-      const allItemsId = allItemsCategory ? allItemsCategory.id : null;
-
-      if (allItemsId && categoriesLoaded[allItemsId]) {
-        categoriesLoaded[allItemsId] = categoriesLoaded[allItemsId].concat(newPhotos);
-      }
-
-      // Obter o container da seção
-      const sectionContainer = document.getElementById('category-section-main');
-      if (!sectionContainer) return;
-
-      // Criar container temporário
-      const tempContainer = document.createElement('div');
-
-      // Renderizar novas fotos no container temporário
-      renderCategoryPhotos(tempContainer, newPhotos);
-
-      // Obter todos os items do container temporário
-      const newItems = Array.from(tempContainer.children);
-
-      // Adicionar cada novo item antes do botão "carregar mais"
-      newItems.forEach(item => {
-        if (loadMoreBtn) {
-          sectionContainer.insertBefore(item, loadMoreBtn);
-        } else {
-          sectionContainer.appendChild(item);
-        }
-      });
-
-      // Atualizar botão "carregar mais"
-      if (loadMoreBtn) {
-        if (newPhotos.length >= 50) {
-          loadMoreBtn.innerHTML = `
-            <button class="btn btn-secondary" onclick="loadMoreAllItems(${offset + newPhotos.length})">
-              Carregar mais fotos
-            </button>
-          `;
-        } else {
-          loadMoreBtn.innerHTML = `
-            <div class="end-message">
-              <p>Fim da galeria. Todas as fotos foram carregadas!</p>
-            </div>
-          `;
-        }
-      }
-
-      // Atualizar botões do carrinho
-      setTimeout(updateButtonsForCartItems, 100);
-    })
-    .catch(error => {
-      console.error(`Erro ao carregar mais fotos para All Items:`, error);
-      if (loadMoreBtn) {
-        loadMoreBtn.innerHTML = `
-          <button class="btn btn-danger">
-            Erro ao carregar mais fotos
-          </button>
-          <button class="btn btn-gold" onclick="loadAllPhotosFromAPI()">
-            Tentar Carregar Galeria Completa
-          </button>
-        `;
-      }
-    });
-}
 
 // Nova função para carregar todas as fotos diretamente das categorias
 function loadAllPhotosFromAPI() {
@@ -830,7 +621,7 @@ function loadAllPhotosFromAPI() {
   processNextCategory(0);
 }
 
-// Função para renderizar fotos agrupadas por categoria
+// Função para renderizar fotos agrupadas por categoria - VERSÃO CORRIGIDA
 function renderPhotosByCategory(photosByCategory) {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = '';
@@ -887,19 +678,102 @@ function renderPhotosByCategory(photosByCategory) {
     const sectionContainer = document.createElement('div');
     sectionContainer.id = `category-section-${category.name.replace(/\s+/g, '-').toLowerCase()}`;
     sectionContainer.className = 'category-section';
-    sectionContainer.style.display = 'grid';
-    sectionContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
-    sectionContainer.style.gap = '30px';
-    sectionContainer.style.width = '100%';
-    sectionContainer.style.marginBottom = '40px';
+    
+    // APLICAR: Estilos de grid com força
+    sectionContainer.style.cssText = `
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+      gap: 30px !important;
+      width: 100% !important;
+      margin-bottom: 40px !important;
+      box-sizing: border-box !important;
+    `;
+    
     contentDiv.appendChild(sectionContainer);
 
-    // Renderizar fotos desta categoria
-    renderCategoryPhotos(sectionContainer, category.photos);
+    // MODIFICADO: Renderizar fotos desta categoria com novo layout
+    renderCategoryPhotosNewLayout(sectionContainer, category.photos);
   });
 
   // Atualizar botões do carrinho
   setTimeout(updateButtonsForCartItems, 100);
+}
+
+// NOVA FUNÇÃO: Renderizar fotos com o novo layout (sem mostrar nome do arquivo)
+function renderCategoryPhotosNewLayout(container, photos) {
+  if (!photos || photos.length === 0) {
+    if (container) {
+      container.style.display = "none";
+    }
+    return;
+  }
+  
+  // Aplicar estilos de grid de forma mais agressiva
+  if (container) {
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+    container.style.gap = '30px';
+    container.style.width = '100%';
+    container.style.maxWidth = '100%';
+    container.style.boxSizing = 'border-box';
+    container.classList.add('category-section');
+    container.setAttribute('data-grid-applied', 'true');
+  }
+  
+  let html = '';
+  
+  // Adicionar cada foto com o NOVO LAYOUT
+  photos.forEach((photo, index) => {
+    const alreadyAdded = cartIds.includes(photo.id);
+    const delay = (index % 10) * 0.05;
+    
+    // Format price if available (agora será usado na parte inferior)
+    let priceText = '';
+    if (photo.price !== undefined) {
+      const formattedPrice = `$${parseFloat(photo.price).toFixed(2)}`;
+      priceText = formattedPrice;
+    }
+
+    // NOVA ESTRUTURA: Sem nome do arquivo, com preço ao lado do botão
+    html += `
+      <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)" 
+           style="animation: fadeIn 0.5s ease-out ${delay}s both; width: 100% !important; max-width: 100% !important;">
+        <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy" 
+             style="width: 100%; height: auto;"
+             onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
+        <div class="photo-info">
+          <div class="photo-actions-container">
+            <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
+              id="button-${photo.id}"
+              onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
+              ${alreadyAdded ? 'Remove' : 'Select'}
+            </button>
+            ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  // Aplicar o HTML
+  container.innerHTML = html;
+  
+  // Verificação final: Forçar recálculo do layout
+  setTimeout(() => {
+    const computedStyle = window.getComputedStyle(container);
+    console.log('Container grid check:', {
+      display: computedStyle.display,
+      gridTemplateColumns: computedStyle.gridTemplateColumns,
+      width: computedStyle.width,
+      photosCount: photos.length
+    });
+    
+    // Se o grid não foi aplicado, tentar novamente
+    if (computedStyle.display !== 'grid') {
+      console.warn('Grid não aplicado, reforçando...');
+      container.style.cssText += 'display: grid !important;';
+    }
+  }, 50);
 }
 
 // Função para melhorar o comportamento do sidebar sticky
@@ -995,4 +869,126 @@ function setupCategorySearch() {
       noResultsMsg.style.display = 'none';
     }
   });
+}
+
+// NOVA FUNÇÃO: Carregar mais fotos para uma categoria específica
+function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
+  const button = event.target;
+  const originalText = button.textContent;
+  
+  // Mostrar loading
+  button.textContent = 'Loading...';
+  button.disabled = true;
+  
+  fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
+    .then(response => response.json())
+    .then(newPhotos => {
+      if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
+        // Não há mais fotos
+        button.parentElement.innerHTML = `
+          <div class="end-message">
+            <p>✨ That's all photos in this category!</p>
+          </div>
+        `;
+        return;
+      }
+      
+      console.log(`Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
+      
+      // Atualizar cache
+      const categoryCache = categoryPhotoCache[categoryId];
+      if (categoryCache) {
+        categoryCache.photos = categoryCache.photos.concat(newPhotos);
+        categoryCache.totalLoaded += newPhotos.length;
+        categoryCache.hasMore = newPhotos.length >= batchSize;
+      }
+      
+      // Registrar novas fotos
+      newPhotos.forEach(photo => {
+        photoRegistry[photo.id] = photo;
+        photos.push(photo);
+      });
+      
+      // Encontrar container da categoria
+      const sectionContainer = document.getElementById('category-section-main');
+      const loadMoreBtn = sectionContainer.querySelector('.load-more-btn');
+      
+      // Adicionar novas fotos antes do botão
+      newPhotos.forEach((photo, index) => {
+        const alreadyAdded = cartIds.includes(photo.id);
+        const delay = (index % 10) * 0.05;
+        
+        let priceText = '';
+        if (photo.price !== undefined) {
+          const formattedPrice = `$${parseFloat(photo.price).toFixed(2)}`;
+          priceText = formattedPrice;
+        }
+
+        const photoDiv = document.createElement('div');
+        photoDiv.className = 'photo-item';
+        photoDiv.id = `photo-${photo.id}`;
+        photoDiv.style.animation = `fadeIn 0.5s ease-out ${delay}s both`;
+        photoDiv.onclick = () => openLightboxById(photo.id, false);
+        
+        photoDiv.innerHTML = `
+          <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy" style="width: 100%; height: auto;">
+          <div class="photo-info">
+            <div class="photo-actions-container">
+              <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
+                id="button-${photo.id}"
+                onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
+                ${alreadyAdded ? 'Remove' : 'Select'}
+              </button>
+              ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
+            </div>
+          </div>
+        `;
+        
+        sectionContainer.insertBefore(photoDiv, loadMoreBtn);
+      });
+      
+      // Atualizar botão ou remover se não há mais fotos
+      if (categoryCache && categoryCache.hasMore) {
+        // Calcular próximo batch
+        const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+        let totalPhotos = categoryCache.totalLoaded + 50; // Estimativa
+        
+        if (categoryItem) {
+          const text = categoryItem.textContent;
+          const match = text.match(/\((\d+)\)/);
+          if (match) {
+            totalPhotos = parseInt(match[1]);
+          }
+        }
+        
+        const remainingPhotos = Math.max(0, totalPhotos - categoryCache.totalLoaded);
+        const nextBatchSize = Math.min(30, remainingPhotos);
+        
+        if (remainingPhotos > 0) {
+          button.textContent = `More +${nextBatchSize} photos`;
+          button.disabled = false;
+          button.onclick = () => loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
+        } else {
+          button.parentElement.innerHTML = `
+            <div class="end-message">
+              <p>✨ That's all photos in this category!</p>
+            </div>
+          `;
+        }
+      } else {
+        button.parentElement.innerHTML = `
+          <div class="end-message">
+            <p>✨ That's all photos in this category!</p>
+          </div>
+        `;
+      }
+      
+      // Atualizar botões do carrinho
+      updateButtonsForCartItems();
+    })
+    .catch(error => {
+      console.error('Error loading more photos:', error);
+      button.textContent = originalText;
+      button.disabled = false;
+    });
 }

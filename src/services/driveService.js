@@ -165,13 +165,6 @@ async function getFolderStructure(isAdmin = false, useLeafFolders = true) {
     
     let categories = [];
     
-    // Adicionar categoria "Todos"
-    categories.push({
-      id: FOLDER_ID,
-      name: "All Items",
-      isAll: true
-    });
-    
     // Explicitly define admin-only folders - make sure spelling exactly matches folder names
     const adminOnlyFolders = ["Sold", "Waiting Payment"];
     

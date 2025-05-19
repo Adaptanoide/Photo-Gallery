@@ -396,24 +396,16 @@ exports.getClientInitialData = async (req, res) => {
     // Aguardar previews
     await Promise.all(previewPromises);
     
-    // Adicionar categoria All Items
-    const categories = [
-      {
-        id: FOLDER_ID,
-        name: "All Items",
-        isAll: true,
-        isLeaf: false
-      },
-      ...allowedCategories.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        path: cat.path || [],
-        fullPath: cat.fullPath || cat.name,
-        isAll: false,
-        isLeaf: true,
-        fileCount: cat.fileCount
-      }))
-    ];
+    // Retornar apenas as categorias específicas
+    const categories = allowedCategories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      path: cat.path || [],
+      fullPath: cat.fullPath || cat.name,
+      isAll: false,
+      isLeaf: true,
+      fileCount: cat.fileCount
+    }));
     
     console.log(`Total de ${categories.length} categorias sendo retornadas ao cliente`);
     

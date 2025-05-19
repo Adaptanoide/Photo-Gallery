@@ -1,4 +1,7 @@
 // lightbox.js
+let currentCategoryIndex = 0; // Índice da categoria atual
+let isTransitioningCategory = false; // Flag para evitar múltiplas transições
+
 // Nova função para abrir o lightbox por ID em vez de índice
 function openLightboxById(photoId, fromCart = false) {
   // Verificar se o array de fotos existe
@@ -96,16 +99,21 @@ function openLightbox(index, fromCart = false) {
   zoomIndicator.style.display = 'none';
   imgContainer.appendChild(zoomIndicator);
   
-  // Configure other information (price, name, etc)
-  let nameText = photo.name;
-  
-  // Add price information if available
+  // Configure other information (category name, price, etc)
+  let nameText = '';
+
+  // NOVA LÓGICA: Encontrar o nome da categoria a partir do foto.folderId
+  const categoryName = getCategoryNameFromFolderId(photo.folderId || photo.categoryId);
+  nameText = categoryName || 'Unknown Category';
+
+  // Configurar o nome da categoria
+  document.getElementById('lightbox-name').innerHTML = nameText;
+
+  // Add price information if available (agora separadamente com estilo preto)
   if (photo.price !== undefined) {
     const formattedPrice = `$${parseFloat(photo.price).toFixed(2)}`;
-    nameText += ` - ${formattedPrice}`;
+    document.getElementById('lightbox-name').innerHTML = nameText + ` <span class="lightbox-price">${formattedPrice}</span>`;
   }
-  
-  document.getElementById('lightbox-name').textContent = nameText;
   
   // Configure add/remove button
   const addBtn = document.getElementById('lightbox-add-btn');
@@ -221,24 +229,6 @@ function showLoadMoreNotification(remaining) {
     notification.style.opacity = '0';
     setTimeout(() => notification.remove(), 500);
   }, 3000);
-}
-
-function showEndOfCategoryNotification() {
-  const notification = document.createElement('div');
-  notification.className = 'lightbox-notification end-notification';
-  notification.innerHTML = `
-    <div class="notification-content">
-      <span>Fim da categoria. Deseja ver sua seleção?</span>
-      <button class="btn btn-sm btn-gold" onclick="returnToCart()">Ver Seleção</button>
-    </div>
-  `;
-  document.querySelector('.lightbox-content').appendChild(notification);
-  
-  // Remover após alguns segundos
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    setTimeout(() => notification.remove(), 500);
-  }, 8000);
 }
 
 // Função para pré-carregar imagens adjacentes
@@ -508,6 +498,12 @@ function closeLightbox() {
     });
   }
   
+  // Limpar flags de transição
+  isTransitioningCategory = false;
+  
+  // Remover qualquer overlay de navegação
+  removeNavigationOverlay();
+  
   // Esconder o lightbox
   document.getElementById('lightbox').style.display = 'none';
   
@@ -532,10 +528,14 @@ function closeLightbox() {
   viewingFromCart = false;
 }
 
-// Modificado para usar IDs para navegação entre fotos
 function navigatePhotos(direction) {
   // Verificação de segurança
   if (currentPhotoIndex < 0 || currentPhotoIndex >= photos.length) {
+    return;
+  }
+  
+  // Se estiver transitioning, ignorar navegação
+  if (isTransitioningCategory) {
     return;
   }
   
@@ -553,12 +553,34 @@ function navigatePhotos(direction) {
         openLightbox(newIndex, true);
       }
     }
-  } else {
-    // Normal gallery navigation
-    const newIndex = currentPhotoIndex + direction;
-    if (newIndex >= 0 && newIndex < photos.length) {
-      openLightbox(newIndex, false);
-    }
+    return;
+  }
+  
+  // Normal gallery navigation
+  const newIndex = currentPhotoIndex + direction;
+  
+  // NOVO: Verificar se precisa pré-carregar mais fotos (apenas indo para frente)
+  if (direction > 0 && newIndex >= photos.length - 5) {
+    preloadMorePhotosInLightbox();
+  }
+  
+  // Verificar se chegamos ao final de uma categoria (navegando para frente)
+  if (direction > 0 && newIndex >= photos.length) {
+    // Chegamos ao final da categoria atual
+    showNextCategoryOption();
+    return;
+  }
+  
+  // Verificar se chegamos ao início de uma categoria (navegando para trás)
+  if (direction < 0 && newIndex < 0) {
+    // Chegamos ao início da categoria atual
+    showPreviousCategoryOption();
+    return;
+  }
+  
+  // Navegação normal dentro da categoria
+  if (newIndex >= 0 && newIndex < photos.length) {
+    openLightbox(newIndex, false);
   }
   
   // Verificar se precisamos carregar mais fotos
@@ -739,20 +761,395 @@ function showLoadMoreNotification(remaining) {
   }, 3000);
 }
 
-function showEndOfCategoryNotification() {
-  const notification = document.createElement('div');
-  notification.className = 'lightbox-notification end-notification';
-  notification.innerHTML = `
-    <div class="notification-content">
-      <span>Fim da categoria. Deseja ver sua seleção?</span>
-      <button class="btn btn-sm btn-gold" onclick="returnToCart()">Ver Seleção</button>
+// Função para obter o nome da categoria a partir do folderId
+function getCategoryNameFromFolderId(folderId) {
+  // Verificar se temos as categorias carregadas globalmente
+  if (window.categories && Array.isArray(window.categories)) {
+    const category = window.categories.find(cat => cat.id === folderId);
+    if (category) {
+      return category.name;
+    }
+  }
+  
+  // Fallback: verificar se estamos numa categoria específica
+  if (window.activeCategory) {
+    // Buscar nos elementos da sidebar
+    const activeCategoryElement = document.querySelector('.category-item.active');
+    if (activeCategoryElement) {
+      // Extrair nome da categoria (remover contadores entre parênteses)
+      const fullText = activeCategoryElement.textContent.trim();
+      return fullText.replace(/\s*\(\d+\)\s*$/, '');
+    }
+  }
+  
+  // Se não conseguir encontrar, retornar um nome padrão
+  return 'Current Category';
+}
+
+// Mostrar opção para ir para próxima categoria
+function showNextCategoryOption() {
+  // Remover qualquer overlay existente
+  removeNavigationOverlay();
+  
+  // Encontrar a próxima categoria
+  const nextCategory = getNextCategory();
+  
+  if (!nextCategory) {
+    // Não há próxima categoria
+    showEndOfGalleryMessage();
+    return;
+  }
+  
+  // Criar overlay para próxima categoria
+  const overlay = document.createElement('div');
+  overlay.className = 'category-navigation-overlay';
+  overlay.innerHTML = `
+    <div class="category-nav-content">
+      <div class="category-nav-icon">→</div>
+      <h3>End of Category</h3>
+      <p>Continue to <strong>${nextCategory.name}</strong>?</p>
+      <div class="category-nav-buttons">
+        <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Stay Here</button>
+        <button class="btn btn-gold" onclick="navigateToNextCategory()">Next Category</button>
+      </div>
     </div>
   `;
-  document.querySelector('.lightbox-content').appendChild(notification);
   
-  // Remover após alguns segundos
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    setTimeout(() => notification.remove(), 500);
-  }, 8000);
+  document.querySelector('.lightbox-content').appendChild(overlay);
+}
+
+// Mostrar opção para ir para categoria anterior
+function showPreviousCategoryOption() {
+  // Remover qualquer overlay existente
+  removeNavigationOverlay();
+  
+  // Encontrar a categoria anterior
+  const previousCategory = getPreviousCategory();
+  
+  if (!previousCategory) {
+    // Não há categoria anterior
+    showBeginningOfGalleryMessage();
+    return;
+  }
+  
+  // Criar overlay para categoria anterior
+  const overlay = document.createElement('div');
+  overlay.className = 'category-navigation-overlay';
+  overlay.innerHTML = `
+    <div class="category-nav-content">
+      <div class="category-nav-icon">←</div>
+      <h3>Beginning of Category</h3>
+      <p>Go back to <strong>${previousCategory.name}</strong>?</p>
+      <div class="category-nav-buttons">
+        <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Stay Here</button>
+        <button class="btn btn-gold" onclick="navigateToPreviousCategory()">Previous Category</button>
+      </div>
+    </div>
+  `;
+  
+  document.querySelector('.lightbox-content').appendChild(overlay);
+}
+
+// Obter próxima categoria - VERSÃO COM MAIS LOGS
+function getNextCategory() {
+  if (!window.categories || !Array.isArray(window.categories)) {
+    console.log('No categories available in window.categories');
+    return null;
+  }
+  
+  // Filtrar apenas categorias específicas (não "All Items")
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  console.log(`Found ${specificCategories.length} specific categories`);
+  
+  // Encontrar índice da categoria atual
+  if (activeCategory) {
+    currentCategoryIndex = specificCategories.findIndex(cat => cat.id === activeCategory);
+    console.log(`Current category index: ${currentCategoryIndex} (ID: ${activeCategory})`);
+  }
+  
+  // Obter próxima categoria
+  const nextIndex = currentCategoryIndex + 1;
+  console.log(`Next category index would be: ${nextIndex}`);
+  
+  if (nextIndex < specificCategories.length) {
+    const nextCategory = specificCategories[nextIndex];
+    console.log(`Next category found: ${nextCategory.name} (ID: ${nextCategory.id})`);
+    return nextCategory;
+  }
+  
+  console.log('No next category available');
+  return null; // Não há próxima categoria
+}
+
+// Obter categoria anterior
+function getPreviousCategory() {
+  if (!window.categories || !Array.isArray(window.categories)) {
+    return null;
+  }
+  
+  // Filtrar apenas categorias específicas (não "All Items")
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  
+  // Encontrar índice da categoria atual
+  if (activeCategory) {
+    currentCategoryIndex = specificCategories.findIndex(cat => cat.id === activeCategory);
+  }
+  
+  // Obter categoria anterior
+  const previousIndex = currentCategoryIndex - 1;
+  if (previousIndex >= 0) {
+    return specificCategories[previousIndex];
+  }
+  
+  return null; // Não há categoria anterior
+}
+
+// Navegar para próxima categoria - VERSÃO COM MAIS LOGS
+function navigateToNextCategory() {
+  const nextCategory = getNextCategory();
+  if (!nextCategory) {
+    console.log('No next category found');
+    return;
+  }
+  
+  console.log(`Navigating to next category: ${nextCategory.name} (ID: ${nextCategory.id})`);
+  
+  isTransitioningCategory = true;
+  removeNavigationOverlay();
+  
+  // Mostrar loader temporário
+  showCategoryTransitionLoader('Loading next category...');
+  
+  // Carregar próxima categoria
+  loadCategoryInLightbox(nextCategory);
+}
+
+// Navegar para categoria anterior
+function navigateToPreviousCategory() {
+  const previousCategory = getPreviousCategory();
+  if (!previousCategory) return;
+  
+  isTransitioningCategory = true;
+  removeNavigationOverlay();
+  
+  // Mostrar loader temporário
+  showCategoryTransitionLoader('Loading previous category...');
+  
+  // Carregar categoria anterior
+  loadCategoryInLightbox(previousCategory);
+}
+
+// Carregar categoria no lightbox
+function loadCategoryInLightbox(category) {
+  // Atualizar categoria ativa
+  activeCategory = category.id;
+  
+  // Atualizar sidebar
+  if (typeof highlightActiveCategory === 'function') {
+    highlightActiveCategory(category.id);
+  }
+  
+  // Verificar se já temos as fotos desta categoria em cache
+  if (categoryPhotoCache && categoryPhotoCache[category.id]) {
+    console.log(`Using cached photos for category: ${category.name}`);
+    
+    // Usar fotos do cache
+    const categoryPhotos = categoryPhotoCache[category.id];
+    
+    if (categoryPhotos.length === 0) {
+      showToast(`Category "${category.name}" has no photos`, 'info');
+      isTransitioningCategory = false;
+      removeNavigationOverlay();
+      return;
+    }
+    
+    // Resetar o array de fotos atual para a nova categoria
+    photos = [];
+    
+    // Atualizar registro de fotos
+    categoryPhotos.forEach(photo => {
+      photoRegistry[photo.id] = photo;
+      photos.push(photo);
+    });
+    
+    // Ir para primeira foto da nova categoria
+    currentPhotoIndex = 0;
+    openLightbox(currentPhotoIndex, false);
+    
+    isTransitioningCategory = false;
+    removeNavigationOverlay();
+    return;
+  }
+  
+  // Carregar fotos da categoria via API - SEMPRE com offset=0 para nova categoria
+  fetch(`/api/photos?category_id=${category.id}&customer_code=${currentCustomerCode}&offset=0&limit=50`)
+    .then(response => response.json())
+    .then(data => {
+      removeNavigationOverlay(); // Remover loader
+      
+      // CORREÇÃO: Tratar tanto array direto quanto objeto com propriedade photos
+      let categoryPhotos;
+      if (Array.isArray(data)) {
+        categoryPhotos = data;
+      } else if (data && Array.isArray(data.photos)) {
+        categoryPhotos = data.photos;
+      } else if (data && data.success && Array.isArray(data.data)) {
+        categoryPhotos = data.data;
+      } else {
+        categoryPhotos = [];
+      }
+      
+      if (!Array.isArray(categoryPhotos) || categoryPhotos.length === 0) {
+        showToast(`Category "${category.name}" has no photos`, 'info');
+        isTransitioningCategory = false;
+        return;
+      }
+      
+      console.log(`Loaded ${categoryPhotos.length} photos from category: ${category.name}`);
+      
+      // Armazenar em cache
+      if (!categoryPhotoCache) categoryPhotoCache = {};
+      categoryPhotoCache[category.id] = categoryPhotos;
+      
+      // Resetar o array de fotos atual para a nova categoria
+      photos = [];
+      
+      // Atualizar registro de fotos
+      categoryPhotos.forEach(photo => {
+        photoRegistry[photo.id] = photo;
+        photos.push(photo);
+      });
+      
+      // Ir para primeira foto da nova categoria
+      currentPhotoIndex = 0;
+      openLightbox(currentPhotoIndex, false);
+      
+      isTransitioningCategory = false;
+    })
+    .catch(error => {
+      console.error(`Error loading category ${category.name}:`, error);
+      removeNavigationOverlay();
+      showToast(`Error loading category "${category.name}"`, 'error');
+      isTransitioningCategory = false;
+    });
+}
+
+// Mostrar loader durante transição de categoria
+function showCategoryTransitionLoader(message) {
+  removeNavigationOverlay(); // Remover overlay existente primeiro
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'category-navigation-overlay transition-loader';
+  overlay.innerHTML = `
+    <div class="category-nav-content">
+      <div class="loading-spinner"></div>
+      <p>${message}</p>
+    </div>
+  `;
+  
+  document.querySelector('.lightbox-content').appendChild(overlay);
+}
+
+// Remover overlay de navegação
+function removeNavigationOverlay() {
+  const overlay = document.querySelector('.category-navigation-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
+// Mostrar mensagem de final da galeria
+function showEndOfGalleryMessage() {
+  const overlay = document.createElement('div');
+  overlay.className = 'category-navigation-overlay';
+  overlay.innerHTML = `
+    <div class="category-nav-content">
+      <div class="category-nav-icon">🏁</div>
+      <h3>End of Gallery</h3>
+      <p>You've reached the end of all categories!</p>
+      <div class="category-nav-buttons">
+        <button class="btn btn-gold" onclick="returnToCart()">View Selection</button>
+        <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Close</button>
+      </div>
+    </div>
+  `;
+  
+  document.querySelector('.lightbox-content').appendChild(overlay);
+}
+
+// Mostrar mensagem de início da galeria
+function showBeginningOfGalleryMessage() {
+  const overlay = document.createElement('div');
+  overlay.className = 'category-navigation-overlay';
+  overlay.innerHTML = `
+    <div class="category-nav-content">
+      <div class="category-nav-icon">🏁</div>
+      <h3>Beginning of Gallery</h3>
+      <p>You're at the beginning of all categories!</p>
+      <div class="category-nav-buttons">
+        <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Close</button>
+      </div>
+    </div>
+  `;
+  
+  document.querySelector('.lightbox-content').appendChild(overlay);
+}
+
+// NOVA FUNÇÃO: Pré-carregar mais fotos automaticamente no lightbox (versão silenciosa)
+function preloadMorePhotosInLightbox() {
+  // Evitar múltiplas requisições simultâneas
+  if (window.isPreloadingLightbox) return;
+  window.isPreloadingLightbox = true;
+  
+  // Identificar categoria atual
+  const currentPhoto = photos[currentPhotoIndex];
+  if (!currentPhoto || !currentPhoto.folderId) {
+    window.isPreloadingLightbox = false;
+    return;
+  }
+  
+  const categoryId = currentPhoto.folderId;
+  
+  // Verificar cache para saber quantas fotos já carregamos
+  const categoryCache = categoryPhotoCache[categoryId];
+  if (!categoryCache) {
+    window.isPreloadingLightbox = false;
+    return;
+  }
+  
+  const currentOffset = categoryCache.totalLoaded || photos.length;
+  
+  console.log(`[Lightbox] Pré-carregando mais fotos silenciosamente... offset: ${currentOffset}`);
+  
+  // Carregar mais 30 fotos (SEM avisos visuais)
+  fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=30`)
+    .then(response => response.json())
+    .then(newPhotos => {
+      if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
+        console.log(`[Lightbox] Não há mais fotos para carregar`);
+        window.isPreloadingLightbox = false;
+        return;
+      }
+      
+      console.log(`[Lightbox] Pré-carregadas ${newPhotos.length} fotos adicionais silenciosamente`);
+      
+      // Atualizar cache
+      categoryCache.photos = categoryCache.photos.concat(newPhotos);
+      categoryCache.totalLoaded += newPhotos.length;
+      categoryCache.hasMore = newPhotos.length >= 30;
+      
+      // Atualizar arrays globais
+      newPhotos.forEach(photo => {
+        photoRegistry[photo.id] = photo;
+      });
+      photos = photos.concat(newPhotos);
+      
+      window.isPreloadingLightbox = false;
+      
+      console.log(`[Lightbox] Total de fotos agora: ${photos.length}`);
+    })
+    .catch(error => {
+      console.error('[Lightbox] Erro ao pré-carregar fotos:', error);
+      window.isPreloadingLightbox = false;
+    });
 }

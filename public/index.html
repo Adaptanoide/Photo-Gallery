@@ -70,9 +70,10 @@
 
 <body>
   <div class="container">
-    <div class="header">
-      <h1>Welcome to Our Gallery</h1>
-    </div>
+    <!-- Botão de ajuda movido para position fixed -->
+    <button id="help-button" class="help-button" onclick="showTutorial()" title="How to use this gallery">
+      <span class="help-icon">?</span>
+    </button>
 
     <!-- Nova estrutura com menu lateral e conteúdo -->
     <div class="catalog-layout">
@@ -90,11 +91,6 @@
 
       <!-- Conteúdo principal -->
       <div class="content-area">
-        <!-- Indicador de categoria atual -->
-        <div id="current-category-header" class="current-category-header">
-          <h2>All Items</h2>
-        </div>
-        
         <!-- Área de conteúdo (galeria) -->
         <div id="content" class="gallery">
           <div class="empty-message">Loading our exquisite collection...</div>

@@ -2,16 +2,17 @@
 /* Estilos para os containers e wrappers do site */
 
 .container {
-  max-width: 100%; /* MUDANÇA: De 1400px para 100% */
-  margin: 0; /* MUDANÇA: Removendo margin auto */
-  padding: 40px 0; /* MUDANÇA: Removendo padding lateral */
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
 .header {
   margin-bottom: 40px;
   text-align: center;
   position: relative;
-  padding: 0 20px; /* ADIÇÃO: Padding só no header */
+  padding: 0 20px;
 }
 
 .header h1 {
@@ -64,10 +65,14 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 20px 0; /* MUDANÇA: Removendo padding lateral em mobile */
+    padding: 0;
   }
   
   .header {
-    padding: 0 15px; /* Padding menor em mobile */
+    padding: 0 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.8rem;
   }
 }

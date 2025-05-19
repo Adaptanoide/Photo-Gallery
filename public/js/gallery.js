@@ -157,203 +157,34 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// NOVA FUNÇÃO: Carregamento otimizado com dados iniciais
-function loadPhotos(categoryId = null) {
+// NOVA FUNÇÃO: Carregamento inicial com tutorial
+function initializeGallery() {
   showLoader();
   
-  // Se o cliente não estiver logado, não tente carregar fotos
+  // Se o cliente não estiver logado, não tente carregar nada
   if (!currentCustomerCode) {
     hideLoader();
     return;
   }
   
-  // Limpamos a galeria e mostramos mensagem de carregamento
+  // Limpar a galeria e mostrar tutorial inicial
   const contentDiv = document.getElementById('content');
-  // CORREÇÃO: Manter a classe gallery em vez de content-vertical
   contentDiv.className = 'gallery';
-  contentDiv.innerHTML = '<div class="empty-message">Loading our exquisite collection...</div>';
   
-  console.log("Loading initial data for customer: " + currentCustomerCode);
+  // Mostrar tutorial em vez da mensagem simples
+  showTutorial();
   
-  // ADICIONADO: Limpar cache para garantir dados atualizados
-  fetch('/api/client/clear-cache', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  }).catch(err => console.log("Erro ao limpar cache (não crítico):", err));
+  console.log("Gallery initialized with tutorial - awaiting category selection");
   
-  // NOVA CHAMADA API: Obter dados iniciais do cliente
-  fetch(`/api/client/initial-data?code=${currentCustomerCode}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Armazenar dados
-        categories = data.categories || [];
-        console.log(`Loaded ${categories.length} categories`);
-        
-        // Esvaziar a área de conteúdo e preparar para renderização
-        contentDiv.innerHTML = '';
-        
-        // Verificar se temos categorias
-        if (categories.length <= 1) { // Apenas All Items
-          contentDiv.innerHTML = '<div class="empty-message">No categories are available for your account. Please contact support.</div>';
-          hideLoader();
-          return;
-        }
-        
-        // CORREÇÃO: Manter a classe gallery e aplicar estilos que respeitam o layout
-        contentDiv.className = 'gallery';
-        
-        // AJUSTE: Adicionar estilos com !important para forçar o layout correto
-        const styleElement = document.createElement('style');
-        styleElement.textContent = `
-          /* Garantir que a galeria tenha o layout correto */
-          .gallery {
-            display: grid !important;
-            grid-template-columns: 1fr !important;
-            gap: 0 !important;
-            width: 100% !important;
-          }
-          
-          /* Garantir que as seções de categoria tenham o layout correto */
-          .category-section {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-            gap: 30px !important;
-            width: 100% !important;
-            margin-bottom: 40px !important;
-          }
-          
-          /* Garantir que os títulos de categoria ocupem toda a largura */
-          .category-title-container {
-            grid-column: 1 / -1 !important;
-            width: 100% !important;
-            margin: 40px 0 20px 0 !important;
-          }
-          
-          /* Garantir que a primeira categoria não tenha margem superior */
-          .category-title-container:first-child {
-            margin-top: 0 !important;
-          }
-          
-          @media (max-width: 768px) {
-            .category-section {
-              grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
-              gap: 15px !important;
-            }
-          }
-        `;
-        document.head.appendChild(styleElement);
-        
-        // Criar indicador de progresso
-        const progressIndicator = document.createElement('div');
-        progressIndicator.className = 'progress-indicator';
-        progressIndicator.id = 'loading-progress';
-        document.body.appendChild(progressIndicator);
-        
-        // Renderizar categorias - primeiro as que têm previews, depois placeholders
-        const previews = data.previews || {};
-        const previewedCategories = Object.keys(previews);
-        
-        // Marcar categorias já carregadas
-        previewedCategories.forEach(catId => {
-          loadedCategories[catId] = true;
-        });
-        
-        // FILTRO ADICIONAL: Pular categorias sem fotos logo no início
-        // Processar categorias específicas (não All Items) com arquivos
-        const specificCategories = categories.filter(cat => 
-          !cat.isAll && 
-          (cat.fileCount > 0 || 
-           (previews[cat.id] && previews[cat.id].length > 0))
-        );
-        
-        console.log(`Filtered to ${specificCategories.length} non-empty categories`);
-        
-        // Limpar photoRegistry e array global de fotos
-        photoRegistry = {};
-        photos = [];
-        allCategoriesLoaded = false; // Reset da flag
-        
-        // Renderizar categorias com previews primeiro
-        specificCategories.forEach(category => {
-          const categoryId = category.id;
-          const categoryPhotos = previews[categoryId] || [];
-          const hasPreview = categoryPhotos.length > 0;
-          
-          // Criar título da categoria
-          const categoryContainer = document.createElement('div');
-          categoryContainer.style.width = '100%';
-          categoryContainer.style.gridColumn = '1 / -1';
-          
-          categoryContainer.innerHTML = `
-            <div class="category-title-container">
-              <h2>${category.name}</h2>
-              <div class="category-divider"></div>
-            </div>
-            <div id="category-section-${categoryId}" class="category-section"></div>
-          `;
-          
-          contentDiv.appendChild(categoryContainer);
-          
-          // Obter o contêiner da seção
-          const sectionContainer = document.getElementById(`category-section-${categoryId}`);
-          
-          if (sectionContainer) {
-            // CORREÇÃO: Aplicar estilos diretamente para garantir grid
-            sectionContainer.style.display = 'grid';
-            sectionContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
-            sectionContainer.style.gap = '30px';
-            sectionContainer.style.width = '100%';
-            
-            if (hasPreview) {
-              // Registrar fotos no índice global
-              categoryPhotos.forEach(photo => {
-                photoRegistry[photo.id] = photo;
-              });
-              
-              // Renderizar fotos disponíveis
-              renderCategoryPhotos(sectionContainer, categoryPhotos);
-              
-              // Adicionar estas fotos ao array global
-              photos = photos.concat(categoryPhotos);
-            } else {
-              // Renderizar esqueletos para categorias sem previews
-              renderSkeletons(sectionContainer);
-            }
-          }
-        });
-        
-        // Ocultar o loader principal - a página já está utilizável
-        hideLoader();
-        
-        // MODIFICADO: Usar carregamento em lotes em vez do original
-        loadCategoriesInBatches(specificCategories, previews);
-        
-        // Atualizar botões para refletir o estado do carrinho
-        setTimeout(updateButtonsForCartItems, 100);
-        
-        // ADICIONADO: Verificar categorias vazias imediatamente e após um curto atraso
-        hideEmptyCategories();
-        setTimeout(hideEmptyCategories, 500);
-      } else {
-        contentDiv.innerHTML = `<div class="empty-message">${data.message || 'Error loading data. Please try again.'}</div>`;
-        hideLoader();
-      }
-    })
-    .catch(error => {
-      console.error("Error loading initial data:", error);
-      contentDiv.innerHTML = '<div class="empty-message">Sorry, we encountered a connection error. Please try again.</div>';
-      hideLoader();
-      
-      // Remover indicador de progresso em caso de erro
-      const progressIndicator = document.getElementById('loading-progress');
-      if (progressIndicator) {
-        progressIndicator.remove();
-      }
-    });
+  // Carregar o menu de categorias
+  if (typeof loadCategoriesMenu === 'function') {
+    loadCategoriesMenu();
+  }
+  
+  hideLoader();
 }
 
-// FUNÇÃO MODIFICADA: Renderizar fotos de uma categoria com tratamento de erro
+// FUNÇÃO CORRIGIDA: Renderizar fotos de uma categoria com tratamento de erro
 function renderCategoryPhotos(container, photos) {
   if (!photos || photos.length === 0) {
     // Se não tem fotos, podemos esconder a categoria completamente
@@ -368,12 +199,21 @@ function renderCategoryPhotos(container, photos) {
     return;
   }
   
-  // CORREÇÃO: Garantir que o container tenha o estilo de grid correto
+  // CORREÇÃO CRÍTICA: Garantir que o container tenha o estilo de grid correto
   if (container) {
+    // Aplicar estilos de grid de forma mais agressiva
     container.style.display = 'grid';
     container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
     container.style.gap = '30px';
     container.style.width = '100%';
+    container.style.maxWidth = '100%';
+    container.style.boxSizing = 'border-box';
+    
+    // Adicionar classe para garantir que o CSS seja aplicado
+    container.classList.add('category-section');
+    
+    // DEBUG: Adicionar atributos para verificação
+    container.setAttribute('data-grid-applied', 'true');
   }
   
   let html = '';
@@ -383,35 +223,50 @@ function renderCategoryPhotos(container, photos) {
     const alreadyAdded = cartIds.includes(photo.id);
     const delay = (index % 10) * 0.05;
     
-    // Format price if available
-    let priceTag = '';
+    // Format price if available (agora será usado na parte inferior)
+    let priceText = '';
     if (photo.price !== undefined) {
       const formattedPrice = `$${parseFloat(photo.price).toFixed(2)}`;
-      priceTag = `<div class="price-tag">${formattedPrice}</div>`;
+      priceText = formattedPrice;
     }
-    
-    // MODIFICADO: Adicionar onerror para tratar imagens que não podem ser carregadas
+
+    // NOVA ESTRUTURA: Adicionar cada foto com o novo layout
     html += `
-      <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)" style="animation: fadeIn 0.5s ease-out ${delay}s both; width: 100%;">
-        ${priceTag}
+      <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)" 
+          style="animation: fadeIn 0.5s ease-out ${delay}s both; width: 100% !important; max-width: 100% !important;">
         <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy" 
-             onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
+            style="width: 100%; height: auto;"
+            onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
         <div class="photo-info">
-          <div class="photo-name">${photo.name}</div>
-          <div class="photo-actions">
+          <div class="photo-actions-container">
             <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
               id="button-${photo.id}"
               onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
               ${alreadyAdded ? 'Remove' : 'Select'}
             </button>
+            ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
           </div>
         </div>
       </div>
     `;
   });
   
-  // CORREÇÃO: Aplicar o HTML diretamente, sem atraso
+  // Aplicar o HTML
   container.innerHTML = html;
+  
+  // Verificação final: Aplicar grid com timeout maior e verificação única
+  setTimeout(() => {
+    if (!container || !container.parentNode) return; // Verificar se ainda existe
+    
+    const computedStyle = window.getComputedStyle(container);
+    
+    // Aplicar grid apenas se necessário, sem logs excessivos
+    if (computedStyle.display !== 'grid') {
+      container.style.display = 'grid';
+      container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+      container.style.gap = '30px';
+    }
+  }, 100); // Timeout maior para dar tempo do CSS carregar
 }
 
 // Substitua a função de animação de mensagens por esta versão mais confiável
@@ -815,7 +670,7 @@ function loadCategories(forcedAdminStatus = null) {
   allCategoriesLoaded = false; // Reset da flag
   
   // Para clientes, carregar com o novo método otimizado
-  loadPhotos();
+  initializeGallery();
 }
 
 // FUNÇÃO MODIFICADA: Find photo by ID com fallback no registro
@@ -995,6 +850,90 @@ function cleanupImageCache() {
     console.log(`Cache reduzido para ${Object.keys(photoRegistry).length} items`);
   }
 }
+
+// NOVA FUNÇÃO: Mostrar tutorial interativo (sem features-grid)
+function showTutorial() {
+  const contentDiv = document.getElementById('content');
+  
+  contentDiv.innerHTML = `
+    <div class="tutorial-container">
+      <div class="tutorial-header">
+        <h1 class="tutorial-title">Welcome to Our Gallery</h1>
+        <p class="tutorial-subtitle">Follow these simple steps to browse and select your premium leather products</p>
+      </div>
+
+      <div class="tutorial-steps">
+        <div class="tutorial-step">
+          <span class="step-number">1</span>
+          <span class="step-icon">📂</span>
+          <h3 class="step-title">Browse Categories</h3>
+          <p class="step-description">Start by selecting a category from the sidebar to view products in that collection</p>
+        </div>
+
+        <div class="tutorial-step">
+          <span class="step-number">2</span>
+          <span class="step-icon">🔍</span>
+          <h3 class="step-title">Explore Products</h3>
+          <p class="step-description">Click on any product image to view it in full size with detailed information</p>
+        </div>
+
+        <div class="tutorial-step">
+          <span class="step-number">3</span>
+          <span class="step-icon">🛒</span>
+          <h3 class="step-title">Add to Selection</h3>
+          <p class="step-description">Use the "Select" button to add products to your shopping cart</p>
+        </div>
+
+        <div class="tutorial-step">
+          <span class="step-number">4</span>
+          <span class="step-icon">✅</span>
+          <h3 class="step-title">Complete Order</h3>
+          <p class="step-description">Review your selection and submit your order with any special instructions</p>
+        </div>
+      </div>
+
+      <div class="tutorial-cta">
+        <p class="cta-text">Ready to start shopping? Choose a category to begin browsing our premium collection!</p>
+        <button class="cta-button" onclick="focusOnFirstCategory()">Get Started</button>
+      </div>
+    </div>
+  `;
+}
+
+// NOVA FUNÇÃO: Focar na primeira categoria disponível
+function focusOnFirstCategory() {
+  // Encontrar a primeira categoria disponível
+  const firstCategory = document.querySelector('.category-item:not(.active)');
+  
+  if (firstCategory) {
+    // Simular clique na primeira categoria
+    firstCategory.click();
+    
+    // Scroll suave para o topo
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    // Destacar brevemente a sidebar
+    const sidebar = document.querySelector('.category-sidebar');
+    if (sidebar) {
+      sidebar.style.transform = 'scale(1.02)';
+      sidebar.style.boxShadow = '0 8px 25px rgba(212, 175, 55, 0.3)';
+      
+      setTimeout(() => {
+        sidebar.style.transform = 'scale(1)';
+        sidebar.style.boxShadow = '2px 0 10px rgba(0, 0, 0, 0.1)';
+      }, 2000);
+    }
+  } else {
+    // Se não há categorias carregadas, mostrar toast
+    showToast('Categories are still loading, please wait a moment...', 'info');
+  }
+}
+
+// FUNÇÃO ATUALIZADA: Tornar o botão de ajuda globalmente acessível
+window.showTutorial = showTutorial;
 
 // Chamar periodicamente (a cada 5 minutos)
 setInterval(cleanupImageCache, 5 * 60 * 1000);

@@ -24,6 +24,7 @@
 @import 'modules/lightbox.css';
 @import 'modules/notification.css';
 @import 'modules/sidebar.css';
+@import 'modules/tutorial.css';
 
 /* Pages */
 @import 'pages/admin.css';

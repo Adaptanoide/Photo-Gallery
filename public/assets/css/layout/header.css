@@ -1,20 +1,21 @@
 /* Header - Sunshine Cowhides */
-/* Estilos para cabeçalho do site */
+/* Header removido para eliminar gap */
 
-.header {
+/* Manter apenas estilos para quando houver header dinâmico */
+.dynamic-header {
   margin-bottom: 40px;
   text-align: center;
   position: relative;
 }
 
-.header h1 {
+.dynamic-header h1 {
   font-size: 2.5rem;
   margin: 0;
   position: relative;
   display: inline-block;
 }
 
-.header h1:after {
+.dynamic-header h1:after {
   content: "";
   position: absolute;
   width: 60px;
@@ -26,7 +27,7 @@
 }
 
 @media (max-width: 768px) {
-  .header h1 {
+  .dynamic-header h1 {
     font-size: 1.8rem;
   }
 }

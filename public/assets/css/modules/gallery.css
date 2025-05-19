@@ -164,3 +164,71 @@
     font-size: 0.9rem;
   }
 }
+
+/* Estilo moderno para botão "More +XX photos" */
+.load-more-btn.modern {
+  padding: 30px 20px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.btn-load-more {
+  background: linear-gradient(135deg, var(--color-gold) 0%, #e9d998 100%);
+  color: var(--color-dark);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-load-more:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, #e9d998 0%, var(--color-gold) 100%);
+}
+
+.btn-load-more:active {
+  transform: translateY(0);
+}
+
+.btn-load-more:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Animação para novas fotos carregadas */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mensagem de fim de categoria */
+.end-message {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 20px 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  grid-column: 1 / -1;
+}
+
+.end-message p {
+  margin: 0;
+  color: var(--color-dark);
+  font-weight: 500;
+  font-size: 1.1rem;
+}
