@@ -2,7 +2,6 @@
 .env
 *.env
 credentials.json
-firebase-credential*.json
 
 # Dependências
 node_modules/
@@ -18,9 +17,6 @@ Thumbs.db
 
 # Outros
 .vscode/
-
-# Arquivos com configurações sensíveis
-public/js/firebase-config.js
 
 # Cache e arquivos temporários
 cache/
