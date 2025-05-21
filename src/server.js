@@ -116,7 +116,7 @@ app.use((err, req, res, next) => {
 // Conectar ao MongoDB e iniciar servidor
 connectDB()
   .then(() => {
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Servidor rodando na porta ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`📊 Status: http://localhost:${PORT}/api/status`);
@@ -143,7 +143,7 @@ connectDB()
     console.error('❌ Failed to connect to MongoDB:', err);
     console.log('🔄 Starting server without MongoDB...');
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`⚠️ Servidor rodando na porta ${PORT} (sem MongoDB)`);
       console.log(`📊 Status: http://localhost:${PORT}/api/status`);
     });
