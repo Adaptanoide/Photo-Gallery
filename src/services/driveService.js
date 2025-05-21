@@ -485,26 +485,34 @@ async function listOrderFolders(status) {
 // Obter ID da pasta raiz (Sunshine Cowhides Actual Pictures)
 async function getRootFolderId() {
   try {
-    const drive = await getDriveInstance();
+    // MODIFICAÇÃO: Usar diretamente o ID da pasta definido nas variáveis de ambiente
+    const rootFolderId = process.env.DRIVE_FOLDER_ID;
     
-    // Procurar a pasta "Sunshine Cowhides Actual Pictures" dentro da pasta "Sales"
-    const query = "name = 'Sunshine Cowhides Actual Pictures' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    
-    const response = await drive.files.list({
-      q: query,
-      fields: 'files(id, name)'
-    });
-    
-    if (response.data.files && response.data.files.length > 0) {
-      return {
-        success: true,
-        folderId: response.data.files[0].id,
-        folderName: response.data.files[0].name
-      };
-    } else {
+    if (!rootFolderId) {
       return {
         success: false,
-        message: 'Root folder "Sunshine Cowhides Actual Pictures" not found'
+        message: 'DRIVE_FOLDER_ID não encontrado nas variáveis de ambiente'
+      };
+    }
+    
+    // Verificar se a pasta existe
+    const drive = await getDriveInstance();
+    try {
+      const folder = await drive.files.get({
+        fileId: rootFolderId,
+        fields: 'id, name'
+      });
+      
+      return {
+        success: true,
+        folderId: rootFolderId,
+        folderName: folder.data.name
+      };
+    } catch (error) {
+      console.error('Erro ao verificar pasta raiz:', error);
+      return {
+        success: false,
+        message: `Pasta raiz com ID ${rootFolderId} não encontrada ou sem permissão: ${error.message}`
       };
     }
   } catch (error) {
@@ -666,160 +674,265 @@ async function checkFolderHasFiles(folderId) {
 
 
 // Obter todas as pastas folha com otimização
-// Obter todas as pastas folha com otimização
 async function getAllLeafFoldersOptimized(rootFolderId, includeEmptyFolders = false) {
   try {
     const drive = await getDriveInstance();
+    
+    // MODIFICAÇÃO: Verificar se o rootFolderId está definido
+    if (!rootFolderId) {
+      console.log('ID da pasta raiz não fornecido para getAllLeafFoldersOptimized, usando variável de ambiente');
+      rootFolderId = process.env.DRIVE_FOLDER_ID; // Usar valor da variável de ambiente como fallback
+      
+      if (!rootFolderId) {
+        console.error('DRIVE_FOLDER_ID não está definido nas variáveis de ambiente');
+        return {
+          success: false,
+          message: 'ID da pasta raiz não encontrado'
+        };
+      }
+    }
+    
+    console.log(`Buscando pastas folha a partir da pasta raiz: ${rootFolderId}`);
     let leafFolders = [];
     
-    // 1. Buscar todas as pastas em uma única consulta
-    const response = await drive.files.list({
-      q: `mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-      fields: 'files(id, name, parents)',
-      pageSize: 1000
-    });
-    
-    const allFolders = response.data.files || [];
-    console.log(`Found ${allFolders.length} total folders`);
-    
-    // 2. Construir uma árvore de pastas em memória
-    const folderMap = {};
-    const childrenMap = {};
-    
-    // Inicializar os mapas
-    allFolders.forEach(folder => {
-      folderMap[folder.id] = folder;
-      childrenMap[folder.id] = [];
-    });
-    
-    // Preencher o mapa de filhos
-    allFolders.forEach(folder => {
-      if (folder.parents && folder.parents.length > 0) {
-        const parentId = folder.parents[0];
-        if (childrenMap[parentId]) {
-          childrenMap[parentId].push(folder.id);
-        }
-      }
-    });
-    
-    // 3. Identificar pastas "folha" (não têm subpastas)
-    const potentialLeafFolders = allFolders.filter(folder => {
-      // Uma pasta é "folha" se não tem filhos no mapa de filhos
-      return !childrenMap[folder.id] || childrenMap[folder.id].length === 0;
-    });
-    
-    console.log(`Found ${potentialLeafFolders.length} potential leaf folders`);
-    
-    // Lista explícita de pastas administrativas (nomes exatos)
-    const adminFolderNames = ['Waiting Payment', 'Sold', 'Developing'];
-    
-    // 4. FILTRO MELHORADO: Remover pastas específicas
-    const filteredLeafFolders = [];
-    
-    for (const folder of potentialLeafFolders) {
-      // Pular pastas com nome administrativo diretamente
-      if (adminFolderNames.includes(folder.name)) {
-        continue;
-      }
+    // 1. Buscar todas as pastas em uma única consulta (sem filtrar por uma pasta raiz específica)
+    // Desta forma, obtemos todas as pastas e filtramos posteriormente
+    try {
+      const response = await drive.files.list({
+        q: `mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+        fields: 'files(id, name, parents)',
+        pageSize: 1000
+      });
       
-      // Pular pastas com padrão de nome de pedido
-      const orderPattern = /\d+un\s+\w+\s+\d+\s+\d+/i;
-      if (orderPattern.test(folder.name)) {
-        continue;
-      }
+      const allFolders = response.data.files || [];
+      console.log(`Found ${allFolders.length} total folders`);
       
-      // Verificar se esta pasta está dentro de uma pasta administrativa
-      let isInAdminFolder = false;
-      let currentFolder = folder;
-      let iterations = 0;
-      const maxIterations = 10; // Proteção contra loops infinitos
+      // 2. Construir uma árvore de pastas em memória
+      const folderMap = {};
+      const childrenMap = {};
       
-      while (currentFolder && iterations < maxIterations) {
-        if (!currentFolder.parents || currentFolder.parents.length === 0) {
-          break;
-        }
-        
-        const parentId = currentFolder.parents[0];
-        const parentFolder = folderMap[parentId];
-        
-        if (!parentFolder) {
-          break;
-        }
-        
-        // Verificar se o pai é uma pasta administrativa
-        if (adminFolderNames.includes(parentFolder.name)) {
-          isInAdminFolder = true;
-          break;
-        }
-        
-        // Ir para o próximo pai
-        currentFolder = parentFolder;
-        iterations++;
-      }
+      // Inicializar os mapas
+      allFolders.forEach(folder => {
+        folderMap[folder.id] = folder;
+        childrenMap[folder.id] = [];
+      });
       
-      // Pular esta pasta se estiver dentro de uma pasta administrativa
-      if (isInAdminFolder) {
-        continue;
-      }
-      
-      // Adicionar a pasta à lista filtrada (passou em todas as verificações)
-      filteredLeafFolders.push(folder);
-    }
-    
-    console.log(`After filtering, ${filteredLeafFolders.length} leaf folders remain`);
-    
-    // 5. Verificar quais pastas folha têm arquivos (em lotes)
-    const BATCH_SIZE = 10;
-    const batches = [];
-    
-    for (let i = 0; i < filteredLeafFolders.length; i += BATCH_SIZE) {
-      batches.push(filteredLeafFolders.slice(i, i + BATCH_SIZE));
-    }
-    
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      const batchPromises = batch.map(async (folder) => {
-        try {
-          // Verificar e contar imagens na pasta
-          const fileResponse = await drive.files.list({
-            q: `'${folder.id}' in parents and mimeType contains 'image/' and trashed = false`,
-            fields: 'files(id)'
-          });
-          
-          // Contar imagens
-          const fileCount = fileResponse.data.files.length;
-          
-          // MODIFICADO: Incluir pastas vazias apenas se includeEmptyFolders for true
-          if (includeEmptyFolders || fileCount > 0) {
-            // Construir o caminho completo da pasta
-            const path = await buildFolderPath(folder.id, folderMap);
-            
-            leafFolders.push({
-              id: folder.id,
-              name: folder.name,
-              path: path,
-              fullPath: path.join(' → '),
-              fileCount: fileCount // Garantir que fileCount está sendo definido corretamente
-            });
+      // Preencher o mapa de filhos
+      allFolders.forEach(folder => {
+        if (folder.parents && folder.parents.length > 0) {
+          const parentId = folder.parents[0];
+          if (childrenMap[parentId]) {
+            childrenMap[parentId].push(folder.id);
           }
-        } catch (error) {
-          console.error(`Error processing folder ${folder.id}:`, error);
         }
       });
       
-      await Promise.all(batchPromises);
-      console.log(`Processed batch ${i+1}/${batches.length}, found ${leafFolders.length} leaf folders so far`);
+      // 3. Identificar pastas "folha" (não têm subpastas)
+      const potentialLeafFolders = allFolders.filter(folder => {
+        // Uma pasta é "folha" se não tem filhos no mapa de filhos
+        return !childrenMap[folder.id] || childrenMap[folder.id].length === 0;
+      });
+      
+      console.log(`Found ${potentialLeafFolders.length} potential leaf folders`);
+      
+      // Lista explícita de pastas administrativas (nomes exatos)
+      // MODIFICAÇÃO: Obter nomes das variáveis de ambiente se disponíveis
+      const adminFolderNames = ['Waiting Payment', 'Sold', 'Developing'];
+      
+      // Adicionar outros nomes administrativos se necessário (baseado em outras variáveis de ambiente)
+      if (process.env.ADMIN_FOLDER_NAMES) {
+        try {
+          const extraNames = process.env.ADMIN_FOLDER_NAMES.split(',').map(n => n.trim());
+          adminFolderNames.push(...extraNames);
+        } catch (e) {
+          console.error('Erro ao processar ADMIN_FOLDER_NAMES:', e.message);
+        }
+      }
+      
+      // 4. FILTRO MELHORADO: Remover pastas específicas
+      const filteredLeafFolders = [];
+      
+      for (const folder of potentialLeafFolders) {
+        // Pular pastas com nome administrativo diretamente
+        if (adminFolderNames.includes(folder.name)) {
+          continue;
+        }
+        
+        // Pular pastas com padrão de nome de pedido
+        const orderPattern = /\d+un\s+\w+\s+\d+\s+\d+/i;
+        if (orderPattern.test(folder.name)) {
+          continue;
+        }
+        
+        // Verificar se esta pasta está dentro de uma pasta administrativa
+        let isInAdminFolder = false;
+        let currentFolder = folder;
+        let iterations = 0;
+        const maxIterations = 10; // Proteção contra loops infinitos
+        
+        while (currentFolder && iterations < maxIterations) {
+          if (!currentFolder.parents || currentFolder.parents.length === 0) {
+            break;
+          }
+          
+          const parentId = currentFolder.parents[0];
+          const parentFolder = folderMap[parentId];
+          
+          if (!parentFolder) {
+            break;
+          }
+          
+          // Verificar se o pai é uma pasta administrativa
+          if (adminFolderNames.includes(parentFolder.name)) {
+            isInAdminFolder = true;
+            break;
+          }
+          
+          // Ir para o próximo pai
+          currentFolder = parentFolder;
+          iterations++;
+        }
+        
+        // Pular esta pasta se estiver dentro de uma pasta administrativa
+        if (isInAdminFolder) {
+          continue;
+        }
+        
+        // MODIFICAÇÃO: Verificar se está na árvore da pasta raiz especificada (opcional)
+        // Isso pode ser desativado se quisermos mostrar todas as pastas folha do Drive
+        let isInRootTree = false;
+        currentFolder = folder;
+        iterations = 0;
+        
+        // MODIFICAÇÃO: Tornar esta verificação opcional
+        if (rootFolderId !== 'all') {  // Permitir um valor especial 'all' para mostrar tudo
+          while (currentFolder && iterations < maxIterations) {
+            if (!currentFolder.parents || currentFolder.parents.length === 0) {
+              break;
+            }
+            
+            if (currentFolder.id === rootFolderId) {
+              isInRootTree = true;
+              break;
+            }
+            
+            const parentId = currentFolder.parents[0];
+            if (parentId === rootFolderId) {
+              isInRootTree = true;
+              break;
+            }
+            
+            currentFolder = folderMap[parentId];
+            if (!currentFolder) break;
+            
+            iterations++;
+          }
+          
+          // Pular se não estiver na árvore da pasta raiz (opcional)
+          // MODIFICAÇÃO: Esta verificação agora é OPCIONAL - descomente se quiser usá-la
+          // if (!isInRootTree) continue;
+        }
+        
+        // Adicionar a pasta à lista filtrada (passou em todas as verificações)
+        filteredLeafFolders.push(folder);
+      }
+      
+      console.log(`After filtering, ${filteredLeafFolders.length} leaf folders remain`);
+      
+      // 5. Verificar quais pastas folha têm arquivos (em lotes)
+      const BATCH_SIZE = 10;
+      const batches = [];
+      
+      for (let i = 0; i < filteredLeafFolders.length; i += BATCH_SIZE) {
+        batches.push(filteredLeafFolders.slice(i, i + BATCH_SIZE));
+      }
+      
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const batchPromises = batch.map(async (folder) => {
+          try {
+            // Verificar e contar imagens na pasta
+            const fileResponse = await drive.files.list({
+              q: `'${folder.id}' in parents and mimeType contains 'image/' and trashed = false`,
+              fields: 'files(id)'
+            });
+            
+            // Contar imagens
+            const fileCount = fileResponse.data.files.length;
+            
+            // MODIFICAÇÃO: Incluir pastas vazias se solicitado OU sempre incluir em modo admin
+            if (includeEmptyFolders || fileCount > 0) {
+              try {
+                // Construir o caminho completo da pasta
+                const path = await buildFolderPath(folder.id, folderMap);
+                
+                leafFolders.push({
+                  id: folder.id,
+                  name: folder.name,
+                  path: path,
+                  fullPath: path.join(' → '),
+                  fileCount: fileCount
+                });
+              } catch (pathError) {
+                console.error(`Error building path for folder ${folder.id}:`, pathError);
+                // Mesmo com erro no caminho, incluir com informações básicas
+                leafFolders.push({
+                  id: folder.id,
+                  name: folder.name,
+                  path: [folder.name],
+                  fullPath: folder.name,
+                  fileCount: fileCount
+                });
+              }
+            }
+          } catch (error) {
+            console.error(`Error processing folder ${folder.id}:`, error);
+            // MODIFICAÇÃO: Adicionar a pasta mesmo com erro, para mostrar no painel
+            if (includeEmptyFolders) {
+              leafFolders.push({
+                id: folder.id,
+                name: folder.name,
+                path: [folder.name],
+                fullPath: folder.name,
+                fileCount: 0,
+                error: error.message
+              });
+            }
+          }
+        });
+        
+        // MODIFICAÇÃO: Tratar erros nas promessas em lote
+        try {
+          await Promise.all(batchPromises);
+        } catch (batchError) {
+          console.error(`Error processing batch ${i+1}:`, batchError);
+        }
+        
+        console.log(`Processed batch ${i+1}/${batches.length}, found ${leafFolders.length} leaf folders so far`);
+      }
+      
+    } catch (listError) {
+      console.error('Error listing folders:', listError);
+      // MODIFICAÇÃO: Continuar com pastas vazias no caso de erro parcial
+      return {
+        success: true, // Retorna sucesso parcial
+        folders: leafFolders,
+        message: `Carregamento parcial: ${listError.message}`
+      };
     }
     
+    // Se chegamos aqui, conseguimos pelo menos algumas pastas
     return {
       success: true,
       folders: leafFolders
     };
+    
   } catch (error) {
     console.error('Error in getAllLeafFoldersOptimized:', error);
     return {
       success: false,
-      message: `Error getting leaf folders: ${error.message}`
+      message: `Error getting leaf folders: ${error.message}`,
+      folders: [] // Retorna array vazio em vez de undefined
     };
   }
 }
