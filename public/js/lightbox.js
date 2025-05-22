@@ -2,6 +2,24 @@
 let currentCategoryIndex = 0; // Índice da categoria atual
 let isTransitioningCategory = false; // Flag para evitar múltiplas transições
 
+// Pré-carrega as próximas N imagens (média + alta res)
+function preloadNextImages(count) {
+  for (let i = 1; i <= count; i++) {
+    const idx = currentPhotoIndex + i;
+    if (idx < photos.length) {
+      const id = photos[idx].id;
+      // carrega thumb/versão média
+      const med = new Image();
+      med.src = `https://drive.google.com/thumbnail?id=${id}&sz=w1024`;
+      med.onload = () => {
+        // quando thumb chegar, já dispara a alta resolução
+        const hi = new Image();
+        hi.src = getDirectImageUrl(id);
+      };
+    }
+  }
+}
+
 // Nova função para abrir o lightbox por ID em vez de índice
 function openLightboxById(photoId, fromCart = false) {
   // Verificar se o array de fotos existe
@@ -283,6 +301,7 @@ function preloadAdjacentImages() {
     });
   }
 }
+
 
 // Função para obter URL de imagem direta do Google Drive
 function getDirectImageUrl(fileId) {
