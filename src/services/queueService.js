@@ -8,18 +8,35 @@ class ProcessingQueue {
     this.processed = 0;
     this.failed = 0;
     
+    // NOVO: Configurações de gerenciamento de recursos
+    this.processingDelay = options.processingDelay || 0; // Pausa entre itens (ms)
+    this.maxRetries = options.maxRetries || 2; // Máximo de tentativas por item
+    this.maxQueueSize = options.maxQueueSize || 100; // Limite de tamanho da fila
+    
     // Status para monitoramento
     this.stats = {
       totalProcessed: 0,
       totalFailed: 0,
       averageTime: 0,
-      lastProcessed: null
+      lastProcessed: null,
+      // NOVO: Métricas avançadas
+      peakQueueSize: 0,
+      totalItems: 0,
+      memoryBeforeProcessing: 0,
+      memoryAfterProcessing: 0
     };
   }
   
   // Adicionar tarefa à fila
   add(task, options = {}) {
     return new Promise((resolve, reject) => {
+      // NOVO: Verificar limite da fila
+      if (this.queue.length >= this.maxQueueSize) {
+        const error = new Error(`Queue limit reached (${this.maxQueueSize} items). Try again later.`);
+        console.warn(`📋 Queue: Rejected task - ${error.message}`);
+        return reject(error);
+      }
+      
       const queueItem = {
         id: Date.now() + Math.random(),
         task,
@@ -27,7 +44,10 @@ class ProcessingQueue {
         reject,
         priority: options.priority || 0,
         addedAt: Date.now(),
-        timeout: options.timeout || 30000 // 30 segundos default
+        timeout: options.timeout || 30000, // 30 segundos default
+        // NOVO: Controle de retry
+        attempts: 0,
+        maxRetries: options.maxRetries || this.maxRetries
       };
       
       // Adicionar respeitando prioridade
@@ -38,6 +58,10 @@ class ProcessingQueue {
         // Adicionar no final para prioridade normal
         this.queue.push(queueItem);
       }
+      
+      // NOVO: Atualizar métricas
+      this.stats.totalItems++;
+      this.stats.peakQueueSize = Math.max(this.stats.peakQueueSize, this.queue.length);
       
       console.log(`📋 Queue: Added task ${queueItem.id} (${this.queue.length} in queue)`);
       
@@ -59,6 +83,9 @@ class ProcessingQueue {
     const queueItem = this.queue.shift();
     const startTime = Date.now();
     
+    // NOVO: Registrar uso de memória antes do processamento
+    this.stats.memoryBeforeProcessing = process.memoryUsage().heapUsed;
+    
     console.log(`⚡ Queue: Processing task ${queueItem.id}...`);
     
     try {
@@ -76,6 +103,13 @@ class ProcessingQueue {
       const endTime = Date.now();
       const processingTime = endTime - startTime;
       
+      // NOVO: Registrar uso de memória após o processamento
+      this.stats.memoryAfterProcessing = process.memoryUsage().heapUsed;
+      
+      // Calcular diferença de memória
+      const memoryChange = this.stats.memoryAfterProcessing - this.stats.memoryBeforeProcessing;
+      const memoryChangeMB = Math.round(memoryChange / 1024 / 1024 * 100) / 100;
+      
       // Atualizar estatísticas
       this.stats.totalProcessed++;
       this.stats.lastProcessed = new Date();
@@ -83,25 +117,45 @@ class ProcessingQueue {
         (this.stats.averageTime * (this.stats.totalProcessed - 1) + processingTime) / 
         this.stats.totalProcessed;
       
-      console.log(`✅ Queue: Task ${queueItem.id} completed in ${processingTime}ms`);
+      // Log mais informativo
+      console.log(`✅ Queue: Task ${queueItem.id} completed in ${processingTime}ms (Memory ${memoryChangeMB > 0 ? '+' : ''}${memoryChangeMB}MB)`);
       queueItem.resolve(result);
       
     } catch (error) {
-      this.stats.totalFailed++;
-      console.error(`❌ Queue: Task ${queueItem.id} failed:`, error.message);
-      queueItem.reject(error);
+      // NOVO: Implementar lógica de retry
+      queueItem.attempts++;
+      
+      if (queueItem.attempts <= queueItem.maxRetries) {
+        console.warn(`⚠️ Queue: Task ${queueItem.id} failed (attempt ${queueItem.attempts}/${queueItem.maxRetries}). Retrying...`);
+        // Colocar de volta na fila com prioridade aumentada
+        this.queue.unshift({
+          ...queueItem,
+          priority: queueItem.priority + 1 // Aumentar prioridade para próxima tentativa
+        });
+      } else {
+        this.stats.totalFailed++;
+        console.error(`❌ Queue: Task ${queueItem.id} failed after ${queueItem.attempts} attempts:`, error.message);
+        queueItem.reject(error);
+      }
     } finally {
       this.currentlyProcessing--;
       
-      // Pequena pausa para não sobrecarregar
-      setTimeout(() => {
-        // Continuar processando se há mais tarefas
-        if (this.queue.length > 0) {
-          this.process();
-        } else {
-          this.processing = false;
+      // NOVO: Adicionar delay opcional entre processamentos
+      if (this.processingDelay > 0) {
+        await new Promise(resolve => setTimeout(resolve, this.processingDelay));
+      }
+      
+      // Continuar processando se há mais tarefas
+      if (this.queue.length > 0) {
+        this.process();
+      } else {
+        this.processing = false;
+        // NOVO: Sugerir liberação de memória
+        if (this.stats.memoryAfterProcessing > 100 * 1024 * 1024) { // > 100MB
+          console.log('🧹 Queue empty. Suggesting garbage collection.');
+          if (global.gc) global.gc();
         }
-      }, 100);
+      }
     }
   }
   
@@ -127,10 +181,23 @@ class ProcessingQueue {
   }
 }
 
-// Criar filas específicas
-const imageQueue = new ProcessingQueue({ maxConcurrent: 1 });
-const emailQueue = new ProcessingQueue({ maxConcurrent: 2 });
-const fileQueue = new ProcessingQueue({ maxConcurrent: 1 });
+// Criar filas específicas - OTIMIZADAS
+const imageQueue = new ProcessingQueue({ 
+  maxConcurrent: 1,      // Reduzir para apenas 1 concorrente
+  processingDelay: 100,  // Adicionar pequeno delay entre itens
+  maxQueueSize: 50       // Limite de 50 itens na fila de imagens
+});
+
+const emailQueue = new ProcessingQueue({ 
+  maxConcurrent: 1,      // Reduzir de 2 para 1
+  maxQueueSize: 100
+});
+
+const fileQueue = new ProcessingQueue({ 
+  maxConcurrent: 1, 
+  processingDelay: 200,  // Adicionar delay maior para operações de arquivo
+  maxQueueSize: 50
+});
 
 module.exports = {
   ProcessingQueue,

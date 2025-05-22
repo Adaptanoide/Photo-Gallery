@@ -20,6 +20,13 @@ class MonitoringService {
       diskThreshold: 90 // 90% disco
     };
     
+    // NOVO: Limites de histórico para economizar memória
+    this.historyLimits = {
+      memoryPeaks: 20,    // Reduzido de 100 para 20
+      cpuHistory: 20,     // Reduzido de 100 para 20
+      cacheStats: 10      // Reduzido de 50 para 10
+    };
+    
     // Iniciar monitoramento automático
     this.startMonitoring();
   }
@@ -67,17 +74,44 @@ class MonitoringService {
       loadAverage: os.loadavg()
     };
     
-    // Manter apenas últimas 100 medições
+    // MODIFICADO: Manter apenas as últimas N medições de acordo com os limites definidos
     this.metrics.memoryPeaks.push(currentMemory);
     this.metrics.cpuHistory.push(currentCpu);
     
-    if (this.metrics.memoryPeaks.length > 100) {
+    if (this.metrics.memoryPeaks.length > this.historyLimits.memoryPeaks) {
       this.metrics.memoryPeaks.shift();
     }
     
-    if (this.metrics.cpuHistory.length > 100) {
+    if (this.metrics.cpuHistory.length > this.historyLimits.cpuHistory) {
       this.metrics.cpuHistory.shift();
     }
+    
+    // NOVO: Liberação proativa de memória quando atingir níveis críticos
+    const memoryUsedPercent = (1 - (os.freemem() / os.totalmem())) * 100;
+    if (memoryUsedPercent > 85) {
+      console.warn(`🚨 CRITICAL: System memory usage at ${memoryUsedPercent.toFixed(1)}%. Forcing memory cleanup.`);
+      this.forceMemoryCleanup();
+    }
+  }
+  
+  // NOVA FUNÇÃO: Limpeza forçada de memória
+  forceMemoryCleanup() {
+    // Limpar todas as métricas históricas
+    this.metrics.memoryPeaks = this.metrics.memoryPeaks.slice(-5);
+    this.metrics.cpuHistory = this.metrics.cpuHistory.slice(-5);
+    this.metrics.cacheStats = this.metrics.cacheStats.slice(-3);
+    
+    // Forçar coleta de lixo se disponível
+    if (global.gc) {
+      console.log('🧹 Forcing garbage collection');
+      global.gc();
+    } else {
+      console.log('⚠️ global.gc not available. Start app with --expose-gc to enable.');
+    }
+    
+    // Log do status da memória após limpeza
+    const memUsage = process.memoryUsage();
+    console.log(`Memory after cleanup: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB heap, ${Math.round(memUsage.rss / 1024 / 1024)}MB RSS`);
   }
   
   logStatus() {
@@ -144,15 +178,15 @@ class MonitoringService {
     this.metrics.errors++;
   }
   
-  // Adicionar estatísticas de cache
+  // Adicionar estatísticas de cache - MODIFICADO
   addCacheStats(stats) {
     this.metrics.cacheStats.push({
       timestamp: Date.now(),
       ...stats
     });
     
-    // Manter apenas últimas 50 medições
-    if (this.metrics.cacheStats.length > 50) {
+    // MODIFICADO: Limite de histórico mais rigoroso
+    if (this.metrics.cacheStats.length > this.historyLimits.cacheStats) {
       this.metrics.cacheStats.shift();
     }
   }

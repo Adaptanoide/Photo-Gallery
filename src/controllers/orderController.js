@@ -493,7 +493,7 @@ const processImageEfficiently = async (inputBuffer, options = {}) => {
   }
 };
 
-// Função para servir imagens do Google Drive em alta resolução com cache
+// Função para servir imagens do Google Drive em alta resolução com cache - OTIMIZADA
 exports.getHighResImage = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -502,10 +502,10 @@ exports.getHighResImage = async (req, res) => {
       return res.status(400).send('File ID is required');
     }
     
-    // Constantes locais (caso não estejam definidas globalmente)
-    const DEFAULT_QUALITY = 90;
+    // Constantes mantidas para alta qualidade
+    const DEFAULT_QUALITY = 90;  // Mantém alta qualidade para visualização em tela cheia
     const MAX_WIDTH = 2048;
-    const CACHE_DIR = path.join(__dirname, '../cache/optimized');
+    const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
     
     // Garantir que o diretório de cache existe
     if (!fs.existsSync(CACHE_DIR)) {
@@ -518,7 +518,7 @@ exports.getHighResImage = async (req, res) => {
     const format = supportsWebP ? 'webp' : 'jpeg';
     const quality = parseInt(req.query.quality) || DEFAULT_QUALITY;
     
-    // Criar nomes de arquivo para cache (CORRIGIDO: definir antes de usar)
+    // Criar nomes de arquivo para cache
     const cacheFilename = `${fileId}_${format}_q${quality}`;
     const cachePath = path.join(CACHE_DIR, cacheFilename);
     const metadataPath = cachePath + '.json';
@@ -543,14 +543,13 @@ exports.getHighResImage = async (req, res) => {
     }
     
     // Se não estiver em cache, buscar do Google Drive
-    const { getDriveInstance } = require('../config/google.drive');
     const drive = await getDriveInstance();
     
-    // Obter metadados do arquivo primeiro
-    const fileMetadata = await drive.files.get({
+    // Obter metadados do arquivo primeiro usando imageQueue
+    const fileMetadata = await imageQueue.add(() => drive.files.get({
       fileId: fileId,
       fields: 'mimeType,size,name'
-    });
+    }));
     
     // Verificar se é uma imagem
     if (!fileMetadata.data.mimeType.startsWith('image/')) {
@@ -559,32 +558,35 @@ exports.getHighResImage = async (req, res) => {
     
     console.log(`Downloading from Google Drive for optimization: ${fileMetadata.data.name}`);
     
-    // Obter o conteúdo da imagem
-    const response = await drive.files.get({
+    // Obter o conteúdo da imagem usando a fila
+    const response = await imageQueue.add(() => drive.files.get({
       fileId: fileId,
       alt: 'media'
     }, {
       responseType: 'arraybuffer'
-    });
+    }));
+    
+    // Verificar tamanho - se muito grande, servir diretamente para economizar memória
+    if (response.data.length > 25 * 1024 * 1024) { // 25MB
+      console.log(`Image too large (${Math.round(response.data.length/1024/1024)}MB), serving without optimization`);
+      res.setHeader('Content-Type', fileMetadata.data.mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(Buffer.from(response.data));
+      return;
+    }
     
     // Otimizar a imagem com sharp
     console.log(`Optimizing image to ${format} format with quality ${quality}`);
-    let optimizedBuffer;
     
     try {
-      const sharp = require('sharp');
-      let sharpInstance = sharp(Buffer.from(response.data))
-        .resize({
-          width: MAX_WIDTH,
-          height: null,
-          withoutEnlargement: true
-        });
+      const optimizedBuffer = await processImageEfficiently(Buffer.from(response.data), {
+        width: MAX_WIDTH,
+        quality: quality,
+        format: format
+      });
       
-      if (format === 'webp') {
-        optimizedBuffer = await sharpInstance.webp({ quality }).toBuffer();
-      } else {
-        optimizedBuffer = await sharpInstance.jpeg({ quality }).toBuffer();
-      }
+      // Liberar buffer original para economizar memória
+      response.data = null;
       
       // Salvar versão otimizada no cache
       fs.writeFileSync(cachePath, optimizedBuffer);
@@ -630,7 +632,7 @@ exports.getHighResImage = async (req, res) => {
   }
 };
 
-// Função para servir thumbnails através do seu próprio servidor
+// Função para servir thumbnails através do seu próprio servidor - OTIMIZADA
 exports.getThumbnail = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -639,8 +641,23 @@ exports.getThumbnail = async (req, res) => {
       return res.status(400).send('File ID is required');
     }
     
+    // Constantes otimizadas para thumbnails
+    const THUMBNAIL_SIZE = 300;
+    const THUMBNAIL_QUALITY = 75; // Qualidade reduzida para thumbnails
+    const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
+    
+    // Garantir que o diretório de cache existe
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+    
+    // Determinar formato baseado no suporte do navegador
+    const acceptHeader = req.headers.accept || '';
+    const supportsWebP = acceptHeader.includes('image/webp');
+    const format = supportsWebP ? 'webp' : 'jpeg';
+    
     // Criar nomes de arquivo para cache
-    const cacheFilename = `thumb_${fileId}`;
+    const cacheFilename = `thumb_${fileId}_${format}`;
     const cachePath = path.join(CACHE_DIR, cacheFilename);
     const metadataPath = `${cachePath}.meta`;
     
@@ -668,7 +685,7 @@ exports.getThumbnail = async (req, res) => {
       console.log(`Serving thumbnail from cache: ${fileId}`);
       
       // Definir headers
-      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Type', `image/${format}`);
       res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
       
       // Adicionar ETag se existir
@@ -681,7 +698,7 @@ exports.getThumbnail = async (req, res) => {
       return;
     }
     
-    // Obter a imagem do Google Drive
+    // Obter a instância do Drive
     const drive = await getDriveInstance();
     
     // Verificar se é uma imagem
@@ -701,24 +718,23 @@ exports.getThumbnail = async (req, res) => {
       return res.status(404).send('File not found or not accessible');
     }
     
-    // Obter o conteúdo da imagem
+    // Obter o conteúdo da imagem usando imageQueue para controle de concorrência
     try {
-      const response = await drive.files.get({
+      const response = await imageQueue.add(() => drive.files.get({
         fileId: fileId,
         alt: 'media'
       }, {
         responseType: 'arraybuffer'
-      });
+      }));
       
-      // Redimensionar para thumbnail usando sharp
-      const thumbnail = await sharp(Buffer.from(response.data))
-        .resize({
-          width: 300,
-          height: 300,
-          fit: 'cover'
-        })
-        .jpeg({ quality: 80 })
-        .toBuffer();
+      // Usar função otimizada para criar thumbnail
+      console.log(`Optimizing thumbnail to ${format} format with quality ${THUMBNAIL_QUALITY}`);
+      const thumbnail = await processImageEfficiently(Buffer.from(response.data), {
+        width: THUMBNAIL_SIZE,
+        height: THUMBNAIL_SIZE, 
+        format: format,
+        quality: THUMBNAIL_QUALITY
+      });
       
       // Gerar ETag (hash MD5 do conteúdo)
       const etag = crypto.createHash('md5').update(thumbnail).digest('hex');
@@ -727,7 +743,7 @@ exports.getThumbnail = async (req, res) => {
       const metadata = {
         etag: etag,
         created: new Date().toISOString(),
-        mimeType: 'image/jpeg',
+        mimeType: `image/${format}`,
         fileId: fileId
       };
       
@@ -736,9 +752,12 @@ exports.getThumbnail = async (req, res) => {
       fs.writeFileSync(metadataPath, JSON.stringify(metadata));
       
       // Definir cabeçalhos
-      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Type', `image/${format}`);
       res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
       res.setHeader('ETag', etag);
+      
+      // Liberar explicitamente a memória
+      response.data = null;
       
       // Enviar a imagem
       res.send(thumbnail);
