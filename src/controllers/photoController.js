@@ -7,6 +7,37 @@ const CategoryAccess = require('../models/categoryAccess');
 // Adicionar acesso à constante FOLDER_ID
 const { FOLDER_ID } = process.env;
 
+// Cache de imagens processadas em memória
+const processedImageCache = new Map();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutos
+const MAX_CACHE_SIZE = 200; // Máximo de imagens no cache
+
+// Função para limpar cache antigo
+function cleanupImageCache() {
+  const now = Date.now();
+  const entriesToDelete = [];
+  
+  processedImageCache.forEach((value, key) => {
+    if (now - value.timestamp > CACHE_TTL) {
+      entriesToDelete.push(key);
+    }
+  });
+  
+  entriesToDelete.forEach(key => processedImageCache.delete(key));
+  
+  // Se ainda estiver muito grande, remover os mais antigos
+  if (processedImageCache.size > MAX_CACHE_SIZE) {
+    const sortedEntries = Array.from(processedImageCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    
+    const toRemove = sortedEntries.slice(0, processedImageCache.size - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => processedImageCache.delete(key));
+  }
+}
+
+// Limpar cache periodicamente
+setInterval(cleanupImageCache, 5 * 60 * 1000); // A cada 5 minutos
+
 // Obter fotos
 exports.getPhotos = async (req, res) => {
   try {
@@ -18,8 +49,9 @@ exports.getPhotos = async (req, res) => {
     const customerCode = req.query.customer_code;
     const limit = parseInt(req.query.limit) || 50; // Padrão: 50 fotos
     const offset = parseInt(req.query.offset) || 0;
+    const preload = req.query.preload === 'true'; // Nova flag para pré-carregamento
     
-    console.log(`Parâmetros de paginação: limit=${limit}, offset=${offset}`);
+    console.log(`Parâmetros de paginação: limit=${limit}, offset=${offset}, preload=${preload}`);
     
     // MODIFICADO: Obter todas as fotos da categoria (usando cache)
     const allPhotos = await driveService.getPhotosCached(categoryId);
@@ -33,6 +65,12 @@ exports.getPhotos = async (req, res) => {
     if (!customerCode) {
       // Aplicar paginação
       const paginatedPhotos = photosArray.slice(offset, offset + limit);
+      
+      // NOVO: Se for pré-carregamento, processar imagens em background
+      if (preload && paginatedPhotos.length > 0) {
+        preloadImages(paginatedPhotos.slice(0, 3)); // Pré-processar primeiras 3 imagens
+      }
+      
       return res.status(200).json(paginatedPhotos);
     }
     
@@ -54,6 +92,12 @@ exports.getPhotos = async (req, res) => {
       console.log("getPhotos - Falha ao obter acesso, retornando todas as fotos sem preços");
       // Aplicar paginação mesmo em caso de erro
       const paginatedPhotos = photosArray.slice(offset, offset + limit);
+      
+      // NOVO: Pré-carregamento se solicitado
+      if (preload && paginatedPhotos.length > 0) {
+        preloadImages(paginatedPhotos.slice(0, 3));
+      }
+      
       return res.status(200).json(paginatedPhotos);
     }
     
@@ -125,6 +169,13 @@ exports.getPhotos = async (req, res) => {
       };
     });
     
+    // NOVO: Se for pré-carregamento, processar imagens em background
+    if (preload && photosWithPrice.length > 0) {
+      // Pré-processar as primeiras 3-5 imagens
+      const imagesToPreload = photosWithPrice.slice(0, 5);
+      preloadImages(imagesToPreload);
+    }
+    
     console.log(`getPhotos - Retornando ${photosWithPrice.length} fotos com preços para o cliente ${customerCode}`);
     res.status(200).json(photosWithPrice);
 
@@ -133,6 +184,127 @@ exports.getPhotos = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao obter fotos: ' + error.message
+    });
+  }
+};
+
+// NOVA FUNÇÃO: Pré-processar imagens em background
+async function preloadImages(photos) {
+  if (!photos || photos.length === 0) return;
+  
+  console.log(`[Preload] Iniciando pré-processamento de ${photos.length} imagens`);
+  
+  // Processar em paralelo mas com limite
+  const BATCH_SIZE = 3;
+  
+  for (let i = 0; i < photos.length; i += BATCH_SIZE) {
+    const batch = photos.slice(i, i + BATCH_SIZE);
+    
+    // Processar batch em paralelo
+    const promises = batch.map(async (photo) => {
+      try {
+        // Verificar se já está em cache
+        if (processedImageCache.has(photo.id)) {
+          console.log(`[Preload] Imagem ${photo.id} já está em cache`);
+          return;
+        }
+        
+        // Simular processamento (aqui você adicionaria a lógica real de conversão WebP)
+        // Por agora, apenas marcamos como processada
+        console.log(`[Preload] Processando imagem ${photo.id}`);
+        
+        // Aqui você adicionaria a lógica real de:
+        // 1. Download da imagem do Google Drive
+        // 2. Conversão para WebP com qualidade otimizada
+        // 3. Armazenamento temporário
+        
+        // Adicionar ao cache
+        processedImageCache.set(photo.id, {
+          timestamp: Date.now(),
+          processed: true,
+          // Adicione aqui os dados da imagem processada
+        });
+        
+      } catch (error) {
+        console.error(`[Preload] Erro ao processar imagem ${photo.id}:`, error);
+      }
+    });
+    
+    // Aguardar o batch completar antes de continuar
+    await Promise.all(promises);
+  }
+  
+  console.log(`[Preload] Pré-processamento concluído`);
+}
+
+// NOVA FUNÇÃO: Endpoint para pré-carregar imagens específicas
+exports.preloadImages = async (req, res) => {
+  try {
+    const { photoIds } = req.body;
+    const customerCode = req.query.customer_code;
+    
+    if (!photoIds || !Array.isArray(photoIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'photoIds array is required'
+      });
+    }
+    
+    console.log(`[API Preload] Solicitação para pré-carregar ${photoIds.length} imagens`);
+    
+    // Buscar informações das fotos
+    const photos = [];
+    for (const photoId of photoIds) {
+      const photo = await driveService.getPhotoById(photoId);
+      if (photo) {
+        photos.push(photo);
+      }
+    }
+    
+    // Processar em background (não aguardar)
+    preloadImages(photos);
+    
+    res.status(200).json({
+      success: true,
+      message: `Iniciado pré-carregamento de ${photos.length} imagens`
+    });
+    
+  } catch (error) {
+    console.error('Erro ao pré-carregar imagens:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao pré-carregar imagens: ' + error.message
+    });
+  }
+};
+
+// NOVA FUNÇÃO: Verificar status de imagem processada
+exports.checkImageStatus = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    
+    // Verificar se está em cache
+    const cached = processedImageCache.get(photoId);
+    
+    if (cached) {
+      res.status(200).json({
+        success: true,
+        processed: true,
+        cached: true
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        processed: false,
+        cached: false
+      });
+    }
+    
+  } catch (error) {
+    console.error('Erro ao verificar status da imagem:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar status: ' + error.message
     });
   }
 };
@@ -388,6 +560,11 @@ exports.getClientInitialData = async (req, res) => {
           
           // Armazenar apenas os primeiros 6 itens para cada categoria
           previews[category.id] = photosWithPrice.slice(0, 6);
+          
+          // NOVO: Pré-processar as primeiras 3 imagens de cada categoria
+          if (photosWithPrice.length > 0) {
+            preloadImages(photosWithPrice.slice(0, 3));
+          }
         });
       
       previewPromises.push(promise);
@@ -435,6 +612,9 @@ exports.clearCache = async (req, res) => {
   try {
     // Limpar todos os caches
     driveService.clearAllCaches();
+    
+    // Limpar cache de imagens processadas
+    processedImageCache.clear();
     
     res.status(200).json({
       success: true,

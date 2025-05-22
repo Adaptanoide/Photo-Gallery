@@ -162,10 +162,8 @@ function openLightbox(index, fromCart = false) {
   // Iniciar carregamento da versão de alta resolução
   highResImage.src = getDirectImageUrl(photo.id);
 
-  // Pré-carregar imagens adjacentes
   preloadAdjacentImages();
-
-  // Verificar se precisamos carregar mais fotos
+  preloadNextImages(3);
   checkAndLoadMorePhotos();
 }
 

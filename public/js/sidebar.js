@@ -138,6 +138,7 @@ function loadCategoryPhotos(categoryId) {
     
     renderPhotosForCategory(photosArray, categoryId);
     hideLoader();
+    preloadCategoryImages(categoryId);
     return;
   }
 
@@ -161,7 +162,7 @@ function loadCategoryPhotos(categoryId) {
 
       // Renderizar com informação se há mais fotos
       renderPhotosForCategory(photos || [], categoryId);
-
+      preloadCategoryImages(categoryId);
       hideLoader();
     })
     .catch(error => {
