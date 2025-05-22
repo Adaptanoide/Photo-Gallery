@@ -4,6 +4,21 @@ let categoriesLoaded = {};
 let isLoadingCategory = false;
 let categoryPhotoCache = {};
 
+
+// Função de pré-carregamento de categoria
+function preloadCategoryImages(categoryId) {
+  // ex.: buscar thumbnails e hi-res em background
+  fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&limit=50`)
+    .then(res => res.json())
+    .then(imgs => {
+      console.log(`Preloaded ${imgs.length} imgs for cat ${categoryId}`);
+      // opcional: já jogar no cache global
+      categoryPhotoCache[categoryId] = categoryPhotoCache[categoryId] || {};
+      categoryPhotoCache[categoryId].photos = imgs;
+    })
+    .catch(err => console.warn('preloadCategoryImages failed', err));
+}
+
 // Carregar categorias no menu lateral - VERSÃO CORRIGIDA
 function loadCategoriesMenu() {
   const menuContainer = document.getElementById('categories-menu');
