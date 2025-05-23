@@ -5,7 +5,6 @@ const emailService = require('../services/emailService');
 const { google } = require('googleapis');
 const { getDriveInstance } = require('../config/google.drive');
 const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 const sharp = require('sharp');
 const SmartCache = require('../services/smartCache');
