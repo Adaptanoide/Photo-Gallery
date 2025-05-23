@@ -1,7 +1,9 @@
 // config/google.drive.js
-const { google } = require('googleapis');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
+
+const { google } = require('googleapis');
 
 // Configurar autenticação do Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive'];

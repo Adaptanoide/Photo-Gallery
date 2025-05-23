@@ -15,6 +15,36 @@ const CustomerCode = require('../models/customerCode');
 const Order = require('../models/order');
 const CategoryPrice = require('../models/categoryPrice');
 
+const path = require('path');
+const fs = require('fs');
+
+// Função para buscar WebP do disco
+function getWebPFromDisk(fileId, type = 'hd') {
+  try {
+    let webpPath;
+    
+    if (type === 'thumbnail') {
+      const sizes = ['medium', 'large', 'small'];
+      for (const size of sizes) {
+        webpPath = path.join('/opt/render/project/storage/cache/thumbnails', size, `${fileId}.webp`);
+        if (fs.existsSync(webpPath)) {
+          return fs.readFileSync(webpPath);
+        }
+      }
+    } else {
+      webpPath = path.join('/opt/render/project/storage/cache/webp/hd', `${fileId}.webp`);
+      if (fs.existsSync(webpPath)) {
+        return fs.readFileSync(webpPath);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Erro ao buscar WebP do disco:', error);
+    return null;
+  }
+}
+
 // Constantes para otimização de imagem
 const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
 const DEFAULT_QUALITY = 90;

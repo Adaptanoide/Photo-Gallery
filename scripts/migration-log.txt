@@ -1,0 +1,1556 @@
+[2025-05-23T18:08:22.316Z] 🚀 Starting WebP migration...
+[2025-05-23T18:08:22.319Z] ❌ Fatal error: Unexpected end of JSON input
+[2025-05-23T18:22:49.284Z] 🚀 Starting WebP migration...
+[2025-05-23T18:22:49.287Z] ❌ Fatal error: Unexpected end of JSON input
+[2025-05-23T18:33:50.975Z] 🚀 Starting WebP migration...
+[2025-05-23T18:33:50.977Z] 📂 Getting all leaf folders...
+[2025-05-23T18:33:58.891Z] Found 127 folders to process
+[2025-05-23T18:33:58.891Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:34:00.064Z] Found 0 photos in Grey Beige XL
+[2025-05-23T18:34:00.064Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:34:05.069Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:34:06.231Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:34:06.231Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:34:11.236Z] 
+📁 Processing folder: TiagoTeste 14un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:34:12.352Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:34:12.352Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:34:17.357Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:34:18.501Z] Found 0 photos in Grey Beige XL
+[2025-05-23T18:34:18.502Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:34:23.507Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:34:24.636Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:34:24.636Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:34:29.642Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:34:30.603Z] Found 1 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:34:30.603Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:34:30.603Z] ⬇️  Downloading: 10575.jpg
+[2025-05-23T18:34:35.184Z] 📦 Original size: 7.93 MB
+[2025-05-23T18:34:36.196Z] 📸 HD WebP: 893.03 KB (11% of original)
+[2025-05-23T18:34:36.266Z] 📸 small thumbnail: 3.39 KB
+[2025-05-23T18:34:36.339Z] 📸 medium thumbnail: 8.77 KB
+[2025-05-23T18:34:36.436Z] 📸 large thumbnail: 24.3 KB
+[2025-05-23T18:34:36.436Z] ✅ Completed in 5833ms
+[2025-05-23T18:34:36.436Z] 
+📁 Processing folder: TiagoTeste 5un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:34:37.266Z] Found 5 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:34:37.266Z] 
+🖼️  Processing: 10759.jpg
+[2025-05-23T18:34:37.266Z] ⬇️  Downloading: 10759.jpg
+[2025-05-23T18:34:40.823Z] 📦 Original size: 8.08 MB
+[2025-05-23T18:34:41.834Z] 📸 HD WebP: 899.12 KB (11% of original)
+[2025-05-23T18:34:41.905Z] 📸 small thumbnail: 3.63 KB
+[2025-05-23T18:34:41.982Z] 📸 medium thumbnail: 9.27 KB
+[2025-05-23T18:34:42.081Z] 📸 large thumbnail: 25.1 KB
+[2025-05-23T18:34:42.082Z] ✅ Completed in 4816ms
+[2025-05-23T18:34:42.082Z] 
+🖼️  Processing: 10761.jpg
+[2025-05-23T18:34:42.082Z] ⬇️  Downloading: 10761.jpg
+[2025-05-23T18:34:46.073Z] 📦 Original size: 7.94 MB
+[2025-05-23T18:34:47.113Z] 📸 HD WebP: 890.09 KB (11% of original)
+[2025-05-23T18:34:47.189Z] 📸 small thumbnail: 3.34 KB
+[2025-05-23T18:34:47.264Z] 📸 medium thumbnail: 8.8 KB
+[2025-05-23T18:34:47.362Z] 📸 large thumbnail: 24.24 KB
+[2025-05-23T18:34:47.362Z] ✅ Completed in 5280ms
+[2025-05-23T18:34:47.362Z] 
+🖼️  Processing: 10762.jpg
+[2025-05-23T18:34:47.362Z] ⬇️  Downloading: 10762.jpg
+[2025-05-23T18:34:52.101Z] 📦 Original size: 7.92 MB
+[2025-05-23T18:34:53.105Z] 📸 HD WebP: 865.75 KB (11% of original)
+[2025-05-23T18:34:53.180Z] 📸 small thumbnail: 3.34 KB
+[2025-05-23T18:34:53.259Z] 📸 medium thumbnail: 8.57 KB
+[2025-05-23T18:34:53.360Z] 📸 large thumbnail: 23.94 KB
+[2025-05-23T18:34:53.361Z] ✅ Completed in 5999ms
+[2025-05-23T18:34:53.361Z] 
+🖼️  Processing: 10763.jpg
+[2025-05-23T18:34:53.361Z] ⬇️  Downloading: 10763.jpg
+[2025-05-23T18:34:58.039Z] 📦 Original size: 8.07 MB
+[2025-05-23T18:34:59.117Z] 📸 HD WebP: 889.79 KB (11% of original)
+[2025-05-23T18:34:59.198Z] 📸 small thumbnail: 3.46 KB
+[2025-05-23T18:34:59.276Z] 📸 medium thumbnail: 9.08 KB
+[2025-05-23T18:34:59.383Z] 📸 large thumbnail: 24.74 KB
+[2025-05-23T18:34:59.384Z] ✅ Completed in 6023ms
+[2025-05-23T18:34:59.384Z] 
+🖼️  Processing: 01445.jpg
+[2025-05-23T18:34:59.384Z] ⬇️  Downloading: 01445.jpg
+[2025-05-23T18:35:04.724Z] 📦 Original size: 29.07 MB
+[2025-05-23T18:36:08.427Z] 📸 HD WebP: 6.81 MB (23% of original)
+[2025-05-23T18:36:08.716Z] 📸 small thumbnail: 3.05 KB
+[2025-05-23T18:36:09.012Z] 📸 medium thumbnail: 8.7 KB
+[2025-05-23T18:36:09.330Z] 📸 large thumbnail: 26.75 KB
+[2025-05-23T18:36:09.330Z] ✅ Completed in 69946ms
+[2025-05-23T18:36:09.330Z] 
+📁 Processing folder: TiagoTeste 14un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:36:10.114Z] Found 9 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:36:10.115Z] 
+🖼️  Processing: 10577.jpg
+[2025-05-23T18:36:10.115Z] ⬇️  Downloading: 10577.jpg
+[2025-05-23T18:36:15.097Z] 📦 Original size: 8.1 MB
+[2025-05-23T18:36:16.166Z] 📸 HD WebP: 939.61 KB (11% of original)
+[2025-05-23T18:36:16.241Z] 📸 small thumbnail: 3.38 KB
+[2025-05-23T18:36:16.320Z] 📸 medium thumbnail: 8.85 KB
+[2025-05-23T18:36:16.422Z] 📸 large thumbnail: 24.44 KB
+[2025-05-23T18:36:16.422Z] ✅ Completed in 6307ms
+[2025-05-23T18:36:16.422Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:36:16.422Z] ⬇️  Downloading: 10570.jpg
+[2025-05-23T18:36:20.826Z] 📦 Original size: 8 MB
+[2025-05-23T18:36:21.803Z] 📸 HD WebP: 889.35 KB (11% of original)
+[2025-05-23T18:36:21.875Z] 📸 small thumbnail: 3.29 KB
+[2025-05-23T18:36:21.950Z] 📸 medium thumbnail: 8.41 KB
+[2025-05-23T18:36:22.049Z] 📸 large thumbnail: 22.9 KB
+[2025-05-23T18:36:22.049Z] ✅ Completed in 5627ms
+[2025-05-23T18:36:22.049Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:36:22.049Z] ⬇️  Downloading: 10571.jpg
+[2025-05-23T18:36:26.462Z] 📦 Original size: 8.13 MB
+[2025-05-23T18:36:27.502Z] 📸 HD WebP: 957.65 KB (12% of original)
+[2025-05-23T18:36:27.580Z] 📸 small thumbnail: 3.34 KB
+[2025-05-23T18:36:27.656Z] 📸 medium thumbnail: 8.96 KB
+[2025-05-23T18:36:27.758Z] 📸 large thumbnail: 25.36 KB
+[2025-05-23T18:36:27.759Z] ✅ Completed in 5710ms
+[2025-05-23T18:36:27.759Z] 
+🖼️  Processing: 10560.jpg
+[2025-05-23T18:36:27.759Z] ⬇️  Downloading: 10560.jpg
+[2025-05-23T18:36:32.055Z] 📦 Original size: 7.8 MB
+[2025-05-23T18:36:33.068Z] 📸 HD WebP: 813.43 KB (10% of original)
+[2025-05-23T18:36:33.146Z] 📸 small thumbnail: 3.17 KB
+[2025-05-23T18:36:33.227Z] 📸 medium thumbnail: 8.04 KB
+[2025-05-23T18:36:33.326Z] 📸 large thumbnail: 22.24 KB
+[2025-05-23T18:36:33.326Z] ✅ Completed in 5567ms
+[2025-05-23T18:36:33.326Z] 
+🖼️  Processing: 10563.jpg
+[2025-05-23T18:36:33.326Z] ⬇️  Downloading: 10563.jpg
+[2025-05-23T18:36:37.808Z] 📦 Original size: 7.84 MB
+[2025-05-23T18:36:38.831Z] 📸 HD WebP: 872.8 KB (11% of original)
+[2025-05-23T18:36:38.901Z] 📸 small thumbnail: 3.33 KB
+[2025-05-23T18:36:38.976Z] 📸 medium thumbnail: 8.49 KB
+[2025-05-23T18:36:39.073Z] 📸 large thumbnail: 22.88 KB
+[2025-05-23T18:36:39.073Z] ✅ Completed in 5747ms
+[2025-05-23T18:36:39.073Z] 
+🖼️  Processing: 10565.jpg
+[2025-05-23T18:36:39.073Z] ⬇️  Downloading: 10565.jpg
+[2025-05-23T18:36:44.149Z] 📦 Original size: 7.92 MB
+[2025-05-23T18:36:45.134Z] 📸 HD WebP: 874.35 KB (11% of original)
+[2025-05-23T18:36:45.205Z] 📸 small thumbnail: 3.18 KB
+[2025-05-23T18:36:45.282Z] 📸 medium thumbnail: 8.05 KB
+[2025-05-23T18:36:45.379Z] 📸 large thumbnail: 22.09 KB
+[2025-05-23T18:36:45.380Z] ✅ Completed in 6307ms
+[2025-05-23T18:36:45.380Z] 
+🖼️  Processing: 10564.jpg
+[2025-05-23T18:36:45.380Z] ⬇️  Downloading: 10564.jpg
+[2025-05-23T18:36:49.931Z] 📦 Original size: 8.07 MB
+[2025-05-23T18:36:50.940Z] 📸 HD WebP: 963.68 KB (12% of original)
+[2025-05-23T18:36:51.015Z] 📸 small thumbnail: 3.27 KB
+[2025-05-23T18:36:51.095Z] 📸 medium thumbnail: 8.66 KB
+[2025-05-23T18:36:51.193Z] 📸 large thumbnail: 24.13 KB
+[2025-05-23T18:36:51.194Z] ✅ Completed in 5814ms
+[2025-05-23T18:36:51.194Z] 
+🖼️  Processing: 10756.jpg
+[2025-05-23T18:36:51.194Z] ⬇️  Downloading: 10756.jpg
+[2025-05-23T18:36:55.841Z] 📦 Original size: 8.04 MB
+[2025-05-23T18:36:56.828Z] 📸 HD WebP: 875.95 KB (11% of original)
+[2025-05-23T18:36:56.904Z] 📸 small thumbnail: 3.45 KB
+[2025-05-23T18:36:56.983Z] 📸 medium thumbnail: 8.83 KB
+[2025-05-23T18:36:57.087Z] 📸 large thumbnail: 24.24 KB
+[2025-05-23T18:36:57.087Z] ✅ Completed in 5893ms
+[2025-05-23T18:36:57.087Z] 
+🖼️  Processing: 10757.jpg
+[2025-05-23T18:36:57.087Z] ⬇️  Downloading: 10757.jpg
+[2025-05-23T18:37:01.698Z] 📦 Original size: 8.05 MB
+[2025-05-23T18:37:02.703Z] 📸 HD WebP: 924.24 KB (11% of original)
+[2025-05-23T18:37:02.779Z] 📸 small thumbnail: 3.43 KB
+[2025-05-23T18:37:02.858Z] 📸 medium thumbnail: 9.01 KB
+[2025-05-23T18:37:02.958Z] 📸 large thumbnail: 24.87 KB
+[2025-05-23T18:37:02.959Z] ✅ Completed in 5872ms
+[2025-05-23T18:37:02.959Z] 
+📁 Processing folder: TiagoTeste 2un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:03.794Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:03.794Z] 
+🖼️  Processing: 10586.jpg
+[2025-05-23T18:37:03.794Z] ⬇️  Downloading: 10586.jpg
+[2025-05-23T18:37:08.849Z] 📦 Original size: 8.01 MB
+[2025-05-23T18:37:09.859Z] 📸 HD WebP: 923.04 KB (11% of original)
+[2025-05-23T18:37:09.932Z] 📸 small thumbnail: 3.34 KB
+[2025-05-23T18:37:10.011Z] 📸 medium thumbnail: 8.69 KB
+[2025-05-23T18:37:10.110Z] 📸 large thumbnail: 24.06 KB
+[2025-05-23T18:37:10.111Z] ✅ Completed in 6317ms
+[2025-05-23T18:37:10.111Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:37:11.063Z] Found 2 photos in Grey Beige XL
+[2025-05-23T18:37:11.063Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:37:11.063Z] ⬇️  Downloading: 10571.jpg
+[2025-05-23T18:37:15.191Z] 📦 Original size: 8.13 MB
+[2025-05-23T18:37:16.208Z] 📸 HD WebP: 957.65 KB (12% of original)
+[2025-05-23T18:37:16.285Z] 📸 small thumbnail: 3.34 KB
+[2025-05-23T18:37:16.364Z] 📸 medium thumbnail: 8.96 KB
+[2025-05-23T18:37:16.466Z] 📸 large thumbnail: 25.36 KB
+[2025-05-23T18:37:16.466Z] ✅ Completed in 5403ms
+[2025-05-23T18:37:16.466Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:37:16.466Z] ⬇️  Downloading: 10572.jpg
+[2025-05-23T18:37:21.075Z] 📦 Original size: 7.77 MB
+[2025-05-23T18:37:22.058Z] 📸 HD WebP: 821.65 KB (10% of original)
+[2025-05-23T18:37:22.130Z] 📸 small thumbnail: 3.23 KB
+[2025-05-23T18:37:22.204Z] 📸 medium thumbnail: 8.11 KB
+[2025-05-23T18:37:22.300Z] 📸 large thumbnail: 22.3 KB
+[2025-05-23T18:37:22.301Z] ✅ Completed in 5835ms
+[2025-05-23T18:37:22.301Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:23.410Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:23.410Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:24.693Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:24.693Z] 
+📁 Processing folder: TESTE11 2un May 20 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:37:25.879Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:37:25.879Z] 
+📁 Processing folder: Procesamiento → developing → TESTE Waiting Payment
+[2025-05-23T18:37:27.242Z] Found 0 photos in TESTE Waiting Payment
+[2025-05-23T18:37:27.242Z] 
+📁 Processing folder: Procesamiento → developing → TESTS Sold
+[2025-05-23T18:37:28.675Z] Found 0 photos in TESTS Sold
+[2025-05-23T18:37:28.676Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:37:29.947Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:37:29.948Z] 
+📁 Processing folder: TESTE 6un May 21 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:30.826Z] Found 3 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:37:30.826Z] 
+🖼️  Processing: 10561.jpg
+[2025-05-23T18:37:30.826Z] ⬇️  Downloading: 10561.jpg
+[2025-05-23T18:37:34.985Z] 📦 Original size: 7.88 MB
+[2025-05-23T18:37:36.013Z] 📸 HD WebP: 882.66 KB (11% of original)
+[2025-05-23T18:37:36.089Z] 📸 small thumbnail: 3.18 KB
+[2025-05-23T18:37:36.166Z] 📸 medium thumbnail: 7.76 KB
+[2025-05-23T18:37:36.262Z] 📸 large thumbnail: 21.81 KB
+[2025-05-23T18:37:36.263Z] ✅ Completed in 5437ms
+[2025-05-23T18:37:36.263Z] 
+🖼️  Processing: 01167.jpg
+[2025-05-23T18:37:36.263Z] ⬇️  Downloading: 01167.jpg
+[2025-05-23T18:37:42.510Z] 📦 Original size: 34.99 MB
+[2025-05-23T18:39:34.571Z] 📸 HD WebP: 11.01 MB (31% of original)
+[2025-05-23T18:39:34.884Z] 📸 small thumbnail: 4 KB
+[2025-05-23T18:39:35.201Z] 📸 medium thumbnail: 12.68 KB
+[2025-05-23T18:39:35.544Z] 📸 large thumbnail: 45.2 KB
+[2025-05-23T18:39:35.544Z] ✅ Completed in 119281ms
+[2025-05-23T18:39:35.544Z] 
+🖼️  Processing: 01169.jpg
+[2025-05-23T18:39:35.544Z] ⬇️  Downloading: 01169.jpg
+[2025-05-23T18:39:43.717Z] 📦 Original size: 31.88 MB
+[2025-05-23T18:41:32.730Z] 📸 HD WebP: 9 MB (28% of original)
+[2025-05-23T18:41:33.025Z] 📸 small thumbnail: 4.54 KB
+[2025-05-23T18:41:33.327Z] 📸 medium thumbnail: 13.37 KB
+[2025-05-23T18:41:33.653Z] 📸 large thumbnail: 42.99 KB
+[2025-05-23T18:41:33.654Z] ✅ Completed in 118110ms
+[2025-05-23T18:41:33.654Z] 
+📁 Processing folder: TESTE11 1un May 21 2025 → Black & White Reddish ML
+[2025-05-23T18:41:34.479Z] Found 1 photos in Black & White Reddish ML
+[2025-05-23T18:41:34.479Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:41:34.480Z] ⬇️  Downloading: 10571.jpg
+[2025-05-23T18:41:38.233Z] 📦 Original size: 8.13 MB
+[2025-05-23T18:41:39.218Z] 📸 HD WebP: 957.65 KB (12% of original)
+[2025-05-23T18:41:39.291Z] 📸 small thumbnail: 3.34 KB
+[2025-05-23T18:41:39.368Z] 📸 medium thumbnail: 8.96 KB
+[2025-05-23T18:41:39.467Z] 📸 large thumbnail: 25.36 KB
+[2025-05-23T18:41:39.467Z] ✅ Completed in 4988ms
+[2025-05-23T18:41:39.467Z] 
+📁 Processing folder: TESTE 6un May 21 2025 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:41:40.375Z] Found 1 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:41:40.375Z] 
+🖼️  Processing: 91441.jpg
+[2025-05-23T18:41:40.375Z] ⬇️  Downloading: 91441.jpg
+[2025-05-23T18:41:48.175Z] 📦 Original size: 42.62 MB
+[2025-05-23T18:43:45.157Z] ❌ Error processing 91441.jpg: webpsave: unable to encode
+webpsave: mux error
+[2025-05-23T18:43:45.158Z] 
+📁 Processing folder: TESTE11 1un May 21 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:43:45.977Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:43:45.978Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:43:45.978Z] ⬇️  Downloading: 10569.jpg
+[2025-05-23T18:43:50.051Z] 📦 Original size: 7.92 MB
+[2025-05-23T18:43:51.048Z] 📸 HD WebP: 876.57 KB (11% of original)
+[2025-05-23T18:43:51.120Z] 📸 small thumbnail: 3.35 KB
+[2025-05-23T18:43:51.196Z] 📸 medium thumbnail: 8.66 KB
+[2025-05-23T18:43:51.292Z] 📸 large thumbnail: 23.71 KB
+[2025-05-23T18:43:51.293Z] ✅ Completed in 5315ms
+[2025-05-23T18:43:51.293Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Tricolor Spotted XL
+[2025-05-23T18:43:52.538Z] Found 0 photos in Tricolor Spotted XL
+[2025-05-23T18:43:52.538Z] 
+📁 Processing folder: TESTE11 1un May 18 2025 → Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T18:43:53.498Z] Found 1 photos in Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T18:43:53.498Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:43:53.498Z] ⬇️  Downloading: 10575.jpg
+[2025-05-23T18:43:57.826Z] 📦 Original size: 7.93 MB
+[2025-05-23T18:43:58.796Z] 📸 HD WebP: 893.03 KB (11% of original)
+[2025-05-23T18:43:58.872Z] 📸 small thumbnail: 3.39 KB
+[2025-05-23T18:43:58.947Z] 📸 medium thumbnail: 8.77 KB
+[2025-05-23T18:43:59.046Z] 📸 large thumbnail: 24.3 KB
+[2025-05-23T18:43:59.047Z] ✅ Completed in 5549ms
+[2025-05-23T18:43:59.047Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Grey Beige XL
+[2025-05-23T18:43:59.942Z] Found 1 photos in Grey Beige XL
+[2025-05-23T18:43:59.942Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:43:59.942Z] ⬇️  Downloading: 10570.jpg
+[2025-05-23T18:44:04.578Z] 📦 Original size: 8 MB
+[2025-05-23T18:49:03.137Z] 🚀 Starting WebP migration...
+[2025-05-23T18:49:03.139Z] 📂 Getting all leaf folders...
+[2025-05-23T18:49:14.107Z] Found 127 folders to process
+[2025-05-23T18:49:14.107Z] 
+📁 Processing folder: TiagoTeste 14un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:15.457Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:15.457Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:49:20.458Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:22.070Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:22.070Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:49:27.076Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:49:28.834Z] Found 0 photos in Grey Beige XL
+[2025-05-23T18:49:28.834Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:49:33.835Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:35.230Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:35.230Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:49:40.234Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:49:41.628Z] Found 0 photos in Grey Beige XL
+[2025-05-23T18:49:41.628Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:49:46.634Z] 
+📁 Processing folder: TiagoTeste 5un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:47.612Z] Found 5 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:47.613Z] 
+🖼️  Processing: 10759.jpg
+[2025-05-23T18:49:47.613Z] ⏭️  Already processed: 10759.jpg
+[2025-05-23T18:49:47.613Z] 
+🖼️  Processing: 10761.jpg
+[2025-05-23T18:49:47.613Z] ⏭️  Already processed: 10761.jpg
+[2025-05-23T18:49:47.613Z] 
+🖼️  Processing: 10762.jpg
+[2025-05-23T18:49:47.613Z] ⏭️  Already processed: 10762.jpg
+[2025-05-23T18:49:47.613Z] 
+🖼️  Processing: 10763.jpg
+[2025-05-23T18:49:47.613Z] ⏭️  Already processed: 10763.jpg
+[2025-05-23T18:49:47.613Z] 
+🖼️  Processing: 01445.jpg
+[2025-05-23T18:49:47.613Z] ⏭️  Already processed: 01445.jpg
+[2025-05-23T18:49:47.613Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:49:48.493Z] Found 2 photos in Grey Beige XL
+[2025-05-23T18:49:48.493Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:49:48.493Z] ⏭️  Already processed: 10571.jpg
+[2025-05-23T18:49:48.493Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:49:48.493Z] ⏭️  Already processed: 10572.jpg
+[2025-05-23T18:49:48.493Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:49.615Z] Found 1 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:49.615Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:49:49.615Z] ⏭️  Already processed: 10575.jpg
+[2025-05-23T18:49:49.615Z] 
+📁 Processing folder: TiagoTeste 2un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:50.835Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:50.835Z] 
+🖼️  Processing: 10586.jpg
+[2025-05-23T18:49:50.835Z] ⏭️  Already processed: 10586.jpg
+[2025-05-23T18:49:50.835Z] 
+📁 Processing folder: TiagoTeste 14un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:51.932Z] Found 9 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:51.932Z] 
+🖼️  Processing: 10577.jpg
+[2025-05-23T18:49:51.932Z] ⏭️  Already processed: 10577.jpg
+[2025-05-23T18:49:51.932Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:49:51.932Z] ⏭️  Already processed: 10570.jpg
+[2025-05-23T18:49:51.932Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:49:51.932Z] ⏭️  Already processed: 10571.jpg
+[2025-05-23T18:49:51.932Z] 
+🖼️  Processing: 10560.jpg
+[2025-05-23T18:49:51.933Z] ⏭️  Already processed: 10560.jpg
+[2025-05-23T18:49:51.933Z] 
+🖼️  Processing: 10563.jpg
+[2025-05-23T18:49:51.933Z] ⏭️  Already processed: 10563.jpg
+[2025-05-23T18:49:51.933Z] 
+🖼️  Processing: 10565.jpg
+[2025-05-23T18:49:51.933Z] ⏭️  Already processed: 10565.jpg
+[2025-05-23T18:49:51.933Z] 
+🖼️  Processing: 10564.jpg
+[2025-05-23T18:49:51.933Z] ⏭️  Already processed: 10564.jpg
+[2025-05-23T18:49:51.933Z] 
+🖼️  Processing: 10756.jpg
+[2025-05-23T18:49:51.933Z] ⏭️  Already processed: 10756.jpg
+[2025-05-23T18:49:51.933Z] 
+🖼️  Processing: 10757.jpg
+[2025-05-23T18:49:51.933Z] ⏭️  Already processed: 10757.jpg
+[2025-05-23T18:49:51.933Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:53.327Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:53.327Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:54.844Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:49:54.844Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:56.390Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:56.391Z] 
+📁 Processing folder: Procesamiento → developing → TESTS Sold
+[2025-05-23T18:49:58.033Z] Found 0 photos in TESTS Sold
+[2025-05-23T18:49:58.033Z] 
+📁 Processing folder: TESTE11 2un May 20 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:59.590Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:49:59.590Z] 
+📁 Processing folder: Procesamiento → developing → TESTE Waiting Payment
+[2025-05-23T18:50:01.141Z] Found 0 photos in TESTE Waiting Payment
+[2025-05-23T18:50:01.141Z] 
+📁 Processing folder: TESTE 6un May 21 2025 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:50:02.089Z] Found 1 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:50:02.089Z] 
+🖼️  Processing: 91441.jpg
+[2025-05-23T18:50:02.089Z] ⏭️  Already processed: 91441.jpg
+[2025-05-23T18:50:02.089Z] 
+📁 Processing folder: TESTE11 1un May 21 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:50:03.158Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:50:03.159Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:50:03.159Z] ⏭️  Already processed: 10569.jpg
+[2025-05-23T18:50:03.159Z] ⏸️  Pausing for 5 seconds... (Processed: 20 files)
+[2025-05-23T18:50:08.165Z] 
+📁 Processing folder: TESTE 6un May 21 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:50:09.305Z] Found 3 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:50:09.306Z] 
+🖼️  Processing: 10561.jpg
+[2025-05-23T18:50:09.306Z] ⏭️  Already processed: 10561.jpg
+[2025-05-23T18:50:09.306Z] 
+🖼️  Processing: 01167.jpg
+[2025-05-23T18:50:09.306Z] ⏭️  Already processed: 01167.jpg
+[2025-05-23T18:50:09.306Z] 
+🖼️  Processing: 01169.jpg
+[2025-05-23T18:50:09.306Z] ⏭️  Already processed: 01169.jpg
+[2025-05-23T18:50:09.306Z] 
+📁 Processing folder: TESTE11 1un May 21 2025 → Black & White Reddish ML
+[2025-05-23T18:50:10.421Z] Found 1 photos in Black & White Reddish ML
+[2025-05-23T18:50:10.421Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:50:10.421Z] ⏭️  Already processed: 10571.jpg
+[2025-05-23T18:50:10.421Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Tricolor Spotted XL
+[2025-05-23T18:50:11.763Z] Found 0 photos in Tricolor Spotted XL
+[2025-05-23T18:50:11.763Z] 
+📁 Processing folder: TESTE11 1un May 18 2025 → Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T18:50:12.826Z] Found 1 photos in Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T18:50:12.826Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:50:12.826Z] ⏭️  Already processed: 10575.jpg
+[2025-05-23T18:50:12.826Z] 
+📁 Processing folder: TESTE11 1un May 20 2025 → Tricolor Spotted XL
+[2025-05-23T18:50:13.794Z] Found 1 photos in Tricolor Spotted XL
+[2025-05-23T18:50:13.794Z] 
+🖼️  Processing: 10564.jpg
+[2025-05-23T18:50:13.794Z] ⬇️  Downloading: 10564.jpg
+[2025-05-23T18:50:34.024Z] 📦 Original size: 8.07 MB
+[2025-05-23T18:50:35.023Z] 📸 HD WebP: 963.68 KB (12% of original)
+[2025-05-23T18:50:35.097Z] 📸 small thumbnail: 3.27 KB
+[2025-05-23T18:50:35.173Z] 📸 medium thumbnail: 8.66 KB
+[2025-05-23T18:50:35.274Z] 📸 large thumbnail: 24.13 KB
+[2025-05-23T18:50:35.274Z] ✅ Completed in 21480ms
+[2025-05-23T18:50:35.274Z] 
+📁 Processing folder: TESTE 2un May 15 2025 → Brindle Grey XLL
+[2025-05-23T18:50:36.214Z] Found 2 photos in Brindle Grey XLL
+[2025-05-23T18:50:36.214Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:50:36.214Z] ⬇️  Downloading: 10569.jpg
+[2025-05-23T18:50:42.833Z] 📦 Original size: 7.92 MB
+[2025-05-23T18:50:43.821Z] 📸 HD WebP: 876.57 KB (11% of original)
+[2025-05-23T18:50:43.894Z] 📸 small thumbnail: 3.35 KB
+[2025-05-23T18:50:43.969Z] 📸 medium thumbnail: 8.66 KB
+[2025-05-23T18:50:44.069Z] 📸 large thumbnail: 23.71 KB
+[2025-05-23T18:50:44.069Z] ✅ Completed in 7855ms
+[2025-05-23T18:50:44.070Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:50:44.070Z] ⬇️  Downloading: 10570.jpg
+[2025-05-23T18:51:11.823Z] 🚀 Starting WebP migration...
+[2025-05-23T18:51:11.825Z] 📂 Getting all leaf folders...
+[2025-05-23T18:51:21.549Z] Found 127 folders to process
+[2025-05-23T18:51:21.549Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:51:23.114Z] Found 0 photos in Grey Beige XL
+[2025-05-23T18:51:23.114Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:51:28.120Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:29.531Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:29.531Z] ⏸️  Pausing for 5 seconds... (Processed: 0 files)
+[2025-05-23T18:51:34.537Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:51:35.741Z] Found 2 photos in Grey Beige XL
+[2025-05-23T18:51:35.741Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:51:35.741Z] ⏭️  Already processed: 10571.jpg
+[2025-05-23T18:51:35.741Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:51:35.741Z] ⏭️  Already processed: 10572.jpg
+[2025-05-23T18:51:35.741Z] 
+📁 Processing folder: TiagoTeste 14un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:36.998Z] Found 9 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10577.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10577.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10570.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10571.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10560.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10560.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10563.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10563.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10565.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10565.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10564.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10564.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10756.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10756.jpg
+[2025-05-23T18:51:36.999Z] 
+🖼️  Processing: 10757.jpg
+[2025-05-23T18:51:36.999Z] ⏭️  Already processed: 10757.jpg
+[2025-05-23T18:51:36.999Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Grey Beige XL
+[2025-05-23T18:51:38.404Z] Found 0 photos in Grey Beige XL
+[2025-05-23T18:51:38.404Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:39.407Z] Found 1 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:39.407Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:51:39.407Z] ⏭️  Already processed: 10575.jpg
+[2025-05-23T18:51:39.407Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:40.982Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:40.983Z] 
+📁 Processing folder: TiagoTeste 14un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:42.602Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:42.602Z] 
+📁 Processing folder: TiagoTeste 5un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:44.036Z] Found 5 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:44.036Z] 
+🖼️  Processing: 10759.jpg
+[2025-05-23T18:51:44.036Z] ⏭️  Already processed: 10759.jpg
+[2025-05-23T18:51:44.036Z] 
+🖼️  Processing: 10761.jpg
+[2025-05-23T18:51:44.036Z] ⏭️  Already processed: 10761.jpg
+[2025-05-23T18:51:44.036Z] 
+🖼️  Processing: 10762.jpg
+[2025-05-23T18:51:44.036Z] ⏭️  Already processed: 10762.jpg
+[2025-05-23T18:51:44.036Z] 
+🖼️  Processing: 10763.jpg
+[2025-05-23T18:51:44.036Z] ⏭️  Already processed: 10763.jpg
+[2025-05-23T18:51:44.036Z] 
+🖼️  Processing: 01445.jpg
+[2025-05-23T18:51:44.036Z] ⏭️  Already processed: 01445.jpg
+[2025-05-23T18:51:44.036Z] 
+📁 Processing folder: TiagoTeste 2un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:45.357Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:45.357Z] 
+🖼️  Processing: 10586.jpg
+[2025-05-23T18:51:45.357Z] ⏭️  Already processed: 10586.jpg
+[2025-05-23T18:51:45.357Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:46.904Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:46.904Z] 
+📁 Processing folder: TESTE11 2un May 20 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:48.224Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:51:48.224Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:49.873Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:49.874Z] 
+📁 Processing folder: TESTE 18un May 22 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:51.399Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:51.399Z] 
+📁 Processing folder: TESTE 6un May 21 2025 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:51:52.332Z] Found 1 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:51:52.332Z] 
+🖼️  Processing: 91441.jpg
+[2025-05-23T18:51:52.332Z] ⏭️  Already processed: 91441.jpg
+[2025-05-23T18:51:52.332Z] 
+📁 Processing folder: TESTE11 1un May 21 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:53.459Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:53.459Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:51:53.459Z] ⏭️  Already processed: 10569.jpg
+[2025-05-23T18:51:53.459Z] ⏸️  Pausing for 5 seconds... (Processed: 20 files)
+[2025-05-23T18:51:58.463Z] 
+📁 Processing folder: TESTE 6un May 21 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:59.499Z] Found 3 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:51:59.499Z] 
+🖼️  Processing: 10561.jpg
+[2025-05-23T18:51:59.499Z] ⏭️  Already processed: 10561.jpg
+[2025-05-23T18:51:59.499Z] 
+🖼️  Processing: 01167.jpg
+[2025-05-23T18:51:59.500Z] ⏭️  Already processed: 01167.jpg
+[2025-05-23T18:51:59.500Z] 
+🖼️  Processing: 01169.jpg
+[2025-05-23T18:51:59.500Z] ⏭️  Already processed: 01169.jpg
+[2025-05-23T18:51:59.500Z] 
+📁 Processing folder: TESTE11 1un May 21 2025 → Black & White Reddish ML
+[2025-05-23T18:52:00.832Z] Found 1 photos in Black & White Reddish ML
+[2025-05-23T18:52:00.832Z] 
+🖼️  Processing: 10571.jpg
+[2025-05-23T18:52:00.832Z] ⏭️  Already processed: 10571.jpg
+[2025-05-23T18:52:00.832Z] 
+📁 Processing folder: Procesamiento → developing → TESTS Sold
+[2025-05-23T18:52:02.676Z] Found 0 photos in TESTS Sold
+[2025-05-23T18:52:02.676Z] 
+📁 Processing folder: Procesamiento → developing → TESTE Waiting Payment
+[2025-05-23T18:52:04.273Z] Found 0 photos in TESTE Waiting Payment
+[2025-05-23T18:52:04.273Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Tricolor Spotted XL
+[2025-05-23T18:52:05.646Z] Found 0 photos in Tricolor Spotted XL
+[2025-05-23T18:52:05.646Z] 
+📁 Processing folder: TiagoTESTE 1un May 18 2025 → Exotic Tones ML-XL
+[2025-05-23T18:52:06.976Z] Found 1 photos in Exotic Tones ML-XL
+[2025-05-23T18:52:06.977Z] 
+🖼️  Processing: 87028.jpg
+[2025-05-23T18:52:06.977Z] ⬇️  Downloading: 87028.jpg
+[2025-05-23T18:52:10.665Z] 📦 Original size: 1.94 MB
+[2025-05-23T18:52:11.625Z] 📸 HD WebP: 605.15 KB (30% of original)
+[2025-05-23T18:52:11.655Z] 📸 small thumbnail: 3.49 KB
+[2025-05-23T18:52:11.688Z] 📸 medium thumbnail: 8.72 KB
+[2025-05-23T18:52:11.747Z] 📸 large thumbnail: 20.8 KB
+[2025-05-23T18:52:11.747Z] ✅ Completed in 4770ms
+[2025-05-23T18:52:11.747Z] 
+📁 Processing folder: TESTE11 1un May 18 2025 → Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T18:52:12.814Z] Found 1 photos in Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T18:52:12.814Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:52:12.814Z] ⏭️  Already processed: 10575.jpg
+[2025-05-23T18:52:12.814Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Black & White Reddish ML
+[2025-05-23T18:52:13.838Z] Found 1 photos in Black & White Reddish ML
+[2025-05-23T18:52:13.839Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:52:13.839Z] ⬇️  Downloading: 10572.jpg
+[2025-05-23T18:52:19.223Z] 📦 Original size: 7.77 MB
+[2025-05-23T18:52:20.181Z] 📸 HD WebP: 821.65 KB (10% of original)
+[2025-05-23T18:52:20.253Z] 📸 small thumbnail: 3.23 KB
+[2025-05-23T18:52:20.330Z] 📸 medium thumbnail: 8.11 KB
+[2025-05-23T18:52:20.426Z] 📸 large thumbnail: 22.3 KB
+[2025-05-23T18:52:20.427Z] ✅ Completed in 6588ms
+[2025-05-23T18:52:20.427Z] 
+📁 Processing folder: TESTE 5un May 20 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:52:21.186Z] Found 3 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:52:21.186Z] 
+🖼️  Processing: 01470.jpg
+[2025-05-23T18:52:21.186Z] ⬇️  Downloading: 01470.jpg
+[2025-05-23T18:52:29.218Z] 📦 Original size: 34.77 MB
+[2025-05-23T18:54:21.974Z] 📸 HD WebP: 10.38 MB (30% of original)
+[2025-05-23T18:54:22.289Z] 📸 small thumbnail: 2.93 KB
+[2025-05-23T18:54:22.611Z] 📸 medium thumbnail: 7.94 KB
+[2025-05-23T18:54:22.959Z] 📸 large thumbnail: 25.81 KB
+[2025-05-23T18:54:22.959Z] ✅ Completed in 121773ms
+[2025-05-23T18:54:22.959Z] 
+🖼️  Processing: 01453.jpg
+[2025-05-23T18:54:22.959Z] ⬇️  Downloading: 01453.jpg
+[2025-05-23T18:54:29.180Z] 📦 Original size: 29.5 MB
+[2025-05-23T18:55:27.097Z] 📸 HD WebP: 6.85 MB (23% of original)
+[2025-05-23T18:55:27.386Z] 📸 small thumbnail: 2.89 KB
+[2025-05-23T18:55:27.676Z] 📸 medium thumbnail: 7.49 KB
+[2025-05-23T18:55:27.988Z] 📸 large thumbnail: 21.16 KB
+[2025-05-23T18:55:27.988Z] ✅ Completed in 65029ms
+[2025-05-23T18:55:27.988Z] 
+🖼️  Processing: 01427.jpg
+[2025-05-23T18:55:27.988Z] ⬇️  Downloading: 01427.jpg
+[2025-05-23T18:55:35.802Z] 📦 Original size: 32.55 MB
+[2025-05-23T18:56:45.655Z] 📸 HD WebP: 9.28 MB (29% of original)
+[2025-05-23T18:56:45.949Z] 📸 small thumbnail: 3.27 KB
+[2025-05-23T18:56:46.252Z] 📸 medium thumbnail: 8.41 KB
+[2025-05-23T18:56:46.584Z] 📸 large thumbnail: 23.76 KB
+[2025-05-23T18:56:46.585Z] ✅ Completed in 78597ms
+[2025-05-23T18:56:46.585Z] ⏸️  Pausing for 5 seconds... (Processed: 30 files)
+[2025-05-23T18:56:51.591Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Hereford ML
+[2025-05-23T18:56:52.655Z] Found 1 photos in Hereford ML
+[2025-05-23T18:56:52.655Z] 
+🖼️  Processing: 10587.jpg
+[2025-05-23T18:56:52.655Z] ⬇️  Downloading: 10587.jpg
+[2025-05-23T18:56:57.769Z] 📦 Original size: 7.95 MB
+[2025-05-23T18:56:58.742Z] 📸 HD WebP: 902.44 KB (11% of original)
+[2025-05-23T18:56:58.813Z] 📸 small thumbnail: 3.39 KB
+[2025-05-23T18:56:58.895Z] 📸 medium thumbnail: 8.57 KB
+[2025-05-23T18:56:58.992Z] 📸 large thumbnail: 23.24 KB
+[2025-05-23T18:56:58.992Z] ✅ Completed in 6337ms
+[2025-05-23T18:56:58.992Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Grey Beige XL
+[2025-05-23T18:56:59.802Z] Found 1 photos in Grey Beige XL
+[2025-05-23T18:56:59.802Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:56:59.802Z] ⏭️  Already processed: 10570.jpg
+[2025-05-23T18:56:59.802Z] 
+📁 Processing folder: TESTE11 2un May 20 2025 → Salt & Pepper Chocolate and White XL
+[2025-05-23T18:57:00.744Z] Found 1 photos in Salt & Pepper Chocolate and White XL
+[2025-05-23T18:57:00.744Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:57:00.744Z] ⬇️  Downloading: 10575.jpg
+[2025-05-23T18:57:05.523Z] 📦 Original size: 7.93 MB
+[2025-05-23T18:57:06.492Z] 📸 HD WebP: 893.03 KB (11% of original)
+[2025-05-23T18:57:06.565Z] 📸 small thumbnail: 3.39 KB
+[2025-05-23T18:57:06.640Z] 📸 medium thumbnail: 8.77 KB
+[2025-05-23T18:57:06.741Z] 📸 large thumbnail: 24.3 KB
+[2025-05-23T18:57:06.742Z] ✅ Completed in 5998ms
+[2025-05-23T18:57:06.742Z] 
+📁 Processing folder: TESTE 2un May 15 2025 → Brindle Grey XLL
+[2025-05-23T18:57:08.730Z] Found 2 photos in Brindle Grey XLL
+[2025-05-23T18:57:08.731Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:57:08.731Z] ⏭️  Already processed: 10569.jpg
+[2025-05-23T18:57:08.731Z] 
+🖼️  Processing: 10570.jpg
+[2025-05-23T18:57:08.731Z] ⬇️  Downloading: 10570.jpg
+[2025-05-23T18:57:12.757Z] 📦 Original size: 8 MB
+[2025-05-23T18:57:13.727Z] 📸 HD WebP: 889.35 KB (11% of original)
+[2025-05-23T18:57:13.798Z] 📸 small thumbnail: 3.29 KB
+[2025-05-23T18:57:13.872Z] 📸 medium thumbnail: 8.41 KB
+[2025-05-23T18:57:13.969Z] 📸 large thumbnail: 22.9 KB
+[2025-05-23T18:57:13.969Z] ✅ Completed in 5238ms
+[2025-05-23T18:57:13.970Z] 
+📁 Processing folder: TESTE11 1un May 20 2025 → Tricolor Spotted XL
+[2025-05-23T18:57:14.833Z] Found 1 photos in Tricolor Spotted XL
+[2025-05-23T18:57:14.833Z] 
+🖼️  Processing: 10564.jpg
+[2025-05-23T18:57:14.833Z] ⏭️  Already processed: 10564.jpg
+[2025-05-23T18:57:14.833Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:57:15.966Z] Found 0 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:57:15.966Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:57:17.052Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T18:57:17.052Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Brindle Light Grey-Beige XL
+[2025-05-23T18:57:17.955Z] Found 1 photos in Brindle Light Grey-Beige XL
+[2025-05-23T18:57:17.955Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:57:17.955Z] ⬇️  Downloading: 10572.jpg
+[2025-05-23T18:57:23.279Z] 📦 Original size: 7.77 MB
+[2025-05-23T18:57:24.235Z] 📸 HD WebP: 821.65 KB (10% of original)
+[2025-05-23T18:57:24.309Z] 📸 small thumbnail: 3.23 KB
+[2025-05-23T18:57:24.386Z] 📸 medium thumbnail: 8.11 KB
+[2025-05-23T18:57:24.485Z] 📸 large thumbnail: 22.3 KB
+[2025-05-23T18:57:24.486Z] ✅ Completed in 6531ms
+[2025-05-23T18:57:24.486Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Salt & Pepper Chocolate and White XL
+[2025-05-23T18:57:25.272Z] Found 2 photos in Salt & Pepper Chocolate and White XL
+[2025-05-23T18:57:25.273Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:57:25.273Z] ⬇️  Downloading: 10569.jpg
+[2025-05-23T18:57:29.372Z] 📦 Original size: 7.92 MB
+[2025-05-23T18:57:30.332Z] 📸 HD WebP: 876.57 KB (11% of original)
+[2025-05-23T18:57:30.405Z] 📸 small thumbnail: 3.35 KB
+[2025-05-23T18:57:30.481Z] 📸 medium thumbnail: 8.66 KB
+[2025-05-23T18:57:30.581Z] 📸 large thumbnail: 23.71 KB
+[2025-05-23T18:57:30.582Z] ✅ Completed in 5309ms
+[2025-05-23T18:57:30.582Z] 
+🖼️  Processing: 10577.jpg
+[2025-05-23T18:57:30.582Z] ⬇️  Downloading: 10577.jpg
+[2025-05-23T18:57:35.115Z] 📦 Original size: 8.1 MB
+[2025-05-23T18:57:36.087Z] 📸 HD WebP: 939.61 KB (11% of original)
+[2025-05-23T18:57:36.158Z] 📸 small thumbnail: 3.38 KB
+[2025-05-23T18:57:36.236Z] 📸 medium thumbnail: 8.85 KB
+[2025-05-23T18:57:36.338Z] 📸 large thumbnail: 24.44 KB
+[2025-05-23T18:57:36.338Z] ✅ Completed in 5756ms
+[2025-05-23T18:57:36.338Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Hereford XL
+[2025-05-23T18:57:37.200Z] Found 1 photos in Hereford XL
+[2025-05-23T18:57:37.201Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:57:37.201Z] ⬇️  Downloading: 10572.jpg
+[2025-05-23T18:57:41.488Z] 📦 Original size: 7.77 MB
+[2025-05-23T18:57:42.497Z] 📸 HD WebP: 821.65 KB (10% of original)
+[2025-05-23T18:57:42.567Z] 📸 small thumbnail: 3.23 KB
+[2025-05-23T18:57:42.645Z] 📸 medium thumbnail: 8.11 KB
+[2025-05-23T18:57:42.742Z] 📸 large thumbnail: 22.3 KB
+[2025-05-23T18:57:42.742Z] ✅ Completed in 5541ms
+[2025-05-23T18:57:42.742Z] ⏸️  Pausing for 5 seconds... (Processed: 40 files)
+[2025-05-23T18:57:47.749Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Brindle Grey XLL
+[2025-05-23T18:57:48.572Z] Found 4 photos in Brindle Grey XLL
+[2025-05-23T18:57:48.572Z] 
+🖼️  Processing: 10575.jpg
+[2025-05-23T18:57:48.572Z] ⬇️  Downloading: 10575.jpg
+[2025-05-23T18:57:51.947Z] 📦 Original size: 7.93 MB
+[2025-05-23T18:57:52.931Z] 📸 HD WebP: 893.03 KB (11% of original)
+[2025-05-23T18:57:53.001Z] 📸 small thumbnail: 3.39 KB
+[2025-05-23T18:57:53.078Z] 📸 medium thumbnail: 8.77 KB
+[2025-05-23T18:57:53.177Z] 📸 large thumbnail: 24.3 KB
+[2025-05-23T18:57:53.177Z] ✅ Completed in 4605ms
+[2025-05-23T18:57:53.177Z] 
+🖼️  Processing: 10587.jpg
+[2025-05-23T18:57:53.177Z] ⬇️  Downloading: 10587.jpg
+[2025-05-23T18:57:57.600Z] 📦 Original size: 7.95 MB
+[2025-05-23T18:57:58.626Z] 📸 HD WebP: 902.44 KB (11% of original)
+[2025-05-23T18:57:58.701Z] 📸 small thumbnail: 3.39 KB
+[2025-05-23T18:57:58.781Z] 📸 medium thumbnail: 8.57 KB
+[2025-05-23T18:57:58.881Z] 📸 large thumbnail: 23.24 KB
+[2025-05-23T18:57:58.881Z] ✅ Completed in 5704ms
+[2025-05-23T18:57:58.882Z] 
+🖼️  Processing: 10576.jpg
+[2025-05-23T18:57:58.882Z] ⬇️  Downloading: 10576.jpg
+[2025-05-23T18:58:03.741Z] 📦 Original size: 7.87 MB
+[2025-05-23T18:58:04.718Z] 📸 HD WebP: 861.8 KB (11% of original)
+[2025-05-23T18:58:04.787Z] 📸 small thumbnail: 3.29 KB
+[2025-05-23T18:58:04.863Z] 📸 medium thumbnail: 8.47 KB
+[2025-05-23T18:58:04.961Z] 📸 large thumbnail: 23.11 KB
+[2025-05-23T18:58:04.962Z] ✅ Completed in 6080ms
+[2025-05-23T18:58:04.962Z] 
+🖼️  Processing: 10577.jpg
+[2025-05-23T18:58:04.962Z] ⬇️  Downloading: 10577.jpg
+[2025-05-23T18:58:09.093Z] 📦 Original size: 8.1 MB
+[2025-05-23T18:58:10.078Z] 📸 HD WebP: 939.61 KB (11% of original)
+[2025-05-23T18:58:10.151Z] 📸 small thumbnail: 3.38 KB
+[2025-05-23T18:58:10.228Z] 📸 medium thumbnail: 8.85 KB
+[2025-05-23T18:58:10.325Z] 📸 large thumbnail: 24.44 KB
+[2025-05-23T18:58:10.325Z] ✅ Completed in 5363ms
+[2025-05-23T18:58:10.325Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:11.080Z] Found 1 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:11.080Z] 
+🖼️  Processing: 10562.jpg
+[2025-05-23T18:58:11.080Z] ⬇️  Downloading: 10562.jpg
+[2025-05-23T18:58:15.665Z] 📦 Original size: 8.1 MB
+[2025-05-23T18:58:16.681Z] 📸 HD WebP: 982.91 KB (12% of original)
+[2025-05-23T18:58:16.755Z] 📸 small thumbnail: 3.35 KB
+[2025-05-23T18:58:16.833Z] 📸 medium thumbnail: 8.94 KB
+[2025-05-23T18:58:16.940Z] 📸 large thumbnail: 24.89 KB
+[2025-05-23T18:58:16.940Z] ✅ Completed in 5860ms
+[2025-05-23T18:58:16.940Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Salt & Pepper - Tricolor, Brown and White Medium
+[2025-05-23T18:58:17.738Z] Found 1 photos in Salt & Pepper - Tricolor, Brown and White Medium
+[2025-05-23T18:58:17.738Z] 
+🖼️  Processing: 10562.jpg
+[2025-05-23T18:58:17.738Z] ⬇️  Downloading: 10562.jpg
+[2025-05-23T18:58:21.146Z] 📦 Original size: 8.1 MB
+[2025-05-23T18:58:22.131Z] 📸 HD WebP: 982.91 KB (12% of original)
+[2025-05-23T18:58:22.202Z] 📸 small thumbnail: 3.35 KB
+[2025-05-23T18:58:22.277Z] 📸 medium thumbnail: 8.94 KB
+[2025-05-23T18:58:22.375Z] 📸 large thumbnail: 24.89 KB
+[2025-05-23T18:58:22.376Z] ✅ Completed in 4638ms
+[2025-05-23T18:58:22.376Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Best Value -Salt & Pepper Mix - Black & White
+[2025-05-23T18:58:23.282Z] Found 1 photos in Best Value -Salt & Pepper Mix - Black & White
+[2025-05-23T18:58:23.282Z] 
+🖼️  Processing: 10569.jpg
+[2025-05-23T18:58:23.283Z] ⬇️  Downloading: 10569.jpg
+[2025-05-23T18:58:26.712Z] 📦 Original size: 7.92 MB
+[2025-05-23T18:58:27.675Z] 📸 HD WebP: 876.57 KB (11% of original)
+[2025-05-23T18:58:27.748Z] 📸 small thumbnail: 3.35 KB
+[2025-05-23T18:58:27.824Z] 📸 medium thumbnail: 8.66 KB
+[2025-05-23T18:58:27.924Z] 📸 large thumbnail: 23.71 KB
+[2025-05-23T18:58:27.924Z] ✅ Completed in 4642ms
+[2025-05-23T18:58:27.924Z] 
+📁 Processing folder: TESTE 18un May 14 2025 → Brindle White Belly XL
+[2025-05-23T18:58:28.806Z] Found 1 photos in Brindle White Belly XL
+[2025-05-23T18:58:28.806Z] 
+🖼️  Processing: 10572.jpg
+[2025-05-23T18:58:28.806Z] ⬇️  Downloading: 10572.jpg
+[2025-05-23T18:58:33.243Z] 📦 Original size: 7.77 MB
+[2025-05-23T18:58:34.188Z] 📸 HD WebP: 821.65 KB (10% of original)
+[2025-05-23T18:58:34.259Z] 📸 small thumbnail: 3.23 KB
+[2025-05-23T18:58:34.333Z] 📸 medium thumbnail: 8.11 KB
+[2025-05-23T18:58:34.427Z] 📸 large thumbnail: 22.3 KB
+[2025-05-23T18:58:34.427Z] ✅ Completed in 5621ms
+[2025-05-23T18:58:34.427Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Tricolor Mix XL
+[2025-05-23T18:58:35.524Z] Found 0 photos in Tricolor Mix XL
+[2025-05-23T18:58:35.524Z] 
+📁 Processing folder: TESTE 10un May 13 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:36.606Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:36.606Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:58:38.746Z] Found 0 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:58:38.746Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:39.859Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:39.859Z] 
+📁 Processing folder: TESTE 13un May 13 2025 → Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:40.624Z] Found 2 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T18:58:40.624Z] 
+🖼️  Processing: 10755.jpg
+[2025-05-23T18:58:40.624Z] ⬇️  Downloading: 10755.jpg
+[2025-05-23T18:58:46.822Z] 📦 Original size: 7.81 MB
+[2025-05-23T18:58:47.790Z] 📸 HD WebP: 819.04 KB (10% of original)
+[2025-05-23T18:58:47.861Z] 📸 small thumbnail: 3.27 KB
+[2025-05-23T18:58:47.937Z] 📸 medium thumbnail: 8.48 KB
+[2025-05-23T18:58:48.037Z] 📸 large thumbnail: 22.83 KB
+[2025-05-23T18:58:48.038Z] ✅ Completed in 7414ms
+[2025-05-23T18:58:48.038Z] 
+🖼️  Processing: 10758.jpg
+[2025-05-23T18:58:48.038Z] ⬇️  Downloading: 10758.jpg
+[2025-05-23T18:58:52.972Z] 📦 Original size: 8.17 MB
+[2025-05-23T18:58:53.951Z] 📸 HD WebP: 940.6 KB (11% of original)
+[2025-05-23T18:58:54.025Z] 📸 small thumbnail: 3.54 KB
+[2025-05-23T18:58:54.107Z] 📸 medium thumbnail: 9.13 KB
+[2025-05-23T18:58:54.210Z] 📸 large thumbnail: 25.17 KB
+[2025-05-23T18:58:54.211Z] ✅ Completed in 6173ms
+[2025-05-23T18:58:54.211Z] ⏸️  Pausing for 5 seconds... (Processed: 50 files)
+[2025-05-23T18:58:59.216Z] 
+📁 Processing folder: TESTE 10un May 13 2025 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:59:00.169Z] Found 2 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T18:59:00.169Z] 
+🖼️  Processing: 91442.jpg
+[2025-05-23T18:59:00.170Z] ⬇️  Downloading: 91442.jpg
+[2025-05-23T18:59:08.352Z] 📦 Original size: 34.8 MB
+[2025-05-23T19:01:01.880Z] 📸 HD WebP: 11.75 MB (34% of original)
+[2025-05-23T19:01:02.204Z] 📸 small thumbnail: 4.24 KB
+[2025-05-23T19:01:02.522Z] 📸 medium thumbnail: 12.25 KB
+[2025-05-23T19:01:02.859Z] 📸 large thumbnail: 36.84 KB
+[2025-05-23T19:01:02.864Z] ✅ Completed in 122695ms
+[2025-05-23T19:01:02.864Z] 
+🖼️  Processing: 91439.jpg
+[2025-05-23T19:01:02.865Z] ⬇️  Downloading: 91439.jpg
+[2025-05-23T19:01:09.334Z] 📦 Original size: 39.38 MB
+[2025-05-23T19:03:03.102Z] 📸 HD WebP: 14.53 MB (37% of original)
+[2025-05-23T19:03:03.424Z] 📸 small thumbnail: 4.17 KB
+[2025-05-23T19:03:03.757Z] 📸 medium thumbnail: 12.3 KB
+[2025-05-23T19:03:04.116Z] 📸 large thumbnail: 38.38 KB
+[2025-05-23T19:03:04.117Z] ✅ Completed in 121253ms
+[2025-05-23T19:03:04.117Z] 
+📁 Processing folder: TESTE 10un May 13 2025 → Salt & Pepper - Tricolor, Brown and White Small
+[2025-05-23T19:03:05.085Z] Found 1 photos in Salt & Pepper - Tricolor, Brown and White Small
+[2025-05-23T19:03:05.085Z] 
+🖼️  Processing: 10759.jpg
+[2025-05-23T19:03:05.085Z] ⬇️  Downloading: 10759.jpg
+[2025-05-23T19:03:10.247Z] 📦 Original size: 8.08 MB
+[2025-05-23T19:03:11.267Z] 📸 HD WebP: 899.12 KB (11% of original)
+[2025-05-23T19:03:11.345Z] 📸 small thumbnail: 3.63 KB
+[2025-05-23T19:03:11.424Z] 📸 medium thumbnail: 9.27 KB
+[2025-05-23T19:03:11.526Z] 📸 large thumbnail: 25.1 KB
+[2025-05-23T19:03:11.526Z] ✅ Completed in 6441ms
+[2025-05-23T19:03:11.526Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Best Value -Salt & Pepper Mix - Black & White
+[2025-05-23T19:03:12.972Z] Found 0 photos in Best Value -Salt & Pepper Mix - Black & White
+[2025-05-23T19:03:12.972Z] 
+📁 Processing folder: TESTE 5un May 13 2025 → Tricolor Mix XL
+[2025-05-23T19:03:13.975Z] Found 1 photos in Tricolor Mix XL
+[2025-05-23T19:03:13.975Z] 
+🖼️  Processing: 10567.jpg
+[2025-05-23T19:03:13.975Z] ⬇️  Downloading: 10567.jpg
+[2025-05-23T19:03:18.814Z] 📦 Original size: 7.78 MB
+[2025-05-23T19:03:19.767Z] 📸 HD WebP: 824.08 KB (10% of original)
+[2025-05-23T19:03:19.838Z] 📸 small thumbnail: 3.26 KB
+[2025-05-23T19:03:19.911Z] 📸 medium thumbnail: 8.17 KB
+[2025-05-23T19:03:20.007Z] 📸 large thumbnail: 21.94 KB
+[2025-05-23T19:03:20.007Z] ✅ Completed in 6032ms
+[2025-05-23T19:03:20.007Z] 
+📁 Processing folder: TESTE 10un May 13 2025 → Super Promo XS - Assorted Tones
+[2025-05-23T19:03:20.958Z] Found 1 photos in Super Promo XS - Assorted Tones
+[2025-05-23T19:03:20.958Z] 
+🖼️  Processing: 10578.jpg
+[2025-05-23T19:03:20.958Z] ⬇️  Downloading: 10578.jpg
+[2025-05-23T19:03:25.660Z] 📦 Original size: 7.86 MB
+[2025-05-23T19:03:26.633Z] 📸 HD WebP: 876.55 KB (11% of original)
+[2025-05-23T19:03:26.705Z] 📸 small thumbnail: 3.25 KB
+[2025-05-23T19:03:26.779Z] 📸 medium thumbnail: 8.22 KB
+[2025-05-23T19:03:26.877Z] 📸 large thumbnail: 22.49 KB
+[2025-05-23T19:03:26.877Z] ✅ Completed in 5919ms
+[2025-05-23T19:03:26.877Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Salt & Pepper - Tricolor, Brown and White XL
+[2025-05-23T19:03:28.535Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White XL
+[2025-05-23T19:03:28.535Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Salt & Pepper Black and White XL
+[2025-05-23T19:03:30.170Z] Found 0 photos in Salt & Pepper Black and White XL
+[2025-05-23T19:03:30.170Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Salt & Pepper Chocolate and White XL
+[2025-05-23T19:03:31.598Z] Found 0 photos in Salt & Pepper Chocolate and White XL
+[2025-05-23T19:03:31.598Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Tricolor XL
+[2025-05-23T19:03:32.911Z] Found 0 photos in Tricolor XL
+[2025-05-23T19:03:32.911Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Brindle Grey XLL
+[2025-05-23T19:03:34.477Z] Found 0 photos in Brindle Grey XLL
+[2025-05-23T19:03:34.477Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Taupe XL
+[2025-05-23T19:03:35.888Z] Found 0 photos in Taupe XL
+[2025-05-23T19:03:35.888Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Palomino Solid XL
+[2025-05-23T19:03:37.243Z] Found 0 photos in Palomino Solid XL
+[2025-05-23T19:03:37.243Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Palomino Exotic XL
+[2025-05-23T19:03:38.778Z] Found 0 photos in Palomino Exotic XL
+[2025-05-23T19:03:38.778Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Natural White XL
+[2025-05-23T19:03:39.897Z] Found 0 photos in Natural White XL
+[2025-05-23T19:03:39.897Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Grey XL
+[2025-05-23T19:03:41.235Z] Found 0 photos in Grey XL
+[2025-05-23T19:03:41.235Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Black and White Reddish XL
+[2025-05-23T19:03:42.349Z] Found 0 photos in Black and White Reddish XL
+[2025-05-23T19:03:42.349Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Hereford XL
+[2025-05-23T19:03:43.646Z] Found 0 photos in Hereford XL
+[2025-05-23T19:03:43.646Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Brindle Light Grey-Beige XL
+[2025-05-23T19:03:44.922Z] Found 0 photos in Brindle Light Grey-Beige XL
+[2025-05-23T19:03:44.922Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Brown & White XL
+[2025-05-23T19:03:46.195Z] Found 0 photos in Brown & White XL
+[2025-05-23T19:03:46.195Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Brindle White Backbone XL
+[2025-05-23T19:03:47.434Z] Found 0 photos in Brindle White Backbone XL
+[2025-05-23T19:03:47.434Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Champagne XL
+[2025-05-23T19:03:48.813Z] Found 0 photos in Champagne XL
+[2025-05-23T19:03:48.813Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Buttercream XL
+[2025-05-23T19:03:50.451Z] Found 0 photos in Buttercream XL
+[2025-05-23T19:03:50.451Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Brindle White Belly XL
+[2025-05-23T19:03:51.987Z] Found 0 photos in Brindle White Belly XL
+[2025-05-23T19:03:51.987Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Grey Beige XL
+[2025-05-23T19:03:53.119Z] Found 0 photos in Grey Beige XL
+[2025-05-23T19:03:53.119Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Extra Large → Black & White XL
+[2025-05-23T19:03:54.371Z] Found 0 photos in Black & White XL
+[2025-05-23T19:03:54.371Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Salt & Pepper - Tricolor, Brown and White Medium
+[2025-05-23T19:03:55.586Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White Medium
+[2025-05-23T19:03:55.586Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Salt & Pepper Chocolate and White ML
+[2025-05-23T19:03:57.002Z] Found 0 photos in Salt & Pepper Chocolate and White ML
+[2025-05-23T19:03:57.002Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T19:03:58.207Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White ML
+[2025-05-23T19:03:58.207Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Salt & Pepper Black and White ML
+[2025-05-23T19:03:59.319Z] Found 0 photos in Salt & Pepper Black and White ML
+[2025-05-23T19:03:59.319Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Tricolor ML
+[2025-05-23T19:04:00.586Z] Found 0 photos in Tricolor ML
+[2025-05-23T19:04:00.586Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Taupe ML
+[2025-05-23T19:04:02.022Z] Found 0 photos in Taupe ML
+[2025-05-23T19:04:02.022Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Palomino Exotic ML
+[2025-05-23T19:04:03.205Z] Found 0 photos in Palomino Exotic ML
+[2025-05-23T19:04:03.205Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Palomino ML
+[2025-05-23T19:04:04.456Z] Found 0 photos in Palomino ML
+[2025-05-23T19:04:04.456Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Grey ML
+[2025-05-23T19:04:05.622Z] Found 0 photos in Grey ML
+[2025-05-23T19:04:05.622Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Natural White ML
+[2025-05-23T19:04:06.833Z] Found 0 photos in Natural White ML
+[2025-05-23T19:04:06.833Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Hereford ML
+[2025-05-23T19:04:07.975Z] Found 0 photos in Hereford ML
+[2025-05-23T19:04:07.975Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Black & White Reddish ML
+[2025-05-23T19:04:09.176Z] Found 0 photos in Black & White Reddish ML
+[2025-05-23T19:04:09.177Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Brindle White Belly ML
+[2025-05-23T19:04:10.370Z] Found 0 photos in Brindle White Belly ML
+[2025-05-23T19:04:10.371Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Black & White ML
+[2025-05-23T19:04:11.571Z] Found 0 photos in Black & White ML
+[2025-05-23T19:04:11.571Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Brindle Light Grey-Beige ML
+[2025-05-23T19:04:12.703Z] Found 0 photos in Brindle Light Grey-Beige ML
+[2025-05-23T19:04:12.703Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Brindle Grey ML
+[2025-05-23T19:04:14.003Z] Found 0 photos in Brindle Grey ML
+[2025-05-23T19:04:14.003Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Grey Beige ML
+[2025-05-23T19:04:15.134Z] Found 0 photos in Grey Beige ML
+[2025-05-23T19:04:15.135Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Brindle White Backbone ML
+[2025-05-23T19:04:16.269Z] Found 0 photos in Brindle White Backbone ML
+[2025-05-23T19:04:16.269Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Brown & White ML
+[2025-05-23T19:04:17.556Z] Found 0 photos in Brown & White ML
+[2025-05-23T19:04:17.556Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Champagne ML
+[2025-05-23T19:04:18.811Z] Found 0 photos in Champagne ML
+[2025-05-23T19:04:18.811Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → X-Large → Tricolor Mix XL
+[2025-05-23T19:04:19.955Z] Found 0 photos in Tricolor Mix XL
+[2025-05-23T19:04:19.956Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Large → Tricolor Mix L
+[2025-05-23T19:04:21.223Z] Found 0 photos in Tricolor Mix L
+[2025-05-23T19:04:21.223Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Medium Large → Buttercream ML
+[2025-05-23T19:04:22.484Z] Found 0 photos in Buttercream ML
+[2025-05-23T19:04:22.485Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Medium → Tricolor Spotted M
+[2025-05-23T19:04:23.627Z] Found 0 photos in Tricolor Spotted M
+[2025-05-23T19:04:23.627Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Medium → Tricolor Mix M
+[2025-05-23T19:04:24.760Z] Found 0 photos in Tricolor Mix M
+[2025-05-23T19:04:24.760Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → X-Large → Tricolor Clouded XL
+[2025-05-23T19:04:26.157Z] Found 0 photos in Tricolor Clouded XL
+[2025-05-23T19:04:26.157Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Large → Tricolor Spotted L
+[2025-05-23T19:04:27.412Z] Found 0 photos in Tricolor Spotted L
+[2025-05-23T19:04:27.412Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Large → Brindle Mix L
+[2025-05-23T19:04:28.598Z] Found 0 photos in Brindle Mix L
+[2025-05-23T19:04:28.598Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → X-Large → Tricolor Spotted XL
+[2025-05-23T19:04:30.080Z] Found 0 photos in Tricolor Spotted XL
+[2025-05-23T19:04:30.080Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Value Tricolor Dark Tones & Creamish White L-XL
+[2025-05-23T19:04:31.207Z] Found 39 photos in Value Tricolor Dark Tones & Creamish White L-XL
+[2025-05-23T19:04:31.207Z] 
+🖼️  Processing: 10396.jpg
+[2025-05-23T19:04:31.207Z] ⬇️  Downloading: 10396.jpg
+[2025-05-23T19:04:35.370Z] 📦 Original size: 8.24 MB
+[2025-05-23T19:04:36.322Z] 📸 HD WebP: 867.76 KB (10% of original)
+[2025-05-23T19:04:36.395Z] 📸 small thumbnail: 3.76 KB
+[2025-05-23T19:04:36.483Z] 📸 medium thumbnail: 9.57 KB
+[2025-05-23T19:04:36.587Z] 📸 large thumbnail: 25.39 KB
+[2025-05-23T19:04:36.588Z] ✅ Completed in 5381ms
+[2025-05-23T19:04:36.588Z] 
+🖼️  Processing: 10398.jpg
+[2025-05-23T19:04:36.588Z] ⬇️  Downloading: 10398.jpg
+[2025-05-23T19:04:41.366Z] 📦 Original size: 8.22 MB
+[2025-05-23T19:04:42.328Z] 📸 HD WebP: 891.8 KB (11% of original)
+[2025-05-23T19:04:42.400Z] 📸 small thumbnail: 4.34 KB
+[2025-05-23T19:04:42.478Z] 📸 medium thumbnail: 11.67 KB
+[2025-05-23T19:04:42.578Z] 📸 large thumbnail: 30.25 KB
+[2025-05-23T19:04:42.578Z] ✅ Completed in 5990ms
+[2025-05-23T19:04:42.578Z] 
+🖼️  Processing: 10399.jpg
+[2025-05-23T19:04:42.578Z] ⬇️  Downloading: 10399.jpg
+[2025-05-23T19:04:47.824Z] 📦 Original size: 8.4 MB
+[2025-05-23T19:04:48.790Z] 📸 HD WebP: 956.53 KB (11% of original)
+[2025-05-23T19:04:48.869Z] 📸 small thumbnail: 4.12 KB
+[2025-05-23T19:04:48.949Z] 📸 medium thumbnail: 11.36 KB
+[2025-05-23T19:04:49.050Z] 📸 large thumbnail: 31.07 KB
+[2025-05-23T19:04:49.051Z] ✅ Completed in 6473ms
+[2025-05-23T19:04:49.051Z] 
+🖼️  Processing: 10400.jpg
+[2025-05-23T19:04:49.051Z] ⬇️  Downloading: 10400.jpg
+[2025-05-23T19:04:53.419Z] 📦 Original size: 8.54 MB
+[2025-05-23T19:04:54.396Z] 📸 HD WebP: 970.83 KB (11% of original)
+[2025-05-23T19:04:54.472Z] 📸 small thumbnail: 4.17 KB
+[2025-05-23T19:04:54.551Z] 📸 medium thumbnail: 11.44 KB
+[2025-05-23T19:04:54.654Z] 📸 large thumbnail: 30.53 KB
+[2025-05-23T19:04:54.655Z] ✅ Completed in 5604ms
+[2025-05-23T19:04:54.655Z] 
+🖼️  Processing: 10401.jpg
+[2025-05-23T19:04:54.655Z] ⬇️  Downloading: 10401.jpg
+[2025-05-23T19:04:59.382Z] 📦 Original size: 8.04 MB
+[2025-05-23T19:05:00.347Z] 📸 HD WebP: 818.64 KB (10% of original)
+[2025-05-23T19:05:00.420Z] 📸 small thumbnail: 3.49 KB
+[2025-05-23T19:05:00.500Z] 📸 medium thumbnail: 8.76 KB
+[2025-05-23T19:05:00.600Z] 📸 large thumbnail: 22.64 KB
+[2025-05-23T19:05:00.600Z] ✅ Completed in 5945ms
+[2025-05-23T19:05:00.600Z] 
+🖼️  Processing: 10402.jpg
+[2025-05-23T19:05:00.600Z] ⬇️  Downloading: 10402.jpg
+[2025-05-23T19:05:05.747Z] 📦 Original size: 8.3 MB
+[2025-05-23T19:05:06.706Z] 📸 HD WebP: 884.22 KB (10% of original)
+[2025-05-23T19:05:06.779Z] 📸 small thumbnail: 4.27 KB
+[2025-05-23T19:05:06.856Z] 📸 medium thumbnail: 11.14 KB
+[2025-05-23T19:05:06.956Z] 📸 large thumbnail: 28.95 KB
+[2025-05-23T19:05:06.956Z] ✅ Completed in 6356ms
+[2025-05-23T19:05:06.956Z] 
+🖼️  Processing: 10403.jpg
+[2025-05-23T19:05:06.957Z] ⬇️  Downloading: 10403.jpg
+[2025-05-23T19:05:13.824Z] 📦 Original size: 8.4 MB
+[2025-05-23T19:05:14.787Z] 📸 HD WebP: 936.82 KB (11% of original)
+[2025-05-23T19:05:14.862Z] 📸 small thumbnail: 4.11 KB
+[2025-05-23T19:05:14.943Z] 📸 medium thumbnail: 11.4 KB
+[2025-05-23T19:05:15.047Z] 📸 large thumbnail: 31.57 KB
+[2025-05-23T19:05:15.047Z] ✅ Completed in 8091ms
+[2025-05-23T19:05:15.047Z] 
+🖼️  Processing: 10404.jpg
+[2025-05-23T19:05:15.047Z] ⬇️  Downloading: 10404.jpg
+[2025-05-23T19:05:19.493Z] 📦 Original size: 8.28 MB
+[2025-05-23T19:05:20.439Z] 📸 HD WebP: 809.81 KB (10% of original)
+[2025-05-23T19:05:20.512Z] 📸 small thumbnail: 3.57 KB
+[2025-05-23T19:05:20.592Z] 📸 medium thumbnail: 9.07 KB
+[2025-05-23T19:05:20.694Z] 📸 large thumbnail: 24.89 KB
+[2025-05-23T19:05:20.694Z] ✅ Completed in 5647ms
+[2025-05-23T19:05:20.694Z] 
+🖼️  Processing: 10405.jpg
+[2025-05-23T19:05:20.694Z] ⬇️  Downloading: 10405.jpg
+[2025-05-23T19:05:25.530Z] 📦 Original size: 8.13 MB
+[2025-05-23T19:05:26.478Z] 📸 HD WebP: 825.73 KB (10% of original)
+[2025-05-23T19:05:26.552Z] 📸 small thumbnail: 4.06 KB
+[2025-05-23T19:05:26.628Z] 📸 medium thumbnail: 10.95 KB
+[2025-05-23T19:05:26.731Z] 📸 large thumbnail: 28.57 KB
+[2025-05-23T19:05:26.731Z] ✅ Completed in 6037ms
+[2025-05-23T19:05:26.731Z] 
+🖼️  Processing: 10406.jpg
+[2025-05-23T19:05:26.732Z] ⬇️  Downloading: 10406.jpg
+[2025-05-23T19:05:31.599Z] 📦 Original size: 8.19 MB
+[2025-05-23T19:05:32.558Z] 📸 HD WebP: 834.52 KB (10% of original)
+[2025-05-23T19:05:32.631Z] 📸 small thumbnail: 3.85 KB
+[2025-05-23T19:05:32.708Z] 📸 medium thumbnail: 9.53 KB
+[2025-05-23T19:05:32.807Z] 📸 large thumbnail: 24.85 KB
+[2025-05-23T19:05:32.807Z] ✅ Completed in 6076ms
+[2025-05-23T19:05:32.807Z] 
+🖼️  Processing: 10407.jpg
+[2025-05-23T19:05:32.807Z] ⬇️  Downloading: 10407.jpg
+[2025-05-23T19:05:38.733Z] 📦 Original size: 8.12 MB
+[2025-05-23T19:05:39.701Z] 📸 HD WebP: 856.35 KB (10% of original)
+[2025-05-23T19:05:39.773Z] 📸 small thumbnail: 3.8 KB
+[2025-05-23T19:05:39.850Z] 📸 medium thumbnail: 10.04 KB
+[2025-05-23T19:05:39.952Z] 📸 large thumbnail: 26.08 KB
+[2025-05-23T19:05:39.952Z] ✅ Completed in 7145ms
+[2025-05-23T19:05:39.953Z] 
+🖼️  Processing: 10409.jpg
+[2025-05-23T19:05:39.953Z] ⬇️  Downloading: 10409.jpg
+[2025-05-23T19:05:45.533Z] 📦 Original size: 8.4 MB
+[2025-05-23T19:05:46.515Z] 📸 HD WebP: 915.41 KB (11% of original)
+[2025-05-23T19:05:46.589Z] 📸 small thumbnail: 4.03 KB
+[2025-05-23T19:05:46.667Z] 📸 medium thumbnail: 10.68 KB
+[2025-05-23T19:05:46.766Z] 📸 large thumbnail: 29.07 KB
+[2025-05-23T19:05:46.767Z] ✅ Completed in 6814ms
+[2025-05-23T19:05:46.767Z] 
+🖼️  Processing: 10410.jpg
+[2025-05-23T19:05:46.767Z] ⬇️  Downloading: 10410.jpg
+[2025-05-23T19:05:51.716Z] 📦 Original size: 8.52 MB
+[2025-05-23T19:05:52.713Z] 📸 HD WebP: 1011.99 KB (12% of original)
+[2025-05-23T19:05:52.786Z] 📸 small thumbnail: 3.38 KB
+[2025-05-23T19:05:52.864Z] 📸 medium thumbnail: 9.02 KB
+[2025-05-23T19:05:52.964Z] 📸 large thumbnail: 25.49 KB
+[2025-05-23T19:05:52.969Z] ✅ Completed in 6202ms
+[2025-05-23T19:05:52.970Z] 
+🖼️  Processing: 10411.jpg
+[2025-05-23T19:05:52.970Z] ⬇️  Downloading: 10411.jpg
+[2025-05-23T19:05:57.875Z] 📦 Original size: 7.84 MB
+[2025-05-23T19:05:58.813Z] 📸 HD WebP: 773.88 KB (10% of original)
+[2025-05-23T19:05:58.884Z] 📸 small thumbnail: 3.43 KB
+[2025-05-23T19:05:58.958Z] 📸 medium thumbnail: 8.88 KB
+[2025-05-23T19:05:59.055Z] 📸 large thumbnail: 24.29 KB
+[2025-05-23T19:05:59.055Z] ✅ Completed in 6085ms
+[2025-05-23T19:05:59.055Z] 
+🖼️  Processing: 10412.jpg
+[2025-05-23T19:05:59.055Z] ⬇️  Downloading: 10412.jpg
+[2025-05-23T19:06:03.694Z] 📦 Original size: 7.91 MB
+[2025-05-23T19:06:04.646Z] 📸 HD WebP: 842.16 KB (10% of original)
+[2025-05-23T19:06:04.715Z] 📸 small thumbnail: 3.73 KB
+[2025-05-23T19:06:04.789Z] 📸 medium thumbnail: 9.47 KB
+[2025-05-23T19:06:04.889Z] 📸 large thumbnail: 24.94 KB
+[2025-05-23T19:06:04.889Z] ✅ Completed in 5834ms
+[2025-05-23T19:06:04.889Z] 
+🖼️  Processing: 10413.jpg
+[2025-05-23T19:06:04.889Z] ⬇️  Downloading: 10413.jpg
+[2025-05-23T19:06:09.562Z] 📦 Original size: 8.38 MB
+[2025-05-23T19:06:10.523Z] 📸 HD WebP: 852.12 KB (10% of original)
+[2025-05-23T19:06:10.597Z] 📸 small thumbnail: 3.99 KB
+[2025-05-23T19:06:10.676Z] 📸 medium thumbnail: 10.49 KB
+[2025-05-23T19:06:10.776Z] 📸 large thumbnail: 27.31 KB
+[2025-05-23T19:06:10.776Z] ✅ Completed in 5887ms
+[2025-05-23T19:06:10.776Z] 
+🖼️  Processing: 10426.jpg
+[2025-05-23T19:06:10.776Z] ⬇️  Downloading: 10426.jpg
+[2025-05-23T19:06:15.890Z] 📦 Original size: 8.21 MB
+[2025-05-23T19:06:16.859Z] 📸 HD WebP: 898.37 KB (11% of original)
+[2025-05-23T19:06:16.932Z] 📸 small thumbnail: 4.24 KB
+[2025-05-23T19:06:17.009Z] 📸 medium thumbnail: 10.93 KB
+[2025-05-23T19:06:17.110Z] 📸 large thumbnail: 28.28 KB
+[2025-05-23T19:06:17.110Z] ✅ Completed in 6334ms
+[2025-05-23T19:06:17.110Z] 
+🖼️  Processing: 10414.jpg
+[2025-05-23T19:06:17.111Z] ⬇️  Downloading: 10414.jpg
+[2025-05-23T19:06:21.586Z] 📦 Original size: 8.12 MB
+[2025-05-23T19:06:22.543Z] 📸 HD WebP: 893.51 KB (11% of original)
+[2025-05-23T19:06:22.615Z] 📸 small thumbnail: 3.61 KB
+[2025-05-23T19:06:22.695Z] 📸 medium thumbnail: 9.08 KB
+[2025-05-23T19:06:22.795Z] 📸 large thumbnail: 23.32 KB
+[2025-05-23T19:06:22.796Z] ✅ Completed in 5686ms
+[2025-05-23T19:06:22.796Z] 
+🖼️  Processing: 10415.jpg
+[2025-05-23T19:06:22.796Z] ⬇️  Downloading: 10415.jpg
+[2025-05-23T19:06:27.778Z] 📦 Original size: 8.3 MB
+[2025-05-23T19:06:28.752Z] 📸 HD WebP: 910.89 KB (11% of original)
+[2025-05-23T19:06:28.824Z] 📸 small thumbnail: 4.22 KB
+[2025-05-23T19:06:28.900Z] 📸 medium thumbnail: 11.45 KB
+[2025-05-23T19:06:29.000Z] 📸 large thumbnail: 30.94 KB
+[2025-05-23T19:06:29.001Z] ✅ Completed in 6205ms
+[2025-05-23T19:06:29.001Z] 
+🖼️  Processing: 10416.jpg
+[2025-05-23T19:06:29.001Z] ⬇️  Downloading: 10416.jpg
+[2025-05-23T19:06:33.864Z] 📦 Original size: 8.02 MB
+[2025-05-23T19:06:34.808Z] 📸 HD WebP: 809.01 KB (10% of original)
+[2025-05-23T19:06:34.882Z] 📸 small thumbnail: 3.74 KB
+[2025-05-23T19:06:34.957Z] 📸 medium thumbnail: 9.39 KB
+[2025-05-23T19:06:35.057Z] 📸 large thumbnail: 24.52 KB
+[2025-05-23T19:06:35.057Z] ✅ Completed in 6056ms
+[2025-05-23T19:06:35.057Z] 
+🖼️  Processing: 10417.jpg
+[2025-05-23T19:06:35.058Z] ⬇️  Downloading: 10417.jpg
+[2025-05-23T19:06:40.010Z] 📦 Original size: 7.75 MB
+[2025-05-23T19:06:40.943Z] 📸 HD WebP: 792.5 KB (10% of original)
+[2025-05-23T19:06:41.015Z] 📸 small thumbnail: 3.68 KB
+[2025-05-23T19:06:41.092Z] 📸 medium thumbnail: 9.38 KB
+[2025-05-23T19:06:41.189Z] 📸 large thumbnail: 23.63 KB
+[2025-05-23T19:06:41.190Z] ✅ Completed in 6133ms
+[2025-05-23T19:06:41.190Z] 
+🖼️  Processing: 10418.jpg
+[2025-05-23T19:06:41.190Z] ⬇️  Downloading: 10418.jpg
+[2025-05-23T19:06:46.718Z] 📦 Original size: 8.09 MB
+[2025-05-23T19:06:47.691Z] 📸 HD WebP: 907.98 KB (11% of original)
+[2025-05-23T19:06:47.765Z] 📸 small thumbnail: 3.79 KB
+[2025-05-23T19:06:47.844Z] 📸 medium thumbnail: 10.23 KB
+[2025-05-23T19:06:47.944Z] 📸 large thumbnail: 27.7 KB
+[2025-05-23T19:06:47.945Z] ✅ Completed in 6755ms
+[2025-05-23T19:06:47.945Z] 
+🖼️  Processing: 10419.jpg
+[2025-05-23T19:06:47.945Z] ⬇️  Downloading: 10419.jpg
+[2025-05-23T19:06:52.383Z] 📦 Original size: 8.58 MB
+[2025-05-23T19:06:53.356Z] 📸 HD WebP: 962.35 KB (11% of original)
+[2025-05-23T19:06:53.431Z] 📸 small thumbnail: 3.88 KB
+[2025-05-23T19:06:53.512Z] 📸 medium thumbnail: 10.56 KB
+[2025-05-23T19:06:53.616Z] 📸 large thumbnail: 29.73 KB
+[2025-05-23T19:06:53.616Z] ✅ Completed in 5671ms
+[2025-05-23T19:06:53.616Z] 
+🖼️  Processing: 10420.jpg
+[2025-05-23T19:06:53.616Z] ⬇️  Downloading: 10420.jpg
+[2025-05-23T19:06:58.509Z] 📦 Original size: 8.38 MB
+[2025-05-23T19:06:59.476Z] 📸 HD WebP: 910.92 KB (11% of original)
+[2025-05-23T19:06:59.551Z] 📸 small thumbnail: 4.31 KB
+[2025-05-23T19:06:59.629Z] 📸 medium thumbnail: 11.41 KB
+[2025-05-23T19:06:59.729Z] 📸 large thumbnail: 29.68 KB
+[2025-05-23T19:06:59.729Z] ✅ Completed in 6113ms
+[2025-05-23T19:06:59.729Z] 
+🖼️  Processing: 10421.jpg
+[2025-05-23T19:06:59.729Z] ⬇️  Downloading: 10421.jpg
+[2025-05-23T19:07:03.843Z] 📦 Original size: 8.07 MB
+[2025-05-23T19:07:04.802Z] 📸 HD WebP: 860.22 KB (10% of original)
+[2025-05-23T19:07:04.879Z] 📸 small thumbnail: 3.95 KB
+[2025-05-23T19:07:04.958Z] 📸 medium thumbnail: 9.68 KB
+[2025-05-23T19:07:05.059Z] 📸 large thumbnail: 24.56 KB
+[2025-05-23T19:07:05.059Z] ✅ Completed in 5330ms
+[2025-05-23T19:07:05.059Z] 
+🖼️  Processing: 10422.jpg
+[2025-05-23T19:07:05.059Z] ⬇️  Downloading: 10422.jpg
+[2025-05-23T19:07:09.132Z] 📦 Original size: 8.56 MB
+[2025-05-23T19:07:10.108Z] 📸 HD WebP: 930.51 KB (11% of original)
+[2025-05-23T19:07:10.184Z] 📸 small thumbnail: 4.09 KB
+[2025-05-23T19:07:10.265Z] 📸 medium thumbnail: 10.76 KB
+[2025-05-23T19:07:10.367Z] 📸 large thumbnail: 27.63 KB
+[2025-05-23T19:07:10.367Z] ✅ Completed in 5308ms
+[2025-05-23T19:07:10.368Z] 
+🖼️  Processing: 10423.jpg
+[2025-05-23T19:07:10.368Z] ⬇️  Downloading: 10423.jpg
+[2025-05-23T19:07:15.266Z] 📦 Original size: 8.35 MB
+[2025-05-23T19:07:16.230Z] 📸 HD WebP: 915.83 KB (11% of original)
+[2025-05-23T19:07:16.304Z] 📸 small thumbnail: 4.14 KB
+[2025-05-23T19:07:16.381Z] 📸 medium thumbnail: 10.66 KB
+[2025-05-23T19:07:16.483Z] 📸 large thumbnail: 27.49 KB
+[2025-05-23T19:07:16.483Z] ✅ Completed in 6115ms
+[2025-05-23T19:07:16.483Z] 
+🖼️  Processing: 10424.jpg
+[2025-05-23T19:07:16.483Z] ⬇️  Downloading: 10424.jpg
+[2025-05-23T19:07:21.338Z] 📦 Original size: 8.35 MB
+[2025-05-23T19:07:22.298Z] 📸 HD WebP: 881.49 KB (10% of original)
+[2025-05-23T19:07:22.371Z] 📸 small thumbnail: 3.65 KB
+[2025-05-23T19:07:22.453Z] 📸 medium thumbnail: 9.73 KB
+[2025-05-23T19:07:22.554Z] 📸 large thumbnail: 25.98 KB
+[2025-05-23T19:07:22.554Z] ✅ Completed in 6071ms
+[2025-05-23T19:07:22.554Z] 
+🖼️  Processing: 10425.jpg
+[2025-05-23T19:07:22.554Z] ⬇️  Downloading: 10425.jpg
+[2025-05-23T19:07:27.948Z] 📦 Original size: 8.33 MB
+[2025-05-23T19:07:28.913Z] 📸 HD WebP: 933.16 KB (11% of original)
+[2025-05-23T19:07:28.987Z] 📸 small thumbnail: 4.3 KB
+[2025-05-23T19:07:29.069Z] 📸 medium thumbnail: 11.57 KB
+[2025-05-23T19:07:29.172Z] 📸 large thumbnail: 31.09 KB
+[2025-05-23T19:07:29.172Z] ✅ Completed in 6618ms
+[2025-05-23T19:07:29.172Z] 
+🖼️  Processing: 10431.jpg
+[2025-05-23T19:07:29.172Z] ⬇️  Downloading: 10431.jpg
+[2025-05-23T19:07:33.516Z] 📦 Original size: 8.28 MB
+[2025-05-23T19:07:34.458Z] 📸 HD WebP: 845.98 KB (10% of original)
+[2025-05-23T19:07:34.534Z] 📸 small thumbnail: 3.57 KB
+[2025-05-23T19:07:34.613Z] 📸 medium thumbnail: 9.78 KB
+[2025-05-23T19:07:34.713Z] 📸 large thumbnail: 27.35 KB
+[2025-05-23T19:07:34.713Z] ✅ Completed in 5541ms
+[2025-05-23T19:07:34.713Z] 
+🖼️  Processing: 10430.jpg
+[2025-05-23T19:07:34.713Z] ⬇️  Downloading: 10430.jpg
+[2025-05-23T19:07:39.970Z] 📦 Original size: 8.76 MB
+[2025-05-23T19:07:40.943Z] 📸 HD WebP: 955.06 KB (11% of original)
+[2025-05-23T19:07:41.021Z] 📸 small thumbnail: 4.16 KB
+[2025-05-23T19:07:41.101Z] 📸 medium thumbnail: 11.07 KB
+[2025-05-23T19:07:41.208Z] 📸 large thumbnail: 29.79 KB
+[2025-05-23T19:07:41.208Z] ✅ Completed in 6495ms
+[2025-05-23T19:07:41.209Z] 
+🖼️  Processing: 10429.jpg
+[2025-05-23T19:07:41.209Z] ⬇️  Downloading: 10429.jpg
+[2025-05-23T19:07:45.890Z] 📦 Original size: 8.57 MB
+[2025-05-23T19:07:46.877Z] 📸 HD WebP: 967.45 KB (11% of original)
+[2025-05-23T19:07:46.951Z] 📸 small thumbnail: 3.64 KB
+[2025-05-23T19:07:47.030Z] 📸 medium thumbnail: 9.98 KB
+[2025-05-23T19:07:47.133Z] 📸 large thumbnail: 28.98 KB
+[2025-05-23T19:07:47.134Z] ✅ Completed in 5926ms
+[2025-05-23T19:07:47.134Z] 
+🖼️  Processing: 10428.jpg
+[2025-05-23T19:07:47.134Z] ⬇️  Downloading: 10428.jpg
+[2025-05-23T19:07:52.700Z] 📦 Original size: 8.29 MB
+[2025-05-23T19:07:53.650Z] 📸 HD WebP: 883.36 KB (10% of original)
+[2025-05-23T19:07:53.725Z] 📸 small thumbnail: 3.48 KB
+[2025-05-23T19:07:53.804Z] 📸 medium thumbnail: 9.73 KB
+[2025-05-23T19:07:53.903Z] 📸 large thumbnail: 27.93 KB
+[2025-05-23T19:07:53.904Z] ✅ Completed in 6770ms
+[2025-05-23T19:07:53.904Z] 
+🖼️  Processing: 10427.jpg
+[2025-05-23T19:07:53.904Z] ⬇️  Downloading: 10427.jpg
+[2025-05-23T19:07:58.456Z] 📦 Original size: 8.12 MB
+[2025-05-23T19:07:59.404Z] 📸 HD WebP: 829.34 KB (10% of original)
+[2025-05-23T19:07:59.476Z] 📸 small thumbnail: 3.77 KB
+[2025-05-23T19:07:59.554Z] 📸 medium thumbnail: 9.62 KB
+[2025-05-23T19:07:59.655Z] 📸 large thumbnail: 25.8 KB
+[2025-05-23T19:07:59.656Z] ✅ Completed in 5752ms
+[2025-05-23T19:07:59.656Z] 
+🖼️  Processing: 605.jpg
+[2025-05-23T19:07:59.656Z] ⬇️  Downloading: 605.jpg
+[2025-05-23T19:08:02.714Z] 📦 Original size: 791.13 KB
+[2025-05-23T19:08:03.243Z] 📸 HD WebP: 447.03 KB (57% of original)
+[2025-05-23T19:08:03.256Z] 📸 small thumbnail: 3.22 KB
+[2025-05-23T19:08:03.273Z] 📸 medium thumbnail: 8.49 KB
+[2025-05-23T19:08:03.305Z] 📸 large thumbnail: 23.64 KB
+[2025-05-23T19:08:03.306Z] ✅ Completed in 3650ms
+[2025-05-23T19:08:03.306Z] 
+🖼️  Processing: 607.jpg
+[2025-05-23T19:08:03.306Z] ⬇️  Downloading: 607.jpg
+[2025-05-23T19:08:06.585Z] 📦 Original size: 772.4 KB
+[2025-05-23T19:08:07.099Z] 📸 HD WebP: 426.23 KB (55% of original)
+[2025-05-23T19:08:07.112Z] 📸 small thumbnail: 3.15 KB
+[2025-05-23T19:08:07.128Z] 📸 medium thumbnail: 8.29 KB
+[2025-05-23T19:08:07.159Z] 📸 large thumbnail: 21.48 KB
+[2025-05-23T19:08:07.160Z] ✅ Completed in 3854ms
+[2025-05-23T19:08:07.160Z] 
+🖼️  Processing: 604.jpg
+[2025-05-23T19:08:07.160Z] ⬇️  Downloading: 604.jpg
+[2025-05-23T19:08:10.370Z] 📦 Original size: 863.17 KB
+[2025-05-23T19:08:10.908Z] 📸 HD WebP: 492.83 KB (57% of original)
+[2025-05-23T19:08:10.922Z] 📸 small thumbnail: 2.98 KB
+[2025-05-23T19:08:10.939Z] 📸 medium thumbnail: 8.52 KB
+[2025-05-23T19:08:10.971Z] 📸 large thumbnail: 24.57 KB
+[2025-05-23T19:08:10.971Z] ✅ Completed in 3811ms
+[2025-05-23T19:08:10.971Z] 
+🖼️  Processing: 591.jpg
+[2025-05-23T19:08:10.971Z] ⬇️  Downloading: 591.jpg
+[2025-05-23T19:08:13.985Z] 📦 Original size: 901.14 KB
+[2025-05-23T19:08:14.505Z] 📸 HD WebP: 521.99 KB (58% of original)
+[2025-05-23T19:08:14.519Z] 📸 small thumbnail: 2.75 KB
+[2025-05-23T19:08:14.536Z] 📸 medium thumbnail: 7.73 KB
+[2025-05-23T19:08:14.568Z] 📸 large thumbnail: 23.2 KB
+[2025-05-23T19:08:14.569Z] ✅ Completed in 3598ms
+[2025-05-23T19:08:14.569Z] 
+🖼️  Processing: 585.jpg
+[2025-05-23T19:08:14.569Z] ⬇️  Downloading: 585.jpg
+[2025-05-23T19:08:17.393Z] 📦 Original size: 847.62 KB
+[2025-05-23T19:08:17.926Z] 📸 HD WebP: 488.32 KB (58% of original)
+[2025-05-23T19:08:17.940Z] 📸 small thumbnail: 2.58 KB
+[2025-05-23T19:08:17.957Z] 📸 medium thumbnail: 6.89 KB
+[2025-05-23T19:08:17.989Z] 📸 large thumbnail: 19.36 KB
+[2025-05-23T19:08:17.989Z] ✅ Completed in 3420ms
+[2025-05-23T19:08:17.989Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Hereford Small
+[2025-05-23T19:08:19.453Z] Found 0 photos in Hereford Small
+[2025-05-23T19:08:19.453Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE 1 → Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T19:08:20.845Z] Found 0 photos in Value Tricolor Dark Tones & Creamish White S-M
+[2025-05-23T19:08:20.845Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Salt & Pepper - Tricolor, Brown and White Small
+[2025-05-23T19:08:22.048Z] Found 0 photos in Salt & Pepper - Tricolor, Brown and White Small
+[2025-05-23T19:08:22.048Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Palomino Exotic Small
+[2025-05-23T19:08:23.546Z] Found 0 photos in Palomino Exotic Small
+[2025-05-23T19:08:23.546Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Champagne Small
+[2025-05-23T19:08:24.934Z] Found 0 photos in Champagne Small
+[2025-05-23T19:08:24.934Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Brindle White Belly Small
+[2025-05-23T19:08:26.112Z] Found 0 photos in Brindle White Belly Small
+[2025-05-23T19:08:26.113Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Grey Beige Small
+[2025-05-23T19:08:27.443Z] Found 0 photos in Grey Beige Small
+[2025-05-23T19:08:27.443Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Brindle Medium Tone Small
+[2025-05-23T19:08:28.713Z] Found 0 photos in Brindle Medium Tone Small
+[2025-05-23T19:08:28.713Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Salt & Pepper Black and White Small
+[2025-05-23T19:08:30.000Z] Found 0 photos in Salt & Pepper Black and White Small
+[2025-05-23T19:08:30.001Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Natural White Small
+[2025-05-23T19:08:31.262Z] Found 0 photos in Natural White Small
+[2025-05-23T19:08:31.262Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Super Promo XS - Assorted Tones
+[2025-05-23T19:08:32.765Z] Found 0 photos in Super Promo XS - Assorted Tones
+[2025-05-23T19:08:32.765Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Brindle Light Grey-Beige Small
+[2025-05-23T19:08:33.943Z] Found 0 photos in Brindle Light Grey-Beige Small
+[2025-05-23T19:08:33.943Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Brown & White Small
+[2025-05-23T19:08:35.430Z] Found 0 photos in Brown & White Small
+[2025-05-23T19:08:35.430Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Black & White Reddish Small
+[2025-05-23T19:08:36.629Z] Found 0 photos in Black & White Reddish Small
+[2025-05-23T19:08:36.629Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Black & White Small
+[2025-05-23T19:08:37.928Z] Found 0 photos in Black & White Small
+[2025-05-23T19:08:37.928Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Grey Small
+[2025-05-23T19:08:39.139Z] Found 0 photos in Grey Small
+[2025-05-23T19:08:39.139Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Super Promo Small - Assorted Natural Tones
+[2025-05-23T19:08:40.303Z] Found 0 photos in Super Promo Small - Assorted Natural Tones
+[2025-05-23T19:08:40.304Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Exotic Tones ML-XL
+[2025-05-23T19:08:41.541Z] Found 0 photos in Exotic Tones ML-XL
+[2025-05-23T19:08:41.542Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Light Tones Mix ML-XL
+[2025-05-23T19:08:42.729Z] Found 0 photos in Light Tones Mix ML-XL
+[2025-05-23T19:08:42.729Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE2 → Small → Brindle White Backbone Small
+[2025-05-23T19:08:43.902Z] Found 0 photos in Brindle White Backbone Small
+[2025-05-23T19:08:43.903Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T19:08:45.237Z] Found 0 photos in Best Value - Brindle Medium and Dark Tones Mix ML-XL
+[2025-05-23T19:08:45.237Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Best Value -Salt & Pepper Mix - Chocolate & White
+[2025-05-23T19:08:46.654Z] Found 0 photos in Best Value -Salt & Pepper Mix - Chocolate & White
+[2025-05-23T19:08:46.654Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Dark Tones Mix ML-XL
+[2025-05-23T19:08:48.127Z] Found 0 photos in Dark Tones Mix ML-XL
+[2025-05-23T19:08:48.127Z] 
+📁 Processing folder: Fotos FORT MYRES/USA → fotosjavascript → Config → Data_Base
+[2025-05-23T19:08:49.317Z] Found 0 photos in Data_Base
+[2025-05-23T19:08:49.317Z] 
+📁 Processing folder: Fotos FORT MYRES/USA → fotosjavascript → Config → Sistema_Clasificacion
+[2025-05-23T19:08:50.477Z] Found 0 photos in Sistema_Clasificacion
+[2025-05-23T19:08:50.477Z] 
+📁 Processing folder: Fotos FORT MYRES/USA → fotosjavascript → Config → Logs
+[2025-05-23T19:08:51.916Z] Found 0 photos in Logs
+[2025-05-23T19:08:51.917Z] 
+📁 Processing folder: Procesamiento → developing → TESTE FOTOS → TESTE → Best Value -Salt & Pepper Mix - Brown & White + Tricolor
+[2025-05-23T19:08:53.350Z] Found 0 photos in Best Value -Salt & Pepper Mix - Brown & White + Tricolor
+[2025-05-23T19:08:53.350Z] ✅ Migration completed!
+[2025-05-23T19:08:53.350Z] 📊 Processed: 94 files
+[2025-05-23T19:08:53.350Z] ❌ Errors: 0
+[2025-05-23T19:08:53.350Z] 💾 Total size: 624.74 MB

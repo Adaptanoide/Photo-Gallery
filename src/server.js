@@ -69,6 +69,17 @@ ensureStoragePaths();
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Servir imagens WebP do disco
+app.use('/images', express.static('/opt/render/project/storage/cache', {
+  maxAge: '1y',
+  etag: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    }
+  }
+}));
+
 // Middleware de monitoramento
 app.use('/api', (req, res, next) => {
   monitoringService.countRequest();

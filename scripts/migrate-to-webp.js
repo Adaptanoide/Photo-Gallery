@@ -5,7 +5,7 @@ const sharp = require('sharp');
 const { getDriveInstance } = require('../src/config/google.drive');
 const driveService = require('../src/services/driveService');
 const SmartCache = require('../src/services/smartCache');
-require('dotenv').config();
+
 
 class WebPMigration {
   constructor() {
