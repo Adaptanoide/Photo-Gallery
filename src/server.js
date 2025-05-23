@@ -30,6 +30,42 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Middleware de cache para arquivos estáticos
+app.use('/api/orders/thumbnail', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+
+app.use('/api/orders/image', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
+  next();
+});
+
+// Configurar paths de storage na inicialização
+const ensureStoragePaths = () => {
+  const fs = require('fs');
+  const storagePath = process.env.CACHE_STORAGE_PATH || './storage/cache';
+  const paths = [
+    storagePath,
+    path.join(storagePath, 'persistent'),
+    path.join(storagePath, 'temp'),
+    path.join(storagePath, 'thumbnails', 'webp'),
+    path.join(storagePath, 'thumbnails', 'jpeg'),
+    path.join(storagePath, 'optimized', 'hd')
+  ];
+  
+  paths.forEach(p => {
+    if (!fs.existsSync(p)) {
+      fs.mkdirSync(p, { recursive: true });
+      console.log(`📁 Created storage path: ${p}`);
+    }
+  });
+};
+
+// Chamar antes de iniciar o servidor
+ensureStoragePaths();
+
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));
 

@@ -1087,6 +1087,100 @@ async function processOrderFilesWithCategories(customerName, photosByCategory, s
   }
 }
 
+// Sistema de pre-warming de cache
+async function prewarmCache() {
+  if (process.env.CACHE_PRELOAD_ON_START !== 'true') return;
+  
+  console.log('🔥 Starting cache pre-warming...');
+  
+  try {
+    // 1. Obter categorias mais populares baseado nas estatísticas do cache
+    const SmartCache = require('./smartCache');
+    const cache = new SmartCache(50);
+    const status = cache.getStatus();
+    const popularCategories = status.topCategories || [];
+    
+    // 2. Se não houver estatísticas, usar primeiras 3 categorias
+    if (popularCategories.length === 0) {
+      const allCategories = await getAllLeafFoldersCached(FOLDER_ID);
+      if (allCategories.success) {
+        popularCategories.push(...allCategories.folders.slice(0, 3));
+      }
+    }
+    
+    // 3. Para cada categoria popular, carregar thumbnails
+    for (const category of popularCategories) {
+      console.log(`Pre-warming category: ${category.name || category.id}`);
+      
+      const photos = await getPhotosCached(category.id);
+      
+      // 4. Simular requests para gerar thumbnails (primeiras 10 fotos)
+      for (const photo of photos.slice(0, 10)) {
+        try {
+          // Fazer request interno para gerar thumbnail
+          const axios = require('axios');
+          const baseUrl = process.env.NODE_ENV === 'production' 
+            ? 'https://seu-app.onrender.com' 
+            : 'http://localhost:3000';
+          
+          await axios.get(`${baseUrl}/api/orders/thumbnail/${photo.id}`, {
+            timeout: 5000,
+            validateStatus: () => true // Aceitar qualquer status
+          });
+          
+          console.log(`✅ Pre-warmed thumbnail: ${photo.id}`);
+        } catch (err) {
+          console.error(`Failed to pre-warm ${photo.id}:`, err.message);
+        }
+        
+        // Aguardar um pouco entre requests para não sobrecarregar
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    console.log('✅ Cache pre-warming completed');
+  } catch (error) {
+    console.error('Error during cache pre-warming:', error);
+  }
+}
+
+// Função para obter categorias populares
+async function getPopularCategories() {
+  try {
+    const SmartCache = require('./smartCache');
+    const cache = new SmartCache(50);
+    const status = cache.getStatus();
+    
+    if (status.topCategories && status.topCategories.length > 0) {
+      // Buscar informações completas das categorias
+      const categories = [];
+      for (const cat of status.topCategories) {
+        const info = await getFolderInfo(cat.id);
+        if (info.success) {
+          categories.push({
+            id: cat.id,
+            name: info.name,
+            accessCount: cat.accessCount
+          });
+        }
+      }
+      return categories;
+    }
+    
+    // Fallback: retornar primeiras categorias
+    const allCategories = await getAllLeafFoldersCached(FOLDER_ID);
+    return allCategories.success ? allCategories.folders.slice(0, 5) : [];
+  } catch (error) {
+    console.error('Error getting popular categories:', error);
+    return [];
+  }
+}
+
+// Chamar pre-warming após 10 segundos do startup
+if (process.env.NODE_ENV === 'production' && process.env.CACHE_PRELOAD_ON_START === 'true') {
+  setTimeout(prewarmCache, 10000);
+}
+
 module.exports = {
   getPhotos,
   getPhotosCached,
@@ -1105,5 +1199,7 @@ module.exports = {
   getAllLeafFoldersCached,
   listOrderFolders,
   clearAllCaches,
-  processOrderFilesWithCategories
+  processOrderFilesWithCategories,
+  prewarmCache,
+  getPopularCategories
 };

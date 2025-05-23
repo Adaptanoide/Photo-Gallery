@@ -641,10 +641,22 @@ exports.getThumbnail = async (req, res) => {
       return res.status(400).send('File ID is required');
     }
     
+    // Headers de cache agressivos logo no início
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 ano
+    res.setHeader('Vary', 'Accept'); // Para WebP
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Verificar ETag imediatamente
+    const etag = `"thumb-${fileId}-v2"`;
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end(); // Not Modified
+    }
+    res.setHeader('ETag', etag);
+    
     // Constantes otimizadas para thumbnails
     const THUMBNAIL_SIZE = 300;
-    const THUMBNAIL_QUALITY = 75; // Qualidade reduzida para thumbnails
-    const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
+    const THUMBNAIL_QUALITY = 80; // Aumentado para melhor qualidade
+    const CACHE_DIR = process.env.CACHE_STORAGE_PATH || path.join(__dirname, '../../cache/optimized');
     
     // Garantir que o diretório de cache existe
     if (!fs.existsSync(CACHE_DIR)) {
@@ -654,47 +666,21 @@ exports.getThumbnail = async (req, res) => {
     // Determinar formato baseado no suporte do navegador
     const acceptHeader = req.headers.accept || '';
     const supportsWebP = acceptHeader.includes('image/webp');
-    const format = supportsWebP ? 'webp' : 'jpeg';
+    const format = supportsWebP && process.env.ENABLE_WEBP_CONVERSION === 'true' ? 'webp' : 'jpeg';
     
     // Criar nomes de arquivo para cache
-    const cacheFilename = `thumb_${fileId}_${format}`;
-    const cachePath = path.join(CACHE_DIR, cacheFilename);
+    const cacheFilename = `thumb_${fileId}_${format}_${THUMBNAIL_SIZE}`;
+    const cachePath = path.join(CACHE_DIR, 'thumbnails', format, cacheFilename);
     const metadataPath = `${cachePath}.meta`;
     
     // Verificar cache
     if (fs.existsSync(cachePath)) {
-      // Verificar se temos metadados
-      let etag = '';
-      if (fs.existsSync(metadataPath)) {
-        try {
-          const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-          etag = metadata.etag || '';
-          
-          // Verificar se o cliente já tem a versão em cache (ETag)
-          const clientETag = req.headers['if-none-match'];
-          if (clientETag && clientETag === etag) {
-            // O cliente já tem esta versão
-            return res.status(304).end(); // Not Modified, economiza banda
-          }
-        } catch (metaError) {
-          console.error('Error reading metadata:', metaError);
-          // Continua sem metadados
-        }
-      }
-      
       console.log(`Serving thumbnail from cache: ${fileId}`);
       
-      // Definir headers
+      // Streaming do arquivo em cache
+      const stream = fs.createReadStream(cachePath);
       res.setHeader('Content-Type', `image/${format}`);
-      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
-      
-      // Adicionar ETag se existir
-      if (etag) {
-        res.setHeader('ETag', etag);
-      }
-      
-      // Enviar do cache
-      fs.createReadStream(cachePath).pipe(res);
+      stream.pipe(res);
       return;
     }
     
@@ -705,21 +691,19 @@ exports.getThumbnail = async (req, res) => {
     try {
       const fileMetadata = await drive.files.get({
         fileId: fileId,
-        fields: 'mimeType,name'
+        fields: 'mimeType,name,parents'
       });
       
       if (!fileMetadata.data.mimeType.startsWith('image/')) {
         return res.status(400).send('Not an image file');
       }
       
+      // Extrair categoryId dos parents
+      const categoryId = fileMetadata.data.parents ? fileMetadata.data.parents[0] : null;
+      
       console.log(`Processing thumbnail for: ${fileMetadata.data.name}`);
-    } catch (error) {
-      console.error(`Error getting file metadata: ${error.message}`);
-      return res.status(404).send('File not found or not accessible');
-    }
-    
-    // Obter o conteúdo da imagem usando imageQueue para controle de concorrência
-    try {
+      
+      // Obter o conteúdo da imagem usando imageQueue para controle de concorrência
       const response = await imageQueue.add(() => drive.files.get({
         fileId: fileId,
         alt: 'media'
@@ -727,47 +711,84 @@ exports.getThumbnail = async (req, res) => {
         responseType: 'arraybuffer'
       }));
       
-      // Usar função otimizada para criar thumbnail
+      // Garantir que o diretório existe
+      const thumbDir = path.dirname(cachePath);
+      if (!fs.existsSync(thumbDir)) {
+        fs.mkdirSync(thumbDir, { recursive: true });
+      }
+      
+      // Processar imagem com Sharp
       console.log(`Optimizing thumbnail to ${format} format with quality ${THUMBNAIL_QUALITY}`);
-      const thumbnail = await processImageEfficiently(Buffer.from(response.data), {
-        width: THUMBNAIL_SIZE,
-        height: THUMBNAIL_SIZE, 
-        format: format,
-        quality: THUMBNAIL_QUALITY
+      
+      let sharpInstance = sharp(Buffer.from(response.data), {
+        failOnError: false,
+        sequentialRead: true,
+        density: 72
+      })
+      .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, {
+        fit: 'cover',
+        position: 'center',
+        withoutEnlargement: true
       });
       
-      // Gerar ETag (hash MD5 do conteúdo)
-      const etag = crypto.createHash('md5').update(thumbnail).digest('hex');
+      // Aplicar formato específico
+      if (format === 'webp') {
+        sharpInstance = sharpInstance.webp({ 
+          quality: THUMBNAIL_QUALITY,
+          effort: 4 // Balanceado entre qualidade e velocidade
+        });
+      } else {
+        sharpInstance = sharpInstance.jpeg({ 
+          quality: THUMBNAIL_QUALITY, 
+          progressive: true,
+          mozjpeg: true
+        });
+      }
       
-      // Criar objeto de metadados
+      const thumbnail = await sharpInstance.toBuffer();
+      
+      // Salvar no cache usando SmartCache
+      await smartCache.addFile(cacheFilename, thumbnail, categoryId);
+      
+      // Criar metadados
       const metadata = {
         etag: etag,
         created: new Date().toISOString(),
         mimeType: `image/${format}`,
-        fileId: fileId
+        fileId: fileId,
+        categoryId: categoryId
       };
       
-      // Salvar imagem e metadados no cache
-      fs.writeFileSync(cachePath, thumbnail);
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+      // Salvar metadados
+      try {
+        fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+      } catch (metaErr) {
+        console.error('Error saving metadata:', metaErr);
+      }
       
-      // Definir cabeçalhos
+      // Definir cabeçalhos finais
       res.setHeader('Content-Type', `image/${format}`);
-      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
-      res.setHeader('ETag', etag);
+      res.setHeader('Content-Length', thumbnail.length);
       
       // Liberar explicitamente a memória
       response.data = null;
       
       // Enviar a imagem
       res.send(thumbnail);
+      
     } catch (error) {
       console.error(`Error processing thumbnail: ${error.message}`);
-      res.status(500).send('Error retrieving thumbnail');
+      
+      // Se falhar, tentar servir uma imagem padrão ou erro
+      if (!res.headersSent) {
+        res.status(500).send('Error retrieving thumbnail');
+      }
     }
   } catch (error) {
     console.error('Error serving thumbnail:', error);
-    res.status(500).send('Error retrieving thumbnail');
+    if (!res.headersSent) {
+      res.status(500).send('Error retrieving thumbnail');
+    }
   }
 };
 
