@@ -21,4 +21,5 @@ Thumbs.db
 # Cache e arquivos temporários
 cache/
 logs/
-*.pid
+*.pidcache-webp.tar.gz
+cache/
