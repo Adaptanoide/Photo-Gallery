@@ -9,7 +9,13 @@
     "dev": "NODE_ENV=development node --expose-gc src/server.js",
     "prod": "NODE_ENV=production node src/server.js",
     "cache-clear": "node -e \"const SmartCache = require('./src/services/smartCache'); const cache = new SmartCache(5); cache.cleanup(); console.log('Cache cleared!');\"",
-    "status": "curl http://localhost:3000/api/status"
+    "status": "curl http://localhost:3000/api/status",
+    "cache-stats": "node scripts/cache-stats.js",
+    "cache-prewarm": "node scripts/prewarm-cache.js",
+    "cache-optimize": "node scripts/optimize-existing-cache.js",
+    "migrate:webp": "node scripts/migrate-to-webp.js",
+    "sync:drive": "node scripts/sync-drive-webp.js",
+    "sync:cron": "node scripts/setup-cron.js"
   },
   "keywords": [],
   "author": "",

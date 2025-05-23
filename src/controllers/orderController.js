@@ -20,6 +20,40 @@ const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
 const DEFAULT_QUALITY = 90;
 const MAX_WIDTH = 2048;
 
+// Adicionar após os requires no topo do arquivo
+const WEBP_DIR = process.env.CACHE_STORAGE_PATH ? 
+  path.join(process.env.CACHE_STORAGE_PATH, 'webp') : 
+  path.join(__dirname, '../../cache/webp');
+
+// Nova função para buscar WebP pré-convertido
+async function getPreConvertedWebP(fileId, size = 'hd') {
+  try {
+    let webpPath;
+    
+    if (size === 'thumbnail') {
+      // Buscar thumbnail apropriado
+      const sizes = ['medium', 'large', 'small'];
+      for (const thumbSize of sizes) {
+        webpPath = path.join(WEBP_DIR, '..', 'thumbnails', thumbSize, `${fileId}.webp`);
+        if (fs.existsSync(webpPath)) {
+          return fs.readFileSync(webpPath);
+        }
+      }
+    } else {
+      // Buscar HD WebP
+      webpPath = path.join(WEBP_DIR, 'hd', `${fileId}.webp`);
+      if (fs.existsSync(webpPath)) {
+        return fs.readFileSync(webpPath);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting pre-converted WebP:', error);
+    return null;
+  }
+}
+
 // Garantir que o diretório de cache exista
 try {
   if (!fs.existsSync(CACHE_DIR)) {
@@ -652,6 +686,15 @@ exports.getThumbnail = async (req, res) => {
       return res.status(304).end(); // Not Modified
     }
     res.setHeader('ETag', etag);
+
+    // NOVO: Tentar buscar WebP pré-convertido primeiro
+    const preConverted = await getPreConvertedWebP(fileId, 'thumbnail');
+    if (preConverted) {
+      console.log(`Serving pre-converted thumbnail for ${fileId}`);
+      res.setHeader('Content-Type', 'image/webp');
+      res.setHeader('X-Cache-Source', 'pre-converted');
+      return res.send(preConverted);
+    }
     
     // Constantes otimizadas para thumbnails
     const THUMBNAIL_SIZE = 300;
