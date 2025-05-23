@@ -13,9 +13,7 @@ const { imageQueue, fileQueue } = require('../services/queueService');
 const CustomerCode = require('../models/customerCode');
 const Order = require('../models/order');
 const CategoryPrice = require('../models/categoryPrice');
-
 const path = require('path');
-const fs = require('fs');
 
 // Função para buscar WebP do disco
 function getWebPFromDisk(fileId, type = 'hd') {
