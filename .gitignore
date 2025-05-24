@@ -1,5 +1,6 @@
 # Arquivos de ambiente e credenciais
 .env
+.env.local
 *.env
 credentials.json
 
@@ -17,6 +18,7 @@ Thumbs.db
 
 # Outros
 .vscode/
+imagens-webp
 
 # Cache e arquivos temporários
 cache/
