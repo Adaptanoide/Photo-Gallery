@@ -830,7 +830,7 @@ async function getAllLeafFoldersOptimized(rootFolderId, includeEmptyFolders = fa
           
           // Pular se não estiver na árvore da pasta raiz (opcional)
           // MODIFICAÇÃO: Esta verificação agora é OPCIONAL - descomente se quiser usá-la
-          if (!isInRootTree) continue;
+          //if (!isInRootTree) continue;
         }
         
         // Adicionar a pasta à lista filtrada (passou em todas as verificações)
