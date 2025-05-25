@@ -7,7 +7,7 @@ class LocalStorageService {
   constructor() {
     // Usar o mesmo path do smartCache para consistência
     this.baseStoragePath = process.env.CACHE_STORAGE_PATH || '/opt/render/project/storage/cache';
-    this.photosPath = path.join(this.baseStoragePath, 'fotos/imagens-webp'); // Nova estrutura para fotos permanentes
+    this.photosPath = '/opt/render/project/storage/cache/fotos/imagens-webp';// Nova estrutura para fotos permanentes
     this.metadataPath = path.join(this.baseStoragePath, 'metadata');
     this.indexFile = path.join(this.baseStoragePath, 'folder-index.json');
     
