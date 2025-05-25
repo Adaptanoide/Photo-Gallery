@@ -14,7 +14,7 @@ router.get('/local/thumbnail/:photoId', photoController.serveLocalImage);
 router.get('/local/:categoryId/:photoId', photoController.serveLocalImage);
 
 // Rotas administrativas para gerenciamento de pastas (requerem autenticação admin)
-router.use('/admin/*', (req, res, next) => {
+router.use('/admin', (req, res, next) => {
   // Verificar se é admin - adapte conforme sua lógica de autenticação
   const adminToken = req.headers.authorization;
   if (!adminToken) {
