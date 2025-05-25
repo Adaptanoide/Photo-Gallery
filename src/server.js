@@ -8,6 +8,7 @@ console.log('🚀 Starting full server...');
 // Importações
 const monitoringService = require('./services/monitoringService');
 const connectDB = require('./config/database');
+const localStorageService = require('./services/localStorageService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -129,6 +130,24 @@ app.get('/api/status', (req, res) => {
   }
 });
 
+// Rota de status do storage local (ADICIONAR AQUI)
+app.get('/api/storage/status', async (req, res) => {
+  try {
+    const stats = await localStorageService.getStorageStats();
+    res.json({
+      success: true,
+      stats: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting storage status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get storage status'
+    });
+  }
+});
+
 // Rota principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -195,3 +214,13 @@ connectDB()
       console.log(`📊 Status: http://localhost:${PORT}/api/status`);
     });
   });
+
+   
+// Inicializar LocalStorageService
+  localStorageService.initialize()
+    .then(() => {
+      console.log('✅ LocalStorageService initialized');
+    })
+    .catch(err => {
+      console.error('⚠️ Failed to initialize LocalStorageService:', err);
+    }); 

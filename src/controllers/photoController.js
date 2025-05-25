@@ -4,6 +4,9 @@ const mongoService = require('../services/mongoService');
 const CategoryPrice = require('../models/categoryPrice');
 const CustomerCode = require('../models/customerCode');
 const CategoryAccess = require('../models/categoryAccess');
+const localStorageService = require('../services/localStorageService');
+
+
 // Adicionar acesso à constante FOLDER_ID
 const { FOLDER_ID } = process.env;
 
@@ -39,6 +42,8 @@ function cleanupImageCache() {
 setInterval(cleanupImageCache, 5 * 60 * 1000); // A cada 5 minutos
 
 // Obter fotos
+// FUNÇÃO COMPLETA PARA SUBSTITUIR exports.getPhotos no photoController.js
+
 exports.getPhotos = async (req, res) => {
   try {
     // Log detalhado para depuração
@@ -53,13 +58,34 @@ exports.getPhotos = async (req, res) => {
     
     console.log(`Parâmetros de paginação: limit=${limit}, offset=${offset}, preload=${preload}`);
     
-    // MODIFICADO: Obter todas as fotos da categoria (usando cache)
-    const allPhotos = await driveService.getPhotosCached(categoryId);
+    // NOVA LÓGICA: Tentar local primeiro, fallback para Drive
+    let allPhotos = [];
+    let source = 'local';
+    
+    try {
+      // Tentar obter do armazenamento local primeiro
+      console.log(`[Photos] Tentando carregar do disco local...`);
+      allPhotos = await localStorageService.getPhotos(categoryId);
+      
+      if (allPhotos.length === 0) {
+        console.log(`[Photos] Nenhuma foto local, tentando Google Drive...`);
+        source = 'drive';
+        // Fallback para Google Drive
+        allPhotos = await driveService.getPhotosCached(categoryId);
+      } else {
+        console.log(`[Photos] ${allPhotos.length} fotos carregadas do disco local!`);
+      }
+    } catch (localError) {
+      console.error('Erro ao buscar localmente:', localError);
+      // Fallback para Google Drive em caso de erro
+      source = 'drive';
+      allPhotos = await driveService.getPhotosCached(categoryId);
+    }
     
     // Garantir que photos é um array, mesmo se a resposta for null/undefined
     const photosArray = Array.isArray(allPhotos) ? allPhotos : [];
     
-    console.log(`getPhotos - Obtidas ${photosArray.length} fotos da categoria ${categoryId}`);
+    console.log(`getPhotos - Obtidas ${photosArray.length} fotos da categoria ${categoryId} (source: ${source})`);
     
     // Se não for um cliente, retornar fotos sem preços
     if (!customerCode) {
@@ -114,14 +140,16 @@ exports.getPhotos = async (req, res) => {
     
     // Se a categoria específica não está acessível, retornar array vazio
     // Exceto para "All Items" que sempre deve mostrar fotos autorizadas
-    if (categoryId !== FOLDER_ID && categoryId && accessMap[categoryId] && accessMap[categoryId].enabled === false) {
+    // MODIFICADO: Adicionar verificação para 'all-items' (formato do local storage)
+    if (categoryId !== FOLDER_ID && categoryId !== 'all-items' && categoryId && 
+        accessMap[categoryId] && accessMap[categoryId].enabled === false) {
       console.log(`getPhotos - Categoria ${categoryId} não está acessível para o cliente ${customerCode}`);
       return res.status(200).json([]);
     }
     
     // Se for a categoria All Items, filtre apenas fotos de categorias autorizadas
     let filteredPhotos = photosArray;
-    if (categoryId === FOLDER_ID) {
+    if (categoryId === FOLDER_ID || categoryId === 'all-items') {
       filteredPhotos = photosArray.filter(photo => {
         const folderIdToCheck = photo.folderId;
         
@@ -309,7 +337,7 @@ exports.checkImageStatus = async (req, res) => {
   }
 };
 
-// Modificação na função getCategories em photoController.js
+// FUNÇÃO COMPLETA PARA SUBSTITUIR exports.getCategories no photoController.js
 exports.getCategories = async (req, res) => {
   try {
     console.log("getCategories - Requisição recebida:", {
@@ -322,13 +350,31 @@ exports.getCategories = async (req, res) => {
     const customerCode = req.query.customer_code;
     const useLeafFolders = !isAdmin && customerCode; // Use folhas para clientes
     
-    // Obter todas as categorias
-    let categories = await driveService.getFolderStructure(isAdmin, useLeafFolders);
+    // NOVA LÓGICA: Tentar local primeiro, fallback para Drive
+    let categories = [];
+    let source = 'local';
+    
+    try {
+      console.log('[Categories] Tentando carregar do disco local...');
+      categories = await localStorageService.getFolderStructure(isAdmin, useLeafFolders);
+      
+      if (!categories || categories.length === 0) {
+        console.log('[Categories] Nenhuma categoria local, tentando Google Drive...');
+        source = 'drive';
+        categories = await driveService.getFolderStructure(isAdmin, useLeafFolders);
+      } else {
+        console.log(`[Categories] ${categories.length} categorias carregadas do disco local!`);
+      }
+    } catch (localError) {
+      console.error('Erro ao buscar categorias localmente:', localError);
+      source = 'drive';
+      categories = await driveService.getFolderStructure(isAdmin, useLeafFolders);
+    }
     
     // Garantir que categories é um array
     const categoriesArray = Array.isArray(categories) ? categories : [];
     
-    console.log(`getCategories - Obtidas ${categoriesArray.length} categorias (isAdmin=${isAdmin})`);
+    console.log(`getCategories - Obtidas ${categoriesArray.length} categorias (isAdmin=${isAdmin}, source=${source})`);
     
     // Lista explícita de pastas administrativas (nomes exatos)
     const adminFolderNames = ['Waiting Payment', 'Sold', 'Developing'];
@@ -408,7 +454,7 @@ exports.getCategories = async (req, res) => {
   }
 };
 
-// NOVA FUNÇÃO: Obter dados iniciais do cliente
+// FUNÇÃO COMPLETA PARA SUBSTITUIR exports.getClientInitialData no photoController.js
 exports.getClientInitialData = async (req, res) => {
   try {
     const { code } = req.query;
@@ -442,8 +488,26 @@ exports.getClientInitialData = async (req, res) => {
     // 3. Obter preços das categorias em paralelo
     const pricesPromise = CategoryPrice.find();
     
-    // 4. Obter pastas folha em paralelo (com cache)
-    const foldersPromise = driveService.getAllLeafFoldersCached();
+    // 4. MODIFICADO: Obter pastas folha com fallback para local/drive
+    const foldersPromise = (async () => {
+      try {
+        // Tentar local primeiro
+        console.log('[InitialData] Tentando carregar categorias do disco local...');
+        const localFolders = await localStorageService.getFolderStructure(false, true);
+        if (localFolders && localFolders.length > 0) {
+          console.log(`[InitialData] ${localFolders.length} categorias carregadas do disco local!`);
+          // Formatar para compatibilidade
+          return { 
+            success: true, 
+            folders: localFolders.filter(f => !f.isAll) // Remover "All Items" das pastas
+          };
+        }
+      } catch (e) {
+        console.log('[InitialData] Erro ao carregar local, tentando Google Drive...');
+      }
+      // Fallback para Drive
+      return driveService.getAllLeafFoldersCached();
+    })();
     
     // Aguardar todas as promessas
     const [accessResult, pricesData, foldersResult] = await Promise.all([
@@ -539,33 +603,47 @@ exports.getClientInitialData = async (req, res) => {
     console.log(`Pré-carregando ${categoriesToPreload.length} categorias`);
     
     for (const category of categoriesToPreload) {
-      const promise = driveService.getPhotosCached(category.id)
-        .then(photos => {
-          console.log(`Obtidas ${photos.length} fotos para categoria ${category.name}`);
-          // Processar preços para as fotos
-          const photosWithPrice = photos.map(photo => {
-            const defaultPrice = categoryPrices[category.id] ? categoryPrices[category.id].price || 0 : 0;
-            const access = accessMap[category.id];
-            
-            // Preço personalizado ou preço padrão
-            const price = access && access.customPrice !== undefined && access.customPrice !== null 
-              ? access.customPrice 
-              : defaultPrice;
-              
-            return {
-              ...photo,
-              price
-            };
-          });
-          
-          // Armazenar apenas os primeiros 6 itens para cada categoria
-          previews[category.id] = photosWithPrice.slice(0, 6);
-          
-          // NOVO: Pré-processar as primeiras 3 imagens de cada categoria
-          if (photosWithPrice.length > 0) {
-            preloadImages(photosWithPrice.slice(0, 3));
+      // MODIFICADO: Tentar local primeiro, depois Drive
+      const promise = (async () => {
+        let photos = [];
+        try {
+          // Tentar local
+          photos = await localStorageService.getPhotos(category.id);
+          if (photos.length === 0) {
+            // Fallback para Drive
+            photos = await driveService.getPhotosCached(category.id);
           }
+        } catch (e) {
+          // Em caso de erro, tentar Drive
+          photos = await driveService.getPhotosCached(category.id);
+        }
+        
+        console.log(`Obtidas ${photos.length} fotos para categoria ${category.name}`);
+        
+        // Processar preços para as fotos
+        const photosWithPrice = photos.map(photo => {
+          const defaultPrice = categoryPrices[category.id] ? categoryPrices[category.id].price || 0 : 0;
+          const access = accessMap[category.id];
+          
+          // Preço personalizado ou preço padrão
+          const price = access && access.customPrice !== undefined && access.customPrice !== null 
+            ? access.customPrice 
+            : defaultPrice;
+            
+          return {
+            ...photo,
+            price
+          };
         });
+        
+        // Armazenar apenas os primeiros 6 itens para cada categoria
+        previews[category.id] = photosWithPrice.slice(0, 6);
+        
+        // NOVO: Pré-processar as primeiras 3 imagens de cada categoria
+        if (photosWithPrice.length > 0) {
+          preloadImages(photosWithPrice.slice(0, 3));
+        }
+      })();
       
       previewPromises.push(promise);
     }
