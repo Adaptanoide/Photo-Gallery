@@ -39,6 +39,39 @@ class LocalStorageService {
     console.log('✅ LocalStorageService initialized');
   }
 
+  // Adicionar ao initialize() do localStorageService.js
+  async initializeOrderFolders() {
+    console.log('📁 Creating order folders structure...');
+    
+    const orderFolders = ['Waiting Payment', 'Sold'];
+    
+    for (const folder of orderFolders) {
+      const folderPath = path.join(this.photosPath, folder);
+      await fs.mkdir(folderPath, { recursive: true });
+      
+      // Adicionar ao índice se não existir
+      const index = await this.getIndex();
+      const exists = this.findCategoryByPath(index, folder);
+      
+      if (!exists) {
+        const newFolder = {
+          id: this.generateId(),
+          name: folder,
+          relativePath: folder,
+          photoCount: 0,
+          children: [],
+          isAdminFolder: true // Flag especial para pastas admin
+        };
+        
+        if (!index.folders) index.folders = [];
+        index.folders.push(newFolder);
+        await this.saveIndex(index);
+      }
+    }
+    
+    console.log('✅ Order folders initialized');
+  }
+
   // CRÍTICO: Função para obter estrutura de pastas (substitui getFolderStructure do driveService)
   async getFolderStructure(isAdmin = false, useLeafFolders = true) {
     try {

@@ -92,12 +92,12 @@ function openLightbox(index, fromCart = false) {
   const imgElement = document.createElement('img');
   imgElement.id = 'lightbox-img-' + Date.now();
   imgElement.className = 'zoom-img';
-  imgElement.src = `https://drive.google.com/thumbnail?id=${photo.id}&sz=w1024`; // Versão de média qualidade
+  imgElement.src = `/api/photos/local/thumbnail/${photo.id}`;
   imgElement.alt = photo.name;
   imgElement.style.maxWidth = '100%';
   imgElement.style.maxHeight = '100%';
   imgElement.style.objectFit = 'contain';
-  imgElement.dataset.zoomSrc = getDirectImageUrl(photo.id); // URL para versão de alta qualidade
+  imgElement.dataset.zoomSrc = `/api/photos/local/image/${photo.id}`;
   imgElement.dataset.photoId = photo.id; // Adicionar ID da foto para referência
   imgElement.title = "Clique para ampliar. Use a roda do mouse para controlar o zoom."; // Dica visual
 
@@ -303,10 +303,10 @@ function preloadAdjacentImages() {
 }
 
 
-// Função para obter URL de imagem direta do Google Drive
+// Em getDirectImageUrl() - linha ~175
+// TROCAR TODA A FUNÇÃO:
 function getDirectImageUrl(fileId) {
-  // Usar nossa nova API de imagens otimizadas em vez da URL direta do Google Drive
-  return `/api/orders/highres-image/${fileId}?quality=92`; // Aumentar qualidade para 92
+  return `/api/photos/local/image/${fileId}`;
 }
 
 // Função para inicializar o zoom

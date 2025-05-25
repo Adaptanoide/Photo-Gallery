@@ -234,3 +234,6 @@ connectDB()
       console.log(`📊 Status: http://localhost:${PORT}/api/status`);
     });
   });
+
+  // Após inicializar localStorageService
+  await localStorageService.initializeOrderFolders();

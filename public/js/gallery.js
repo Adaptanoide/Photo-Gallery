@@ -232,9 +232,9 @@ function renderCategoryPhotos(container, photos) {
 
     // NOVA ESTRUTURA: Adicionar cada foto com o novo layout
     html += `
-      <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)" 
+      <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)">
           style="animation: fadeIn 0.5s ease-out ${delay}s both; width: 100% !important; max-width: 100% !important;">
-        <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy" 
+        <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" alt="${photo.name}" loading="lazy">
             style="width: 100%; height: auto;"
             onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
         <div class="photo-info">

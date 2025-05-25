@@ -1,4 +1,5 @@
 // controllers/orderController.js
+const localOrderService = require('../services/localOrderService');
 const mongoService = require('../services/mongoService');
 const driveService = require('../services/driveService');
 const emailService = require('../services/emailService');
@@ -217,13 +218,10 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
       }
     }
 
-    // Usar fila para operações de arquivo
-    const result = await fileQueue.add(() =>
-      driveService.processOrderFilesWithCategories(
-        customerName,
-        photosByCategory,
-        'waiting'
-      )
+    const result = await localOrderService.createOrderFolder(
+      customerName,
+      photosByCategory,
+      'waiting'
     );
 
     if (result.success) {
@@ -355,7 +353,7 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
 exports.listOrderFolders = async (req, res) => {
   try {
     const status = req.query.status || 'waiting';
-    const result = await driveService.listOrderFolders(status);
+    const result = await localOrderService.listOrdersByStatus(status);
 
     res.status(200).json(result);
   } catch (error) {
@@ -379,7 +377,7 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    const result = await driveService.updateOrderStatus(status, folderId);
+    const result = await localOrderService.moveOrderToStatus(folderId, status);
 
     // Se pedido foi marcado como pago, remover os IDs dos arquivos das seleções dos clientes
     if (result.success && status === 'paid' && result.fileIds && result.fileIds.length > 0) {

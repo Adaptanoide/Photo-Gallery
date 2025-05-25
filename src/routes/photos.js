@@ -13,6 +13,25 @@ router.get('/categories', photoController.getCategories);
 router.get('/local/thumbnail/:photoId', photoController.serveLocalImage);
 router.get('/local/:categoryId/:photoId', photoController.serveLocalImage);
 
+// Servir imagem em alta resolução
+router.get('/local/image/:photoId', async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    const result = await localStorageService.serveImage(photoId, 'full');
+    
+    if (!result) {
+      return res.status(404).send('Image not found');
+    }
+    
+    res.setHeader('Content-Type', result.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(result.buffer);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(500).send('Error serving image');
+  }
+});
+
 // Rotas administrativas para gerenciamento de pastas (requerem autenticação admin)
 router.use('/admin', (req, res, next) => {
   // Verificar se é admin - adapte conforme sua lógica de autenticação
