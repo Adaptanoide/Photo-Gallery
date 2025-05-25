@@ -16,7 +16,6 @@ const PORT = process.env.PORT || 3000;
 // Configurações de produção
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
-  
   try {
     const compression = require('compression');
     app.use(compression());
@@ -55,7 +54,6 @@ const ensureStoragePaths = () => {
     path.join(storagePath, 'thumbnails', 'jpeg'),
     path.join(storagePath, 'optimized', 'hd')
   ];
-  
   paths.forEach(p => {
     if (!fs.existsSync(p)) {
       fs.mkdirSync(p, { recursive: true });
@@ -81,7 +79,7 @@ app.use('/images', express.static('/opt/render/project/storage/cache', {
   }
 }));
 
-// Servir fotos diretamente do disco (ADICIONAR ESTAS LINHAS AQUI)
+// Servir fotos diretamente do disco
 app.use('/fotos', express.static('/opt/render/project/storage/cache/fotos/imagens-webp', {
   maxAge: '1y',
   etag: true,
@@ -95,13 +93,11 @@ app.use('/fotos', express.static('/opt/render/project/storage/cache/fotos/imagen
 // Middleware de monitoramento
 app.use('/api', (req, res, next) => {
   monitoringService.countRequest();
-  
   res.on('finish', () => {
     if (res.statusCode >= 400) {
       monitoringService.countError();
     }
   });
-  
   next();
 });
 
@@ -124,7 +120,6 @@ app.use('/api/config', configRoutes);
 app.get('/api/status', (req, res) => {
   try {
     const status = monitoringService.getStatus();
-    
     res.json({
       success: true,
       status: status,
@@ -141,7 +136,7 @@ app.get('/api/status', (req, res) => {
   }
 });
 
-// Rota de status do storage local (ADICIONAR AQUI)
+// Rota de status do storage local
 app.get('/api/storage/status', async (req, res) => {
   try {
     const stats = await localStorageService.getStorageStats();
@@ -164,7 +159,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// ✅ MIDDLEWARE DE FALLBACK CORRIGIDO
+// Middleware de fallback
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
     res.status(404).json({
@@ -181,12 +176,9 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
   monitoringService.countError();
-  
   res.status(500).json({
     success: false,
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
-      : err.message
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
   });
 });
 
@@ -201,6 +193,16 @@ connectDB()
       .catch(err => {
         console.error('⚠️ Failed to initialize LocalStorageService:', err);
       });
+
+    // Inicializar pastas de pedido
+    (async () => {
+      try {
+        await localStorageService.initializeOrderFolders();
+        console.log('📁 Order folders initialized successfully');
+      } catch (err) {
+        console.error('⚠️ Failed to initialize order folders:', err);
+      }
+    })();
 
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Servidor rodando na porta ${PORT}`);
@@ -235,5 +237,3 @@ connectDB()
     });
   });
 
-  // Após inicializar localStorageService
-  await localStorageService.initializeOrderFolders();
