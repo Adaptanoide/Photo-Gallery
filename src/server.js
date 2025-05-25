@@ -81,6 +81,17 @@ app.use('/images', express.static('/opt/render/project/storage/cache', {
   }
 }));
 
+// Servir fotos diretamente do disco (ADICIONAR ESTAS LINHAS AQUI)
+app.use('/fotos', express.static('/opt/render/project/storage/cache/fotos/imagens-webp', {
+  maxAge: '1y',
+  etag: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    }
+  }
+}));
+
 // Middleware de monitoramento
 app.use('/api', (req, res, next) => {
   monitoringService.countRequest();
@@ -182,6 +193,15 @@ app.use((err, req, res, next) => {
 // Conectar ao MongoDB e iniciar servidor
 connectDB()
   .then(() => {
+    // Inicializar LocalStorageService
+    localStorageService.initialize()
+      .then(() => {
+        console.log('✅ LocalStorageService initialized');
+      })
+      .catch(err => {
+        console.error('⚠️ Failed to initialize LocalStorageService:', err);
+      });
+
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Servidor rodando na porta ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -208,19 +228,9 @@ connectDB()
   .catch(err => {
     console.error('❌ Failed to connect to MongoDB:', err);
     console.log('🔄 Starting server without MongoDB...');
-    
+
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`⚠️ Servidor rodando na porta ${PORT} (sem MongoDB)`);
       console.log(`📊 Status: http://localhost:${PORT}/api/status`);
     });
   });
-
-   
-// Inicializar LocalStorageService
-  localStorageService.initialize()
-    .then(() => {
-      console.log('✅ LocalStorageService initialized');
-    })
-    .catch(err => {
-      console.error('⚠️ Failed to initialize LocalStorageService:', err);
-    }); 
