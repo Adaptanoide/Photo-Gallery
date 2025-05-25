@@ -731,3 +731,49 @@ exports.saveCustomerSelections = async (req, res) => {
     });
   }
 };
+
+// Serve imagem do disco local (thumb ou full)
+exports.serveLocalImage = async (req, res) => {
+  try {
+    const { categoryId, photoId } = req.params;
+    const buffer = await localStorageService.getImage(categoryId, photoId);
+    res.type('image/webp').send(buffer);
+  } catch (err) {
+    res.status(404).send('Imagem não encontrada');
+  }
+};
+
+// Pasta: estrutura de pastas
+exports.getFolderStructure = async (req, res) => {
+  const data = await localStorageService.getFolderStructure(req.query.is_admin==='true', true);
+  res.json(data);
+};
+
+// CRUD de pastas
+exports.createFolder = async (req, res) => {
+  const { parentId, name } = req.body;
+  const result = await localStorageService.createFolder(parentId, name);
+  res.json(result);
+};
+exports.deleteFolder = async (req, res) => {
+  const { folderId } = req.body;
+  const result = await localStorageService.deleteFolder(folderId);
+  res.json(result);
+};
+exports.renameFolder = async (req, res) => {
+  const { folderId, newName } = req.body;
+  const result = await localStorageService.renameFolder(folderId, newName);
+  res.json(result);
+};
+
+// CRUD de fotos
+exports.movePhoto = async (req, res) => {
+  const { photoId, toFolderId } = req.body;
+  const result = await localStorageService.movePhoto(photoId, toFolderId);
+  res.json(result);
+};
+exports.deletePhoto = async (req, res) => {
+  const { photoId } = req.body;
+  const result = await localStorageService.deletePhoto(photoId);
+  res.json(result);
+};
