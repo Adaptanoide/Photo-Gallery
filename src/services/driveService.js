@@ -1119,11 +1119,6 @@ async function getPopularCategories() {
   }
 }
 
-// Chamar pre-warming após 10 segundos do startup
-if (process.env.NODE_ENV === 'production' && process.env.CACHE_PRELOAD_ON_START === 'true') {
-  setTimeout(prewarmCache, 10000);
-}
-
 module.exports = {
   getPhotos,
   getPhotosCached,
