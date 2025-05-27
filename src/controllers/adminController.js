@@ -74,59 +74,52 @@ exports.deleteCustomerCode = async (req, res) => {
   }
 };
 
-// In src/controllers/adminController.js - Modify getLeafFolders
-
+// SUBSTITUIR a função exports.getLeafFolders por esta:
 exports.getLeafFolders = async function(req, res) {
   try {
-    console.log('Starting getLeafFolders - local storage version');
+    console.log('Starting getLeafFolders - usando localStorageService');
     
-    // Ensure localStorageService is properly imported at the top of the file
+    // Verificar se é para incluir pastas vazias (para o painel de administrador)
     const includeEmptyFolders = req.query.include_empty === 'true' || req.query.admin === 'true';
     
-    // Get all folders from local storage
-    const allFolders = await localStorageService.getFolderStructure(true, includeEmptyFolders);
+    console.log(`Include empty folders: ${includeEmptyFolders}`);
     
-    // Create a flat array of leaf folders (including those in subfolders)
-    const leafFolders = [];
+    // NOVO: Usar localStorageService em vez de driveService
+    const localStorageService = require('../services/localStorageService');
     
-    // Function to recursively collect leaf folders
-    function collectLeafFolders(folders, parentPath = []) {
-      if (!folders || !Array.isArray(folders)) return;
-      
-      folders.forEach(folder => {
-        const currentPath = [...parentPath, folder.name];
-        
-        // Skip admin folders like "Waiting Payment" and "Sold" for regular folder listings
-        const isAdminFolder = folder.isAdminFolder || 
-                             ['Waiting Payment', 'Sold', 'Developing'].includes(folder.name);
-        
-        // Add this folder if it's a leaf folder (has photos or has no children)
-        if (!isAdminFolder && 
-            (folder.photoCount > 0 || !folder.children || folder.children.length === 0)) {
-          leafFolders.push({
-            id: folder.id,
-            name: folder.name,
-            fileCount: folder.photoCount || 0,
-            path: currentPath,
-            fullPath: currentPath.join(' → ')
-          });
-        }
-        
-        // Recursively process children
-        if (folder.children && folder.children.length > 0) {
-          collectLeafFolders(folder.children, currentPath);
-        }
+    // Obter estrutura de pastas do storage local
+    const result = await localStorageService.getFolderStructure(true, true); // admin=true, useLeafFolders=true
+    
+    if (!result.success) {
+      console.error('Could not get folder structure:', result.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Could not get folder structure: ' + result.message
       });
     }
     
-    collectLeafFolders(allFolders);
+    let folders = result.folders || [];
     
-    console.log(`Found ${leafFolders.length} leaf folders for admin panel`);
+    // Se não incluir pastas vazias, filtrar apenas as que têm fotos
+    if (!includeEmptyFolders) {
+      folders = folders.filter(folder => folder.photoCount && folder.photoCount > 0);
+    }
+    
+    console.log(`Found ${folders.length} folders (includeEmpty: ${includeEmptyFolders})`);
+    
+    // Converter para o formato esperado pelo frontend
+    const formattedFolders = folders.map(folder => ({
+      id: folder.id,
+      name: folder.name,
+      fileCount: folder.photoCount || 0,
+      path: folder.fullPath || folder.relativePath || folder.name
+    }));
     
     res.status(200).json({
       success: true,
-      folders: leafFolders
+      folders: formattedFolders
     });
+    
   } catch (error) {
     console.error('Error finding leaf folders:', error);
     res.status(500).json({
@@ -161,7 +154,7 @@ exports.getCategoryPrices = async function(req, res) {
   }
 };
 
-// Definir preço para uma categoria específica
+// SUBSTITUA a função exports.setCategoryPrice completamente por esta:
 exports.setCategoryPrice = async function(req, res) {
   try {
     const { folderId } = req.params;
@@ -174,25 +167,26 @@ exports.setCategoryPrice = async function(req, res) {
       });
     }
     
-    // Obter informações da pasta para pegar o nome
-    const folderInfo = await driveService.getFolderInfo(folderId);
+    // NOVO: Usar localStorageService em vez de driveService
+    const index = await localStorageService.getIndex();
+    const folder = localStorageService.findCategoryById(index, folderId);
     
-    if (!folderInfo.success) {
+    if (!folder) {
       return res.status(400).json({
         success: false,
-        message: 'Could not get folder information'
+        message: 'Folder not found in local storage'
       });
     }
     
-    // Atualizar ou criar no MongoDB
+    // Atualizar ou criar no MongoDB usando informações do local storage
     await CategoryPrice.findOneAndUpdate(
       { folderId },
       {
         folderId: folderId,
-        name: folderInfo.name,
+        name: folder.name,
         price: parseFloat(price),
         updatedAt: new Date(),
-        path: req.body.path || ''
+        path: folder.relativePath || ''
       },
       { upsert: true }
     );

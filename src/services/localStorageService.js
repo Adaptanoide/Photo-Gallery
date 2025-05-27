@@ -43,13 +43,17 @@ class LocalStorageService {
     console.log('✅ Order folders initialized');
   }
 
-  // FUNÇÃO PRINCIPAL CORRIGIDA - SEM DUPLICAÇÃO
+  // SUBSTITUA a função getFolderStructure completa por esta:
   async getFolderStructure(isAdmin = false, useLeafFolders = true) {
     try {
-      console.log(`[LocalStorage] Getting folder structure (admin=${isAdmin})`);
+      console.log(`[LocalStorage] Getting folder structure (admin=${isAdmin}, useLeafFolders=${useLeafFolders})`);
       
       if (this.folderCache && Date.now() - this.folderCacheTime < this.CACHE_DURATION) {
-        return this.formatFolderStructure(this.folderCache, isAdmin, useLeafFolders);
+        const formatted = this.formatFolderStructure(this.folderCache, isAdmin, useLeafFolders);
+        return {
+          success: true,
+          folders: formatted
+        };
       }
 
       let index;
@@ -64,13 +68,22 @@ class LocalStorageService {
       this.folderCache = index;
       this.folderCacheTime = Date.now();
 
-      return this.formatFolderStructure(index, isAdmin, useLeafFolders);
+      const formatted = this.formatFolderStructure(index, isAdmin, useLeafFolders);
+      
+      return {
+        success: true,
+        folders: formatted,
+        message: `Found ${formatted.length} folders`
+      };
     } catch (error) {
       console.error('Error getting folder structure:', error);
-      return [];
+      return {
+        success: false,
+        folders: [],
+        message: error.message
+      };
     }
   }
-
   // FORMATAÇÃO CORRIGIDA - MOSTRA SUBPASTAS COM FOTOS
   formatFolderStructure(index, isAdmin, useLeafFolders) {
     const adminFolders = ['Waiting Payment', 'Sold', 'Developing'];
@@ -307,6 +320,15 @@ class LocalStorageService {
     };
     
     return search(index.folders || []);
+  }
+
+  async getIndex() {
+    try {
+      const data = await fs.readFile(this.indexFile, 'utf8');
+      return JSON.parse(data);
+    } catch {
+      return await this.rebuildIndex();
+    }
   }
 
   async serveImage(photoId, size = 'full') {

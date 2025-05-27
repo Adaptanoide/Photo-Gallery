@@ -48,8 +48,7 @@ function initPriceManager() {
     });
 }
 
-// Em price-manager.js, procure a função loadLeafFoldersWithProgress ou similar
-
+// SUBSTITUA a função loadLeafFoldersWithProgress por esta:
 function loadLeafFoldersWithProgress() {
   const progressElement = document.getElementById('loading-progress');
   
@@ -58,51 +57,49 @@ function loadLeafFoldersWithProgress() {
     progressElement.textContent = 'Buscando categorias...';
   }
   
-  // Tentar usar localStorageService primeiro
-  if (typeof localStorageService !== 'undefined' && localStorageService.getFolderStructure) {
-    localStorageService.getFolderStructure(true, true)
-      .then(result => {
-        if (result && result.length > 0) {
-          leafFolders = result;
-          console.log(`Loaded ${leafFolders.length} leaf folders from local storage`);
-          renderCategoryPriceTable();
-          isLoadingFolders = false;
-          return;
-        } else {
-          // Se não encontrar no storage local, continua para o método tradicional
-          fallbackToApiCall();
-        }
-      })
-      .catch(error => {
-        console.warn("Error loading from local storage:", error);
-        fallbackToApiCall();
-      });
-  } else {
-    fallbackToApiCall();
-  }
+  console.log('Fazendo requisição para: /api/admin/folders/leaf?include_empty=true');
   
-  function fallbackToApiCall() {
-    // Código original da função aqui
-    fetch('/api/admin/folders/leaf?include_empty=true')
-      .then(response => {
-        // Resto do código...
-      })
-      .catch(error => {
-        // Tratar o erro mais graciosamente
-        console.error('Error loading leaf folders:', error);
-        document.getElementById('category-price-container').innerHTML = 
-          `<div class="error-message">Não foi possível carregar categorias. Usando dados em cache se disponíveis.</div>`;
+  // Fazer a requisição
+  fetch('/api/admin/folders/leaf?include_empty=true')
+    .then(response => {
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(result => {
+      console.log('API Response completa:', result);
+      
+      if (result.success) {
+        leafFolders = result.folders || [];
+        console.log(`Loaded ${leafFolders.length} leaf folders`);
+        console.log('Primeiras 3 pastas:', leafFolders.slice(0, 3));
         
-        // Tentar usar dados em cache se disponíveis
-        const cachedFolders = sessionStorage.getItem('leaf_folders');
-        if (cachedFolders) {
-          leafFolders = JSON.parse(cachedFolders);
-          renderCategoryPriceTable();
-        }
+        // Armazenar em cache na sessão
+        sessionStorage.setItem('leaf_folders', JSON.stringify(leafFolders));
+        sessionStorage.setItem('leaf_folders_timestamp', Date.now().toString());
         
-        isLoadingFolders = false;
-      });
-  }
+        // Atualizar UI
+        renderCategoryPriceTable();
+        
+        // Ajustar altura da tabela
+        setTimeout(adjustTableHeight, 100);
+        
+        // Adicionar evento de redimensionamento
+        window.addEventListener('resize', adjustTableHeight);
+      } else {
+        throw new Error(result.message || 'Falha ao carregar pastas');
+      }
+    })
+    .catch(error => {
+      console.error('Error loading leaf folders:', error);
+      document.getElementById('category-price-container').innerHTML = 
+        `<div class="error-message">Erro ao carregar categorias: ${error.message}</div>`;
+    })
+    .finally(() => {
+      isLoadingFolders = false;
+    });
 }
 
 // Atualizar pastas em segundo plano sem interromper o usuário
