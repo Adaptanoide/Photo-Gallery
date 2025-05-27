@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const photoController = require('../controllers/photoController');
+const localStorageService = require('../services/localStorageService');
 
 // Rotas existentes
 router.get('/', photoController.getPhotos);
@@ -9,21 +10,64 @@ router.get('/categories', photoController.getCategories);
 
 // NOVAS ROTAS PARA GERENCIAMENTO LOCAL
 
-// Servir imagens do disco local
-router.get('/local/thumbnail/:photoId', photoController.serveLocalImage);
-router.get('/local/:categoryId/:photoId', photoController.serveLocalImage);
+// Servir thumbnail
+router.get('/local/thumbnail/:photoId', async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    console.log(`[Routes] Serving thumbnail for: ${photoId}`);
+    
+    const result = await localStorageService.serveImage(photoId, 'thumbnail');
+    
+    if (!result) {
+      console.log(`[Routes] Thumbnail not found for: ${photoId}`);
+      return res.status(404).send('Thumbnail not found');
+    }
+    
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(result.buffer);
+  } catch (error) {
+    console.error('Error serving thumbnail:', error);
+    res.status(500).send('Error serving thumbnail');
+  }
+});
+
+// Rota com categoryId (compatibilidade)
+router.get('/local/:categoryId/:photoId', async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    console.log(`[Routes] Serving image with category for: ${photoId}`);
+    
+    const result = await localStorageService.serveImage(photoId, 'full');
+    
+    if (!result) {
+      console.log(`[Routes] Image not found for: ${photoId}`);
+      return res.status(404).send('Image not found');
+    }
+    
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(result.buffer);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(500).send('Error serving image');
+  }
+});
 
 // Servir imagem em alta resolução
 router.get('/local/image/:photoId', async (req, res) => {
   try {
     const { photoId } = req.params;
+    console.log(`[Routes] Serving full image for: ${photoId}`);
+    
     const result = await localStorageService.serveImage(photoId, 'full');
     
     if (!result) {
+      console.log(`[Routes] Image not found for: ${photoId}`);
       return res.status(404).send('Image not found');
     }
     
-    res.setHeader('Content-Type', result.contentType);
+    res.setHeader('Content-Type', 'image/webp');
     res.setHeader('Cache-Control', 'public, max-age=31536000');
     res.send(result.buffer);
   } catch (error) {

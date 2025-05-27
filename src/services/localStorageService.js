@@ -311,13 +311,21 @@ class LocalStorageService {
 
   async serveImage(photoId, size = 'full') {
     try {
+      console.log(`[LocalStorage] Serving image: ${photoId}, size: ${size}`);
+      
+      // Buscar a foto em todas as pastas do índice
       const index = await this.getIndex();
       
-      for (const folder of index.folders || []) {
+      // Função recursiva para buscar a foto
+      const findPhotoInFolder = async (folder) => {
+        // Tentar na pasta atual
         const folderPath = path.join(this.photosPath, folder.relativePath);
         const imagePath = path.join(folderPath, `${photoId}.webp`);
         
         try {
+          await fs.access(imagePath);
+          console.log(`[LocalStorage] Found image at: ${imagePath}`);
+          
           const buffer = await fs.readFile(imagePath);
           return {
             buffer: buffer,
@@ -325,10 +333,27 @@ class LocalStorageService {
             path: imagePath
           };
         } catch {
-          continue;
+          // Não encontrou nesta pasta
         }
+        
+        // Buscar nas subpastas
+        if (folder.children && folder.children.length > 0) {
+          for (const child of folder.children) {
+            const result = await findPhotoInFolder(child);
+            if (result) return result;
+          }
+        }
+        
+        return null;
+      };
+      
+      // Buscar em todas as pastas raiz
+      for (const folder of index.folders || []) {
+        const result = await findPhotoInFolder(folder);
+        if (result) return result;
       }
       
+      console.log(`[LocalStorage] Image not found: ${photoId}`);
       return null;
     } catch (error) {
       console.error(`Error serving image ${photoId}:`, error);
