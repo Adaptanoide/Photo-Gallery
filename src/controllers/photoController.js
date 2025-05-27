@@ -50,23 +50,44 @@ exports.getPhotos = async (req, res) => {
     const customerCode = req.query.customer_code;
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
+    const preload = req.query.preload === 'true'; // Define preload from query params
     
-    // Sempre usar o serviço de armazenamento local
-    const allPhotos = await localStorageService.getPhotos(categoryId);
+    // Define a safe fallback for FOLDER_ID if it's not available
+    const FOLDER_ID = process.env.FOLDER_ID || 'all-items';
     
-    // Garantir que photos é um array, mesmo se a resposta for null/undefined
+    console.log(`[Photos] Loading from local disk for category: ${categoryId}`);
+    
+    // Always use localStorageService
+    let allPhotos = [];
+    try {
+      allPhotos = await localStorageService.getPhotos(categoryId);
+      console.log(`[Photos] Loaded ${allPhotos.length} photos from local storage`);
+      
+      // Ensure all photos have proper URL paths
+      allPhotos = allPhotos.map(photo => ({
+        ...photo,
+        thumbnail: `/api/photos/local/thumbnail/${photo.id}`,
+        highres: `/api/photos/local/${photo.folderId || categoryId}/${photo.id}`,
+        source: 'local'
+      }));
+    } catch (error) {
+      console.error('Error loading photos from local storage:', error);
+      allPhotos = [];
+    }
+    
+    // Ensure photosArray is always an array
     const photosArray = Array.isArray(allPhotos) ? allPhotos : [];
     
-    console.log(`getPhotos - Obtidas ${photosArray.length} fotos da categoria ${categoryId}`);
+    console.log(`getPhotos - Obtained ${photosArray.length} photos for category ${categoryId}`);
     
-    // Se não for um cliente, retornar fotos sem preços
+    // If not a client, return photos without prices
     if (!customerCode) {
-      // Aplicar paginação
+      // Apply pagination
       const paginatedPhotos = photosArray.slice(offset, offset + limit);
       return res.status(200).json(paginatedPhotos);
     }
     
-    // Obter preços padrão das categorias
+    // Get default category prices
     const categoryPricesData = await CategoryPrice.find();
     const categoryPrices = {};
     
@@ -74,18 +95,18 @@ exports.getPhotos = async (req, res) => {
       categoryPrices[price.folderId] = price.price || 0;
     });
     
-    console.log(`getPhotos - Obtidos preços para ${Object.keys(categoryPrices).length} categorias`);
+    console.log(`getPhotos - Obtained prices for ${Object.keys(categoryPrices).length} categories`);
     
-    // Obter configurações de acesso do cliente
+    // Get client access settings
     const accessResult = await mongoService.getCustomerCategoryAccess(customerCode);
-    console.log("getPhotos - Dados de acesso do cliente:", accessResult);
+    console.log("getPhotos - Client access data:", accessResult);
     
     if (!accessResult.success) {
-      console.log("getPhotos - Falha ao obter acesso, retornando todas as fotos sem preços");
-      // Aplicar paginação mesmo em caso de erro
+      console.log("getPhotos - Failed to get access, returning all photos without prices");
+      // Apply pagination even in case of error
       const paginatedPhotos = photosArray.slice(offset, offset + limit);
       
-      // NOVO: Pré-carregamento se solicitado
+      // Preload if requested
       if (preload && paginatedPhotos.length > 0) {
         preloadImages(paginatedPhotos.slice(0, 3));
       }
@@ -96,61 +117,60 @@ exports.getPhotos = async (req, res) => {
     const accessData = accessResult.data || {};
     const categoryAccess = accessData.categoryAccess || [];
     
-    console.log(`getPhotos - Cliente tem ${categoryAccess.length} configurações de acesso`);
+    console.log(`getPhotos - Client has ${categoryAccess.length} access configurations`);
     
-    // Mapa de acesso para consulta rápida
+    // Access map for quick lookup
     const accessMap = {};
     categoryAccess.forEach(item => {
       accessMap[item.categoryId] = item;
     });
     
-    // Se a categoria específica não está acessível, retornar array vazio
-    // Exceto para "All Items" que sempre deve mostrar fotos autorizadas
-    // MODIFICADO: Adicionar verificação para 'all-items' (formato do local storage)
+    // If specific category is not accessible, return empty array
+    // Except for "All Items" which should always show authorized photos
     if (categoryId !== FOLDER_ID && categoryId !== 'all-items' && categoryId && 
         accessMap[categoryId] && accessMap[categoryId].enabled === false) {
-      console.log(`getPhotos - Categoria ${categoryId} não está acessível para o cliente ${customerCode}`);
+      console.log(`getPhotos - Category ${categoryId} is not accessible for client ${customerCode}`);
       return res.status(200).json([]);
     }
     
-    // Se for a categoria All Items, filtre apenas fotos de categorias autorizadas
+    // If it's the All Items category, filter only photos from authorized categories
     let filteredPhotos = photosArray;
     if (categoryId === FOLDER_ID || categoryId === 'all-items') {
       filteredPhotos = photosArray.filter(photo => {
         const folderIdToCheck = photo.folderId;
         
-        // Se não houver configuração para esta pasta, permite por padrão
+        // If there's no configuration for this folder, allow by default
         if (!accessMap[folderIdToCheck]) return true;
         
-        // Verifica se está autorizado
+        // Check if authorized
         return accessMap[folderIdToCheck].enabled !== false;
       });
       
-      console.log(`getPhotos - Filtradas de ${photosArray.length} para ${filteredPhotos.length} fotos autorizadas para All Items`);
+      console.log(`getPhotos - Filtered from ${photosArray.length} to ${filteredPhotos.length} authorized photos for All Items`);
     }
     
-    // IMPORTANTE: Aplicar paginação explicitamente antes de retornar
+    // Apply pagination explicitly before returning
     const totalFiltered = filteredPhotos.length;
     const paginatedFiltered = filteredPhotos.slice(offset, offset + limit);
     
-    console.log(`Total de fotos: ${totalFiltered}, Retornando: ${paginatedFiltered.length} (offset ${offset}, limit ${limit})`);
+    console.log(`Total photos: ${totalFiltered}, Returning: ${paginatedFiltered.length} (offset ${offset}, limit ${limit})`);
     
-    // Adicionar informações de preço às fotos
+    // Add price information to photos
     const photosWithPrice = paginatedFiltered.map(photo => {
       const categoryFolderId = photo.folderId || categoryId;
       
-      // Preço padrão da categoria
+      // Default category price
       const defaultPrice = categoryPrices[categoryFolderId] || 0;
       
-      // Configurações de acesso à categoria
+      // Category access settings
       const access = accessMap[categoryFolderId];
       
-      // Preço personalizado ou preço padrão
+      // Custom price or default price
       const price = access && access.customPrice !== undefined && access.customPrice !== null 
         ? access.customPrice 
         : defaultPrice;
       
-      // Informações de desconto
+      // Discount information
       const minQuantityForDiscount = access ? access.minQuantityForDiscount : null;
       const discountPercentage = access ? access.discountPercentage : null;
       
@@ -163,21 +183,21 @@ exports.getPhotos = async (req, res) => {
       };
     });
     
-    // NOVO: Se for pré-carregamento, processar imagens em background
+    // Preload if requested
     if (preload && photosWithPrice.length > 0) {
-      // Pré-processar as primeiras 3-5 imagens
+      // Preprocess the first 3-5 images
       const imagesToPreload = photosWithPrice.slice(0, 5);
       preloadImages(imagesToPreload);
     }
     
-    console.log(`getPhotos - Retornando ${photosWithPrice.length} fotos com preços para o cliente ${customerCode}`);
+    console.log(`getPhotos - Returning ${photosWithPrice.length} photos with prices for client ${customerCode}`);
     res.status(200).json(photosWithPrice);
 
   } catch (error) {
-    console.error('Erro ao obter fotos:', error);
+    console.error('Error getting photos:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro ao obter fotos: ' + error.message
+      message: 'Error getting photos: ' + error.message
     });
   }
 };

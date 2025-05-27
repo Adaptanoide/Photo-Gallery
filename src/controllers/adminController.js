@@ -74,21 +74,58 @@ exports.deleteCustomerCode = async (req, res) => {
   }
 };
 
-// Find the getLeafFolders function and replace it with this:
+// In src/controllers/adminController.js - Modify getLeafFolders
+
 exports.getLeafFolders = async function(req, res) {
   try {
     console.log('Starting getLeafFolders - local storage version');
     
+    // Ensure localStorageService is properly imported at the top of the file
     const includeEmptyFolders = req.query.include_empty === 'true' || req.query.admin === 'true';
     
-    // Now localStorageService will be defined
-    const folders = await localStorageService.getFolderStructure(true, includeEmptyFolders);
+    // Get all folders from local storage
+    const allFolders = await localStorageService.getFolderStructure(true, includeEmptyFolders);
     
-    console.log(`Found ${folders ? folders.length : 0} folders from local storage`);
+    // Create a flat array of leaf folders (including those in subfolders)
+    const leafFolders = [];
+    
+    // Function to recursively collect leaf folders
+    function collectLeafFolders(folders, parentPath = []) {
+      if (!folders || !Array.isArray(folders)) return;
+      
+      folders.forEach(folder => {
+        const currentPath = [...parentPath, folder.name];
+        
+        // Skip admin folders like "Waiting Payment" and "Sold" for regular folder listings
+        const isAdminFolder = folder.isAdminFolder || 
+                             ['Waiting Payment', 'Sold', 'Developing'].includes(folder.name);
+        
+        // Add this folder if it's a leaf folder (has photos or has no children)
+        if (!isAdminFolder && 
+            (folder.photoCount > 0 || !folder.children || folder.children.length === 0)) {
+          leafFolders.push({
+            id: folder.id,
+            name: folder.name,
+            fileCount: folder.photoCount || 0,
+            path: currentPath,
+            fullPath: currentPath.join(' → ')
+          });
+        }
+        
+        // Recursively process children
+        if (folder.children && folder.children.length > 0) {
+          collectLeafFolders(folder.children, currentPath);
+        }
+      });
+    }
+    
+    collectLeafFolders(allFolders);
+    
+    console.log(`Found ${leafFolders.length} leaf folders for admin panel`);
     
     res.status(200).json({
       success: true,
-      folders: folders || []
+      folders: leafFolders
     });
   } catch (error) {
     console.error('Error finding leaf folders:', error);
