@@ -203,11 +203,15 @@ function loadOrderFolders(status, retryCount = 0) {
               onclick="viewOrderDetails('${folder.id}', '${folder.name}')">View Details</button>
             <button class="btn btn-gold" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="moveOrderToSold('${folder.id}', '${folder.name}')">Mark as Sold</button>
+            <button class="btn btn-info" style="padding: 4px 8px; white-space: nowrap;" 
+              onclick="openReturnToStockModal('${folder.id}', '${folder.name}')">📦 Return to Stock</button>
           `;
         } else if (status === 'paid') {
           actionButtons = `
             <button class="btn btn-secondary" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="viewOrderDetails('${folder.id}', '${folder.name}')">View Details</button>
+            <button class="btn btn-info" style="padding: 4px 8px; white-space: nowrap;" 
+              onclick="openReturnToStockModal('${folder.id}', '${folder.name}')">📦 Return to Stock</button>
           `;
         }
       
