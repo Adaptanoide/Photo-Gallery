@@ -419,83 +419,86 @@
     </div>
   </div>
 
-  <!-- Order Details Modal -->
-  <div id="order-details-modal" class="modal">
-    <!-- Return to Stock Modal -->
-    <div id="return-to-stock-modal" class="modal" style="display: none;">
-      <div class="modal-content" style="max-width: 900px; width: 95%;">
-        <h2>Return Photos to Stock</h2>
-        <p>Select which photos you want to return to the main gallery from: <strong><span id="return-order-name"></span></strong></p>
-        
-        <div id="return-modal-loading" class="loading-message">Loading order photos...</div>
-        
-        <div id="return-modal-content" style="display: none;">
-          <!-- Categories will be loaded here -->
-          <div id="return-categories-container">
-            <!-- Dynamic content -->
-          </div>
-          
-          <div class="luxury-divider"></div>
-          
-          <div class="return-summary">
-            <p><strong>Selected:</strong> <span id="return-selected-count">0</span> photos</p>
-          </div>
-        </div>
-        
-        <div class="modal-actions">
-          <button class="btn btn-secondary" onclick="closeModal('return-to-stock-modal')">Cancel</button>
-          <button class="btn btn-gold" onclick="processReturnToStock()" id="process-return-btn" disabled>
-            Return Selected Photos
-          </button>
-        </div>
+<!-- Return to Stock Modal - SEPARADO -->
+<div id="return-to-stock-modal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 900px; width: 95%;">
+    <h2>Return Photos to Stock</h2>
+    <p>Select which photos you want to return to the main gallery from: <strong><span id="return-order-name"></span></strong></p>
+    
+    <div id="return-modal-loading" class="loading-message">Loading order photos...</div>
+    
+    <div id="return-modal-content" style="display: none;">
+      <!-- Categories will be loaded here -->
+      <div id="return-categories-container">
+        <!-- Dynamic content -->
+      </div>
+      
+      <div class="luxury-divider"></div>
+      
+      <div class="return-summary">
+        <p><strong>Selected:</strong> <span id="return-selected-count">0</span> photos</p>
       </div>
     </div>
-    <div class="modal-content" style="max-width: 800px;">
-      <h2>Order Details</h2>
-      <div id="order-loading" class="loading-message">Loading order details...</div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('return-to-stock-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="processReturnToStock()" id="process-return-btn" disabled>
+        Return Selected Photos
+      </button>
+    </div>
+  </div>
+</div>
 
-      <div id="order-details-content" style="display: none;">
-        <div class="order-info">
-          <p><strong>Order:</strong> <span id="order-name"></span></p>
-          <p><strong>Client:</strong> <span id="order-client"></span></p>
-          <p><strong>Date:</strong> <span id="order-date"></span></p>
+<!-- Order Details Modal - SEPARADO -->
+<div id="order-details-modal" class="modal">
+  <div class="modal-content" style="max-width: 800px;">
+    <h2>Order Details</h2>
+    <div id="order-loading" class="loading-message">Loading order details...</div>
+
+    <div id="order-details-content" style="display: none;">
+      <div class="order-info">
+        <p><strong>Order:</strong> <span id="order-name"></span></p>
+        <p><strong>Client:</strong> <span id="order-client"></span></p>
+        <p><strong>Date:</strong> <span id="order-date"></span></p>
+      </div>
+
+      <div class="luxury-divider"></div>
+
+      <!-- Cabeçalho centralizado para categorias -->
+      <h3 class="section-title">Items by Category</h3>
+
+      <div id="category-breakdown" class="category-breakdown">
+        <!-- Categorias serão inseridas aqui dinamicamente -->
+      </div>
+
+      <div class="luxury-divider"></div>
+
+      <div class="order-totals">
+        <div class="order-total-row">
+          <span><strong>Total Items:</strong></span>
+          <span id="total-items"></span>
         </div>
-
-        <div class="luxury-divider"></div>
-
-        <!-- Cabeçalho centralizado para categorias -->
-        <h3 class="section-title">Items by Category</h3>
-
-        <div id="category-breakdown" class="category-breakdown">
-          <!-- Categorias serão inseridas aqui dinamicamente -->
-        </div>
-
-        <div class="luxury-divider"></div>
-
-        <div class="order-totals">
-          <div class="order-total-row">
-            <span><strong>Total Items:</strong></span>
-            <span id="total-items"></span>
-          </div>
-          <div class="order-total-row">
-            <span><strong>Total Amount:</strong></span>
-            <span id="total-amount"></span>
-          </div>
-        </div>
-
-        <div id="order-comments-section" style="display: none;">
-          <div class="luxury-divider"></div>
-          <h3>Client Comments</h3>
-          <div id="order-comments" class="order-comments"></div>
-        </div>
-
-        <div class="luxury-divider"></div>
-
-        <div class="modal-actions">
-          <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
-          <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+        <div class="order-total-row">
+          <span><strong>Total Amount:</strong></span>
+          <span id="total-amount"></span>
         </div>
       </div>
+
+      <div id="order-comments-section" style="display: none;">
+        <div class="luxury-divider"></div>
+        <h3>Client Comments</h3>
+        <div id="order-comments" class="order-comments"></div>
+      </div>
+
+      <div class="luxury-divider"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
+        <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+      </div>
+    </div>
+  </div>
+</div>
 
       <!-- App Scripts -->
       <script src="/js/database-service.js"></script>

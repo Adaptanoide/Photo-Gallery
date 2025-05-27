@@ -883,64 +883,38 @@ function parseOrderFolderName(folderName) {
   }
 }
 
-// FUNÇÃO CORRIGIDA - Return to Stock Modal
 function openReturnToStockModal(folderId, folderName) {
   console.log(`🔧 Opening return modal for: ${folderName} (${folderId})`);
   
-  // FECHAR TODOS os outros modais primeiro
+  // Fechar outros modais
   const allModals = document.querySelectorAll('.modal');
   allModals.forEach(modal => {
     modal.style.display = 'none';
+    modal.classList.remove('show');
   });
   
-  // Armazenar informações do pedido
+  // Armazenar informações
   window.currentReturnOrderId = folderId;
   window.currentReturnOrderName = folderName;
   
-  // Atualizar título do modal
+  // Atualizar título
   document.getElementById('return-order-name').textContent = folderName;
   
-  // Obter modal e garantir que existe
+  // Mostrar modal
   const modal = document.getElementById('return-to-stock-modal');
-  if (!modal) {
-    console.error('❌ Modal element not found!');
-    showToast('Error: Modal not found', 'error');
-    return;
+  if (modal) {
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    
+    // Resetar estado
+    document.getElementById('return-modal-loading').style.display = 'block';
+    document.getElementById('return-modal-content').style.display = 'none';
+    document.getElementById('return-selected-count').textContent = '0';
+    document.getElementById('process-return-btn').disabled = true;
+    
+    // Carregar fotos
+    loadOrderPhotosForReturn(folderId);
   }
-  
-  // FORÇAR exibição do modal
-  modal.style.display = 'block';
-  modal.style.position = 'fixed';
-  modal.style.top = '0';
-  modal.style.left = '0';
-  modal.style.width = '100%';
-  modal.style.height = '100%';
-  modal.style.zIndex = '99999';
-  modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
-  
-  // Garantir que o conteúdo do modal também está visível
-  const modalContent = modal.querySelector('.modal-content');
-  if (modalContent) {
-    modalContent.style.position = 'relative';
-    modalContent.style.zIndex = '100000';
-    modalContent.style.margin = '5% auto';
-    modalContent.style.backgroundColor = 'white';
-    modalContent.style.borderRadius = '8px';
-    modalContent.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-  }
-  
-  // Mostrar loading
-  document.getElementById('return-modal-loading').style.display = 'block';
-  document.getElementById('return-modal-content').style.display = 'none';
-  
-  // Resetar contador
-  document.getElementById('return-selected-count').textContent = '0';
-  document.getElementById('process-return-btn').disabled = true;
-  
-  // Carregar fotos do pedido
-  loadOrderPhotosForReturn(folderId);
-  
-  console.log(`✅ Modal should be visible now!`);
 }
 
 // Função para carregar fotos do pedido

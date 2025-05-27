@@ -150,12 +150,15 @@
    RETURN TO STOCK MODAL
    ======================================== */
 
-/* Return to Stock Modal - CSS Específico */
 #return-to-stock-modal {
   z-index: 99999 !important;
-  display: flex !important;  /* ← APENAS ESTA LINHA */
-  align-items: center !important;  /* ← APENAS ESTA LINHA */  
-  justify-content: center !important;  /* ← APENAS ESTA LINHA */
+  /* REMOVER as propriedades display/flex que estavam forçando sempre */
+}
+
+#return-to-stock-modal.show {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 #return-to-stock-modal .modal-content {
