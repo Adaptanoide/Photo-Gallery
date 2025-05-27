@@ -946,121 +946,41 @@ function openReturnToStockModal(folderId, folderName) {
 // Função para carregar fotos do pedido
 async function loadOrderPhotosForReturn(folderId) {
   try {
-    console.log(`📋 Loading photos for order: ${folderId}`);
+    console.log(`Loading photos for order: ${folderId}`);
     
-    // Fazer requisição para buscar detalhes do pedido
-    const response = await fetch(`/api/orders/details?folderId=${folderId}`);
-    const result = await response.json();
-    
-    if (result.success) {
+    // Por enquanto, vamos simular o carregamento
+    setTimeout(() => {
       // Esconder loading
       document.getElementById('return-modal-loading').style.display = 'none';
       
-      // Renderizar categorias e fotos
-      renderReturnPhotosInterface(result.categories || []);
+      // Mostrar conteúdo temporário
+      document.getElementById('return-categories-container').innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #666;">
+          <p>📋 Order ID: ${folderId}</p>
+          <p>🔧 Loading system in development...</p>
+          <p>✅ Modal is working correctly!</p>
+        </div>
+      `;
       
       // Mostrar conteúdo
       document.getElementById('return-modal-content').style.display = 'block';
       
-      console.log('✅ Photos loaded successfully!');
-    } else {
-      throw new Error(result.message || 'Failed to load order photos');
-    }
+      console.log('Modal loaded successfully!');
+    }, 1000);
     
   } catch (error) {
-    console.error('❌ Error loading order photos:', error);
-    
-    // Esconder loading
-    document.getElementById('return-modal-loading').style.display = 'none';
-    
-    // Mostrar erro
+    console.error('Error loading order photos:', error);
     document.getElementById('return-categories-container').innerHTML = `
       <div style="padding: 20px; text-align: center; color: red;">
-        <p>❌ Error loading photos: ${error.message}</p>
-        <button class="btn btn-secondary" onclick="loadOrderPhotosForReturn('${folderId}')">
-          Try Again
-        </button>
+        Error loading photos: ${error.message}
       </div>
     `;
-    
-    // Mostrar conteúdo mesmo com erro
-    document.getElementById('return-modal-content').style.display = 'block';
   }
 }
 
-// Função para renderizar interface de seleção de fotos
-function renderReturnPhotosInterface(categories) {
-  const container = document.getElementById('return-categories-container');
-  
-  if (!categories || categories.length === 0) {
-    container.innerHTML = `
-      <div style="padding: 20px; text-align: center; color: #666;">
-        <p>📋 No photos found in this order.</p>
-      </div>
-    `;
-    return;
-  }
-  
-  let html = '';
-  
-  categories.forEach(category => {
-    html += `
-      <div class="category-section" style="margin-bottom: 25px; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
-        <div class="category-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h4 style="margin: 0; color: #333;">${category.name}</h4>
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666;">
-            <input type="checkbox" class="select-all-category" onchange="toggleCategorySelection('${category.id}', this.checked)">
-            Select All (${category.items ? category.items.length : 0})
-          </label>
-        </div>
-        
-        <div class="photos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;">
-    `;
-    
-    if (category.items && category.items.length > 0) {
-      category.items.forEach(item => {
-        html += `
-          <div class="photo-item" style="text-align: center; border: 1px solid #eee; border-radius: 4px; padding: 8px;">
-            <label style="display: block; cursor: pointer;">
-              <input type="checkbox" class="photo-checkbox" value="${item.id}" 
-                onchange="updateReturnSelection()" style="margin-bottom: 5px;">
-              <div style="width: 100px; height: 100px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
-                <span style="font-size: 12px; color: #666;">📷</span>
-              </div>
-              <div style="font-size: 11px; color: #666; word-break: break-all;">${item.name || item.id}.webp</div>
-            </label>
-          </div>
-        `;
-      });
-    }
-    
-    html += `
-        </div>
-      </div>
-    `;
-  });
-  
-  container.innerHTML = html;
-}
-
-// Função para alternar seleção de categoria
-function toggleCategorySelection(categoryId, checked) {
-  const categorySection = document.querySelector(`[data-category-id="${categoryId}"]`) || 
-                         document.querySelector('.category-section');
-  const checkboxes = categorySection.querySelectorAll('.photo-checkbox');
-  
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = checked;
-  });
-  
-  updateReturnSelection();
-}
-
-// Função para atualizar contador de seleção
-function updateReturnSelection() {
-  const selectedBoxes = document.querySelectorAll('.photo-checkbox:checked');
-  const count = selectedBoxes.length;
-  
-  document.getElementById('return-selected-count').textContent = count;
-  document.getElementById('process-return-btn').disabled = count === 0;
+// Função temporária para processar retorno (placeholder)
+function processReturnToStock() {
+  console.log('Process return to stock - in development');
+  showToast('Return to stock feature in development', 'info');
+  closeModal('return-to-stock-modal');
 }
