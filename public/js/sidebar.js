@@ -753,10 +753,10 @@ function renderCategoryPhotosNewLayout(container, photos) {
     // NOVA ESTRUTURA: Sem nome do arquivo, com preço ao lado do botão
     html += `
       <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)" 
-           style="animation: fadeIn 0.5s ease-out ${delay}s both; width: 100% !important; max-width: 100% !important;">
-        <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy" 
-             style="width: 100%; height: auto;"
-             onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
+          style="animation: fadeIn 0.5s ease-out ${delay}s both;">
+        <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy"
+            style="width: 100%; height: auto;"
+            onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
         <div class="photo-info">
           <div class="photo-actions-container">
             <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
@@ -947,7 +947,8 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         photoDiv.onclick = () => openLightboxById(photo.id, false);
         
         photoDiv.innerHTML = `
-          <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy" style="width: 100%; height: auto;">
+          <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy"
+              style="width: 100%; height: auto;">
           <div class="photo-info">
             <div class="photo-actions-container">
               <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
