@@ -203,15 +203,11 @@ function loadOrderFolders(status, retryCount = 0) {
               onclick="viewOrderDetails('${folder.id}', '${folder.name}')">View Details</button>
             <button class="btn btn-gold" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="moveOrderToSold('${folder.id}', '${folder.name}')">Mark as Sold</button>
-            <button class="btn btn-info" style="padding: 4px 8px; white-space: nowrap;" 
-              onclick="openReturnToStockModal('${folder.id}', '${folder.name}')">📦 Return to Stock</button>
           `;
         } else if (status === 'paid') {
           actionButtons = `
             <button class="btn btn-secondary" style="padding: 4px 8px; white-space: nowrap;" 
               onclick="viewOrderDetails('${folder.id}', '${folder.name}')">View Details</button>
-            <button class="btn btn-info" style="padding: 4px 8px; white-space: nowrap;" 
-              onclick="openReturnToStockModal('${folder.id}', '${folder.name}')">📦 Return to Stock</button>
           `;
         }
       
@@ -881,106 +877,4 @@ function parseOrderFolderName(folderName) {
       orderDate: ''
     };
   }
-}
-
-// FUNÇÃO CORRIGIDA - Return to Stock Modal
-function openReturnToStockModal(folderId, folderName) {
-  console.log(`🔧 Opening return modal for: ${folderName} (${folderId})`);
-  
-  // FECHAR TODOS os outros modais primeiro
-  const allModals = document.querySelectorAll('.modal');
-  allModals.forEach(modal => {
-    modal.style.display = 'none';
-  });
-  
-  // Armazenar informações do pedido
-  window.currentReturnOrderId = folderId;
-  window.currentReturnOrderName = folderName;
-  
-  // Atualizar título do modal
-  document.getElementById('return-order-name').textContent = folderName;
-  
-  // Obter modal e garantir que existe
-  const modal = document.getElementById('return-to-stock-modal');
-  if (!modal) {
-    console.error('❌ Modal element not found!');
-    showToast('Error: Modal not found', 'error');
-    return;
-  }
-  
-  // FORÇAR exibição do modal
-  modal.style.display = 'block';
-  modal.style.position = 'fixed';
-  modal.style.top = '0';
-  modal.style.left = '0';
-  modal.style.width = '100%';
-  modal.style.height = '100%';
-  modal.style.zIndex = '99999';
-  modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
-  
-  // Garantir que o conteúdo do modal também está visível
-  const modalContent = modal.querySelector('.modal-content');
-  if (modalContent) {
-    modalContent.style.position = 'relative';
-    modalContent.style.zIndex = '100000';
-    modalContent.style.margin = '5% auto';
-    modalContent.style.backgroundColor = 'white';
-    modalContent.style.borderRadius = '8px';
-    modalContent.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-  }
-  
-  // Mostrar loading
-  document.getElementById('return-modal-loading').style.display = 'block';
-  document.getElementById('return-modal-content').style.display = 'none';
-  
-  // Resetar contador
-  document.getElementById('return-selected-count').textContent = '0';
-  document.getElementById('process-return-btn').disabled = true;
-  
-  // Carregar fotos do pedido
-  loadOrderPhotosForReturn(folderId);
-  
-  console.log(`✅ Modal should be visible now!`);
-}
-
-// Função para carregar fotos do pedido
-async function loadOrderPhotosForReturn(folderId) {
-  try {
-    console.log(`Loading photos for order: ${folderId}`);
-    
-    // Por enquanto, vamos simular o carregamento
-    setTimeout(() => {
-      // Esconder loading
-      document.getElementById('return-modal-loading').style.display = 'none';
-      
-      // Mostrar conteúdo temporário
-      document.getElementById('return-categories-container').innerHTML = `
-        <div style="padding: 20px; text-align: center; color: #666;">
-          <p>📋 Order ID: ${folderId}</p>
-          <p>🔧 Loading system in development...</p>
-          <p>✅ Modal is working correctly!</p>
-        </div>
-      `;
-      
-      // Mostrar conteúdo
-      document.getElementById('return-modal-content').style.display = 'block';
-      
-      console.log('Modal loaded successfully!');
-    }, 1000);
-    
-  } catch (error) {
-    console.error('Error loading order photos:', error);
-    document.getElementById('return-categories-container').innerHTML = `
-      <div style="padding: 20px; text-align: center; color: red;">
-        Error loading photos: ${error.message}
-      </div>
-    `;
-  }
-}
-
-// Função temporária para processar retorno (placeholder)
-function processReturnToStock() {
-  console.log('Process return to stock - in development');
-  showToast('Return to stock feature in development', 'info');
-  closeModal('return-to-stock-modal');
 }
