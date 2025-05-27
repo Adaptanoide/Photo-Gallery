@@ -885,9 +885,18 @@ function parseOrderFolderName(folderName) {
 
 // ADICIONAR no final do admin.js:
 
-// Função para abrir o modal de retorno ao estoque
+// SUBSTITUIR a função openReturnToStockModal por esta:
 function openReturnToStockModal(folderId, folderName) {
-  console.log(`Opening return modal for: ${folderName} (${folderId})`);
+  console.log(`🔧 Opening return modal for: ${folderName} (${folderId})`);
+  
+  // Debug: Verificar se modal existe
+  const modal = document.getElementById('return-to-stock-modal');
+  console.log(`🔧 Modal element found:`, modal ? 'YES' : 'NO');
+  
+  if (!modal) {
+    console.error('❌ Modal element not found!');
+    return;
+  }
   
   // Armazenar informações do pedido
   window.currentReturnOrderId = folderId;
@@ -896,8 +905,14 @@ function openReturnToStockModal(folderId, folderName) {
   // Atualizar título do modal
   document.getElementById('return-order-name').textContent = folderName;
   
-  // Mostrar modal com loading
-  document.getElementById('return-to-stock-modal').style.display = 'block';
+  // Forçar exibição do modal
+  modal.style.display = 'block';
+  modal.style.zIndex = '1010';
+  
+  console.log(`🔧 Modal display set to: ${modal.style.display}`);
+  console.log(`🔧 Modal z-index set to: ${modal.style.zIndex}`);
+  
+  // Mostrar loading
   document.getElementById('return-modal-loading').style.display = 'block';
   document.getElementById('return-modal-content').style.display = 'none';
   
@@ -907,6 +922,8 @@ function openReturnToStockModal(folderId, folderName) {
   
   // Carregar fotos do pedido
   loadOrderPhotosForReturn(folderId);
+  
+  console.log(`🔧 Modal should be visible now!`);
 }
 
 // Função para carregar fotos do pedido
