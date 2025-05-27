@@ -153,6 +153,9 @@
 /* Return to Stock Modal - CSS Específico */
 #return-to-stock-modal {
   z-index: 99999 !important;
+  display: flex !important;  /* ← APENAS ESTA LINHA */
+  align-items: center !important;  /* ← APENAS ESTA LINHA */  
+  justify-content: center !important;  /* ← APENAS ESTA LINHA */
 }
 
 #return-to-stock-modal .modal-content {
