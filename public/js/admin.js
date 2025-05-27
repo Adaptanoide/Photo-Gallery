@@ -1064,10 +1064,3 @@ function updateReturnSelection() {
   document.getElementById('return-selected-count').textContent = count;
   document.getElementById('process-return-btn').disabled = count === 0;
 }
-
-// Função temporária para processar retorno (placeholder)
-function processReturnToStock() {
-  console.log('Process return to stock - in development');
-  showToast('Return to stock feature in development', 'info');
-  closeModal('return-to-stock-modal');
-}

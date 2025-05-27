@@ -460,65 +460,69 @@
       </div>
     </div>
   </div>
-  <div class="modal-content" style="max-width: 800px;">
-    <h2>Order Details</h2>
-    <div id="order-loading" class="loading-message">Loading order details...</div>
+  
+  <!-- Order Details Modal - CORRIGIDO -->
+  <div id="order-details-modal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <h2>Order Details</h2>
+      <div id="order-loading" class="loading-message">Loading order details...</div>
 
-    <div id="order-details-content" style="display: none;">
-      <div class="order-info">
-        <p><strong>Order:</strong> <span id="order-name"></span></p>
-        <p><strong>Client:</strong> <span id="order-client"></span></p>
-        <p><strong>Date:</strong> <span id="order-date"></span></p>
-      </div>
-
-      <div class="luxury-divider"></div>
-
-      <!-- Cabeçalho centralizado para categorias -->
-      <h3 class="section-title">Items by Category</h3>
-
-      <div id="category-breakdown" class="category-breakdown">
-        <!-- Categorias serão inseridas aqui dinamicamente -->
-      </div>
-
-      <div class="luxury-divider"></div>
-
-      <div class="order-totals">
-        <div class="order-total-row">
-          <span><strong>Total Items:</strong></span>
-          <span id="total-items"></span>
+      <div id="order-details-content" style="display: none;">
+        <div class="order-info">
+          <p><strong>Order:</strong> <span id="order-name"></span></p>
+          <p><strong>Client:</strong> <span id="order-client"></span></p>
+          <p><strong>Date:</strong> <span id="order-date"></span></p>
         </div>
-        <div class="order-total-row">
-          <span><strong>Total Amount:</strong></span>
-          <span id="total-amount"></span>
-        </div>
-      </div>
 
-      <div id="order-comments-section" style="display: none;">
         <div class="luxury-divider"></div>
-        <h3>Client Comments</h3>
-        <div id="order-comments" class="order-comments"></div>
-      </div>
 
-      <div class="luxury-divider"></div>
+        <h3 class="section-title">Items by Category</h3>
 
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
-        <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+        <div id="category-breakdown" class="category-breakdown">
+          <!-- Categorias serão inseridas aqui dinamicamente -->
+        </div>
+
+        <div class="luxury-divider"></div>
+
+        <div class="order-totals">
+          <div class="order-total-row">
+            <span><strong>Total Items:</strong></span>
+            <span id="total-items"></span>
+          </div>
+          <div class="order-total-row">
+            <span><strong>Total Amount:</strong></span>
+            <span id="total-amount"></span>
+          </div>
+        </div>
+
+        <div id="order-comments-section" style="display: none;">
+          <div class="luxury-divider"></div>
+          <h3>Client Comments</h3>
+          <div id="order-comments" class="order-comments"></div>
+        </div>
+
+        <div class="luxury-divider"></div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
+          <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- App Scripts -->
-    <script src="/js/database-service.js"></script>
-    <script src="/js/utils.js"></script>
-    <script src="/js/api-client.js"></script>
-    <script src="/js/gallery.js"></script>
-    <script src="/js/cart.js"></script>
-    <script src="/js/lightbox.js"></script>
-    <script src="/js/auth.js"></script>
-    <script src="/js/admin.js"></script>
-    <script src="/js/photo-manager-admin.js"></script>
-    <script src="/js/price-manager.js"></script>
-    <script src="/js/sidebar.js"></script>
+  <!-- App Scripts -->
+  <script src="/js/database-service.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/api-client.js"></script>
+  <script src="/js/gallery.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/lightbox.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/photo-manager-admin.js"></script>
+  <script src="/js/price-manager.js"></script>
+  <script src="/js/sidebar.js"></script>
 </body>
 
 </html>
