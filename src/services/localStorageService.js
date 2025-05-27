@@ -43,22 +43,13 @@ class LocalStorageService {
     console.log('✅ Order folders initialized');
   }
 
-  // SUBSTITUA a função getFolderStructure completa por esta:
+  // REVERTER - SUBSTITUA a função getFolderStructure por esta versão:
   async getFolderStructure(isAdmin = false, useLeafFolders = true) {
     try {
-      console.log(`[LocalStorage] Getting folder structure (admin=${isAdmin}, useLeafFolders=${useLeafFolders})`);
+      console.log(`[LocalStorage] Getting folder structure (admin=${isAdmin})`);
       
-      // ADICIONAR ESTA LINHA PARA DEBUG:
-      if (!isAdmin) {
-        await this.debugIndex();
-      }
-
       if (this.folderCache && Date.now() - this.folderCacheTime < this.CACHE_DURATION) {
-        const formatted = this.formatFolderStructure(this.folderCache, isAdmin, useLeafFolders);
-        return {
-          success: true,
-          folders: formatted
-        };
+        return this.formatFolderStructure(this.folderCache, isAdmin, useLeafFolders);
       }
 
       let index;
@@ -73,15 +64,36 @@ class LocalStorageService {
       this.folderCache = index;
       this.folderCacheTime = Date.now();
 
-      const formatted = this.formatFolderStructure(index, isAdmin, useLeafFolders);
+      // VOLTAR A RETORNAR ARRAY DIRETO (como era antes)
+      return this.formatFolderStructure(index, isAdmin, useLeafFolders);
+    } catch (error) {
+      console.error('Error getting folder structure:', error);
+      return []; // RETORNAR ARRAY VAZIO EM CASO DE ERRO
+    }
+  }
+
+  // ADICIONAR esta nova função para o admin:
+  async getAdminFolderStructure(includeEmpty = true) {
+    try {
+      console.log('[LocalStorage] Getting admin folder structure');
+      
+      const folders = await this.getFolderStructure(true, true);
+      
+      // Filtrar pastas vazias se necessário
+      let filteredFolders = folders;
+      if (!includeEmpty) {
+        filteredFolders = folders.filter(folder => folder.fileCount && folder.fileCount > 0);
+      }
+      
+      console.log(`[LocalStorage] Returning ${filteredFolders.length} folders for admin`);
       
       return {
         success: true,
-        folders: formatted,
-        message: `Found ${formatted.length} folders`
+        folders: filteredFolders,
+        message: `Found ${filteredFolders.length} folders`
       };
     } catch (error) {
-      console.error('Error getting folder structure:', error);
+      console.error('Error getting admin folder structure:', error);
       return {
         success: false,
         folders: [],
@@ -89,6 +101,7 @@ class LocalStorageService {
       };
     }
   }
+
   // SUBSTITUA a função formatFolderStructure por esta versão com logs:
   formatFolderStructure(index, isAdmin, useLeafFolders) {
     console.log(`[DEBUG] formatFolderStructure - isAdmin: ${isAdmin}, useLeafFolders: ${useLeafFolders}`);

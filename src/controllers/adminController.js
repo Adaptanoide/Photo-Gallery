@@ -74,7 +74,7 @@ exports.deleteCustomerCode = async (req, res) => {
   }
 };
 
-// SUBSTITUIR a função exports.getLeafFolders por esta:
+// SUBSTITUA a função exports.getLeafFolders por esta versão:
 exports.getLeafFolders = async function(req, res) {
   try {
     console.log('Starting getLeafFolders - usando localStorageService');
@@ -84,11 +84,8 @@ exports.getLeafFolders = async function(req, res) {
     
     console.log(`Include empty folders: ${includeEmptyFolders}`);
     
-    // NOVO: Usar localStorageService em vez de driveService
-    const localStorageService = require('../services/localStorageService');
-    
-    // Obter estrutura de pastas do storage local
-    const result = await localStorageService.getFolderStructure(true, true); // admin=true, useLeafFolders=true
+    // USAR A NOVA FUNÇÃO ESPECÍFICA PARA ADMIN
+    const result = await localStorageService.getAdminFolderStructure(includeEmptyFolders);
     
     if (!result.success) {
       console.error('Could not get folder structure:', result.message);
@@ -100,19 +97,14 @@ exports.getLeafFolders = async function(req, res) {
     
     let folders = result.folders || [];
     
-    // Se não incluir pastas vazias, filtrar apenas as que têm fotos
-    if (!includeEmptyFolders) {
-      folders = folders.filter(folder => folder.photoCount && folder.photoCount > 0);
-    }
-    
     console.log(`Found ${folders.length} folders (includeEmpty: ${includeEmptyFolders})`);
     
     // Converter para o formato esperado pelo frontend
     const formattedFolders = folders.map(folder => ({
       id: folder.id,
       name: folder.name,
-      fileCount: folder.photoCount || 0,
-      path: folder.fullPath || folder.relativePath || folder.name
+      fileCount: folder.fileCount || 0,
+      path: folder.fullPath || folder.path || folder.name
     }));
     
     res.status(200).json({
