@@ -73,64 +73,30 @@ exports.deleteCustomerCode = async (req, res) => {
   }
 };
 
+// Modificar em src/controllers/adminController.js
+
 exports.getLeafFolders = async function(req, res) {
   try {
-    console.log('Starting getLeafFolders - optimized version');
+    console.log("Starting getLeafFolders - local storage version");
     
-    // Verificar se é para incluir pastas vazias (para o painel de administrador)
+    // Verificar se é para incluir pastas vazias
     const includeEmptyFolders = req.query.include_empty === 'true' || req.query.admin === 'true';
     
-    // Cache key para armazenar resultados
-    const cacheKey = includeEmptyFolders ? 'leaf_folders_all' : 'leaf_folders';
+    // Usar localStorageService em vez de driveService
+    const result = await localStorageService.getFolderStructure(true, includeEmptyFolders);
     
-    // Verificar se temos um resultado em cache
-    const cachedResult = global[cacheKey];
-    const cacheAge = cachedResult ? (Date.now() - cachedResult.timestamp) : null;
+    // Formatar o resultado para manter compatibilidade com o formato esperado
+    const formattedFolders = result.map(folder => ({
+      id: folder.id,
+      name: folder.name,
+      fileCount: folder.fileCount || 0,
+      path: folder.path || [],
+      fullPath: folder.fullPath || folder.name
+    }));
     
-    // Usar cache se existir e tiver menos de 30 minutos
-    if (cachedResult && cacheAge < 30 * 60 * 1000) {
-      console.log(`Serving leaf folders from cache (includeEmptyFolders=${includeEmptyFolders})`);
-      return res.status(200).json({
-        success: true,
-        folders: cachedResult.folders,
-        fromCache: true
-      });
-    }
-    
-    // Obter a pasta raiz
-    const rootFolderResult = await driveService.getRootFolderId();
-    if (!rootFolderResult.success) {
-      console.error('Could not determine root folder:', rootFolderResult.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Could not determine root folder'
-      });
-    }
-    
-    console.log('Root folder found:', rootFolderResult.folderId);
-    
-    // Usar a função otimizada com o parâmetro includeEmptyFolders
-    const result = await driveService.getAllLeafFoldersOptimized(rootFolderResult.folderId, includeEmptyFolders);
-    
-    if (!result.success) {
-      console.error('Could not get leaf folders:', result.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Could not get leaf folders: ' + result.message
-      });
-    }
-    
-    console.log(`Found ${result.folders.length} leaf folders`);
-    
-    // Armazenar em cache
-    global[cacheKey] = {
-      folders: result.folders,
-      timestamp: Date.now()
-    };
-    
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      folders: result.folders
+      folders: formattedFolders
     });
   } catch (error) {
     console.error('Error finding leaf folders:', error);

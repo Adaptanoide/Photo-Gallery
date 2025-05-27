@@ -46,57 +46,23 @@ setInterval(cleanupImageCache, 5 * 60 * 1000); // A cada 5 minutos
 
 exports.getPhotos = async (req, res) => {
   try {
-    // Log detalhado para depuração
-    console.log("===== REQUISIÇÃO DE FOTOS =====");
-    console.log("Query params:", req.query);
-    
     const categoryId = req.query.category_id || null;
     const customerCode = req.query.customer_code;
-    const limit = parseInt(req.query.limit) || 50; // Padrão: 50 fotos
+    const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
-    const preload = req.query.preload === 'true'; // Nova flag para pré-carregamento
     
-    console.log(`Parâmetros de paginação: limit=${limit}, offset=${offset}, preload=${preload}`);
-    
-    // NOVA LÓGICA: Tentar local primeiro, fallback para Drive
-    let allPhotos = [];
-    let source = 'local';
-    
-    try {
-      // Tentar obter do armazenamento local primeiro
-      console.log(`[Photos] Tentando carregar do disco local...`);
-      allPhotos = await localStorageService.getPhotos(categoryId);
-      
-      if (allPhotos.length === 0) {
-        console.log(`[Photos] Nenhuma foto local, tentando Google Drive...`);
-        source = 'drive';
-        // Fallback para Google Drive
-        allPhotos = await driveService.getPhotosCached(categoryId);
-      } else {
-        console.log(`[Photos] ${allPhotos.length} fotos carregadas do disco local!`);
-      }
-    } catch (localError) {
-      console.error('Erro ao buscar localmente:', localError);
-      // Fallback para Google Drive em caso de erro
-      source = 'drive';
-      allPhotos = await driveService.getPhotosCached(categoryId);
-    }
+    // Sempre usar o serviço de armazenamento local
+    const allPhotos = await localStorageService.getPhotos(categoryId);
     
     // Garantir que photos é um array, mesmo se a resposta for null/undefined
     const photosArray = Array.isArray(allPhotos) ? allPhotos : [];
     
-    console.log(`getPhotos - Obtidas ${photosArray.length} fotos da categoria ${categoryId} (source: ${source})`);
+    console.log(`getPhotos - Obtidas ${photosArray.length} fotos da categoria ${categoryId}`);
     
     // Se não for um cliente, retornar fotos sem preços
     if (!customerCode) {
       // Aplicar paginação
       const paginatedPhotos = photosArray.slice(offset, offset + limit);
-      
-      // NOVO: Se for pré-carregamento, processar imagens em background
-      if (preload && paginatedPhotos.length > 0) {
-        preloadImages(paginatedPhotos.slice(0, 3)); // Pré-processar primeiras 3 imagens
-      }
-      
       return res.status(200).json(paginatedPhotos);
     }
     

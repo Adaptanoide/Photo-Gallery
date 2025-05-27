@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "initialize-folders": "node scripts/initialize-folders.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --expose-gc src/server.js",
     "dev": "NODE_ENV=development node --expose-gc src/server.js",

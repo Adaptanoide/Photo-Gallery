@@ -3,9 +3,11 @@ const path = require('path');
 const localStorageService = require('./localStorageService');
 
 class LocalOrderService {
-  constructor() {
-    this.ordersPath = '/opt/render/project/storage/cache/fotos/imagens-webp';
-  }
+constructor() {
+  this.ordersPath = process.env.CACHE_STORAGE_PATH 
+    ? path.join(process.env.CACHE_STORAGE_PATH, 'fotos/imagens-webp') 
+    : '/opt/render/project/storage/cache/fotos/imagens-webp';
+}
 
   // Criar pasta do pedido
   async createOrderFolder(customerName, photosByCategory, status = 'waiting') {
