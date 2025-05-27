@@ -882,3 +882,71 @@ function parseOrderFolderName(folderName) {
     };
   }
 }
+
+// ADICIONAR no final do admin.js:
+
+// Função para abrir o modal de retorno ao estoque
+function openReturnToStockModal(folderId, folderName) {
+  console.log(`Opening return modal for: ${folderName} (${folderId})`);
+  
+  // Armazenar informações do pedido
+  window.currentReturnOrderId = folderId;
+  window.currentReturnOrderName = folderName;
+  
+  // Atualizar título do modal
+  document.getElementById('return-order-name').textContent = folderName;
+  
+  // Mostrar modal com loading
+  document.getElementById('return-to-stock-modal').style.display = 'block';
+  document.getElementById('return-modal-loading').style.display = 'block';
+  document.getElementById('return-modal-content').style.display = 'none';
+  
+  // Resetar contador
+  document.getElementById('return-selected-count').textContent = '0';
+  document.getElementById('process-return-btn').disabled = true;
+  
+  // Carregar fotos do pedido
+  loadOrderPhotosForReturn(folderId);
+}
+
+// Função para carregar fotos do pedido
+async function loadOrderPhotosForReturn(folderId) {
+  try {
+    console.log(`Loading photos for order: ${folderId}`);
+    
+    // Por enquanto, vamos simular o carregamento
+    setTimeout(() => {
+      // Esconder loading
+      document.getElementById('return-modal-loading').style.display = 'none';
+      
+      // Mostrar conteúdo temporário
+      document.getElementById('return-categories-container').innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #666;">
+          <p>📋 Order ID: ${folderId}</p>
+          <p>🔧 Loading system in development...</p>
+          <p>✅ Modal is working correctly!</p>
+        </div>
+      `;
+      
+      // Mostrar conteúdo
+      document.getElementById('return-modal-content').style.display = 'block';
+      
+      console.log('Modal loaded successfully!');
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Error loading order photos:', error);
+    document.getElementById('return-categories-container').innerHTML = `
+      <div style="padding: 20px; text-align: center; color: red;">
+        Error loading photos: ${error.message}
+      </div>
+    `;
+  }
+}
+
+// Função temporária para processar retorno (placeholder)
+function processReturnToStock() {
+  console.log('Process return to stock - in development');
+  showToast('Return to stock feature in development', 'info');
+  closeModal('return-to-stock-modal');
+}
