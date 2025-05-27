@@ -92,6 +92,46 @@ try {
 // NOVO: Cache em memória para referências rápidas
 const imageCache = {};
 
+// ADICIONAR esta função auxiliar ANTES de processOrderInBackground:
+async function findPhotoInLocalIndex(index, photoId) {
+  // Função recursiva para procurar a foto no índice
+  const searchInFolder = (folder, parentPath = []) => {
+    const currentPath = [...parentPath, folder.name];
+
+    // Se esta pasta tem fotos, verificar se nossa foto está aqui
+    if (folder.photoCount > 0) {
+      // Construir caminho da pasta
+      const folderPath = folder.relativePath;
+
+      return {
+        categoryName: folder.name,
+        categoryPath: folderPath,
+        fullPath: currentPath.join(' → ')
+      };
+    }
+
+    // Buscar nas subpastas
+    if (folder.children && folder.children.length > 0) {
+      for (const child of folder.children) {
+        const result = searchInFolder(child, currentPath);
+        if (result) return result;
+      }
+    }
+
+    return null;
+  };
+
+  // Buscar em todas as pastas raiz
+  if (index.folders) {
+    for (const folder of index.folders) {
+      const result = searchInFolder(folder);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
+
 // Enviar pedido
 exports.submitOrder = async (req, res) => {
   try {
@@ -146,46 +186,6 @@ exports.submitOrder = async (req, res) => {
       message: 'Seu pedido foi recebido e está sendo processado',
       orderId: orderId
     });
-
-    // ADICIONAR esta função auxiliar ANTES de processOrderInBackground:
-    async function findPhotoInLocalIndex(index, photoId) {
-      // Função recursiva para procurar a foto no índice
-      const searchInFolder = (folder, parentPath = []) => {
-        const currentPath = [...parentPath, folder.name];
-        
-        // Se esta pasta tem fotos, verificar se nossa foto está aqui
-        if (folder.photoCount > 0) {
-          // Construir caminho da pasta
-          const folderPath = folder.relativePath;
-          
-          return {
-            categoryName: folder.name,
-            categoryPath: folderPath,
-            fullPath: currentPath.join(' → ')
-          };
-        }
-        
-        // Buscar nas subpastas
-        if (folder.children && folder.children.length > 0) {
-          for (const child of folder.children) {
-            const result = searchInFolder(child, currentPath);
-            if (result) return result;
-          }
-        }
-        
-        return null;
-      };
-      
-      // Buscar em todas as pastas raiz
-      if (index.folders) {
-        for (const folder of index.folders) {
-          const result = searchInFolder(folder);
-          if (result) return result;
-        }
-      }
-      
-      return null;
-    }
 
     // Continuar o processamento após responder ao cliente
     processOrderInBackground(
