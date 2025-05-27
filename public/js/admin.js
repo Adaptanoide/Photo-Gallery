@@ -885,9 +885,18 @@ function parseOrderFolderName(folderName) {
 
 // ADICIONAR no final do admin.js:
 
-// SUBSTITUIR a função openReturnToStockModal por esta:
+// SUBSTITUIR função openReturnToStockModal por esta versão debug:
 function openReturnToStockModal(folderId, folderName) {
   console.log(`🔧 Opening return modal for: ${folderName} (${folderId})`);
+  
+  // Fechar TODOS os outros modais primeiro
+  const allModals = document.querySelectorAll('.modal');
+  allModals.forEach(modal => {
+    if (modal.id !== 'return-to-stock-modal') {
+      modal.style.display = 'none';
+      console.log(`🔧 Fechando modal: ${modal.id}`);
+    }
+  });
   
   // Debug: Verificar se modal existe
   const modal = document.getElementById('return-to-stock-modal');
@@ -905,12 +914,22 @@ function openReturnToStockModal(folderId, folderName) {
   // Atualizar título do modal
   document.getElementById('return-order-name').textContent = folderName;
   
-  // Forçar exibição do modal
+  // FORÇAR exibição do modal com CSS específico
   modal.style.display = 'block';
-  modal.style.zIndex = '1010';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.zIndex = '9999';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
   
-  console.log(`🔧 Modal display set to: ${modal.style.display}`);
-  console.log(`🔧 Modal z-index set to: ${modal.style.zIndex}`);
+  console.log(`🔧 Modal styles applied:`);
+  console.log(`  - display: ${modal.style.display}`);
+  console.log(`  - position: ${modal.style.position}`);
+  console.log(`  - zIndex: ${modal.style.zIndex}`);
+  console.log(`  - visibility: ${getComputedStyle(modal).visibility}`);
+  console.log(`  - opacity: ${getComputedStyle(modal).opacity}`);
   
   // Mostrar loading
   document.getElementById('return-modal-loading').style.display = 'block';
@@ -920,10 +939,18 @@ function openReturnToStockModal(folderId, folderName) {
   document.getElementById('return-selected-count').textContent = '0';
   document.getElementById('process-return-btn').disabled = true;
   
+  // TESTE: Adicionar border colorido para ver se modal está lá
+  modal.style.border = '5px solid red';
+  
   // Carregar fotos do pedido
   loadOrderPhotosForReturn(folderId);
   
-  console.log(`🔧 Modal should be visible now!`);
+  console.log(`🔧 Modal should be VERY visible now with red border!`);
+  
+  // TESTE EXTREMO: Alert para confirmar
+  setTimeout(() => {
+    alert('Modal deveria estar visível agora! Você consegue ver uma borda vermelha?');
+  }, 500);
 }
 
 // Função para carregar fotos do pedido
