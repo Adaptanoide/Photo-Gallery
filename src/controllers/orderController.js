@@ -1,11 +1,9 @@
 // controllers/orderController.js
 const localOrderService = require('../services/localOrderService');
 const mongoService = require('../services/mongoService');
-const driveService = require('../services/driveService');
 const emailService = require('../services/emailService');
-const { google } = require('googleapis');
-const { getDriveInstance } = require('../config/google.drive');
 const fs = require('fs');
+const fs_promises = require('fs').promises; // Para diferenciar do fs normal
 const crypto = require('crypto');
 const sharp = require('sharp');
 const SmartCache = require('../services/smartCache');
@@ -149,6 +147,46 @@ exports.submitOrder = async (req, res) => {
       orderId: orderId
     });
 
+    // ADICIONAR esta função auxiliar ANTES de processOrderInBackground:
+    async function findPhotoInLocalIndex(index, photoId) {
+      // Função recursiva para procurar a foto no índice
+      const searchInFolder = (folder, parentPath = []) => {
+        const currentPath = [...parentPath, folder.name];
+        
+        // Se esta pasta tem fotos, verificar se nossa foto está aqui
+        if (folder.photoCount > 0) {
+          // Construir caminho da pasta
+          const folderPath = folder.relativePath;
+          
+          return {
+            categoryName: folder.name,
+            categoryPath: folderPath,
+            fullPath: currentPath.join(' → ')
+          };
+        }
+        
+        // Buscar nas subpastas
+        if (folder.children && folder.children.length > 0) {
+          for (const child of folder.children) {
+            const result = searchInFolder(child, currentPath);
+            if (result) return result;
+          }
+        }
+        
+        return null;
+      };
+      
+      // Buscar em todas as pastas raiz
+      if (index.folders) {
+        for (const folder of index.folders) {
+          const result = searchInFolder(folder);
+          if (result) return result;
+        }
+      }
+      
+      return null;
+    }
+
     // Continuar o processamento após responder ao cliente
     processOrderInBackground(
       customer.customerName,
@@ -169,55 +207,68 @@ exports.submitOrder = async (req, res) => {
   }
 };
 
+// SUBSTITUIR a função processOrderInBackground COMPLETA por esta:
 async function processOrderInBackground(customerName, customerCode, photoIds, comments, orderId) {
   try {
+    console.log(`🚀 TESTE: Iniciando processamento para ${customerName}`);
+    console.log(`📋 TESTE: PhotoIds recebidos: ${photoIds.length} fotos`);
+    console.log(`📁 TESTE: Verificando localOrderService...`);
+    
+    // Testar se localOrderService está acessível
+    if (typeof localOrderService.createOrderFolder === 'function') {
+      console.log(`✅ TESTE: localOrderService.createOrderFolder existe!`);
+    } else {
+      console.log(`❌ TESTE: localOrderService.createOrderFolder NÃO existe!`);
+      throw new Error('localOrderService.createOrderFolder não está disponível');
+    }
     console.log(`Processando pedido ${orderId} em segundo plano para ${customerName}`);
 
-    // Obter informações das fotos e suas categorias
-    const drive = await getDriveInstance();
+    // NOVO: Usar localStorageService em vez de Google Drive
+    const localStorageService = require('../services/localStorageService');
     const photosByCategory = {};
 
-    // Coletar informações sobre as fotos e suas categorias
-    console.log("Obtendo informações das fotos e suas categorias...");
+    // Coletar informações sobre as fotos e suas categorias usando sistema local
+    console.log("Obtendo informações das fotos e suas categorias do storage local...");
+    
     for (const photoId of photoIds) {
       try {
-        // Obter informações do arquivo
-        const file = await drive.files.get({
-          fileId: photoId,
-          fields: 'id, name, parents'
-        });
-
-        // Tentar obter nome da categoria (pasta pai original)
-        let categoryName = "Categoria não especificada";
-
-        if (file.data.parents && file.data.parents.length > 0) {
-          const parentId = file.data.parents[0];
-          try {
-            const parentFolder = await drive.files.get({
-              fileId: parentId,
-              fields: 'id, name'
-            });
-            categoryName = parentFolder.data.name;
-          } catch (folderError) {
-            console.log(`Não foi possível obter nome da pasta pai: ${folderError.message}`);
+        // Buscar a foto no índice local
+        const index = await localStorageService.getIndex();
+        const photoInfo = await findPhotoInLocalIndex(index, photoId);
+        
+        if (photoInfo) {
+          const categoryName = photoInfo.categoryName || "Categoria não especificada";
+          
+          // Adicionar ao objeto agrupado por categoria
+          if (!photosByCategory[categoryName]) {
+            photosByCategory[categoryName] = [];
           }
-        }
 
-        // Adicionar ao objeto agrupado por categoria
-        if (!photosByCategory[categoryName]) {
-          photosByCategory[categoryName] = [];
+          photosByCategory[categoryName].push({
+            id: photoId,
+            name: `${photoId}.webp`,
+            categoryPath: photoInfo.categoryPath
+          });
+        } else {
+          console.warn(`Foto ${photoId} não encontrada no índice local`);
+          // Adicionar à categoria genérica
+          if (!photosByCategory["Categoria não especificada"]) {
+            photosByCategory["Categoria não especificada"] = [];
+          }
+          photosByCategory["Categoria não especificada"].push({
+            id: photoId,
+            name: `${photoId}.webp`
+          });
         }
-
-        photosByCategory[categoryName].push({
-          id: file.data.id,
-          name: file.data.name
-        });
       } catch (photoError) {
         console.error(`Erro ao obter informações da foto ${photoId}:`, photoError);
         // Continue com as outras fotos mesmo se uma falhar
       }
     }
 
+    console.log(`Fotos organizadas em ${Object.keys(photosByCategory).length} categorias`);
+
+    // Criar pasta do pedido usando localOrderService
     const result = await localOrderService.createOrderFolder(
       customerName,
       photosByCategory,
@@ -225,38 +276,7 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
     );
 
     if (result.success) {
-      // AQUI: Envio de dados para o CDE após criar pasta e mover arquivos
-      try {
-        console.log("Enviando dados do pedido para o sistema CDE...");
-        
-        // Criar objeto de dados para enviar ao CDE
-        const cdeOrderData = {
-          orderId: orderId,
-          customerName: customerName,
-          customerCode: customerCode,
-          folderName: result.folderName,
-          folderId: result.folderId,
-          status: 'waiting_payment',
-          orderDate: new Date().toISOString(),
-          photosByCategory: photosByCategory,
-          totalPhotos: photoIds.length,
-          comments: comments
-        };
-        
-        // Enviar para o serviço de integração com CDE
-        const cdeResult = await cdeIntegrationService.sendOrderToCDE(cdeOrderData);
-        
-        if (cdeResult.success) {
-          console.log("Dados enviados com sucesso para o sistema CDE:", cdeResult.status);
-        } else {
-          console.error("Falha ao enviar dados para o CDE, mas continuando o processamento:", cdeResult.error);
-          // Continua o processamento mesmo com falha no CDE
-        }
-      } catch (cdeError) {
-        // Captura erros específicos da integração com CDE
-        console.error("Erro na integração com CDE, mas continuando o processamento:", cdeError);
-        // Continua o processamento mesmo com erro
-      }
+      console.log(`Pasta do pedido criada: ${result.folderName}`);
 
       // Atualizar status do cliente no MongoDB
       await CustomerCode.findOneAndUpdate(
@@ -276,21 +296,28 @@ async function processOrderInBackground(customerName, customerCode, photoIds, co
         folderId: result.folderId,
         photosByCategory: photosByCategory,
         comments: comments,
+        totalPhotos: photoIds.length,
         // Incluir array simples de fotos também para compatibilidade
         photos: photoIds.map(id => ({ id }))
       };
 
       // Enviar o email
       console.log("Enviando e-mail com os detalhes do pedido...");
-      const emailResult = await emailService.sendOrderConfirmation(
-        customerName,
-        orderDetails
-      );
+      
+      try {
+        const emailResult = await emailService.sendOrderConfirmation(
+          customerName,
+          orderDetails
+        );
 
-      if (emailResult.success) {
-        console.log("E-mail enviado com sucesso:", emailResult.messageId);
-      } else {
-        console.error("Falha ao enviar e-mail:", emailResult.message);
+        if (emailResult.success) {
+          console.log("E-mail enviado com sucesso:", emailResult.messageId);
+        } else {
+          console.error("Falha ao enviar e-mail:", emailResult.message);
+        }
+      } catch (emailError) {
+        console.error("Erro no serviço de email:", emailError);
+        // Continuar mesmo se email falhar
       }
 
       // Atualizar status do pedido no MongoDB quando concluído
@@ -401,7 +428,7 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// Nova função para obter detalhes completos de um pedido
+// SUBSTITUIR exports.getOrderDetails COMPLETA por esta:
 exports.getOrderDetails = async (req, res) => {
   try {
     const { folderId } = req.query;
@@ -413,73 +440,89 @@ exports.getOrderDetails = async (req, res) => {
       });
     }
 
-    // 1. Buscar informações básicas da pasta
-    const drive = await getDriveInstance();
-    const folderInfo = await drive.files.get({
-      fileId: folderId,
-      fields: 'id, name, createdTime'
-    });
+    console.log(`Getting order details for folder: ${folderId}`);
 
-    // 2. Buscar subpastas (categorias) dentro da pasta do pedido
-    const subfolders = await drive.files.list({
-      q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-      fields: 'files(id, name)'
-    });
+    // Buscar informações do pedido no MongoDB
+    const order = await Order.findOne({ folderId });
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Buscar detalhes usando localOrderService
+    const orderPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', 
+                              order.status === 'waiting_payment' ? 'Waiting Payment' : 'Sold', 
+                              order.folderName);
 
     const categories = [];
-
-    // 3. Para cada subpasta, buscar os itens e suas informações
-    for (const folder of subfolders.data.files) {
-      const categoryId = folder.id;
-      const categoryName = folder.name;
-
-      // Buscar arquivos na categoria
-      const filesResponse = await drive.files.list({
-        q: `'${categoryId}' in parents and mimeType contains 'image/' and trashed = false`,
-        fields: 'files(id, name)'
-      });
-
-      const items = [];
-
-      // Para cada arquivo, adicionar informações básicas
-      for (const file of filesResponse.data.files) {
-        // Tentar obter preço do arquivo (do MongoDB ou de metadados)
-        const price = await getItemPrice(file.id, categoryName) || 99.99;
-
-        items.push({
-          id: file.id,
-          name: file.name,
-          price: price
-        });
-      }
-
-      categories.push({
-        id: categoryId,
-        name: categoryName,
-        items: items
-      });
-    }
-
-    // 4. Buscar comentários do pedido do MongoDB
-    let comments = '';
+    
     try {
-      // Tentar encontrar pedido no MongoDB com esse folderId
-      const order = await Order.findOne({ folderId });
-      if (order) {
-        comments = order.comments || '';
+      // Verificar se a pasta existe
+      const fs = require('fs').promises;
+      const folderContents = await fs.readdir(orderPath, { withFileTypes: true });
+      
+      // Para cada subpasta (categoria)
+      for (const item of folderContents) {
+        if (item.isDirectory()) {
+          const categoryPath = path.join(orderPath, item.name);
+          const categoryFiles = await fs.readdir(categoryPath);
+          
+          const items = [];
+          
+          // Para cada arquivo na categoria
+          for (const fileName of categoryFiles) {
+            if (fileName.endsWith('.webp')) {
+              const photoId = path.parse(fileName).name;
+              
+              // Buscar preço da categoria no MongoDB
+              const categoryPrice = await CategoryPrice.findOne({ 
+                name: item.name 
+              });
+              
+              const price = categoryPrice ? categoryPrice.price : 99.99;
+              
+              items.push({
+                id: photoId,
+                name: fileName,
+                price: price
+              });
+            }
+          }
+          
+          categories.push({
+            id: item.name.replace(/\s+/g, '_'), // ID baseado no nome
+            name: item.name,
+            items: items
+          });
+        }
       }
-    } catch (commentError) {
-      console.error('Error fetching order comments:', commentError);
+      
+    } catch (folderError) {
+      console.error('Error reading order folder:', folderError);
+      // Se não conseguir ler a pasta, usar dados do MongoDB
+      const photoIds = order.photoIds || [];
+      categories.push({
+        id: 'default',
+        name: 'Items',
+        items: photoIds.map(id => ({
+          id: id,
+          name: `${id}.webp`,
+          price: 99.99
+        }))
+      });
     }
 
-    // 5. Retornar todas as informações
+    // Retornar todas as informações
     res.status(200).json({
       success: true,
       folderId: folderId,
-      folderName: folderInfo.data.name,
-      created: folderInfo.data.createdTime,
+      folderName: order.folderName,
+      created: order.createdAt,
       categories: categories,
-      comments: comments
+      comments: order.comments || ''
     });
 
   } catch (error) {
