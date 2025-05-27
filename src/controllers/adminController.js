@@ -1,4 +1,5 @@
 // controllers/adminController.js
+const localStorageService = require('../services/localStorageService');
 const driveService = require('../services/driveService');
 const mongoService = require('../services/mongoService');
 const CategoryPrice = require('../models/categoryPrice');
@@ -73,30 +74,21 @@ exports.deleteCustomerCode = async (req, res) => {
   }
 };
 
-// Modificar em src/controllers/adminController.js
-
+// Find the getLeafFolders function and replace it with this:
 exports.getLeafFolders = async function(req, res) {
   try {
-    console.log("Starting getLeafFolders - local storage version");
+    console.log('Starting getLeafFolders - local storage version');
     
-    // Verificar se é para incluir pastas vazias
     const includeEmptyFolders = req.query.include_empty === 'true' || req.query.admin === 'true';
     
-    // Usar localStorageService em vez de driveService
-    const result = await localStorageService.getFolderStructure(true, includeEmptyFolders);
+    // Now localStorageService will be defined
+    const folders = await localStorageService.getFolderStructure(true, includeEmptyFolders);
     
-    // Formatar o resultado para manter compatibilidade com o formato esperado
-    const formattedFolders = result.map(folder => ({
-      id: folder.id,
-      name: folder.name,
-      fileCount: folder.fileCount || 0,
-      path: folder.path || [],
-      fullPath: folder.fullPath || folder.name
-    }));
+    console.log(`Found ${folders ? folders.length : 0} folders from local storage`);
     
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      folders: formattedFolders
+      folders: folders || []
     });
   } catch (error) {
     console.error('Error finding leaf folders:', error);
