@@ -48,6 +48,11 @@ class LocalStorageService {
     try {
       console.log(`[LocalStorage] Getting folder structure (admin=${isAdmin}, useLeafFolders=${useLeafFolders})`);
       
+      // ADICIONAR ESTA LINHA PARA DEBUG:
+      if (!isAdmin) {
+        await this.debugIndex();
+      }
+
       if (this.folderCache && Date.now() - this.folderCacheTime < this.CACHE_DURATION) {
         const formatted = this.formatFolderStructure(this.folderCache, isAdmin, useLeafFolders);
         return {
@@ -84,23 +89,30 @@ class LocalStorageService {
       };
     }
   }
-  // FORMATAÇÃO CORRIGIDA - MOSTRA SUBPASTAS COM FOTOS
+  // SUBSTITUA a função formatFolderStructure por esta versão com logs:
   formatFolderStructure(index, isAdmin, useLeafFolders) {
+    console.log(`[DEBUG] formatFolderStructure - isAdmin: ${isAdmin}, useLeafFolders: ${useLeafFolders}`);
+    console.log(`[DEBUG] Index folders count: ${index.folders ? index.folders.length : 0}`);
+    
     const adminFolders = ['Waiting Payment', 'Sold', 'Developing'];
     let folders = [];
 
     // FUNÇÃO RECURSIVA CORRIGIDA
     const processFolder = (folderData, parentPath = []) => {
+      console.log(`[DEBUG] Processing folder: ${folderData.name}, photoCount: ${folderData.photoCount}, isAdmin: ${isAdmin}`);
+      
       const currentPath = [...parentPath, folderData.name];
       
       if (!isAdmin && adminFolders.includes(folderData.name)) {
+        console.log(`[DEBUG] Skipping admin folder: ${folderData.name}`);
         return;
       }
 
       // CORREÇÃO: Para clientes, mostrar APENAS pastas com fotos (subpastas finais)
       if (!isAdmin) {
         // Se esta pasta tem fotos diretamente, adicionar
-        if (folderData.photoCount > 0) {
+        if (folderData.photoCount && folderData.photoCount > 0) {
+          console.log(`[DEBUG] Adding folder with photos: ${folderData.name} (${folderData.photoCount} photos)`);
           folders.push({
             id: folderData.id,
             name: folderData.name,
@@ -140,6 +152,7 @@ class LocalStorageService {
     };
 
     if (index.folders) {
+      console.log(`[DEBUG] Processing ${index.folders.length} root folders`);
       index.folders.forEach(folder => processFolder(folder));
     }
 
@@ -154,7 +167,9 @@ class LocalStorageService {
       });
     }
 
-    console.log(`[LocalStorage] Returning ${folders.length} folders`);
+    console.log(`[DEBUG] Final folders count: ${folders.length}`);
+    console.log(`[DEBUG] First few folders:`, folders.slice(0, 3));
+    
     return folders;
   }
 
@@ -406,6 +421,43 @@ class LocalStorageService {
       availableGB: '50',
       percentUsed: '0'
     };
+  }
+
+  // ADICIONAR esta função para debug:
+  async debugIndex() {
+    try {
+      const index = await this.getIndex();
+      console.log('[DEBUG] Full index structure:');
+      console.log('Total photos:', index.totalPhotos);
+      console.log('Root folders:', index.folders.length);
+      
+      // Mostrar estrutura das primeiras 3 pastas
+      if (index.folders && index.folders.length > 0) {
+        index.folders.slice(0, 3).forEach((folder, i) => {
+          console.log(`[DEBUG] Folder ${i + 1}:`, {
+            name: folder.name,
+            photoCount: folder.photoCount,
+            hasChildren: folder.children ? folder.children.length : 0
+          });
+          
+          // Mostrar primeiros filhos também
+          if (folder.children && folder.children.length > 0) {
+            folder.children.slice(0, 2).forEach((child, j) => {
+              console.log(`  Child ${j + 1}:`, {
+                name: child.name,
+                photoCount: child.photoCount,
+                hasChildren: child.children ? child.children.length : 0
+              });
+            });
+          }
+        });
+      }
+      
+      return index;
+    } catch (error) {
+      console.error('[DEBUG] Error reading index:', error);
+      return null;
+    }
   }
 }
 
