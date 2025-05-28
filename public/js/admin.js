@@ -1096,7 +1096,7 @@ async function processReturnToStock() {
       );
       
       // ADICIONAR ESTA LINHA:
-      closeReturnToStockModal();
+      closeReturnAndShowAdmin();
       
       // Atualizar lista de pedidos
       const status = document.getElementById('order-status').value;
@@ -1135,4 +1135,28 @@ function closeReturnToStockModal() {
   // Limpar dados temporários
   window.currentReturnOrderId = null;
   window.currentReturnOrderName = null;
+}
+
+// FUNÇÃO CORRIGIDA: Fechar Return to Stock e voltar ao Admin
+function closeReturnAndShowAdmin() {
+  console.log('🔒 Closing return modal and showing admin panel');
+  
+  // Fechar Return to Stock modal
+  const returnModal = document.getElementById('return-to-stock-modal');
+  if (returnModal) {
+    returnModal.classList.remove('show');
+    returnModal.style.display = 'none';
+  }
+  
+  // Reabrir Admin Panel
+  const adminModal = document.getElementById('admin-panel-modal');
+  if (adminModal) {
+    adminModal.style.display = 'block';
+  }
+  
+  // Limpar dados temporários
+  window.currentReturnOrderId = null;
+  window.currentReturnOrderName = null;
+  
+  console.log('✅ Returned to admin panel');
 }
