@@ -428,7 +428,7 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// SUBSTITUIR exports.getOrderDetails COMPLETA por esta:
+// CORRIGIDA: Get order details - busca no local correto
 exports.getOrderDetails = async (req, res) => {
   try {
     const { folderId } = req.query;
@@ -442,87 +442,61 @@ exports.getOrderDetails = async (req, res) => {
 
     console.log(`Getting order details for folder: ${folderId}`);
 
-    // Buscar informações do pedido no MongoDB
-    const order = await Order.findOne({ folderId });
+    // CORRIGIDO: Usar localOrderService para buscar no local correto
+    const orderDetails = await localOrderService.getOrderDetails(folderId);
     
-    if (!order) {
+    if (!orderDetails.success) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: orderDetails.message || 'Order not found'
       });
     }
 
-    // Buscar detalhes usando localOrderService
-    const orderPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', 
-                              order.status === 'waiting_payment' ? 'Waiting Payment' : 'Sold', 
-                              order.folderName);
-
+    const order = orderDetails.order;
+    
+    // Buscar informações do pedido no MongoDB para preços
+    const mongoOrder = await Order.findOne({ folderId });
+    
+    // Converter categorias para formato esperado pelo frontend
     const categories = [];
     
-    try {
-      // Verificar se a pasta existe
-      const fs = require('fs').promises;
-      const folderContents = await fs.readdir(orderPath, { withFileTypes: true });
-      
-      // Para cada subpasta (categoria)
-      for (const item of folderContents) {
-        if (item.isDirectory()) {
-          const categoryPath = path.join(orderPath, item.name);
-          const categoryFiles = await fs.readdir(categoryPath);
+    if (order.categories && order.categories.length > 0) {
+      for (const category of order.categories) {
+        const items = [];
+        
+        for (const photo of category.photos) {
+          // Buscar preço da categoria no MongoDB
+          const categoryPrice = await CategoryPrice.findOne({ 
+            name: category.name 
+          });
           
-          const items = [];
+          const price = categoryPrice ? categoryPrice.price : 99.99;
           
-          // Para cada arquivo na categoria
-          for (const fileName of categoryFiles) {
-            if (fileName.endsWith('.webp')) {
-              const photoId = path.parse(fileName).name;
-              
-              // Buscar preço da categoria no MongoDB
-              const categoryPrice = await CategoryPrice.findOne({ 
-                name: item.name 
-              });
-              
-              const price = categoryPrice ? categoryPrice.price : 99.99;
-              
-              items.push({
-                id: photoId,
-                name: fileName,
-                price: price
-              });
-            }
-          }
-          
-          categories.push({
-            id: item.name.replace(/\s+/g, '_'), // ID baseado no nome
-            name: item.name,
-            items: items
+          items.push({
+            id: photo.id,
+            name: photo.name,
+            price: price
           });
         }
+        
+        categories.push({
+          id: category.name.replace(/\s+/g, '_'),
+          name: category.name,
+          items: items
+        });
       }
-      
-    } catch (folderError) {
-      console.error('Error reading order folder:', folderError);
-      // Se não conseguir ler a pasta, usar dados do MongoDB
-      const photoIds = order.photoIds || [];
-      categories.push({
-        id: 'default',
-        name: 'Items',
-        items: photoIds.map(id => ({
-          id: id,
-          name: `${id}.webp`,
-          price: 99.99
-        }))
-      });
     }
 
-    // Retornar todas as informações
+    // Retornar informações completas
     res.status(200).json({
       success: true,
       folderId: folderId,
-      folderName: order.folderName,
-      created: order.createdAt,
+      folderName: order.name,
+      status: order.status,
+      created: order.createdTime,
       categories: categories,
-      comments: order.comments || ''
+      comments: mongoOrder ? mongoOrder.comments : '',
+      photoCount: order.photoCount
     });
 
   } catch (error) {
@@ -951,6 +925,57 @@ exports.confirmPaymentFromCDE = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Erro ao processar confirmação: ' + error.message
+    });
+  }
+};
+
+// NOVA FUNÇÃO: Process return to stock
+exports.processReturnToStock = async (req, res) => {
+  try {
+    const { folderId, selectedPhotoIds } = req.body;
+
+    if (!folderId || !selectedPhotoIds || !Array.isArray(selectedPhotoIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Folder ID and selected photo IDs are required'
+      });
+    }
+
+    if (selectedPhotoIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one photo must be selected'
+      });
+    }
+
+    console.log(`Processing return to stock: ${selectedPhotoIds.length} photos from ${folderId}`);
+
+    // Usar localOrderService para processar o retorno
+    const result = await localOrderService.returnPhotosToStock(folderId, selectedPhotoIds);
+
+    if (result.success) {
+      // Log para auditoria
+      console.log(`✅ Return to stock completed: ${result.movedPhotos} photos returned`);
+      
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        movedPhotos: result.movedPhotos,
+        emptyCategories: result.emptyCategories,
+        orderDeleted: result.orderDeleted
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: result.message || 'Error processing return to stock'
+      });
+    }
+
+  } catch (error) {
+    console.error('Error processing return to stock:', error);
+    res.status(500).json({
+      success: false,
+      message: `Error processing return to stock: ${error.message}`
     });
   }
 };

@@ -24,4 +24,7 @@ router.get('/thumbnail/:fileId', orderController.getThumbnail);
 // CDE
 router.post('/confirm-payment', orderController.confirmPaymentFromCDE);
 
+router.post('/return-to-stock', orderController.processReturnToStock);
+
+
 module.exports = router;

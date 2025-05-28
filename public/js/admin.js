@@ -1039,9 +1039,73 @@ function updateReturnSelection() {
   document.getElementById('process-return-btn').disabled = count === 0;
 }
 
-// Função temporária para processar retorno (placeholder)
-function processReturnToStock() {
-  console.log('Process return to stock - in development');
-  showToast('Return to stock feature in development', 'info');
-  closeModal('return-to-stock-modal');
+// FUNÇÃO CORRIGIDA: Processar retorno ao estoque
+async function processReturnToStock() {
+  // Prevenir propagação
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
+  
+  const selectedPhotos = document.querySelectorAll('.photo-checkbox:checked');
+  console.log(`Processing return of ${selectedPhotos.length} photos`);
+  
+  if (selectedPhotos.length === 0) {
+    showToast('Please select at least one photo to return', 'warning');
+    return;
+  }
+
+  // Coletar IDs das fotos selecionadas
+  const selectedPhotoIds = Array.from(selectedPhotos).map(checkbox => checkbox.value);
+  
+  // Confirmar ação
+  const confirmed = await showConfirm(
+    `Are you sure you want to return ${selectedPhotoIds.length} photos to stock?`,
+    'Confirm Return to Stock'
+  );
+  
+  if (!confirmed) return;
+  
+  try {
+    showLoader();
+    
+    // Fazer requisição para o backend
+    const response = await fetch('/api/orders/return-to-stock', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        folderId: window.currentReturnOrderId,
+        selectedPhotoIds: selectedPhotoIds
+      })
+    });
+    
+    const result = await response.json();
+    
+    hideLoader();
+    
+    if (result.success) {
+      showToast(
+        `Successfully returned ${result.movedPhotos} photos to stock!`, 
+        'success'
+      );
+      
+      // Fechar modal
+      closeModal('return-to-stock-modal');
+      
+      // Atualizar lista de pedidos
+      const status = document.getElementById('order-status').value;
+      loadOrderFolders(status);
+      
+    } else {
+      showToast(`Error: ${result.message}`, 'error');
+    }
+    
+  } catch (error) {
+    hideLoader();
+    console.error('Error processing return to stock:', error);
+    showToast(`Error processing return: ${error.message}`, 'error');
+  }
 }
