@@ -1039,7 +1039,7 @@ function updateReturnSelection() {
   document.getElementById('process-return-btn').disabled = count === 0;
 }
 
-// FUNÇÃO CORRIGIDA: Processar retorno ao estoque
+// FUNÇÃO CORRIGIDA com melhor debug
 async function processReturnToStock() {
   // Prevenir propagação
   if (event) {
@@ -1049,7 +1049,7 @@ async function processReturnToStock() {
   }
   
   const selectedPhotos = document.querySelectorAll('.photo-checkbox:checked');
-  console.log(`Processing return of ${selectedPhotos.length} photos`);
+  console.log(`🔄 Processing return of ${selectedPhotos.length} photos`);
   
   if (selectedPhotos.length === 0) {
     showToast('Please select at least one photo to return', 'warning');
@@ -1058,17 +1058,12 @@ async function processReturnToStock() {
 
   // Coletar IDs das fotos selecionadas
   const selectedPhotoIds = Array.from(selectedPhotos).map(checkbox => checkbox.value);
-  
-  // Confirmar ação
-  const confirmed = await showConfirm(
-    `Are you sure you want to return ${selectedPhotoIds.length} photos to stock?`,
-    'Confirm Return to Stock'
-  );
-  
-  if (!confirmed) return;
+  console.log(`📋 Selected photo IDs:`, selectedPhotoIds);
+  console.log(`📁 Order ID:`, window.currentReturnOrderId);
   
   try {
     showLoader();
+    console.log(`🚀 Making fetch request to /api/orders/return-to-stock`);
     
     // Fazer requisição para o backend
     const response = await fetch('/api/orders/return-to-stock', {
@@ -1082,7 +1077,15 @@ async function processReturnToStock() {
       })
     });
     
+    console.log(`📡 Response status:`, response.status);
+    console.log(`📡 Response ok:`, response.ok);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const result = await response.json();
+    console.log(`✅ Backend response:`, result);
     
     hideLoader();
     
@@ -1105,7 +1108,7 @@ async function processReturnToStock() {
     
   } catch (error) {
     hideLoader();
-    console.error('Error processing return to stock:', error);
-    showToast(`Error processing return: ${error.message}`, 'error');
+    console.error('❌ Error processing return to stock:', error);
+    showToast(`Error: ${error.message}`, 'error');
   }
 }
