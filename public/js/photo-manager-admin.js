@@ -1,335 +1,181 @@
-// Adicionar ao admin.js ou criar novo arquivo photo-manager-admin.js
+// photo-manager-admin.js CORRIGIDO
+// Este arquivo substitui completamente o anterior
 
-// Adicionar nova aba no painel admin
-function addPhotoManagerTab() {
-  // Adicionar botão da aba
-  const tabButtons = document.querySelector('.admin-tabs');
-  const newTabButton = document.createElement('button');
-  newTabButton.className = 'tab-button';
-  newTabButton.textContent = 'Photo Storage';
-  newTabButton.onclick = () => switchTab('photo-storage');
-  tabButtons.appendChild(newTabButton);
-
-  // Adicionar conteúdo da aba
-  const tabContent = document.querySelector('.tab-content');
-  const newTabPane = document.createElement('div');
-  newTabPane.id = 'photo-storage';
-  newTabPane.className = 'tab-pane';
-  newTabPane.innerHTML = `
-    <div class="admin-section">
-      <h3>Photo Storage Management</h3>
-      <p>Manage photos and folders on local Render disk (50GB)</p>
-      
-      <div class="storage-stats-panel">
-        <h4>Storage Statistics</h4>
-        <div id="storage-stats-content">
-          <div class="loading">Loading storage stats...</div>
-        </div>
-      </div>
-
-      <div class="folder-management-panel">
-        <h4>Folder Structure</h4>
-        <div class="folder-toolbar">
-          <button class="btn btn-gold" onclick="photoManager.createNewFolder()">New Folder</button>
-          <button class="btn btn-secondary" onclick="photoManager.refreshStructure()">Refresh</button>
-        </div>
-        
-        <div class="folder-tree-container">
-          <div id="folder-tree" class="folder-tree">
-            <div class="loading">Loading folder structure...</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="photo-management-panel" style="display: none;">
-        <h4>Photos in: <span id="current-folder-name"></span></h4>
-        <div class="photo-grid" id="folder-photos">
-          <!-- Photos will be loaded here -->
-        </div>
-      </div>
-    </div>
-  `;
-  tabContent.appendChild(newTabPane);
-
-  // Adicionar estilos
-  const style = document.createElement('style');
-  style.textContent = `
-    .storage-stats-panel {
-      background: #f5f5f5;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .storage-stats-content {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 15px;
-      margin-top: 15px;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 15px;
-      border-radius: 6px;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: var(--color-gold);
-    }
-
-    .stat-label {
-      font-size: 14px;
-      color: #666;
-      margin-top: 5px;
-    }
-
-    .folder-management-panel {
-      margin-top: 30px;
-    }
-
-    .folder-toolbar {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    .folder-tree-container {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 20px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .folder-tree {
-      font-family: monospace;
-    }
-
-    .folder-item {
-      padding: 5px 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .folder-item:hover {
-      background: #f0f0f0;
-      border-radius: 4px;
-    }
-
-    .folder-item.selected {
-      background: #e3f2fd;
-      border-radius: 4px;
-    }
-
-    .folder-icon {
-      width: 16px;
-    }
-
-    .folder-actions {
-      margin-left: auto;
-      display: none;
-      gap: 5px;
-    }
-
-    .folder-item:hover .folder-actions {
-      display: flex;
-    }
-
-    .folder-action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-size: 12px;
-    }
-
-    .folder-action-btn:hover {
-      background: rgba(0,0,0,0.1);
-    }
-
-    .photo-management-panel {
-      margin-top: 30px;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 20px;
-    }
-
-    .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .photo-item {
-      aspect-ratio: 1;
-      background: #f0f0f0;
-      border-radius: 4px;
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .photo-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .photo-item-actions {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      display: none;
-    }
-
-    .photo-item:hover .photo-item-actions {
-      display: block;
-    }
-
-    .storage-progress-bar {
-      width: 100%;
-      height: 20px;
-      background: #e0e0e0;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 10px;
-    }
-
-    .storage-progress-fill {
-      height: 100%;
-      background: var(--color-gold);
-      transition: width 0.3s ease;
-    }
-
-    .storage-progress-text {
-      text-align: center;
-      margin-top: 5px;
-      font-size: 14px;
-      color: #666;
-    }
-
-    .folder-children {
-      margin-left: 20px;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-// Objeto gerenciador de fotos
+// Objeto gerenciador de fotos - VERSÃO CORRIGIDA
 const photoManager = {
   currentStructure: null,
   selectedFolder: null,
+  selectedPhotos: new Set(),
 
   async init() {
+    console.log('🚀 Initializing Photo Storage tab...');
+    
     if (document.getElementById('photo-storage')) {
       await this.loadStorageStats();
       await this.loadFolderStructure();
     }
   },
 
+  // CORRIGIDO: Usar API existente
   async loadStorageStats() {
     try {
-      const response = await fetch('/api/photos/admin/folder-structure', {
-        headers: {
-          'Authorization': localStorage.getItem('adminToken')
-        }
-      });
-
+      console.log('📊 Loading storage stats...');
+      
+      // Usar a API existente de leafFolders para calcular estatísticas
+      const response = await fetch('/api/admin/folders/leaf?admin=true');
       const data = await response.json();
       
-      if (data.success && data.stats) {
-        const stats = data.stats;
+      if (data.success && data.folders) {
+        const folders = data.folders;
+        const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
+        const totalFolders = folders.length;
+        
+        // Estimar uso de disco (2434 fotos * ~200KB média)
+        const estimatedSizeGB = Math.round((totalPhotos * 0.2) / 1024 * 100) / 100;
+        const usedPercent = Math.round((estimatedSizeGB / 50) * 100);
+        
         document.getElementById('storage-stats-content').innerHTML = `
-          <div class="storage-stats-content">
+          <div class="storage-stats-grid">
             <div class="stat-card">
-              <div class="stat-value">${stats.photoCount || 0}</div>
+              <div class="stat-value">${totalPhotos}</div>
               <div class="stat-label">Total Photos</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">${stats.folderCount || 0}</div>
-              <div class="stat-label">Folders</div>
+              <div class="stat-value">${totalFolders}</div>
+              <div class="stat-label">Photo Folders</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">${stats.usedGB || 0} GB</div>
+              <div class="stat-value">${estimatedSizeGB} GB</div>
               <div class="stat-label">Used Space</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">${stats.availableGB || 0} GB</div>
+              <div class="stat-value">${50 - estimatedSizeGB} GB</div>
               <div class="stat-label">Available</div>
             </div>
           </div>
           <div class="storage-progress-bar">
-            <div class="storage-progress-fill" style="width: ${stats.percentUsed || 0}%"></div>
+            <div class="storage-progress-fill" style="width: ${usedPercent}%"></div>
           </div>
-          <div class="storage-progress-text">${stats.percentUsed || 0}% of 50GB used</div>
+          <div class="storage-progress-text">${usedPercent}% of 50GB used</div>
         `;
+        
+        console.log(`✅ Stats loaded: ${totalPhotos} photos in ${totalFolders} folders`);
       }
     } catch (error) {
-      console.error('Error loading storage stats:', error);
+      console.error('❌ Error loading storage stats:', error);
       document.getElementById('storage-stats-content').innerHTML = 
         '<div class="error">Failed to load storage statistics</div>';
     }
   },
 
+  // CORRIGIDO: Usar API existente para carregar estrutura
   async loadFolderStructure() {
     try {
-      const response = await fetch('/api/photos/admin/folder-structure', {
-        headers: {
-          'Authorization': localStorage.getItem('adminToken')
-        }
-      });
-
+      console.log('📂 Loading folder structure...');
+      
+      // Usar a API existente que já funciona
+      const response = await fetch('/api/admin/folders/leaf?admin=true');
       const data = await response.json();
       
-      if (data.success && data.structure) {
-        this.currentStructure = data.structure;
-        this.renderFolderTree(data.structure);
+      if (data.success && data.folders) {
+        console.log(`📋 Loaded ${data.folders.length} folders`);
+        
+        // Organizar em estrutura hierárquica para exibição
+        const organizedStructure = this.organizeIntoHierarchy(data.folders);
+        this.currentStructure = organizedStructure;
+        this.renderFolderTree(organizedStructure);
+        
+        console.log('✅ Folder structure rendered successfully');
+      } else {
+        throw new Error(data.message || 'Failed to load folders');
       }
     } catch (error) {
-      console.error('Error loading folder structure:', error);
+      console.error('❌ Error loading folder structure:', error);
       document.getElementById('folder-tree').innerHTML = 
-        '<div class="error">Failed to load folder structure</div>';
+        `<div class="error">Failed to load folder structure: ${error.message}</div>`;
     }
   },
 
+  // NOVA: Organizar pastas planas em hierarquia visual
+  organizeIntoHierarchy(folders) {
+    console.log('🏗️ Organizing folders into hierarchy...');
+    
+    const hierarchy = {};
+    
+    folders.forEach(folder => {
+      // Usar o fullPath ou path para criar hierarquia
+      const path = folder.path || folder.fullPath || folder.name;
+      const parts = Array.isArray(path) ? path : path.split(' → ');
+      
+      let current = hierarchy;
+      
+      parts.forEach((part, index) => {
+        if (!current[part]) {
+          current[part] = {
+            name: part,
+            children: {},
+            isLeaf: index === parts.length - 1,
+            folder: index === parts.length - 1 ? folder : null
+          };
+        }
+        current = current[part].children;
+      });
+    });
+    
+    return this.convertToArray(hierarchy);
+  },
+
+  // NOVA: Converter objeto hierárquico em array para renderização
+  convertToArray(hierarchyObj) {
+    return Object.values(hierarchyObj).map(item => ({
+      name: item.name,
+      isLeaf: item.isLeaf,
+      fileCount: item.folder ? item.folder.fileCount : 0,
+      id: item.folder ? item.folder.id : null,
+      folder: item.folder,
+      children: Object.keys(item.children).length > 0 ? this.convertToArray(item.children) : []
+    }));
+  },
+
+  // MELHORADO: Renderização com melhor UX
   renderFolderTree(folders, container = null, level = 0) {
     if (!container) {
       container = document.getElementById('folder-tree');
       container.innerHTML = '';
+      
+      if (folders.length === 0) {
+        container.innerHTML = '<div class="empty-message">No folders found</div>';
+        return;
+      }
     }
 
     folders.forEach(folder => {
       const folderDiv = document.createElement('div');
-      folderDiv.className = 'folder-item';
+      folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
       
+      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
+      
       folderDiv.innerHTML = `
-        <span class="folder-icon">📁</span>
+        <span class="folder-icon">${icon}</span>
         <span class="folder-name">${folder.name}</span>
-        <span class="folder-count">(${folder.fileCount || 0} photos)</span>
-        <div class="folder-actions">
-          <button class="folder-action-btn" onclick="photoManager.renameFolder('${folder.id}', '${folder.name}')" title="Rename">✏️</button>
-          <button class="folder-action-btn" onclick="photoManager.deleteFolder('${folder.id}', '${folder.name}')" title="Delete">🗑️</button>
-          <button class="folder-action-btn" onclick="photoManager.viewFolderPhotos('${folder.id}', '${folder.name}')" title="View Photos">👁️</button>
-        </div>
+        <span class="folder-count">${photoCount}</span>
+        ${folder.isLeaf ? `
+          <div class="folder-actions">
+            <button class="folder-action-btn" onclick="photoManager.viewFolderPhotos('${folder.id}', '${folder.name}')" title="View Photos">👁️</button>
+            <button class="folder-action-btn" onclick="photoManager.selectFolderForMove('${folder.id}', '${folder.name}')" title="Select for Move">📦</button>
+          </div>
+        ` : ''}
       `;
       
-      folderDiv.onclick = (e) => {
-        if (!e.target.classList.contains('folder-action-btn')) {
-          this.selectFolder(folder, folderDiv);
-        }
-      };
+      if (folder.isLeaf) {
+        folderDiv.onclick = (e) => {
+          if (!e.target.classList.contains('folder-action-btn')) {
+            this.selectFolder(folder, folderDiv);
+          }
+        };
+      }
       
       container.appendChild(folderDiv);
       
@@ -352,184 +198,173 @@ const photoManager = {
     // Adicionar seleção
     element.classList.add('selected');
     this.selectedFolder = folder;
+    
+    console.log(`📁 Selected folder: ${folder.name} (${folder.fileCount} photos)`);
   },
 
-  async createNewFolder() {
-    const folderPath = prompt('Enter folder path (e.g., "Category/Subcategory"):');
-    if (!folderPath) return;
-
-    try {
-      const response = await fetch('/api/photos/admin/folder/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('adminToken')
-        },
-        body: JSON.stringify({ folderPath })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        showToast('Folder created successfully', 'success');
-        this.refreshStructure();
-      } else {
-        showToast('Error creating folder: ' + result.message, 'error');
-      }
-    } catch (error) {
-      showToast('Error creating folder: ' + error.message, 'error');
-    }
-  },
-
-  async renameFolder(folderId, currentName) {
-    const newName = prompt(`Rename folder "${currentName}" to:`, currentName);
-    if (!newName || newName === currentName) return;
-
-    try {
-      const response = await fetch('/api/photos/admin/folder/rename', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('adminToken')
-        },
-        body: JSON.stringify({ folderId, newName })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        showToast('Folder renamed successfully', 'success');
-        this.refreshStructure();
-      } else {
-        showToast('Error renaming folder: ' + result.message, 'error');
-      }
-    } catch (error) {
-      showToast('Error renaming folder: ' + error.message, 'error');
-    }
-  },
-
-  async deleteFolder(folderId, folderName) {
-    if (!confirm(`Delete folder "${folderName}"? (Only empty folders can be deleted)`)) return;
-
-    try {
-      const response = await fetch('/api/photos/admin/folder/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('adminToken')
-        },
-        body: JSON.stringify({ folderId })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        showToast('Folder deleted successfully', 'success');
-        this.refreshStructure();
-      } else {
-        showToast('Error deleting folder: ' + result.message, 'error');
-      }
-    } catch (error) {
-      showToast('Error deleting folder: ' + error.message, 'error');
-    }
-  },
-
+  // FUNCIONAL: Visualizar fotos usando API existente
   async viewFolderPhotos(folderId, folderName) {
+    console.log(`👁️ Viewing photos in: ${folderName} (${folderId})`);
+    
     document.getElementById('current-folder-name').textContent = folderName;
     document.querySelector('.photo-management-panel').style.display = 'block';
     
-    // Carregar fotos da pasta
+    const photoGrid = document.getElementById('folder-photos');
+    photoGrid.innerHTML = '<div class="loading">Loading photos...</div>';
+    
     try {
-      const response = await fetch(`/api/photos?category_id=${folderId}`, {
-        headers: {
-          'Authorization': localStorage.getItem('adminToken')
-        }
-      });
-
+      // Usar API existente que já funciona
+      const response = await fetch(`/api/photos?category_id=${folderId}`);
       const data = await response.json();
-      const photos = data.photos || data;
       
-      const photoGrid = document.getElementById('folder-photos');
-      photoGrid.innerHTML = '';
+      let photos = [];
+      if (data.success && data.photos) {
+        photos = data.photos;
+      } else if (Array.isArray(data)) {
+        photos = data;
+      }
       
-      if (!photos || photos.length === 0) {
-        photoGrid.innerHTML = '<p>No photos in this folder</p>';
+      console.log(`📷 Found ${photos.length} photos`);
+      
+      if (photos.length === 0) {
+        photoGrid.innerHTML = '<div class="empty-message">No photos in this folder</div>';
         return;
       }
       
-      photos.forEach(photo => {
-        const photoDiv = document.createElement('div');
-        photoDiv.className = 'photo-item';
-        photoDiv.innerHTML = `
-          <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
-          <div class="photo-item-actions">
-            <button class="folder-action-btn" onclick="photoManager.movePhoto('${photo.id}', '${folderId}')" title="Move">↗️</button>
+      // Renderizar grid de fotos
+      photoGrid.innerHTML = `
+        <div class="photo-grid-header">
+          <div class="selection-controls">
+            <label>
+              <input type="checkbox" id="select-all-photos" onchange="photoManager.toggleSelectAll(this.checked)">
+              Select All (${photos.length} photos)
+            </label>
+            <button class="btn btn-secondary" onclick="photoManager.clearSelection()" style="margin-left: 10px;">Clear Selection</button>
+            <button class="btn btn-gold" onclick="photoManager.showMoveModal()" style="margin-left: 10px;" disabled id="move-selected-btn">Move Selected</button>
           </div>
-        `;
-        photoGrid.appendChild(photoDiv);
-      });
+        </div>
+        <div class="photo-grid-container">
+          ${photos.map(photo => `
+            <div class="photo-item" data-photo-id="${photo.id}">
+              <label class="photo-checkbox-label">
+                <input type="checkbox" class="photo-checkbox" value="${photo.id}" onchange="photoManager.togglePhotoSelection('${photo.id}', this.checked)">
+                <img src="${photo.thumbnail}" alt="${photo.name || photo.id}" loading="lazy" onerror="this.src='/api/photos/local/thumbnail/${photo.id}'">
+                <div class="photo-name">${photo.name || photo.id}</div>
+              </label>
+            </div>
+          `).join('')}
+        </div>
+      `;
       
     } catch (error) {
-      console.error('Error loading folder photos:', error);
-      document.getElementById('folder-photos').innerHTML = 
-        '<p class="error">Failed to load photos</p>';
+      console.error('❌ Error loading folder photos:', error);
+      photoGrid.innerHTML = '<div class="error">Failed to load photos</div>';
     }
   },
 
-  async movePhoto(photoId, fromCategoryId) {
-    // Implementar diálogo para selecionar pasta destino
-    const toCategory = prompt('Enter destination folder ID:');
-    if (!toCategory) return;
+  // NOVA: Controle de seleção de fotos
+  togglePhotoSelection(photoId, selected) {
+    if (selected) {
+      this.selectedPhotos.add(photoId);
+    } else {
+      this.selectedPhotos.delete(photoId);
+    }
+    
+    // Atualizar UI
+    this.updateSelectionUI();
+  },
 
-    try {
-      const response = await fetch('/api/photos/admin/photo/move', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('adminToken')
-        },
-        body: JSON.stringify({
-          photoId,
-          fromCategoryId,
-          toCategoryId: toCategory
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        showToast('Photo moved successfully', 'success');
-        this.viewFolderPhotos(fromCategoryId, this.selectedFolder.name);
-      } else {
-        showToast('Error moving photo: ' + result.message, 'error');
+  toggleSelectAll(selectAll) {
+    const checkboxes = document.querySelectorAll('.photo-checkbox');
+    this.selectedPhotos.clear();
+    
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = selectAll;
+      if (selectAll) {
+        this.selectedPhotos.add(checkbox.value);
       }
-    } catch (error) {
-      showToast('Error moving photo: ' + error.message, 'error');
-    }
+    });
+    
+    this.updateSelectionUI();
   },
 
+  clearSelection() {
+    this.selectedPhotos.clear();
+    document.querySelectorAll('.photo-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('select-all-photos').checked = false;
+    this.updateSelectionUI();
+  },
+
+  updateSelectionUI() {
+    const selectedCount = this.selectedPhotos.size;
+    const moveBtn = document.getElementById('move-selected-btn');
+    
+    if (moveBtn) {
+      moveBtn.disabled = selectedCount === 0;
+      moveBtn.textContent = selectedCount > 0 ? `Move Selected (${selectedCount})` : 'Move Selected';
+    }
+    
+    console.log(`📋 Selected photos: ${selectedCount}`);
+  },
+
+  // PLACEHOLDER: Modal para mover fotos (implementar depois)
+  showMoveModal() {
+    const selectedCount = this.selectedPhotos.size;
+    if (selectedCount === 0) {
+      showToast('Please select photos to move', 'warning');
+      return;
+    }
+    
+    // Por enquanto, apenas mostrar quantas fotos estão selecionadas
+    showToast(`${selectedCount} photos selected. Move modal coming soon!`, 'info');
+    
+    console.log('📦 Photos to move:', Array.from(this.selectedPhotos));
+  },
+
+  // FUNCIONAL: Refresh usando APIs existentes
   async refreshStructure() {
+    console.log('🔄 Refreshing folder structure...');
     await this.loadStorageStats();
     await this.loadFolderStructure();
+    showToast('Folder structure refreshed', 'success');
+  },
+
+  // PLACEHOLDER: Funcionalidades futuras
+  async createNewFolder() {
+    showToast('Create folder feature coming soon!', 'info');
+  },
+  
+  async renameFolder(folderId, currentName) {
+    showToast('Rename folder feature coming soon!', 'info');
+  },
+  
+  async deleteFolder(folderId, folderName) {
+    showToast('Delete folder feature coming soon!', 'info');
   }
 };
 
-// Adicionar aba quando o admin carregar
+// Modificar a função switchTab existente para incluir nossa aba
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.location.pathname.includes('admin') || document.getElementById('admin-panel-modal')) {
-    // Aguardar um pouco para garantir que o admin está carregado
-    setTimeout(() => {
-      addPhotoManagerTab();
-      
-      // Modificar switchTab para incluir nossa nova aba
-      const originalSwitchTab = window.switchTab;
+  // Aguardar carregamento do admin
+  setTimeout(() => {
+    // Encontrar a função switchTab original
+    const originalSwitchTab = window.switchTab;
+    
+    if (originalSwitchTab) {
       window.switchTab = function(tabId) {
+        // Chamar função original
         originalSwitchTab(tabId);
         
+        // Inicializar nosso manager se a aba photo-storage for selecionada
         if (tabId === 'photo-storage') {
-          photoManager.init();
+          console.log('🎯 Photo Storage tab activated');
+          setTimeout(() => {
+            photoManager.init();
+          }, 100);
         }
       };
-    }, 1000);
-  }
+      
+      console.log('✅ Photo Manager integration completed');
+    }
+  }, 500);
 });
