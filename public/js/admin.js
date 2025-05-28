@@ -1095,8 +1095,8 @@ async function processReturnToStock() {
         'success'
       );
       
-      // Fechar modal
-      closeModal('return-to-stock-modal');
+      // ADICIONAR ESTA LINHA:
+      closeReturnToStockModal();
       
       // Atualizar lista de pedidos
       const status = document.getElementById('order-status').value;
@@ -1111,4 +1111,28 @@ async function processReturnToStock() {
     console.error('❌ Error processing return to stock:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
+}
+
+// FUNÇÃO ESPECÍFICA para Return to Stock Modal
+function closeReturnToStockModal() {
+  console.log('🔒 Closing return to stock modal');
+  
+  const modal = document.getElementById('return-to-stock-modal');
+  if (modal) {
+    // Limpar TODOS os estilos inline forçados
+    modal.style.display = 'none';
+    modal.style.position = '';
+    modal.style.top = '';
+    modal.style.left = '';
+    modal.style.width = '';
+    modal.style.height = '';
+    modal.style.zIndex = '';
+    modal.style.backgroundColor = '';
+    
+    console.log('✅ Modal closed and styles cleared');
+  }
+  
+  // Limpar dados temporários
+  window.currentReturnOrderId = null;
+  window.currentReturnOrderName = null;
 }
