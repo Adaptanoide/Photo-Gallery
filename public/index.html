@@ -268,6 +268,7 @@
         <button class="tab-button active" onclick="switchTab('customer-codes')">Customer Management</button>
         <button class="tab-button" onclick="switchTab('order-management')">Order Management</button>
         <button class="tab-button" onclick="switchTab('price-management')">Price Management</button>
+        <button class="tab-button" onclick="switchTab('photo-storage')">Photo Storage</button>
       </div>
 
       <!-- Tab Content -->
@@ -327,7 +328,7 @@
           </div>
         </div>
 
-        <!-- Nova aba de gerenciamento de preços -->
+        <!-- Price Management Tab -->
         <div id="price-management" class="tab-pane">
           <div class="admin-section">
             <h3>Category Price Management</h3>
@@ -338,12 +339,46 @@
             </div>
           </div>
         </div>
+
+        <!-- NOVA ABA: Photo Storage -->
+        <div id="photo-storage" class="tab-pane">
+          <div class="admin-section">
+            <h3>Photo Storage Management</h3>
+            <p>Manage photos and folders on local Render disk (50GB)</p>
+            
+            <div class="storage-stats-panel">
+              <h4>Storage Statistics</h4>
+              <div id="storage-stats-content">
+                <div class="loading">Loading storage stats...</div>
+              </div>
+            </div>
+
+            <div class="folder-management-panel">
+              <h4>Folder Structure</h4>
+              <div class="folder-toolbar">
+                <button class="btn btn-secondary" onclick="photoManager.refreshStructure()">Refresh</button>
+              </div>
+              
+              <div class="folder-tree-container">
+                <div id="folder-tree" class="folder-tree">
+                  <div class="loading">Loading folder structure...</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="photo-management-panel" style="display: none;">
+              <h4>Photos in: <span id="current-folder-name"></span></h4>
+              <div id="folder-photos">
+                <!-- Photos will be loaded here -->
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Hidden footer div (replaced by top-right logout button) -->
     <div class="admin-footer" style="display: none;"></div>
-  </div>
   </div>
 
   <!-- Custom Notification Toast -->
