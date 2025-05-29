@@ -863,35 +863,19 @@ const photoManager = {
     showToast('Folder structure refreshed', 'success');
   },
 
-  // Renderizar estatísticas de storage
-  renderStorageStats(stats) {
-    const statsContainer = document.getElementById('storage-stats-content');
-    if (!statsContainer) return;
+  // 🔧 SUBSTITUIR A FUNÇÃO renderStorageStats() por esta versão discreta:
 
-    statsContainer.innerHTML = `
-      <div class="storage-stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">${stats.totalPhotos}</div>
-          <div class="stat-label">Total Photos</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.totalFolders}</div>
-          <div class="stat-label">Total Folders</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.usedSpace} GB</div>
-          <div class="stat-label">Used Space</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.percentUsed}%</div>
-          <div class="stat-label">Storage Used</div>
-        </div>
-      </div>
-      <div class="storage-progress-bar">
-        <div class="storage-progress-fill" style="width: ${stats.percentUsed}%"></div>
-        <div class="storage-progress-text">${stats.usedSpace} GB / ${stats.availableSpace} GB</div>
-      </div>
-    `;
+  renderStorageStats(stats) {
+    // Atualizar contador discreto
+    const discreteCount = document.getElementById('discrete-photo-count');
+    if (discreteCount) {
+      discreteCount.textContent = `${stats.totalPhotos} photos`;
+    }
+
+    // Remover a interface grande de estatísticas (não faz mais nada)
+    // Mantém só o contador pequeno no canto
+
+    console.log(`📊 Discrete stats updated: ${stats.totalPhotos} photos`);
   },
 
   // Renderizar fotos no modal (função que estava faltando)

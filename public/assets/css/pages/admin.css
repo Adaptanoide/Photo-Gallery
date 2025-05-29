@@ -334,7 +334,6 @@
     height: 70px;
   }
 }
-/* CSS MODAIS + LISTA - Adicionar ao final do admin.css */
 
 /* ===== ESTILOS EXISTENTES (manter todos) ===== */
 .storage-stats-panel {
@@ -1578,6 +1577,291 @@
   
   .move-folder-count {
     font-size: 11px;
+  }
+}
+
+/* ===== PHOTO STORAGE - LAYOUT FOCADO NA LISTA ===== */
+/* ADICIONAR ao final do admin.css */
+
+/* Cabeçalho minimalista */
+.photo-storage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.photo-storage-header h3 {
+  margin: 0;
+  color: #333;
+  font-family: 'Playfair Display', serif;
+}
+
+.discrete-stats {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#discrete-photo-count {
+  font-size: 13px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  font-weight: 500;
+}
+
+/* Container focado na estrutura de pastas */
+.folder-management-focused {
+  margin-top: 0;
+}
+
+.folder-tree-expanded {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  
+  /* 🎯 FOCO: Muito mais altura para a lista */
+  min-height: 500px;
+  max-height: 70vh;
+  overflow-y: auto;
+  
+  /* Melhor scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f1f1f1;
+}
+
+.folder-tree-expanded::-webkit-scrollbar {
+  width: 8px;
+}
+
+.folder-tree-expanded::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.folder-tree-expanded::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.folder-tree-expanded::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Melhorias na árvore de pastas */
+.folder-tree {
+  /* Remove altura fixa anterior */
+  height: auto;
+  min-height: auto;
+}
+
+.folder-item {
+  padding: 10px 15px; /* Mais espaço vertical */
+  margin: 3px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px; /* Bordas mais arredondadas */
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.folder-item:hover {
+  background: #f8f9fa;
+  border-color: #e9ecef;
+  transform: translateX(4px); /* Sutil movimento */
+}
+
+.folder-item.selected {
+  background: #e3f2fd;
+  border-color: var(--color-gold);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+}
+
+.folder-icon {
+  font-size: 18px; /* Ícones maiores */
+  width: 24px;
+  text-align: center;
+}
+
+.folder-name {
+  flex-grow: 1;
+  font-weight: 500;
+  font-size: 15px; /* Texto ligeiramente maior */
+  color: #333;
+}
+
+.folder-count {
+  color: #666;
+  font-size: 13px;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.folder-actions {
+  margin-left: auto;
+  display: none;
+  gap: 6px;
+}
+
+.folder-item:hover .folder-actions {
+  display: flex;
+}
+
+.folder-action-btn {
+  background: var(--color-gold);
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.folder-action-btn:hover {
+  background: #c5a647;
+  transform: scale(1.05);
+}
+
+.folder-children {
+  margin-left: 0;
+  border-left: 2px solid #f0f0f0;
+  padding-left: 15px;
+  margin-top: 6px;
+}
+
+/* Estados especiais */
+.folder-item.folder-leaf {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.folder-item.folder-leaf:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+}
+
+/* Loading e empty states melhorados */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-style: italic;
+  font-size: 16px;
+}
+
+.loading::before {
+  content: "🔄";
+  display: block;
+  font-size: 24px;
+  margin-bottom: 10px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-message {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+  font-size: 16px;
+}
+
+.empty-message::before {
+  content: "📁";
+  display: block;
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+/* Responsividade melhorada */
+@media (max-width: 768px) {
+  .photo-storage-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .discrete-stats {
+    align-self: flex-end;
+  }
+  
+  .folder-tree-expanded {
+    padding: 15px;
+    max-height: 60vh;
+  }
+  
+  .folder-item {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+  
+  .folder-name {
+    font-size: 14px;
+  }
+  
+  .folder-count {
+    font-size: 11px;
+    padding: 1px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .folder-tree-expanded {
+    padding: 10px;
+    max-height: 50vh;
+  }
+  
+  .folder-item {
+    padding: 6px 10px;
+    gap: 8px;
+  }
+  
+  .folder-icon {
+    font-size: 16px;
+    width: 20px;
+  }
+  
+  .folder-name {
+    font-size: 13px;
+  }
+  
+  .discrete-stats {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+}
+
+/* Animações suaves para a árvore */
+.folder-item {
+  animation: fadeInLeft 0.3s ease-out;
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

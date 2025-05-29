@@ -343,29 +343,25 @@
         <!-- NOVA ABA: Photo Storage -->
         <div id="photo-storage" class="tab-pane">
           <div class="admin-section">
-            <h3>Photo Storage Management</h3>
-            <p>Manage photos and folders on local Render disk (50GB)</p>
-            
-            <div class="storage-stats-panel">
-              <h4>Storage Statistics</h4>
-              <div id="storage-stats-content">
-                <div class="loading">Loading storage stats...</div>
+            <!-- Cabeçalho minimalista com contador discreto -->
+            <div class="photo-storage-header">
+              <h3>Photo Storage Management</h3>
+              <div class="discrete-stats">
+                <span id="discrete-photo-count">Loading...</span>
+                <button class="btn btn-secondary btn-sm" onclick="photoManager.refreshStructure()">Refresh</button>
               </div>
             </div>
 
-            <div class="folder-management-panel">
-              <h4>Folder Structure</h4>
-              <div class="folder-toolbar">
-                <button class="btn btn-secondary" onclick="photoManager.refreshStructure()">Refresh</button>
-              </div>
-              
-              <div class="folder-tree-container">
+            <!-- FOCO PRINCIPAL: Lista de Pastas (90% do espaço) -->
+            <div class="folder-management-focused">
+              <div class="folder-tree-expanded">
                 <div id="folder-tree" class="folder-tree">
                   <div class="loading">Loading folder structure...</div>
                 </div>
               </div>
             </div>
 
+            <!-- Panel de fotos (mantido como estava) -->
             <div class="photo-management-panel" style="display: none;">
               <h4>Photos in: <span id="current-folder-name"></span></h4>
               <div id="folder-photos">
