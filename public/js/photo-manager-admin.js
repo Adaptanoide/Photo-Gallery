@@ -1,11 +1,13 @@
-// photo-manager-admin.js - MODAL + MODO LISTA
+// photo-manager-admin.js - THUMBNAILS + SELEÇÃO MÚLTIPLA
 // Substitua completamente o arquivo existente
 
 const photoManager = {
   currentStructure: null,
   selectedFolder: null,
-  selectedPhotos: new Set(),
+  selectedPhotos: new Set(), // Para seleção múltipla
   currentFolderPhotos: [], // Armazenar fotos da pasta atual
+  currentFolderId: null, // ID da pasta atual
+  currentFolderName: '', // Nome da pasta atual
   viewMode: 'list', // 'list' ou 'thumbnails'
 
   async init() {
@@ -29,12 +31,9 @@ const photoManager = {
         const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
         const totalFolders = folders.length;
         
-        // Cálculo mais realista de espaço
         const estimatedSizeMB = totalPhotos * 2.5;
         const estimatedSizeGB = Math.round((estimatedSizeMB / 1024) * 100) / 100;
         const usedPercent = Math.round((estimatedSizeGB / 50) * 100);
-        
-        console.log(`📊 Calculated stats: ${totalPhotos} photos, estimated ${estimatedSizeGB}GB`);
         
         document.getElementById('storage-stats-content').innerHTML = `
           <div class="storage-stats-grid">
@@ -96,8 +95,6 @@ const photoManager = {
   },
 
   organizeIntoHierarchy(folders) {
-    console.log('🏗️ Organizing folders into hierarchy...');
-    
     const hierarchy = {};
     
     folders.forEach(folder => {
@@ -193,27 +190,26 @@ const photoManager = {
     console.log(`📁 Selected folder: ${folder.name} (${folder.fileCount} photos)`);
   },
 
-  // NOVA FUNÇÃO: Abrir modal da pasta
+  // Abrir modal da pasta
   async openFolderModal(folderId, folderName) {
     console.log(`🎯 Opening folder modal: ${folderName} (${folderId})`);
     
-    // Criar modal se não existir
+    // Armazenar informações da pasta atual
+    this.currentFolderId = folderId;
+    this.currentFolderName = folderName;
+    this.selectedPhotos.clear(); // Limpar seleções anteriores
+    
     if (!document.getElementById('photo-folder-modal')) {
       this.createFolderModal();
     }
     
-    // Atualizar título do modal
     document.getElementById('modal-folder-title').textContent = folderName;
+    document.getElementById('photo-folder-modal').style.display = 'flex';
     
-    // Mostrar modal
-    const modal = document.getElementById('photo-folder-modal');
-    modal.style.display = 'flex';
-    
-    // Carregar fotos
     await this.loadFolderPhotos(folderId, folderName);
   },
 
-  // NOVA FUNÇÃO: Criar modal para fotos
+  // Criar modal para fotos
   createFolderModal() {
     console.log('🏗️ Creating folder modal...');
     
@@ -223,7 +219,8 @@ const photoManager = {
           <div class="photo-modal-header">
             <h3 id="modal-folder-title">Folder Name</h3>
             <div class="photo-modal-controls">
-              <button class="btn btn-secondary btn-sm" onclick="photoManager.toggleViewMode()" id="view-mode-btn">📋 Switch to Thumbnails</button>
+              <button class="btn btn-secondary btn-sm" onclick="photoManager.toggleViewMode()" id="view-mode-btn">🖼️ Switch to Thumbnails</button>
+              <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
               <button class="photo-modal-close" onclick="photoManager.closeFolderModal()">&times;</button>
             </div>
           </div>
@@ -242,7 +239,7 @@ const photoManager = {
     console.log('✅ Folder modal created');
   },
 
-  // NOVA FUNÇÃO: Carregar fotos da pasta
+  // Carregar fotos da pasta
   async loadFolderPhotos(folderId, folderName) {
     console.log(`📋 Loading photos for folder: ${folderName}`);
     
@@ -254,7 +251,6 @@ const photoManager = {
     
     try {
       const response = await fetch(`/api/photos?category_id=${folderId}`);
-      console.log(`📡 API Response status: ${response.status}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -289,36 +285,188 @@ const photoManager = {
     }
   },
 
-  // NOVA FUNÇÃO: Renderizar fotos no modal (modo lista como padrão)
+  // NOVA FUNÇÃO: Renderizar fotos (lista ou thumbnails)
   renderPhotosInModal(photos) {
     console.log(`🎨 Rendering ${photos.length} photos in ${this.viewMode} mode`);
     
     const contentDiv = document.getElementById('photo-modal-content');
     
     if (this.viewMode === 'list') {
-      // MODO LISTA (PADRÃO)
-      const listHTML = `
-        <div class="photo-list-header">
-          <span><strong>${photos.length}</strong> photos in this folder</span>
-        </div>
-        <div class="photo-list-container">
-          ${photos.map((photo, index) => `
-            <div class="photo-list-item" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">
-              <span class="photo-list-icon">📸</span>
-              <span class="photo-list-name">${photo.name || photo.id}</span>
-              <span class="photo-list-id">${photo.id}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
-      contentDiv.innerHTML = listHTML;
+      this.renderListMode(photos, contentDiv);
     } else {
-      // MODO THUMBNAILS (para depois)
-      this.renderThumbnailsMode(photos);
+      this.renderThumbnailsMode(photos, contentDiv);
+    }
+    
+    // Atualizar contador de selecionados
+    this.updateSelectionCounter();
+  },
+
+  // NOVA FUNÇÃO: Renderizar modo lista COM CHECKBOXES
+  renderListMode(photos, container) {
+    console.log('📋 Rendering list mode with checkboxes');
+    
+    const listHTML = `
+      <div class="photo-list-header">
+        <div class="selection-controls">
+          <label class="select-all-label">
+            <input type="checkbox" id="select-all-checkbox" onchange="photoManager.toggleSelectAll(this.checked)">
+            Select All
+          </label>
+          <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
+        </div>
+      </div>
+      <div class="photo-list-container">
+        ${photos.map((photo, index) => `
+          <div class="photo-list-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
+            <label class="photo-checkbox-container" onclick="event.stopPropagation();">
+              <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
+                ${this.selectedPhotos.has(photo.id) ? 'checked' : ''} 
+                onchange="photoManager.togglePhotoSelection('${photo.id}', this.checked)">
+            </label>
+            <span class="photo-list-icon">📸</span>
+            <span class="photo-list-name" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">${photo.name || photo.id}</span>
+            <span class="photo-list-id">${photo.id}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.innerHTML = listHTML;
+  },
+
+  // NOVA FUNÇÃO: Renderizar modo thumbnails COM CHECKBOXES
+  renderThumbnailsMode(photos, container) {
+    console.log('🖼️ Rendering thumbnails mode with checkboxes');
+    
+    const thumbnailsHTML = `
+      <div class="photo-thumbnails-header">
+        <div class="selection-controls">
+          <label class="select-all-label">
+            <input type="checkbox" id="select-all-checkbox" onchange="photoManager.toggleSelectAll(this.checked)">
+            Select All
+          </label>
+          <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
+        </div>
+      </div>
+      <div class="photo-thumbnails-container">
+        ${photos.map((photo, index) => {
+          let thumbnailUrl = photo.thumbnail;
+          if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
+            thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
+          }
+          
+          return `
+            <div class="photo-thumbnail-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
+              <label class="photo-thumbnail-checkbox" onclick="event.stopPropagation();">
+                <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
+                  ${this.selectedPhotos.has(photo.id) ? 'checked' : ''} 
+                  onchange="photoManager.togglePhotoSelection('${photo.id}', this.checked)">
+              </label>
+              <div class="photo-thumbnail-preview" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">
+                <img src="${thumbnailUrl}" 
+                     alt="${photo.name || photo.id}" 
+                     loading="lazy" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="photo-placeholder" style="display: none;">📷</div>
+              </div>
+              <div class="photo-thumbnail-name">${photo.name || photo.id}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    container.innerHTML = thumbnailsHTML;
+  },
+
+  // NOVA FUNÇÃO: Alternar seleção de foto individual
+  togglePhotoSelection(photoId, selected) {
+    console.log(`📋 Toggling photo selection: ${photoId} = ${selected}`);
+    
+    if (selected) {
+      this.selectedPhotos.add(photoId);
+    } else {
+      this.selectedPhotos.delete(photoId);
+    }
+    
+    // Atualizar visual da linha/thumbnail
+    const photoElement = document.querySelector(`[data-photo-id="${photoId}"]`);
+    if (photoElement) {
+      if (selected) {
+        photoElement.classList.add('selected');
+      } else {
+        photoElement.classList.remove('selected');
+      }
+    }
+    
+    this.updateSelectionCounter();
+    this.updateSelectAllCheckbox();
+  },
+
+  // NOVA FUNÇÃO: Selecionar/desselecionar todas
+  toggleSelectAll(selectAll) {
+    console.log(`📋 Toggle select all: ${selectAll}`);
+    
+    const checkboxes = document.querySelectorAll('.photo-checkbox');
+    this.selectedPhotos.clear();
+    
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = selectAll;
+      if (selectAll) {
+        this.selectedPhotos.add(checkbox.value);
+      }
+      
+      // Atualizar visual
+      const photoElement = checkbox.closest('[data-photo-id]');
+      if (photoElement) {
+        if (selectAll) {
+          photoElement.classList.add('selected');
+        } else {
+          photoElement.classList.remove('selected');
+        }
+      }
+    });
+    
+    this.updateSelectionCounter();
+  },
+
+  // NOVA FUNÇÃO: Atualizar contador de selecionados
+  updateSelectionCounter() {
+    const selectedCount = this.selectedPhotos.size;
+    const moveBtn = document.getElementById('move-selected-btn');
+    
+    if (moveBtn) {
+      moveBtn.disabled = selectedCount === 0;
+      moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
+    }
+    
+    console.log(`📊 Selected photos: ${selectedCount}`);
+  },
+
+  // NOVA FUNÇÃO: Atualizar checkbox "Select All"
+  updateSelectAllCheckbox() {
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    if (selectAllCheckbox) {
+      const totalPhotos = this.currentFolderPhotos.length;
+      const selectedCount = this.selectedPhotos.size;
+      
+      selectAllCheckbox.checked = selectedCount === totalPhotos && totalPhotos > 0;
+      selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalPhotos;
     }
   },
 
-  // NOVA FUNÇÃO: Abrir foto em fullscreen
+  // Alternar modo de visualização
+  toggleViewMode() {
+    this.viewMode = this.viewMode === 'list' ? 'thumbnails' : 'list';
+    console.log(`🔄 Switching to ${this.viewMode} mode`);
+    
+    // Atualizar botão
+    const btn = document.getElementById('view-mode-btn');
+    btn.textContent = this.viewMode === 'list' ? '🖼️ Switch to Thumbnails' : '📋 Switch to List';
+    
+    // Re-renderizar fotos mantendo seleções
+    this.renderPhotosInModal(this.currentFolderPhotos);
+  },
+
+  // Abrir foto em fullscreen
   openPhotoFullscreen(photoId, photoIndex) {
     console.log(`🖼️ Opening photo fullscreen: ${photoId} (index: ${photoIndex})`);
     
@@ -328,23 +476,23 @@ const photoManager = {
       return;
     }
     
-    // Criar fullscreen se não existir
     if (!document.getElementById('photo-fullscreen-modal')) {
       this.createFullscreenModal();
     }
     
-    // Configurar imagem
-    const imageUrl = photo.highres || `/api/photos/local/${this.selectedFolder.id}/${photoId}`;
+    const imageUrl = photo.highres || `/api/photos/local/${this.currentFolderId}/${photoId}`;
     document.getElementById('fullscreen-image').src = imageUrl;
     document.getElementById('fullscreen-photo-name').textContent = photo.name || photoId;
     
-    // Mostrar modal fullscreen
+    // Armazenar foto atual para o botão Move
+    this.currentFullscreenPhoto = photo;
+    
     document.getElementById('photo-fullscreen-modal').style.display = 'flex';
     
     console.log(`✅ Fullscreen opened for: ${photo.name || photoId}`);
   },
 
-  // NOVA FUNÇÃO: Criar modal fullscreen
+  // Criar modal fullscreen
   createFullscreenModal() {
     const fullscreenHTML = `
       <div id="photo-fullscreen-modal" class="photo-fullscreen-modal" style="display: none;">
@@ -353,7 +501,7 @@ const photoManager = {
             <h4 id="fullscreen-photo-name">Photo Name</h4>
             <div class="fullscreen-controls">
               <button class="btn btn-secondary" onclick="photoManager.closeFullscreen()">← Back</button>
-              <button class="btn btn-gold" onclick="photoManager.movePhoto()">📦 Move Photo</button>
+              <button class="btn btn-gold" onclick="photoManager.moveSinglePhoto()">📦 Move Photo</button>
               <button class="fullscreen-close" onclick="photoManager.closeFullscreen()">&times;</button>
             </div>
           </div>
@@ -369,34 +517,52 @@ const photoManager = {
     console.log('✅ Fullscreen modal created');
   },
 
-  // NOVA FUNÇÃO: Fechar modal da pasta
+  // Fechar modal da pasta
   closeFolderModal() {
     console.log('🚪 Closing folder modal');
     document.getElementById('photo-folder-modal').style.display = 'none';
+    this.selectedPhotos.clear();
+    this.currentFolderPhotos = [];
+    this.currentFolderId = null;
+    this.currentFolderName = '';
   },
 
-  // NOVA FUNÇÃO: Fechar fullscreen
+  // Fechar fullscreen
   closeFullscreen() {
     console.log('🚪 Closing fullscreen');
     document.getElementById('photo-fullscreen-modal').style.display = 'none';
+    this.currentFullscreenPhoto = null;
   },
 
-  // NOVA FUNÇÃO: Alternar modo de visualização (para depois)
-  toggleViewMode() {
-    this.viewMode = this.viewMode === 'list' ? 'thumbnails' : 'list';
-    console.log(`🔄 Switching to ${this.viewMode} mode`);
+  // PLACEHOLDER: Mover foto única (do fullscreen)
+  moveSinglePhoto() {
+    if (!this.currentFullscreenPhoto) {
+      showToast('No photo selected', 'error');
+      return;
+    }
     
-    // Atualizar botão
-    const btn = document.getElementById('view-mode-btn');
-    btn.textContent = this.viewMode === 'list' ? '📋 Switch to Thumbnails' : '🖼️ Switch to List';
+    console.log(`📦 Moving single photo: ${this.currentFullscreenPhoto.id}`);
     
-    // Re-renderizar fotos
-    this.renderPhotosInModal(this.currentFolderPhotos);
+    // Criar set com uma foto para usar a mesma lógica
+    const singlePhotoSet = new Set([this.currentFullscreenPhoto.id]);
+    this.openMoveModal(singlePhotoSet);
   },
 
-  // PLACEHOLDER: Mover foto (implementar depois)
-  movePhoto() {
-    showToast('Move photo feature coming soon!', 'info');
+  // PLACEHOLDER: Mover fotos selecionadas
+  moveSelectedPhotos() {
+    if (this.selectedPhotos.size === 0) {
+      showToast('Please select photos to move', 'warning');
+      return;
+    }
+    
+    console.log(`📦 Moving ${this.selectedPhotos.size} selected photos`);
+    this.openMoveModal(this.selectedPhotos);
+  },
+
+  // PLACEHOLDER: Abrir modal de movimentação (implementar no próximo passo)
+  openMoveModal(photosToMove) {
+    console.log('📦 Opening move modal for photos:', Array.from(photosToMove));
+    showToast(`Move modal coming soon! Selected ${photosToMove.size} photos`, 'info');
   },
 
   async refreshStructure() {
