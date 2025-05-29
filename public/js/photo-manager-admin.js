@@ -18,6 +18,9 @@ const photoManager = {
     if (document.getElementById('photo-storage')) {
       await this.loadStorageStats();
       await this.loadFolderStructure();
+      
+      // 🔄 RESTAURAR UPLOAD EM PROGRESSO (se houver)
+      await this.restoreUploadIfNeeded();
     }
   },
 
@@ -2237,30 +2240,77 @@ const photoManager = {
     }
   },
 
-  // 🎯 ADICIONAR ESTAS 4 FUNÇÕES APÓS A LINHA ~2850 (depois de validateFolderId):
-
-  // 🎯 OBTER NÚMERO ATUAL DE FOTOS NA PASTA
+// 🔧 SUBSTITUIR a função getCurrentPhotoCount() existente por esta versão corrigida:
   async getCurrentPhotoCount(folderId) {
     try {
-      const response = await fetch(`/api/photos?category_id=${folderId}`);
-      if (response.ok) {
-        const photos = await response.json();
-        return photos.length;
+      console.log(`🔍 Getting photo count for folder: ${folderId}`);
+      
+      // Tentar múltiplas estratégias para obter contagem
+      
+      // ESTRATÉGIA 1: API de fotos (atual)
+      const photosResponse = await fetch(`/api/photos?category_id=${folderId}`);
+      if (photosResponse.ok) {
+        const photos = await photosResponse.json();
+        console.log(`📊 Strategy 1 - Photos API: ${photos.length} photos`);
+        if (photos.length > 0) {
+          return photos.length;
+        }
       }
+      
+      // ESTRATÉGIA 2: API de estatísticas (backup)
+      const statsResponse = await fetch(`/api/admin/folders/leaf`);
+      if (statsResponse.ok) {
+        const data = await statsResponse.json();
+        if (data.success && data.folders) {
+          const folder = data.folders.find(f => f.id === folderId);
+          if (folder) {
+            console.log(`📊 Strategy 2 - Stats API: ${folder.fileCount || 0} photos`);
+            return folder.fileCount || 0;
+          }
+        }
+      }
+      
+      // ESTRATÉGIA 3: Cache local (último recurso)
+      if (this.allFolders) {
+        const folder = this.allFolders.find(f => f.id === folderId);
+        if (folder) {
+          console.log(`📊 Strategy 3 - Local cache: ${folder.fileCount || 0} photos`);
+          return folder.fileCount || 0;
+        }
+      }
+      
+      console.warn(`⚠️ Could not get photo count for folder: ${folderId}`);
       return 0;
+      
     } catch (error) {
-      console.error('Error getting current photo count:', error);
+      console.error('❌ Error getting current photo count:', error);
       return 0;
     }
   },
 
-  // 🎯 INICIAR MONITORAMENTO REAL DE UPLOAD
-  startRealUploadMonitoring(folderId, folderName, uploadingCount, expectedFinalCount) {
-    console.log(`🔄 Starting REAL upload monitoring for: ${folderName}`);
+// 🔧 SUBSTITUIR a função startRealUploadMonitoring() existente:
+  startRealUploadMonitoring(folderId, folderName, uploadingCount, expectedFinalCount, isRestoring = false) {
+    console.log(`🔄 Starting REAL upload monitoring for: ${folderName} (restoring: ${isRestoring})`);
     console.log(`📊 Expecting ${expectedFinalCount} photos when complete`);
+    
+    // 💾 SALVAR ESTADO PARA PERSISTÊNCIA
+    if (!isRestoring) {
+      this.saveUploadState(folderId, folderName, uploadingCount, expectedFinalCount);
+      
+      // 🔒 ATIVAR PROTEÇÃO CONTRA SAÍDA
+      this.activateExitProtection(folderName, uploadingCount);
+    }
     
     // Marcar pasta como uploadando
     this.markFolderAsUploading(folderId, folderName, uploadingCount);
+    
+    // 🎯 ADICIONAR INDICADOR VISUAL NO HEADER
+    this.showUploadIndicator(folderName, uploadingCount);
+    
+    // Parar qualquer monitoramento anterior para esta pasta
+    if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
+      clearInterval(this.uploadMonitoringIntervals.get(folderId));
+    }
     
     // Iniciar polling a cada 30 segundos
     const monitoringInterval = setInterval(async () => {
@@ -2277,10 +2327,20 @@ const photoManager = {
           clearInterval(monitoringInterval);
           this.stopUploadMonitoring(folderId);
           
-          // 🎯 ATUALIZAR SÓ A PASTA ESPECÍFICA (não tudo!)
+          // 🎯 ATUALIZAR SÓ A PASTA ESPECÍFICA
           this.updateSpecificFolder(folderId, currentCount);
           
+          // 🎉 NOTIFICAÇÃO DE CONCLUSÃO
           alert(`✅ Upload completed!\n"${folderName}" now has ${currentCount} photos.`);
+          
+          // 🔓 DESATIVAR PROTEÇÃO
+          this.deactivateExitProtection();
+          
+          // 💾 LIMPAR ESTADO SALVO
+          this.clearUploadState();
+          
+          // 🔄 ATUALIZAR STATS GERAIS
+          await this.loadStorageStats(true);
         }
         
       } catch (error) {
@@ -2288,14 +2348,14 @@ const photoManager = {
       }
     }, 30000); // Verificar a cada 30 segundos
     
-    // Armazenar referência do interval para poder parar depois
+    // Armazenar referência do interval
     if (!this.uploadMonitoringIntervals) {
       this.uploadMonitoringIntervals = new Map();
     }
     this.uploadMonitoringIntervals.set(folderId, monitoringInterval);
   },
 
-  // 🎯 PARAR MONITORAMENTO DE UPLOAD
+// 🔧 SUBSTITUIR a função stopUploadMonitoring() existente:
   stopUploadMonitoring(folderId) {
     console.log(`🛑 Stopping upload monitoring for folder: ${folderId}`);
     
@@ -2305,8 +2365,17 @@ const photoManager = {
       this.uploadMonitoringIntervals.delete(folderId);
     }
     
-    // Remover loading visual
+    // Remover loading visual da pasta
     this.unmarkFolderAsUploading(folderId);
+    
+    // 🔇 ESCONDER INDICADOR DE UPLOAD
+    this.hideUploadIndicator();
+    
+    // 🔓 DESATIVAR PROTEÇÃO CONTRA SAÍDA
+    this.deactivateExitProtection();
+    
+    // 💾 LIMPAR ESTADO SALVO
+    this.clearUploadState();
   },
 
   // 🎯 ATUALIZAR APENAS UMA PASTA ESPECÍFICA (não quebrar outras)
@@ -2328,7 +2397,199 @@ const photoManager = {
       }
     });
   },
+
+  // 🆕 ADICIONAR ESTAS FUNÇÕES - Sistema de persistência de upload:
+
+  // 💾 SALVAR ESTADO DE UPLOAD
+  saveUploadState(folderId, folderName, fileCount, expectedCount) {
+    const uploadState = {
+      folderId: folderId,
+      folderName: folderName,
+      fileCount: fileCount,
+      expectedCount: expectedCount,
+      startTime: Date.now(),
+      isActive: true
+    };
+    
+    try {
+      localStorage.setItem('activeUpload', JSON.stringify(uploadState));
+      console.log(`💾 Upload state saved for: ${folderName}`);
+    } catch (error) {
+      console.error('❌ Error saving upload state:', error);
+    }
+  },
+
+  // 📖 RECUPERAR ESTADO DE UPLOAD
+  loadUploadState() {
+    try {
+      const savedState = localStorage.getItem('activeUpload');
+      if (savedState) {
+        const uploadState = JSON.parse(savedState);
+        console.log(`📖 Found saved upload state:`, uploadState);
+        return uploadState;
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error loading upload state:', error);
+      return null;
+    }
+  },
+
+  // 🗑️ LIMPAR ESTADO DE UPLOAD
+  clearUploadState() {
+    try {
+      localStorage.removeItem('activeUpload');
+      console.log(`🗑️ Upload state cleared`);
+    } catch (error) {
+      console.error('❌ Error clearing upload state:', error);
+    }
+  },
+
+  // 🔄 RESTAURAR UPLOAD EM PROGRESSO
+  async restoreUploadIfNeeded() {
+    const savedState = this.loadUploadState();
+    
+    if (savedState && savedState.isActive) {
+      console.log(`🔄 Restoring upload monitoring for: ${savedState.folderName}`);
+      
+      // Verificar se não passou muito tempo (máximo 2 horas)
+      const elapsedTime = Date.now() - savedState.startTime;
+      const maxTime = 2 * 60 * 60 * 1000; // 2 horas
+      
+      if (elapsedTime > maxTime) {
+        console.log(`⏰ Upload state too old (${Math.round(elapsedTime / 1000 / 60)} minutes), clearing...`);
+        this.clearUploadState();
+        return;
+      }
+      
+      // Restaurar monitoramento
+      this.startRealUploadMonitoring(
+        savedState.folderId, 
+        savedState.folderName, 
+        savedState.fileCount, 
+        savedState.expectedCount,
+        true // isRestoring = true
+      );
+      
+      // 🚨 MOSTRAR AVISO DE UPLOAD EM PROGRESSO
+      setTimeout(() => {
+        const elapsedMinutes = Math.round(elapsedTime / 1000 / 60);
+        alert(`⚠️ UPLOAD IN PROGRESS!\n\nFolder: "${savedState.folderName}"\nFiles: ${savedState.fileCount} photos\nElapsed time: ${elapsedMinutes} minutes\n\n🚨 Do NOT close this page until upload completes!`);
+      }, 1000);
+    }
+  },
+
+  // 🛡️ ADICIONAR ESTAS FUNÇÕES - Proteção contra saída:
+
+  // 🔒 ATIVAR PROTEÇÃO CONTRA SAÍDA
+  activateExitProtection(folderName, fileCount) {
+    console.log(`🔒 Activating exit protection for: ${folderName}`);
+    
+    // Função para mostrar aviso
+    this.beforeUnloadHandler = (event) => {
+      const message = `⚠️ UPLOAD IN PROGRESS!\n\nUploading ${fileCount} photos to "${folderName}"\n\n🚨 If you leave now, the upload will be LOST!\n\nAre you sure you want to leave?`;
+      
+      event.preventDefault();
+      event.returnValue = message; // Para navegadores antigos
+      return message; // Para navegadores modernos
+    };
+    
+    // Adicionar listener
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
+    
+    // Também proteger navegação interna (admin tabs)
+    this.protectAdminNavigation = true;
+  },
+
+  // 🔓 DESATIVAR PROTEÇÃO CONTRA SAÍDA
+  deactivateExitProtection() {
+    console.log(`🔓 Deactivating exit protection`);
+    
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+      this.beforeUnloadHandler = null;
+    }
+    
+    this.protectAdminNavigation = false;
+  },
+
+  // 🚨 VERIFICAR SE PODE NAVEGAR (para tabs do admin)
+  canNavigateAway() {
+    if (this.protectAdminNavigation) {
+      const uploadState = this.loadUploadState();
+      if (uploadState && uploadState.isActive) {
+        const confirmLeave = confirm(`⚠️ UPLOAD IN PROGRESS!\n\nFolder: "${uploadState.folderName}"\nFiles: ${uploadState.fileCount} photos\n\n🚨 Navigation will interrupt the upload!\n\nDo you want to continue anyway?`);
+        
+        if (!confirmLeave) {
+          return false;
+        } else {
+          // Usuário confirmou - limpar estado e permitir
+          this.clearUploadState();
+          this.deactivateExitProtection();
+          return true;
+        }
+      }
+    }
+    return true;
+  },
+
+  // 🎯 ADICIONAR ESTAS FUNÇÕES - Indicador visual:
+
+  // 📢 MOSTRAR INDICADOR DE UPLOAD NO HEADER
+  showUploadIndicator(folderName, fileCount) {
+    // Remover indicador anterior se existir
+    const existingIndicator = document.getElementById('upload-indicator');
+    if (existingIndicator) {
+      existingIndicator.remove();
+    }
+    
+    // Criar novo indicador
+    const indicator = document.createElement('div');
+    indicator.id = 'upload-indicator';
+    indicator.style.cssText = `
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: linear-gradient(90deg, #fff3cd, #ffffff, #fff3cd);
+      background-size: 200% 100%;
+      animation: uploadPulse 2s ease-in-out infinite;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 10px 15px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #856404;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      max-width: 300px;
+    `;
+    
+    indicator.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px; animation: uploadBounce 1s ease-in-out infinite;">📤</span>
+        <div>
+          <div style="font-weight: 600;">Upload in Progress</div>
+          <div style="font-size: 12px;">📁 ${folderName} (${fileCount} photos)</div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(indicator);
+    console.log(`📢 Upload indicator shown for: ${folderName}`);
+  },
+
+  // 🔇 ESCONDER INDICADOR DE UPLOAD
+  hideUploadIndicator() {
+    const indicator = document.getElementById('upload-indicator');
+    if (indicator) {
+      indicator.remove();
+      console.log(`🔇 Upload indicator hidden`);
+    }
+  },
+
 };
+
+// 🔧 SUBSTITUIR o final do arquivo (após a linha ~2900) por esta versão:
 
 // Integração com o sistema existente
 document.addEventListener('DOMContentLoaded', () => {
@@ -2336,7 +2597,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalSwitchTab = window.switchTab;
 
     if (originalSwitchTab) {
+      // 🛡️ INTERCEPTAR NAVEGAÇÃO ENTRE TABS
       window.switchTab = function (tabId) {
+        
+        // 🚨 VERIFICAR SE PODE NAVEGAR
+        if (photoManager.protectAdminNavigation && !photoManager.canNavigateAway()) {
+          console.log('🚫 Navigation blocked due to active upload');
+          return; // Bloquear navegação
+        }
+        
+        // Continuar navegação normal
         originalSwitchTab(tabId);
 
         if (tabId === 'photo-storage') {
@@ -2347,7 +2617,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      console.log('✅ Photo Manager integration completed');
+      console.log('✅ Photo Manager integration completed with upload protection');
     }
   }, 500);
 });
