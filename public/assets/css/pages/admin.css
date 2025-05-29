@@ -1869,3 +1869,179 @@
 #custom-confirm {
   z-index: 15000 !important;
 }
+
+/* ===== ESTILOS BOTÕES DELETE - ADICIONAR AO FINAL DO admin.css ===== */
+
+/* Botão Delete na árvore de pastas */
+.folder-action-btn.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.folder-action-btn.delete-btn:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+/* Container para ações em lote */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Layout do cabeçalho da lista/thumbnails */
+.photo-list-header, .photo-thumbnails-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+/* Ações individuais na lista */
+.photo-individual-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 5px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-icon.delete-photo-btn {
+  color: #dc3545;
+}
+
+.btn-icon.delete-photo-btn:hover {
+  background: #dc3545;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Ações nos thumbnails */
+.photo-thumbnail-actions {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-thumbnail-item:hover .photo-thumbnail-actions {
+  opacity: 1;
+}
+
+.photo-thumbnail-actions .btn-icon {
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+/* Botão Delete principal */
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+  border-color: #bd2130;
+  transform: translateY(-1px);
+}
+
+.btn-danger:disabled {
+  background: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-danger:disabled:hover {
+  background: #6c757d;
+  border-color: #6c757d;
+  transform: none;
+}
+
+/* Melhorias na responsividade */
+@media (max-width: 768px) {
+  .photo-list-header, .photo-thumbnails-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .bulk-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .bulk-actions .btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .photo-individual-actions {
+    margin-left: 10px;
+  }
+  
+  .fullscreen-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .fullscreen-controls .btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bulk-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .bulk-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .photo-thumbnail-actions {
+    position: static;
+    opacity: 1;
+    background: #f8f9fa;
+    margin-top: 5px;
+    text-align: center;
+  }
+}
+
+/* Animações suaves para botões delete */
+.delete-btn, .delete-photo-btn {
+  animation: fadeInDeleteBtn 0.3s ease-out;
+}
+
+@keyframes fadeInDeleteBtn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

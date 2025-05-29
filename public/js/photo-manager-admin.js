@@ -127,54 +127,69 @@ const photoManager = {
     }));
   },
 
-  renderFolderTree(folders, container = null, level = 0) {
-    if (!container) {
-      container = document.getElementById('folder-tree');
-      container.innerHTML = '';
+// 🔧 SUBSTITUIR A FUNÇÃO renderFolderTree() POR ESTA VERSÃO COM BOTÕES DELETE:
 
-      if (folders.length === 0) {
-        container.innerHTML = '<div class="empty-message">No folders found</div>';
-        return;
-      }
+renderFolderTree(folders, container = null, level = 0) {
+  if (!container) {
+    container = document.getElementById('folder-tree');
+    container.innerHTML = '';
+
+    if (folders.length === 0) {
+      container.innerHTML = '<div class="empty-message">No folders found</div>';
+      return;
+    }
+  }
+
+  folders.forEach(folder => {
+    const folderDiv = document.createElement('div');
+    folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
+    folderDiv.style.paddingLeft = `${level * 20}px`;
+
+    const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+    const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
+
+    // 🆕 VERIFICAR SE É PASTA ADMINISTRATIVA (não pode deletar)
+    const adminFolders = ['Waiting Payment', 'Sold'];
+    const isAdminFolder = adminFolders.includes(folder.name);
+    
+    folderDiv.innerHTML = `
+      <span class="folder-icon">${icon}</span>
+      <span class="folder-name">${folder.name}</span>
+      <span class="folder-count">${photoCount}</span>
+      ${folder.isLeaf ? `
+        <div class="folder-actions">
+          <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">👁️</button>
+          ${!isAdminFolder ? `
+            <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+          ` : ''}
+        </div>
+      ` : `
+        <div class="folder-actions">
+          ${!isAdminFolder ? `
+            <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+          ` : ''}
+        </div>
+      `}
+    `;
+
+    if (folder.isLeaf) {
+      folderDiv.onclick = (e) => {
+        if (!e.target.classList.contains('folder-action-btn')) {
+          this.selectFolder(folder, folderDiv);
+        }
+      };
     }
 
-    folders.forEach(folder => {
-      const folderDiv = document.createElement('div');
-      folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
-      folderDiv.style.paddingLeft = `${level * 20}px`;
+    container.appendChild(folderDiv);
 
-      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
-      const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
-
-      folderDiv.innerHTML = `
-        <span class="folder-icon">${icon}</span>
-        <span class="folder-name">${folder.name}</span>
-        <span class="folder-count">${photoCount}</span>
-        ${folder.isLeaf ? `
-          <div class="folder-actions">
-            <button class="folder-action-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">👁️</button>
-          </div>
-        ` : ''}
-      `;
-
-      if (folder.isLeaf) {
-        folderDiv.onclick = (e) => {
-          if (!e.target.classList.contains('folder-action-btn')) {
-            this.selectFolder(folder, folderDiv);
-          }
-        };
-      }
-
-      container.appendChild(folderDiv);
-
-      if (folder.children && folder.children.length > 0) {
-        const childContainer = document.createElement('div');
-        childContainer.className = 'folder-children';
-        container.appendChild(childContainer);
-        this.renderFolderTree(folder.children, childContainer, level + 1);
-      }
-    });
-  },
+    if (folder.children && folder.children.length > 0) {
+      const childContainer = document.createElement('div');
+      childContainer.className = 'folder-children';
+      container.appendChild(childContainer);
+      this.renderFolderTree(folder.children, childContainer, level + 1);
+    }
+  });
+},
 
   selectFolder(folder, element) {
     document.querySelectorAll('.folder-item').forEach(item => {
@@ -280,80 +295,97 @@ const photoManager = {
   },
 
   // Renderizar modo lista COM CHECKBOXES
-  renderListMode(photos, container) {
-    console.log('📋 Rendering list mode with checkboxes');
+renderListMode(photos, container) {
+  console.log('📋 Rendering list mode with checkboxes and delete button');
 
-    const listHTML = `
-      <div class="photo-list-header">
-        <div class="selection-controls">
-          <label class="select-all-label">
-            <input type="checkbox" id="select-all-checkbox" onchange="photoManager.toggleSelectAll(this.checked)">
-            Select All
-          </label>
-          <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
-        </div>
+  const listHTML = `
+    <div class="photo-list-header">
+      <div class="selection-controls">
+        <label class="select-all-label">
+          <input type="checkbox" id="select-all-checkbox" onchange="photoManager.toggleSelectAll(this.checked)">
+          Select All
+        </label>
+        <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
       </div>
-      <div class="photo-list-container">
-        ${photos.map((photo, index) => `
-          <div class="photo-list-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
-            <label class="photo-checkbox-container" onclick="event.stopPropagation();">
+      <div class="bulk-actions">
+        <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
+        <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>
+      </div>
+    </div>
+    <div class="photo-list-container">
+      ${photos.map((photo, index) => `
+        <div class="photo-list-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
+          <label class="photo-checkbox-container" onclick="event.stopPropagation();">
+            <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
+              ${this.selectedPhotos.has(photo.id) ? 'checked' : ''} 
+              onchange="photoManager.togglePhotoSelection('${photo.id}', this.checked)">
+          </label>
+          <span class="photo-list-icon">📸</span>
+          <span class="photo-list-name" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">${photo.name || photo.id}</span>
+          <span class="photo-list-id">${photo.id}</span>
+          <div class="photo-individual-actions">
+            <button class="btn-icon delete-photo-btn" onclick="photoManager.confirmDeleteSinglePhoto('${photo.id}')" title="Delete Photo">🗑️</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  container.innerHTML = listHTML;
+},
+
+  // Renderizar modo thumbnails COM CHECKBOXES
+renderThumbnailsMode(photos, container) {
+  console.log('🖼️ Rendering thumbnails mode with checkboxes and delete button');
+
+  const thumbnailsHTML = `
+    <div class="photo-thumbnails-header">
+      <div class="selection-controls">
+        <label class="select-all-label">
+          <input type="checkbox" id="select-all-checkbox" onchange="photoManager.toggleSelectAll(this.checked)">
+          Select All
+        </label>
+        <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
+      </div>
+      <div class="bulk-actions">
+        <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
+        <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>
+      </div>
+    </div>
+    <div class="photo-thumbnails-container">
+      ${photos.map((photo, index) => {
+        let thumbnailUrl = photo.thumbnail;
+        if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
+          thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
+        }
+
+        return `
+          <div class="photo-thumbnail-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
+            <label class="photo-thumbnail-checkbox" onclick="event.stopPropagation();">
               <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
                 ${this.selectedPhotos.has(photo.id) ? 'checked' : ''} 
                 onchange="photoManager.togglePhotoSelection('${photo.id}', this.checked)">
             </label>
-            <span class="photo-list-icon">📸</span>
-            <span class="photo-list-name" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">${photo.name || photo.id}</span>
-            <span class="photo-list-id">${photo.id}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    container.innerHTML = listHTML;
-  },
-
-  // Renderizar modo thumbnails COM CHECKBOXES
-  renderThumbnailsMode(photos, container) {
-    console.log('🖼️ Rendering thumbnails mode with checkboxes');
-
-    const thumbnailsHTML = `
-      <div class="photo-thumbnails-header">
-        <div class="selection-controls">
-          <label class="select-all-label">
-            <input type="checkbox" id="select-all-checkbox" onchange="photoManager.toggleSelectAll(this.checked)">
-            Select All
-          </label>
-          <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
-        </div>
-      </div>
-      <div class="photo-thumbnails-container">
-        ${photos.map((photo, index) => {
-      let thumbnailUrl = photo.thumbnail;
-      if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
-        thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
-      }
-
-      return `
-            <div class="photo-thumbnail-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
-              <label class="photo-thumbnail-checkbox" onclick="event.stopPropagation();">
-                <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
-                  ${this.selectedPhotos.has(photo.id) ? 'checked' : ''} 
-                  onchange="photoManager.togglePhotoSelection('${photo.id}', this.checked)">
-              </label>
-              <div class="photo-thumbnail-preview" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">
-                <img src="${thumbnailUrl}" 
-                     alt="${photo.name || photo.id}" 
-                     loading="lazy" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <div class="photo-placeholder" style="display: none;">📷</div>
-              </div>
-              <div class="photo-thumbnail-name">${photo.name || photo.id}</div>
+            
+            <div class="photo-thumbnail-preview" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">
+              <img src="${thumbnailUrl}" 
+                   alt="${photo.name || photo.id}" 
+                   loading="lazy" 
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <div class="photo-placeholder" style="display: none;">📷</div>
             </div>
-          `;
-    }).join('')}
-      </div>
-    `;
-    container.innerHTML = thumbnailsHTML;
-  },
+            
+            <div class="photo-thumbnail-name">${photo.name || photo.id}</div>
+            
+            <div class="photo-thumbnail-actions">
+              <button class="btn-icon delete-photo-btn" onclick="photoManager.confirmDeleteSinglePhoto('${photo.id}')" title="Delete Photo">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  container.innerHTML = thumbnailsHTML;
+},
 
   // Alternar seleção de foto individual
   togglePhotoSelection(photoId, selected) {
@@ -407,17 +439,25 @@ const photoManager = {
   },
 
   // Atualizar contador de selecionados
-  updateSelectionCounter() {
-    const selectedCount = this.selectedPhotos.size;
-    const moveBtn = document.getElementById('move-selected-btn');
+updateSelectionCounter() {
+  const selectedCount = this.selectedPhotos.size;
+  
+  // Atualizar botão de mover
+  const moveBtn = document.getElementById('move-selected-btn');
+  if (moveBtn) {
+    moveBtn.disabled = selectedCount === 0;
+    moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
+  }
+  
+  // 🆕 Atualizar botão de deletar
+  const deleteBtn = document.getElementById('delete-selected-btn');
+  if (deleteBtn) {
+    deleteBtn.disabled = selectedCount === 0;
+    deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
+  }
 
-    if (moveBtn) {
-      moveBtn.disabled = selectedCount === 0;
-      moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
-    }
-
-    console.log(`📊 Selected photos: ${selectedCount}`);
-  },
+  console.log(`📊 Selected photos: ${selectedCount}`);
+},
 
   // Atualizar checkbox "Select All"
   updateSelectAllCheckbox() {
@@ -471,29 +511,30 @@ const photoManager = {
   },
 
   // Criar modal fullscreen
-  createFullscreenModal() {
-    const fullscreenHTML = `
-      <div id="photo-fullscreen-modal" class="photo-fullscreen-modal" style="display: none;">
-        <div class="fullscreen-content">
-          <div class="fullscreen-header">
-            <h4 id="fullscreen-photo-name">Photo Name</h4>
-            <div class="fullscreen-controls">
-              <button class="btn btn-secondary" onclick="photoManager.closeFullscreen()">← Back</button>
-              <button class="btn btn-gold" onclick="photoManager.moveSinglePhoto()">📦 Move Photo</button>
-              <button class="fullscreen-close" onclick="photoManager.closeFullscreen()">&times;</button>
-            </div>
-          </div>
-          
-          <div class="fullscreen-image-container">
-            <img id="fullscreen-image" src="" alt="Photo" />
+createFullscreenModal() {
+  const fullscreenHTML = `
+    <div id="photo-fullscreen-modal" class="photo-fullscreen-modal" style="display: none;">
+      <div class="fullscreen-content">
+        <div class="fullscreen-header">
+          <h4 id="fullscreen-photo-name">Photo Name</h4>
+          <div class="fullscreen-controls">
+            <button class="btn btn-secondary" onclick="photoManager.closeFullscreen()">← Back</button>
+            <button class="btn btn-gold" onclick="photoManager.moveSinglePhoto()">📦 Move Photo</button>
+            <button class="btn btn-danger" onclick="photoManager.confirmDeleteCurrentPhoto()">🗑️ Delete Photo</button>
+            <button class="fullscreen-close" onclick="photoManager.closeFullscreen()">&times;</button>
           </div>
         </div>
+        
+        <div class="fullscreen-image-container">
+          <img id="fullscreen-image" src="" alt="Photo" />
+        </div>
       </div>
-    `;
+    </div>
+  `;
 
-    document.body.insertAdjacentHTML('beforeend', fullscreenHTML);
-    console.log('✅ Fullscreen modal created');
-  },
+  document.body.insertAdjacentHTML('beforeend', fullscreenHTML);
+  console.log('✅ Fullscreen modal created with delete button');
+},
 
   // Fechar modal da pasta
   closeFolderModal() {
@@ -896,7 +937,58 @@ const photoManager = {
 
     // Atualizar contador de selecionados
     this.updateSelectionCounter();
+  },
+
+  // ===== FUNÇÕES DELETE - PLACEHOLDER (SÓ VISUAL POR ENQUANTO) =====
+
+// Confirmar exclusão de pasta
+confirmDeleteFolder(folderId, folderName) {
+  console.log(`🗑️ [PLACEHOLDER] Delete folder requested: ${folderName} (${folderId})`);
+  showToast(`Delete folder feature coming soon!\nRequested: ${folderName}`, 'info');
+},
+
+// Confirmar exclusão de fotos selecionadas
+confirmDeleteSelectedPhotos() {
+  const selectedCount = this.selectedPhotos.size;
+  console.log(`🗑️ [PLACEHOLDER] Delete ${selectedCount} selected photos requested`);
+  
+  if (selectedCount === 0) {
+    showToast('Please select photos to delete', 'warning');
+    return;
   }
+  
+  showToast(`Delete ${selectedCount} photos feature coming soon!`, 'info');
+},
+
+// Confirmar exclusão de foto única
+confirmDeleteSinglePhoto(photoId) {
+  console.log(`🗑️ [PLACEHOLDER] Delete single photo requested: ${photoId}`);
+  showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
+},
+
+// Confirmar exclusão da foto atual (fullscreen)
+confirmDeleteCurrentPhoto() {
+  if (!this.currentFullscreenPhoto) {
+    showToast('No photo selected', 'error');
+    return;
+  }
+  
+  const photoId = this.currentFullscreenPhoto.id;
+  console.log(`🗑️ [PLACEHOLDER] Delete current photo requested: ${photoId}`);
+  showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
+},
+
+// Atualizar contador de botões delete (igual ao move)
+updateDeleteButtonsState() {
+  const selectedCount = this.selectedPhotos.size;
+  const deleteBtn = document.getElementById('delete-selected-btn');
+  
+  if (deleteBtn) {
+    deleteBtn.disabled = selectedCount === 0;
+    deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
+  }
+}
+
 };
 
 // Integração com o sistema existente
