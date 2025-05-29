@@ -27,4 +27,7 @@ router.get('/customers/:code/category-access', adminController.getCustomerCatego
 // Salvar configurações de acesso a categorias para um cliente
 router.post('/customers/:code/category-access', adminController.saveCustomerCategoryAccess);
 
+// NOVA ROTA: Movimentação de fotos
+router.post('/photos/move', adminController.movePhotos);
+
 module.exports = router;

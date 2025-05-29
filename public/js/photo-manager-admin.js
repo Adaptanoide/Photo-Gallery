@@ -763,39 +763,113 @@ const photoManager = {
 
   // NOVA FUNÇÃO: Executar movimentação (implementar API no próximo passo)
   async executeMovePhotos() {
-    console.log('🚀 Executing photo move...');
-    
-    showLoader();
-    
     try {
-      // PLACEHOLDER - implementar API no próximo passo
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simular delay
-      
-      hideLoader();
-      
-      showToast(
-        `Successfully moved ${this.photosToMove.size} photos to ${this.selectedDestinationFolder.name}!`, 
-        'success'
-      );
-      
-      // Fechar modal de movimentação
-      this.closeMoveModal();
-      
-      // Recarregar fotos da pasta atual
-      await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
-      
-      // Fechar fullscreen se estiver aberto
-      if (document.getElementById('photo-fullscreen-modal').style.display === 'flex') {
-        this.closeFullscreen();
+      console.log('🚀 Executing real photo move...');
+
+      if (!this.selectedDestinationFolder || !this.photosToMove || this.photosToMove.size === 0) {
+        showToast('Invalid move operation', 'error');
+        return;
       }
-      
+
+      const photoIds = Array.from(this.photosToMove);
+      const sourceFolderId = this.currentFolderId;
+      const destinationFolderId = this.selectedDestinationFolder.id;
+      const photoCount = photoIds.length;
+
+      console.log(`📦 Moving ${photoCount} photos:`);
+      console.log(`📂 From: ${sourceFolderId} → To: ${destinationFolderId}`);
+      console.log('📋 Photo IDs:', photoIds);
+
+      // Mostrar loading
+      const moveModal = document.getElementById('move-photos-modal');
+      const originalContent = moveModal.innerHTML;
+
+      moveModal.innerHTML = `
+      <div class="modal-content move-modal-content" style="text-align: center; padding: 40px;">
+        <div class="loading" style="font-size: 18px;">
+          <div style="margin-bottom: 20px;">🔄</div>
+          <div>Moving ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}...</div>
+          <div style="margin-top: 10px; font-size: 14px; color: #666;">
+            This may take a few moments
+          </div>
+        </div>
+      </div>
+    `;
+
+      try {
+        // Chamada real para a API
+        const response = await fetch('/api/admin/photos/move', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            photoIds: photoIds,
+            sourceFolderId: sourceFolderId,
+            destinationFolderId: destinationFolderId
+          })
+        });
+
+        const result = await response.json();
+
+        console.log('📡 API Response:', result);
+
+        if (result.success) {
+          // Sucesso - mostrar resultado
+          console.log(`✅ Successfully moved ${result.movedCount} photos`);
+
+          // Mostrar toast de sucesso
+          let successMessage = `Successfully moved ${result.movedCount} ${result.movedCount === 1 ? 'photo' : 'photos'}`;
+
+          if (result.errors && result.errors.length > 0) {
+            successMessage += ` (${result.errors.length} warnings)`;
+          }
+
+          showToast(successMessage, 'success');
+
+          // Se houve erros, mostrar detalhes no console
+          if (result.errors && result.errors.length > 0) {
+            console.warn('⚠️ Move warnings:', result.errors);
+          }
+
+          // Fechar modal de movimentação
+          this.closeMoveModal();
+
+          // Limpar seleções
+          this.photosToMove.clear();
+          this.selectedDestinationFolder = null;
+
+          // Recarregar fotos da pasta atual para refletir mudanças
+          console.log('🔄 Reloading current folder photos...');
+          await this.loadFolderPhotos(this.currentFolderId);
+
+        } else {
+          // Erro na API
+          console.error('❌ API Error:', result.message);
+
+          showToast(`Failed to move photos: ${result.message}`, 'error');
+
+          if (result.errors && result.errors.length > 0) {
+            console.error('❌ Detailed errors:', result.errors);
+          }
+
+          // Restaurar conteúdo do modal
+          moveModal.innerHTML = originalContent;
+        }
+
+      } catch (fetchError) {
+        console.error('❌ Network/Fetch Error:', fetchError);
+        showToast('Network error while moving photos', 'error');
+
+        // Restaurar conteúdo do modal
+        moveModal.innerHTML = originalContent;
+      }
+
     } catch (error) {
-      hideLoader();
-      console.error('❌ Error moving photos:', error);
-      showToast(`Error moving photos: ${error.message}`, 'error');
+      console.error('❌ Error in executeMovePhotos:', error);
+      showToast('Unexpected error while moving photos', 'error');
     }
   },
-
   // NOVA FUNÇÃO: Fechar modal de movimentação
   closeMoveModal() {
     console.log('🚪 Closing move modal');

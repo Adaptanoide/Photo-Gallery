@@ -472,6 +472,138 @@ class LocalStorageService {
       return null;
     }
   }
+
+    // Mover fotos entre categorias
+  async movePhotosToCategory(photoIds, sourceFolder, destinationFolder) {
+    const fs = require('fs').promises;
+    const path = require('path');
+    
+    try {
+      console.log(`🔄 Moving ${photoIds.length} photos between categories`);
+      console.log(`📂 From: ${sourceFolder.name} → To: ${destinationFolder.name}`);
+      
+      // Construir caminhos físicos
+      const sourcePath = path.join(this.photosPath, sourceFolder.relativePath);
+      const destinationPath = path.join(this.photosPath, destinationFolder.relativePath);
+      
+      console.log(`📁 Source path: ${sourcePath}`);
+      console.log(`📁 Destination path: ${destinationPath}`);
+      
+      // Verificar se pastas existem fisicamente
+      try {
+        await fs.access(sourcePath);
+        await fs.access(destinationPath);
+      } catch (error) {
+        throw new Error(`Folder path does not exist: ${error.message}`);
+      }
+      
+      // Garantir que pasta de destino existe
+      await fs.mkdir(destinationPath, { recursive: true });
+      
+      let movedCount = 0;
+      let errors = [];
+      
+      // Processar cada foto
+      for (const photoId of photoIds) {
+        try {
+          const fileName = `${photoId}.webp`;
+          const sourceFilePath = path.join(sourcePath, fileName);
+          const destinationFilePath = path.join(destinationPath, fileName);
+          
+          // Verificar se arquivo fonte existe
+          try {
+            await fs.access(sourceFilePath);
+          } catch {
+            console.warn(`⚠️ Photo not found: ${fileName}`);
+            errors.push(`Photo not found: ${fileName}`);
+            continue;
+          }
+          
+          // Verificar se arquivo destino já existe
+          try {
+            await fs.access(destinationFilePath);
+            console.warn(`⚠️ Photo already exists in destination: ${fileName}`);
+            errors.push(`Photo already exists in destination: ${fileName}`);
+            continue;
+          } catch {
+            // Arquivo não existe no destino - pode mover
+          }
+          
+          // Mover arquivo fisicamente (copiar + deletar)
+          await fs.copyFile(sourceFilePath, destinationFilePath);
+          await fs.unlink(sourceFilePath);
+          
+          movedCount++;
+          console.log(`✅ Moved photo: ${fileName}`);
+          
+        } catch (photoError) {
+          console.error(`❌ Error moving photo ${photoId}:`, photoError);
+          errors.push(`Error moving ${photoId}: ${photoError.message}`);
+        }
+      }
+      
+      if (movedCount > 0) {
+        // Atualizar índice com novos contadores
+        await this.updatePhotoCountsAfterMove(sourceFolder, destinationFolder, movedCount);
+        console.log(`📊 Updated photo counts: -${movedCount} from source, +${movedCount} to destination`);
+      }
+      
+      return {
+        success: true,
+        movedCount: movedCount,
+        totalRequested: photoIds.length,
+        errors: errors,
+        message: `Successfully moved ${movedCount} of ${photoIds.length} photos`
+      };
+      
+    } catch (error) {
+      console.error('❌ Error in movePhotosToCategory:', error);
+      return {
+        success: false,
+        movedCount: 0,
+        errors: [error.message],
+        message: `Failed to move photos: ${error.message}`
+      };
+    }
+  }
+
+  // Atualizar contadores de fotos após movimentação
+  async updatePhotoCountsAfterMove(sourceFolder, destinationFolder, movedCount) {
+    try {
+      console.log(`📊 Updating photo counts after moving ${movedCount} photos`);
+      
+      const index = await this.getIndex();
+      
+      // Encontrar e atualizar pasta origem
+      const sourceInIndex = this.findCategoryById(index, sourceFolder.id);
+      if (sourceInIndex) {
+        sourceInIndex.photoCount = Math.max(0, (sourceInIndex.photoCount || 0) - movedCount);
+        console.log(`📉 Source folder ${sourceFolder.name}: ${sourceInIndex.photoCount} photos remaining`);
+      }
+      
+      // Encontrar e atualizar pasta destino
+      const destinationInIndex = this.findCategoryById(index, destinationFolder.id);
+      if (destinationInIndex) {
+        destinationInIndex.photoCount = (destinationInIndex.photoCount || 0) + movedCount;
+        console.log(`📈 Destination folder ${destinationFolder.name}: ${destinationInIndex.photoCount} photos total`);
+      }
+      
+      // Atualizar timestamp do índice
+      index.lastUpdate = new Date().toISOString();
+      
+      // Salvar índice atualizado
+      await this.saveIndex(index);
+      
+      // Limpar cache para forçar recarregamento
+      this.clearCache();
+      
+      console.log('✅ Photo counts updated successfully');
+      
+    } catch (error) {
+      console.error('❌ Error updating photo counts:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new LocalStorageService();

@@ -322,3 +322,101 @@ exports.saveCustomerCategoryAccess = async (req, res) => {
     });
   }
 };
+
+// Movimentar fotos entre categorias
+exports.movePhotos = async function(req, res) {
+  try {
+    console.log('🔄 Starting photo move operation...');
+    
+    const { photoIds, sourceFolderId, destinationFolderId } = req.body;
+    
+    // Validações básicas
+    if (!photoIds || !Array.isArray(photoIds) || photoIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Photo IDs are required and must be an array'
+      });
+    }
+    
+    if (!sourceFolderId || !destinationFolderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source and destination folder IDs are required'
+      });
+    }
+    
+    if (sourceFolderId === destinationFolderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source and destination folders cannot be the same'
+      });
+    }
+    
+    console.log(`📦 Moving ${photoIds.length} photos from ${sourceFolderId} to ${destinationFolderId}`);
+    
+    // Obter índice e encontrar pastas
+    const index = await localStorageService.getIndex();
+    
+    const sourceFolder = localStorageService.findCategoryById(index, sourceFolderId);
+    const destinationFolder = localStorageService.findCategoryById(index, destinationFolderId);
+    
+    if (!sourceFolder) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source folder not found'
+      });
+    }
+    
+    if (!destinationFolder) {
+      return res.status(400).json({
+        success: false,
+        message: 'Destination folder not found'
+      });
+    }
+    
+    // Validar que não são pastas administrativas
+    const adminFolders = ['Waiting Payment', 'Sold'];
+    if (adminFolders.includes(destinationFolder.name)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot move photos to administrative folders'
+      });
+    }
+    
+    console.log(`📁 Source: ${sourceFolder.name} (${sourceFolder.relativePath})`);
+    console.log(`📁 Destination: ${destinationFolder.name} (${destinationFolder.relativePath})`);
+    
+    // Chamar função auxiliar do localStorageService
+    const result = await localStorageService.movePhotosToCategory(
+      photoIds, 
+      sourceFolder, 
+      destinationFolder
+    );
+    
+    if (result.success) {
+      console.log(`✅ Successfully moved ${result.movedCount} photos`);
+      
+      res.status(200).json({
+        success: true,
+        message: `Successfully moved ${result.movedCount} photos`,
+        movedCount: result.movedCount,
+        errors: result.errors || []
+      });
+    } else {
+      console.error('❌ Failed to move photos:', result.message);
+      
+      res.status(400).json({
+        success: false,
+        message: result.message,
+        errors: result.errors || []
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in movePhotos controller:', error);
+    res.status(500).json({
+      success: false,
+      message: `Server error: ${error.message}`
+    });
+  }
+};
