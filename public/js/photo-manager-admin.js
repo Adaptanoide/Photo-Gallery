@@ -1895,7 +1895,7 @@ const photoManager = {
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
-  // 🔧 SUBSTITUIR A FUNÇÃO startUpload() POR ESTA VERSÃO CORRIGIDA:
+  // 🔧 SUBSTITUIR APENAS A FUNÇÃO startUpload() POR ESTA VERSÃO SIMPLES:
 
   async startUpload() {
     let uploadBtn = null;
@@ -1904,70 +1904,30 @@ const photoManager = {
     try {
       console.log('🚀 Starting real photo upload...');
 
-      // 🔧 CORREÇÃO: Buscar dados se as variáveis foram perdidas
-      let destination = this.selectedUploadDestination;
-      let files = this.selectedFiles;
+      // 🔍 DEBUG das variáveis originais
+      console.log('🔍 DEBUG - this.selectedUploadDestination:', this.selectedUploadDestination);
+      console.log('🔍 DEBUG - this.selectedFiles:', this.selectedFiles);
 
-      // Se a variável foi perdida, buscar no sessionStorage
-      if (!destination) {
-        console.log('🔧 selectedUploadDestination was lost, searching in sessionStorage...');
-        const storedDestination = sessionStorage.getItem('uploadDestination');
-        if (storedDestination) {
-          destination = JSON.parse(storedDestination);
-          console.log('🔧 Recovered destination from sessionStorage:', destination);
-        }
+      // 🔧 CORREÇÃO SIMPLES: usar valores das variáveis ou alertar problema
+      const destination = this.selectedUploadDestination;
+      const files = this.selectedFiles;
+
+      if (!destination || !destination.id) {
+        console.log('❌ Destination not found, please select folder again');
+        showToast('Please select destination folder again', 'error');
+        // Voltar para step 1
+        document.getElementById('upload-step-1').style.display = 'block';
+        document.getElementById('upload-step-2').style.display = 'none';
+        return;
       }
 
-      // Se ainda não tem, buscar no DOM
-      if (!destination) {
-        console.log('🔧 Still no destination, searching in DOM...');
-        const selectedFolderElement = document.querySelector('.upload-folder-item.selected');
-        if (selectedFolderElement) {
-          destination = {
-            id: selectedFolderElement.dataset.folderId,
-            name: selectedFolderElement.dataset.folderName
-          };
-          console.log('🔧 Recovered destination from DOM:', destination);
-        }
-      }
-
-      // Se files foi perdido, buscar no DOM
       if (!files || files.length === 0) {
-        console.log('🔧 selectedFiles was lost, searching in DOM...');
-        const fileInputs = document.querySelectorAll('#file-upload-input');
-        if (fileInputs.length > 0) {
-          files = Array.from(fileInputs[0].files || []);
-          console.log('🔧 Recovered files from DOM:', files);
-        }
-      }
-
-      // 🔍 DEBUG: Verificar estado das variáveis
-      console.log('🔍 DEBUG - destination (original):', this.selectedUploadDestination);
-      console.log('🔍 DEBUG - destination (recovered):', destination);
-      console.log('🔍 DEBUG - files (original):', this.selectedFiles);
-      console.log('🔍 DEBUG - files (recovered):', files);
-      console.log('🔍 DEBUG - files length:', files ? files.length : 'undefined');
-
-      // Verificar se as variáveis estão definidas
-      if (!destination) {
-        console.log('❌ DEBUG - No destination found');
-        showToast('Destination folder not selected', 'error');
+        console.log('❌ No files selected');
+        showToast('Please select files to upload', 'error');
         return;
       }
 
-      if (!files) {
-        console.log('❌ DEBUG - No files found');
-        showToast('No files selected', 'error');
-        return;
-      }
-
-      if (files.length === 0) {
-        console.log('❌ DEBUG - Files array is empty');
-        showToast('No files in selection', 'error');
-        return;
-      }
-
-      console.log('✅ DEBUG - All validations passed, proceeding with upload');
+      console.log('✅ Validation passed - proceeding with upload');
 
       // Mostrar loading no botão
       uploadBtn = document.getElementById('start-upload-btn');
@@ -1982,15 +1942,12 @@ const photoManager = {
       formData.append('destinationFolderId', destination.id);
 
       console.log('📦 Adding files to FormData...');
-
-      // Adicionar todos os arquivos
       Array.from(files).forEach((file, index) => {
-        console.log(`📎 Adding file ${index + 1}: ${file.name} (${file.size} bytes)`);
+        console.log(`📎 File ${index + 1}: ${file.name} (${file.size} bytes)`);
         formData.append('photos', file);
       });
 
-      console.log(`📦 Uploading ${files.length} files to folder: ${destination.name}`);
-      console.log(`📁 Destination ID: ${destination.id}`);
+      console.log(`📦 Uploading ${files.length} files to: ${destination.name} (${destination.id})`);
 
       // Fazer upload
       console.log('📡 Sending upload request...');
@@ -1999,26 +1956,24 @@ const photoManager = {
         body: formData
       });
 
-      console.log(`📡 Upload response status: ${response.status}`);
+      console.log(`📡 Response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('📡 Error response text:', errorText);
-        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        console.log('📡 Error response:', errorText);
+        throw new Error(`Server error ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('📡 Upload result:', result);
+      console.log('📡 Server response:', result);
 
       if (result.success) {
-        console.log('✅ Upload successful:', result);
-
+        console.log('✅ Upload successful!');
         showToast(`Successfully uploaded ${result.uploadedCount} photos!`, 'success');
 
-        // Fechar modal e limpar
         this.closeUploadModal();
 
-        // Refresh da interface principal
+        // Refresh interface
         setTimeout(async () => {
           await this.loadStorageStats(true);
           await this.loadFolderStructure();
@@ -2027,20 +1982,12 @@ const photoManager = {
       } else {
         console.error('❌ Upload failed:', result);
         showToast(result.message || 'Upload failed', 'error');
-
-        // Mostrar erros se houver
-        if (result.errors && result.errors.length > 0) {
-          console.log('Upload errors:', result.errors);
-          const errorMessages = result.errors.map(e => `${e.originalName}: ${e.error}`).join('\n');
-          showToast(`Some files failed:\n${errorMessages}`, 'error');
-        }
       }
 
     } catch (error) {
       console.error('❌ Upload error:', error);
       showToast('Upload failed: ' + error.message, 'error');
     } finally {
-      // Restaurar botão
       if (uploadBtn && originalText) {
         uploadBtn.disabled = false;
         uploadBtn.textContent = originalText;
