@@ -34,4 +34,7 @@ router.post('/photos/move', adminController.movePhotos);
 router.post('/photos/delete', adminController.deletePhotos);
 router.post('/folders/delete', adminController.deleteFolder);
 
+// ROTA DE UPLOAD
+router.post('/photos/upload', adminController.uploadPhotos);
+
 module.exports = router;

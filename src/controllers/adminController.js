@@ -571,3 +571,141 @@ exports.deleteFolder = async function(req, res) {
     });
   }
 };
+
+// 🆕 ADICIONAR NO FINAL DO adminController.js
+
+const multer = require('multer');
+const sharp = require('sharp');
+const path = require('path');
+const fs = require('fs').promises;
+
+// Configurar Multer para upload em memória
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB por arquivo
+    files: 20 // Máximo 20 arquivos por vez
+  },
+  fileFilter: (req, file, cb) => {
+    // Aceitar apenas imagens
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido. Apenas JPG, PNG e WebP.'), false);
+    }
+  }
+});
+
+// Controller para upload de fotos
+exports.uploadPhotos = [
+  // Middleware Multer para múltiplos arquivos
+  upload.array('photos', 20),
+  
+  // Função principal
+  async (req, res) => {
+    try {
+      console.log('📁 Starting photo upload...');
+      
+      const { destinationFolderId } = req.body;
+      const files = req.files;
+      
+      // Validações básicas
+      if (!destinationFolderId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Destination folder ID is required'
+        });
+      }
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No files uploaded'
+        });
+      }
+      
+      console.log(`📦 Processing ${files.length} files for folder: ${destinationFolderId}`);
+      
+      // Processar cada arquivo
+      const results = [];
+      const errors = [];
+      
+      for (const file of files) {
+        try {
+          console.log(`🔄 Processing file: ${file.originalname}`);
+          
+          // Gerar ID único para a foto
+          const photoId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          
+          // Converter para WebP usando Sharp (mesma config do convert-local-to-webp.js)
+          const webpBuffer = await sharp(file.buffer)
+            .rotate() // Auto-rotação baseada em EXIF
+            .webp({ quality: 85 }) // Qualidade 85 (mesmo do sistema atual)
+            .toBuffer();
+          
+          // Salvar foto usando localStorageService
+          const saveResult = await localStorageService.savePhotoToFolder(
+            destinationFolderId,
+            photoId,
+            webpBuffer,
+            file.originalname
+          );
+          
+          if (saveResult.success) {
+            results.push({
+              originalName: file.originalname,
+              photoId: photoId,
+              size: webpBuffer.length,
+              saved: true
+            });
+            console.log(`✅ Successfully saved: ${file.originalname} as ${photoId}.webp`);
+          } else {
+            errors.push({
+              originalName: file.originalname,
+              error: saveResult.error
+            });
+            console.error(`❌ Failed to save: ${file.originalname} - ${saveResult.error}`);
+          }
+          
+        } catch (error) {
+          console.error(`❌ Error processing ${file.originalname}:`, error);
+          errors.push({
+            originalName: file.originalname,
+            error: error.message
+          });
+        }
+      }
+      
+      // Atualizar índice se pelo menos uma foto foi salva
+      if (results.length > 0) {
+        try {
+          await localStorageService.rebuildIndex();
+          console.log('📊 Index updated successfully');
+        } catch (error) {
+          console.error('⚠️ Warning: Failed to update index:', error);
+        }
+      }
+      
+      // Retornar resultado
+      const response = {
+        success: results.length > 0,
+        message: `Successfully uploaded ${results.length} of ${files.length} photos`,
+        uploadedCount: results.length,
+        errorCount: errors.length,
+        results: results,
+        errors: errors.length > 0 ? errors : undefined
+      };
+      
+      console.log(`📊 Upload completed: ${results.length} success, ${errors.length} errors`);
+      res.status(200).json(response);
+      
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error during upload: ' + error.message
+      });
+    }
+  }
+];

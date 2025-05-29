@@ -847,6 +847,94 @@ class LocalStorageService {
     }
   }
 
+  // 🆕 ADICIONAR NO FINAL DA CLASSE LocalStorageService
+
+  // Salvar foto em uma pasta específica
+  async savePhotoToFolder(folderId, photoId, buffer, originalName) {
+    try {
+      console.log(`💾 Saving photo ${photoId} to folder ${folderId}`);
+      
+      // Buscar informações da pasta no índice
+      const index = await this.getIndex();
+      const folder = await this.findFolderById(index, folderId);
+      
+      if (!folder) {
+        return {
+          success: false,
+          error: `Folder not found: ${folderId}`
+        };
+      }
+      
+      console.log(`📁 Target folder: ${folder.name} (${folder.relativePath})`);
+      
+      // Construir caminho da pasta
+      const folderPath = path.join(this.photosPath, folder.relativePath);
+      
+      // Garantir que a pasta existe
+      await fs.mkdir(folderPath, { recursive: true });
+      
+      // Caminho do arquivo
+      const filePath = path.join(folderPath, `${photoId}.webp`);
+      
+      // Verificar se já existe (evitar sobrescrever)
+      try {
+        await fs.access(filePath);
+        return {
+          success: false,
+          error: `Photo already exists: ${photoId}.webp`
+        };
+      } catch {
+        // Arquivo não existe, pode salvar
+      }
+      
+      // Salvar arquivo
+      await fs.writeFile(filePath, buffer);
+      
+      console.log(`✅ Photo saved: ${filePath}`);
+      
+      return {
+        success: true,
+        photoId: photoId,
+        filePath: filePath,
+        folderPath: folder.relativePath,
+        originalName: originalName
+      };
+      
+    } catch (error) {
+      console.error(`❌ Error saving photo ${photoId}:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  
+  // Função auxiliar para encontrar pasta por ID
+  async findFolderById(index, folderId) {
+    const searchInFolder = (folder) => {
+      if (folder.id === folderId) {
+        return folder;
+      }
+      
+      if (folder.children && folder.children.length > 0) {
+        for (const child of folder.children) {
+          const result = searchInFolder(child);
+          if (result) return result;
+        }
+      }
+      
+      return null;
+    };
+    
+    // Buscar em todas as pastas raiz
+    for (const folder of index.folders || []) {
+      const result = searchInFolder(folder);
+      if (result) return result;
+    }
+    
+    return null;
+  }
+
 }
 
 module.exports = new LocalStorageService();

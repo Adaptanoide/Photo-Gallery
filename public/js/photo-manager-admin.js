@@ -1662,7 +1662,7 @@ const photoManager = {
     if (!fileType || fileType === 'application/octet-stream') {
       fileType = this.getFileTypeFromExtension(file.name);
     }
-    
+
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(fileType)) {
       return {
@@ -1670,7 +1670,7 @@ const photoManager = {
         error: 'Invalid file type. Only JPG, PNG, and WebP are allowed.'
       };
     }
-    
+
     // Validar tamanho (máximo 10MB por arquivo)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
@@ -1679,7 +1679,7 @@ const photoManager = {
         error: `File too large (${this.formatFileSize(file.size)}). Maximum size is 10MB.`
       };
     }
-    
+
     // Validar se o arquivo não está vazio
     if (file.size === 0) {
       return {
@@ -1687,7 +1687,7 @@ const photoManager = {
         error: 'File is empty.'
       };
     }
-    
+
     // Validar nome do arquivo
     if (file.name.length > 100) {
       return {
@@ -1695,7 +1695,7 @@ const photoManager = {
         error: 'Filename too long. Maximum 100 characters.'
       };
     }
-    
+
     // Validar caracteres especiais no nome
     const invalidChars = /[<>:"/\\|?*]/g;
     if (invalidChars.test(file.name)) {
@@ -1704,7 +1704,7 @@ const photoManager = {
         error: 'Filename contains invalid characters.'
       };
     }
-    
+
     return { valid: true };
   },
 
@@ -1865,26 +1865,92 @@ const photoManager = {
 
   goBackToFolderSelection() {
     console.log('📁 Going back to folder selection...');
-    
+
     // Versão simples com confirm() nativo
     if (this.selectedFiles && this.selectedFiles.length > 0) {
       const keepFiles = confirm(
         `You have ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'photo' : 'photos'} selected.\n\nClick OK to keep them, or Cancel to start over.`
       );
-      
+
       if (!keepFiles) {
         this.clearSelectedFiles();
       }
     }
-    
+
     document.getElementById('upload-step-2').style.display = 'none';
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
   // Placeholder para início do upload
-  startUpload() {
-    console.log('🔺 [PLACEHOLDER] Start upload requested');
-    showToast('Upload functionality coming in next step!', 'info');
+  async startUpload() {
+    try {
+      console.log('🚀 Starting real photo upload...');
+
+      if (!this.selectedUploadDestination || !this.selectedFiles || this.selectedFiles.length === 0) {
+        showToast('No files selected or destination not chosen', 'error');
+        return;
+      }
+
+      // Mostrar loading no botão
+      const uploadBtn = document.getElementById('start-upload-btn');
+      const originalText = uploadBtn.textContent;
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '🔄 Uploading...';
+
+      // Preparar FormData
+      const formData = new FormData();
+      formData.append('destinationFolderId', this.selectedUploadDestination.id);
+
+      // Adicionar todos os arquivos
+      this.selectedFiles.forEach(file => {
+        formData.append('photos', file);
+      });
+
+      console.log(`📦 Uploading ${this.selectedFiles.length} files to folder: ${this.selectedUploadDestination.name}`);
+
+      // Fazer upload
+      const response = await fetch('/api/admin/photos/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('✅ Upload successful:', result);
+
+        showToast(`Successfully uploaded ${result.uploadedCount} photos!`, 'success');
+
+        // Fechar modal e limpar
+        this.closeUploadModal();
+
+        // Refresh da interface principal
+        await this.loadStorageStats(true);
+        await this.loadFolderStructure();
+
+      } else {
+        console.error('❌ Upload failed:', result);
+        showToast(result.message || 'Upload failed', 'error');
+
+        // Mostrar erros se houver
+        if (result.errors && result.errors.length > 0) {
+          console.log('Upload errors:', result.errors);
+          const errorMessages = result.errors.map(e => `${e.originalName}: ${e.error}`).join('\n');
+          showToast(`Some files failed:\n${errorMessages}`, 'error');
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      showToast('Upload failed: ' + error.message, 'error');
+    } finally {
+      // Restaurar botão
+      const uploadBtn = document.getElementById('start-upload-btn');
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = originalText;
+      }
+    }
   },
 
   // 🔧 SUBSTITUIR A FUNÇÃO closeUploadModal() POR ESTA VERSÃO MELHORADA:
