@@ -1,4 +1,4 @@
-// photo-manager-admin.js - THUMBNAILS + SELEÇÃO MÚLTIPLA
+// photo-manager-admin.js - MODAL DE MOVIMENTAÇÃO
 // Substitua completamente o arquivo existente
 
 const photoManager = {
@@ -9,6 +9,8 @@ const photoManager = {
   currentFolderId: null, // ID da pasta atual
   currentFolderName: '', // Nome da pasta atual
   viewMode: 'list', // 'list' ou 'thumbnails'
+  photosToMove: null, // Set de IDs das fotos a serem movidas
+  selectedDestinationFolder: null, // Pasta destino selecionada
 
   async init() {
     console.log('🚀 Initializing Photo Storage tab...');
@@ -285,7 +287,7 @@ const photoManager = {
     }
   },
 
-  // NOVA FUNÇÃO: Renderizar fotos (lista ou thumbnails)
+  // Renderizar fotos (lista ou thumbnails)
   renderPhotosInModal(photos) {
     console.log(`🎨 Rendering ${photos.length} photos in ${this.viewMode} mode`);
     
@@ -301,7 +303,7 @@ const photoManager = {
     this.updateSelectionCounter();
   },
 
-  // NOVA FUNÇÃO: Renderizar modo lista COM CHECKBOXES
+  // Renderizar modo lista COM CHECKBOXES
   renderListMode(photos, container) {
     console.log('📋 Rendering list mode with checkboxes');
     
@@ -333,7 +335,7 @@ const photoManager = {
     container.innerHTML = listHTML;
   },
 
-  // NOVA FUNÇÃO: Renderizar modo thumbnails COM CHECKBOXES
+  // Renderizar modo thumbnails COM CHECKBOXES
   renderThumbnailsMode(photos, container) {
     console.log('🖼️ Rendering thumbnails mode with checkboxes');
     
@@ -377,7 +379,7 @@ const photoManager = {
     container.innerHTML = thumbnailsHTML;
   },
 
-  // NOVA FUNÇÃO: Alternar seleção de foto individual
+  // Alternar seleção de foto individual
   togglePhotoSelection(photoId, selected) {
     console.log(`📋 Toggling photo selection: ${photoId} = ${selected}`);
     
@@ -401,7 +403,7 @@ const photoManager = {
     this.updateSelectAllCheckbox();
   },
 
-  // NOVA FUNÇÃO: Selecionar/desselecionar todas
+  // Selecionar/desselecionar todas
   toggleSelectAll(selectAll) {
     console.log(`📋 Toggle select all: ${selectAll}`);
     
@@ -428,7 +430,7 @@ const photoManager = {
     this.updateSelectionCounter();
   },
 
-  // NOVA FUNÇÃO: Atualizar contador de selecionados
+  // Atualizar contador de selecionados
   updateSelectionCounter() {
     const selectedCount = this.selectedPhotos.size;
     const moveBtn = document.getElementById('move-selected-btn');
@@ -441,7 +443,7 @@ const photoManager = {
     console.log(`📊 Selected photos: ${selectedCount}`);
   },
 
-  // NOVA FUNÇÃO: Atualizar checkbox "Select All"
+  // Atualizar checkbox "Select All"
   updateSelectAllCheckbox() {
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     if (selectAllCheckbox) {
@@ -534,7 +536,7 @@ const photoManager = {
     this.currentFullscreenPhoto = null;
   },
 
-  // PLACEHOLDER: Mover foto única (do fullscreen)
+  // NOVA FUNÇÃO: Mover foto única (do fullscreen)
   moveSinglePhoto() {
     if (!this.currentFullscreenPhoto) {
       showToast('No photo selected', 'error');
@@ -548,7 +550,7 @@ const photoManager = {
     this.openMoveModal(singlePhotoSet);
   },
 
-  // PLACEHOLDER: Mover fotos selecionadas
+  // NOVA FUNÇÃO: Mover fotos selecionadas
   moveSelectedPhotos() {
     if (this.selectedPhotos.size === 0) {
       showToast('Please select photos to move', 'warning');
@@ -559,10 +561,247 @@ const photoManager = {
     this.openMoveModal(this.selectedPhotos);
   },
 
-  // PLACEHOLDER: Abrir modal de movimentação (implementar no próximo passo)
-  openMoveModal(photosToMove) {
+  // NOVA FUNÇÃO: Abrir modal de movimentação
+  async openMoveModal(photosToMove) {
     console.log('📦 Opening move modal for photos:', Array.from(photosToMove));
-    showToast(`Move modal coming soon! Selected ${photosToMove.size} photos`, 'info');
+    
+    this.photosToMove = new Set(photosToMove);
+    this.selectedDestinationFolder = null;
+    
+    // Criar modal se não existir
+    if (!document.getElementById('photo-move-modal')) {
+      this.createMoveModal();
+    }
+    
+    // Atualizar título
+    document.getElementById('move-modal-title').textContent = 
+      `Move ${photosToMove.size} ${photosToMove.size === 1 ? 'Photo' : 'Photos'}`;
+    
+    // Mostrar de onde estão vindo
+    document.getElementById('move-source-folder').textContent = this.currentFolderName;
+    
+    // Mostrar modal
+    document.getElementById('photo-move-modal').style.display = 'flex';
+    
+    // Carregar estrutura de pastas para seleção
+    await this.loadFoldersForMove();
+  },
+
+  // NOVA FUNÇÃO: Criar modal de movimentação
+  createMoveModal() {
+    console.log('🏗️ Creating move modal...');
+    
+    const moveModalHTML = `
+      <div id="photo-move-modal" class="photo-move-modal" style="display: none;">
+        <div class="move-modal-content">
+          <div class="move-modal-header">
+            <h3 id="move-modal-title">Move Photos</h3>
+            <button class="move-modal-close" onclick="photoManager.closeMoveModal()">&times;</button>
+          </div>
+          
+          <div class="move-modal-body">
+            <div class="move-info">
+              <p><strong>From:</strong> <span id="move-source-folder"></span></p>
+              <p><strong>To:</strong> <span id="move-destination-folder" style="color: #666;">Select a destination folder below</span></p>
+            </div>
+            
+            <div class="move-folder-selection">
+              <h4>Select Destination Folder:</h4>
+              <div id="move-folders-loading" class="loading">Loading folders...</div>
+              <div id="move-folders-tree" style="display: none;">
+                <!-- Folder tree will be loaded here -->
+              </div>
+            </div>
+          </div>
+          
+          <div class="move-modal-footer">
+            <button class="btn btn-secondary" onclick="photoManager.closeMoveModal()">Cancel</button>
+            <button class="btn btn-gold" onclick="photoManager.confirmMovePhotos()" id="confirm-move-btn" disabled>📦 Move Photos</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', moveModalHTML);
+    console.log('✅ Move modal created');
+  },
+
+  // NOVA FUNÇÃO: Carregar pastas para movimentação
+  async loadFoldersForMove() {
+    console.log('📂 Loading folder structure for move...');
+    
+    const loadingDiv = document.getElementById('move-folders-loading');
+    const treeDiv = document.getElementById('move-folders-tree');
+    
+    loadingDiv.style.display = 'block';
+    treeDiv.style.display = 'none';
+    
+    try {
+      // Usar a estrutura já carregada
+      const foldersForMove = this.filterFoldersForMove(this.currentStructure);
+      
+      if (foldersForMove.length === 0) {
+        treeDiv.innerHTML = '<div class="empty-message">No available destination folders</div>';
+      } else {
+        this.renderMoveTree(foldersForMove, treeDiv);
+      }
+      
+      loadingDiv.style.display = 'none';
+      treeDiv.style.display = 'block';
+      
+    } catch (error) {
+      console.error('❌ Error loading folders for move:', error);
+      treeDiv.innerHTML = `<div class="error">Failed to load folders: ${error.message}</div>`;
+      loadingDiv.style.display = 'none';
+      treeDiv.style.display = 'block';
+    }
+  },
+
+  // NOVA FUNÇÃO: Filtrar pastas válidas para movimentação
+  filterFoldersForMove(folders) {
+    const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
+    
+    const filterRecursive = (folderList) => {
+      return folderList.filter(folder => {
+        // Excluir pastas administrativas
+        if (adminFoldersToExclude.includes(folder.name)) {
+          return false;
+        }
+        
+        // Excluir a pasta atual (não pode mover para ela mesma)
+        if (folder.id === this.currentFolderId) {
+          return false;
+        }
+        
+        // Filtrar filhos recursivamente
+        if (folder.children && folder.children.length > 0) {
+          folder.children = filterRecursive(folder.children);
+        }
+        
+        return true;
+      });
+    };
+    
+    return filterRecursive(folders);
+  },
+
+  // NOVA FUNÇÃO: Renderizar árvore de pastas para movimentação
+  renderMoveTree(folders, container, level = 0) {
+    container.innerHTML = '';
+    
+    folders.forEach(folder => {
+      const folderDiv = document.createElement('div');
+      folderDiv.className = 'move-folder-item';
+      folderDiv.style.paddingLeft = `${level * 20}px`;
+      
+      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
+      
+      folderDiv.innerHTML = `
+        <div class="move-folder-content" onclick="photoManager.selectDestinationFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" ${folder.isLeaf ? 'data-selectable="true"' : ''}>
+          <span class="move-folder-icon">${icon}</span>
+          <span class="move-folder-name">${folder.name}</span>
+          <span class="move-folder-count">${photoCount}</span>
+          ${folder.isLeaf ? '<span class="move-folder-action">Click to select</span>' : ''}
+        </div>
+      `;
+      
+      container.appendChild(folderDiv);
+      
+      // Renderizar filhos
+      if (folder.children && folder.children.length > 0) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'move-folder-children';
+        container.appendChild(childContainer);
+        this.renderMoveTree(folder.children, childContainer, level + 1);
+      }
+    });
+  },
+
+  // NOVA FUNÇÃO: Selecionar pasta destino
+  selectDestinationFolder(folderId, folderName) {
+    console.log(`📁 Selected destination folder: ${folderName} (${folderId})`);
+    
+    // Remover seleção anterior
+    document.querySelectorAll('.move-folder-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+    
+    // Adicionar seleção atual
+    event.currentTarget.closest('.move-folder-item').classList.add('selected');
+    
+    // Atualizar informações
+    this.selectedDestinationFolder = { id: folderId, name: folderName };
+    document.getElementById('move-destination-folder').textContent = folderName;
+    document.getElementById('move-destination-folder').style.color = 'var(--color-gold)';
+    
+    // Habilitar botão confirmar
+    document.getElementById('confirm-move-btn').disabled = false;
+  },
+
+  // NOVA FUNÇÃO: Confirmar movimentação
+  async confirmMovePhotos() {
+    if (!this.selectedDestinationFolder || !this.photosToMove || this.photosToMove.size === 0) {
+      showToast('Invalid move operation', 'error');
+      return;
+    }
+    
+    const photoCount = this.photosToMove.size;
+    const destinationName = this.selectedDestinationFolder.name;
+    
+    console.log(`📦 Confirming move of ${photoCount} photos to: ${destinationName}`);
+    
+    // Mostrar confirmação
+    showConfirm(
+      `Are you sure you want to move ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'} to "${destinationName}"?`,
+      async () => {
+        await this.executeMovePhotos();
+      },
+      'Confirm Move'
+    );
+  },
+
+  // NOVA FUNÇÃO: Executar movimentação (implementar API no próximo passo)
+  async executeMovePhotos() {
+    console.log('🚀 Executing photo move...');
+    
+    showLoader();
+    
+    try {
+      // PLACEHOLDER - implementar API no próximo passo
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simular delay
+      
+      hideLoader();
+      
+      showToast(
+        `Successfully moved ${this.photosToMove.size} photos to ${this.selectedDestinationFolder.name}!`, 
+        'success'
+      );
+      
+      // Fechar modal de movimentação
+      this.closeMoveModal();
+      
+      // Recarregar fotos da pasta atual
+      await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
+      
+      // Fechar fullscreen se estiver aberto
+      if (document.getElementById('photo-fullscreen-modal').style.display === 'flex') {
+        this.closeFullscreen();
+      }
+      
+    } catch (error) {
+      hideLoader();
+      console.error('❌ Error moving photos:', error);
+      showToast(`Error moving photos: ${error.message}`, 'error');
+    }
+  },
+
+  // NOVA FUNÇÃO: Fechar modal de movimentação
+  closeMoveModal() {
+    console.log('🚪 Closing move modal');
+    document.getElementById('photo-move-modal').style.display = 'none';
+    this.photosToMove = null;
+    this.selectedDestinationFolder = null;
   },
 
   async refreshStructure() {
