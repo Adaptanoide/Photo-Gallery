@@ -782,19 +782,50 @@ const photoManager = {
 
           showToast(`Successfully moved ${result.movedCount} ${result.movedCount === 1 ? 'photo' : 'photos'}`, 'success');
 
-          // Fechar modal e limpar seleções
+          // 🔧 CORREÇÃO: Verificar se variáveis existem antes de limpar
+          console.log('🧹 Cleaning up selections...');
+
+          // Fechar modal primeiro
           this.closeMoveModal();
-          this.photosToMove.clear();
-          this.selectedPhotos.clear();
+
+          // Limpar seleções com verificação de segurança
+          if (this.photosToMove && typeof this.photosToMove.clear === 'function') {
+            this.photosToMove.clear();
+            console.log('✅ photosToMove cleared');
+          }
+
+          if (this.selectedPhotos && typeof this.selectedPhotos.clear === 'function') {
+            this.selectedPhotos.clear();
+            console.log('✅ selectedPhotos cleared');
+          }
+
+          // Resetar variável
           this.selectedDestinationFolder = null;
+          console.log('✅ selectedDestinationFolder reset');
 
-          // 🎯 FORÇAR ATUALIZAÇÃO DA INTERFACE
+          // 🎯 ATUALIZAÇÃO DA INTERFACE
           console.log('🔄 Refreshing interface...');
-          await this.loadStorageStats(true); // forceReload = true
-          await this.loadFolderStructure();
-          await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
 
-          console.log('✅ Interface refreshed');
+          // Aguardar um pouco para garantir que modal fechou
+          setTimeout(async () => {
+            try {
+              await this.loadStorageStats(true); // forceReload = true
+              console.log('✅ Storage stats refreshed');
+
+              await this.loadFolderStructure();
+              console.log('✅ Folder structure refreshed');
+
+              // Só recarregar fotos se ainda estiver na mesma pasta
+              if (this.currentFolderId && this.currentFolderName) {
+                await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
+                console.log('✅ Folder photos refreshed');
+              }
+
+              console.log('✅ Interface refresh completed');
+            } catch (refreshError) {
+              console.error('❌ Error refreshing interface:', refreshError);
+            }
+          }, 500);
 
         } else {
           const errors = result.errors || [];
