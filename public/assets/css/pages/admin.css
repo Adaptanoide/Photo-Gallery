@@ -2612,3 +2612,368 @@
     font-size: 30px;
   }
 }
+
+/* ===== CSS PREVIEW DE ARQUIVOS - ADICIONAR AO FINAL DO admin.css ===== */
+
+/* Drag & Drop Zone Estados */
+.file-drop-zone.dragover {
+  border-color: #4caf50 !important;
+  background: #f1f8e9 !important;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  transform: scale(1.02);
+}
+
+/* Preview de arquivos selecionados */
+.selected-files-preview {
+  animation: slideInPreview 0.3s ease-out;
+}
+
+.files-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+  border-radius: 8px;
+  border: 1px solid #c3e6cb;
+}
+
+.files-summary h5 {
+  margin: 0;
+  color: #155724;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.files-summary p {
+  margin: 0;
+  color: #0f5132;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Grid de preview das fotos */
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.file-preview-item {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.file-preview-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  border-color: var(--color-gold);
+}
+
+.file-preview-image {
+  width: 100%;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f8f9fa;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.file-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.file-preview-image::before {
+  content: '📷';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.file-preview-info {
+  text-align: center;
+}
+
+.file-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.file-size {
+  font-size: 11px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* Botão remover arquivo */
+.file-remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.file-preview-item:hover .file-remove-btn {
+  opacity: 1;
+}
+
+.file-remove-btn:hover {
+  background: #dc3545;
+  transform: scale(1.1);
+}
+
+/* Progress bar melhorada */
+.upload-progress-bar {
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.upload-progress-fill {
+  background: linear-gradient(90deg, 
+    var(--color-gold) 0%, 
+    #ffc107 30%, 
+    #ffeb3b  60%, 
+    var(--color-gold) 100%);
+  position: relative;
+  transition: width 0.5s ease;
+}
+
+.upload-progress-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,255,255,0.4) 50%, 
+    transparent 100%);
+  animation: progressPulse 2s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+  0%, 100% { 
+    left: -100%; 
+  }
+  50% { 
+    left: 100%; 
+  }
+}
+
+/* Status do upload */
+.upload-status {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.upload-status p {
+  margin: 8px 0;
+  padding: 4px 0;
+}
+
+/* Scrollbar customizada para files-grid */
+.files-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.files-grid::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.files-grid::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.files-grid::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Animações */
+@keyframes slideInPreview {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+
+.file-preview-item {
+  animation: fadeInFileItem 0.3s ease-out;
+}
+
+@keyframes fadeInFileItem {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Hover states melhorados */
+.file-drop-zone:hover .drop-icon {
+  animation: bounceIcon 0.6s ease-in-out;
+}
+
+@keyframes bounceIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .files-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    max-height: 250px;
+  }
+  
+  .file-preview-image {
+    height: 100px;
+  }
+  
+  .files-summary {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .files-summary h5 {
+    font-size: 14px;
+  }
+  
+  .files-summary p {
+    font-size: 12px;
+  }
+  
+  .file-preview-item {
+    padding: 8px;
+  }
+  
+  .file-name {
+    font-size: 11px;
+  }
+  
+  .file-size {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .files-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    max-height: 200px;
+  }
+  
+  .file-preview-image {
+    height: 80px;
+  }
+  
+  .file-preview-item {
+    padding: 6px;
+  }
+  
+  .file-remove-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    opacity: 1; /* Sempre visível no mobile */
+  }
+  
+  .upload-progress-text {
+    font-size: 13px;
+  }
+}
+
+/* Estados especiais */
+.file-drop-zone:active {
+  transform: scale(0.98);
+}
+
+.upload-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-actions .btn:disabled:hover {
+  transform: none;
+}
+
+/* Indicadores visuais */
+.files-summary::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #28a745;
+  border-radius: 0 4px 4px 0;
+}
+
+.files-summary {
+  position: relative;
+}
+
+/* Melhorias no contraste */
+.file-preview-item:hover .file-name {
+  color: #0d47a1;
+}
+
+.file-preview-item:hover .file-size {
+  background: var(--color-gold);
+  color: white;
+}

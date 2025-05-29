@@ -21,6 +21,41 @@ const photoManager = {
     }
   },
 
+  // Verificar compatibilidade do navegador
+  checkBrowserCompatibility() {
+    const features = {
+      fileAPI: window.File && window.FileReader && window.FileList && window.Blob,
+      dragDrop: 'draggable' in document.createElement('div'),
+      formData: typeof FormData !== 'undefined',
+      fetch: typeof fetch !== 'undefined'
+    };
+    
+    const missingFeatures = Object.keys(features).filter(key => !features[key]);
+    
+    if (missingFeatures.length > 0) {
+      console.warn('⚠️ Browser compatibility issues:', missingFeatures);
+      showToast('Your browser might not support all upload features. Please use a modern browser.', 'warning');
+      return false;
+    }
+    
+    console.log('✅ Browser compatibility check passed');
+    return true;
+  },
+
+  // Função utilitária: Detectar tipo de arquivo por extensão (fallback)
+  getFileTypeFromExtension(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const typeMap = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'webp': 'image/webp',
+      'gif': 'image/gif'
+    };
+    
+    return typeMap[extension] || 'application/octet-stream';
+  },
+
   async loadStorageStats(forceReload = false) {
     try {
       console.log('📊 Loading storage stats...');
@@ -1327,14 +1362,19 @@ const photoManager = {
   // Abrir modal de upload
   openUploadModal() {
     console.log('🔺 Opening upload modal...');
-
+    
+    // Verificar compatibilidade do navegador
+    if (!this.checkBrowserCompatibility()) {
+      return;
+    }
+    
     if (!document.getElementById('photo-upload-modal')) {
       this.createUploadModal();
     }
-
+    
     // Carregar estrutura de pastas para seleção
     this.loadFoldersForUpload();
-
+    
     document.getElementById('photo-upload-modal').style.display = 'flex';
   },
 
@@ -1530,18 +1570,313 @@ const photoManager = {
     document.querySelector('.upload-selected-folder').style.display = 'block';
   },
 
-  // Ir para seleção de arquivos
+  // Ir para seleção de arquivos (versão completa)
   goToFileSelection() {
     console.log('📁 Going to file selection step...');
 
     document.getElementById('upload-step-1').style.display = 'none';
     document.getElementById('upload-step-2').style.display = 'block';
+
+    // 🆕 INICIALIZAR FUNCIONALIDADE DE UPLOAD
+    this.initializeFileUpload();
   },
 
-  // Voltar para seleção de pasta
+  // 🆕 INICIALIZAR sistema de upload de arquivos
+  initializeFileUpload() {
+    console.log('📎 Initializing file upload functionality...');
+
+    const fileInput = document.getElementById('photo-files-input');
+    const dropZone = document.querySelector('.file-drop-zone');
+
+    // Limpar seleções anteriores
+    this.selectedFiles = [];
+    this.updateFilePreview();
+
+    // Event listener para seleção de arquivos
+    fileInput.addEventListener('change', (e) => {
+      this.handleFileSelection(e.target.files);
+    });
+
+    // Event listeners para drag & drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      this.handleFileSelection(e.dataTransfer.files);
+    });
+
+    console.log('✅ File upload functionality initialized');
+  },
+
+  // 🆕 PROCESSAR arquivos selecionados
+  handleFileSelection(files) {
+    console.log(`📎 Processing ${files.length} selected files...`);
+
+    const validFiles = [];
+    const errors = [];
+
+    // Validar cada arquivo
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const validation = this.validateFile(file);
+
+      if (validation.valid) {
+        validFiles.push(file);
+        console.log(`✅ Valid file: ${file.name} (${this.formatFileSize(file.size)})`);
+      } else {
+        errors.push(`${file.name}: ${validation.error}`);
+        console.warn(`❌ Invalid file: ${file.name} - ${validation.error}`);
+      }
+    }
+
+    // Mostrar erros se houver
+    if (errors.length > 0) {
+      const errorMsg = `Some files were rejected:\n\n${errors.slice(0, 5).join('\n')}`;
+      showToast(errorMsg, 'warning');
+    }
+
+    // Adicionar arquivos válidos
+    if (validFiles.length > 0) {
+      this.selectedFiles = [...this.selectedFiles, ...validFiles];
+      this.updateFilePreview();
+
+      showToast(`Added ${validFiles.length} ${validFiles.length === 1 ? 'photo' : 'photos'}`, 'success');
+    }
+
+    console.log(`📊 Total selected files: ${this.selectedFiles.length}`);
+  },
+
+  // 🆕 VALIDAR arquivo individual
+  validateFile(file) {
+    // Validar tipo de arquivo (com fallback para extensão)
+    let fileType = file.type;
+    if (!fileType || fileType === 'application/octet-stream') {
+      fileType = this.getFileTypeFromExtension(file.name);
+    }
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(fileType)) {
+      return {
+        valid: false,
+        error: 'Invalid file type. Only JPG, PNG, and WebP are allowed.'
+      };
+    }
+    
+    // Validar tamanho (máximo 10MB por arquivo)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return {
+        valid: false,
+        error: `File too large (${this.formatFileSize(file.size)}). Maximum size is 10MB.`
+      };
+    }
+    
+    // Validar se o arquivo não está vazio
+    if (file.size === 0) {
+      return {
+        valid: false,
+        error: 'File is empty.'
+      };
+    }
+    
+    // Validar nome do arquivo
+    if (file.name.length > 100) {
+      return {
+        valid: false,
+        error: 'Filename too long. Maximum 100 characters.'
+      };
+    }
+    
+    // Validar caracteres especiais no nome
+    const invalidChars = /[<>:"/\\|?*]/g;
+    if (invalidChars.test(file.name)) {
+      return {
+        valid: false,
+        error: 'Filename contains invalid characters.'
+      };
+    }
+    
+    return { valid: true };
+  },
+
+  // 🆕 ATUALIZAR preview de arquivos selecionados
+  updateFilePreview() {
+    const previewContainer = document.getElementById('selected-files-preview');
+    const uploadActions = document.querySelector('.upload-actions');
+    const startUploadBtn = document.getElementById('start-upload-btn');
+
+    if (this.selectedFiles.length === 0) {
+      previewContainer.style.display = 'none';
+      uploadActions.style.display = 'none';
+      return;
+    }
+
+    // Mostrar preview
+    previewContainer.style.display = 'block';
+    uploadActions.style.display = 'flex';
+
+    // Calcular estatísticas
+    const totalSize = this.selectedFiles.reduce((sum, file) => sum + file.size, 0);
+    const totalSizeFormatted = this.formatFileSize(totalSize);
+
+    // Gerar HTML do preview
+    const previewHTML = `
+    <div class="files-summary">
+      <h5>📸 Selected Photos (${this.selectedFiles.length})</h5>
+      <p>Total size: ${totalSizeFormatted}</p>
+      <button class="btn btn-secondary btn-sm" onclick="photoManager.clearSelectedFiles()">Clear All</button>
+    </div>
+    
+    <div class="files-grid">
+      ${this.selectedFiles.map((file, index) => `
+        <div class="file-preview-item" data-index="${index}">
+          <div class="file-preview-image">
+            <img src="${URL.createObjectURL(file)}" alt="${file.name}" 
+                 onload="this.style.opacity=1" style="opacity:0; transition: opacity 0.3s ease;">
+          </div>
+          <div class="file-preview-info">
+            <div class="file-name">${this.truncateFileName(file.name, 20)}</div>
+            <div class="file-size">${this.formatFileSize(file.size)}</div>
+          </div>
+          <button class="file-remove-btn" onclick="photoManager.removeFile(${index})" title="Remove file">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+    previewContainer.innerHTML = previewHTML;
+
+    // Atualizar botão de upload
+    startUploadBtn.textContent = `🔺 Upload ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'Photo' : 'Photos'}`;
+
+    console.log(`📊 Preview updated: ${this.selectedFiles.length} files (${totalSizeFormatted})`);
+  },
+
+  // 🆕 REMOVER arquivo específico
+  removeFile(index) {
+    console.log(`🗑️ Removing file at index: ${index}`);
+
+    if (index >= 0 && index < this.selectedFiles.length) {
+      const removedFile = this.selectedFiles[index];
+      this.selectedFiles.splice(index, 1);
+
+      console.log(`✅ Removed file: ${removedFile.name}`);
+
+      this.updateFilePreview();
+      showToast(`Removed ${removedFile.name}`, 'info');
+    }
+  },
+
+  // 🆕 LIMPAR todos os arquivos selecionados
+  clearSelectedFiles() {
+    console.log('🧹 Clearing all selected files...');
+
+    this.selectedFiles = [];
+    this.updateFilePreview();
+
+    // Limpar input de arquivo
+    const fileInput = document.getElementById('photo-files-input');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    showToast('All files cleared', 'info');
+  },
+
+  // 🆕 FORMATEAR tamanho de arquivo
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+
+  // 🆕 TRUNCAR nome de arquivo
+  truncateFileName(fileName, maxLength) {
+    if (fileName.length <= maxLength) return fileName;
+
+    const extension = fileName.split('.').pop();
+    const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+    const truncatedName = nameWithoutExt.substring(0, maxLength - extension.length - 4) + '...';
+
+    return truncatedName + '.' + extension;
+  },
+
+  // 🔧 ATUALIZAR função startUpload para verificar arquivos
+  startUpload() {
+    if (!this.selectedUploadFolder) {
+      showToast('Please select a destination folder first', 'error');
+      return;
+    }
+
+    if (!this.selectedFiles || this.selectedFiles.length === 0) {
+      showToast('Please select photos to upload', 'error');
+      return;
+    }
+
+    console.log(`🔺 Starting upload of ${this.selectedFiles.length} files to: ${this.selectedUploadFolder.name}`);
+
+    // Ir para step 3 (progress)
+    document.getElementById('upload-step-2').style.display = 'none';
+    document.getElementById('upload-step-3').style.display = 'block';
+
+    // 🆕 INICIAR upload real (será implementado no próximo passo)
+    this.executeUpload();
+  },
+
+  // 🆕 PLACEHOLDER para upload real (próximo passo)
+  async executeUpload() {
+    console.log('🔺 [PLACEHOLDER] Executing upload...');
+
+    // Simular progress por enquanto
+    const progressFill = document.getElementById('upload-progress-fill');
+    const progressText = document.getElementById('upload-progress-text');
+    const statusDiv = document.getElementById('upload-status');
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      progressFill.style.width = `${progress}%`;
+      progressText.textContent = `Uploading... ${progress}%`;
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        progressText.textContent = 'Upload completed!';
+        statusDiv.innerHTML = '<p style="color: #28a745; font-weight: 500;">✅ Upload functionality will be implemented in the next step!</p>';
+
+        setTimeout(() => {
+          showToast('Upload simulation completed! Real upload coming in next step.', 'success');
+        }, 1000);
+      }
+    }, 300);
+  },
+
   goBackToFolderSelection() {
     console.log('📁 Going back to folder selection...');
-
+    
+    // Versão simples com confirm() nativo
+    if (this.selectedFiles && this.selectedFiles.length > 0) {
+      const keepFiles = confirm(
+        `You have ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'photo' : 'photos'} selected.\n\nClick OK to keep them, or Cancel to start over.`
+      );
+      
+      if (!keepFiles) {
+        this.clearSelectedFiles();
+      }
+    }
+    
     document.getElementById('upload-step-2').style.display = 'none';
     document.getElementById('upload-step-1').style.display = 'block';
   },
@@ -1552,22 +1887,102 @@ const photoManager = {
     showToast('Upload functionality coming in next step!', 'info');
   },
 
-  // Fechar modal de upload
+  // 🔧 SUBSTITUIR A FUNÇÃO closeUploadModal() POR ESTA VERSÃO MELHORADA:
+
+  // Fechar modal de upload (versão com limpeza completa)
   closeUploadModal() {
-    console.log('🚪 Closing upload modal');
+    console.log('🚪 Closing upload modal with full cleanup...');
 
     const modal = document.getElementById('photo-upload-modal');
     if (modal) {
       modal.style.display = 'none';
 
-      // Reset modal state
-      document.getElementById('upload-step-1').style.display = 'block';
-      document.getElementById('upload-step-2').style.display = 'none';
-      document.getElementById('upload-step-3').style.display = 'none';
-      document.querySelector('.upload-selected-folder').style.display = 'none';
+      // 🧹 LIMPEZA COMPLETA
+      this.resetUploadModal();
+    }
+  },
 
-      // Clear selections
-      this.selectedUploadFolder = null;
+  // 🆕 RESET completo do modal de upload
+  resetUploadModal() {
+    console.log('🧹 Performing full upload modal reset...');
+
+    // Reset visual state
+    document.getElementById('upload-step-1').style.display = 'block';
+    document.getElementById('upload-step-2').style.display = 'none';
+    document.getElementById('upload-step-3').style.display = 'none';
+    document.querySelector('.upload-selected-folder').style.display = 'none';
+
+    // Clear selections
+    this.selectedUploadFolder = null;
+
+    // 🧹 LIMPAR arquivos selecionados e liberar memória
+    if (this.selectedFiles && this.selectedFiles.length > 0) {
+      // Liberar URLs dos objetos criados (importante para evitar vazamentos de memória)
+      this.selectedFiles.forEach(file => {
+        const img = document.querySelector(`img[src^="blob:"][alt="${file.name}"]`);
+        if (img && img.src.startsWith('blob:')) {
+          URL.revokeObjectURL(img.src);
+        }
+      });
+    }
+
+    this.selectedFiles = [];
+
+    // Limpar input de arquivo
+    const fileInput = document.getElementById('photo-files-input');
+    if (fileInput) {
+      fileInput.value = '';
+
+      // Remover event listeners antigos para evitar duplicação
+      const newFileInput = fileInput.cloneNode(true);
+      fileInput.parentNode.replaceChild(newFileInput, fileInput);
+    }
+
+    // Reset folder selections
+    document.querySelectorAll('.upload-folder-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+
+    // Reset progress
+    const progressFill = document.getElementById('upload-progress-fill');
+    const progressText = document.getElementById('upload-progress-text');
+    const statusDiv = document.getElementById('upload-status');
+
+    if (progressFill) progressFill.style.width = '0%';
+    if (progressText) progressText.textContent = 'Preparing upload...';
+    if (statusDiv) statusDiv.innerHTML = '';
+
+    console.log('✅ Upload modal reset completed');
+  },
+
+  // 🔧 MODIFICAR TAMBÉM A FUNÇÃO goBackToFolderSelection() PARA LIMPAR ARQUIVOS:
+
+  // Voltar para seleção de pasta (versão com limpeza)
+  goBackToFolderSelection() {
+    console.log('📁 Going back to folder selection...');
+
+    // Confirmar se quer manter os arquivos selecionados
+    if (this.selectedFiles && this.selectedFiles.length > 0) {
+      showConfirm(
+        `You have ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'photo' : 'photos'} selected.\n\nDo you want to keep them or start over?`,
+        () => {
+          // Manter arquivos - apenas voltar
+          document.getElementById('upload-step-2').style.display = 'none';
+          document.getElementById('upload-step-1').style.display = 'block';
+        },
+        () => {
+          // Limpar tudo e voltar
+          this.clearSelectedFiles();
+          document.getElementById('upload-step-2').style.display = 'none';
+          document.getElementById('upload-step-1').style.display = 'block';
+        },
+        'Keep Files',
+        'Start Over'
+      );
+    } else {
+      // Sem arquivos - voltar diretamente
+      document.getElementById('upload-step-2').style.display = 'none';
+      document.getElementById('upload-step-1').style.display = 'block';
     }
   }
 
