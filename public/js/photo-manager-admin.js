@@ -1897,8 +1897,7 @@ const photoManager = {
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
-  // 🔧 MODIFICAR A FUNÇÃO startUpload PARA VALIDAR ID:
-
+// 🔧 SUBSTITUIR A FUNÇÃO startUpload() EXISTENTE POR ESTA VERSÃO MELHORADA:
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
@@ -1923,55 +1922,58 @@ const photoManager = {
         return;
       }
 
-      // 🆕 VALIDAR ID DA PASTA ANTES DO UPLOAD
-      console.log('🔍 Validating destination folder...');
-      const validation = await this.validateFolderId(destination.id, destination.name);
-
-      let actualFolderId = destination.id;
-
-      if (!validation.valid && validation.newFolderId) {
-        console.log(`🔄 Folder ID changed: ${destination.id} → ${validation.newFolderId}`);
-        actualFolderId = validation.newFolderId;
-
-        // Atualizar a variável para próximas operações
-        this.selectedUploadDestination.id = validation.newFolderId;
-
-        showToast(`Folder ID updated automatically`, 'info');
-      } else if (!validation.valid) {
-        showToast('Destination folder not found. Please refresh and try again.', 'error');
-        return;
-      }
-
       console.log('✅ Validation passed - proceeding with upload');
+
+      // 🆕 MELHOR FEEDBACK VISUAL
+      const fileCount = files.length;
+      const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+      const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+      
+      // Mostrar toast de início
+      showToast(`Starting upload of ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'} (${totalSizeMB}MB) to "${destination.name}"...`, 'info');
 
       // Mostrar loading no botão
       uploadBtn = document.getElementById('start-upload-btn');
       if (uploadBtn) {
         originalText = uploadBtn.textContent;
         uploadBtn.disabled = true;
-        uploadBtn.textContent = '🔄 Uploading...';
+        uploadBtn.textContent = `🔄 Uploading ${fileCount} photos...`;
       }
 
-      // Preparar FormData com ID validado
+      // 🆕 ADICIONAR CLASSE DE LOADING NA PASTA DESTINO
+      this.markFolderAsUploading(destination.id, destination.name, fileCount);
+
+      // Preparar FormData
       const formData = new FormData();
-      formData.append('destinationFolderId', actualFolderId);
+      formData.append('destinationFolderId', destination.id);
 
       console.log('📦 Adding files to FormData...');
       Array.from(files).forEach((file, index) => {
-        console.log(`📎 File ${index + 1}: ${file.name} (${file.size} bytes)`);
+        console.log(`📎 File ${index + 1}: ${file.name} (${this.formatFileSize(file.size)})`);
         formData.append('photos', file);
       });
 
-      console.log(`📦 Uploading ${files.length} files to: ${destination.name} (${actualFolderId})`);
+      console.log(`📦 Uploading ${fileCount} files to: ${destination.name} (${destination.id})`);
+
+      // 🆕 FEEDBACK DURANTE UPLOAD
+      const uploadStartTime = Date.now();
+      
+      // Toast com estimativa de tempo para arquivos grandes
+      if (totalSizeMB > 5) {
+        showToast(`Large files detected (${totalSizeMB}MB). This may take a few minutes...`, 'info');
+      }
 
       // Fazer upload
       console.log('📡 Sending upload request...');
+      showToast('📡 Sending files to server...', 'info');
+      
       const response = await fetch('/api/admin/photos/upload', {
         method: 'POST',
         body: formData
       });
 
-      console.log(`📡 Response status: ${response.status}`);
+      const uploadDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
+      console.log(`📡 Response status: ${response.status} (took ${uploadDuration}s)`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -1982,22 +1984,59 @@ const photoManager = {
       const result = await response.json();
       console.log('📡 Server response:', result);
 
-      if (result.success) {
+      if (result.success && result.uploadedCount > 0) {
         console.log('✅ Upload successful!');
-        showToast(`Successfully uploaded ${result.uploadedCount} photos!`, 'success');
+        
+        // 🆕 FEEDBACK DETALHADO DE SUCESSO
+        const successMsg = `✅ Successfully uploaded ${result.uploadedCount} ${result.uploadedCount === 1 ? 'photo' : 'photos'} to "${destination.name}" in ${uploadDuration}s`;
+        showToast(successMsg, 'success');
 
-        this.closeUploadModal();
+        // 🆕 MOSTRAR PROGRESSO DE ATUALIZAÇÃO
+        showToast('📊 Updating folder structure...', 'info');
+        
+        // 🆕 NÃO FECHAR MODAL IMEDIATAMENTE - mostrar progresso
+        const modal = document.getElementById('photo-upload-modal');
+        if (modal) {
+          // Ir para step de progresso/conclusão
+          document.getElementById('upload-step-2').style.display = 'none';
+          document.getElementById('upload-step-3').style.display = 'block';
+          
+          // Mostrar progresso de atualização
+          const progressText = document.getElementById('upload-progress-text');
+          const progressFill = document.getElementById('upload-progress-fill');
+          const statusDiv = document.getElementById('upload-status');
+          
+          if (progressText) progressText.textContent = 'Upload completed! Updating interface...';
+          if (progressFill) progressFill.style.width = '100%';
+          if (statusDiv) {
+            statusDiv.innerHTML = `
+              <div style="color: #28a745; margin: 15px 0;">
+                <strong>✅ Upload Successful!</strong><br>
+                ${result.uploadedCount} ${result.uploadedCount === 1 ? 'photo' : 'photos'} uploaded to "${destination.name}"
+              </div>
+              <div style="color: #6c757d;">
+                📊 Updating folder index... <span class="loading-dots">●●●</span>
+              </div>
+            `;
+          }
+        }
 
-        // Refresh interface
-        setTimeout(async () => {
-          await this.loadStorageStats(true);
-          await this.loadFolderStructure();
-        }, 1000);
+        // 🆕 ATUALIZAR INTERFACE DE FORMA MAIS SUAVE
+        this.updateInterfaceAfterUpload(destination, result.uploadedCount);
 
       } else {
         console.error('❌ Upload failed:', result);
-        showToast(result.message || 'Upload failed', 'error');
-
+        
+        // 🆕 FEEDBACK DE ERRO MAIS DETALHADO
+        let errorMsg = 'Upload failed';
+        if (result.uploadedCount === 0 && result.errorCount > 0) {
+          errorMsg = `Upload failed: ${result.errors[0]?.error || 'Unknown error'}`;
+        } else if (result.uploadedCount > 0 && result.errorCount > 0) {
+          errorMsg = `Partial success: ${result.uploadedCount} uploaded, ${result.errorCount} errors`;
+        }
+        
+        showToast(errorMsg, 'error');
+        
         // Mostrar erros detalhados se houver
         if (result.errors && result.errors.length > 0) {
           console.log('📋 Upload errors:', result.errors);
@@ -2009,8 +2048,28 @@ const photoManager = {
 
     } catch (error) {
       console.error('❌ Upload error:', error);
-      showToast('Upload failed: ' + error.message, 'error');
+      
+      // 🆕 FEEDBACK DE ERRO DE REDE MAIS CLARO
+      let errorMsg = 'Upload failed: ';
+      if (error.message.includes('500')) {
+        errorMsg += 'Server error. Please try again.';
+      } else if (error.message.includes('413')) {
+        errorMsg += 'Files too large. Try smaller files.';
+      } else if (error.message.includes('timeout')) {
+        errorMsg += 'Upload timeout. Try fewer files at once.';
+      } else {
+        errorMsg += error.message;
+      }
+      
+      showToast(errorMsg, 'error');
+      
     } finally {
+      // 🆕 SEMPRE REMOVER LOADING STATE DA PASTA
+      if (this.selectedUploadDestination) {
+        this.unmarkFolderAsUploading(this.selectedUploadDestination.id);
+      }
+      
+      // Restaurar botão
       if (uploadBtn && originalText) {
         uploadBtn.disabled = false;
         uploadBtn.textContent = originalText;
@@ -2170,6 +2229,132 @@ const photoManager = {
     return searchRecursive(this.currentStructure);
   },
 
+  // 🆕 MARCAR PASTA COMO "UPLOADANDO"
+  markFolderAsUploading(folderId, folderName, fileCount) {
+    console.log(`🔄 Marking folder as uploading: ${folderName} (${fileCount} files)`);
+    
+    // Encontrar elemento da pasta na árvore
+    const folderElements = document.querySelectorAll('.folder-item');
+    folderElements.forEach(element => {
+      const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
+      if (viewButton) {
+        // Adicionar classe de loading
+        element.classList.add('folder-uploading');
+        
+        // Substituir contador de fotos por loading
+        const countSpan = element.querySelector('.folder-count');
+        if (countSpan) {
+          countSpan.dataset.originalText = countSpan.textContent;
+          countSpan.innerHTML = `<span class="upload-loading">📤 Uploading ${fileCount}...</span>`;
+        }
+        
+        // Desabilitar botão de visualização temporariamente  
+        const eyeButton = element.querySelector('.view-btn');
+        if (eyeButton) {
+          eyeButton.disabled = true;
+          eyeButton.style.opacity = '0.5';
+          eyeButton.title = 'Upload in progress...';
+        }
+      }
+    });
+  },
+
+  // 🆕 REMOVER LOADING STATE DA PASTA
+  unmarkFolderAsUploading(folderId) {
+    console.log(`✅ Removing upload loading state from folder: ${folderId}`);
+    
+    const folderElements = document.querySelectorAll('.folder-item.folder-uploading');
+    folderElements.forEach(element => {
+      const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
+      if (viewButton) {
+        // Remover classe de loading
+        element.classList.remove('folder-uploading');
+        
+        // Restaurar contador (será atualizado depois)
+        const countSpan = element.querySelector('.folder-count');
+        if (countSpan && countSpan.dataset.originalText) {
+          countSpan.textContent = countSpan.dataset.originalText;
+          delete countSpan.dataset.originalText;
+        }
+        
+        // Reabilitar botão de visualização
+        const eyeButton = element.querySelector('.view-btn');
+        if (eyeButton) {
+          eyeButton.disabled = false;
+          eyeButton.style.opacity = '1';
+          eyeButton.title = 'View Photos';
+        }
+      }
+    });
+  },
+
+  // 🆕 ATUALIZAÇÃO MAIS SUAVE DA INTERFACE
+  async updateInterfaceAfterUpload(destination, uploadedCount) {
+    try {
+      console.log('🔄 Starting gradual interface update...');
+      
+      // PASSO 1: Atualizar estatísticas gerais (rápido)
+      showToast('📊 Updating statistics...', 'info');
+      await this.loadStorageStats(true);
+      
+      // PASSO 2: Aguardar um pouco para o backend processar
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // PASSO 3: Atualizar estrutura de pastas (pode demorar)
+      showToast('📂 Updating folder structure...', 'info');
+      await this.loadFolderStructure();
+      
+      // PASSO 4: Feedback final
+      showToast(`✅ Interface updated! ${destination.name} now shows ${uploadedCount} new ${uploadedCount === 1 ? 'photo' : 'photos'}`, 'success');
+      
+      // PASSO 5: Fechar modal após tudo pronto
+      setTimeout(() => {
+        this.closeUploadModal();
+      }, 1500);
+      
+      console.log('✅ Interface update completed');
+      
+    } catch (error) {
+      console.error('❌ Error updating interface:', error);
+      showToast('Interface update failed. Please refresh the page.', 'warning');
+      
+      // Fechar modal mesmo com erro
+      setTimeout(() => {
+        this.closeUploadModal();
+      }, 2000);
+    }
+  },
+
+  // 🆕 VALIDAR SE ID DA PASTA AINDA EXISTE
+  async validateFolderId(folderId, folderName) {
+    try {
+      console.log(`🔍 Validating folder ID: ${folderId} (${folderName})`);
+
+      // Fazer uma requisição rápida para verificar se a pasta existe
+      const response = await fetch(`/api/photos?category_id=${folderId}&limit=1`);
+
+      if (response.ok) {
+        const photos = await response.json();
+        console.log(`✅ Folder ID validated: ${folderId}`);
+        return { valid: true, folderId: folderId };
+      } else {
+        console.log(`⚠️ Folder ID may have changed: ${folderId}`);
+
+        // Tentar encontrar a pasta na estrutura atual
+        const currentFolder = this.findFolderByName(folderName);
+        if (currentFolder) {
+          console.log(`🔄 Found folder with new ID: ${currentFolder.id}`);
+          return { valid: false, newFolderId: currentFolder.id, oldFolderId: folderId };
+        }
+      }
+
+      return { valid: false };
+
+    } catch (error) {
+      console.error('Error validating folder ID:', error);
+      return { valid: false };
+    }
+  },
 };
 
 // Integração com o sistema existente

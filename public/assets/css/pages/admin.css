@@ -2977,3 +2977,117 @@
   background: var(--color-gold);
   color: white;
 }
+
+/* ===== CSS PARA ESTADOS DE UPLOAD - ADICIONAR AO FINAL DO admin.css ===== */
+
+/* Pasta em estado de upload */
+.folder-item.folder-uploading {
+  background: linear-gradient(90deg, #fff3cd, #ffffff, #fff3cd);
+  background-size: 200% 100%;
+  animation: uploadPulse 2s ease-in-out infinite;
+  border-left: 4px solid #ffc107;
+  position: relative;
+}
+
+.folder-item.folder-uploading::before {
+  content: "📤";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  animation: uploadBounce 1s ease-in-out infinite;
+}
+
+/* Animação de upload pulse */
+@keyframes uploadPulse {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Animação do ícone de upload */
+@keyframes uploadBounce {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.2); }
+}
+
+/* Texto de loading do upload */
+.upload-loading {
+  color: #856404;
+  font-weight: 500;
+  font-size: 12px;
+  animation: loadingDots 1.5s infinite;
+}
+
+/* Loading dots animados */
+.loading-dots {
+  animation: loadingDots 1.5s infinite;
+}
+
+@keyframes loadingDots {
+  0%, 20% { opacity: 0; }
+  50% { opacity: 1; }
+  80%, 100% { opacity: 0; }
+}
+
+/* Modal de upload - step 3 melhorado */
+.upload-progress-container {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.upload-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.upload-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.upload-progress-text {
+  font-weight: 500;
+  color: #495057;
+  text-align: center;
+}
+
+.upload-status {
+  text-align: center;
+  margin-top: 15px;
+}
+
+/* Botões desabilitados durante upload */
+.folder-item.folder-uploading .view-btn:disabled {
+  background: #6c757d !important;
+  cursor: not-allowed;
+}
+
+.folder-item.folder-uploading .view-btn:disabled:hover {
+  background: #6c757d !important;
+}
