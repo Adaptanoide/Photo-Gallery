@@ -1883,6 +1883,8 @@ const photoManager = {
 
   // 🔧 SUBSTITUIR A FUNÇÃO startUpload() POR ESTA VERSÃO CORRIGIDA:
 
+  // 🔧 SUBSTITUIR A FUNÇÃO startUpload() POR ESTA VERSÃO COM DEBUG:
+
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
@@ -1890,10 +1892,31 @@ const photoManager = {
     try {
       console.log('🚀 Starting real photo upload...');
 
-      if (!this.selectedUploadDestination || !this.selectedFiles || this.selectedFiles.length === 0) {
-        showToast('No files selected or destination not chosen', 'error');
+      // 🔍 DEBUG: Verificar estado das variáveis
+      console.log('🔍 DEBUG - selectedUploadDestination:', this.selectedUploadDestination);
+      console.log('🔍 DEBUG - selectedFiles:', this.selectedFiles);
+      console.log('🔍 DEBUG - selectedFiles length:', this.selectedFiles ? this.selectedFiles.length : 'undefined');
+
+      // Verificar se as variáveis estão definidas
+      if (!this.selectedUploadDestination) {
+        console.log('❌ DEBUG - selectedUploadDestination is missing');
+        showToast('Destination folder not selected', 'error');
         return;
       }
+
+      if (!this.selectedFiles) {
+        console.log('❌ DEBUG - selectedFiles is missing');
+        showToast('No files selected', 'error');
+        return;
+      }
+
+      if (this.selectedFiles.length === 0) {
+        console.log('❌ DEBUG - selectedFiles array is empty');
+        showToast('No files in selection', 'error');
+        return;
+      }
+
+      console.log('✅ DEBUG - All validations passed, proceeding with upload');
 
       // Mostrar loading no botão
       uploadBtn = document.getElementById('start-upload-btn');
@@ -1907,8 +1930,11 @@ const photoManager = {
       const formData = new FormData();
       formData.append('destinationFolderId', this.selectedUploadDestination.id);
 
+      console.log('📦 Adding files to FormData...');
+
       // Adicionar todos os arquivos
-      this.selectedFiles.forEach(file => {
+      this.selectedFiles.forEach((file, index) => {
+        console.log(`📎 Adding file ${index + 1}: ${file.name} (${file.size} bytes)`);
         formData.append('photos', file);
       });
 
@@ -1916,6 +1942,7 @@ const photoManager = {
       console.log(`📁 Destination ID: ${this.selectedUploadDestination.id}`);
 
       // Fazer upload
+      console.log('📡 Sending upload request...');
       const response = await fetch('/api/admin/photos/upload', {
         method: 'POST',
         body: formData
@@ -1924,6 +1951,8 @@ const photoManager = {
       console.log(`📡 Upload response status: ${response.status}`);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('📡 Error response text:', errorText);
         throw new Error(`Server returned ${response.status}: ${response.statusText}`);
       }
 
