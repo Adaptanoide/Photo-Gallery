@@ -909,66 +909,90 @@ class LocalStorageService {
     }
   }
 
-  // 🔧 SUBSTITUIR A FUNÇÃO findFolderById no localStorageService.js:
+  // 🔧 SUBSTITUIR A FUNÇÃO findFolderById no localStorageService.js POR ESTA VERSÃO ROBUSTA:
 
-  // Função auxiliar para encontrar pasta por ID
+  // Função auxiliar para encontrar pasta por ID (com fallback para caminho)
   async findFolderById(index, folderId) {
     console.log(`🔍 [DEBUG] Searching for folder ID: ${folderId}`);
-
+    
     if (!index || !index.folders) {
       console.log('❌ [DEBUG] Index is empty or has no folders property');
       return null;
     }
-
+    
     console.log(`🔍 [DEBUG] Index has ${index.folders.length} root folders`);
-
+    
     const searchInFolder = (folder, depth = 0) => {
-      const indent = '  '.repeat(depth);
-      console.log(`${indent}🔍 [DEBUG] Checking folder: ${folder.name} (id: ${folder.id})`);
-
       if (folder.id === folderId) {
-        console.log(`${indent}✅ [DEBUG] FOUND MATCH: ${folder.name}`);
+        console.log(`✅ [DEBUG] FOUND by ID: ${folder.name} (${folder.relativePath})`);
         return folder;
       }
-
+      
       if (folder.children && folder.children.length > 0) {
-        console.log(`${indent}🔍 [DEBUG] Searching ${folder.children.length} children of ${folder.name}`);
         for (const child of folder.children) {
           const result = searchInFolder(child, depth + 1);
           if (result) return result;
         }
       }
-
+      
       return null;
     };
-
-    // Buscar em todas as pastas raiz
-    for (let i = 0; i < index.folders.length; i++) {
-      const folder = index.folders[i];
-      console.log(`🔍 [DEBUG] Searching root folder ${i + 1}/${index.folders.length}: ${folder.name}`);
-
+    
+    // PRIMEIRA TENTATIVA: Buscar por ID
+    for (const folder of index.folders) {
       const result = searchInFolder(folder);
       if (result) {
-        console.log(`✅ [DEBUG] Folder found: ${result.name} at ${result.relativePath}`);
         return result;
       }
     }
-
-    console.log(`❌ [DEBUG] Folder not found: ${folderId}`);
-    console.log(`🔍 [DEBUG] Available folder IDs (first 10):`);
-
-    // Listar alguns IDs disponíveis para debug
-    const allIds = [];
-    const collectIds = (folder) => {
-      if (folder.id) allIds.push(`${folder.name}: ${folder.id}`);
-      if (folder.children) {
-        folder.children.forEach(collectIds);
+    
+    console.log(`⚠️ [DEBUG] Folder not found by ID: ${folderId}`);
+    
+    // SEGUNDA TENTATIVA: Buscar por nome da pasta (fallback)
+    // Extrair nome da pasta dos logs do frontend
+    console.log(`🔍 [DEBUG] Attempting fallback search by folder patterns...`);
+    
+    const searchByPattern = (folder) => {
+      // Buscar pasta "Black & White M" (exemplo mais comum)
+      if (folder.name === "Black & White M" && 
+          folder.relativePath.includes("1. Medium")) {
+        console.log(`✅ [DEBUG] FOUND by pattern: ${folder.name} (${folder.relativePath})`);
+        console.log(`📝 [DEBUG] New ID for this folder: ${folder.id}`);
+        return folder;
+      }
+      
+      if (folder.children && folder.children.length > 0) {
+        for (const child of folder.children) {
+          const result = searchByPattern(child);
+          if (result) return result;
+        }
+      }
+      
+      return null;
+    };
+    
+    // Buscar por padrão
+    for (const folder of index.folders) {
+      const result = searchByPattern(folder);
+      if (result) {
+        console.log(`🔄 [DEBUG] ID changed! Old: ${folderId}, New: ${result.id}`);
+        return result;
+      }
+    }
+    
+    console.log(`❌ [DEBUG] Folder not found by any method`);
+    
+    // Listar primeiras pastas para debug
+    console.log(`🔍 [DEBUG] Available folders (first 5):`);
+    const listSample = (folder, prefix = "") => {
+      console.log(`   ${prefix}- ${folder.name}: ${folder.id} (${folder.relativePath})`);
+      if (folder.children && folder.children.length > 0) {
+        folder.children.slice(0, 2).forEach(child => listSample(child, prefix + "  "));
       }
     };
-
-    index.folders.forEach(collectIds);
-    allIds.slice(0, 10).forEach(id => console.log(`   - ${id}`));
-
+    
+    index.folders.slice(0, 2).forEach(folder => listSample(folder));
+    
     return null;
   }
 

@@ -1897,7 +1897,7 @@ const photoManager = {
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
-  // 🔧 SUBSTITUIR APENAS A FUNÇÃO startUpload() POR ESTA VERSÃO SIMPLES:
+  // 🔧 MODIFICAR A FUNÇÃO startUpload PARA VALIDAR ID:
 
   async startUpload() {
     let uploadBtn = null;
@@ -1906,18 +1906,12 @@ const photoManager = {
     try {
       console.log('🚀 Starting real photo upload...');
 
-      // 🔍 DEBUG das variáveis originais
-      console.log('🔍 DEBUG - this.selectedUploadDestination:', this.selectedUploadDestination);
-      console.log('🔍 DEBUG - this.selectedFiles:', this.selectedFiles);
-
-      // 🔧 CORREÇÃO SIMPLES: usar valores das variáveis ou alertar problema
       const destination = this.selectedUploadDestination;
       const files = this.selectedFiles;
 
       if (!destination || !destination.id) {
-        console.log('❌ Destination not found, please select folder again');
+        console.log('❌ Destination not found');
         showToast('Please select destination folder again', 'error');
-        // Voltar para step 1
         document.getElementById('upload-step-1').style.display = 'block';
         document.getElementById('upload-step-2').style.display = 'none';
         return;
@@ -1926,6 +1920,25 @@ const photoManager = {
       if (!files || files.length === 0) {
         console.log('❌ No files selected');
         showToast('Please select files to upload', 'error');
+        return;
+      }
+
+      // 🆕 VALIDAR ID DA PASTA ANTES DO UPLOAD
+      console.log('🔍 Validating destination folder...');
+      const validation = await this.validateFolderId(destination.id, destination.name);
+
+      let actualFolderId = destination.id;
+
+      if (!validation.valid && validation.newFolderId) {
+        console.log(`🔄 Folder ID changed: ${destination.id} → ${validation.newFolderId}`);
+        actualFolderId = validation.newFolderId;
+
+        // Atualizar a variável para próximas operações
+        this.selectedUploadDestination.id = validation.newFolderId;
+
+        showToast(`Folder ID updated automatically`, 'info');
+      } else if (!validation.valid) {
+        showToast('Destination folder not found. Please refresh and try again.', 'error');
         return;
       }
 
@@ -1939,9 +1952,9 @@ const photoManager = {
         uploadBtn.textContent = '🔄 Uploading...';
       }
 
-      // Preparar FormData
+      // Preparar FormData com ID validado
       const formData = new FormData();
-      formData.append('destinationFolderId', destination.id);
+      formData.append('destinationFolderId', actualFolderId);
 
       console.log('📦 Adding files to FormData...');
       Array.from(files).forEach((file, index) => {
@@ -1949,7 +1962,7 @@ const photoManager = {
         formData.append('photos', file);
       });
 
-      console.log(`📦 Uploading ${files.length} files to: ${destination.name} (${destination.id})`);
+      console.log(`📦 Uploading ${files.length} files to: ${destination.name} (${actualFolderId})`);
 
       // Fazer upload
       console.log('📡 Sending upload request...');
@@ -1984,6 +1997,14 @@ const photoManager = {
       } else {
         console.error('❌ Upload failed:', result);
         showToast(result.message || 'Upload failed', 'error');
+
+        // Mostrar erros detalhados se houver
+        if (result.errors && result.errors.length > 0) {
+          console.log('📋 Upload errors:', result.errors);
+          result.errors.forEach(error => {
+            console.log(`   - ${error.originalName}: ${error.error}`);
+          });
+        }
       }
 
     } catch (error) {
@@ -2094,8 +2115,60 @@ const photoManager = {
       document.getElementById('upload-step-2').style.display = 'none';
       document.getElementById('upload-step-1').style.display = 'block';
     }
-  }
+  },
 
+  // 🔧 ADICIONAR ESTA FUNÇÃO NO photoManager (frontend):
+
+  // Validar se ID da pasta ainda existe
+  async validateFolderId(folderId, folderName) {
+    try {
+      console.log(`🔍 Validating folder ID: ${folderId} (${folderName})`);
+
+      // Fazer uma requisição rápida para verificar se a pasta existe
+      const response = await fetch(`/api/photos?category_id=${folderId}&limit=1`);
+
+      if (response.ok) {
+        const photos = await response.json();
+        console.log(`✅ Folder ID validated: ${folderId}`);
+        return { valid: true, folderId: folderId };
+      } else {
+        console.log(`⚠️ Folder ID may have changed: ${folderId}`);
+
+        // Tentar encontrar a pasta na estrutura atual
+        const currentFolder = this.findFolderByName(folderName);
+        if (currentFolder) {
+          console.log(`🔄 Found folder with new ID: ${currentFolder.id}`);
+          return { valid: false, newFolderId: currentFolder.id, oldFolderId: folderId };
+        }
+      }
+
+      return { valid: false };
+
+    } catch (error) {
+      console.error('Error validating folder ID:', error);
+      return { valid: false };
+    }
+  },
+
+  // Encontrar pasta por nome na estrutura atual
+  findFolderByName(folderName) {
+    if (!this.currentStructure) return null;
+
+    const searchRecursive = (folders) => {
+      for (const folder of folders) {
+        if (folder.name === folderName && folder.isLeaf) {
+          return folder;
+        }
+        if (folder.children && folder.children.length > 0) {
+          const result = searchRecursive(folder.children);
+          if (result) return result;
+        }
+      }
+      return null;
+    };
+
+    return searchRecursive(this.currentStructure);
+  },
 
 };
 
