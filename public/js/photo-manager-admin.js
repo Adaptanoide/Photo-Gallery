@@ -1550,24 +1550,38 @@ const photoManager = {
     });
   },
 
-  // Selecionar pasta destino para upload
-  selectUploadDestination(folderId, folderName) {
-    console.log(`📁 Selected upload destination: ${folderName} (${folderId})`);
+  // 🔧 ENCONTRAR E SUBSTITUIR A FUNÇÃO selectUploadDestination() POR:
 
-    // Remover seleção anterior
+  selectUploadDestination(folder) {
+    console.log(`📁 Selecting upload destination: ${folder.name} (${folder.id})`);
+
+    // Armazenar na variável do objeto
+    this.selectedUploadDestination = {
+      id: folder.id,
+      name: folder.name,
+      path: folder.path || []
+    };
+
+    // 🔧 CORREÇÃO: Também armazenar no sessionStorage como backup
+    sessionStorage.setItem('uploadDestination', JSON.stringify(this.selectedUploadDestination));
+
+    // 🔧 CORREÇÃO: Marcar elemento DOM para recuperação
     document.querySelectorAll('.upload-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
 
-    // Adicionar seleção atual
-    event.currentTarget.closest('.upload-folder-item').classList.add('selected');
+    const folderElement = document.querySelector(`[data-folder-id="${folder.id}"]`);
+    if (folderElement) {
+      folderElement.classList.add('selected');
+      folderElement.dataset.folderId = folder.id;
+      folderElement.dataset.folderName = folder.name;
+    }
 
-    // Armazenar seleção
-    this.selectedUploadFolder = { id: folderId, name: folderName };
+    // Atualizar interface
+    document.getElementById('selected-destination-name').textContent = folder.name;
+    document.getElementById('next-to-files-btn').disabled = false;
 
-    // Mostrar pasta selecionada
-    document.getElementById('upload-destination-name').textContent = folderName;
-    document.querySelector('.upload-selected-folder').style.display = 'block';
+    console.log('✅ Upload destination stored:', this.selectedUploadDestination);
   },
 
   // Ir para seleção de arquivos (versão completa)
@@ -1883,8 +1897,6 @@ const photoManager = {
 
   // 🔧 SUBSTITUIR A FUNÇÃO startUpload() POR ESTA VERSÃO CORRIGIDA:
 
-  // 🔧 SUBSTITUIR A FUNÇÃO startUpload() POR ESTA VERSÃO COM DEBUG:
-
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
@@ -1892,26 +1904,65 @@ const photoManager = {
     try {
       console.log('🚀 Starting real photo upload...');
 
+      // 🔧 CORREÇÃO: Buscar dados se as variáveis foram perdidas
+      let destination = this.selectedUploadDestination;
+      let files = this.selectedFiles;
+
+      // Se a variável foi perdida, buscar no sessionStorage
+      if (!destination) {
+        console.log('🔧 selectedUploadDestination was lost, searching in sessionStorage...');
+        const storedDestination = sessionStorage.getItem('uploadDestination');
+        if (storedDestination) {
+          destination = JSON.parse(storedDestination);
+          console.log('🔧 Recovered destination from sessionStorage:', destination);
+        }
+      }
+
+      // Se ainda não tem, buscar no DOM
+      if (!destination) {
+        console.log('🔧 Still no destination, searching in DOM...');
+        const selectedFolderElement = document.querySelector('.upload-folder-item.selected');
+        if (selectedFolderElement) {
+          destination = {
+            id: selectedFolderElement.dataset.folderId,
+            name: selectedFolderElement.dataset.folderName
+          };
+          console.log('🔧 Recovered destination from DOM:', destination);
+        }
+      }
+
+      // Se files foi perdido, buscar no DOM
+      if (!files || files.length === 0) {
+        console.log('🔧 selectedFiles was lost, searching in DOM...');
+        const fileInputs = document.querySelectorAll('#file-upload-input');
+        if (fileInputs.length > 0) {
+          files = Array.from(fileInputs[0].files || []);
+          console.log('🔧 Recovered files from DOM:', files);
+        }
+      }
+
       // 🔍 DEBUG: Verificar estado das variáveis
-      console.log('🔍 DEBUG - selectedUploadDestination:', this.selectedUploadDestination);
-      console.log('🔍 DEBUG - selectedFiles:', this.selectedFiles);
-      console.log('🔍 DEBUG - selectedFiles length:', this.selectedFiles ? this.selectedFiles.length : 'undefined');
+      console.log('🔍 DEBUG - destination (original):', this.selectedUploadDestination);
+      console.log('🔍 DEBUG - destination (recovered):', destination);
+      console.log('🔍 DEBUG - files (original):', this.selectedFiles);
+      console.log('🔍 DEBUG - files (recovered):', files);
+      console.log('🔍 DEBUG - files length:', files ? files.length : 'undefined');
 
       // Verificar se as variáveis estão definidas
-      if (!this.selectedUploadDestination) {
-        console.log('❌ DEBUG - selectedUploadDestination is missing');
+      if (!destination) {
+        console.log('❌ DEBUG - No destination found');
         showToast('Destination folder not selected', 'error');
         return;
       }
 
-      if (!this.selectedFiles) {
-        console.log('❌ DEBUG - selectedFiles is missing');
+      if (!files) {
+        console.log('❌ DEBUG - No files found');
         showToast('No files selected', 'error');
         return;
       }
 
-      if (this.selectedFiles.length === 0) {
-        console.log('❌ DEBUG - selectedFiles array is empty');
+      if (files.length === 0) {
+        console.log('❌ DEBUG - Files array is empty');
         showToast('No files in selection', 'error');
         return;
       }
@@ -1928,18 +1979,18 @@ const photoManager = {
 
       // Preparar FormData
       const formData = new FormData();
-      formData.append('destinationFolderId', this.selectedUploadDestination.id);
+      formData.append('destinationFolderId', destination.id);
 
       console.log('📦 Adding files to FormData...');
 
       // Adicionar todos os arquivos
-      this.selectedFiles.forEach((file, index) => {
+      Array.from(files).forEach((file, index) => {
         console.log(`📎 Adding file ${index + 1}: ${file.name} (${file.size} bytes)`);
         formData.append('photos', file);
       });
 
-      console.log(`📦 Uploading ${this.selectedFiles.length} files to folder: ${this.selectedUploadDestination.name}`);
-      console.log(`📁 Destination ID: ${this.selectedUploadDestination.id}`);
+      console.log(`📦 Uploading ${files.length} files to folder: ${destination.name}`);
+      console.log(`📁 Destination ID: ${destination.id}`);
 
       // Fazer upload
       console.log('📡 Sending upload request...');
