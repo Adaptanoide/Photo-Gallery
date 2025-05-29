@@ -1881,8 +1881,12 @@ const photoManager = {
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
-  // Placeholder para início do upload
+  // 🔧 SUBSTITUIR A FUNÇÃO startUpload() POR ESTA VERSÃO CORRIGIDA:
+
   async startUpload() {
+    let uploadBtn = null;
+    let originalText = '';
+
     try {
       console.log('🚀 Starting real photo upload...');
 
@@ -1892,10 +1896,12 @@ const photoManager = {
       }
 
       // Mostrar loading no botão
-      const uploadBtn = document.getElementById('start-upload-btn');
-      const originalText = uploadBtn.textContent;
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = '🔄 Uploading...';
+      uploadBtn = document.getElementById('start-upload-btn');
+      if (uploadBtn) {
+        originalText = uploadBtn.textContent;
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '🔄 Uploading...';
+      }
 
       // Preparar FormData
       const formData = new FormData();
@@ -1907,6 +1913,7 @@ const photoManager = {
       });
 
       console.log(`📦 Uploading ${this.selectedFiles.length} files to folder: ${this.selectedUploadDestination.name}`);
+      console.log(`📁 Destination ID: ${this.selectedUploadDestination.id}`);
 
       // Fazer upload
       const response = await fetch('/api/admin/photos/upload', {
@@ -1914,7 +1921,14 @@ const photoManager = {
         body: formData
       });
 
+      console.log(`📡 Upload response status: ${response.status}`);
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
+      console.log('📡 Upload result:', result);
 
       if (result.success) {
         console.log('✅ Upload successful:', result);
@@ -1925,8 +1939,10 @@ const photoManager = {
         this.closeUploadModal();
 
         // Refresh da interface principal
-        await this.loadStorageStats(true);
-        await this.loadFolderStructure();
+        setTimeout(async () => {
+          await this.loadStorageStats(true);
+          await this.loadFolderStructure();
+        }, 1000);
 
       } else {
         console.error('❌ Upload failed:', result);
@@ -1945,8 +1961,7 @@ const photoManager = {
       showToast('Upload failed: ' + error.message, 'error');
     } finally {
       // Restaurar botão
-      const uploadBtn = document.getElementById('start-upload-btn');
-      if (uploadBtn) {
+      if (uploadBtn && originalText) {
         uploadBtn.disabled = false;
         uploadBtn.textContent = originalText;
       }
