@@ -334,9 +334,8 @@
     height: 70px;
   }
 }
-/* CSS ADICIONAL - Adicionar ao admin.css ou criar arquivo separado */
+/* CSS COMPLETO - Adicionar ao final do admin.css */
 
-/* Photo Storage Tab Styles */
 /* Photo Storage Styles */
 .storage-stats-panel {
   background: #f8f9fa;
@@ -476,12 +475,20 @@
   margin-left: 0;
 }
 
+/* SEÇÃO CRÍTICA: Photo Management Panel */
 .photo-management-panel {
   margin-top: 30px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 25px;
+  display: none; /* Inicialmente escondido */
+}
+
+.photo-management-panel h4 {
+  margin-bottom: 20px;
+  color: #333;
+  font-family: 'Playfair Display', serif;
 }
 
 .photo-grid-header {
@@ -490,9 +497,17 @@
   border-bottom: 1px solid #eee;
 }
 
+.selection-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-weight: 500;
+}
+
+/* SEÇÃO CRÍTICA: Photo Grid */
 .photo-grid-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 15px;
 }
 
@@ -501,31 +516,55 @@
   border-radius: 8px;
   overflow: hidden;
   transition: transform 0.2s ease;
+  border: 2px solid transparent;
 }
 
 .photo-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: var(--color-gold);
+}
+
+/* SEÇÃO CRÍTICA: Photo Preview */
+.photo-preview {
+  position: relative;
 }
 
 .photo-preview img {
   width: 100%;
-  height: 140px;
+  height: 150px;
   object-fit: cover;
+  display: block;
+}
+
+.photo-placeholder {
+  width: 100%;
+  height: 150px;
+  background: #f0f0f0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 24px;
 }
 
 .photo-name {
-  padding: 8px;
+  padding: 10px;
   font-size: 11px;
   color: #666;
   text-align: center;
   background: white;
+  font-weight: 500;
+  word-break: break-all;
+  border-top: 1px solid #eee;
 }
 
+/* Estados e mensagens */
 .loading {
   text-align: center;
   padding: 40px;
   color: #666;
+  font-style: italic;
 }
 
 .error {
@@ -534,6 +573,7 @@
   color: #721c24;
   border-radius: 6px;
   text-align: center;
+  border: 1px solid #f5c6cb;
 }
 
 .empty-message {
@@ -541,4 +581,46 @@
   text-align: center;
   color: #6c757d;
   font-style: italic;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 2px dashed #dee2e6;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .storage-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .folder-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .photo-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  
+  .photo-preview img {
+    height: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .storage-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 15px;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+  }
+  
+  .photo-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
 }

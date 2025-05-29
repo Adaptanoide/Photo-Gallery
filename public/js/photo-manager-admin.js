@@ -1,4 +1,4 @@
-// photo-manager-admin.js SIMPLIFICADO
+// photo-manager-admin.js CORRIGIDO COM DEBUG
 // Substitua completamente o arquivo existente
 
 const photoManager = {
@@ -27,9 +27,13 @@ const photoManager = {
         const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
         const totalFolders = folders.length;
         
-        // Estimativa de uso de disco
-        const estimatedSizeGB = Math.round((totalPhotos * 0.2) / 1024 * 100) / 100;
+        // CORREÇÃO: Cálculo mais realista de espaço
+        // Assumindo ~2.5MB por foto WebP em média
+        const estimatedSizeMB = totalPhotos * 2.5;
+        const estimatedSizeGB = Math.round((estimatedSizeMB / 1024) * 100) / 100;
         const usedPercent = Math.round((estimatedSizeGB / 50) * 100);
+        
+        console.log(`📊 Calculated stats: ${totalPhotos} photos, estimated ${estimatedSizeGB}GB`);
         
         document.getElementById('storage-stats-content').innerHTML = `
           <div class="storage-stats-grid">
@@ -43,17 +47,17 @@ const photoManager = {
             </div>
             <div class="stat-card">
               <div class="stat-value">${estimatedSizeGB} GB</div>
-              <div class="stat-label">Used Space</div>
+              <div class="stat-label">Used Space (est.)</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">${50 - estimatedSizeGB} GB</div>
+              <div class="stat-value">${(50 - estimatedSizeGB).toFixed(1)} GB</div>
               <div class="stat-label">Available</div>
             </div>
           </div>
           <div class="storage-progress-bar">
-            <div class="storage-progress-fill" style="width: ${usedPercent}%"></div>
+            <div class="storage-progress-fill" style="width: ${Math.min(usedPercent, 100)}%"></div>
           </div>
-          <div class="storage-progress-text">${usedPercent}% of 50GB used</div>
+          <div class="storage-progress-text">${usedPercent}% of 50GB used (estimated)</div>
         `;
         
         console.log(`✅ Stats loaded: ${totalPhotos} photos in ${totalFolders} folders`);
@@ -75,7 +79,7 @@ const photoManager = {
       if (data.success && data.folders) {
         console.log(`📋 Loaded ${data.folders.length} folders`);
         
-        // Organizar pastas por hierarquia
+        // Organizar em estrutura hierárquica para exibição
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
         this.currentStructure = organizedStructure;
         this.renderFolderTree(organizedStructure);
@@ -189,24 +193,57 @@ const photoManager = {
     console.log(`📁 Selected folder: ${folder.name} (${folder.fileCount} photos)`);
   },
 
+  // FUNÇÃO CORRIGIDA: viewFolderPhotos com DEBUG
   async viewFolderPhotos(folderId, folderName) {
     console.log(`👁️ Viewing photos in: ${folderName} (${folderId})`);
     
-    document.getElementById('current-folder-name').textContent = folderName;
-    document.querySelector('.photo-management-panel').style.display = 'block';
+    // PASSO 1: Encontrar e mostrar o painel
+    const photoPanel = document.querySelector('.photo-management-panel');
+    if (!photoPanel) {
+      console.error('❌ Photo management panel not found!');
+      return;
+    }
     
+    console.log('📋 Showing photo management panel...');
+    photoPanel.style.display = 'block';
+    
+    // PASSO 2: Atualizar título
+    const titleElement = document.getElementById('current-folder-name');
+    if (titleElement) {
+      titleElement.textContent = folderName;
+      console.log(`📝 Updated title to: ${folderName}`);
+    }
+    
+    // PASSO 3: Encontrar container de fotos
     const photoContainer = document.getElementById('folder-photos');
+    if (!photoContainer) {
+      console.error('❌ Photo container not found!');
+      return;
+    }
+    
     photoContainer.innerHTML = '<div class="loading">Loading photos...</div>';
+    console.log('⏳ Loading photos...');
     
     try {
+      // PASSO 4: Buscar fotos via API
       const response = await fetch(`/api/photos?category_id=${folderId}`);
-      const data = await response.json();
+      console.log(`📡 API Response status: ${response.status}`);
       
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('📋 API Response data:', data);
+      
+      // PASSO 5: Processar resposta
       let photos = [];
       if (data.success && data.photos) {
         photos = data.photos;
       } else if (Array.isArray(data)) {
         photos = data;
+      } else {
+        console.warn('⚠️ Unexpected API response format:', data);
       }
       
       console.log(`📷 Found ${photos.length} photos`);
@@ -216,6 +253,33 @@ const photoManager = {
         return;
       }
       
+      // PASSO 6: Renderizar HTML (CORRIGIDO)
+      console.log('🎨 Rendering photos HTML...');
+      
+      const photosHTML = photos.map((photo, index) => {
+        // Garantir URLs corretos para thumbnails
+        let thumbnailUrl = photo.thumbnail;
+        if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
+          thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
+        }
+        
+        console.log(`📸 Photo ${index + 1}: ${photo.id}, thumbnail: ${thumbnailUrl}`);
+        
+        return `
+          <div class="photo-item" data-photo-id="${photo.id}">
+            <div class="photo-preview">
+              <img src="${thumbnailUrl}" 
+                   alt="${photo.name || photo.id}" 
+                   loading="lazy" 
+                   onerror="console.error('Failed to load image:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';"
+                   onload="console.log('Image loaded successfully:', this.src);">
+              <div class="photo-placeholder" style="display: none; width: 100%; height: 140px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666;">📷</div>
+              <div class="photo-name">${photo.name || photo.id}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
       photoContainer.innerHTML = `
         <div class="photo-grid-header">
           <div class="selection-controls">
@@ -223,20 +287,18 @@ const photoManager = {
           </div>
         </div>
         <div class="photo-grid-container">
-          ${photos.map(photo => `
-            <div class="photo-item" data-photo-id="${photo.id}">
-              <div class="photo-preview">
-                <img src="${photo.thumbnail}" alt="${photo.name || photo.id}" loading="lazy" onerror="this.src='/api/photos/local/thumbnail/${photo.id}'">
-                <div class="photo-name">${photo.name || photo.id}</div>
-              </div>
-            </div>
-          `).join('')}
+          ${photosHTML}
         </div>
       `;
       
+      console.log('✅ Photos HTML rendered successfully');
+      
+      // PASSO 7: Scroll para ver as fotos
+      photoPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
     } catch (error) {
       console.error('❌ Error loading folder photos:', error);
-      photoContainer.innerHTML = '<div class="error">Failed to load photos</div>';
+      photoContainer.innerHTML = `<div class="error">Failed to load photos: ${error.message}</div>`;
     }
   },
 
