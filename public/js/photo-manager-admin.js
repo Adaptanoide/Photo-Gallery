@@ -1,10 +1,12 @@
-// photo-manager-admin.js CORRIGIDO COM DEBUG
+// photo-manager-admin.js - MODAL + MODO LISTA
 // Substitua completamente o arquivo existente
 
 const photoManager = {
   currentStructure: null,
   selectedFolder: null,
   selectedPhotos: new Set(),
+  currentFolderPhotos: [], // Armazenar fotos da pasta atual
+  viewMode: 'list', // 'list' ou 'thumbnails'
 
   async init() {
     console.log('🚀 Initializing Photo Storage tab...');
@@ -27,8 +29,7 @@ const photoManager = {
         const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
         const totalFolders = folders.length;
         
-        // CORREÇÃO: Cálculo mais realista de espaço
-        // Assumindo ~2.5MB por foto WebP em média
+        // Cálculo mais realista de espaço
         const estimatedSizeMB = totalPhotos * 2.5;
         const estimatedSizeGB = Math.round((estimatedSizeMB / 1024) * 100) / 100;
         const usedPercent = Math.round((estimatedSizeGB / 50) * 100);
@@ -79,7 +80,6 @@ const photoManager = {
       if (data.success && data.folders) {
         console.log(`📋 Loaded ${data.folders.length} folders`);
         
-        // Organizar em estrutura hierárquica para exibição
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
         this.currentStructure = organizedStructure;
         this.renderFolderTree(organizedStructure);
@@ -158,7 +158,7 @@ const photoManager = {
         <span class="folder-count">${photoCount}</span>
         ${folder.isLeaf ? `
           <div class="folder-actions">
-            <button class="folder-action-btn" onclick="photoManager.viewFolderPhotos('${folder.id}', '${folder.name}')" title="View Photos">👁️</button>
+            <button class="folder-action-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">👁️</button>
           </div>
         ` : ''}
       `;
@@ -193,39 +193,66 @@ const photoManager = {
     console.log(`📁 Selected folder: ${folder.name} (${folder.fileCount} photos)`);
   },
 
-  // FUNÇÃO CORRIGIDA: viewFolderPhotos com DEBUG
-  async viewFolderPhotos(folderId, folderName) {
-    console.log(`👁️ Viewing photos in: ${folderName} (${folderId})`);
+  // NOVA FUNÇÃO: Abrir modal da pasta
+  async openFolderModal(folderId, folderName) {
+    console.log(`🎯 Opening folder modal: ${folderName} (${folderId})`);
     
-    // PASSO 1: Encontrar e mostrar o painel
-    const photoPanel = document.querySelector('.photo-management-panel');
-    if (!photoPanel) {
-      console.error('❌ Photo management panel not found!');
-      return;
+    // Criar modal se não existir
+    if (!document.getElementById('photo-folder-modal')) {
+      this.createFolderModal();
     }
     
-    console.log('📋 Showing photo management panel...');
-    photoPanel.style.display = 'block';
+    // Atualizar título do modal
+    document.getElementById('modal-folder-title').textContent = folderName;
     
-    // PASSO 2: Atualizar título
-    const titleElement = document.getElementById('current-folder-name');
-    if (titleElement) {
-      titleElement.textContent = folderName;
-      console.log(`📝 Updated title to: ${folderName}`);
-    }
+    // Mostrar modal
+    const modal = document.getElementById('photo-folder-modal');
+    modal.style.display = 'flex';
     
-    // PASSO 3: Encontrar container de fotos
-    const photoContainer = document.getElementById('folder-photos');
-    if (!photoContainer) {
-      console.error('❌ Photo container not found!');
-      return;
-    }
+    // Carregar fotos
+    await this.loadFolderPhotos(folderId, folderName);
+  },
+
+  // NOVA FUNÇÃO: Criar modal para fotos
+  createFolderModal() {
+    console.log('🏗️ Creating folder modal...');
     
-    photoContainer.innerHTML = '<div class="loading">Loading photos...</div>';
-    console.log('⏳ Loading photos...');
+    const modalHTML = `
+      <div id="photo-folder-modal" class="photo-folder-modal" style="display: none;">
+        <div class="photo-modal-content">
+          <div class="photo-modal-header">
+            <h3 id="modal-folder-title">Folder Name</h3>
+            <div class="photo-modal-controls">
+              <button class="btn btn-secondary btn-sm" onclick="photoManager.toggleViewMode()" id="view-mode-btn">📋 Switch to Thumbnails</button>
+              <button class="photo-modal-close" onclick="photoManager.closeFolderModal()">&times;</button>
+            </div>
+          </div>
+          
+          <div class="photo-modal-body">
+            <div id="photo-modal-loading" class="loading">Loading photos...</div>
+            <div id="photo-modal-content" style="display: none;">
+              <!-- Photos will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('✅ Folder modal created');
+  },
+
+  // NOVA FUNÇÃO: Carregar fotos da pasta
+  async loadFolderPhotos(folderId, folderName) {
+    console.log(`📋 Loading photos for folder: ${folderName}`);
+    
+    const loadingDiv = document.getElementById('photo-modal-loading');
+    const contentDiv = document.getElementById('photo-modal-content');
+    
+    loadingDiv.style.display = 'block';
+    contentDiv.style.display = 'none';
     
     try {
-      // PASSO 4: Buscar fotos via API
       const response = await fetch(`/api/photos?category_id=${folderId}`);
       console.log(`📡 API Response status: ${response.status}`);
       
@@ -234,72 +261,142 @@ const photoManager = {
       }
       
       const data = await response.json();
-      console.log('📋 API Response data:', data);
       
-      // PASSO 5: Processar resposta
       let photos = [];
       if (data.success && data.photos) {
         photos = data.photos;
       } else if (Array.isArray(data)) {
         photos = data;
-      } else {
-        console.warn('⚠️ Unexpected API response format:', data);
       }
       
       console.log(`📷 Found ${photos.length} photos`);
+      this.currentFolderPhotos = photos;
       
       if (photos.length === 0) {
-        photoContainer.innerHTML = '<div class="empty-message">No photos in this folder</div>';
-        return;
+        contentDiv.innerHTML = '<div class="empty-message">No photos in this folder</div>';
+      } else {
+        this.renderPhotosInModal(photos);
       }
       
-      // PASSO 6: Renderizar HTML (CORRIGIDO)
-      console.log('🎨 Rendering photos HTML...');
-      
-      const photosHTML = photos.map((photo, index) => {
-        // Garantir URLs corretos para thumbnails
-        let thumbnailUrl = photo.thumbnail;
-        if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
-          thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
-        }
-        
-        console.log(`📸 Photo ${index + 1}: ${photo.id}, thumbnail: ${thumbnailUrl}`);
-        
-        return `
-          <div class="photo-item" data-photo-id="${photo.id}">
-            <div class="photo-preview">
-              <img src="${thumbnailUrl}" 
-                   alt="${photo.name || photo.id}" 
-                   loading="lazy" 
-                   onerror="console.error('Failed to load image:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';"
-                   onload="console.log('Image loaded successfully:', this.src);">
-              <div class="photo-placeholder" style="display: none; width: 100%; height: 140px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666;">📷</div>
-              <div class="photo-name">${photo.name || photo.id}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      photoContainer.innerHTML = `
-        <div class="photo-grid-header">
-          <div class="selection-controls">
-            <span><strong>${photos.length}</strong> photos in this folder</span>
-          </div>
-        </div>
-        <div class="photo-grid-container">
-          ${photosHTML}
-        </div>
-      `;
-      
-      console.log('✅ Photos HTML rendered successfully');
-      
-      // PASSO 7: Scroll para ver as fotos
-      photoPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      loadingDiv.style.display = 'none';
+      contentDiv.style.display = 'block';
       
     } catch (error) {
       console.error('❌ Error loading folder photos:', error);
-      photoContainer.innerHTML = `<div class="error">Failed to load photos: ${error.message}</div>`;
+      contentDiv.innerHTML = `<div class="error">Failed to load photos: ${error.message}</div>`;
+      loadingDiv.style.display = 'none';
+      contentDiv.style.display = 'block';
     }
+  },
+
+  // NOVA FUNÇÃO: Renderizar fotos no modal (modo lista como padrão)
+  renderPhotosInModal(photos) {
+    console.log(`🎨 Rendering ${photos.length} photos in ${this.viewMode} mode`);
+    
+    const contentDiv = document.getElementById('photo-modal-content');
+    
+    if (this.viewMode === 'list') {
+      // MODO LISTA (PADRÃO)
+      const listHTML = `
+        <div class="photo-list-header">
+          <span><strong>${photos.length}</strong> photos in this folder</span>
+        </div>
+        <div class="photo-list-container">
+          ${photos.map((photo, index) => `
+            <div class="photo-list-item" onclick="photoManager.openPhotoFullscreen('${photo.id}', ${index})">
+              <span class="photo-list-icon">📸</span>
+              <span class="photo-list-name">${photo.name || photo.id}</span>
+              <span class="photo-list-id">${photo.id}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      contentDiv.innerHTML = listHTML;
+    } else {
+      // MODO THUMBNAILS (para depois)
+      this.renderThumbnailsMode(photos);
+    }
+  },
+
+  // NOVA FUNÇÃO: Abrir foto em fullscreen
+  openPhotoFullscreen(photoId, photoIndex) {
+    console.log(`🖼️ Opening photo fullscreen: ${photoId} (index: ${photoIndex})`);
+    
+    const photo = this.currentFolderPhotos[photoIndex];
+    if (!photo) {
+      console.error('❌ Photo not found');
+      return;
+    }
+    
+    // Criar fullscreen se não existir
+    if (!document.getElementById('photo-fullscreen-modal')) {
+      this.createFullscreenModal();
+    }
+    
+    // Configurar imagem
+    const imageUrl = photo.highres || `/api/photos/local/${this.selectedFolder.id}/${photoId}`;
+    document.getElementById('fullscreen-image').src = imageUrl;
+    document.getElementById('fullscreen-photo-name').textContent = photo.name || photoId;
+    
+    // Mostrar modal fullscreen
+    document.getElementById('photo-fullscreen-modal').style.display = 'flex';
+    
+    console.log(`✅ Fullscreen opened for: ${photo.name || photoId}`);
+  },
+
+  // NOVA FUNÇÃO: Criar modal fullscreen
+  createFullscreenModal() {
+    const fullscreenHTML = `
+      <div id="photo-fullscreen-modal" class="photo-fullscreen-modal" style="display: none;">
+        <div class="fullscreen-content">
+          <div class="fullscreen-header">
+            <h4 id="fullscreen-photo-name">Photo Name</h4>
+            <div class="fullscreen-controls">
+              <button class="btn btn-secondary" onclick="photoManager.closeFullscreen()">← Back</button>
+              <button class="btn btn-gold" onclick="photoManager.movePhoto()">📦 Move Photo</button>
+              <button class="fullscreen-close" onclick="photoManager.closeFullscreen()">&times;</button>
+            </div>
+          </div>
+          
+          <div class="fullscreen-image-container">
+            <img id="fullscreen-image" src="" alt="Photo" />
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', fullscreenHTML);
+    console.log('✅ Fullscreen modal created');
+  },
+
+  // NOVA FUNÇÃO: Fechar modal da pasta
+  closeFolderModal() {
+    console.log('🚪 Closing folder modal');
+    document.getElementById('photo-folder-modal').style.display = 'none';
+  },
+
+  // NOVA FUNÇÃO: Fechar fullscreen
+  closeFullscreen() {
+    console.log('🚪 Closing fullscreen');
+    document.getElementById('photo-fullscreen-modal').style.display = 'none';
+  },
+
+  // NOVA FUNÇÃO: Alternar modo de visualização (para depois)
+  toggleViewMode() {
+    this.viewMode = this.viewMode === 'list' ? 'thumbnails' : 'list';
+    console.log(`🔄 Switching to ${this.viewMode} mode`);
+    
+    // Atualizar botão
+    const btn = document.getElementById('view-mode-btn');
+    btn.textContent = this.viewMode === 'list' ? '📋 Switch to Thumbnails' : '🖼️ Switch to List';
+    
+    // Re-renderizar fotos
+    this.renderPhotosInModal(this.currentFolderPhotos);
+  },
+
+  // PLACEHOLDER: Mover foto (implementar depois)
+  movePhoto() {
+    showToast('Move photo feature coming soon!', 'info');
   },
 
   async refreshStructure() {
