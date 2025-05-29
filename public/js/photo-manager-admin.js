@@ -1383,81 +1383,81 @@ const photoManager = {
     console.log('🏗️ Creating upload modal...');
 
     const uploadModalHTML = `
-    <div id="photo-upload-modal" class="photo-upload-modal" style="display: none;">
-      <div class="upload-modal-content">
-        <div class="upload-modal-header">
-          <h3>📸 Upload Photos</h3>
-          <button class="upload-modal-close" onclick="photoManager.closeUploadModal()">&times;</button>
-        </div>
-        
-        <div class="upload-modal-body">
-          <!-- PASSO 1: Seleção de pasta destino -->
-          <div class="upload-step" id="upload-step-1">
-            <h4>Step 1: Select Destination Folder</h4>
-            <p>Choose where to upload your photos:</p>
-            
-            <div class="upload-folder-selection">
-              <div id="upload-folders-loading" class="loading">Loading folders...</div>
-              <div id="upload-folders-tree" style="display: none;">
-                <!-- Folder tree will be loaded here -->
-              </div>
-            </div>
-            
-            <div class="upload-selected-folder" style="display: none;">
-              <p><strong>Selected:</strong> <span id="upload-destination-name"></span></p>
-              <button class="btn btn-gold" onclick="photoManager.goToFileSelection()">Next: Select Photos →</button>
-            </div>
+      <div id="photo-upload-modal" class="photo-upload-modal" style="display: none;">
+        <div class="upload-modal-content">
+          <div class="upload-modal-header">
+            <h3>📸 Upload Photos</h3>
+            <button class="upload-modal-close" onclick="photoManager.closeUploadModal()">&times;</button>
           </div>
           
-          <!-- PASSO 2: Seleção de arquivos (será implementado depois) -->
-          <div class="upload-step" id="upload-step-2" style="display: none;">
-            <h4>Step 2: Select Photos</h4>
-            <p>Choose photos from your computer:</p>
-            
-            <div class="file-upload-area">
-              <input type="file" id="photo-files-input" multiple accept="image/*" style="display: none;">
-              <div class="file-drop-zone" onclick="document.getElementById('photo-files-input').click()">
-                <div class="drop-zone-content">
-                  <span class="drop-icon">📁</span>
-                  <p>Click to select photos or drag & drop here</p>
-                  <small>Supports: JPG, PNG, WebP</small>
+          <div class="upload-modal-body">
+            <!-- PASSO 1: Seleção de pasta destino -->
+            <div class="upload-step" id="upload-step-1">
+              <h4>Step 1: Select Destination Folder</h4>
+              <p>Choose where to upload your photos:</p>
+              
+              <div class="upload-folder-selection">
+                <div id="upload-folders-loading" class="loading">Loading folders...</div>
+                <div id="upload-folders-tree" style="display: none;">
+                  <!-- Folder tree will be loaded here -->
                 </div>
               </div>
+              
+              <div class="upload-selected-folder" style="display: none;">
+                <p><strong>Selected:</strong> <span id="upload-destination-name"></span></p>
+                <button class="btn btn-gold" id="next-to-files-btn" onclick="photoManager.goToFileSelection()">Next: Select Photos →</button>
+              </div>
             </div>
             
-            <div class="selected-files-preview" id="selected-files-preview" style="display: none;">
-              <!-- File preview will be shown here -->
+            <!-- PASSO 2: Seleção de arquivos -->
+            <div class="upload-step" id="upload-step-2" style="display: none;">
+              <h4>Step 2: Select Photos</h4>
+              <p>Choose photos from your computer:</p>
+              
+              <div class="file-upload-area">
+                <input type="file" id="photo-files-input" multiple accept="image/*" style="display: none;">
+                <div class="file-drop-zone" onclick="document.getElementById('photo-files-input').click()">
+                  <div class="drop-zone-content">
+                    <span class="drop-icon">📁</span>
+                    <p>Click to select photos or drag & drop here</p>
+                    <small>Supports: JPG, PNG, WebP</small>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="selected-files-preview" id="selected-files-preview" style="display: none;">
+                <!-- File preview will be shown here -->
+              </div>
+              
+              <div class="upload-actions" style="display: none;">
+                <button class="btn btn-secondary" onclick="photoManager.goBackToFolderSelection()">← Back</button>
+                <button class="btn btn-gold" onclick="photoManager.startUpload()" id="start-upload-btn">🔺 Upload Photos</button>
+              </div>
             </div>
             
-            <div class="upload-actions" style="display: none;">
-              <button class="btn btn-secondary" onclick="photoManager.goBackToFolderSelection()">← Back</button>
-              <button class="btn btn-gold" onclick="photoManager.startUpload()" id="start-upload-btn">🔺 Upload Photos</button>
+            <!-- PASSO 3: Progress -->
+            <div class="upload-step" id="upload-step-3" style="display: none;">
+              <h4>Uploading Photos...</h4>
+              
+              <div class="upload-progress-container">
+                <div class="upload-progress-bar">
+                  <div class="upload-progress-fill" id="upload-progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="upload-progress-text" id="upload-progress-text">Preparing upload...</div>
+              </div>
+              
+              <div class="upload-status" id="upload-status">
+                <!-- Status messages will appear here -->
+              </div>
             </div>
           </div>
           
-          <!-- PASSO 3: Progress (será implementado depois) -->
-          <div class="upload-step" id="upload-step-3" style="display: none;">
-            <h4>Uploading Photos...</h4>
-            
-            <div class="upload-progress-container">
-              <div class="upload-progress-bar">
-                <div class="upload-progress-fill" id="upload-progress-fill" style="width: 0%"></div>
-              </div>
-              <div class="upload-progress-text" id="upload-progress-text">Preparing upload...</div>
-            </div>
-            
-            <div class="upload-status" id="upload-status">
-              <!-- Status messages will appear here -->
-            </div>
+          <div class="upload-modal-footer">
+            <button class="btn btn-secondary" onclick="photoManager.closeUploadModal()">Cancel</button>
           </div>
         </div>
-        
-        <div class="upload-modal-footer">
-          <button class="btn btn-secondary" onclick="photoManager.closeUploadModal()">Cancel</button>
-        </div>
       </div>
-    </div>
-  `;
+    `;
 
     document.body.insertAdjacentHTML('beforeend', uploadModalHTML);
     console.log('✅ Upload modal created');
@@ -1551,37 +1551,39 @@ const photoManager = {
   },
 
   // 🔧 ENCONTRAR E SUBSTITUIR A FUNÇÃO selectUploadDestination() POR:
-
-  selectUploadDestination(folder) {
-    console.log(`📁 Selecting upload destination: ${folder.name} (${folder.id})`);
-
+  selectUploadDestination(folderId, folderName) {
+    console.log(`📁 Selecting upload destination: ${folderName} (${folderId})`);
+    
     // Armazenar na variável do objeto
     this.selectedUploadDestination = {
-      id: folder.id,
-      name: folder.name,
-      path: folder.path || []
+      id: folderId,
+      name: folderName,
+      path: []
     };
-
-    // 🔧 CORREÇÃO: Também armazenar no sessionStorage como backup
-    sessionStorage.setItem('uploadDestination', JSON.stringify(this.selectedUploadDestination));
-
-    // 🔧 CORREÇÃO: Marcar elemento DOM para recuperação
+    
+    // Remover seleção anterior
     document.querySelectorAll('.upload-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
-
-    const folderElement = document.querySelector(`[data-folder-id="${folder.id}"]`);
-    if (folderElement) {
-      folderElement.classList.add('selected');
-      folderElement.dataset.folderId = folder.id;
-      folderElement.dataset.folderName = folder.name;
+    
+    // Adicionar seleção atual ao elemento clicado
+    if (event && event.currentTarget) {
+      event.currentTarget.closest('.upload-folder-item').classList.add('selected');
     }
-
-    // Atualizar interface
-    document.getElementById('selected-destination-name').textContent = folder.name;
-    document.getElementById('next-to-files-btn').disabled = false;
-
-    console.log('✅ Upload destination stored:', this.selectedUploadDestination);
+    
+    // 🔧 CORRIGIR IDs dos elementos DOM
+    const destinationNameSpan = document.getElementById('upload-destination-name');
+    const selectedFolderDiv = document.querySelector('.upload-selected-folder');
+    
+    if (destinationNameSpan) {
+      destinationNameSpan.textContent = folderName;
+    }
+    
+    if (selectedFolderDiv) {
+      selectedFolderDiv.style.display = 'block';
+    }
+    
+    console.log('✅ Upload destination selected:', this.selectedUploadDestination);
   },
 
   // Ir para seleção de arquivos (versão completa)
