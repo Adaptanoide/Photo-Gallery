@@ -1318,6 +1318,257 @@ const photoManager = {
       console.error('❌ Error deleting single photo:', error);
       showToast(`Failed to delete photo: ${error.message}`, 'error');
     }
+  },
+
+  // 🆕 ADICIONAR ESTAS FUNÇÕES NO FINAL DO OBJETO photoManager:
+
+  // ===== SISTEMA DE UPLOAD - PASSO 1 (INTERFACE) =====
+
+  // Abrir modal de upload
+  openUploadModal() {
+    console.log('🔺 Opening upload modal...');
+
+    if (!document.getElementById('photo-upload-modal')) {
+      this.createUploadModal();
+    }
+
+    // Carregar estrutura de pastas para seleção
+    this.loadFoldersForUpload();
+
+    document.getElementById('photo-upload-modal').style.display = 'flex';
+  },
+
+  // Criar modal de upload
+  createUploadModal() {
+    console.log('🏗️ Creating upload modal...');
+
+    const uploadModalHTML = `
+    <div id="photo-upload-modal" class="photo-upload-modal" style="display: none;">
+      <div class="upload-modal-content">
+        <div class="upload-modal-header">
+          <h3>📸 Upload Photos</h3>
+          <button class="upload-modal-close" onclick="photoManager.closeUploadModal()">&times;</button>
+        </div>
+        
+        <div class="upload-modal-body">
+          <!-- PASSO 1: Seleção de pasta destino -->
+          <div class="upload-step" id="upload-step-1">
+            <h4>Step 1: Select Destination Folder</h4>
+            <p>Choose where to upload your photos:</p>
+            
+            <div class="upload-folder-selection">
+              <div id="upload-folders-loading" class="loading">Loading folders...</div>
+              <div id="upload-folders-tree" style="display: none;">
+                <!-- Folder tree will be loaded here -->
+              </div>
+            </div>
+            
+            <div class="upload-selected-folder" style="display: none;">
+              <p><strong>Selected:</strong> <span id="upload-destination-name"></span></p>
+              <button class="btn btn-gold" onclick="photoManager.goToFileSelection()">Next: Select Photos →</button>
+            </div>
+          </div>
+          
+          <!-- PASSO 2: Seleção de arquivos (será implementado depois) -->
+          <div class="upload-step" id="upload-step-2" style="display: none;">
+            <h4>Step 2: Select Photos</h4>
+            <p>Choose photos from your computer:</p>
+            
+            <div class="file-upload-area">
+              <input type="file" id="photo-files-input" multiple accept="image/*" style="display: none;">
+              <div class="file-drop-zone" onclick="document.getElementById('photo-files-input').click()">
+                <div class="drop-zone-content">
+                  <span class="drop-icon">📁</span>
+                  <p>Click to select photos or drag & drop here</p>
+                  <small>Supports: JPG, PNG, WebP</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="selected-files-preview" id="selected-files-preview" style="display: none;">
+              <!-- File preview will be shown here -->
+            </div>
+            
+            <div class="upload-actions" style="display: none;">
+              <button class="btn btn-secondary" onclick="photoManager.goBackToFolderSelection()">← Back</button>
+              <button class="btn btn-gold" onclick="photoManager.startUpload()" id="start-upload-btn">🔺 Upload Photos</button>
+            </div>
+          </div>
+          
+          <!-- PASSO 3: Progress (será implementado depois) -->
+          <div class="upload-step" id="upload-step-3" style="display: none;">
+            <h4>Uploading Photos...</h4>
+            
+            <div class="upload-progress-container">
+              <div class="upload-progress-bar">
+                <div class="upload-progress-fill" id="upload-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="upload-progress-text" id="upload-progress-text">Preparing upload...</div>
+            </div>
+            
+            <div class="upload-status" id="upload-status">
+              <!-- Status messages will appear here -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="upload-modal-footer">
+          <button class="btn btn-secondary" onclick="photoManager.closeUploadModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+    document.body.insertAdjacentHTML('beforeend', uploadModalHTML);
+    console.log('✅ Upload modal created');
+  },
+
+  // Carregar pastas para upload (reutilizar estrutura existente)
+  async loadFoldersForUpload() {
+    console.log('📂 Loading folders for upload...');
+
+    const loadingDiv = document.getElementById('upload-folders-loading');
+    const treeDiv = document.getElementById('upload-folders-tree');
+
+    loadingDiv.style.display = 'block';
+    treeDiv.style.display = 'none';
+
+    try {
+      // Usar a estrutura já carregada
+      const foldersForUpload = this.filterFoldersForUpload(this.currentStructure);
+
+      if (foldersForUpload.length === 0) {
+        treeDiv.innerHTML = '<div class="empty-message">No available folders for upload</div>';
+      } else {
+        this.renderUploadTree(foldersForUpload, treeDiv);
+      }
+
+      loadingDiv.style.display = 'none';
+      treeDiv.style.display = 'block';
+
+    } catch (error) {
+      console.error('❌ Error loading folders for upload:', error);
+      treeDiv.innerHTML = `<div class="error">Failed to load folders: ${error.message}</div>`;
+      loadingDiv.style.display = 'none';
+      treeDiv.style.display = 'block';
+    }
+  },
+
+  // Filtrar pastas válidas para upload
+  filterFoldersForUpload(folders) {
+    const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
+
+    const filterRecursive = (folderList) => {
+      return folderList.filter(folder => {
+        // Excluir pastas administrativas
+        if (adminFoldersToExclude.includes(folder.name)) {
+          return false;
+        }
+
+        // Filtrar filhos recursivamente
+        if (folder.children && folder.children.length > 0) {
+          folder.children = filterRecursive(folder.children);
+        }
+
+        return true;
+      });
+    };
+
+    return filterRecursive(folders);
+  },
+
+  // Renderizar árvore de pastas para upload
+  renderUploadTree(folders, container, level = 0) {
+    container.innerHTML = '';
+
+    folders.forEach(folder => {
+      const folderDiv = document.createElement('div');
+      folderDiv.className = 'upload-folder-item';
+      folderDiv.style.paddingLeft = `${level * 20}px`;
+
+      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
+
+      folderDiv.innerHTML = `
+      <div class="upload-folder-content" onclick="photoManager.selectUploadDestination('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" ${folder.isLeaf ? 'data-selectable="true"' : ''}>
+        <span class="upload-folder-icon">${icon}</span>
+        <span class="upload-folder-name">${folder.name}</span>
+        <span class="upload-folder-count">${photoCount}</span>
+        ${folder.isLeaf ? '<span class="upload-folder-action">Click to select</span>' : ''}
+      </div>
+    `;
+
+      container.appendChild(folderDiv);
+
+      // Renderizar filhos
+      if (folder.children && folder.children.length > 0) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'upload-folder-children';
+        container.appendChild(childContainer);
+        this.renderUploadTree(folder.children, childContainer, level + 1);
+      }
+    });
+  },
+
+  // Selecionar pasta destino para upload
+  selectUploadDestination(folderId, folderName) {
+    console.log(`📁 Selected upload destination: ${folderName} (${folderId})`);
+
+    // Remover seleção anterior
+    document.querySelectorAll('.upload-folder-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+
+    // Adicionar seleção atual
+    event.currentTarget.closest('.upload-folder-item').classList.add('selected');
+
+    // Armazenar seleção
+    this.selectedUploadFolder = { id: folderId, name: folderName };
+
+    // Mostrar pasta selecionada
+    document.getElementById('upload-destination-name').textContent = folderName;
+    document.querySelector('.upload-selected-folder').style.display = 'block';
+  },
+
+  // Ir para seleção de arquivos
+  goToFileSelection() {
+    console.log('📁 Going to file selection step...');
+
+    document.getElementById('upload-step-1').style.display = 'none';
+    document.getElementById('upload-step-2').style.display = 'block';
+  },
+
+  // Voltar para seleção de pasta
+  goBackToFolderSelection() {
+    console.log('📁 Going back to folder selection...');
+
+    document.getElementById('upload-step-2').style.display = 'none';
+    document.getElementById('upload-step-1').style.display = 'block';
+  },
+
+  // Placeholder para início do upload
+  startUpload() {
+    console.log('🔺 [PLACEHOLDER] Start upload requested');
+    showToast('Upload functionality coming in next step!', 'info');
+  },
+
+  // Fechar modal de upload
+  closeUploadModal() {
+    console.log('🚪 Closing upload modal');
+
+    const modal = document.getElementById('photo-upload-modal');
+    if (modal) {
+      modal.style.display = 'none';
+
+      // Reset modal state
+      document.getElementById('upload-step-1').style.display = 'block';
+      document.getElementById('upload-step-2').style.display = 'none';
+      document.getElementById('upload-step-3').style.display = 'none';
+      document.querySelector('.upload-selected-folder').style.display = 'none';
+
+      // Clear selections
+      this.selectedUploadFolder = null;
+    }
   }
 
 
