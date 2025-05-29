@@ -829,18 +829,18 @@ class LocalStorageService {
       if (removed) {
         // Atualizar timestamp
         index.lastUpdate = new Date().toISOString();
-        
+
         // Salvar índice atualizado
         await this.saveIndex(index);
-        
+
         // Limpar cache
         this.clearCache();
-        
+
         console.log('✅ Folder removed from index');
       } else {
         console.warn('⚠️ Folder not found in index for removal');
       }
-      
+
     } catch (error) {
       console.error('❌ Error removing folder from index:', error);
       throw error;
@@ -853,29 +853,29 @@ class LocalStorageService {
   async savePhotoToFolder(folderId, photoId, buffer, originalName) {
     try {
       console.log(`💾 Saving photo ${photoId} to folder ${folderId}`);
-      
+
       // Buscar informações da pasta no índice
       const index = await this.getIndex();
       const folder = await this.findFolderById(index, folderId);
-      
+
       if (!folder) {
         return {
           success: false,
           error: `Folder not found: ${folderId}`
         };
       }
-      
+
       console.log(`📁 Target folder: ${folder.name} (${folder.relativePath})`);
-      
+
       // Construir caminho da pasta
       const folderPath = path.join(this.photosPath, folder.relativePath);
-      
+
       // Garantir que a pasta existe
       await fs.mkdir(folderPath, { recursive: true });
-      
+
       // Caminho do arquivo
       const filePath = path.join(folderPath, `${photoId}.webp`);
-      
+
       // Verificar se já existe (evitar sobrescrever)
       try {
         await fs.access(filePath);
@@ -886,12 +886,12 @@ class LocalStorageService {
       } catch {
         // Arquivo não existe, pode salvar
       }
-      
+
       // Salvar arquivo
       await fs.writeFile(filePath, buffer);
-      
+
       console.log(`✅ Photo saved: ${filePath}`);
-      
+
       return {
         success: true,
         photoId: photoId,
@@ -899,7 +899,7 @@ class LocalStorageService {
         folderPath: folder.relativePath,
         originalName: originalName
       };
-      
+
     } catch (error) {
       console.error(`❌ Error saving photo ${photoId}:`, error);
       return {
@@ -908,30 +908,67 @@ class LocalStorageService {
       };
     }
   }
-  
+
+  // 🔧 SUBSTITUIR A FUNÇÃO findFolderById no localStorageService.js:
+
   // Função auxiliar para encontrar pasta por ID
   async findFolderById(index, folderId) {
-    const searchInFolder = (folder) => {
+    console.log(`🔍 [DEBUG] Searching for folder ID: ${folderId}`);
+
+    if (!index || !index.folders) {
+      console.log('❌ [DEBUG] Index is empty or has no folders property');
+      return null;
+    }
+
+    console.log(`🔍 [DEBUG] Index has ${index.folders.length} root folders`);
+
+    const searchInFolder = (folder, depth = 0) => {
+      const indent = '  '.repeat(depth);
+      console.log(`${indent}🔍 [DEBUG] Checking folder: ${folder.name} (id: ${folder.id})`);
+
       if (folder.id === folderId) {
+        console.log(`${indent}✅ [DEBUG] FOUND MATCH: ${folder.name}`);
         return folder;
       }
-      
+
       if (folder.children && folder.children.length > 0) {
+        console.log(`${indent}🔍 [DEBUG] Searching ${folder.children.length} children of ${folder.name}`);
         for (const child of folder.children) {
-          const result = searchInFolder(child);
+          const result = searchInFolder(child, depth + 1);
           if (result) return result;
         }
       }
-      
+
       return null;
     };
-    
+
     // Buscar em todas as pastas raiz
-    for (const folder of index.folders || []) {
+    for (let i = 0; i < index.folders.length; i++) {
+      const folder = index.folders[i];
+      console.log(`🔍 [DEBUG] Searching root folder ${i + 1}/${index.folders.length}: ${folder.name}`);
+
       const result = searchInFolder(folder);
-      if (result) return result;
+      if (result) {
+        console.log(`✅ [DEBUG] Folder found: ${result.name} at ${result.relativePath}`);
+        return result;
+      }
     }
-    
+
+    console.log(`❌ [DEBUG] Folder not found: ${folderId}`);
+    console.log(`🔍 [DEBUG] Available folder IDs (first 10):`);
+
+    // Listar alguns IDs disponíveis para debug
+    const allIds = [];
+    const collectIds = (folder) => {
+      if (folder.id) allIds.push(`${folder.name}: ${folder.id}`);
+      if (folder.children) {
+        folder.children.forEach(collectIds);
+      }
+    };
+
+    index.folders.forEach(collectIds);
+    allIds.slice(0, 10).forEach(id => console.log(`   - ${id}`));
+
     return null;
   }
 
