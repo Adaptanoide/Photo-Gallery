@@ -1897,7 +1897,7 @@ const photoManager = {
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
-// 🔧 SUBSTITUIR A FUNÇÃO startUpload() EXISTENTE POR ESTA VERSÃO MELHORADA:
+// 🔧 NOVA VERSÃO startUpload - SUBSTITUIR A FUNÇÃO EXISTENTE NA LINHA ~2680:
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
@@ -1908,29 +1908,33 @@ const photoManager = {
       const destination = this.selectedUploadDestination;
       const files = this.selectedFiles;
 
+      // Validações básicas
       if (!destination || !destination.id) {
         console.log('❌ Destination not found');
-        showToast('Please select destination folder again', 'error');
-        document.getElementById('upload-step-1').style.display = 'block';
-        document.getElementById('upload-step-2').style.display = 'none';
+        alert('Please select destination folder again');
         return;
       }
 
       if (!files || files.length === 0) {
         console.log('❌ No files selected');
-        showToast('Please select files to upload', 'error');
+        alert('Please select files to upload');
         return;
       }
 
       console.log('✅ Validation passed - proceeding with upload');
 
-      // 🆕 MELHOR FEEDBACK VISUAL
       const fileCount = files.length;
       const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
       const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
       
-      // Mostrar toast de início
-      showToast(`Starting upload of ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'} (${totalSizeMB}MB) to "${destination.name}"...`, 'info');
+      console.log(`📦 Starting upload of ${fileCount} files (${totalSizeMB}MB) to "${destination.name}"`);
+
+      // 🎯 OBTER NÚMERO ATUAL DE FOTOS NA PASTA DESTINO
+      const currentPhotoCount = await this.getCurrentPhotoCount(destination.id);
+      const expectedFinalCount = currentPhotoCount + fileCount;
+      
+      console.log(`📊 Current photos in destination: ${currentPhotoCount}`);
+      console.log(`📊 Expected final count: ${expectedFinalCount}`);
 
       // Mostrar loading no botão
       uploadBtn = document.getElementById('start-upload-btn');
@@ -1940,8 +1944,8 @@ const photoManager = {
         uploadBtn.textContent = `🔄 Uploading ${fileCount} photos...`;
       }
 
-      // 🆕 ADICIONAR CLASSE DE LOADING NA PASTA DESTINO
-      this.markFolderAsUploading(destination.id, destination.name, fileCount);
+      // 🎯 MARCAR PASTA COMO UPLOADANDO (até número real mudar)
+      this.startRealUploadMonitoring(destination.id, destination.name, fileCount, expectedFinalCount);
 
       // Preparar FormData
       const formData = new FormData();
@@ -1953,27 +1957,16 @@ const photoManager = {
         formData.append('photos', file);
       });
 
-      console.log(`📦 Uploading ${fileCount} files to: ${destination.name} (${destination.id})`);
-
-      // 🆕 FEEDBACK DURANTE UPLOAD
-      const uploadStartTime = Date.now();
-      
-      // Toast com estimativa de tempo para arquivos grandes
-      if (totalSizeMB > 5) {
-        showToast(`Large files detected (${totalSizeMB}MB). This may take a few minutes...`, 'info');
-      }
-
-      // Fazer upload
+      // 🎯 FAZER UPLOAD (sem mentir sobre quando termina)
       console.log('📡 Sending upload request...');
-      showToast('📡 Sending files to server...', 'info');
+      console.log('⏰ This may take several minutes for large files...');
       
       const response = await fetch('/api/admin/photos/upload', {
         method: 'POST',
         body: formData
       });
 
-      const uploadDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
-      console.log(`📡 Response status: ${response.status} (took ${uploadDuration}s)`);
+      console.log(`📡 Response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -1985,90 +1978,33 @@ const photoManager = {
       console.log('📡 Server response:', result);
 
       if (result.success && result.uploadedCount > 0) {
-        console.log('✅ Upload successful!');
+        console.log('✅ Upload request successful!');
+        console.log('⏰ Files are now being processed on server...');
+        console.log('🔄 Monitoring will continue until photos appear in folder...');
         
-        // 🆕 FEEDBACK DETALHADO DE SUCESSO
-        const successMsg = `✅ Successfully uploaded ${result.uploadedCount} ${result.uploadedCount === 1 ? 'photo' : 'photos'} to "${destination.name}" in ${uploadDuration}s`;
-        showToast(successMsg, 'success');
+        alert(`✅ Upload request sent! ${result.uploadedCount} photos are being processed.\n\n⏰ This may take several minutes.\n🔄 The folder will show upload status until complete.`);
 
-        // 🆕 MOSTRAR PROGRESSO DE ATUALIZAÇÃO
-        showToast('📊 Updating folder structure...', 'info');
-        
-        // 🆕 NÃO FECHAR MODAL IMEDIATAMENTE - mostrar progresso
-        const modal = document.getElementById('photo-upload-modal');
-        if (modal) {
-          // Ir para step de progresso/conclusão
-          document.getElementById('upload-step-2').style.display = 'none';
-          document.getElementById('upload-step-3').style.display = 'block';
-          
-          // Mostrar progresso de atualização
-          const progressText = document.getElementById('upload-progress-text');
-          const progressFill = document.getElementById('upload-progress-fill');
-          const statusDiv = document.getElementById('upload-status');
-          
-          if (progressText) progressText.textContent = 'Upload completed! Updating interface...';
-          if (progressFill) progressFill.style.width = '100%';
-          if (statusDiv) {
-            statusDiv.innerHTML = `
-              <div style="color: #28a745; margin: 15px 0;">
-                <strong>✅ Upload Successful!</strong><br>
-                ${result.uploadedCount} ${result.uploadedCount === 1 ? 'photo' : 'photos'} uploaded to "${destination.name}"
-              </div>
-              <div style="color: #6c757d;">
-                📊 Updating folder index... <span class="loading-dots">●●●</span>
-              </div>
-            `;
-          }
-        }
-
-        // 🆕 ATUALIZAR INTERFACE DE FORMA MAIS SUAVE
-        this.updateInterfaceAfterUpload(destination, result.uploadedCount);
+        // Fechar modal
+        this.closeUploadModal();
 
       } else {
         console.error('❌ Upload failed:', result);
+        alert(`Upload failed: ${result.message || 'Unknown error'}`);
         
-        // 🆕 FEEDBACK DE ERRO MAIS DETALHADO
-        let errorMsg = 'Upload failed';
-        if (result.uploadedCount === 0 && result.errorCount > 0) {
-          errorMsg = `Upload failed: ${result.errors[0]?.error || 'Unknown error'}`;
-        } else if (result.uploadedCount > 0 && result.errorCount > 0) {
-          errorMsg = `Partial success: ${result.uploadedCount} uploaded, ${result.errorCount} errors`;
-        }
-        
-        showToast(errorMsg, 'error');
-        
-        // Mostrar erros detalhados se houver
-        if (result.errors && result.errors.length > 0) {
-          console.log('📋 Upload errors:', result.errors);
-          result.errors.forEach(error => {
-            console.log(`   - ${error.originalName}: ${error.error}`);
-          });
-        }
+        // Parar monitoramento se falhou
+        this.stopUploadMonitoring(destination.id);
       }
 
     } catch (error) {
       console.error('❌ Upload error:', error);
+      alert(`Upload failed: ${error.message}`);
       
-      // 🆕 FEEDBACK DE ERRO DE REDE MAIS CLARO
-      let errorMsg = 'Upload failed: ';
-      if (error.message.includes('500')) {
-        errorMsg += 'Server error. Please try again.';
-      } else if (error.message.includes('413')) {
-        errorMsg += 'Files too large. Try smaller files.';
-      } else if (error.message.includes('timeout')) {
-        errorMsg += 'Upload timeout. Try fewer files at once.';
-      } else {
-        errorMsg += error.message;
+      // Parar monitoramento se deu erro
+      if (this.selectedUploadDestination) {
+        this.stopUploadMonitoring(this.selectedUploadDestination.id);
       }
-      
-      showToast(errorMsg, 'error');
       
     } finally {
-      // 🆕 SEMPRE REMOVER LOADING STATE DA PASTA
-      if (this.selectedUploadDestination) {
-        this.unmarkFolderAsUploading(this.selectedUploadDestination.id);
-      }
-      
       // Restaurar botão
       if (uploadBtn && originalText) {
         uploadBtn.disabled = false;
@@ -2176,39 +2112,6 @@ const photoManager = {
     }
   },
 
-  // 🔧 ADICIONAR ESTA FUNÇÃO NO photoManager (frontend):
-
-  // Validar se ID da pasta ainda existe
-  async validateFolderId(folderId, folderName) {
-    try {
-      console.log(`🔍 Validating folder ID: ${folderId} (${folderName})`);
-
-      // Fazer uma requisição rápida para verificar se a pasta existe
-      const response = await fetch(`/api/photos?category_id=${folderId}&limit=1`);
-
-      if (response.ok) {
-        const photos = await response.json();
-        console.log(`✅ Folder ID validated: ${folderId}`);
-        return { valid: true, folderId: folderId };
-      } else {
-        console.log(`⚠️ Folder ID may have changed: ${folderId}`);
-
-        // Tentar encontrar a pasta na estrutura atual
-        const currentFolder = this.findFolderByName(folderName);
-        if (currentFolder) {
-          console.log(`🔄 Found folder with new ID: ${currentFolder.id}`);
-          return { valid: false, newFolderId: currentFolder.id, oldFolderId: folderId };
-        }
-      }
-
-      return { valid: false };
-
-    } catch (error) {
-      console.error('Error validating folder ID:', error);
-      return { valid: false };
-    }
-  },
-
   // Encontrar pasta por nome na estrutura atual
   findFolderByName(folderName) {
     if (!this.currentStructure) return null;
@@ -2229,7 +2132,7 @@ const photoManager = {
     return searchRecursive(this.currentStructure);
   },
 
-  // 🆕 MARCAR PASTA COMO "UPLOADANDO"
+// 🔧 SUBSTITUIR A FUNÇÃO markFolderAsUploading() EXISTENTE NA LINHA ~2750:
   markFolderAsUploading(folderId, folderName, fileCount) {
     console.log(`🔄 Marking folder as uploading: ${folderName} (${fileCount} files)`);
     
@@ -2241,11 +2144,11 @@ const photoManager = {
         // Adicionar classe de loading
         element.classList.add('folder-uploading');
         
-        // Substituir contador de fotos por loading
+        // 🎯 MENSAGEM MAIS CLARA SOBRE O TEMPO
         const countSpan = element.querySelector('.folder-count');
         if (countSpan) {
           countSpan.dataset.originalText = countSpan.textContent;
-          countSpan.innerHTML = `<span class="upload-loading">📤 Uploading ${fileCount}...</span>`;
+          countSpan.innerHTML = `<span class="upload-loading">📤 Processing ${fileCount} photos... (may take ~10min)</span>`;
         }
         
         // Desabilitar botão de visualização temporariamente  
@@ -2253,7 +2156,7 @@ const photoManager = {
         if (eyeButton) {
           eyeButton.disabled = true;
           eyeButton.style.opacity = '0.5';
-          eyeButton.title = 'Upload in progress...';
+          eyeButton.title = 'Upload in progress... Please wait until processing completes.';
         }
       }
     });
@@ -2288,40 +2191,18 @@ const photoManager = {
     });
   },
 
-  // 🆕 ATUALIZAÇÃO MAIS SUAVE DA INTERFACE
+// 🔧 SUBSTITUIR A FUNÇÃO updateInterfaceAfterUpload() EXISTENTE NA LINHA ~2800:
   async updateInterfaceAfterUpload(destination, uploadedCount) {
     try {
-      console.log('🔄 Starting gradual interface update...');
+      console.log('🔄 Interface update - REAL monitoring will handle this...');
       
-      // PASSO 1: Atualizar estatísticas gerais (rápido)
-      showToast('📊 Updating statistics...', 'info');
-      await this.loadStorageStats(true);
+      // 🎯 NÃO FAZER NADA AQUI!
+      // O monitoramento real vai cuidar da atualização quando as fotos realmente aparecerem
       
-      // PASSO 2: Aguardar um pouco para o backend processar
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // PASSO 3: Atualizar estrutura de pastas (pode demorar)
-      showToast('📂 Updating folder structure...', 'info');
-      await this.loadFolderStructure();
-      
-      // PASSO 4: Feedback final
-      showToast(`✅ Interface updated! ${destination.name} now shows ${uploadedCount} new ${uploadedCount === 1 ? 'photo' : 'photos'}`, 'success');
-      
-      // PASSO 5: Fechar modal após tudo pronto
-      setTimeout(() => {
-        this.closeUploadModal();
-      }, 1500);
-      
-      console.log('✅ Interface update completed');
+      console.log('✅ Interface update delegated to real monitoring system');
       
     } catch (error) {
-      console.error('❌ Error updating interface:', error);
-      showToast('Interface update failed. Please refresh the page.', 'warning');
-      
-      // Fechar modal mesmo com erro
-      setTimeout(() => {
-        this.closeUploadModal();
-      }, 2000);
+      console.error('❌ Error in interface update:', error);
     }
   },
 
@@ -2354,6 +2235,98 @@ const photoManager = {
       console.error('Error validating folder ID:', error);
       return { valid: false };
     }
+  },
+
+  // 🎯 ADICIONAR ESTAS 4 FUNÇÕES APÓS A LINHA ~2850 (depois de validateFolderId):
+
+  // 🎯 OBTER NÚMERO ATUAL DE FOTOS NA PASTA
+  async getCurrentPhotoCount(folderId) {
+    try {
+      const response = await fetch(`/api/photos?category_id=${folderId}`);
+      if (response.ok) {
+        const photos = await response.json();
+        return photos.length;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error getting current photo count:', error);
+      return 0;
+    }
+  },
+
+  // 🎯 INICIAR MONITORAMENTO REAL DE UPLOAD
+  startRealUploadMonitoring(folderId, folderName, uploadingCount, expectedFinalCount) {
+    console.log(`🔄 Starting REAL upload monitoring for: ${folderName}`);
+    console.log(`📊 Expecting ${expectedFinalCount} photos when complete`);
+    
+    // Marcar pasta como uploadando
+    this.markFolderAsUploading(folderId, folderName, uploadingCount);
+    
+    // Iniciar polling a cada 30 segundos
+    const monitoringInterval = setInterval(async () => {
+      try {
+        console.log(`🔍 Checking photo count for ${folderName}...`);
+        
+        const currentCount = await this.getCurrentPhotoCount(folderId);
+        console.log(`📊 Current count: ${currentCount}, Expected: ${expectedFinalCount}`);
+        
+        // Se chegou no número esperado, parar monitoramento
+        if (currentCount >= expectedFinalCount) {
+          console.log(`✅ Upload completed! ${folderName} now has ${currentCount} photos`);
+          
+          clearInterval(monitoringInterval);
+          this.stopUploadMonitoring(folderId);
+          
+          // 🎯 ATUALIZAR SÓ A PASTA ESPECÍFICA (não tudo!)
+          this.updateSpecificFolder(folderId, currentCount);
+          
+          alert(`✅ Upload completed!\n"${folderName}" now has ${currentCount} photos.`);
+        }
+        
+      } catch (error) {
+        console.error('Error in upload monitoring:', error);
+      }
+    }, 30000); // Verificar a cada 30 segundos
+    
+    // Armazenar referência do interval para poder parar depois
+    if (!this.uploadMonitoringIntervals) {
+      this.uploadMonitoringIntervals = new Map();
+    }
+    this.uploadMonitoringIntervals.set(folderId, monitoringInterval);
+  },
+
+  // 🎯 PARAR MONITORAMENTO DE UPLOAD
+  stopUploadMonitoring(folderId) {
+    console.log(`🛑 Stopping upload monitoring for folder: ${folderId}`);
+    
+    // Parar interval se existir
+    if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
+      clearInterval(this.uploadMonitoringIntervals.get(folderId));
+      this.uploadMonitoringIntervals.delete(folderId);
+    }
+    
+    // Remover loading visual
+    this.unmarkFolderAsUploading(folderId);
+  },
+
+  // 🎯 ATUALIZAR APENAS UMA PASTA ESPECÍFICA (não quebrar outras)
+  updateSpecificFolder(folderId, newPhotoCount) {
+    console.log(`🔄 Updating specific folder ${folderId} with count: ${newPhotoCount}`);
+    
+    // Encontrar elemento da pasta na árvore
+    const folderElements = document.querySelectorAll('.folder-item');
+    folderElements.forEach(element => {
+      const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
+      if (viewButton) {
+        // Atualizar contador
+        const countSpan = element.querySelector('.folder-count');
+        if (countSpan) {
+          countSpan.textContent = ` (${newPhotoCount} photos)`;
+        }
+        
+        console.log(`✅ Updated folder display: ${newPhotoCount} photos`);
+      }
+    });
   },
 };
 
