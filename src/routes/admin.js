@@ -30,4 +30,8 @@ router.post('/customers/:code/category-access', adminController.saveCustomerCate
 // NOVA ROTA: Movimentação de fotos
 router.post('/photos/move', adminController.movePhotos);
 
+// ROTAS DE EXCLUSÃO
+router.post('/photos/delete', adminController.deletePhotos);
+router.post('/folders/delete', adminController.deleteFolder);
+
 module.exports = router;

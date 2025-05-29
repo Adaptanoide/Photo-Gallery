@@ -66,6 +66,8 @@ const photoManager = {
     }
   },
 
+  // 🔧 CORRIGIR A FUNÇÃO loadFolderStructure() PARA ARMAZENAR allFolders:
+
   async loadFolderStructure() {
     try {
       console.log('📂 Loading folder structure...');
@@ -75,6 +77,9 @@ const photoManager = {
 
       if (data.success && data.folders) {
         console.log(`📋 Loaded ${data.folders.length} folders`);
+
+        // 🔧 ARMAZENAR PARA USO NAS VALIDAÇÕES
+        this.allFolders = data.folders;
 
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
         this.currentStructure = organizedStructure;
@@ -127,32 +132,32 @@ const photoManager = {
     }));
   },
 
-// 🔧 SUBSTITUIR A FUNÇÃO renderFolderTree() POR ESTA VERSÃO COM BOTÕES DELETE:
+  // 🔧 SUBSTITUIR A FUNÇÃO renderFolderTree() POR ESTA VERSÃO COM BOTÕES DELETE:
 
-renderFolderTree(folders, container = null, level = 0) {
-  if (!container) {
-    container = document.getElementById('folder-tree');
-    container.innerHTML = '';
+  renderFolderTree(folders, container = null, level = 0) {
+    if (!container) {
+      container = document.getElementById('folder-tree');
+      container.innerHTML = '';
 
-    if (folders.length === 0) {
-      container.innerHTML = '<div class="empty-message">No folders found</div>';
-      return;
+      if (folders.length === 0) {
+        container.innerHTML = '<div class="empty-message">No folders found</div>';
+        return;
+      }
     }
-  }
 
-  folders.forEach(folder => {
-    const folderDiv = document.createElement('div');
-    folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
-    folderDiv.style.paddingLeft = `${level * 20}px`;
+    folders.forEach(folder => {
+      const folderDiv = document.createElement('div');
+      folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
+      folderDiv.style.paddingLeft = `${level * 20}px`;
 
-    const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
-    const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
+      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
-    // 🆕 VERIFICAR SE É PASTA ADMINISTRATIVA (não pode deletar)
-    const adminFolders = ['Waiting Payment', 'Sold'];
-    const isAdminFolder = adminFolders.includes(folder.name);
-    
-    folderDiv.innerHTML = `
+      // 🆕 VERIFICAR SE É PASTA ADMINISTRATIVA (não pode deletar)
+      const adminFolders = ['Waiting Payment', 'Sold'];
+      const isAdminFolder = adminFolders.includes(folder.name);
+
+      folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
       <span class="folder-name">${folder.name}</span>
       <span class="folder-count">${photoCount}</span>
@@ -172,24 +177,24 @@ renderFolderTree(folders, container = null, level = 0) {
       `}
     `;
 
-    if (folder.isLeaf) {
-      folderDiv.onclick = (e) => {
-        if (!e.target.classList.contains('folder-action-btn')) {
-          this.selectFolder(folder, folderDiv);
-        }
-      };
-    }
+      if (folder.isLeaf) {
+        folderDiv.onclick = (e) => {
+          if (!e.target.classList.contains('folder-action-btn')) {
+            this.selectFolder(folder, folderDiv);
+          }
+        };
+      }
 
-    container.appendChild(folderDiv);
+      container.appendChild(folderDiv);
 
-    if (folder.children && folder.children.length > 0) {
-      const childContainer = document.createElement('div');
-      childContainer.className = 'folder-children';
-      container.appendChild(childContainer);
-      this.renderFolderTree(folder.children, childContainer, level + 1);
-    }
-  });
-},
+      if (folder.children && folder.children.length > 0) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'folder-children';
+        container.appendChild(childContainer);
+        this.renderFolderTree(folder.children, childContainer, level + 1);
+      }
+    });
+  },
 
   selectFolder(folder, element) {
     document.querySelectorAll('.folder-item').forEach(item => {
@@ -295,10 +300,10 @@ renderFolderTree(folders, container = null, level = 0) {
   },
 
   // Renderizar modo lista COM CHECKBOXES
-renderListMode(photos, container) {
-  console.log('📋 Rendering list mode with checkboxes and delete button');
+  renderListMode(photos, container) {
+    console.log('📋 Rendering list mode with checkboxes and delete button');
 
-  const listHTML = `
+    const listHTML = `
     <div class="photo-list-header">
       <div class="selection-controls">
         <label class="select-all-label">
@@ -330,14 +335,14 @@ renderListMode(photos, container) {
       `).join('')}
     </div>
   `;
-  container.innerHTML = listHTML;
-},
+    container.innerHTML = listHTML;
+  },
 
   // Renderizar modo thumbnails COM CHECKBOXES
-renderThumbnailsMode(photos, container) {
-  console.log('🖼️ Rendering thumbnails mode with checkboxes and delete button');
+  renderThumbnailsMode(photos, container) {
+    console.log('🖼️ Rendering thumbnails mode with checkboxes and delete button');
 
-  const thumbnailsHTML = `
+    const thumbnailsHTML = `
     <div class="photo-thumbnails-header">
       <div class="selection-controls">
         <label class="select-all-label">
@@ -353,12 +358,12 @@ renderThumbnailsMode(photos, container) {
     </div>
     <div class="photo-thumbnails-container">
       ${photos.map((photo, index) => {
-        let thumbnailUrl = photo.thumbnail;
-        if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
-          thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
-        }
+      let thumbnailUrl = photo.thumbnail;
+      if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
+        thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
+      }
 
-        return `
+      return `
           <div class="photo-thumbnail-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
             <label class="photo-thumbnail-checkbox" onclick="event.stopPropagation();">
               <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
@@ -381,11 +386,11 @@ renderThumbnailsMode(photos, container) {
             </div>
           </div>
         `;
-      }).join('')}
+    }).join('')}
     </div>
   `;
-  container.innerHTML = thumbnailsHTML;
-},
+    container.innerHTML = thumbnailsHTML;
+  },
 
   // Alternar seleção de foto individual
   togglePhotoSelection(photoId, selected) {
@@ -439,25 +444,25 @@ renderThumbnailsMode(photos, container) {
   },
 
   // Atualizar contador de selecionados
-updateSelectionCounter() {
-  const selectedCount = this.selectedPhotos.size;
-  
-  // Atualizar botão de mover
-  const moveBtn = document.getElementById('move-selected-btn');
-  if (moveBtn) {
-    moveBtn.disabled = selectedCount === 0;
-    moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
-  }
-  
-  // 🆕 Atualizar botão de deletar
-  const deleteBtn = document.getElementById('delete-selected-btn');
-  if (deleteBtn) {
-    deleteBtn.disabled = selectedCount === 0;
-    deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
-  }
+  updateSelectionCounter() {
+    const selectedCount = this.selectedPhotos.size;
 
-  console.log(`📊 Selected photos: ${selectedCount}`);
-},
+    // Atualizar botão de mover
+    const moveBtn = document.getElementById('move-selected-btn');
+    if (moveBtn) {
+      moveBtn.disabled = selectedCount === 0;
+      moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
+    }
+
+    // 🆕 Atualizar botão de deletar
+    const deleteBtn = document.getElementById('delete-selected-btn');
+    if (deleteBtn) {
+      deleteBtn.disabled = selectedCount === 0;
+      deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
+    }
+
+    console.log(`📊 Selected photos: ${selectedCount}`);
+  },
 
   // Atualizar checkbox "Select All"
   updateSelectAllCheckbox() {
@@ -511,8 +516,8 @@ updateSelectionCounter() {
   },
 
   // Criar modal fullscreen
-createFullscreenModal() {
-  const fullscreenHTML = `
+  createFullscreenModal() {
+    const fullscreenHTML = `
     <div id="photo-fullscreen-modal" class="photo-fullscreen-modal" style="display: none;">
       <div class="fullscreen-content">
         <div class="fullscreen-header">
@@ -532,9 +537,9 @@ createFullscreenModal() {
     </div>
   `;
 
-  document.body.insertAdjacentHTML('beforeend', fullscreenHTML);
-  console.log('✅ Fullscreen modal created with delete button');
-},
+    document.body.insertAdjacentHTML('beforeend', fullscreenHTML);
+    console.log('✅ Fullscreen modal created with delete button');
+  },
 
   // Fechar modal da pasta
   closeFolderModal() {
@@ -941,53 +946,380 @@ createFullscreenModal() {
 
   // ===== FUNÇÕES DELETE - PLACEHOLDER (SÓ VISUAL POR ENQUANTO) =====
 
-// Confirmar exclusão de pasta
-confirmDeleteFolder(folderId, folderName) {
-  console.log(`🗑️ [PLACEHOLDER] Delete folder requested: ${folderName} (${folderId})`);
-  showToast(`Delete folder feature coming soon!\nRequested: ${folderName}`, 'info');
-},
+  // ===== FUNÇÕES DELETE - VERSÃO ROBUSTA COM CONFIRMAÇÕES =====
 
-// Confirmar exclusão de fotos selecionadas
-confirmDeleteSelectedPhotos() {
-  const selectedCount = this.selectedPhotos.size;
-  console.log(`🗑️ [PLACEHOLDER] Delete ${selectedCount} selected photos requested`);
-  
-  if (selectedCount === 0) {
-    showToast('Please select photos to delete', 'warning');
-    return;
+  // Confirmar exclusão de pasta
+  confirmDeleteFolder(folderId, folderName) {
+    console.log(`🗑️ Delete folder requested: ${folderName} (${folderId})`);
+
+    // 🔒 VALIDAÇÃO: Verificar se é pasta administrativa
+    const adminFolders = ['Waiting Payment', 'Sold'];
+    if (adminFolders.includes(folderName)) {
+      showToast('Cannot delete administrative folders', 'error');
+      return;
+    }
+
+    // 🔒 VALIDAÇÃO: Verificar se pasta tem fotos
+    const folder = this.allFolders?.find(f => f.id === folderId);
+    const photoCount = folder?.fileCount || 0;
+
+    if (photoCount > 0) {
+      // Pasta com fotos - confirmação mais rigorosa
+      this.showDeleteFolderModal(folderId, folderName, photoCount);
+    } else {
+      // Pasta vazia - confirmação simples
+      showConfirm(
+        `Are you sure you want to delete the empty folder "${folderName}"?`,
+        () => this.executeDeleteFolder(folderId, folderName, false),
+        'Delete Empty Folder'
+      );
+    }
+  },
+
+  // Confirmar exclusão de fotos selecionadas
+  confirmDeleteSelectedPhotos() {
+    const selectedCount = this.selectedPhotos.size;
+    console.log(`🗑️ Delete ${selectedCount} selected photos requested`);
+
+    if (selectedCount === 0) {
+      showToast('Please select photos to delete', 'warning');
+      return;
+    }
+
+    // 🔒 CONFIRMAÇÃO: Lista as fotos que serão deletadas
+    const photoIds = Array.from(this.selectedPhotos);
+    const photoList = photoIds.slice(0, 5).join(', ');
+    const moreText = selectedCount > 5 ? ` and ${selectedCount - 5} more` : '';
+
+    showConfirm(
+      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete ${selectedCount} ${selectedCount === 1 ? 'photo' : 'photos'}:\n\n${photoList}${moreText}\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
+      () => this.executeDeleteSelectedPhotos(),
+      'Delete Photos Permanently'
+    );
+  },
+
+  // Confirmar exclusão de foto única
+  confirmDeleteSinglePhoto(photoId) {
+    console.log(`🗑️ Delete single photo requested: ${photoId}`);
+
+    showConfirm(
+      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete photo:\n${photoId}.webp\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
+      () => this.executeDeleteSinglePhoto(photoId),
+      'Delete Photo Permanently'
+    );
+  },
+
+  // Confirmar exclusão da foto atual (fullscreen)
+  confirmDeleteCurrentPhoto() {
+    if (!this.currentFullscreenPhoto) {
+      showToast('No photo selected', 'error');
+      return;
+    }
+
+    const photoId = this.currentFullscreenPhoto.id;
+    const photoName = this.currentFullscreenPhoto.name || photoId;
+
+    console.log(`🗑️ Delete current photo requested: ${photoId}`);
+
+    showConfirm(
+      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete:\n${photoName}\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
+      () => {
+        this.closeFullscreen(); // Fechar fullscreen primeiro
+        this.executeDeleteSinglePhoto(photoId);
+      },
+      'Delete Photo Permanently'
+    );
+  },
+
+  // 🆕 NOVO: Modal especial para pasta com fotos
+  showDeleteFolderModal(folderId, folderName, photoCount) {
+    const modalHTML = `
+    <div id="delete-folder-modal" class="modal" style="display: flex; z-index: 15000;">
+      <div class="modal-content" style="max-width: 500px;">
+        <h2 style="color: #dc3545;">⚠️ Delete Folder Warning</h2>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 15px 0;">
+          <p><strong>Folder:</strong> ${folderName}</p>
+          <p><strong>Contains:</strong> ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}</p>
+          <p style="color: #856404; margin: 0;"><strong>⚠️ All photos in this folder will be permanently deleted!</strong></p>
+        </div>
+        
+        <p>This action will:</p>
+        <ul style="color: #dc3545; font-weight: 500;">
+          <li>🗑️ Delete all ${photoCount} photos permanently</li>
+          <li>🗂️ Remove the folder completely</li>
+          <li>📊 Update the folder index</li>
+        </ul>
+        
+        <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 15px; margin: 15px 0;">
+          <p style="margin: 0; color: #721c24; font-weight: 600;">🚨 THIS CANNOT BE UNDONE!</p>
+        </div>
+        
+        <p>To confirm this dangerous action, please type: <code>DELETE</code></p>
+        <input type="text" id="delete-confirmation-input" class="form-control" placeholder="Type DELETE to confirm" style="margin: 10px 0;">
+        
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+          <button class="btn btn-secondary" onclick="photoManager.closeDeleteFolderModal()">Cancel</button>
+          <button class="btn btn-danger" onclick="photoManager.confirmDeleteFolderWithText('${folderId}', '${folderName.replace(/'/g, '\\\'')}')" id="confirm-delete-folder-btn" disabled>🗑️ Delete Folder</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // 🔒 VALIDAÇÃO: Só habilitar botão se digitou "DELETE"
+    const input = document.getElementById('delete-confirmation-input');
+    const button = document.getElementById('confirm-delete-folder-btn');
+
+    input.addEventListener('input', () => {
+      button.disabled = input.value.trim() !== 'DELETE';
+    });
+
+    // Focar no input
+    setTimeout(() => input.focus(), 100);
+  },
+
+  // Confirmar delete da pasta com validação de texto
+  confirmDeleteFolderWithText(folderId, folderName) {
+    const input = document.getElementById('delete-confirmation-input');
+
+    if (input.value.trim() !== 'DELETE') {
+      showToast('Please type DELETE to confirm', 'error');
+      return;
+    }
+
+    this.closeDeleteFolderModal();
+    this.executeDeleteFolder(folderId, folderName, true);
+  },
+
+  // Fechar modal de confirmação de pasta
+  closeDeleteFolderModal() {
+    const modal = document.getElementById('delete-folder-modal');
+    if (modal) {
+      modal.remove();
+    }
+  },
+
+  // Confirmar exclusão de fotos selecionadas
+  confirmDeleteSelectedPhotos() {
+    const selectedCount = this.selectedPhotos.size;
+    console.log(`🗑️ [PLACEHOLDER] Delete ${selectedCount} selected photos requested`);
+
+    if (selectedCount === 0) {
+      showToast('Please select photos to delete', 'warning');
+      return;
+    }
+
+    showToast(`Delete ${selectedCount} photos feature coming soon!`, 'info');
+  },
+
+  // Confirmar exclusão de foto única
+  confirmDeleteSinglePhoto(photoId) {
+    console.log(`🗑️ [PLACEHOLDER] Delete single photo requested: ${photoId}`);
+    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
+  },
+
+  // Confirmar exclusão da foto atual (fullscreen)
+  confirmDeleteCurrentPhoto() {
+    if (!this.currentFullscreenPhoto) {
+      showToast('No photo selected', 'error');
+      return;
+    }
+
+    const photoId = this.currentFullscreenPhoto.id;
+    console.log(`🗑️ [PLACEHOLDER] Delete current photo requested: ${photoId}`);
+    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
+  },
+
+  // Atualizar contador de botões delete (igual ao move)
+  updateDeleteButtonsState() {
+    const selectedCount = this.selectedPhotos.size;
+    const deleteBtn = document.getElementById('delete-selected-btn');
+
+    if (deleteBtn) {
+      deleteBtn.disabled = selectedCount === 0;
+      deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
+    }
+  },
+
+  // 🔧 ADICIONAR ESTAS FUNÇÕES DE EXECUÇÃO NO photoManager:
+
+  // ===== FUNÇÕES DE EXECUÇÃO DELETE =====
+
+  // Executar exclusão de pasta
+  async executeDeleteFolder(folderId, folderName, includePhotos) {
+    try {
+      console.log(`🗑️ Executing delete folder: ${folderName} (includePhotos: ${includePhotos})`);
+
+      showToast(`Deleting folder "${folderName}"...`, 'info');
+
+      const response = await fetch('/api/admin/folders/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folderId: folderId,
+          folderName: folderName,
+          includePhotos: includePhotos
+        })
+      });
+
+      console.log(`📡 Delete folder API response: ${response.status}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('📡 Delete folder result:', result);
+
+      if (result.success) {
+        const deletedCount = result.deletedPhotos || 0;
+        const message = includePhotos
+          ? `Successfully deleted folder "${folderName}" and ${deletedCount} photos`
+          : `Successfully deleted empty folder "${folderName}"`;
+
+        showToast(message, 'success');
+
+        // 🔄 ATUALIZAR INTERFACE
+        console.log('🔄 Refreshing interface after folder deletion...');
+        await this.loadStorageStats(true);
+        await this.loadFolderStructure();
+
+        console.log('✅ Interface refreshed after folder deletion');
+
+      } else {
+        throw new Error(result.message || 'Failed to delete folder');
+      }
+
+    } catch (error) {
+      console.error('❌ Error deleting folder:', error);
+      showToast(`Failed to delete folder: ${error.message}`, 'error');
+    }
+  },
+
+  // Executar exclusão de fotos selecionadas
+  async executeDeleteSelectedPhotos() {
+    try {
+      const photoIds = Array.from(this.selectedPhotos);
+      const photoCount = photoIds.length;
+
+      console.log(`🗑️ Executing delete ${photoCount} selected photos:`, photoIds);
+
+      showToast(`Deleting ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}...`, 'info');
+
+      const response = await fetch('/api/admin/photos/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photoIds: photoIds,
+          sourceFolderId: this.currentFolderId
+        })
+      });
+
+      console.log(`📡 Delete photos API response: ${response.status}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('📡 Delete photos result:', result);
+
+      if (result.success) {
+        const deletedCount = result.deletedCount || 0;
+        const errors = result.errors || [];
+
+        let message = `Successfully deleted ${deletedCount} ${deletedCount === 1 ? 'photo' : 'photos'}`;
+        if (errors.length > 0) {
+          message += ` (${errors.length} errors)`;
+          console.warn('⚠️ Delete errors:', errors);
+        }
+
+        showToast(message, 'success');
+
+        // 🧹 LIMPAR SELEÇÕES
+        this.selectedPhotos.clear();
+        this.updateSelectionCounter();
+
+        // 🔄 ATUALIZAR INTERFACE
+        console.log('🔄 Refreshing interface after photo deletion...');
+        await this.loadStorageStats(true);
+        await this.loadFolderStructure();
+
+        if (this.currentFolderId) {
+          await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
+        }
+
+        console.log('✅ Interface refreshed after photo deletion');
+
+      } else {
+        throw new Error(result.message || 'Failed to delete photos');
+      }
+
+    } catch (error) {
+      console.error('❌ Error deleting selected photos:', error);
+      showToast(`Failed to delete photos: ${error.message}`, 'error');
+    }
+  },
+
+  // Executar exclusão de foto única
+  async executeDeleteSinglePhoto(photoId) {
+    try {
+      console.log(`🗑️ Executing delete single photo: ${photoId}`);
+
+      showToast(`Deleting photo ${photoId}...`, 'info');
+
+      const response = await fetch('/api/admin/photos/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photoIds: [photoId],
+          sourceFolderId: this.currentFolderId
+        })
+      });
+
+      console.log(`📡 Delete photo API response: ${response.status}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('📡 Delete photo result:', result);
+
+      if (result.success && result.deletedCount > 0) {
+        showToast(`Successfully deleted photo ${photoId}`, 'success');
+
+        // 🧹 REMOVER DA SELEÇÃO SE ESTAVA SELECIONADA
+        if (this.selectedPhotos.has(photoId)) {
+          this.selectedPhotos.delete(photoId);
+          this.updateSelectionCounter();
+        }
+
+        // 🔄 ATUALIZAR INTERFACE
+        console.log('🔄 Refreshing interface after single photo deletion...');
+        await this.loadStorageStats(true);
+        await this.loadFolderStructure();
+
+        if (this.currentFolderId) {
+          await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
+        }
+
+        console.log('✅ Interface refreshed after single photo deletion');
+
+      } else {
+        const errors = result.errors || [];
+        const errorMsg = errors.length > 0 ? errors[0] : 'Unknown error';
+        throw new Error(errorMsg);
+      }
+
+    } catch (error) {
+      console.error('❌ Error deleting single photo:', error);
+      showToast(`Failed to delete photo: ${error.message}`, 'error');
+    }
   }
-  
-  showToast(`Delete ${selectedCount} photos feature coming soon!`, 'info');
-},
 
-// Confirmar exclusão de foto única
-confirmDeleteSinglePhoto(photoId) {
-  console.log(`🗑️ [PLACEHOLDER] Delete single photo requested: ${photoId}`);
-  showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
-},
-
-// Confirmar exclusão da foto atual (fullscreen)
-confirmDeleteCurrentPhoto() {
-  if (!this.currentFullscreenPhoto) {
-    showToast('No photo selected', 'error');
-    return;
-  }
-  
-  const photoId = this.currentFullscreenPhoto.id;
-  console.log(`🗑️ [PLACEHOLDER] Delete current photo requested: ${photoId}`);
-  showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
-},
-
-// Atualizar contador de botões delete (igual ao move)
-updateDeleteButtonsState() {
-  const selectedCount = this.selectedPhotos.size;
-  const deleteBtn = document.getElementById('delete-selected-btn');
-  
-  if (deleteBtn) {
-    deleteBtn.disabled = selectedCount === 0;
-    deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
-  }
-}
 
 };
 

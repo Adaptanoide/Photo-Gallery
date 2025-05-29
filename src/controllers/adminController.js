@@ -420,3 +420,154 @@ exports.movePhotos = async function(req, res) {
     });
   }
 };
+
+// Deletar fotos
+exports.deletePhotos = async function(req, res) {
+  try {
+    console.log('🗑️ Starting photo deletion...');
+    
+    const { photoIds, sourceFolderId } = req.body;
+    
+    // Validações básicas
+    if (!photoIds || !Array.isArray(photoIds) || photoIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Photo IDs are required and must be an array'
+      });
+    }
+    
+    if (!sourceFolderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source folder ID is required'
+      });
+    }
+    
+    console.log(`🗑️ Deleting ${photoIds.length} photos from folder ${sourceFolderId}`);
+    console.log('📋 Photo IDs:', photoIds);
+    
+    // Obter informações da pasta fonte
+    const index = await localStorageService.getIndex();
+    const sourceFolder = localStorageService.findCategoryById(index, sourceFolderId);
+    
+    if (!sourceFolder) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source folder not found'
+      });
+    }
+    
+    console.log(`📁 Source folder: ${sourceFolder.name} (${sourceFolder.relativePath})`);
+    
+    // Chamar função de exclusão do serviço
+    const result = await localStorageService.deletePhotosFromCategory(
+      photoIds, 
+      sourceFolder
+    );
+    
+    if (result.success) {
+      console.log(`✅ Successfully deleted ${result.deletedCount} photos`);
+      
+      res.status(200).json({
+        success: true,
+        message: `Successfully deleted ${result.deletedCount} photos`,
+        deletedCount: result.deletedCount,
+        errors: result.errors || []
+      });
+    } else {
+      console.error('❌ Failed to delete photos:', result.message);
+      
+      res.status(400).json({
+        success: false,
+        message: result.message,
+        errors: result.errors || []
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in deletePhotos controller:', error);
+    res.status(500).json({
+      success: false,
+      message: `Server error: ${error.message}`
+    });
+  }
+};
+
+// Deletar pasta
+exports.deleteFolder = async function(req, res) {
+  try {
+    console.log('🗑️ Starting folder deletion...');
+    
+    const { folderId, folderName, includePhotos } = req.body;
+    
+    // Validações básicas
+    if (!folderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Folder ID is required'
+      });
+    }
+    
+    if (!folderName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Folder name is required'
+      });
+    }
+    
+    // Validar que não é pasta administrativa
+    const adminFolders = ['Waiting Payment', 'Sold'];
+    if (adminFolders.includes(folderName)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete administrative folders'
+      });
+    }
+    
+    console.log(`🗑️ Deleting folder: ${folderName} (includePhotos: ${includePhotos})`);
+    
+    // Obter informações da pasta
+    const index = await localStorageService.getIndex();
+    const folder = localStorageService.findCategoryById(index, folderId);
+    
+    if (!folder) {
+      return res.status(400).json({
+        success: false,
+        message: 'Folder not found'
+      });
+    }
+    
+    console.log(`📁 Target folder: ${folder.name} (${folder.relativePath})`);
+    
+    // Chamar função de exclusão do serviço
+    const result = await localStorageService.deleteFolderCompletely(
+      folder,
+      includePhotos
+    );
+    
+    if (result.success) {
+      console.log(`✅ Successfully deleted folder ${folderName}`);
+      
+      res.status(200).json({
+        success: true,
+        message: `Successfully deleted folder "${folderName}"`,
+        deletedPhotos: result.deletedPhotos || 0,
+        folderDeleted: result.folderDeleted || false
+      });
+    } else {
+      console.error('❌ Failed to delete folder:', result.message);
+      
+      res.status(400).json({
+        success: false,
+        message: result.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in deleteFolder controller:', error);
+    res.status(500).json({
+      success: false,
+      message: `Server error: ${error.message}`
+    });
+  }
+};

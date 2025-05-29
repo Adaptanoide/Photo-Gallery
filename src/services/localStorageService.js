@@ -604,6 +604,249 @@ class LocalStorageService {
       throw error;
     }
   }
+
+  // 🔧 ADICIONAR ESTAS FUNÇÕES NO FINAL DA CLASSE LocalStorageService:
+
+  // Deletar fotos de uma categoria
+  async deletePhotosFromCategory(photoIds, sourceFolder) {
+    const fs = require('fs').promises;
+    const path = require('path');
+    
+    try {
+      console.log(`🗑️ Deleting ${photoIds.length} photos from category: ${sourceFolder.name}`);
+      
+      // Construir caminho físico da pasta
+      const sourcePath = path.join(this.photosPath, sourceFolder.relativePath);
+      
+      console.log(`📁 Source path: ${sourcePath}`);
+      
+      // Verificar se pasta existe fisicamente
+      try {
+        await fs.access(sourcePath);
+      } catch (error) {
+        throw new Error(`Source folder does not exist: ${sourcePath}`);
+      }
+      
+      let deletedCount = 0;
+      let errors = [];
+      
+      // Processar cada foto
+      for (const photoId of photoIds) {
+        try {
+          const fileName = `${photoId}.webp`;
+          const filePath = path.join(sourcePath, fileName);
+          
+          // Verificar se arquivo existe
+          try {
+            await fs.access(filePath);
+          } catch {
+            console.warn(`⚠️ Photo file not found: ${fileName}`);
+            errors.push(`Photo not found: ${fileName}`);
+            continue;
+          }
+          
+          // 🗑️ DELETAR ARQUIVO FISICAMENTE
+          await fs.unlink(filePath);
+          deletedCount++;
+          
+          console.log(`✅ Deleted photo: ${fileName}`);
+          
+        } catch (photoError) {
+          console.error(`❌ Error deleting photo ${photoId}:`, photoError);
+          errors.push(`Error deleting ${photoId}: ${photoError.message}`);
+        }
+      }
+      
+      if (deletedCount > 0) {
+        // Atualizar contadores no índice
+        await this.updatePhotoCountsAfterDeletion(sourceFolder, deletedCount);
+        console.log(`📊 Updated photo counts: -${deletedCount} from ${sourceFolder.name}`);
+      }
+      
+      return {
+        success: true,
+        deletedCount: deletedCount,
+        totalRequested: photoIds.length,
+        errors: errors,
+        message: `Successfully deleted ${deletedCount} of ${photoIds.length} photos`
+      };
+      
+    } catch (error) {
+      console.error('❌ Error in deletePhotosFromCategory:', error);
+      return {
+        success: false,
+        deletedCount: 0,
+        errors: [error.message],
+        message: `Failed to delete photos: ${error.message}`
+      };
+    }
+  }
+
+  // Deletar pasta completamente
+  async deleteFolderCompletely(folder, includePhotos) {
+    const fs = require('fs').promises;
+    const path = require('path');
+    
+    try {
+      console.log(`🗑️ Deleting folder completely: ${folder.name} (includePhotos: ${includePhotos})`);
+      
+      const folderPath = path.join(this.photosPath, folder.relativePath);
+      console.log(`📁 Folder path: ${folderPath}`);
+      
+      // Verificar se pasta existe
+      try {
+        await fs.access(folderPath);
+      } catch (error) {
+        throw new Error(`Folder does not exist: ${folderPath}`);
+      }
+      
+      let deletedPhotos = 0;
+      
+      if (includePhotos) {
+        // Contar e deletar todas as fotos na pasta
+        try {
+          const files = await fs.readdir(folderPath);
+          const photoFiles = files.filter(file => this.isImageFile(file));
+          
+          console.log(`📸 Found ${photoFiles.length} photos to delete`);
+          
+          for (const file of photoFiles) {
+            try {
+              const filePath = path.join(folderPath, file);
+              await fs.unlink(filePath);
+              deletedPhotos++;
+              console.log(`✅ Deleted photo: ${file}`);
+            } catch (error) {
+              console.error(`❌ Error deleting photo ${file}:`, error);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error reading folder contents:', error);
+        }
+      }
+      
+      // Verificar se pasta está vazia agora
+      try {
+        const remainingFiles = await fs.readdir(folderPath);
+        const remainingPhotos = remainingFiles.filter(file => this.isImageFile(file));
+        
+        if (remainingPhotos.length === 0) {
+          // 🗑️ DELETAR PASTA FISICAMENTE
+          await fs.rmdir(folderPath);
+          console.log(`✅ Deleted folder: ${folder.name}`);
+          
+          // Remover do índice
+          await this.removeFolderFromIndex(folder);
+          
+          return {
+            success: true,
+            deletedPhotos: deletedPhotos,
+            folderDeleted: true,
+            message: `Successfully deleted folder "${folder.name}" with ${deletedPhotos} photos`
+          };
+        } else {
+          throw new Error(`Folder still contains ${remainingPhotos.length} photos. Cannot delete folder.`);
+        }
+      } catch (error) {
+        if (error.code === 'ENOTEMPTY') {
+          throw new Error('Folder is not empty. Cannot delete folder.');
+        }
+        throw error;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error in deleteFolderCompletely:', error);
+      return {
+        success: false,
+        deletedPhotos: 0,
+        folderDeleted: false,
+        message: `Failed to delete folder: ${error.message}`
+      };
+    }
+  }
+
+  // Atualizar contadores após exclusão de fotos
+  async updatePhotoCountsAfterDeletion(sourceFolder, deletedCount) {
+    try {
+      console.log(`📊 Updating photo counts after deleting ${deletedCount} photos`);
+      
+      const index = await this.getIndex();
+      
+      // Encontrar e atualizar pasta no índice
+      const folderInIndex = this.findCategoryById(index, sourceFolder.id);
+      if (folderInIndex) {
+        folderInIndex.photoCount = Math.max(0, (folderInIndex.photoCount || 0) - deletedCount);
+        console.log(`📉 Folder ${sourceFolder.name}: ${folderInIndex.photoCount} photos remaining`);
+      }
+      
+      // Atualizar total geral
+      index.totalPhotos = Math.max(0, (index.totalPhotos || 0) - deletedCount);
+      
+      // Atualizar timestamp
+      index.lastUpdate = new Date().toISOString();
+      
+      // Salvar índice atualizado
+      await this.saveIndex(index);
+      
+      // Limpar cache para forçar recarregamento
+      this.clearCache();
+      
+      console.log('✅ Photo counts updated after deletion');
+      
+    } catch (error) {
+      console.error('❌ Error updating photo counts after deletion:', error);
+      throw error;
+    }
+  }
+
+  // Remover pasta do índice
+  async removeFolderFromIndex(folderToRemove) {
+    try {
+      console.log(`📊 Removing folder from index: ${folderToRemove.name}`);
+      
+      const index = await this.getIndex();
+      
+      // Função recursiva para encontrar e remover pasta
+      const removeFolderRecursive = (folders, targetId) => {
+        for (let i = 0; i < folders.length; i++) {
+          if (folders[i].id === targetId) {
+            console.log(`✅ Found and removing folder: ${folders[i].name}`);
+            folders.splice(i, 1);
+            return true;
+          }
+          
+          if (folders[i].children && folders[i].children.length > 0) {
+            if (removeFolderRecursive(folders[i].children, targetId)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      
+      const removed = removeFolderRecursive(index.folders, folderToRemove.id);
+      
+      if (removed) {
+        // Atualizar timestamp
+        index.lastUpdate = new Date().toISOString();
+        
+        // Salvar índice atualizado
+        await this.saveIndex(index);
+        
+        // Limpar cache
+        this.clearCache();
+        
+        console.log('✅ Folder removed from index');
+      } else {
+        console.warn('⚠️ Folder not found in index for removal');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error removing folder from index:', error);
+      throw error;
+    }
+  }
+
 }
 
 module.exports = new LocalStorageService();
