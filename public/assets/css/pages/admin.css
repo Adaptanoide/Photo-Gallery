@@ -1580,3 +1580,8 @@
     font-size: 11px;
   }
 }
+
+/* FIX: Modal de confirmação acima dos outros */
+#custom-confirm {
+  z-index: 15000 !important;
+}
