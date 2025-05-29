@@ -14,7 +14,7 @@ const photoManager = {
 
   async init() {
     console.log('🚀 Initializing Photo Storage tab...');
-    
+
     if (document.getElementById('photo-storage')) {
       await this.loadStorageStats();
       await this.loadFolderStructure();
@@ -24,19 +24,19 @@ const photoManager = {
   async loadStorageStats() {
     try {
       console.log('📊 Loading storage stats...');
-      
+
       const response = await fetch('/api/admin/folders/leaf?admin=true');
       const data = await response.json();
-      
+
       if (data.success && data.folders) {
         const folders = data.folders;
         const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
         const totalFolders = folders.length;
-        
+
         const estimatedSizeMB = totalPhotos * 2.5;
         const estimatedSizeGB = Math.round((estimatedSizeMB / 1024) * 100) / 100;
         const usedPercent = Math.round((estimatedSizeGB / 50) * 100);
-        
+
         document.getElementById('storage-stats-content').innerHTML = `
           <div class="storage-stats-grid">
             <div class="stat-card">
@@ -61,12 +61,12 @@ const photoManager = {
           </div>
           <div class="storage-progress-text">${usedPercent}% of 50GB used (estimated)</div>
         `;
-        
+
         console.log(`✅ Stats loaded: ${totalPhotos} photos in ${totalFolders} folders`);
       }
     } catch (error) {
       console.error('❌ Error loading storage stats:', error);
-      document.getElementById('storage-stats-content').innerHTML = 
+      document.getElementById('storage-stats-content').innerHTML =
         '<div class="error">Failed to load storage statistics</div>';
     }
   },
@@ -74,37 +74,37 @@ const photoManager = {
   async loadFolderStructure() {
     try {
       console.log('📂 Loading folder structure...');
-      
+
       const response = await fetch('/api/admin/folders/leaf?admin=true');
       const data = await response.json();
-      
+
       if (data.success && data.folders) {
         console.log(`📋 Loaded ${data.folders.length} folders`);
-        
+
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
         this.currentStructure = organizedStructure;
         this.renderFolderTree(organizedStructure);
-        
+
         console.log('✅ Folder structure rendered successfully');
       } else {
         throw new Error(data.message || 'Failed to load folders');
       }
     } catch (error) {
       console.error('❌ Error loading folder structure:', error);
-      document.getElementById('folder-tree').innerHTML = 
+      document.getElementById('folder-tree').innerHTML =
         `<div class="error">Failed to load folder structure: ${error.message}</div>`;
     }
   },
 
   organizeIntoHierarchy(folders) {
     const hierarchy = {};
-    
+
     folders.forEach(folder => {
       const path = folder.path || folder.fullPath || folder.name;
       const parts = Array.isArray(path) ? path : path.split(' → ');
-      
+
       let current = hierarchy;
-      
+
       parts.forEach((part, index) => {
         if (!current[part]) {
           current[part] = {
@@ -117,7 +117,7 @@ const photoManager = {
         current = current[part].children;
       });
     });
-    
+
     return this.convertToArray(hierarchy);
   },
 
@@ -136,7 +136,7 @@ const photoManager = {
     if (!container) {
       container = document.getElementById('folder-tree');
       container.innerHTML = '';
-      
+
       if (folders.length === 0) {
         container.innerHTML = '<div class="empty-message">No folders found</div>';
         return;
@@ -147,10 +147,10 @@ const photoManager = {
       const folderDiv = document.createElement('div');
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
-      
+
       const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
-      
+
       folderDiv.innerHTML = `
         <span class="folder-icon">${icon}</span>
         <span class="folder-name">${folder.name}</span>
@@ -161,7 +161,7 @@ const photoManager = {
           </div>
         ` : ''}
       `;
-      
+
       if (folder.isLeaf) {
         folderDiv.onclick = (e) => {
           if (!e.target.classList.contains('folder-action-btn')) {
@@ -169,9 +169,9 @@ const photoManager = {
           }
         };
       }
-      
+
       container.appendChild(folderDiv);
-      
+
       if (folder.children && folder.children.length > 0) {
         const childContainer = document.createElement('div');
         childContainer.className = 'folder-children';
@@ -185,36 +185,36 @@ const photoManager = {
     document.querySelectorAll('.folder-item').forEach(item => {
       item.classList.remove('selected');
     });
-    
+
     element.classList.add('selected');
     this.selectedFolder = folder;
-    
+
     console.log(`📁 Selected folder: ${folder.name} (${folder.fileCount} photos)`);
   },
 
   // Abrir modal da pasta
   async openFolderModal(folderId, folderName) {
     console.log(`🎯 Opening folder modal: ${folderName} (${folderId})`);
-    
+
     // Armazenar informações da pasta atual
     this.currentFolderId = folderId;
     this.currentFolderName = folderName;
     this.selectedPhotos.clear(); // Limpar seleções anteriores
-    
+
     if (!document.getElementById('photo-folder-modal')) {
       this.createFolderModal();
     }
-    
+
     document.getElementById('modal-folder-title').textContent = folderName;
     document.getElementById('photo-folder-modal').style.display = 'flex';
-    
+
     await this.loadFolderPhotos(folderId, folderName);
   },
 
   // Criar modal para fotos
   createFolderModal() {
     console.log('🏗️ Creating folder modal...');
-    
+
     const modalHTML = `
       <div id="photo-folder-modal" class="photo-folder-modal" style="display: none;">
         <div class="photo-modal-content">
@@ -236,7 +236,7 @@ const photoManager = {
         </div>
       </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     console.log('✅ Folder modal created');
   },
@@ -244,41 +244,41 @@ const photoManager = {
   // Carregar fotos da pasta
   async loadFolderPhotos(folderId, folderName) {
     console.log(`📋 Loading photos for folder: ${folderName}`);
-    
+
     const loadingDiv = document.getElementById('photo-modal-loading');
     const contentDiv = document.getElementById('photo-modal-content');
-    
+
     loadingDiv.style.display = 'block';
     contentDiv.style.display = 'none';
-    
+
     try {
       const response = await fetch(`/api/photos?category_id=${folderId}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
+
       let photos = [];
       if (data.success && data.photos) {
         photos = data.photos;
       } else if (Array.isArray(data)) {
         photos = data;
       }
-      
+
       console.log(`📷 Found ${photos.length} photos`);
       this.currentFolderPhotos = photos;
-      
+
       if (photos.length === 0) {
         contentDiv.innerHTML = '<div class="empty-message">No photos in this folder</div>';
       } else {
         this.renderPhotosInModal(photos);
       }
-      
+
       loadingDiv.style.display = 'none';
       contentDiv.style.display = 'block';
-      
+
     } catch (error) {
       console.error('❌ Error loading folder photos:', error);
       contentDiv.innerHTML = `<div class="error">Failed to load photos: ${error.message}</div>`;
@@ -290,15 +290,15 @@ const photoManager = {
   // Renderizar fotos (lista ou thumbnails)
   renderPhotosInModal(photos) {
     console.log(`🎨 Rendering ${photos.length} photos in ${this.viewMode} mode`);
-    
+
     const contentDiv = document.getElementById('photo-modal-content');
-    
+
     if (this.viewMode === 'list') {
       this.renderListMode(photos, contentDiv);
     } else {
       this.renderThumbnailsMode(photos, contentDiv);
     }
-    
+
     // Atualizar contador de selecionados
     this.updateSelectionCounter();
   },
@@ -306,7 +306,7 @@ const photoManager = {
   // Renderizar modo lista COM CHECKBOXES
   renderListMode(photos, container) {
     console.log('📋 Rendering list mode with checkboxes');
-    
+
     const listHTML = `
       <div class="photo-list-header">
         <div class="selection-controls">
@@ -338,7 +338,7 @@ const photoManager = {
   // Renderizar modo thumbnails COM CHECKBOXES
   renderThumbnailsMode(photos, container) {
     console.log('🖼️ Rendering thumbnails mode with checkboxes');
-    
+
     const thumbnailsHTML = `
       <div class="photo-thumbnails-header">
         <div class="selection-controls">
@@ -351,12 +351,12 @@ const photoManager = {
       </div>
       <div class="photo-thumbnails-container">
         ${photos.map((photo, index) => {
-          let thumbnailUrl = photo.thumbnail;
-          if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
-            thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
-          }
-          
-          return `
+      let thumbnailUrl = photo.thumbnail;
+      if (!thumbnailUrl || thumbnailUrl.includes('undefined')) {
+        thumbnailUrl = `/api/photos/local/thumbnail/${photo.id}`;
+      }
+
+      return `
             <div class="photo-thumbnail-item ${this.selectedPhotos.has(photo.id) ? 'selected' : ''}" data-photo-id="${photo.id}">
               <label class="photo-thumbnail-checkbox" onclick="event.stopPropagation();">
                 <input type="checkbox" class="photo-checkbox" value="${photo.id}" 
@@ -373,7 +373,7 @@ const photoManager = {
               <div class="photo-thumbnail-name">${photo.name || photo.id}</div>
             </div>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
     container.innerHTML = thumbnailsHTML;
@@ -382,13 +382,13 @@ const photoManager = {
   // Alternar seleção de foto individual
   togglePhotoSelection(photoId, selected) {
     console.log(`📋 Toggling photo selection: ${photoId} = ${selected}`);
-    
+
     if (selected) {
       this.selectedPhotos.add(photoId);
     } else {
       this.selectedPhotos.delete(photoId);
     }
-    
+
     // Atualizar visual da linha/thumbnail
     const photoElement = document.querySelector(`[data-photo-id="${photoId}"]`);
     if (photoElement) {
@@ -398,7 +398,7 @@ const photoManager = {
         photoElement.classList.remove('selected');
       }
     }
-    
+
     this.updateSelectionCounter();
     this.updateSelectAllCheckbox();
   },
@@ -406,16 +406,16 @@ const photoManager = {
   // Selecionar/desselecionar todas
   toggleSelectAll(selectAll) {
     console.log(`📋 Toggle select all: ${selectAll}`);
-    
+
     const checkboxes = document.querySelectorAll('.photo-checkbox');
     this.selectedPhotos.clear();
-    
+
     checkboxes.forEach(checkbox => {
       checkbox.checked = selectAll;
       if (selectAll) {
         this.selectedPhotos.add(checkbox.value);
       }
-      
+
       // Atualizar visual
       const photoElement = checkbox.closest('[data-photo-id]');
       if (photoElement) {
@@ -426,7 +426,7 @@ const photoManager = {
         }
       }
     });
-    
+
     this.updateSelectionCounter();
   },
 
@@ -434,12 +434,12 @@ const photoManager = {
   updateSelectionCounter() {
     const selectedCount = this.selectedPhotos.size;
     const moveBtn = document.getElementById('move-selected-btn');
-    
+
     if (moveBtn) {
       moveBtn.disabled = selectedCount === 0;
       moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
     }
-    
+
     console.log(`📊 Selected photos: ${selectedCount}`);
   },
 
@@ -449,7 +449,7 @@ const photoManager = {
     if (selectAllCheckbox) {
       const totalPhotos = this.currentFolderPhotos.length;
       const selectedCount = this.selectedPhotos.size;
-      
+
       selectAllCheckbox.checked = selectedCount === totalPhotos && totalPhotos > 0;
       selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalPhotos;
     }
@@ -459,11 +459,11 @@ const photoManager = {
   toggleViewMode() {
     this.viewMode = this.viewMode === 'list' ? 'thumbnails' : 'list';
     console.log(`🔄 Switching to ${this.viewMode} mode`);
-    
+
     // Atualizar botão
     const btn = document.getElementById('view-mode-btn');
     btn.textContent = this.viewMode === 'list' ? '🖼️ Switch to Thumbnails' : '📋 Switch to List';
-    
+
     // Re-renderizar fotos mantendo seleções
     this.renderPhotosInModal(this.currentFolderPhotos);
   },
@@ -471,26 +471,26 @@ const photoManager = {
   // Abrir foto em fullscreen
   openPhotoFullscreen(photoId, photoIndex) {
     console.log(`🖼️ Opening photo fullscreen: ${photoId} (index: ${photoIndex})`);
-    
+
     const photo = this.currentFolderPhotos[photoIndex];
     if (!photo) {
       console.error('❌ Photo not found');
       return;
     }
-    
+
     if (!document.getElementById('photo-fullscreen-modal')) {
       this.createFullscreenModal();
     }
-    
+
     const imageUrl = photo.highres || `/api/photos/local/${this.currentFolderId}/${photoId}`;
     document.getElementById('fullscreen-image').src = imageUrl;
     document.getElementById('fullscreen-photo-name').textContent = photo.name || photoId;
-    
+
     // Armazenar foto atual para o botão Move
     this.currentFullscreenPhoto = photo;
-    
+
     document.getElementById('photo-fullscreen-modal').style.display = 'flex';
-    
+
     console.log(`✅ Fullscreen opened for: ${photo.name || photoId}`);
   },
 
@@ -514,7 +514,7 @@ const photoManager = {
         </div>
       </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', fullscreenHTML);
     console.log('✅ Fullscreen modal created');
   },
@@ -542,9 +542,9 @@ const photoManager = {
       showToast('No photo selected', 'error');
       return;
     }
-    
+
     console.log(`📦 Moving single photo: ${this.currentFullscreenPhoto.id}`);
-    
+
     // Criar set com uma foto para usar a mesma lógica
     const singlePhotoSet = new Set([this.currentFullscreenPhoto.id]);
     this.openMoveModal(singlePhotoSet);
@@ -556,7 +556,7 @@ const photoManager = {
       showToast('Please select photos to move', 'warning');
       return;
     }
-    
+
     console.log(`📦 Moving ${this.selectedPhotos.size} selected photos`);
     this.openMoveModal(this.selectedPhotos);
   },
@@ -564,25 +564,25 @@ const photoManager = {
   // NOVA FUNÇÃO: Abrir modal de movimentação
   async openMoveModal(photosToMove) {
     console.log('📦 Opening move modal for photos:', Array.from(photosToMove));
-    
+
     this.photosToMove = new Set(photosToMove);
     this.selectedDestinationFolder = null;
-    
+
     // Criar modal se não existir
     if (!document.getElementById('photo-move-modal')) {
       this.createMoveModal();
     }
-    
+
     // Atualizar título
-    document.getElementById('move-modal-title').textContent = 
+    document.getElementById('move-modal-title').textContent =
       `Move ${photosToMove.size} ${photosToMove.size === 1 ? 'Photo' : 'Photos'}`;
-    
+
     // Mostrar de onde estão vindo
     document.getElementById('move-source-folder').textContent = this.currentFolderName;
-    
+
     // Mostrar modal
     document.getElementById('photo-move-modal').style.display = 'flex';
-    
+
     // Carregar estrutura de pastas para seleção
     await this.loadFoldersForMove();
   },
@@ -590,7 +590,7 @@ const photoManager = {
   // NOVA FUNÇÃO: Criar modal de movimentação
   createMoveModal() {
     console.log('🏗️ Creating move modal...');
-    
+
     const moveModalHTML = `
       <div id="photo-move-modal" class="photo-move-modal" style="display: none;">
         <div class="move-modal-content">
@@ -621,7 +621,7 @@ const photoManager = {
         </div>
       </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', moveModalHTML);
     console.log('✅ Move modal created');
   },
@@ -629,26 +629,26 @@ const photoManager = {
   // NOVA FUNÇÃO: Carregar pastas para movimentação
   async loadFoldersForMove() {
     console.log('📂 Loading folder structure for move...');
-    
+
     const loadingDiv = document.getElementById('move-folders-loading');
     const treeDiv = document.getElementById('move-folders-tree');
-    
+
     loadingDiv.style.display = 'block';
     treeDiv.style.display = 'none';
-    
+
     try {
       // Usar a estrutura já carregada
       const foldersForMove = this.filterFoldersForMove(this.currentStructure);
-      
+
       if (foldersForMove.length === 0) {
         treeDiv.innerHTML = '<div class="empty-message">No available destination folders</div>';
       } else {
         this.renderMoveTree(foldersForMove, treeDiv);
       }
-      
+
       loadingDiv.style.display = 'none';
       treeDiv.style.display = 'block';
-      
+
     } catch (error) {
       console.error('❌ Error loading folders for move:', error);
       treeDiv.innerHTML = `<div class="error">Failed to load folders: ${error.message}</div>`;
@@ -660,43 +660,43 @@ const photoManager = {
   // NOVA FUNÇÃO: Filtrar pastas válidas para movimentação
   filterFoldersForMove(folders) {
     const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
-    
+
     const filterRecursive = (folderList) => {
       return folderList.filter(folder => {
         // Excluir pastas administrativas
         if (adminFoldersToExclude.includes(folder.name)) {
           return false;
         }
-        
+
         // Excluir a pasta atual (não pode mover para ela mesma)
         if (folder.id === this.currentFolderId) {
           return false;
         }
-        
+
         // Filtrar filhos recursivamente
         if (folder.children && folder.children.length > 0) {
           folder.children = filterRecursive(folder.children);
         }
-        
+
         return true;
       });
     };
-    
+
     return filterRecursive(folders);
   },
 
   // NOVA FUNÇÃO: Renderizar árvore de pastas para movimentação
   renderMoveTree(folders, container, level = 0) {
     container.innerHTML = '';
-    
+
     folders.forEach(folder => {
       const folderDiv = document.createElement('div');
       folderDiv.className = 'move-folder-item';
       folderDiv.style.paddingLeft = `${level * 20}px`;
-      
+
       const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
-      
+
       folderDiv.innerHTML = `
         <div class="move-folder-content" onclick="photoManager.selectDestinationFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" ${folder.isLeaf ? 'data-selectable="true"' : ''}>
           <span class="move-folder-icon">${icon}</span>
@@ -705,9 +705,9 @@ const photoManager = {
           ${folder.isLeaf ? '<span class="move-folder-action">Click to select</span>' : ''}
         </div>
       `;
-      
+
       container.appendChild(folderDiv);
-      
+
       // Renderizar filhos
       if (folder.children && folder.children.length > 0) {
         const childContainer = document.createElement('div');
@@ -721,20 +721,20 @@ const photoManager = {
   // NOVA FUNÇÃO: Selecionar pasta destino
   selectDestinationFolder(folderId, folderName) {
     console.log(`📁 Selected destination folder: ${folderName} (${folderId})`);
-    
+
     // Remover seleção anterior
     document.querySelectorAll('.move-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
-    
+
     // Adicionar seleção atual
     event.currentTarget.closest('.move-folder-item').classList.add('selected');
-    
+
     // Atualizar informações
     this.selectedDestinationFolder = { id: folderId, name: folderName };
     document.getElementById('move-destination-folder').textContent = folderName;
     document.getElementById('move-destination-folder').style.color = 'var(--color-gold)';
-    
+
     // Habilitar botão confirmar
     document.getElementById('confirm-move-btn').disabled = false;
   },
@@ -745,12 +745,12 @@ const photoManager = {
       showToast('Invalid move operation', 'error');
       return;
     }
-    
+
     const photoCount = this.photosToMove.size;
     const destinationName = this.selectedDestinationFolder.name;
-    
+
     console.log(`📦 Confirming move of ${photoCount} photos to: ${destinationName}`);
-    
+
     // Mostrar confirmação
     showConfirm(
       `Are you sure you want to move ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'} to "${destinationName}"?`,
@@ -761,7 +761,6 @@ const photoManager = {
     );
   },
 
-  // NOVA FUNÇÃO: Executar movimentação (implementar API no próximo passo)
   async executeMovePhotos() {
     try {
       console.log('🚀 Executing real photo move...');
@@ -780,21 +779,8 @@ const photoManager = {
       console.log(`📂 From: ${sourceFolderId} → To: ${destinationFolderId}`);
       console.log('📋 Photo IDs:', photoIds);
 
-      // Mostrar loading
-      const moveModal = document.getElementById('move-photos-modal');
-      const originalContent = moveModal.innerHTML;
-
-      moveModal.innerHTML = `
-      <div class="modal-content move-modal-content" style="text-align: center; padding: 40px;">
-        <div class="loading" style="font-size: 18px;">
-          <div style="margin-bottom: 20px;">🔄</div>
-          <div>Moving ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}...</div>
-          <div style="margin-top: 10px; font-size: 14px; color: #666;">
-            This may take a few moments
-          </div>
-        </div>
-      </div>
-    `;
+      // Mostrar toast de loading em vez de modificar modal
+      showToast(`Moving ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}...`, 'info');
 
       try {
         // Chamada real para a API
@@ -810,6 +796,12 @@ const photoManager = {
           })
         });
 
+        console.log(`📡 API Response status: ${response.status}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const result = await response.json();
 
         console.log('📡 API Response:', result);
@@ -823,14 +815,10 @@ const photoManager = {
 
           if (result.errors && result.errors.length > 0) {
             successMessage += ` (${result.errors.length} warnings)`;
+            console.warn('⚠️ Move warnings:', result.errors);
           }
 
           showToast(successMessage, 'success');
-
-          // Se houve erros, mostrar detalhes no console
-          if (result.errors && result.errors.length > 0) {
-            console.warn('⚠️ Move warnings:', result.errors);
-          }
 
           // Fechar modal de movimentação
           this.closeMoveModal();
@@ -841,28 +829,33 @@ const photoManager = {
 
           // Recarregar fotos da pasta atual para refletir mudanças
           console.log('🔄 Reloading current folder photos...');
-          await this.loadFolderPhotos(this.currentFolderId);
+          setTimeout(() => {
+            this.loadFolderPhotos(this.currentFolderId);
+          }, 1000);
 
         } else {
           // Erro na API
           console.error('❌ API Error:', result.message);
-
           showToast(`Failed to move photos: ${result.message}`, 'error');
 
           if (result.errors && result.errors.length > 0) {
             console.error('❌ Detailed errors:', result.errors);
           }
-
-          // Restaurar conteúdo do modal
-          moveModal.innerHTML = originalContent;
         }
 
       } catch (fetchError) {
         console.error('❌ Network/Fetch Error:', fetchError);
-        showToast('Network error while moving photos', 'error');
 
-        // Restaurar conteúdo do modal
-        moveModal.innerHTML = originalContent;
+        // Verificar se é erro 404 (rota não encontrada)
+        if (fetchError.message.includes('404')) {
+          showToast('API endpoint not found - check server routes', 'error');
+          console.error('🔍 Verify that /api/admin/photos/move route exists in backend');
+        } else if (fetchError.message.includes('500')) {
+          showToast('Server error during photo move', 'error');
+          console.error('🔍 Check server logs for detailed error information');
+        } else {
+          showToast('Network error while moving photos', 'error');
+        }
       }
 
     } catch (error) {
@@ -890,11 +883,11 @@ const photoManager = {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     const originalSwitchTab = window.switchTab;
-    
+
     if (originalSwitchTab) {
-      window.switchTab = function(tabId) {
+      window.switchTab = function (tabId) {
         originalSwitchTab(tabId);
-        
+
         if (tabId === 'photo-storage') {
           console.log('🎯 Photo Storage tab activated');
           setTimeout(() => {
@@ -902,7 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 100);
         }
       };
-      
+
       console.log('✅ Photo Manager integration completed');
     }
   }, 500);
