@@ -21,11 +21,18 @@ const photoManager = {
     }
   },
 
-  async loadStorageStats() {
+  async loadStorageStats(forceReload = false) {
     try {
       console.log('📊 Loading storage stats...');
 
-      const response = await fetch('/api/admin/folders/leaf?admin=true');
+      // Cache busting para forçar atualização
+      const cacheParam = forceReload ? `?t=${Date.now()}` : '';
+      const response = await fetch(`/api/admin/folders/leaf${cacheParam}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const data = await response.json();
 
       if (data.success && data.folders) {
@@ -33,41 +40,29 @@ const photoManager = {
         const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
         const totalFolders = folders.length;
 
-        const estimatedSizeMB = totalPhotos * 2.5;
-        const estimatedSizeGB = Math.round((estimatedSizeMB / 1024) * 100) / 100;
-        const usedPercent = Math.round((estimatedSizeGB / 50) * 100);
+        // Calcular estatísticas
+        const stats = {
+          totalPhotos: totalPhotos,
+          totalFolders: totalFolders,
+          usedSpace: (totalPhotos * 2.5).toFixed(2), // ~2.5MB por foto
+          availableSpace: '50.00',
+          percentUsed: Math.min(100, (totalPhotos * 2.5 / 50) * 100).toFixed(1)
+        };
 
-        document.getElementById('storage-stats-content').innerHTML = `
-          <div class="storage-stats-grid">
-            <div class="stat-card">
-              <div class="stat-value">${totalPhotos}</div>
-              <div class="stat-label">Total Photos</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${totalFolders}</div>
-              <div class="stat-label">Photo Folders</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${estimatedSizeGB} GB</div>
-              <div class="stat-label">Used Space (est.)</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${(50 - estimatedSizeGB).toFixed(1)} GB</div>
-              <div class="stat-label">Available</div>
-            </div>
-          </div>
-          <div class="storage-progress-bar">
-            <div class="storage-progress-fill" style="width: ${Math.min(usedPercent, 100)}%"></div>
-          </div>
-          <div class="storage-progress-text">${usedPercent}% of 50GB used (estimated)</div>
-        `;
+        console.log(`✅ Stats loaded: ${stats.totalPhotos} photos in ${stats.totalFolders} folders`);
 
-        console.log(`✅ Stats loaded: ${totalPhotos} photos in ${totalFolders} folders`);
+        // Atualizar interface
+        this.renderStorageStats(stats);
+
+        return stats;
+      } else {
+        throw new Error('Invalid response format');
       }
+
     } catch (error) {
       console.error('❌ Error loading storage stats:', error);
-      document.getElementById('storage-stats-content').innerHTML =
-        '<div class="error">Failed to load storage statistics</div>';
+      showToast('Error loading storage statistics', 'error');
+      return null;
     }
   },
 
@@ -226,7 +221,7 @@ const photoManager = {
               <button class="photo-modal-close" onclick="photoManager.closeFolderModal()">&times;</button>
             </div>
           </div>
-          
+
           <div class="photo-modal-body">
             <div id="photo-modal-loading" class="loading">Loading photos...</div>
             <div id="photo-modal-content" style="display: none;">
@@ -242,48 +237,59 @@ const photoManager = {
   },
 
   // Carregar fotos da pasta
-  async loadFolderPhotos(folderId, folderName) {
-    console.log(`📋 Loading photos for folder: ${folderName}`);
-
-    const loadingDiv = document.getElementById('photo-modal-loading');
-    const contentDiv = document.getElementById('photo-modal-content');
-
-    loadingDiv.style.display = 'block';
-    contentDiv.style.display = 'none';
-
+  async loadFolderPhotos(folderId, forceReload = false) {
     try {
-      const response = await fetch(`/api/photos?category_id=${folderId}`);
+      console.log(`📋 Loading photos for folder: ${folderId} (forceReload: ${forceReload})`);
+
+      if (!folderId) {
+        console.error('❌ No folder ID provided');
+        return;
+      }
+
+      // Cache busting se forçado
+      const cacheParam = forceReload ? `?t=${Date.now()}` : '';
+      const response = await fetch(`/api/photos?category_id=${folderId}${cacheParam}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
-
-      let photos = [];
-      if (data.success && data.photos) {
-        photos = data.photos;
-      } else if (Array.isArray(data)) {
-        photos = data;
-      }
-
+      const photos = await response.json();
       console.log(`📷 Found ${photos.length} photos`);
+
+      // Atualizar array interno
       this.currentFolderPhotos = photos;
 
-      if (photos.length === 0) {
-        contentDiv.innerHTML = '<div class="empty-message">No photos in this folder</div>';
-      } else {
-        this.renderPhotosInModal(photos);
+      // Encontrar informações da pasta atual
+      const currentFolder = this.allFolders.find(f => f.id === folderId);
+      if (currentFolder) {
+        console.log(`📂 Folder: ${currentFolder.name} (${photos.length} photos)`);
+
+        // Atualizar título do modal se estiver aberto
+        const folderTitleElement = document.getElementById('current-folder-name');
+        if (folderTitleElement) {
+          folderTitleElement.textContent = `${currentFolder.name} (${photos.length} photos)`;
+        }
       }
 
-      loadingDiv.style.display = 'none';
-      contentDiv.style.display = 'block';
+      // Re-renderizar no modo atual
+      if (this.isListMode) {
+        console.log('🎨 Re-rendering in list mode');
+        this.renderPhotosInListMode(photos);
+      } else {
+        console.log('🎨 Re-rendering in thumbnails mode');
+        this.renderPhotosInThumbnailsMode(photos);
+      }
+
+      // Limpar seleções após recarregar
+      this.photosToMove.clear();
+      this.updateSelectedCount();
+
+      console.log('✅ Folder photos reloaded successfully');
 
     } catch (error) {
       console.error('❌ Error loading folder photos:', error);
-      contentDiv.innerHTML = `<div class="error">Failed to load photos: ${error.message}</div>`;
-      loadingDiv.style.display = 'none';
-      contentDiv.style.display = 'block';
+      showToast('Error reloading photos', 'error');
     }
   },
 
@@ -774,16 +780,19 @@ const photoManager = {
       const sourceFolderId = this.currentFolderId;
       const destinationFolderId = this.selectedDestinationFolder.id;
       const photoCount = photoIds.length;
+      const destinationName = this.selectedDestinationFolder.name;
 
       console.log(`📦 Moving ${photoCount} photos:`);
       console.log(`📂 From: ${sourceFolderId} → To: ${destinationFolderId}`);
+      console.log(`📂 Destination name: ${destinationName}`);
       console.log('📋 Photo IDs:', photoIds);
 
-      // Mostrar toast de loading em vez de modificar modal
-      showToast(`Moving ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}...`, 'info');
+      // Mostrar toast de loading
+      showToast(`Moving ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'} to ${destinationName}...`, 'info');
 
       try {
         // Chamada real para a API
+        console.log('📡 Sending API request...');
         const response = await fetch('/api/admin/photos/move', {
           method: 'POST',
           headers: {
@@ -803,39 +812,66 @@ const photoManager = {
         }
 
         const result = await response.json();
-
-        console.log('📡 API Response:', result);
+        console.log('📡 API Response data:', result);
 
         if (result.success) {
-          // Sucesso - mostrar resultado
-          console.log(`✅ Successfully moved ${result.movedCount} photos`);
+          // Sucesso - processar resultado
+          const movedCount = result.movedCount || 0;
+          const errors = result.errors || [];
 
-          // Mostrar toast de sucesso
-          let successMessage = `Successfully moved ${result.movedCount} ${result.movedCount === 1 ? 'photo' : 'photos'}`;
+          console.log(`✅ API returned success: moved ${movedCount} photos`);
 
-          if (result.errors && result.errors.length > 0) {
-            successMessage += ` (${result.errors.length} warnings)`;
-            console.warn('⚠️ Move warnings:', result.errors);
+          if (movedCount > 0) {
+            // Fotos foram movidas com sucesso
+            let successMessage = `Successfully moved ${movedCount} ${movedCount === 1 ? 'photo' : 'photos'} to ${destinationName}`;
+
+            if (errors.length > 0) {
+              successMessage += ` (${errors.length} warnings)`;
+              console.warn('⚠️ Move warnings:', errors);
+            }
+
+            showToast(successMessage, 'success');
+
+            // 🎯 ATUALIZAÇÃO FORÇADA DA INTERFACE
+            console.log('🔄 Starting interface refresh...');
+
+            // 1. Fechar modal de movimentação
+            this.closeMoveModal();
+            console.log('✅ Move modal closed');
+
+            // 2. Limpar seleções
+            this.photosToMove.clear();
+            this.selectedDestinationFolder = null;
+            console.log('✅ Selections cleared');
+
+            // 3. Atualizar estatísticas gerais
+            console.log('📊 Refreshing storage stats...');
+            await this.loadStorageStats();
+
+            // 4. Atualizar estrutura de pastas (contador de fotos)
+            console.log('📂 Refreshing folder structure...');
+            await this.loadFolderStructure();
+
+            // 5. Recarregar fotos da pasta atual
+            console.log(`🔄 Reloading photos for current folder: ${this.currentFolderId}`);
+            await this.loadFolderPhotos(this.currentFolderId);
+
+            console.log('✅ Interface refresh completed');
+
+          } else {
+            // Nenhuma foto foi movida
+            if (errors.length > 0) {
+              console.warn('⚠️ No photos moved due to:', errors);
+              showToast(`No photos moved: ${errors[0]}`, 'warning');
+            } else {
+              console.warn('⚠️ No photos moved - unknown reason');
+              showToast('No photos were moved', 'warning');
+            }
           }
 
-          showToast(successMessage, 'success');
-
-          // Fechar modal de movimentação
-          this.closeMoveModal();
-
-          // Limpar seleções
-          this.photosToMove.clear();
-          this.selectedDestinationFolder = null;
-
-          // Recarregar fotos da pasta atual para refletir mudanças
-          console.log('🔄 Reloading current folder photos...');
-          setTimeout(() => {
-            this.loadFolderPhotos(this.currentFolderId);
-          }, 1000);
-
         } else {
-          // Erro na API
-          console.error('❌ API Error:', result.message);
+          // API retornou erro
+          console.error('❌ API returned error:', result.message);
           showToast(`Failed to move photos: ${result.message}`, 'error');
 
           if (result.errors && result.errors.length > 0) {
@@ -846,7 +882,6 @@ const photoManager = {
       } catch (fetchError) {
         console.error('❌ Network/Fetch Error:', fetchError);
 
-        // Verificar se é erro 404 (rota não encontrada)
         if (fetchError.message.includes('404')) {
           showToast('API endpoint not found - check server routes', 'error');
           console.error('🔍 Verify that /api/admin/photos/move route exists in backend');
@@ -863,6 +898,7 @@ const photoManager = {
       showToast('Unexpected error while moving photos', 'error');
     }
   },
+
   // NOVA FUNÇÃO: Fechar modal de movimentação
   closeMoveModal() {
     console.log('🚪 Closing move modal');
