@@ -183,11 +183,11 @@
 }
 
 .category-nav-button--primary {
-  border-color: var(--color-gold, #d4af37);
-  color: var(--color-gold, #d4af37);
+  border-color: var(--color-taupe, #8b7355);
+  color: var(--color-taupe, #8b7355);
 }
 
 .category-nav-button--primary:hover {
-  background-color: var(--color-gold, #d4af37);
-  color: var(--color-dark, #333);
+  background-color: var(--color-taupe, #8b7355);
+  color: white;
 }

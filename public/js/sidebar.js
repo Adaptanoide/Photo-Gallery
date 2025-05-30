@@ -1037,7 +1037,7 @@ function navigateToNextCategoryMain(currentCategoryId) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   } else {
-    showToast('Esta é a última categoria!', 'info');
+    showToast('This is the last category!', 'info');
   }
 }
 
@@ -1050,7 +1050,7 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   } else {
-    showToast('Esta é a primeira categoria!', 'info');
+    showToast('This is the first category!', 'info');
   }
 }
 
