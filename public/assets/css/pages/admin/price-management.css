@@ -1,188 +1,236 @@
-/* ===== PRICE MANAGEMENT MODULE - COMPACTO E OTIMIZADO ===== */
+/* ===== PRICE MANAGEMENT MODULE - BOTÕES À DIREITA E ACABAMENTO ===== */
 /* public/assets/css/pages/admin/price-management.css */
 
-/* Container principal - MÁXIMO FOCO NA LISTA */
+/* Container principal - SCROLL ÚNICO E OTIMIZADO */
 .category-price-container {
   margin-top: 0;
-  min-height: 700px;
+  min-height: 100%;
+  height: calc(100vh - 160px); /* Altura fixa para eliminar scroll duplo */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Importante: sem scroll no container pai */
 }
 
-/* Ações em lote - MUITO MAIS COMPACTA */
+/* Ações em lote - COMPACTAS */
 .bulk-actions {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-radius: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   border: 1px solid #dee2e6;
+  flex-shrink: 0; /* Não comprime */
 }
 
 .bulk-actions h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   color: #333;
   font-family: 'Playfair Display', serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .bulk-form {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .bulk-form .form-control {
-  min-width: 140px;
-  padding: 6px 10px;
+  min-width: 130px;
+  padding: 5px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 13px;
-  height: 34px;
+  font-size: 12px;
+  height: 30px;
 }
 
 .bulk-form .form-control:focus {
   outline: none;
   border-color: var(--color-gold);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
 .bulk-form .btn {
-  padding: 6px 14px;
-  font-size: 13px;
+  padding: 5px 12px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
-  height: 34px;
+  height: 30px;
 }
 
-/* Filtro inline - HORIZONTAL E COMPACTO */
-.table-filter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  gap: 15px;
-  background: #f8f9fa;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+/* Filtro simples - SÓ À ESQUERDA */
+.table-filter-simple {
+  margin-bottom: 8px;
+  flex-shrink: 0; /* Não comprime */
 }
 
-.table-filter .form-control {
+.table-filter-simple .form-control {
   width: 280px;
   max-width: 280px;
   padding: 6px 10px;
   font-size: 13px;
   height: 32px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-.filter-stats {
-  color: #666;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  margin: 0;
+.table-filter-simple .form-control:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
-/* Container da tabela - MÁXIMA ALTURA E FOCO */
+/* Container da tabela - SCROLL ÚNICO AQUI */
 .price-table-container {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
+  flex: 1; /* Ocupa todo o espaço restante */
   overflow: hidden;
-  min-height: 550px;
-  max-height: 85vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #ccc #f1f1f1;
+  display: flex;
+  flex-direction: column;
 }
 
-.price-table-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.price-table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.price-table-container::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-
-.price-table-container::-webkit-scrollbar-thumb:hover {
-  background: #999;
-}
-
-/* Tabela principal */
+/* Tabela principal - SEM SCROLL PRÓPRIO */
 .price-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .price-table thead {
   background: #f8f9fa;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-shrink: 0; /* Header fixo */
+  border-bottom: 2px solid #dee2e6;
+}
+
+.price-table thead tr {
+  display: flex;
+  width: 100%;
 }
 
 .price-table th {
-  padding: 15px 12px;
+  padding: 12px 10px;
   text-align: left;
   font-weight: 600;
   color: #333;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 14px;
+  font-size: 13px;
   white-space: nowrap;
+  border-right: 1px solid #e9ecef;
 }
 
-.price-table td {
-  padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
+.price-table th:last-child {
+  border-right: none;
+}
+
+/* TBODY com scroll único e suave + ACABAMENTO NO FINAL */
+.price-table tbody {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  /* Scroll customizado e suave */
+  scrollbar-width: thin;
+  scrollbar-color: #bbb #f5f5f5;
+  
+  /* Padding no final para acabamento visual */
+  padding-bottom: 20px;
+}
+
+.price-table tbody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.price-table tbody::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.price-table tbody::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.price-table tbody::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }
 
 .price-table tbody tr {
-  transition: all 0.2s ease;
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
 }
 
 .price-table tbody tr:hover {
   background: #f8f9fa;
 }
 
-/* Larguras das colunas */
+/* ACABAMENTO VISUAL NO FINAL DA LISTA */
+.price-table tbody tr:last-child {
+  border-bottom: 2px solid #dee2e6;
+  margin-bottom: 10px;
+}
+
+.price-table tbody tr:last-child::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, #dee2e6 80%, transparent 100%);
+  margin-top: 15px;
+}
+
+.price-table td {
+  padding: 10px;
+  vertical-align: middle;
+  border-right: 1px solid #f5f5f5;
+  display: flex;
+  align-items: center;
+}
+
+.price-table td:last-child {
+  border-right: none;
+}
+
+/* Larguras das colunas - ACTIONS MAIS À DIREITA */
 .checkbox-column {
-  width: 50px;
-  text-align: center;
+  flex: 0 0 50px;
+  justify-content: center;
 }
 
 .category-column {
-  width: auto;
-  min-width: 280px;
+  flex: 1;
+  min-width: 200px; /* Reduzido para dar mais espaço às actions */
+  max-width: 300px; /* Limite máximo */
 }
 
 .photos-column {
-  width: 100px;
-  text-align: center;
+  flex: 0 0 80px;
+  justify-content: center;
 }
 
 .price-column {
-  width: 120px;
-  text-align: right;
+  flex: 0 0 100px;
+  justify-content: flex-end;
 }
 
 .actions-column {
-  width: 140px;
-  text-align: left;
-  padding-left: 8px !important;
+  flex: 0 0 160px; /* Aumentado de 140px para 160px */
+  justify-content: flex-end; /* Alinhado à direita! */
+  padding-right: 15px !important; /* Mais espaço da borda direita */
 }
 
 /* Checkboxes */
 .category-checkbox, #select-all {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
   accent-color: var(--color-gold);
 }
@@ -191,35 +239,35 @@
 .price-display {
   font-weight: 600;
   color: #333;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .price-input {
-  width: 100px;
-  padding: 6px 8px;
+  width: 90px;
+  padding: 4px 6px;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 3px;
+  font-size: 13px;
 }
 
 .price-input:focus {
   outline: none;
   border-color: var(--color-gold);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
-/* Botões de ação */
+/* Botões de ação - ALINHADOS À DIREITA */
 .action-btn {
   background: var(--color-gold);
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  margin-right: 6px;
-  transition: all 0.2s ease;
+  margin-left: 4px; /* Mudado de margin-right para margin-left */
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
@@ -228,8 +276,8 @@
   transform: translateY(-1px);
 }
 
-.action-btn:last-child {
-  margin-right: 0;
+.action-btn:first-child {
+  margin-left: 0; /* Primeiro botão sem margin */
 }
 
 .edit-price-btn {
@@ -263,7 +311,7 @@
 /* Seleção de categorias */
 .price-table tbody tr:has(.category-checkbox:checked) {
   background: #fff3cd !important;
-  border-left: 4px solid var(--color-gold);
+  border-left: 3px solid var(--color-gold);
 }
 
 /* Loading progress */
@@ -289,15 +337,15 @@
   background: #f8f9fa;
 }
 
-/* Animações */
+/* Animações suaves */
 .price-table tbody tr {
-  animation: fadeInTableRow 0.3s ease-out;
+  animation: fadeInTableRow 0.2s ease-out;
 }
 
 @keyframes fadeInTableRow {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
@@ -305,59 +353,70 @@
   }
 }
 
-/* RESPONSIVIDADE COMPACTA */
+/* RESPONSIVIDADE OTIMIZADA */
 @media (max-width: 1200px) {
-  .table-filter {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+  .table-filter-simple .form-control {
+    width: 240px;
+    max-width: 240px;
   }
   
-  .table-filter .form-control {
-    width: 100%;
-    max-width: none;
+  .actions-column {
+    flex: 0 0 140px;
+    padding-right: 12px !important;
+  }
+  
+  .action-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+    margin-left: 3px;
   }
 }
 
 @media (max-width: 1024px) {
+  .category-price-container {
+    height: calc(100vh - 140px);
+  }
+  
+  .category-column {
+    min-width: 180px;
+    max-width: 250px;
+  }
+  
   .bulk-form {
-    gap: 8px;
+    gap: 6px;
   }
   
   .bulk-form .form-control {
-    min-width: 120px;
-  }
-  
-  .actions-column {
-    width: 130px;
-  }
-  
-  .action-btn {
-    padding: 5px 10px;
+    min-width: 110px;
+    height: 28px;
     font-size: 11px;
-    margin-right: 4px;
   }
   
-  .price-table-container {
-    max-height: 80vh;
+  .bulk-form .btn {
+    height: 28px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 768px) {
+  .category-price-container {
+    height: calc(100vh - 120px);
+  }
+  
   .bulk-actions {
-    padding: 10px 12px;
-    margin-bottom: 10px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
   }
   
   .bulk-actions h4 {
-    font-size: 14px;
-    margin-bottom: 6px;
+    font-size: 13px;
+    margin-bottom: 4px;
   }
   
   .bulk-form {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 6px;
   }
   
   .bulk-form .form-control,
@@ -366,93 +425,74 @@
     min-width: auto;
   }
   
-  .table-filter {
-    padding: 6px 10px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-  
-  .filter-stats {
-    text-align: center;
-    font-size: 12px;
-  }
-  
-  .price-table-container {
-    max-height: 75vh;
-    min-height: 450px;
-  }
-  
-  .price-table {
-    font-size: 13px;
+  .table-filter-simple .form-control {
+    width: 100%;
+    max-width: none;
   }
   
   .price-table th,
   .price-table td {
     padding: 8px 6px;
+    font-size: 12px;
   }
   
   .category-column {
     min-width: 120px;
+    max-width: 180px;
   }
   
   .actions-column {
-    width: 110px;
+    flex: 0 0 120px;
+    padding-right: 8px !important;
   }
   
   .action-btn {
-    padding: 4px 8px;
-    font-size: 10px;
-    margin-right: 3px;
+    padding: 2px 4px;
+    font-size: 9px;
+    margin-left: 2px;
   }
   
   .price-input {
-    width: 80px;
-    padding: 4px 6px;
-    font-size: 12px;
+    width: 70px;
+    padding: 3px 4px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 480px) {
+  .category-price-container {
+    height: calc(100vh - 100px);
+  }
+  
   .bulk-actions {
-    padding: 8px 10px;
-    margin-bottom: 8px;
-  }
-  
-  .table-filter {
-    padding: 5px 8px;
-  }
-  
-  .price-table-container {
-    max-height: 70vh;
-    min-height: 400px;
-  }
-  
-  .price-table {
-    font-size: 12px;
+    padding: 6px 8px;
+    margin-bottom: 4px;
   }
   
   .price-table th,
   .price-table td {
     padding: 6px 4px;
+    font-size: 11px;
   }
   
   .actions-column {
-    width: 100px;
+    flex: 0 0 100px;
+    padding-right: 6px !important;
   }
   
   .action-btn {
-    padding: 3px 6px;
-    font-size: 9px;
-    margin-right: 2px;
+    padding: 1px 3px;
+    font-size: 8px;
+    margin-left: 1px;
   }
   
   .category-column {
     min-width: 100px;
+    max-width: 150px;
   }
   
   .photos-column,
   .price-column {
-    width: 80px;
+    flex: 0 0 60px;
   }
 }
