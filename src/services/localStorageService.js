@@ -382,7 +382,7 @@ class LocalStorageService {
           if (size === 'thumbnail') {
             try {
               buffer = await sharp(buffer)
-                .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+                .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
                 .webp({ quality: 80 })
                 .toBuffer();
               console.log(`[LocalStorage] Generated thumbnail for: ${photoId}`);
