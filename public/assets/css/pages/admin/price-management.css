@@ -1,4 +1,4 @@
-/* ===== PRICE MANAGEMENT MODULE - BOTÕES À DIREITA E ACABAMENTO ===== */
+/* ===== PRICE MANAGEMENT MODULE - COLUNAS BEM DISTRIBUÍDAS ===== */
 /* public/assets/css/pages/admin/price-management.css */
 
 /* Container principal - SCROLL ÚNICO E OTIMIZADO */
@@ -125,6 +125,7 @@
 
 .price-table th:last-child {
   border-right: none;
+  text-align: right; /* Alinha "Actions" à direita */
 }
 
 /* TBODY com scroll único e suave + ACABAMENTO NO FINAL */
@@ -199,32 +200,33 @@
   border-right: none;
 }
 
-/* Larguras das colunas - ACTIONS MAIS À DIREITA */
+/* LARGURAS DAS COLUNAS - BEM DISTRIBUÍDAS E EQUILIBRADAS */
 .checkbox-column {
-  flex: 0 0 50px;
+  flex: 0 0 60px; /* Aumentado um pouco */
   justify-content: center;
 }
 
 .category-column {
-  flex: 1;
-  min-width: 200px; /* Reduzido para dar mais espaço às actions */
-  max-width: 300px; /* Limite máximo */
+  flex: 1; /* Flexível - ocupa todo o espaço disponível */
+  min-width: 350px; /* Mais espaço para nomes completos */
+  max-width: none; /* Sem limite máximo */
+  padding-right: 15px; /* Mais espaço */
 }
 
 .photos-column {
-  flex: 0 0 80px;
+  flex: 0 0 120px; /* Aumentado de 80px para 120px */
   justify-content: center;
 }
 
 .price-column {
-  flex: 0 0 100px;
+  flex: 0 0 150px; /* Aumentado de 100px para 150px */
   justify-content: flex-end;
 }
 
 .actions-column {
-  flex: 0 0 160px; /* Aumentado de 140px para 160px */
-  justify-content: flex-end; /* Alinhado à direita! */
-  padding-right: 15px !important; /* Mais espaço da borda direita */
+  flex: 0 0 180px; /* Aumentado para dar mais espaço */
+  justify-content: flex-end; /* Botões à direita */
+  padding-right: 10px !important; /* Espaçamento da borda */
 }
 
 /* Checkboxes */
@@ -243,7 +245,7 @@
 }
 
 .price-input {
-  width: 90px;
+  width: 100px; /* Aumentado para mais espaço */
   padding: 4px 6px;
   border: 1px solid #ddd;
   border-radius: 3px;
@@ -256,17 +258,17 @@
   box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
-/* Botões de ação - ALINHADOS À DIREITA */
+/* Botões de ação - ALINHADOS À DIREITA COM ESPAÇAMENTO */
 .action-btn {
   background: var(--color-gold);
   color: white;
   border: none;
-  padding: 4px 8px;
+  padding: 6px 10px; /* Aumentado o padding */
   border-radius: 3px;
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  margin-left: 4px; /* Mudado de margin-right para margin-left */
+  margin-left: 6px; /* Espaçamento entre botões */
   transition: all 0.15s ease;
   white-space: nowrap;
 }
@@ -354,21 +356,43 @@
 }
 
 /* RESPONSIVIDADE OTIMIZADA */
+@media (max-width: 1400px) {
+  .category-column {
+    min-width: 300px;
+  }
+  
+  .actions-column {
+    flex: 0 0 160px;
+  }
+}
+
 @media (max-width: 1200px) {
   .table-filter-simple .form-control {
     width: 240px;
     max-width: 240px;
   }
   
+  .category-column {
+    min-width: 250px;
+  }
+  
+  .photos-column {
+    flex: 0 0 100px;
+  }
+  
+  .price-column {
+    flex: 0 0 130px;
+  }
+  
   .actions-column {
     flex: 0 0 140px;
-    padding-right: 12px !important;
+    padding-right: 8px !important;
   }
   
   .action-btn {
-    padding: 3px 6px;
+    padding: 4px 8px;
     font-size: 10px;
-    margin-left: 3px;
+    margin-left: 4px;
   }
 }
 
@@ -378,8 +402,7 @@
   }
   
   .category-column {
-    min-width: 180px;
-    max-width: 250px;
+    min-width: 200px;
   }
   
   .bulk-form {
@@ -437,19 +460,26 @@
   }
   
   .category-column {
-    min-width: 120px;
-    max-width: 180px;
+    min-width: 150px;
+  }
+  
+  .photos-column {
+    flex: 0 0 80px;
+  }
+  
+  .price-column {
+    flex: 0 0 100px;
   }
   
   .actions-column {
     flex: 0 0 120px;
-    padding-right: 8px !important;
+    padding-right: 6px !important;
   }
   
   .action-btn {
-    padding: 2px 4px;
+    padding: 3px 6px;
     font-size: 9px;
-    margin-left: 2px;
+    margin-left: 3px;
   }
   
   .price-input {
@@ -477,22 +507,24 @@
   
   .actions-column {
     flex: 0 0 100px;
-    padding-right: 6px !important;
+    padding-right: 4px !important;
   }
   
   .action-btn {
-    padding: 1px 3px;
+    padding: 2px 4px;
     font-size: 8px;
-    margin-left: 1px;
+    margin-left: 2px;
   }
   
   .category-column {
-    min-width: 100px;
-    max-width: 150px;
+    min-width: 120px;
   }
   
-  .photos-column,
-  .price-column {
+  .photos-column {
     flex: 0 0 60px;
+  }
+  
+  .price-column {
+    flex: 0 0 80px;
   }
 }
