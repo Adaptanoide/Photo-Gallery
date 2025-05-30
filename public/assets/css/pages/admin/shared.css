@@ -232,3 +232,157 @@
     text-align: center;
   }
 }
+
+/* ===== ADICIONAR ESTAS SEÇÕES AO SEU shared.css EXISTENTE ===== */
+
+/* Header compartilhado para todas as abas admin */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 0 2px;
+}
+
+.admin-title-section {
+  flex: 1;
+}
+
+.admin-title {
+  margin: 0;
+  color: #333;
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-title i {
+  color: var(--color-gold);
+  font-size: 22px;
+}
+
+.admin-stats-section {
+  flex: 0 0 auto;
+}
+
+.header-stats {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* Loading states compartilhados */
+.loading-folders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.empty-folder-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #888;
+  font-size: 16px;
+  font-style: italic;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 15px 20px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+  margin: 20px 0;
+  font-weight: 500;
+}
+
+/* Form controls compartilhados */
+.form-control {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.15s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.form-control:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Tab panes compartilhados */
+.tab-pane {
+  display: none;
+  padding: 20px 0;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* Responsividade do header compartilhado */
+@media (max-width: 768px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .admin-title {
+    font-size: 20px;
+  }
+  
+  .admin-stats-section {
+    align-self: flex-end;
+  }
+  
+  .header-stats {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-title {
+    font-size: 18px;
+  }
+  
+  .admin-title i {
+    font-size: 16px;
+  }
+  
+  .header-stats {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  .loading-folders,
+  .empty-folder-message {
+    padding: 40px 15px;
+    font-size: 14px;
+  }
+}

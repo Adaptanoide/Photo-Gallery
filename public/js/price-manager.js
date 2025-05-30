@@ -1,4 +1,4 @@
-// price-manager.js - ENGLISH VERSION
+// price-manager.js - ENGLISH VERSION - INTERFACE MELHORADA
 // Global variables
 let leafFolders = []; // Stores all final folders
 let priceManagerCategoryPrices = {}; // Stores category prices - Renamed to avoid conflict
@@ -27,6 +27,7 @@ function initPriceManager() {
         console.log('Using cached folders from session storage');
         leafFolders = JSON.parse(cachedFolders);
         renderCategoryPriceTable();
+        updateHeaderStats(); // Atualizar estatísticas no header
         isLoadingFolders = false;
         
         // Add resize event
@@ -82,6 +83,7 @@ function loadLeafFoldersWithProgress() {
         
         // Update UI
         renderCategoryPriceTable();
+        updateHeaderStats(); // Atualizar estatísticas no header
         
         // Adjust table height
         setTimeout(adjustTableHeight, 100);
@@ -120,6 +122,7 @@ function backgroundRefreshFolders() {
           sessionStorage.setItem('leaf_folders', JSON.stringify(leafFolders));
           sessionStorage.setItem('leaf_folders_timestamp', Date.now().toString());
           renderCategoryPriceTable();
+          updateHeaderStats(); // Atualizar estatísticas no header
         }
       }
     })
@@ -155,7 +158,15 @@ function loadCategoryPrices() {
     });
 }
 
-// MAIN FUNCTION - CLEAN AND CORRECTED IN ENGLISH
+// NOVA FUNÇÃO: Atualizar estatísticas no header
+function updateHeaderStats() {
+  const headerStatsElement = document.getElementById('price-header-stats');
+  if (headerStatsElement) {
+    headerStatsElement.textContent = `${leafFolders.length} categories`;
+  }
+}
+
+// MAIN FUNCTION - INTERFACE LIMPA SEM ESTATÍSTICAS INTERNAS
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
   
@@ -181,8 +192,7 @@ function renderCategoryPriceTable() {
       </div>
     </div>
     
-    <div class="table-filter">
-      <div class="filter-stats">Showing <span id="displayed-count">${leafFolders.length}</span> of ${leafFolders.length} categories</div>
+    <div class="table-filter-simple">
       <input type="text" id="category-filter" class="form-control" placeholder="Filter categories..." onkeyup="filterCategories()">
     </div>
     
@@ -248,7 +258,7 @@ function adjustTableHeight() {
   container.style.height = `${Math.max(400, availableHeight)}px`;
 }
 
-// Function to filter categories
+// Function to filter categories - ATUALIZADA
 function filterCategories() {
   const filterValue = document.getElementById('category-filter').value.toLowerCase();
   const rows = document.querySelectorAll('#price-table-body tr');
@@ -264,10 +274,14 @@ function filterCategories() {
     }
   });
   
-  // Update counter
-  const countDisplay = document.getElementById('displayed-count');
-  if (countDisplay) {
-    countDisplay.textContent = displayedCount;
+  // Atualizar contador no header
+  const headerStatsElement = document.getElementById('price-header-stats');
+  if (headerStatsElement) {
+    if (filterValue) {
+      headerStatsElement.textContent = `${displayedCount} of ${leafFolders.length} categories`;
+    } else {
+      headerStatsElement.textContent = `${leafFolders.length} categories`;
+    }
   }
 }
 

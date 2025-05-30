@@ -328,17 +328,109 @@
           </div>
         </div>
 
-        <!-- Price Management Tab -->
+        <!-- Price Management Tab - COM ESTATÍSTICAS NO HEADER -->
         <div id="price-management" class="tab-pane">
-          <div class="admin-section">
-            <h3>Category Price Management</h3>
-            <!-- REMOVIDO: <p>Manage prices for all product categories (leaf folders containing photos).</p> -->
-
-            <div id="category-price-container" class="category-price-container">
-              <div class="loading-folders">Loading categories...</div>
+          <!-- Header com título e estatísticas -->
+          <div class="admin-header">
+            <div class="admin-title-section">
+              <h2 class="admin-title">
+                <i class="fas fa-dollar-sign"></i>
+                Price Management
+              </h2>
+            </div>
+            <div class="admin-stats-section">
+              <span id="price-header-stats" class="header-stats">Loading...</span>
             </div>
           </div>
+          
+          <!-- Container principal do price management -->
+          <div id="category-price-container">
+            <!-- Conteúdo será carregado dinamicamente pelo JavaScript -->
+          </div>
         </div>
+
+        <style>
+        /* Estilos para o header com estatísticas */
+        .admin-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+          padding: 0 2px;
+        }
+
+        .admin-title-section {
+          flex: 1;
+        }
+
+        .admin-title {
+          margin: 0;
+          color: #333;
+          font-family: 'Playfair Display', serif;
+          font-size: 24px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .admin-title i {
+          color: var(--color-gold);
+          font-size: 22px;
+        }
+
+        .admin-stats-section {
+          flex: 0 0 auto;
+        }
+
+        .header-stats {
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #dee2e6;
+          font-size: 13px;
+          font-weight: 500;
+          color: #666;
+          white-space: nowrap;
+        }
+
+        /* Responsividade do header */
+        @media (max-width: 768px) {
+          .admin-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+          
+          .admin-title {
+            font-size: 20px;
+          }
+          
+          .admin-stats-section {
+            align-self: flex-end;
+          }
+          
+          .header-stats {
+            font-size: 12px;
+            padding: 4px 8px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .admin-title {
+            font-size: 18px;
+          }
+          
+          .admin-title i {
+            font-size: 16px;
+          }
+          
+          .header-stats {
+            font-size: 11px;
+            padding: 3px 6px;
+          }
+        }
+        </style>
 
         <!-- NOVA ABA: Photo Storage -->
         <div id="photo-storage" class="tab-pane">
