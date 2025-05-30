@@ -3101,21 +3101,20 @@
 }
 
 
-/* SUBSTITUIR o CSS da classe .table-filter no admin.css por este: */
+/* SUBSTITUIR COMPLETAMENTE a seção .table-filter no admin.css por esta versão: */
 
 .table-filter {
   display: flex;
-  align-items: center;
-  justify-content: flex-end; /* ALTERADO: alinha à direita */
-  margin-bottom: 15px; /* REDUZIDO: menos espaço embaixo */
-  gap: 15px;
-  padding-right: 0; /* ADICIONADO: sem padding direito */
+  flex-direction: column; /* ALTERADO: coluna vertical */
+  align-items: flex-start; /* ALTERADO: alinha à esquerda */
+  margin-bottom: 20px;
+  gap: 10px; /* REDUZIDO: gap menor para elementos verticais */
 }
 
 .table-filter .form-control {
-  flex: none; /* ALTERADO: não expande */
-  width: 250px; /* ADICIONADO: largura fixa */
-  max-width: 250px;
+  width: 300px; /* AJUSTADO: largura boa para filtro */
+  max-width: 300px;
+  order: 2; /* ADICIONADO: campo fica embaixo */
 }
 
 .filter-stats {
@@ -3123,8 +3122,8 @@
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  order: -1; /* ADICIONADO: coloca as estatísticas antes do campo */
-  margin-right: auto; /* ADICIONADO: empurra para a esquerda */
+  order: 1; /* ADICIONADO: estatísticas ficam em cima */
+  margin-bottom: 5px; /* ADICIONADO: pequeno espaço embaixo */
 }
 
 /* Container da tabela com scroll controlado */
@@ -3403,17 +3402,7 @@
   .price-table-container {
     max-height: 50vh;
   }
-  
-  .table-filter {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  
-  .table-filter .form-control {
-    max-width: none;
-  }
-  
+   
   .filter-stats {
     text-align: center;
   }
