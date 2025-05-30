@@ -376,21 +376,7 @@ class LocalStorageService {
           await fs.access(imagePath);
           console.log(`[LocalStorage] Found image at: ${imagePath}`);
           
-          let buffer = await fs.readFile(imagePath);
-
-          // OTIMIZAÇÃO: Gerar thumbnail real se solicitado
-          if (size === 'thumbnail') {
-            try {
-              buffer = await sharp(buffer)
-                .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
-                .webp({ quality: 80 })
-                .toBuffer();
-              console.log(`[LocalStorage] Generated thumbnail for: ${photoId}`);
-            } catch (error) {
-              console.warn(`[LocalStorage] Thumbnail generation failed for ${photoId}, using original:`, error.message);
-            }
-          }
-
+          const buffer = await fs.readFile(imagePath);
           return {
             buffer: buffer,
             contentType: 'image/webp',
