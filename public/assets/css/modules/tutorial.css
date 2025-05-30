@@ -93,12 +93,6 @@
   height: fit-content;
 }
 
-.tutorial-step:hover {
-  border-color: var(--color-gold);
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
 .step-icon {
   font-size: 2.5rem;
   margin-bottom: 15px;
