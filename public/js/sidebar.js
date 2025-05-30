@@ -98,15 +98,15 @@ function loadCategoriesMenu() {
 // Adicionar event listeners para itens de categoria
 function setupCategoryClickHandlers() {
   const categoryItems = document.querySelectorAll('.category-item');
-  
+
   categoryItems.forEach(item => {
-    item.addEventListener('click', function() {
+    item.addEventListener('click', function () {
       const categoryId = this.getAttribute('data-category-id');
-      
+
       console.log(`Clicou na categoria: ${categoryId}`);
-      
+
       // Carregar categoria se for diferente da ativa
-      if (categoryId && categoryId !== activeCategory) {
+      if (categoryId) {
         loadCategoryPhotos(categoryId);
       }
     });
