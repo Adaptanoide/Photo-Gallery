@@ -48,7 +48,7 @@ function initPriceManager() {
     });
 }
 
-// SUBSTITUA a função loadLeafFoldersWithProgress por esta:
+// Carregar pastas com progresso
 function loadLeafFoldersWithProgress() {
   const progressElement = document.getElementById('loading-progress');
   
@@ -155,8 +155,7 @@ function loadCategoryPrices() {
     });
 }
 
-// SUBSTITUIR a função renderCategoryPriceTable por esta versão corrigida:
-
+// FUNÇÃO PRINCIPAL - LIMPA E CORRIGIDA
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
   
@@ -201,7 +200,7 @@ function renderCategoryPriceTable() {
         <tbody id="price-table-body">
   `;
   
-  // ALTERADO: Renderizar TODAS as pastas de uma vez (sem limitação)
+  // Renderizar TODAS as pastas de uma vez - SÓ COM OS 2 BOTÕES
   leafFolders.forEach(folder => {
     const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : '';
     const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
@@ -227,58 +226,12 @@ function renderCategoryPriceTable() {
   });
   
   html += `
-      </tbody>
-    </table>
+        </tbody>
+      </table>
     </div>
   `;
   
-  // Renderizar apenas as primeiras 100 linhas inicialmente
-  const initialRows = 100;
-  const initialFolders = leafFolders.slice(0, initialRows);
-  
-  initialFolders.forEach(folder => {
-    const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : ''; // ALTERADO: Renomeado para evitar conflito
-    const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
-    const hasPrice = price !== '';
-    
-    html += `
-      <tr data-folder-id="${folder.id}" data-folder-name="${folder.name.toLowerCase()}">
-        <td><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
-        <td>${folder.name}</td>
-        <td>${folder.fileCount || '0'}</td>
-        <td>
-          <span class="price-display">${formattedPrice}</span>
-          <input type="number" class="price-input form-control" value="${price}" style="display: none;" step="0.01">
-        </td>
-        <td>
-          <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
-            ${hasPrice ? 'Edit Price' : 'Set Price'}
-          </button>
-          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Salvar</button>
-          <button class="action-btn rename-btn" onclick="renameCategory('${folder.id}', '${folder.name}')">Renomear</button>
-          <button class="btn btn-danger trash-button" onclick="deleteCategory('${folder.id}', '${folder.name}')">🗑️</button>
-        </td>
-      </tr>
-    `;
-  });
-  
-  html += `
-      </tbody>
-    </table>
-    </div>
-  `;
-  
-  // Se temos mais pastas que o inicial, mostrar botão "carregar mais"
-  if (leafFolders.length > initialRows) {
-    html += `
-      <div class="load-more">
-        <button class="btn btn-secondary" onclick="loadMoreRows()">
-          Mostrar mais (${initialRows} de ${leafFolders.length})
-        </button>
-      </div>
-    `;
-  }
-  
+  // DEFINIR O HTML UMA ÚNICA VEZ
   container.innerHTML = html;
 }
 
@@ -360,10 +313,10 @@ function savePrice(folderId) {
       showToast(`Preço atualizado com sucesso para a categoria`, 'success');
       
       // Atualizar preço no objeto local
-      if (priceManagerCategoryPrices[folderId]) { // ALTERADO: Renomeado para evitar conflito
-        priceManagerCategoryPrices[folderId].price = price; // ALTERADO: Renomeado para evitar conflito
+      if (priceManagerCategoryPrices[folderId]) {
+        priceManagerCategoryPrices[folderId].price = price;
       } else {
-        priceManagerCategoryPrices[folderId] = { // ALTERADO: Renomeado para evitar conflito
+        priceManagerCategoryPrices[folderId] = {
           folderId: folderId,
           price: price
         };
