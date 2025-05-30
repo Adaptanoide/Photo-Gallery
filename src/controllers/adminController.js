@@ -677,17 +677,8 @@ exports.uploadPhotos = [
         }
       }
       
-      // Atualizar índice se pelo menos uma foto foi salva
-      if (results.length > 0) {
-        try {
-          await localStorageService.rebuildIndex();
-          console.log('📊 Index updated successfully');
-        } catch (error) {
-          console.error('⚠️ Warning: Failed to update index:', error);
-        }
-      }
-      
-      // Retornar resultado
+
+// ✅ RESPONDER IMEDIATAMENTE (não esperar rebuild)
       const response = {
         success: results.length > 0,
         message: `Successfully uploaded ${results.length} of ${files.length} photos`,
@@ -699,6 +690,21 @@ exports.uploadPhotos = [
       
       console.log(`📊 Upload completed: ${results.length} success, ${errors.length} errors`);
       res.status(200).json(response);
+      
+      // 🚀 REBUILD EM BACKGROUND (não bloquear resposta)
+      if (results.length > 0) {
+        console.log('🔄 Starting background index rebuild...');
+        
+        // Executar rebuild em background sem bloquear
+        setImmediate(async () => {
+          try {
+            await localStorageService.rebuildIndex();
+            console.log('✅ Background index rebuild completed');
+          } catch (error) {
+            console.error('⚠️ Background rebuild failed:', error);
+          }
+        });
+      }
       
     } catch (error) {
       console.error('❌ Upload error:', error);
