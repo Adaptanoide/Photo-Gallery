@@ -245,6 +245,30 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
   
   // Renderizar as fotos usando a função existente
   renderCategoryPhotos(sectionContainer, categoryPhotos);
+
+  // SEMPRE adicionar botões de navegação entre categorias
+  const navigationContainer = document.createElement('div');
+  navigationContainer.className = 'category-navigation-container';
+  navigationContainer.style.cssText = `
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 40px;
+    padding: 30px 20px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+  `;
+
+  navigationContainer.innerHTML = `
+    <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+      ← Previous Category
+    </button>
+    <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
+      Next Category →
+    </button>
+  `;
+
+sectionContainer.appendChild(navigationContainer);
   
   // NOVO: Verificar se há mais fotos para carregar
   const categoryCache = categoryPhotoCache[categoryId];
@@ -899,23 +923,11 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
   fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
     .then(response => response.json())
     .then(newPhotos => {
-      if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
-        // Não há mais fotos
-        button.parentElement.innerHTML = `
-          <div class="end-message">
-            <p>✨ That's all photos in this category!</p>
-            <div class="category-navigation-buttons">
-              <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-                ← Previous Category
-              </button>
-              <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
-                Next Category →
-              </button>
-            </div>
-          </div>
-        `;
-        return;
-      }
+    if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
+      // Não há mais fotos
+      button.parentElement.remove();
+      return;
+    }
       
       console.log(`Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
       
@@ -994,45 +1006,21 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
           button.disabled = false;
           button.onclick = () => loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
         } else {
-          button.parentElement.innerHTML = `
-            <div class="end-message">
-              <p>✨ That's all photos in this category!</p>
-              <div class="category-navigation-buttons">
-                <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-                  ← Previous Category
-                </button>
-                <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
-                  Next Category →
-                </button>
-              </div>
-            </div>
-          `;
+          button.parentElement.remove();
         }
-      } else {
-        button.parentElement.innerHTML = `
-          <div class="end-message">
-            <p>✨ That's all photos in this category!</p>
-            <div class="category-navigation-buttons">
-              <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-                ← Previous Category
-              </button>
-              <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
-                Next Category →
-              </button>
-            </div>
-          </div>
-        `;
-      }
-      
-      // Atualizar botões do carrinho
-      updateButtonsForCartItems();
-    })
-    .catch(error => {
-      console.error('Error loading more photos:', error);
-      button.textContent = originalText;
-      button.disabled = false;
-    });
-}
+        } else {
+          button.parentElement.remove();
+        }
+              
+              // Atualizar botões do carrinho
+              updateButtonsForCartItems();
+            })
+            .catch(error => {
+              console.error('Error loading more photos:', error);
+              button.textContent = originalText;
+              button.disabled = false;
+            });
+        }
 
 // Funções de navegação entre categorias
 function getNextCategoryFromId(currentCategoryId) {
