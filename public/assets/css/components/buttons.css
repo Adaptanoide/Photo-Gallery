@@ -153,3 +153,41 @@
     padding: 4px 8px;
   }
 }
+
+/* Category Navigation Buttons */
+.category-nav-button {
+  min-width: 160px;
+  padding: 12px 24px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.category-nav-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.category-nav-button--secondary {
+  border-color: var(--color-taupe, #8b7355);
+  color: var(--color-taupe, #8b7355);
+}
+
+.category-nav-button--secondary:hover {
+  background-color: var(--color-taupe, #8b7355);
+  color: white;
+}
+
+.category-nav-button--primary {
+  border-color: var(--color-gold, #d4af37);
+  color: var(--color-gold, #d4af37);
+}
+
+.category-nav-button--primary:hover {
+  background-color: var(--color-gold, #d4af37);
+  color: var(--color-dark, #333);
+}

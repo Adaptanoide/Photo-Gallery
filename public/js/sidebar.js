@@ -282,10 +282,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
           sectionContainer.appendChild(loadMoreBtn);
           
           // Adicionar botões de navegação APÓS o botão "More"
-          addCategoryNavigationButtons(sectionContainer, categoryId);
+          addCategoryNavigationButtons(contentDiv, categoryId);
         } else {
           // Se não há mais fotos, adicionar apenas botões de navegação
-          addCategoryNavigationButtons(sectionContainer, categoryId);
+          addCategoryNavigationButtons(contentDiv, categoryId);
         }
       })
       .catch(error => {
@@ -989,18 +989,18 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
           button.onclick = () => loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
           
           // Reposicionar botões de navegação APÓS o botão More
-          addCategoryNavigationButtons(sectionContainer, categoryId);
+          addCategoryNavigationButtons(contentDiv, categoryId);
         } else {
           button.parentElement.remove();
           
           // Adicionar botões finais quando não há mais fotos
-          addCategoryNavigationButtons(sectionContainer, categoryId);
+          addCategoryNavigationButtons(contentDiv, categoryId);
         }
       } else {
         button.parentElement.remove();
         
         // Adicionar botões finais quando não há mais fotos
-        addCategoryNavigationButtons(sectionContainer, categoryId);
+        addCategoryNavigationButtons(contentDiv, categoryId);
       }
 
       // Atualizar botões do carrinho
@@ -1063,29 +1063,20 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
 // Função para adicionar/atualizar botões de navegação
 function addCategoryNavigationButtons(container, categoryId) {
   // Remover botões existentes se houver
-  const existingNav = container.querySelector('.category-navigation-fixed');
+  const existingNav = container.querySelector('.category-navigation-section');
   if (existingNav) {
     existingNav.remove();
   }
   
-  // Criar novos botões
+  // Criar novos botões com classes CSS organizadas
   const navigationContainer = document.createElement('div');
-  navigationContainer.className = 'category-navigation-fixed';
+  navigationContainer.className = 'category-navigation-section';
   navigationContainer.innerHTML = `
-    <div style="
-      display: flex; 
-      justify-content: center; 
-      gap: 20px; 
-      margin-top: 30px; 
-      padding: 25px 20px; 
-      border-top: 1px solid rgba(212, 175, 55, 0.2);
-      background: rgba(250, 250, 250, 0.5);
-      border-radius: 10px;
-    ">
-      <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')" style="min-width: 160px; padding: 12px 24px;">
+    <div class="category-navigation-buttons">
+      <button class="category-nav-button category-nav-button--secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
         ← Previous Category
       </button>
-      <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')" style="min-width: 160px; padding: 12px 24px;">
+      <button class="category-nav-button category-nav-button--primary" onclick="navigateToNextCategoryMain('${categoryId}')">
         Next Category →
       </button>
     </div>
