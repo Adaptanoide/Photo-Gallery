@@ -1,16 +1,17 @@
-// photo-manager-admin.js - MODAL DE MOVIMENTAÇÃO
-// Substitua completamente o arquivo existente
+// photo-manager-admin.js - VERSÃO LIMPA SEM ALERTS
+// Removidos: alerts chatos, indicador do topo, texto "processing", proteção de saída
+// Mantido: setinha 📤, funcionalidade de upload, monitoramento
 
 const photoManager = {
   currentStructure: null,
   selectedFolder: null,
-  selectedPhotos: new Set(), // Para seleção múltipla
-  currentFolderPhotos: [], // Armazenar fotos da pasta atual
-  currentFolderId: null, // ID da pasta atual
-  currentFolderName: '', // Nome da pasta atual
-  viewMode: 'list', // 'list' ou 'thumbnails'
-  photosToMove: null, // Set de IDs das fotos a serem movidas
-  selectedDestinationFolder: null, // Pasta destino selecionada
+  selectedPhotos: new Set(),
+  currentFolderPhotos: [],
+  currentFolderId: null,
+  currentFolderName: '',
+  viewMode: 'list',
+  photosToMove: null,
+  selectedDestinationFolder: null,
 
   async init() {
     console.log('🚀 Initializing Photo Storage tab...');
@@ -19,12 +20,11 @@ const photoManager = {
       await this.loadStorageStats();
       await this.loadFolderStructure();
       
-      // 🔄 RESTAURAR UPLOAD EM PROGRESSO (se houver)
+      // 🔄 RESTAURAR UPLOAD EM PROGRESSO (sem alert chato)
       await this.restoreUploadIfNeeded();
     }
   },
 
-  // Verificar compatibilidade do navegador
   checkBrowserCompatibility() {
     const features = {
       fileAPI: window.File && window.FileReader && window.FileList && window.Blob,
@@ -45,7 +45,6 @@ const photoManager = {
     return true;
   },
 
-  // Função utilitária: Detectar tipo de arquivo por extensão (fallback)
   getFileTypeFromExtension(fileName) {
     const extension = fileName.split('.').pop().toLowerCase();
     const typeMap = {
@@ -63,7 +62,6 @@ const photoManager = {
     try {
       console.log('📊 Loading storage stats...');
 
-      // Cache busting para forçar atualização
       const cacheParam = forceReload ? `?t=${Date.now()}` : '';
       const response = await fetch(`/api/admin/folders/leaf${cacheParam}`);
 
@@ -78,18 +76,16 @@ const photoManager = {
         const totalPhotos = folders.reduce((sum, folder) => sum + (folder.fileCount || 0), 0);
         const totalFolders = folders.length;
 
-        // Calcular estatísticas
         const stats = {
           totalPhotos: totalPhotos,
           totalFolders: totalFolders,
-          usedSpace: (totalPhotos * 2.5).toFixed(2), // ~2.5MB por foto
+          usedSpace: (totalPhotos * 2.5).toFixed(2),
           availableSpace: '50.00',
           percentUsed: Math.min(100, (totalPhotos * 2.5 / 50) * 100).toFixed(1)
         };
 
         console.log(`✅ Stats loaded: ${stats.totalPhotos} photos in ${stats.totalFolders} folders`);
 
-        // Atualizar interface
         this.renderStorageStats(stats);
 
         return stats;
@@ -104,8 +100,6 @@ const photoManager = {
     }
   },
 
-  // 🔧 CORRIGIR A FUNÇÃO loadFolderStructure() PARA ARMAZENAR allFolders:
-
   async loadFolderStructure() {
     try {
       console.log('📂 Loading folder structure...');
@@ -116,7 +110,6 @@ const photoManager = {
       if (data.success && data.folders) {
         console.log(`📋 Loaded ${data.folders.length} folders`);
 
-        // 🔧 ARMAZENAR PARA USO NAS VALIDAÇÕES
         this.allFolders = data.folders;
 
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
@@ -170,8 +163,6 @@ const photoManager = {
     }));
   },
 
-  // 🔧 SUBSTITUIR A FUNÇÃO renderFolderTree() POR ESTA VERSÃO COM BOTÕES DELETE:
-
   renderFolderTree(folders, container = null, level = 0) {
     if (!container) {
       container = document.getElementById('folder-tree');
@@ -191,7 +182,6 @@ const photoManager = {
       const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
-      // 🆕 VERIFICAR SE É PASTA ADMINISTRATIVA (não pode deletar)
       const adminFolders = ['Waiting Payment', 'Sold'];
       const isAdminFolder = adminFolders.includes(folder.name);
 
@@ -245,14 +235,12 @@ const photoManager = {
     console.log(`📁 Selected folder: ${folder.name} (${folder.fileCount} photos)`);
   },
 
-  // Abrir modal da pasta
   async openFolderModal(folderId, folderName) {
     console.log(`🎯 Opening folder modal: ${folderName} (${folderId})`);
 
-    // Armazenar informações da pasta atual
     this.currentFolderId = folderId;
     this.currentFolderName = folderName;
-    this.selectedPhotos.clear(); // Limpar seleções anteriores
+    this.selectedPhotos.clear();
 
     if (!document.getElementById('photo-folder-modal')) {
       this.createFolderModal();
@@ -264,7 +252,6 @@ const photoManager = {
     await this.loadFolderPhotos(folderId, folderName);
   },
 
-  // Criar modal para fotos
   createFolderModal() {
     console.log('🏗️ Creating folder modal...');
 
@@ -294,7 +281,6 @@ const photoManager = {
     console.log('✅ Folder modal created');
   },
 
-  // Carregar fotos da pasta
   async loadFolderPhotos(folderId, folderName) {
     try {
       console.log(`📋 Loading photos for folder: ${folderName || folderId}`);
@@ -309,7 +295,6 @@ const photoManager = {
 
       this.currentFolderPhotos = photos;
 
-      // Renderizar fotos
       this.renderPhotosInModal(photos);
 
     } catch (error) {
@@ -321,11 +306,14 @@ const photoManager = {
     }
   },
 
-  // Renderizar fotos (lista ou thumbnails)
   renderPhotosInModal(photos) {
     console.log(`🎨 Rendering ${photos.length} photos in ${this.viewMode} mode`);
 
+    const loadingDiv = document.getElementById('photo-modal-loading');
     const contentDiv = document.getElementById('photo-modal-content');
+
+    if (loadingDiv) loadingDiv.style.display = 'none';
+    if (contentDiv) contentDiv.style.display = 'block';
 
     if (this.viewMode === 'list') {
       this.renderListMode(photos, contentDiv);
@@ -333,11 +321,9 @@ const photoManager = {
       this.renderThumbnailsMode(photos, contentDiv);
     }
 
-    // Atualizar contador de selecionados
     this.updateSelectionCounter();
   },
 
-  // Renderizar modo lista COM CHECKBOXES
   renderListMode(photos, container) {
     console.log('📋 Rendering list mode with checkboxes and delete button');
 
@@ -376,7 +362,6 @@ const photoManager = {
     container.innerHTML = listHTML;
   },
 
-  // Renderizar modo thumbnails COM CHECKBOXES
   renderThumbnailsMode(photos, container) {
     console.log('🖼️ Rendering thumbnails mode with checkboxes and delete button');
 
@@ -430,7 +415,6 @@ const photoManager = {
     container.innerHTML = thumbnailsHTML;
   },
 
-  // Alternar seleção de foto individual
   togglePhotoSelection(photoId, selected) {
     console.log(`📋 Toggling photo selection: ${photoId} = ${selected}`);
 
@@ -440,7 +424,6 @@ const photoManager = {
       this.selectedPhotos.delete(photoId);
     }
 
-    // Atualizar visual da linha/thumbnail
     const photoElement = document.querySelector(`[data-photo-id="${photoId}"]`);
     if (photoElement) {
       if (selected) {
@@ -454,7 +437,6 @@ const photoManager = {
     this.updateSelectAllCheckbox();
   },
 
-  // Selecionar/desselecionar todas
   toggleSelectAll(selectAll) {
     console.log(`📋 Toggle select all: ${selectAll}`);
 
@@ -467,7 +449,6 @@ const photoManager = {
         this.selectedPhotos.add(checkbox.value);
       }
 
-      // Atualizar visual
       const photoElement = checkbox.closest('[data-photo-id]');
       if (photoElement) {
         if (selectAll) {
@@ -481,18 +462,15 @@ const photoManager = {
     this.updateSelectionCounter();
   },
 
-  // Atualizar contador de selecionados
   updateSelectionCounter() {
     const selectedCount = this.selectedPhotos.size;
 
-    // Atualizar botão de mover
     const moveBtn = document.getElementById('move-selected-btn');
     if (moveBtn) {
       moveBtn.disabled = selectedCount === 0;
       moveBtn.textContent = `📦 Move Selected (${selectedCount})`;
     }
 
-    // 🆕 Atualizar botão de deletar
     const deleteBtn = document.getElementById('delete-selected-btn');
     if (deleteBtn) {
       deleteBtn.disabled = selectedCount === 0;
@@ -502,7 +480,6 @@ const photoManager = {
     console.log(`📊 Selected photos: ${selectedCount}`);
   },
 
-  // Atualizar checkbox "Select All"
   updateSelectAllCheckbox() {
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     if (selectAllCheckbox) {
@@ -514,20 +491,16 @@ const photoManager = {
     }
   },
 
-  // Alternar modo de visualização
   toggleViewMode() {
     this.viewMode = this.viewMode === 'list' ? 'thumbnails' : 'list';
     console.log(`🔄 Switching to ${this.viewMode} mode`);
 
-    // Atualizar botão
     const btn = document.getElementById('view-mode-btn');
     btn.textContent = this.viewMode === 'list' ? '🖼️ Switch to Thumbnails' : '📋 Switch to List';
 
-    // Re-renderizar fotos mantendo seleções
     this.renderPhotosInModal(this.currentFolderPhotos);
   },
 
-  // Abrir foto em fullscreen
   openPhotoFullscreen(photoId, photoIndex) {
     console.log(`🖼️ Opening photo fullscreen: ${photoId} (index: ${photoIndex})`);
 
@@ -545,7 +518,6 @@ const photoManager = {
     document.getElementById('fullscreen-image').src = imageUrl;
     document.getElementById('fullscreen-photo-name').textContent = photo.name || photoId;
 
-    // Armazenar foto atual para o botão Move
     this.currentFullscreenPhoto = photo;
 
     document.getElementById('photo-fullscreen-modal').style.display = 'flex';
@@ -553,7 +525,6 @@ const photoManager = {
     console.log(`✅ Fullscreen opened for: ${photo.name || photoId}`);
   },
 
-  // Criar modal fullscreen
   createFullscreenModal() {
     const fullscreenHTML = `
     <div id="photo-fullscreen-modal" class="photo-fullscreen-modal" style="display: none;">
@@ -579,7 +550,6 @@ const photoManager = {
     console.log('✅ Fullscreen modal created with delete button');
   },
 
-  // Fechar modal da pasta
   closeFolderModal() {
     console.log('🚪 Closing folder modal');
     document.getElementById('photo-folder-modal').style.display = 'none';
@@ -589,14 +559,12 @@ const photoManager = {
     this.currentFolderName = '';
   },
 
-  // Fechar fullscreen
   closeFullscreen() {
     console.log('🚪 Closing fullscreen');
     document.getElementById('photo-fullscreen-modal').style.display = 'none';
     this.currentFullscreenPhoto = null;
   },
 
-  // NOVA FUNÇÃO: Mover foto única (do fullscreen)
   moveSinglePhoto() {
     if (!this.currentFullscreenPhoto) {
       showToast('No photo selected', 'error');
@@ -605,12 +573,10 @@ const photoManager = {
 
     console.log(`📦 Moving single photo: ${this.currentFullscreenPhoto.id}`);
 
-    // Criar set com uma foto para usar a mesma lógica
     const singlePhotoSet = new Set([this.currentFullscreenPhoto.id]);
     this.openMoveModal(singlePhotoSet);
   },
 
-  // NOVA FUNÇÃO: Mover fotos selecionadas
   moveSelectedPhotos() {
     if (this.selectedPhotos.size === 0) {
       showToast('Please select photos to move', 'warning');
@@ -621,33 +587,26 @@ const photoManager = {
     this.openMoveModal(this.selectedPhotos);
   },
 
-  // NOVA FUNÇÃO: Abrir modal de movimentação
   async openMoveModal(photosToMove) {
     console.log('📦 Opening move modal for photos:', Array.from(photosToMove));
 
     this.photosToMove = new Set(photosToMove);
     this.selectedDestinationFolder = null;
 
-    // Criar modal se não existir
     if (!document.getElementById('photo-move-modal')) {
       this.createMoveModal();
     }
 
-    // Atualizar título
     document.getElementById('move-modal-title').textContent =
       `Move ${photosToMove.size} ${photosToMove.size === 1 ? 'Photo' : 'Photos'}`;
 
-    // Mostrar de onde estão vindo
     document.getElementById('move-source-folder').textContent = this.currentFolderName;
 
-    // Mostrar modal
     document.getElementById('photo-move-modal').style.display = 'flex';
 
-    // Carregar estrutura de pastas para seleção
     await this.loadFoldersForMove();
   },
 
-  // NOVA FUNÇÃO: Criar modal de movimentação
   createMoveModal() {
     console.log('🏗️ Creating move modal...');
 
@@ -686,7 +645,6 @@ const photoManager = {
     console.log('✅ Move modal created');
   },
 
-  // NOVA FUNÇÃO: Carregar pastas para movimentação
   async loadFoldersForMove() {
     console.log('📂 Loading folder structure for move...');
 
@@ -697,7 +655,6 @@ const photoManager = {
     treeDiv.style.display = 'none';
 
     try {
-      // Usar a estrutura já carregada
       const foldersForMove = this.filterFoldersForMove(this.currentStructure);
 
       if (foldersForMove.length === 0) {
@@ -717,23 +674,19 @@ const photoManager = {
     }
   },
 
-  // NOVA FUNÇÃO: Filtrar pastas válidas para movimentação
   filterFoldersForMove(folders) {
     const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
 
     const filterRecursive = (folderList) => {
       return folderList.filter(folder => {
-        // Excluir pastas administrativas
         if (adminFoldersToExclude.includes(folder.name)) {
           return false;
         }
 
-        // Excluir a pasta atual (não pode mover para ela mesma)
         if (folder.id === this.currentFolderId) {
           return false;
         }
 
-        // Filtrar filhos recursivamente
         if (folder.children && folder.children.length > 0) {
           folder.children = filterRecursive(folder.children);
         }
@@ -745,7 +698,6 @@ const photoManager = {
     return filterRecursive(folders);
   },
 
-  // NOVA FUNÇÃO: Renderizar árvore de pastas para movimentação
   renderMoveTree(folders, container, level = 0) {
     container.innerHTML = '';
 
@@ -768,7 +720,6 @@ const photoManager = {
 
       container.appendChild(folderDiv);
 
-      // Renderizar filhos
       if (folder.children && folder.children.length > 0) {
         const childContainer = document.createElement('div');
         childContainer.className = 'move-folder-children';
@@ -778,28 +729,22 @@ const photoManager = {
     });
   },
 
-  // NOVA FUNÇÃO: Selecionar pasta destino
   selectDestinationFolder(folderId, folderName) {
     console.log(`📁 Selected destination folder: ${folderName} (${folderId})`);
 
-    // Remover seleção anterior
     document.querySelectorAll('.move-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
 
-    // Adicionar seleção atual
     event.currentTarget.closest('.move-folder-item').classList.add('selected');
 
-    // Atualizar informações
     this.selectedDestinationFolder = { id: folderId, name: folderName };
     document.getElementById('move-destination-folder').textContent = folderName;
     document.getElementById('move-destination-folder').style.color = 'var(--color-gold)';
 
-    // Habilitar botão confirmar
     document.getElementById('confirm-move-btn').disabled = false;
   },
 
-  // NOVA FUNÇÃO: Confirmar movimentação
   async confirmMovePhotos() {
     if (!this.selectedDestinationFolder || !this.photosToMove || this.photosToMove.size === 0) {
       showToast('Invalid move operation', 'error');
@@ -811,7 +756,6 @@ const photoManager = {
 
     console.log(`📦 Confirming move of ${photoCount} photos to: ${destinationName}`);
 
-    // Mostrar confirmação
     showConfirm(
       `Are you sure you want to move ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'} to "${destinationName}"?`,
       async () => {
@@ -866,13 +810,10 @@ const photoManager = {
 
           showToast(`Successfully moved ${result.movedCount} ${result.movedCount === 1 ? 'photo' : 'photos'}`, 'success');
 
-          // 🔧 CORREÇÃO: Verificar se variáveis existem antes de limpar
           console.log('🧹 Cleaning up selections...');
 
-          // Fechar modal primeiro
           this.closeMoveModal();
 
-          // Limpar seleções com verificação de segurança
           if (this.photosToMove && typeof this.photosToMove.clear === 'function') {
             this.photosToMove.clear();
             console.log('✅ photosToMove cleared');
@@ -883,23 +824,19 @@ const photoManager = {
             console.log('✅ selectedPhotos cleared');
           }
 
-          // Resetar variável
           this.selectedDestinationFolder = null;
           console.log('✅ selectedDestinationFolder reset');
 
-          // 🎯 ATUALIZAÇÃO DA INTERFACE
           console.log('🔄 Refreshing interface...');
 
-          // Aguardar um pouco para garantir que modal fechou
           setTimeout(async () => {
             try {
-              await this.loadStorageStats(true); // forceReload = true
+              await this.loadStorageStats(true);
               console.log('✅ Storage stats refreshed');
 
               await this.loadFolderStructure();
               console.log('✅ Folder structure refreshed');
 
-              // Só recarregar fotos se ainda estiver na mesma pasta
               if (this.currentFolderId && this.currentFolderName) {
                 await this.loadFolderPhotos(this.currentFolderId, this.currentFolderName);
                 console.log('✅ Folder photos refreshed');
@@ -932,7 +869,6 @@ const photoManager = {
     }
   },
 
-  // NOVA FUNÇÃO: Fechar modal de movimentação
   closeMoveModal() {
     console.log('🚪 Closing move modal');
     document.getElementById('photo-move-modal').style.display = 'none';
@@ -947,65 +883,30 @@ const photoManager = {
     showToast('Folder structure refreshed', 'success');
   },
 
-  // 🔧 SUBSTITUIR A FUNÇÃO renderStorageStats() por esta versão discreta:
-
   renderStorageStats(stats) {
-    // Atualizar contador discreto
     const discreteCount = document.getElementById('discrete-photo-count');
     if (discreteCount) {
       discreteCount.textContent = `${stats.totalPhotos} photos`;
     }
 
-    // Remover a interface grande de estatísticas (não faz mais nada)
-    // Mantém só o contador pequeno no canto
-
     console.log(`📊 Discrete stats updated: ${stats.totalPhotos} photos`);
   },
 
-  // Renderizar fotos no modal (função que estava faltando)
-  renderPhotosInModal(photos) {
-    console.log(`🎨 Rendering ${photos.length} photos in ${this.viewMode} mode`);
-
-    const loadingDiv = document.getElementById('photo-modal-loading');
-    const contentDiv = document.getElementById('photo-modal-content');
-
-    if (loadingDiv) loadingDiv.style.display = 'none';
-    if (contentDiv) contentDiv.style.display = 'block';
-
-    if (this.viewMode === 'list') {
-      this.renderListMode(photos, contentDiv);
-    } else {
-      this.renderThumbnailsMode(photos, contentDiv);
-    }
-
-    // Atualizar contador de selecionados
-    this.updateSelectionCounter();
-  },
-
-  // ===== FUNÇÕES DELETE - PLACEHOLDER (SÓ VISUAL POR ENQUANTO) =====
-
-  // ===== FUNÇÕES DELETE - VERSÃO ROBUSTA COM CONFIRMAÇÕES =====
-
-  // Confirmar exclusão de pasta
   confirmDeleteFolder(folderId, folderName) {
     console.log(`🗑️ Delete folder requested: ${folderName} (${folderId})`);
 
-    // 🔒 VALIDAÇÃO: Verificar se é pasta administrativa
     const adminFolders = ['Waiting Payment', 'Sold'];
     if (adminFolders.includes(folderName)) {
       showToast('Cannot delete administrative folders', 'error');
       return;
     }
 
-    // 🔒 VALIDAÇÃO: Verificar se pasta tem fotos
     const folder = this.allFolders?.find(f => f.id === folderId);
     const photoCount = folder?.fileCount || 0;
 
     if (photoCount > 0) {
-      // Pasta com fotos - confirmação mais rigorosa
       this.showDeleteFolderModal(folderId, folderName, photoCount);
     } else {
-      // Pasta vazia - confirmação simples
       showConfirm(
         `Are you sure you want to delete the empty folder "${folderName}"?`,
         () => this.executeDeleteFolder(folderId, folderName, false),
@@ -1014,7 +915,6 @@ const photoManager = {
     }
   },
 
-  // Confirmar exclusão de fotos selecionadas
   confirmDeleteSelectedPhotos() {
     const selectedCount = this.selectedPhotos.size;
     console.log(`🗑️ Delete ${selectedCount} selected photos requested`);
@@ -1024,30 +924,14 @@ const photoManager = {
       return;
     }
 
-    // 🔒 CONFIRMAÇÃO: Lista as fotos que serão deletadas
-    const photoIds = Array.from(this.selectedPhotos);
-    const photoList = photoIds.slice(0, 5).join(', ');
-    const moreText = selectedCount > 5 ? ` and ${selectedCount - 5} more` : '';
-
-    showConfirm(
-      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete ${selectedCount} ${selectedCount === 1 ? 'photo' : 'photos'}:\n\n${photoList}${moreText}\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
-      () => this.executeDeleteSelectedPhotos(),
-      'Delete Photos Permanently'
-    );
+    showToast(`Delete ${selectedCount} photos feature coming soon!`, 'info');
   },
 
-  // Confirmar exclusão de foto única
   confirmDeleteSinglePhoto(photoId) {
     console.log(`🗑️ Delete single photo requested: ${photoId}`);
-
-    showConfirm(
-      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete photo:\n${photoId}.webp\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
-      () => this.executeDeleteSinglePhoto(photoId),
-      'Delete Photo Permanently'
-    );
+    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
   },
 
-  // Confirmar exclusão da foto atual (fullscreen)
   confirmDeleteCurrentPhoto() {
     if (!this.currentFullscreenPhoto) {
       showToast('No photo selected', 'error');
@@ -1055,21 +939,10 @@ const photoManager = {
     }
 
     const photoId = this.currentFullscreenPhoto.id;
-    const photoName = this.currentFullscreenPhoto.name || photoId;
-
     console.log(`🗑️ Delete current photo requested: ${photoId}`);
-
-    showConfirm(
-      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete:\n${photoName}\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
-      () => {
-        this.closeFullscreen(); // Fechar fullscreen primeiro
-        this.executeDeleteSinglePhoto(photoId);
-      },
-      'Delete Photo Permanently'
-    );
+    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
   },
 
-  // 🆕 NOVO: Modal especial para pasta com fotos
   showDeleteFolderModal(folderId, folderName, photoCount) {
     const modalHTML = `
     <div id="delete-folder-modal" class="modal" style="display: flex; z-index: 15000;">
@@ -1106,7 +979,6 @@ const photoManager = {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // 🔒 VALIDAÇÃO: Só habilitar botão se digitou "DELETE"
     const input = document.getElementById('delete-confirmation-input');
     const button = document.getElementById('confirm-delete-folder-btn');
 
@@ -1114,11 +986,9 @@ const photoManager = {
       button.disabled = input.value.trim() !== 'DELETE';
     });
 
-    // Focar no input
     setTimeout(() => input.focus(), 100);
   },
 
-  // Confirmar delete da pasta com validação de texto
   confirmDeleteFolderWithText(folderId, folderName) {
     const input = document.getElementById('delete-confirmation-input');
 
@@ -1131,7 +1001,6 @@ const photoManager = {
     this.executeDeleteFolder(folderId, folderName, true);
   },
 
-  // Fechar modal de confirmação de pasta
   closeDeleteFolderModal() {
     const modal = document.getElementById('delete-folder-modal');
     if (modal) {
@@ -1139,53 +1008,6 @@ const photoManager = {
     }
   },
 
-  // Confirmar exclusão de fotos selecionadas
-  confirmDeleteSelectedPhotos() {
-    const selectedCount = this.selectedPhotos.size;
-    console.log(`🗑️ [PLACEHOLDER] Delete ${selectedCount} selected photos requested`);
-
-    if (selectedCount === 0) {
-      showToast('Please select photos to delete', 'warning');
-      return;
-    }
-
-    showToast(`Delete ${selectedCount} photos feature coming soon!`, 'info');
-  },
-
-  // Confirmar exclusão de foto única
-  confirmDeleteSinglePhoto(photoId) {
-    console.log(`🗑️ [PLACEHOLDER] Delete single photo requested: ${photoId}`);
-    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
-  },
-
-  // Confirmar exclusão da foto atual (fullscreen)
-  confirmDeleteCurrentPhoto() {
-    if (!this.currentFullscreenPhoto) {
-      showToast('No photo selected', 'error');
-      return;
-    }
-
-    const photoId = this.currentFullscreenPhoto.id;
-    console.log(`🗑️ [PLACEHOLDER] Delete current photo requested: ${photoId}`);
-    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
-  },
-
-  // Atualizar contador de botões delete (igual ao move)
-  updateDeleteButtonsState() {
-    const selectedCount = this.selectedPhotos.size;
-    const deleteBtn = document.getElementById('delete-selected-btn');
-
-    if (deleteBtn) {
-      deleteBtn.disabled = selectedCount === 0;
-      deleteBtn.textContent = `🗑️ Delete Selected (${selectedCount})`;
-    }
-  },
-
-  // 🔧 ADICIONAR ESTAS FUNÇÕES DE EXECUÇÃO NO photoManager:
-
-  // ===== FUNÇÕES DE EXECUÇÃO DELETE =====
-
-  // Executar exclusão de pasta
   async executeDeleteFolder(folderId, folderName, includePhotos) {
     try {
       console.log(`🗑️ Executing delete folder: ${folderName} (includePhotos: ${includePhotos})`);
@@ -1219,7 +1041,6 @@ const photoManager = {
 
         showToast(message, 'success');
 
-        // 🔄 ATUALIZAR INTERFACE
         console.log('🔄 Refreshing interface after folder deletion...');
         await this.loadStorageStats(true);
         await this.loadFolderStructure();
@@ -1236,7 +1057,6 @@ const photoManager = {
     }
   },
 
-  // Executar exclusão de fotos selecionadas
   async executeDeleteSelectedPhotos() {
     try {
       const photoIds = Array.from(this.selectedPhotos);
@@ -1276,11 +1096,9 @@ const photoManager = {
 
         showToast(message, 'success');
 
-        // 🧹 LIMPAR SELEÇÕES
         this.selectedPhotos.clear();
         this.updateSelectionCounter();
 
-        // 🔄 ATUALIZAR INTERFACE
         console.log('🔄 Refreshing interface after photo deletion...');
         await this.loadStorageStats(true);
         await this.loadFolderStructure();
@@ -1301,7 +1119,6 @@ const photoManager = {
     }
   },
 
-  // Executar exclusão de foto única
   async executeDeleteSinglePhoto(photoId) {
     try {
       console.log(`🗑️ Executing delete single photo: ${photoId}`);
@@ -1329,13 +1146,11 @@ const photoManager = {
       if (result.success && result.deletedCount > 0) {
         showToast(`Successfully deleted photo ${photoId}`, 'success');
 
-        // 🧹 REMOVER DA SELEÇÃO SE ESTAVA SELECIONADA
         if (this.selectedPhotos.has(photoId)) {
           this.selectedPhotos.delete(photoId);
           this.updateSelectionCounter();
         }
 
-        // 🔄 ATUALIZAR INTERFACE
         console.log('🔄 Refreshing interface after single photo deletion...');
         await this.loadStorageStats(true);
         await this.loadFolderStructure();
@@ -1358,15 +1173,9 @@ const photoManager = {
     }
   },
 
-  // 🆕 ADICIONAR ESTAS FUNÇÕES NO FINAL DO OBJETO photoManager:
-
-  // ===== SISTEMA DE UPLOAD - PASSO 1 (INTERFACE) =====
-
-  // Abrir modal de upload
   openUploadModal() {
     console.log('🔺 Opening upload modal...');
     
-    // Verificar compatibilidade do navegador
     if (!this.checkBrowserCompatibility()) {
       return;
     }
@@ -1375,13 +1184,11 @@ const photoManager = {
       this.createUploadModal();
     }
     
-    // Carregar estrutura de pastas para seleção
     this.loadFoldersForUpload();
     
     document.getElementById('photo-upload-modal').style.display = 'flex';
   },
 
-  // Criar modal de upload
   createUploadModal() {
     console.log('🏗️ Creating upload modal...');
 
@@ -1394,16 +1201,13 @@ const photoManager = {
           </div>
           
           <div class="upload-modal-body">
-            <!-- PASSO 1: Seleção de pasta destino -->
             <div class="upload-step" id="upload-step-1">
               <h4>Step 1: Select Destination Folder</h4>
               <p>Choose where to upload your photos:</p>
               
               <div class="upload-folder-selection">
                 <div id="upload-folders-loading" class="loading">Loading folders...</div>
-                <div id="upload-folders-tree" style="display: none;">
-                  <!-- Folder tree will be loaded here -->
-                </div>
+                <div id="upload-folders-tree" style="display: none;"></div>
               </div>
               
               <div class="upload-selected-folder" style="display: none;">
@@ -1412,7 +1216,6 @@ const photoManager = {
               </div>
             </div>
             
-            <!-- PASSO 2: Seleção de arquivos -->
             <div class="upload-step" id="upload-step-2" style="display: none;">
               <h4>Step 2: Select Photos</h4>
               <p>Choose photos from your computer:</p>
@@ -1428,9 +1231,7 @@ const photoManager = {
                 </div>
               </div>
               
-              <div class="selected-files-preview" id="selected-files-preview" style="display: none;">
-                <!-- File preview will be shown here -->
-              </div>
+              <div class="selected-files-preview" id="selected-files-preview" style="display: none;"></div>
               
               <div class="upload-actions" style="display: none;">
                 <button class="btn btn-secondary" onclick="photoManager.goBackToFolderSelection()">← Back</button>
@@ -1438,7 +1239,6 @@ const photoManager = {
               </div>
             </div>
             
-            <!-- PASSO 3: Progress -->
             <div class="upload-step" id="upload-step-3" style="display: none;">
               <h4>Uploading Photos...</h4>
               
@@ -1449,9 +1249,7 @@ const photoManager = {
                 <div class="upload-progress-text" id="upload-progress-text">Preparing upload...</div>
               </div>
               
-              <div class="upload-status" id="upload-status">
-                <!-- Status messages will appear here -->
-              </div>
+              <div class="upload-status" id="upload-status"></div>
             </div>
           </div>
           
@@ -1466,7 +1264,6 @@ const photoManager = {
     console.log('✅ Upload modal created');
   },
 
-  // Carregar pastas para upload (reutilizar estrutura existente)
   async loadFoldersForUpload() {
     console.log('📂 Loading folders for upload...');
 
@@ -1477,7 +1274,6 @@ const photoManager = {
     treeDiv.style.display = 'none';
 
     try {
-      // Usar a estrutura já carregada
       const foldersForUpload = this.filterFoldersForUpload(this.currentStructure);
 
       if (foldersForUpload.length === 0) {
@@ -1497,18 +1293,15 @@ const photoManager = {
     }
   },
 
-  // Filtrar pastas válidas para upload
   filterFoldersForUpload(folders) {
     const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
 
     const filterRecursive = (folderList) => {
       return folderList.filter(folder => {
-        // Excluir pastas administrativas
         if (adminFoldersToExclude.includes(folder.name)) {
           return false;
         }
 
-        // Filtrar filhos recursivamente
         if (folder.children && folder.children.length > 0) {
           folder.children = filterRecursive(folder.children);
         }
@@ -1520,7 +1313,6 @@ const photoManager = {
     return filterRecursive(folders);
   },
 
-  // Renderizar árvore de pastas para upload
   renderUploadTree(folders, container, level = 0) {
     container.innerHTML = '';
 
@@ -1543,7 +1335,6 @@ const photoManager = {
 
       container.appendChild(folderDiv);
 
-      // Renderizar filhos
       if (folder.children && folder.children.length > 0) {
         const childContainer = document.createElement('div');
         childContainer.className = 'upload-folder-children';
@@ -1553,28 +1344,23 @@ const photoManager = {
     });
   },
 
-  // 🔧 ENCONTRAR E SUBSTITUIR A FUNÇÃO selectUploadDestination() POR:
   selectUploadDestination(folderId, folderName) {
     console.log(`📁 Selecting upload destination: ${folderName} (${folderId})`);
     
-    // Armazenar na variável do objeto
     this.selectedUploadDestination = {
       id: folderId,
       name: folderName,
       path: []
     };
     
-    // Remover seleção anterior
     document.querySelectorAll('.upload-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
     
-    // Adicionar seleção atual ao elemento clicado
     if (event && event.currentTarget) {
       event.currentTarget.closest('.upload-folder-item').classList.add('selected');
     }
     
-    // 🔧 CORRIGIR IDs dos elementos DOM
     const destinationNameSpan = document.getElementById('upload-destination-name');
     const selectedFolderDiv = document.querySelector('.upload-selected-folder');
     
@@ -1589,34 +1375,28 @@ const photoManager = {
     console.log('✅ Upload destination selected:', this.selectedUploadDestination);
   },
 
-  // Ir para seleção de arquivos (versão completa)
   goToFileSelection() {
     console.log('📁 Going to file selection step...');
 
     document.getElementById('upload-step-1').style.display = 'none';
     document.getElementById('upload-step-2').style.display = 'block';
 
-    // 🆕 INICIALIZAR FUNCIONALIDADE DE UPLOAD
     this.initializeFileUpload();
   },
 
-  // 🆕 INICIALIZAR sistema de upload de arquivos
   initializeFileUpload() {
     console.log('📎 Initializing file upload functionality...');
 
     const fileInput = document.getElementById('photo-files-input');
     const dropZone = document.querySelector('.file-drop-zone');
 
-    // Limpar seleções anteriores
     this.selectedFiles = [];
     this.updateFilePreview();
 
-    // Event listener para seleção de arquivos
     fileInput.addEventListener('change', (e) => {
       this.handleFileSelection(e.target.files);
     });
 
-    // Event listeners para drag & drop
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropZone.classList.add('dragover');
@@ -1636,14 +1416,12 @@ const photoManager = {
     console.log('✅ File upload functionality initialized');
   },
 
-  // 🆕 PROCESSAR arquivos selecionados
   handleFileSelection(files) {
     console.log(`📎 Processing ${files.length} selected files...`);
 
     const validFiles = [];
     const errors = [];
 
-    // Validar cada arquivo
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const validation = this.validateFile(file);
@@ -1657,13 +1435,11 @@ const photoManager = {
       }
     }
 
-    // Mostrar erros se houver
     if (errors.length > 0) {
       const errorMsg = `Some files were rejected:\n\n${errors.slice(0, 5).join('\n')}`;
       showToast(errorMsg, 'warning');
     }
 
-    // Adicionar arquivos válidos
     if (validFiles.length > 0) {
       this.selectedFiles = [...this.selectedFiles, ...validFiles];
       this.updateFilePreview();
@@ -1674,9 +1450,7 @@ const photoManager = {
     console.log(`📊 Total selected files: ${this.selectedFiles.length}`);
   },
 
-  // 🆕 VALIDAR arquivo individual
   validateFile(file) {
-    // Validar tipo de arquivo (com fallback para extensão)
     let fileType = file.type;
     if (!fileType || fileType === 'application/octet-stream') {
       fileType = this.getFileTypeFromExtension(file.name);
@@ -1690,8 +1464,7 @@ const photoManager = {
       };
     }
 
-    // Validar tamanho (máximo 10MB por arquivo)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return {
         valid: false,
@@ -1699,7 +1472,6 @@ const photoManager = {
       };
     }
 
-    // Validar se o arquivo não está vazio
     if (file.size === 0) {
       return {
         valid: false,
@@ -1707,7 +1479,6 @@ const photoManager = {
       };
     }
 
-    // Validar nome do arquivo
     if (file.name.length > 100) {
       return {
         valid: false,
@@ -1715,7 +1486,6 @@ const photoManager = {
       };
     }
 
-    // Validar caracteres especiais no nome
     const invalidChars = /[<>:"/\\|?*]/g;
     if (invalidChars.test(file.name)) {
       return {
@@ -1727,7 +1497,6 @@ const photoManager = {
     return { valid: true };
   },
 
-  // 🆕 ATUALIZAR preview de arquivos selecionados
   updateFilePreview() {
     const previewContainer = document.getElementById('selected-files-preview');
     const uploadActions = document.querySelector('.upload-actions');
@@ -1739,15 +1508,12 @@ const photoManager = {
       return;
     }
 
-    // Mostrar preview
     previewContainer.style.display = 'block';
     uploadActions.style.display = 'flex';
 
-    // Calcular estatísticas
     const totalSize = this.selectedFiles.reduce((sum, file) => sum + file.size, 0);
     const totalSizeFormatted = this.formatFileSize(totalSize);
 
-    // Gerar HTML do preview
     const previewHTML = `
     <div class="files-summary">
       <h5>📸 Selected Photos (${this.selectedFiles.length})</h5>
@@ -1774,13 +1540,11 @@ const photoManager = {
 
     previewContainer.innerHTML = previewHTML;
 
-    // Atualizar botão de upload
     startUploadBtn.textContent = `🔺 Upload ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'Photo' : 'Photos'}`;
 
     console.log(`📊 Preview updated: ${this.selectedFiles.length} files (${totalSizeFormatted})`);
   },
 
-  // 🆕 REMOVER arquivo específico
   removeFile(index) {
     console.log(`🗑️ Removing file at index: ${index}`);
 
@@ -1795,14 +1559,12 @@ const photoManager = {
     }
   },
 
-  // 🆕 LIMPAR todos os arquivos selecionados
   clearSelectedFiles() {
     console.log('🧹 Clearing all selected files...');
 
     this.selectedFiles = [];
     this.updateFilePreview();
 
-    // Limpar input de arquivo
     const fileInput = document.getElementById('photo-files-input');
     if (fileInput) {
       fileInput.value = '';
@@ -1811,7 +1573,6 @@ const photoManager = {
     showToast('All files cleared', 'info');
   },
 
-  // 🆕 FORMATEAR tamanho de arquivo
   formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
 
@@ -1822,7 +1583,6 @@ const photoManager = {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   },
 
-  // 🆕 TRUNCAR nome de arquivo
   truncateFileName(fileName, maxLength) {
     if (fileName.length <= maxLength) return fileName;
 
@@ -1833,74 +1593,7 @@ const photoManager = {
     return truncatedName + '.' + extension;
   },
 
-  // 🔧 ATUALIZAR função startUpload para verificar arquivos
-  startUpload() {
-    if (!this.selectedUploadFolder) {
-      showToast('Please select a destination folder first', 'error');
-      return;
-    }
-
-    if (!this.selectedFiles || this.selectedFiles.length === 0) {
-      showToast('Please select photos to upload', 'error');
-      return;
-    }
-
-    console.log(`🔺 Starting upload of ${this.selectedFiles.length} files to: ${this.selectedUploadFolder.name}`);
-
-    // Ir para step 3 (progress)
-    document.getElementById('upload-step-2').style.display = 'none';
-    document.getElementById('upload-step-3').style.display = 'block';
-
-    // 🆕 INICIAR upload real (será implementado no próximo passo)
-    this.executeUpload();
-  },
-
-  // 🆕 PLACEHOLDER para upload real (próximo passo)
-  async executeUpload() {
-    console.log('🔺 [PLACEHOLDER] Executing upload...');
-
-    // Simular progress por enquanto
-    const progressFill = document.getElementById('upload-progress-fill');
-    const progressText = document.getElementById('upload-progress-text');
-    const statusDiv = document.getElementById('upload-status');
-
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      progressFill.style.width = `${progress}%`;
-      progressText.textContent = `Uploading... ${progress}%`;
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        progressText.textContent = 'Upload completed!';
-        statusDiv.innerHTML = '<p style="color: #28a745; font-weight: 500;">✅ Upload functionality will be implemented in the next step!</p>';
-
-        setTimeout(() => {
-          showToast('Upload simulation completed! Real upload coming in next step.', 'success');
-        }, 1000);
-      }
-    }, 300);
-  },
-
-  goBackToFolderSelection() {
-    console.log('📁 Going back to folder selection...');
-
-    // Versão simples com confirm() nativo
-    if (this.selectedFiles && this.selectedFiles.length > 0) {
-      const keepFiles = confirm(
-        `You have ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'photo' : 'photos'} selected.\n\nClick OK to keep them, or Cancel to start over.`
-      );
-
-      if (!keepFiles) {
-        this.clearSelectedFiles();
-      }
-    }
-
-    document.getElementById('upload-step-2').style.display = 'none';
-    document.getElementById('upload-step-1').style.display = 'block';
-  },
-
-// 🔧 NOVA VERSÃO startUpload - SUBSTITUIR A FUNÇÃO EXISTENTE NA LINHA ~2680:
+  // 🎯 VERSÃO LIMPA DA FUNÇÃO startUpload() - SEM ALERTS E INDICADORES CHATOS
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
@@ -1911,16 +1604,15 @@ const photoManager = {
       const destination = this.selectedUploadDestination;
       const files = this.selectedFiles;
 
-      // Validações básicas
       if (!destination || !destination.id) {
         console.log('❌ Destination not found');
-        alert('Please select destination folder again');
+        showToast('Please select destination folder again', 'error');
         return;
       }
 
       if (!files || files.length === 0) {
         console.log('❌ No files selected');
-        alert('Please select files to upload');
+        showToast('Please select files to upload', 'error');
         return;
       }
 
@@ -1932,14 +1624,12 @@ const photoManager = {
       
       console.log(`📦 Starting upload of ${fileCount} files (${totalSizeMB}MB) to "${destination.name}"`);
 
-      // 🎯 OBTER NÚMERO ATUAL DE FOTOS NA PASTA DESTINO
       const currentPhotoCount = await this.getCurrentPhotoCount(destination.id);
       const expectedFinalCount = currentPhotoCount + fileCount;
       
       console.log(`📊 Current photos in destination: ${currentPhotoCount}`);
       console.log(`📊 Expected final count: ${expectedFinalCount}`);
 
-      // Mostrar loading no botão
       uploadBtn = document.getElementById('start-upload-btn');
       if (uploadBtn) {
         originalText = uploadBtn.textContent;
@@ -1947,10 +1637,9 @@ const photoManager = {
         uploadBtn.textContent = `🔄 Uploading ${fileCount} photos...`;
       }
 
-      // 🎯 MARCAR PASTA COMO UPLOADANDO (até número real mudar)
+      // 🎯 MARCAR PASTA COMO UPLOADANDO (SÓ A SETINHA 📤)
       this.startRealUploadMonitoring(destination.id, destination.name, fileCount, expectedFinalCount);
 
-      // Preparar FormData
       const formData = new FormData();
       formData.append('destinationFolderId', destination.id);
 
@@ -1960,7 +1649,6 @@ const photoManager = {
         formData.append('photos', file);
       });
 
-      // 🎯 FAZER UPLOAD (sem mentir sobre quando termina)
       console.log('📡 Sending upload request...');
       console.log('⏰ This may take several minutes for large files...');
       
@@ -1985,30 +1673,27 @@ const photoManager = {
         console.log('⏰ Files are now being processed on server...');
         console.log('🔄 Monitoring will continue until photos appear in folder...');
         
-        alert(`✅ Upload request sent! ${result.uploadedCount} photos are being processed.\n\n⏰ This may take several minutes.\n🔄 The folder will show upload status until complete.`);
+        // 🎯 SEM ALERT CHATO - SÓ TOAST SIMPLES
+        showToast(`Upload started! ${result.uploadedCount} photos being processed.`, 'success');
 
-        // Fechar modal
         this.closeUploadModal();
 
       } else {
         console.error('❌ Upload failed:', result);
-        alert(`Upload failed: ${result.message || 'Unknown error'}`);
+        showToast(`Upload failed: ${result.message || 'Unknown error'}`, 'error');
         
-        // Parar monitoramento se falhou
         this.stopUploadMonitoring(destination.id);
       }
 
     } catch (error) {
       console.error('❌ Upload error:', error);
-      alert(`Upload failed: ${error.message}`);
+      showToast(`Upload failed: ${error.message}`, 'error');
       
-      // Parar monitoramento se deu erro
       if (this.selectedUploadDestination) {
         this.stopUploadMonitoring(this.selectedUploadDestination.id);
       }
       
     } finally {
-      // Restaurar botão
       if (uploadBtn && originalText) {
         uploadBtn.disabled = false;
         uploadBtn.textContent = originalText;
@@ -2016,9 +1701,6 @@ const photoManager = {
     }
   },
 
-  // 🔧 SUBSTITUIR A FUNÇÃO closeUploadModal() POR ESTA VERSÃO MELHORADA:
-
-  // Fechar modal de upload (versão com limpeza completa)
   closeUploadModal() {
     console.log('🚪 Closing upload modal with full cleanup...');
 
@@ -2026,27 +1708,21 @@ const photoManager = {
     if (modal) {
       modal.style.display = 'none';
 
-      // 🧹 LIMPEZA COMPLETA
       this.resetUploadModal();
     }
   },
 
-  // 🆕 RESET completo do modal de upload
   resetUploadModal() {
     console.log('🧹 Performing full upload modal reset...');
 
-    // Reset visual state
     document.getElementById('upload-step-1').style.display = 'block';
     document.getElementById('upload-step-2').style.display = 'none';
     document.getElementById('upload-step-3').style.display = 'none';
     document.querySelector('.upload-selected-folder').style.display = 'none';
 
-    // Clear selections
     this.selectedUploadFolder = null;
 
-    // 🧹 LIMPAR arquivos selecionados e liberar memória
     if (this.selectedFiles && this.selectedFiles.length > 0) {
-      // Liberar URLs dos objetos criados (importante para evitar vazamentos de memória)
       this.selectedFiles.forEach(file => {
         const img = document.querySelector(`img[src^="blob:"][alt="${file.name}"]`);
         if (img && img.src.startsWith('blob:')) {
@@ -2057,22 +1733,18 @@ const photoManager = {
 
     this.selectedFiles = [];
 
-    // Limpar input de arquivo
     const fileInput = document.getElementById('photo-files-input');
     if (fileInput) {
       fileInput.value = '';
 
-      // Remover event listeners antigos para evitar duplicação
       const newFileInput = fileInput.cloneNode(true);
       fileInput.parentNode.replaceChild(newFileInput, fileInput);
     }
 
-    // Reset folder selections
     document.querySelectorAll('.upload-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
 
-    // Reset progress
     const progressFill = document.getElementById('upload-progress-fill');
     const progressText = document.getElementById('upload-progress-text');
     const statusDiv = document.getElementById('upload-status');
@@ -2084,23 +1756,17 @@ const photoManager = {
     console.log('✅ Upload modal reset completed');
   },
 
-  // 🔧 MODIFICAR TAMBÉM A FUNÇÃO goBackToFolderSelection() PARA LIMPAR ARQUIVOS:
-
-  // Voltar para seleção de pasta (versão com limpeza)
   goBackToFolderSelection() {
     console.log('📁 Going back to folder selection...');
 
-    // Confirmar se quer manter os arquivos selecionados
     if (this.selectedFiles && this.selectedFiles.length > 0) {
       showConfirm(
         `You have ${this.selectedFiles.length} ${this.selectedFiles.length === 1 ? 'photo' : 'photos'} selected.\n\nDo you want to keep them or start over?`,
         () => {
-          // Manter arquivos - apenas voltar
           document.getElementById('upload-step-2').style.display = 'none';
           document.getElementById('upload-step-1').style.display = 'block';
         },
         () => {
-          // Limpar tudo e voltar
           this.clearSelectedFiles();
           document.getElementById('upload-step-2').style.display = 'none';
           document.getElementById('upload-step-1').style.display = 'block';
@@ -2109,13 +1775,11 @@ const photoManager = {
         'Start Over'
       );
     } else {
-      // Sem arquivos - voltar diretamente
       document.getElementById('upload-step-2').style.display = 'none';
       document.getElementById('upload-step-1').style.display = 'block';
     }
   },
 
-  // Encontrar pasta por nome na estrutura atual
   findFolderByName(folderName) {
     if (!this.currentStructure) return null;
 
@@ -2135,37 +1799,30 @@ const photoManager = {
     return searchRecursive(this.currentStructure);
   },
 
-// 🔧 SUBSTITUIR A FUNÇÃO markFolderAsUploading() EXISTENTE NA LINHA ~2750:
+  // 🎯 VERSÃO LIMPA - SÓ MARCA A SETINHA 📤 (SEM TEXTO CHATO)
   markFolderAsUploading(folderId, folderName, fileCount) {
     console.log(`🔄 Marking folder as uploading: ${folderName} (${fileCount} files)`);
     
-    // Encontrar elemento da pasta na árvore
     const folderElements = document.querySelectorAll('.folder-item');
     folderElements.forEach(element => {
       const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
       if (viewButton) {
-        // Adicionar classe de loading
+        // ✅ MANTER APENAS: Classe de upload (para a setinha 📤)
         element.classList.add('folder-uploading');
         
-        // 🎯 MENSAGEM MAIS CLARA SOBRE O TEMPO
-        const countSpan = element.querySelector('.folder-count');
-        if (countSpan) {
-          countSpan.dataset.originalText = countSpan.textContent;
-          countSpan.innerHTML = `<span class="upload-loading">📤 Processing ${fileCount} photos... (may take ~10min)</span>`;
-        }
+        // ❌ REMOVIDO: O texto chato "Processing X photos... (may take ~10min)"
+        // Agora só mantém o contador original
         
-        // Desabilitar botão de visualização temporariamente  
         const eyeButton = element.querySelector('.view-btn');
         if (eyeButton) {
           eyeButton.disabled = true;
           eyeButton.style.opacity = '0.5';
-          eyeButton.title = 'Upload in progress... Please wait until processing completes.';
+          eyeButton.title = 'Upload in progress...';
         }
       }
     });
   },
 
-  // 🆕 REMOVER LOADING STATE DA PASTA
   unmarkFolderAsUploading(folderId) {
     console.log(`✅ Removing upload loading state from folder: ${folderId}`);
     
@@ -2173,17 +1830,14 @@ const photoManager = {
     folderElements.forEach(element => {
       const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
       if (viewButton) {
-        // Remover classe de loading
         element.classList.remove('folder-uploading');
         
-        // Restaurar contador (será atualizado depois)
         const countSpan = element.querySelector('.folder-count');
         if (countSpan && countSpan.dataset.originalText) {
           countSpan.textContent = countSpan.dataset.originalText;
           delete countSpan.dataset.originalText;
         }
         
-        // Reabilitar botão de visualização
         const eyeButton = element.querySelector('.view-btn');
         if (eyeButton) {
           eyeButton.disabled = false;
@@ -2194,13 +1848,9 @@ const photoManager = {
     });
   },
 
-// 🔧 SUBSTITUIR A FUNÇÃO updateInterfaceAfterUpload() EXISTENTE NA LINHA ~2800:
   async updateInterfaceAfterUpload(destination, uploadedCount) {
     try {
       console.log('🔄 Interface update - REAL monitoring will handle this...');
-      
-      // 🎯 NÃO FAZER NADA AQUI!
-      // O monitoramento real vai cuidar da atualização quando as fotos realmente aparecerem
       
       console.log('✅ Interface update delegated to real monitoring system');
       
@@ -2209,12 +1859,10 @@ const photoManager = {
     }
   },
 
-  // 🆕 VALIDAR SE ID DA PASTA AINDA EXISTE
   async validateFolderId(folderId, folderName) {
     try {
       console.log(`🔍 Validating folder ID: ${folderId} (${folderName})`);
 
-      // Fazer uma requisição rápida para verificar se a pasta existe
       const response = await fetch(`/api/photos?category_id=${folderId}&limit=1`);
 
       if (response.ok) {
@@ -2224,7 +1872,6 @@ const photoManager = {
       } else {
         console.log(`⚠️ Folder ID may have changed: ${folderId}`);
 
-        // Tentar encontrar a pasta na estrutura atual
         const currentFolder = this.findFolderByName(folderName);
         if (currentFolder) {
           console.log(`🔄 Found folder with new ID: ${currentFolder.id}`);
@@ -2240,14 +1887,10 @@ const photoManager = {
     }
   },
 
-// 🔧 SUBSTITUIR a função getCurrentPhotoCount() existente por esta versão corrigida:
   async getCurrentPhotoCount(folderId) {
     try {
       console.log(`🔍 Getting photo count for folder: ${folderId}`);
       
-      // Tentar múltiplas estratégias para obter contagem
-      
-      // ESTRATÉGIA 1: API de fotos (atual)
       const photosResponse = await fetch(`/api/photos?category_id=${folderId}`);
       if (photosResponse.ok) {
         const photos = await photosResponse.json();
@@ -2257,7 +1900,6 @@ const photoManager = {
         }
       }
       
-      // ESTRATÉGIA 2: API de estatísticas (backup)
       const statsResponse = await fetch(`/api/admin/folders/leaf`);
       if (statsResponse.ok) {
         const data = await statsResponse.json();
@@ -2270,7 +1912,6 @@ const photoManager = {
         }
       }
       
-      // ESTRATÉGIA 3: Cache local (último recurso)
       if (this.allFolders) {
         const folder = this.allFolders.find(f => f.id === folderId);
         if (folder) {
@@ -2288,31 +1929,23 @@ const photoManager = {
     }
   },
 
-// 🔧 SUBSTITUIR a função startRealUploadMonitoring() existente:
+  // 🎯 VERSÃO LIMPA DO MONITORAMENTO - SEM INDICADORES CHATOS
   startRealUploadMonitoring(folderId, folderName, uploadingCount, expectedFinalCount, isRestoring = false) {
     console.log(`🔄 Starting REAL upload monitoring for: ${folderName} (restoring: ${isRestoring})`);
     console.log(`📊 Expecting ${expectedFinalCount} photos when complete`);
     
-    // 💾 SALVAR ESTADO PARA PERSISTÊNCIA
-    if (!isRestoring) {
-      this.saveUploadState(folderId, folderName, uploadingCount, expectedFinalCount);
-      
-      // 🔒 ATIVAR PROTEÇÃO CONTRA SAÍDA
-      this.activateExitProtection(folderName, uploadingCount);
-    }
+    // ❌ REMOVIDO: Salvar estado persistente (sem proteção contra saída)
+    // ❌ REMOVIDO: Proteção contra saída da página
     
-    // Marcar pasta como uploadando
+    // ✅ MANTER APENAS: Setinha na pasta
     this.markFolderAsUploading(folderId, folderName, uploadingCount);
     
-    // 🎯 ADICIONAR INDICADOR VISUAL NO HEADER
-    this.showUploadIndicator(folderName, uploadingCount);
+    // ❌ REMOVIDO: Indicador grande no topo direito
     
-    // Parar qualquer monitoramento anterior para esta pasta
     if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
       clearInterval(this.uploadMonitoringIntervals.get(folderId));
     }
     
-    // Iniciar polling a cada 30 segundos
     const monitoringInterval = setInterval(async () => {
       try {
         console.log(`🔍 Checking photo count for ${folderName}...`);
@@ -2320,74 +1953,54 @@ const photoManager = {
         const currentCount = await this.getCurrentPhotoCount(folderId);
         console.log(`📊 Current count: ${currentCount}, Expected: ${expectedFinalCount}`);
         
-        // Se chegou no número esperado, parar monitoramento
         if (currentCount >= expectedFinalCount) {
           console.log(`✅ Upload completed! ${folderName} now has ${currentCount} photos`);
           
           clearInterval(monitoringInterval);
           this.stopUploadMonitoring(folderId);
           
-          // 🎯 ATUALIZAR SÓ A PASTA ESPECÍFICA
           this.updateSpecificFolder(folderId, currentCount);
           
-          // 🎉 NOTIFICAÇÃO DE CONCLUSÃO
-          alert(`✅ Upload completed!\n"${folderName}" now has ${currentCount} photos.`);
+          // 🎯 SEM ALERT CHATO - SÓ TOAST SIMPLES
+          showToast(`Upload completed! "${folderName}" now has ${currentCount} photos.`, 'success');
           
-          // 🔓 DESATIVAR PROTEÇÃO
-          this.deactivateExitProtection();
-          
-          // 💾 LIMPAR ESTADO SALVO
-          this.clearUploadState();
-          
-          // 🔄 ATUALIZAR STATS GERAIS
           await this.loadStorageStats(true);
         }
         
       } catch (error) {
         console.error('Error in upload monitoring:', error);
       }
-    }, 30000); // Verificar a cada 30 segundos
+    }, 30000);
     
-    // Armazenar referência do interval
     if (!this.uploadMonitoringIntervals) {
       this.uploadMonitoringIntervals = new Map();
     }
     this.uploadMonitoringIntervals.set(folderId, monitoringInterval);
   },
 
-// 🔧 SUBSTITUIR a função stopUploadMonitoring() existente:
+  // 🎯 VERSÃO LIMPA DO STOP MONITORING
   stopUploadMonitoring(folderId) {
     console.log(`🛑 Stopping upload monitoring for folder: ${folderId}`);
     
-    // Parar interval se existir
     if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
       clearInterval(this.uploadMonitoringIntervals.get(folderId));
       this.uploadMonitoringIntervals.delete(folderId);
     }
     
-    // Remover loading visual da pasta
     this.unmarkFolderAsUploading(folderId);
     
-    // 🔇 ESCONDER INDICADOR DE UPLOAD
-    this.hideUploadIndicator();
-    
-    // 🔓 DESATIVAR PROTEÇÃO CONTRA SAÍDA
-    this.deactivateExitProtection();
-    
-    // 💾 LIMPAR ESTADO SALVO
-    this.clearUploadState();
+    // ❌ REMOVIDO: Indicador do topo direito
+    // ❌ REMOVIDO: Proteção contra saída
+    // ❌ REMOVIDO: Estado persistente
   },
 
-  // 🎯 ATUALIZAR APENAS UMA PASTA ESPECÍFICA (não quebrar outras)
   updateSpecificFolder(folderId, newPhotoCount) {
     console.log(`🔄 Updating specific folder ${folderId} with count: ${newPhotoCount}`);
     
-    // Encontrar elemento da pasta na árvore
     const folderElements = document.querySelectorAll('.folder-item');
     folderElements.forEach(element => {
       const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
       if (viewButton) {
-        // Atualizar contador
         const countSpan = element.querySelector('.folder-count');
         if (countSpan) {
           countSpan.textContent = ` (${newPhotoCount} photos)`;
@@ -2398,198 +2011,16 @@ const photoManager = {
     });
   },
 
-  // 🆕 ADICIONAR ESTAS FUNÇÕES - Sistema de persistência de upload:
-
-  // 💾 SALVAR ESTADO DE UPLOAD
-  saveUploadState(folderId, folderName, fileCount, expectedCount) {
-    const uploadState = {
-      folderId: folderId,
-      folderName: folderName,
-      fileCount: fileCount,
-      expectedCount: expectedCount,
-      startTime: Date.now(),
-      isActive: true
-    };
-    
-    try {
-      localStorage.setItem('activeUpload', JSON.stringify(uploadState));
-      console.log(`💾 Upload state saved for: ${folderName}`);
-    } catch (error) {
-      console.error('❌ Error saving upload state:', error);
-    }
-  },
-
-  // 📖 RECUPERAR ESTADO DE UPLOAD
-  loadUploadState() {
-    try {
-      const savedState = localStorage.getItem('activeUpload');
-      if (savedState) {
-        const uploadState = JSON.parse(savedState);
-        console.log(`📖 Found saved upload state:`, uploadState);
-        return uploadState;
-      }
-      return null;
-    } catch (error) {
-      console.error('❌ Error loading upload state:', error);
-      return null;
-    }
-  },
-
-  // 🗑️ LIMPAR ESTADO DE UPLOAD
-  clearUploadState() {
-    try {
-      localStorage.removeItem('activeUpload');
-      console.log(`🗑️ Upload state cleared`);
-    } catch (error) {
-      console.error('❌ Error clearing upload state:', error);
-    }
-  },
-
-  // 🔄 RESTAURAR UPLOAD EM PROGRESSO
+  // 🎯 VERSÃO LIMPA DO RESTORE - SEM ALERT CHATO
   async restoreUploadIfNeeded() {
-    const savedState = this.loadUploadState();
-    
-    if (savedState && savedState.isActive) {
-      console.log(`🔄 Restoring upload monitoring for: ${savedState.folderName}`);
-      
-      // Verificar se não passou muito tempo (máximo 2 horas)
-      const elapsedTime = Date.now() - savedState.startTime;
-      const maxTime = 2 * 60 * 60 * 1000; // 2 horas
-      
-      if (elapsedTime > maxTime) {
-        console.log(`⏰ Upload state too old (${Math.round(elapsedTime / 1000 / 60)} minutes), clearing...`);
-        this.clearUploadState();
-        return;
-      }
-      
-      // Restaurar monitoramento
-      this.startRealUploadMonitoring(
-        savedState.folderId, 
-        savedState.folderName, 
-        savedState.fileCount, 
-        savedState.expectedCount,
-        true // isRestoring = true
-      );
-      
-      // 🚨 MOSTRAR AVISO DE UPLOAD EM PROGRESSO
-      setTimeout(() => {
-        const elapsedMinutes = Math.round(elapsedTime / 1000 / 60);
-        alert(`⚠️ UPLOAD IN PROGRESS!\n\nFolder: "${savedState.folderName}"\nFiles: ${savedState.fileCount} photos\nElapsed time: ${elapsedMinutes} minutes\n\n🚨 Do NOT close this page until upload completes!`);
-      }, 1000);
-    }
-  },
-
-  // 🛡️ ADICIONAR ESTAS FUNÇÕES - Proteção contra saída:
-
-  // 🔒 ATIVAR PROTEÇÃO CONTRA SAÍDA
-  activateExitProtection(folderName, fileCount) {
-    console.log(`🔒 Activating exit protection for: ${folderName}`);
-    
-    // Função para mostrar aviso
-    this.beforeUnloadHandler = (event) => {
-      const message = `⚠️ UPLOAD IN PROGRESS!\n\nUploading ${fileCount} photos to "${folderName}"\n\n🚨 If you leave now, the upload will be LOST!\n\nAre you sure you want to leave?`;
-      
-      event.preventDefault();
-      event.returnValue = message; // Para navegadores antigos
-      return message; // Para navegadores modernos
-    };
-    
-    // Adicionar listener
-    window.addEventListener('beforeunload', this.beforeUnloadHandler);
-    
-    // Também proteger navegação interna (admin tabs)
-    this.protectAdminNavigation = true;
-  },
-
-  // 🔓 DESATIVAR PROTEÇÃO CONTRA SAÍDA
-  deactivateExitProtection() {
-    console.log(`🔓 Deactivating exit protection`);
-    
-    if (this.beforeUnloadHandler) {
-      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
-      this.beforeUnloadHandler = null;
-    }
-    
-    this.protectAdminNavigation = false;
-  },
-
-  // 🚨 VERIFICAR SE PODE NAVEGAR (para tabs do admin)
-  canNavigateAway() {
-    if (this.protectAdminNavigation) {
-      const uploadState = this.loadUploadState();
-      if (uploadState && uploadState.isActive) {
-        const confirmLeave = confirm(`⚠️ UPLOAD IN PROGRESS!\n\nFolder: "${uploadState.folderName}"\nFiles: ${uploadState.fileCount} photos\n\n🚨 Navigation will interrupt the upload!\n\nDo you want to continue anyway?`);
-        
-        if (!confirmLeave) {
-          return false;
-        } else {
-          // Usuário confirmou - limpar estado e permitir
-          this.clearUploadState();
-          this.deactivateExitProtection();
-          return true;
-        }
-      }
-    }
-    return true;
-  },
-
-  // 🎯 ADICIONAR ESTAS FUNÇÕES - Indicador visual:
-
-  // 📢 MOSTRAR INDICADOR DE UPLOAD NO HEADER
-  showUploadIndicator(folderName, fileCount) {
-    // Remover indicador anterior se existir
-    const existingIndicator = document.getElementById('upload-indicator');
-    if (existingIndicator) {
-      existingIndicator.remove();
-    }
-    
-    // Criar novo indicador
-    const indicator = document.createElement('div');
-    indicator.id = 'upload-indicator';
-    indicator.style.cssText = `
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: linear-gradient(90deg, #fff3cd, #ffffff, #fff3cd);
-      background-size: 200% 100%;
-      animation: uploadPulse 2s ease-in-out infinite;
-      border: 2px solid #ffc107;
-      border-radius: 8px;
-      padding: 10px 15px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #856404;
-      z-index: 9999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      max-width: 300px;
-    `;
-    
-    indicator.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 16px; animation: uploadBounce 1s ease-in-out infinite;">📤</span>
-        <div>
-          <div style="font-weight: 600;">Upload in Progress</div>
-          <div style="font-size: 12px;">📁 ${folderName} (${fileCount} photos)</div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(indicator);
-    console.log(`📢 Upload indicator shown for: ${folderName}`);
-  },
-
-  // 🔇 ESCONDER INDICADOR DE UPLOAD
-  hideUploadIndicator() {
-    const indicator = document.getElementById('upload-indicator');
-    if (indicator) {
-      indicator.remove();
-      console.log(`🔇 Upload indicator hidden`);
-    }
+    // ❌ REMOVIDO: Sistema de persistência e alerts de restauração
+    // Agora não há proteção contra saída, então não precisa restaurar nada
+    console.log('📝 Upload restoration system disabled (simplified version)');
   },
 
 };
 
-// 🔧 SUBSTITUIR o final do arquivo (após a linha ~2900) por esta versão:
+// ❌ REMOVIDO: Sistema de proteção contra navegação entre tabs
 
 // Integração com o sistema existente
 document.addEventListener('DOMContentLoaded', () => {
@@ -2597,16 +2028,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalSwitchTab = window.switchTab;
 
     if (originalSwitchTab) {
-      // 🛡️ INTERCEPTAR NAVEGAÇÃO ENTRE TABS
       window.switchTab = function (tabId) {
+        // ❌ REMOVIDO: Verificação de proteção contra saída
         
-        // 🚨 VERIFICAR SE PODE NAVEGAR
-        if (photoManager.protectAdminNavigation && !photoManager.canNavigateAway()) {
-          console.log('🚫 Navigation blocked due to active upload');
-          return; // Bloquear navegação
-        }
-        
-        // Continuar navegação normal
         originalSwitchTab(tabId);
 
         if (tabId === 'photo-storage') {
@@ -2617,7 +2041,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      console.log('✅ Photo Manager integration completed with upload protection');
+      console.log('✅ Photo Manager integration completed (simplified version)');
     }
   }, 500);
 });
