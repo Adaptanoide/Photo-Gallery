@@ -191,7 +191,7 @@ const photoManager = {
       <span class="folder-count">${photoCount}</span>
       ${folder.isLeaf ? `
         <div class="folder-actions">
-          <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">👁️</button>
+          <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
           ${!isAdminFolder ? `
             <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
           ` : ''}
@@ -337,7 +337,6 @@ const photoManager = {
         <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
       </div>
       <div class="bulk-actions">
-        <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
         <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>
       </div>
     </div>
@@ -375,7 +374,6 @@ const photoManager = {
         <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
       </div>
       <div class="bulk-actions">
-        <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
         <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>
       </div>
     </div>
