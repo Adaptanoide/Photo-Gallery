@@ -2,20 +2,14 @@
 let currentCategoryIndex = 0; // Índice da categoria atual
 let isTransitioningCategory = false; // Flag para evitar múltiplas transições
 
-// Pré-carrega as próximas N imagens (média + alta res)
 function preloadNextImages(count) {
   for (let i = 1; i <= count; i++) {
     const idx = currentPhotoIndex + i;
     if (idx < photos.length) {
       const id = photos[idx].id;
-      // carrega thumb/versão média
-      const med = new Image();
-      med.src = `/api/photos/local/thumbnail/${id}`;
-      med.onload = () => {
-        // quando thumb chegar, já dispara a alta resolução
-        const hi = new Image();
-        hi.src = getDirectImageUrl(id);
-      };
+      // PRELOAD DIRETO da alta resolução (sem thumbnail)
+      const hi = new Image();
+      hi.src = getDirectImageUrl(id);
     }
   }
 }

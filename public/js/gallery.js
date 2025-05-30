@@ -221,7 +221,7 @@ function renderCategoryPhotos(container, photos) {
   // Adicionar cada foto com tratamento de erro de carregamento
   photos.forEach((photo, index) => {
     const alreadyAdded = cartIds.includes(photo.id);
-    const delay = (index % 10) * 0.05;
+    const delay = index * 0.02; // Carregamento sequencial de cima para baixo
     
     // Format price if available (agora será usado na parte inferior)
     let priceText = '';
