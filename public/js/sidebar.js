@@ -246,7 +246,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
   // Renderizar as fotos usando a função existente
   renderCategoryPhotos(sectionContainer, categoryPhotos);
 
-  // NOVO: Verificar se há mais fotos para carregar
+  // ✅ CORREÇÃO: SEMPRE adicionar botões de navegação PRIMEIRO
+  addCategoryNavigationButtons(contentDiv, categoryId);
+
+  // DEPOIS verificar se há mais fotos para carregar
   const categoryCache = categoryPhotoCache[categoryId];
   if (categoryCache && categoryCache.hasMore) {
     // Fazer uma requisição rápida para saber quantas fotos há no total
@@ -269,7 +272,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
         const nextBatchSize = Math.min(30, remainingPhotos); // Carregar máximo 30 por vez
 
-        // Criar botão "More +XX photos"
+        // Criar botão "More +XX photos" apenas se há fotos restantes
         if (remainingPhotos > 0) {
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
@@ -279,27 +282,18 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
               More +${nextBatchSize} photos
             </button>
           `;
-          sectionContainer.appendChild(loadMoreBtn);
           
-          // Adicionar botões de navegação APÓS o botão "More"
-          addCategoryNavigationButtons(contentDiv, categoryId);
-        } else {
-          // Se não há mais fotos, adicionar apenas botões de navegação
-          addCategoryNavigationButtons(contentDiv, categoryId);
+          // Inserir botão ANTES dos botões de navegação
+          const navigationSection = contentDiv.querySelector('.category-navigation-section');
+          if (navigationSection) {
+            contentDiv.insertBefore(loadMoreBtn, navigationSection);
+          } else {
+            contentDiv.appendChild(loadMoreBtn);
+          }
         }
       })
       .catch(error => {
-        console.log('Could not determine total photos, using default button');
-        // Fallback: botão padrão
-        const loadMoreBtn = document.createElement('div');
-        loadMoreBtn.className = 'load-more-btn modern';
-        loadMoreBtn.style.gridColumn = '1 / -1';
-        loadMoreBtn.innerHTML = `
-          <button class="btn-load-more" onclick="loadMorePhotosForCategory('${categoryId}', ${categoryCache.totalLoaded}, 30)">
-            More +30 photos
-          </button>
-        `;
-        sectionContainer.appendChild(loadMoreBtn);
+        console.log('Could not determine total photos');
       });
   }
 
