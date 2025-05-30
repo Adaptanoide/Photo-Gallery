@@ -922,12 +922,26 @@ const photoManager = {
       return;
     }
 
-    showToast(`Delete ${selectedCount} photos feature coming soon!`, 'info');
+    // 🔒 CONFIRMAÇÃO: Lista as fotos que serão deletadas
+    const photoIds = Array.from(this.selectedPhotos);
+    const photoList = photoIds.slice(0, 5).join(', ');
+    const moreText = selectedCount > 5 ? ` and ${selectedCount - 5} more` : '';
+
+    showConfirm(
+      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete ${selectedCount} ${selectedCount === 1 ? 'photo' : 'photos'}:\n\n${photoList}${moreText}\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
+      () => this.executeDeleteSelectedPhotos(),
+      'Delete Photos Permanently'
+    );
   },
 
   confirmDeleteSinglePhoto(photoId) {
     console.log(`🗑️ Delete single photo requested: ${photoId}`);
-    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
+
+    showConfirm(
+      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete photo:\n${photoId}.webp\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
+      () => this.executeDeleteSinglePhoto(photoId),
+      'Delete Photo Permanently'
+    );
   },
 
   confirmDeleteCurrentPhoto() {
@@ -937,8 +951,18 @@ const photoManager = {
     }
 
     const photoId = this.currentFullscreenPhoto.id;
+    const photoName = this.currentFullscreenPhoto.name || photoId;
+
     console.log(`🗑️ Delete current photo requested: ${photoId}`);
-    showToast(`Delete photo feature coming soon!\nPhoto: ${photoId}`, 'info');
+
+    showConfirm(
+      `⚠️ PERMANENT DELETION WARNING\n\nYou are about to permanently delete:\n${photoName}\n\n🚨 This action CANNOT be undone!\n\nAre you absolutely sure?`,
+      () => {
+        this.closeFullscreen(); // Fechar fullscreen primeiro
+        this.executeDeleteSinglePhoto(photoId);
+      },
+      'Delete Photo Permanently'
+    );
   },
 
   showDeleteFolderModal(folderId, folderName, photoCount) {
