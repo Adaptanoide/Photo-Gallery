@@ -903,7 +903,7 @@ function showTutorial() {
 // NOVA FUNÇÃO: Focar na primeira categoria disponível
 function focusOnFirstCategory() {
   // Encontrar a primeira categoria disponível
-  const firstCategory = document.querySelector('.category-item:not(.active)');
+  const firstCategory = document.querySelector('.category-item');
   
   if (firstCategory) {
     // Simular clique na primeira categoria
