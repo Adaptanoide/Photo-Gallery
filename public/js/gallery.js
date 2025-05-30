@@ -574,10 +574,18 @@ function loadMoreForCategory(categoryId, offset) {
           </button>
         `;
       } else {
-        // Não tem mais fotos, mostrar mensagem final
+        // Não tem mais fotos, adicionar navegação entre categorias
         loadMoreBtn.innerHTML = `
           <div class="end-message">
             <p>Fim desta categoria. Explore outras categorias para mais opções!</p>
+            <div class="category-navigation-buttons">
+              <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+                ← Previous Category
+              </button>
+              <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
+                Next Category →
+              </button>
+            </div>
           </div>
         `;
       }
@@ -929,6 +937,61 @@ function focusOnFirstCategory() {
   } else {
     // Se não há categorias carregadas, mostrar toast
     showToast('Categories are still loading, please wait a moment...', 'info');
+  }
+}
+
+// IMPORTAR funções do lightbox para galeria principal
+function getNextCategoryFromId(currentCategoryId) {
+  // Reutilizar lógica do lightbox.js
+  if (!window.categories) return null;
+  
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
+  
+  if (currentIndex >= 0 && currentIndex < specificCategories.length - 1) {
+    return specificCategories[currentIndex + 1];
+  }
+  return null;
+}
+
+function getPreviousCategoryFromId(currentCategoryId) {
+  if (!window.categories) return null;
+  
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
+  
+  if (currentIndex > 0) {
+    return specificCategories[currentIndex - 1];
+  }
+  return null;
+}
+
+// Navegar para próxima categoria (interface principal)
+function navigateToNextCategoryMain(currentCategoryId) {
+  const nextCategory = getNextCategoryFromId(currentCategoryId);
+  if (nextCategory) {
+    // Simular clique na categoria do sidebar
+    const categoryElement = document.querySelector(`[data-category-id="${nextCategory.id}"]`);
+    if (categoryElement) {
+      categoryElement.click();
+      // Scroll suave para o topo
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } else {
+    showToast('Esta é a última categoria!', 'info');
+  }
+}
+
+function navigateToPreviousCategoryMain(currentCategoryId) {
+  const prevCategory = getPreviousCategoryFromId(currentCategoryId);
+  if (prevCategory) {
+    const categoryElement = document.querySelector(`[data-category-id="${prevCategory.id}"]`);
+    if (categoryElement) {
+      categoryElement.click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } else {
+    showToast('Esta é a primeira categoria!', 'info');
   }
 }
 
