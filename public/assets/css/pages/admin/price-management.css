@@ -1,41 +1,43 @@
-/* ===== PRICE MANAGEMENT MODULE ===== */
+/* ===== PRICE MANAGEMENT MODULE - COMPACTO E OTIMIZADO ===== */
 /* public/assets/css/pages/admin/price-management.css */
 
-/* Container principal - MAIOR FOCO NA LISTA */
+/* Container principal - MÁXIMO FOCO NA LISTA */
 .category-price-container {
   margin-top: 0;
-  min-height: 650px;
+  min-height: 700px;
 }
 
-/* Ações em lote - MAIS COMPACTA */
+/* Ações em lote - MUITO MAIS COMPACTA */
 .bulk-actions {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 15px 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
   border: 1px solid #dee2e6;
 }
 
 .bulk-actions h4 {
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   color: #333;
   font-family: 'Playfair Display', serif;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .bulk-form {
   display: flex;
-  gap: 15px;
+  gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .bulk-form .form-control {
-  min-width: 150px;
-  padding: 8px 12px;
+  min-width: 140px;
+  padding: 6px 10px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  height: 34px;
 }
 
 .bulk-form .form-control:focus {
@@ -45,44 +47,50 @@
 }
 
 .bulk-form .btn {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 6px 14px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
+  height: 34px;
 }
 
-/* Filtro à esquerda - VERTICAL */
+/* Filtro inline - HORIZONTAL E COMPACTO */
 .table-filter {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 15px;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 15px;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
 }
 
 .table-filter .form-control {
-  width: 300px;
-  max-width: 300px;
-  order: 2;
+  width: 280px;
+  max-width: 280px;
+  padding: 6px 10px;
+  font-size: 13px;
+  height: 32px;
 }
 
 .filter-stats {
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  order: 1;
-  margin-bottom: 3px;
+  margin: 0;
 }
 
-/* Container da tabela - MAIOR ALTURA E FOCO */
+/* Container da tabela - MÁXIMA ALTURA E FOCO */
 .price-table-container {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
-  min-height: 500px;
-  max-height: 75vh;
+  min-height: 550px;
+  max-height: 85vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #ccc #f1f1f1;
@@ -297,8 +305,29 @@
   }
 }
 
-/* RESPONSIVIDADE */
+/* RESPONSIVIDADE COMPACTA */
+@media (max-width: 1200px) {
+  .table-filter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .table-filter .form-control {
+    width: 100%;
+    max-width: none;
+  }
+}
+
 @media (max-width: 1024px) {
+  .bulk-form {
+    gap: 8px;
+  }
+  
+  .bulk-form .form-control {
+    min-width: 120px;
+  }
+  
   .actions-column {
     width: 130px;
   }
@@ -308,30 +337,50 @@
     font-size: 11px;
     margin-right: 4px;
   }
+  
+  .price-table-container {
+    max-height: 80vh;
+  }
 }
 
 @media (max-width: 768px) {
-  .price-table-container {
-    max-height: 65vh;
+  .bulk-actions {
+    padding: 10px 12px;
+    margin-bottom: 10px;
   }
   
-  .table-filter {
-    align-items: stretch;
-  }
-  
-  .table-filter .form-control {
-    width: 100%;
-    max-width: none;
+  .bulk-actions h4 {
+    font-size: 14px;
+    margin-bottom: 6px;
   }
   
   .bulk-form {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
   
   .bulk-form .form-control,
   .bulk-form .btn {
     width: 100%;
+    min-width: auto;
+  }
+  
+  .table-filter {
+    padding: 6px 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  
+  .filter-stats {
+    text-align: center;
+    font-size: 12px;
+  }
+  
+  .price-table-container {
+    max-height: 75vh;
+    min-height: 450px;
   }
   
   .price-table {
@@ -365,8 +414,18 @@
 }
 
 @media (max-width: 480px) {
+  .bulk-actions {
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  
+  .table-filter {
+    padding: 5px 8px;
+  }
+  
   .price-table-container {
-    max-height: 55vh;
+    max-height: 70vh;
+    min-height: 400px;
   }
   
   .price-table {
