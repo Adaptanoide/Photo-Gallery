@@ -386,3 +386,130 @@
     font-size: 14px;
   }
 }
+
+/* ===== CORREÇÃO MÍNIMA PARA CUSTOMER MANAGEMENT TABLE ===== */
+/* Adicionar ao final do shared.css ou admin.css existente */
+
+/* Container da tabela de códigos ativos */
+#active-codes-container {
+  max-height: 400px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Tabela de códigos - melhor distribuição das colunas */
+#active-codes-list table {
+  width: 100% !important;
+  table-layout: fixed !important; /* Forçar larguras fixas */
+}
+
+/* Definir larguras específicas para cada coluna */
+#active-codes-list table th:nth-child(1),
+#active-codes-list table td:nth-child(1) {
+  width: 80px !important; /* Code */
+  text-align: center !important;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: var(--color-gold);
+}
+
+#active-codes-list table th:nth-child(2),
+#active-codes-list table td:nth-child(2) {
+  width: auto !important; /* Customer - flexível */
+  min-width: 200px;
+}
+
+#active-codes-list table th:nth-child(3),
+#active-codes-list table td:nth-child(3) {
+  width: 120px !important; /* Created */
+  text-align: center !important;
+  color: #666;
+  font-size: 13px;
+}
+
+#active-codes-list table th:nth-child(4),
+#active-codes-list table td:nth-child(4) {
+  width: 200px !important; /* Actions */
+  text-align: right !important; /* Mover para a direita */
+  padding-right: 15px !important;
+}
+
+/* Container dos botões - alinhar à direita */
+#active-codes-list .action-buttons-container {
+  display: flex !important;
+  justify-content: flex-end !important; /* Direita em vez de center */
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+/* Melhorar aparência dos botões */
+#active-codes-list .action-btn {
+  font-size: 11px !important;
+  padding: 5px 10px !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+#active-codes-list .action-btn:hover {
+  transform: translateY(-1px) !important;
+}
+
+/* Botão de lixeira mais compacto */
+#active-codes-list .trash-button {
+  width: 32px !important;
+  min-width: 32px !important;
+  padding: 5px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Melhorar hover das linhas */
+#active-codes-list table tr:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* Header da tabela */
+#active-codes-list table th {
+  background-color: #f8f9fa !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+/* Bordas das células */
+#active-codes-list table td {
+  border-bottom: 1px solid #f0f0f0 !important;
+  vertical-align: middle !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  #active-codes-list table th:nth-child(1),
+  #active-codes-list table td:nth-child(1) {
+    width: 60px !important;
+  }
+  
+  #active-codes-list table th:nth-child(3),
+  #active-codes-list table td:nth-child(3) {
+    width: 90px !important;
+    font-size: 11px !important;
+  }
+  
+  #active-codes-list table th:nth-child(4),
+  #active-codes-list table td:nth-child(4) {
+    width: 160px !important;
+    padding-right: 10px !important;
+  }
+  
+  #active-codes-list .action-btn {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+  
+  #active-codes-list .trash-button {
+    width: 28px !important;
+    min-width: 28px !important;
+  }
+}
