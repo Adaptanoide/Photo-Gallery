@@ -408,9 +408,6 @@
 #active-codes-list table td:nth-child(1) {
   width: 80px !important; /* Code */
   text-align: center !important;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  color: var(--color-gold);
 }
 
 #active-codes-list table th:nth-child(2),
