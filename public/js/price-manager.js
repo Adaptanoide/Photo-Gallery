@@ -155,7 +155,8 @@ function loadCategoryPrices() {
     });
 }
 
-// Renderizar tabela de preços de categorias
+// SUBSTITUIR a função renderCategoryPriceTable por esta versão corrigida:
+
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
   
@@ -198,6 +199,37 @@ function renderCategoryPriceTable() {
           </tr>
         </thead>
         <tbody id="price-table-body">
+  `;
+  
+  // ALTERADO: Renderizar TODAS as pastas de uma vez (sem limitação)
+  leafFolders.forEach(folder => {
+    const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : '';
+    const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
+    const hasPrice = price !== '';
+    
+    html += `
+      <tr data-folder-id="${folder.id}" data-folder-name="${folder.name.toLowerCase()}">
+        <td><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
+        <td>${folder.name}</td>
+        <td>${folder.fileCount || '0'}</td>
+        <td>
+          <span class="price-display">${formattedPrice}</span>
+          <input type="number" class="price-input form-control" value="${price}" style="display: none;" step="0.01">
+        </td>
+        <td>
+          <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
+            ${hasPrice ? 'Edit Price' : 'Set Price'}
+          </button>
+          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Salvar</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += `
+      </tbody>
+    </table>
+    </div>
   `;
   
   // Renderizar apenas as primeiras 100 linhas inicialmente
@@ -248,58 +280,6 @@ function renderCategoryPriceTable() {
   }
   
   container.innerHTML = html;
-}
-
-// Função para carregar mais linhas sob demanda
-function loadMoreRows() {
-  const tableBody = document.getElementById('price-table-body');
-  const currentRows = tableBody.querySelectorAll('tr').length;
-  const batchSize = 100;
-  const nextBatch = leafFolders.slice(currentRows, currentRows + batchSize);
-  
-  if (nextBatch.length === 0) return;
-  
-  let html = '';
-  nextBatch.forEach(folder => {
-    const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : ''; // ALTERADO: Renomeado para evitar conflito
-    const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
-    const hasPrice = price !== '';
-    
-    html += `
-      <tr data-folder-id="${folder.id}" data-folder-name="${folder.name.toLowerCase()}">
-        <td><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
-        <td>${folder.name}</td>
-        <td>${folder.fileCount || '0'}</td>
-        <td>
-          <span class="price-display">${formattedPrice}</span>
-          <input type="number" class="price-input form-control" value="${price}" style="display: none;" step="0.01">
-        </td>
-        <td>
-          <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
-            ${hasPrice ? 'Edit Price' : 'Set Price'}
-          </button>
-          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Salvar</button>
-          <button class="action-btn rename-btn" onclick="renameCategory('${folder.id}', '${folder.name}')">Renomear</button>
-          <button class="btn btn-danger trash-button" onclick="deleteCategory('${folder.id}', '${folder.name}')">🗑️</button>
-        </td>
-      </tr>
-    `;
-  });
-  
-  // Adicionar as novas linhas
-  tableBody.insertAdjacentHTML('beforeend', html);
-  
-  // Atualizar botão de "carregar mais"
-  const newTotal = currentRows + nextBatch.length;
-  const loadMoreBtn = document.querySelector('.load-more button');
-  
-  if (newTotal >= leafFolders.length) {
-    // Remover botão se carregamos tudo
-    document.querySelector('.load-more').remove();
-  } else {
-    // Atualizar texto
-    loadMoreBtn.textContent = `Mostrar mais (${newTotal} de ${leafFolders.length})`;
-  }
 }
 
 // Função para ajustar altura da tabela
@@ -464,83 +444,6 @@ function applyBulkUpdate() {
     hideLoader();
     showToast('Erro ao atualizar preços: ' + error.message, 'error');
   });
-}
-
-// Renomear categoria
-function renameCategory(folderId, currentName) {
-  // Perguntar pelo novo nome
-  const newName = prompt('Digite o novo nome para a categoria:', currentName);
-  
-  if (!newName || newName === currentName) return;
-  
-  showLoader();
-  
-  // Chamar a API existente para renomear pasta
-  fetch(`/api/admin/folders/${folderId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ newName })
-  })
-  .then(response => response.json())
-  .then(result => {
-    hideLoader();
-    
-    if (result.success) {
-      showToast(`Categoria renomeada para "${newName}" com sucesso.`, 'success');
-      
-      // Atualizar dados locais
-      const folder = leafFolders.find(f => f.id === folderId);
-      if (folder) {
-        folder.name = newName;
-      }
-      
-      // Atualizar UI
-      renderCategoryPriceTable();
-    } else {
-      showToast('Erro ao renomear categoria: ' + result.message, 'error');
-    }
-  })
-  .catch(error => {
-    hideLoader();
-    showToast('Erro ao renomear categoria: ' + error.message, 'error');
-  });
-}
-
-// Excluir categoria
-function deleteCategory(folderId, folderName) {
-  showConfirm(
-    `Tem certeza que deseja excluir a categoria "${folderName}"? Esta ação não pode ser desfeita e todas as fotos dentro dela serão excluídas.`, 
-    function() {
-      showLoader();
-      
-      apiClient.deleteFolder(folderId)
-        .then(function(result) {
-          hideLoader();
-          
-          if (result.success) {
-            showToast(`Categoria "${folderName}" excluída com sucesso.`, 'success');
-            
-            // Remover da lista local
-            leafFolders = leafFolders.filter(f => f.id !== folderId);
-            
-            // Remover dos preços
-            if (priceManagerCategoryPrices[folderId]) { // ALTERADO: Renomeado para evitar conflito
-              delete priceManagerCategoryPrices[folderId]; // ALTERADO: Renomeado para evitar conflito
-            }
-            
-            // Atualizar UI
-            renderCategoryPriceTable();
-          } else {
-            showToast('Erro ao excluir categoria: ' + result.message, 'error');
-          }
-        })
-        .catch(function(error) {
-          hideLoader();
-          showToast('Erro ao excluir categoria: ' + error.message, 'error');
-        });
-    },
-    'Confirmar Exclusão'
-  );
 }
 
 // Alternar seleção de todas as categorias

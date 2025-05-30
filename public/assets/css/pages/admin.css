@@ -3092,8 +3092,8 @@
   background: #6c757d !important;
 }
 
-/* ===== PRICE MANAGEMENT - ESTILOS COMPLETOS ===== */
-/* Adicionar ao final do admin.css */
+/* ===== PRICE MANAGEMENT - ESTILOS CORRIGIDOS ===== */
+/* Substituir o CSS anterior por este */
 
 /* Container principal do Price Management */
 .category-price-container {
@@ -3194,7 +3194,7 @@
   background: #f8f9fa;
 }
 
-/* Larguras das colunas */
+/* Larguras das colunas - AJUSTADO para botões menores */
 .checkbox-column {
   width: 50px;
   text-align: center;
@@ -3216,8 +3216,8 @@
 }
 
 .actions-column {
-  width: 300px;
-  text-align: right;
+  width: 150px; /* REDUZIDO: só temos 2 botões agora */
+  text-align: left; /* ALTERADO: alinhado à esquerda */
 }
 
 /* Checkboxes */
@@ -3228,10 +3228,10 @@
   accent-color: var(--color-gold);
 }
 
-/* Células de preço */
+/* Células de preço - COR PRETA */
 .price-display {
   font-weight: 600;
-  color: var(--color-gold);
+  color: #333; /* CORRIGIDO: preto ao invés de dourado */
   font-size: 16px;
 }
 
@@ -3249,7 +3249,7 @@
   box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
 }
 
-/* Botões de ação */
+/* Botões de ação - APENAS Edit/Set Price e Salvar */
 .action-btn {
   background: var(--color-gold);
   color: white;
@@ -3291,29 +3291,7 @@
   background: #218838;
 }
 
-/* Botão Renomear */
-.rename-btn {
-  background: #007bff;
-}
-
-.rename-btn:hover {
-  background: #0069d9;
-}
-
-/* Botão Lixeira */
-.trash-button {
-  background: #dc3545 !important;
-  color: white !important;
-  border: 1px solid #dc3545 !important;
-  padding: 6px 10px;
-  font-size: 16px;
-}
-
-.trash-button:hover {
-  background: #c82333 !important;
-  border-color: #bd2130 !important;
-  transform: translateY(-1px);
-}
+/* REMOVIDO: Estilos dos botões Renomear e Lixeira */
 
 /* Ações em lote - reestilizar para ser consistente */
 .bulk-actions {
@@ -3359,18 +3337,7 @@
   white-space: nowrap;
 }
 
-/* Botão "Carregar mais" */
-.load-more {
-  text-align: center;
-  padding: 20px;
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-}
-
-.load-more .btn {
-  padding: 10px 20px;
-  font-size: 14px;
-}
+/* REMOVIDO: Estilos do botão "Carregar mais" */
 
 /* Estados de loading */
 .loading-folders {
@@ -3416,7 +3383,7 @@
 /* Responsividade */
 @media (max-width: 1024px) {
   .actions-column {
-    width: 280px;
+    width: 140px;
   }
   
   .action-btn {
@@ -3470,7 +3437,7 @@
   }
   
   .actions-column {
-    width: 200px;
+    width: 120px;
   }
   
   .action-btn {
@@ -3501,18 +3468,13 @@
   }
   
   .actions-column {
-    width: 160px;
+    width: 100px;
   }
   
   .action-btn {
     padding: 3px 6px;
     font-size: 9px;
     margin-right: 3px;
-  }
-  
-  .trash-button {
-    padding: 3px 6px !important;
-    font-size: 12px !important;
   }
   
   .category-column {
