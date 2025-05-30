@@ -1900,44 +1900,55 @@ const photoManager = {
     document.getElementById('upload-step-1').style.display = 'block';
   },
 
-// 🔧 VERSÃO SIMPLIFICADA - SUBSTITUIR startUpload() ATUAL:
+// 🔧 NOVA VERSÃO startUpload - SUBSTITUIR A FUNÇÃO EXISTENTE NA LINHA ~2680:
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
 
     try {
-      console.log('🚀 Starting simplified photo upload...');
+      console.log('🚀 Starting real photo upload...');
 
       const destination = this.selectedUploadDestination;
       const files = this.selectedFiles;
 
       // Validações básicas
       if (!destination || !destination.id) {
+        console.log('❌ Destination not found');
         alert('Please select destination folder again');
         return;
       }
 
       if (!files || files.length === 0) {
+        console.log('❌ No files selected');
         alert('Please select files to upload');
         return;
       }
+
+      console.log('✅ Validation passed - proceeding with upload');
 
       const fileCount = files.length;
       const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
       const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
       
-      console.log(`📦 Uploading ${fileCount} files (${totalSizeMB}MB) to "${destination.name}"`);
+      console.log(`📦 Starting upload of ${fileCount} files (${totalSizeMB}MB) to "${destination.name}"`);
+
+      // 🎯 OBTER NÚMERO ATUAL DE FOTOS NA PASTA DESTINO
+      const currentPhotoCount = await this.getCurrentPhotoCount(destination.id);
+      const expectedFinalCount = currentPhotoCount + fileCount;
+      
+      console.log(`📊 Current photos in destination: ${currentPhotoCount}`);
+      console.log(`📊 Expected final count: ${expectedFinalCount}`);
 
       // Mostrar loading no botão
       uploadBtn = document.getElementById('start-upload-btn');
       if (uploadBtn) {
         originalText = uploadBtn.textContent;
         uploadBtn.disabled = true;
-        uploadBtn.textContent = `🔄 Uploading...`;
+        uploadBtn.textContent = `🔄 Uploading ${fileCount} photos...`;
       }
 
-      // 🎯 MOSTRAR INDICADOR SIMPLES NO CANTO
-      this.showSimpleUploadIndicator(destination.name, fileCount);
+      // 🎯 MARCAR PASTA COMO UPLOADANDO (até número real mudar)
+      this.startRealUploadMonitoring(destination.id, destination.name, fileCount, expectedFinalCount);
 
       // Preparar FormData
       const formData = new FormData();
@@ -1945,52 +1956,56 @@ const photoManager = {
 
       console.log('📦 Adding files to FormData...');
       Array.from(files).forEach((file, index) => {
-        console.log(`📎 File ${index + 1}: ${file.name}`);
+        console.log(`📎 File ${index + 1}: ${file.name} (${this.formatFileSize(file.size)})`);
         formData.append('photos', file);
       });
 
-      // 🎯 FAZER UPLOAD
+      // 🎯 FAZER UPLOAD (sem mentir sobre quando termina)
       console.log('📡 Sending upload request...');
+      console.log('⏰ This may take several minutes for large files...');
       
       const response = await fetch('/api/admin/photos/upload', {
         method: 'POST',
         body: formData
       });
 
+      console.log(`📡 Response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`Server error ${response.status}`);
+        const errorText = await response.text();
+        console.log('📡 Error response:', errorText);
+        throw new Error(`Server error ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('📡 Upload result:', result);
+      console.log('📡 Server response:', result);
 
       if (result.success && result.uploadedCount > 0) {
-        console.log('✅ Upload completed successfully!');
+        console.log('✅ Upload request successful!');
+        console.log('⏰ Files are now being processed on server...');
+        console.log('🔄 Monitoring will continue until photos appear in folder...');
         
-        alert(`✅ Upload completed! ${result.uploadedCount} photos uploaded successfully.`);
-
-        // 🔇 ESCONDER INDICADOR
-        this.hideSimpleUploadIndicator();
+        alert(`✅ Upload request sent! ${result.uploadedCount} photos are being processed.\n\n⏰ This may take several minutes.\n🔄 The folder will show upload status until complete.`);
 
         // Fechar modal
         this.closeUploadModal();
 
-        // 🔄 ATUALIZAR APENAS STATS (não fazer rebuild)
-        setTimeout(async () => {
-          await this.loadStorageStats(true);
-          await this.loadFolderStructure();
-        }, 2000);
-
       } else {
-        throw new Error(result.message || 'Upload failed');
+        console.error('❌ Upload failed:', result);
+        alert(`Upload failed: ${result.message || 'Unknown error'}`);
+        
+        // Parar monitoramento se falhou
+        this.stopUploadMonitoring(destination.id);
       }
 
     } catch (error) {
       console.error('❌ Upload error:', error);
       alert(`Upload failed: ${error.message}`);
       
-      // Esconder indicador em caso de erro
-      this.hideSimpleUploadIndicator();
+      // Parar monitoramento se deu erro
+      if (this.selectedUploadDestination) {
+        this.stopUploadMonitoring(this.selectedUploadDestination.id);
+      }
       
     } finally {
       // Restaurar botão
@@ -1998,61 +2013,6 @@ const photoManager = {
         uploadBtn.disabled = false;
         uploadBtn.textContent = originalText;
       }
-    }
-  },
-
-  // 🎯 ADICIONAR APÓS startUpload() - Funções simples do indicador:
-
-  // 📢 MOSTRAR INDICADOR SIMPLES NO CANTO
-  showSimpleUploadIndicator(folderName, fileCount) {
-    // Remover indicador anterior se existir
-    const existingIndicator = document.getElementById('simple-upload-indicator');
-    if (existingIndicator) {
-      existingIndicator.remove();
-    }
-    
-    // Criar indicador simples
-    const indicator = document.createElement('div');
-    indicator.id = 'simple-upload-indicator';
-    indicator.style.cssText = `
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: linear-gradient(90deg, #fff3cd, #ffffff, #fff3cd);
-      background-size: 200% 100%;
-      animation: uploadPulse 2s ease-in-out infinite;
-      border: 2px solid #ffc107;
-      border-radius: 8px;
-      padding: 10px 15px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #856404;
-      z-index: 9999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      max-width: 250px;
-      cursor: default;
-    `;
-    
-    indicator.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 16px;">📤</span>
-        <div>
-          <div style="font-weight: 600;">Uploading...</div>
-          <div style="font-size: 12px;">${folderName} (${fileCount} photos)</div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(indicator);
-    console.log(`📢 Simple upload indicator shown`);
-  },
-
-  // 🔇 ESCONDER INDICADOR SIMPLES
-  hideSimpleUploadIndicator() {
-    const indicator = document.getElementById('simple-upload-indicator');
-    if (indicator) {
-      indicator.remove();
-      console.log(`🔇 Simple upload indicator hidden`);
     }
   },
 
