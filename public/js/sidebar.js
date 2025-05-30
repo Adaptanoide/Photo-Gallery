@@ -904,6 +904,14 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         button.parentElement.innerHTML = `
           <div class="end-message">
             <p>✨ That's all photos in this category!</p>
+            <div class="category-navigation-buttons">
+              <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+                ← Previous Category
+              </button>
+              <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
+                Next Category →
+              </button>
+            </div>
           </div>
         `;
         return;
@@ -989,6 +997,14 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
           button.parentElement.innerHTML = `
             <div class="end-message">
               <p>✨ That's all photos in this category!</p>
+              <div class="category-navigation-buttons">
+                <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+                  ← Previous Category
+                </button>
+                <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
+                  Next Category →
+                </button>
+              </div>
             </div>
           `;
         }
@@ -996,6 +1012,14 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         button.parentElement.innerHTML = `
           <div class="end-message">
             <p>✨ That's all photos in this category!</p>
+            <div class="category-navigation-buttons">
+              <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+                ← Previous Category
+              </button>
+              <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
+                Next Category →
+              </button>
+            </div>
           </div>
         `;
       }
@@ -1008,4 +1032,51 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
       button.textContent = originalText;
       button.disabled = false;
     });
+}
+
+// Funções de navegação entre categorias
+function getNextCategoryFromId(currentCategoryId) {
+  if (!window.categories) return null;
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
+  if (currentIndex >= 0 && currentIndex < specificCategories.length - 1) {
+    return specificCategories[currentIndex + 1];
+  }
+  return null;
+}
+
+function getPreviousCategoryFromId(currentCategoryId) {
+  if (!window.categories) return null;
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
+  if (currentIndex > 0) {
+    return specificCategories[currentIndex - 1];
+  }
+  return null;
+}
+
+function navigateToNextCategoryMain(currentCategoryId) {
+  const nextCategory = getNextCategoryFromId(currentCategoryId);
+  if (nextCategory) {
+    const categoryElement = document.querySelector(`[data-category-id="${nextCategory.id}"]`);
+    if (categoryElement) {
+      categoryElement.click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } else {
+    showToast('Esta é a última categoria!', 'info');
+  }
+}
+
+function navigateToPreviousCategoryMain(currentCategoryId) {
+  const prevCategory = getPreviousCategoryFromId(currentCategoryId);
+  if (prevCategory) {
+    const categoryElement = document.querySelector(`[data-category-id="${prevCategory.id}"]`);
+    if (categoryElement) {
+      categoryElement.click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } else {
+    showToast('Esta é a primeira categoria!', 'info');
+  }
 }
