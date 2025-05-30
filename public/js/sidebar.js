@@ -52,7 +52,7 @@ function loadCategoriesMenu() {
 
       // NOVA LINHA: Tornar as categorias acessíveis globalmente para o lightbox
       window.categories = data.categories || [];
-      
+
       // Usar as categorias dos dados iniciais
       categories = data.categories || [];
 
@@ -72,13 +72,13 @@ function loadCategoriesMenu() {
 
       specificCategories.forEach((category, index) => {
         const isActive = index === 0 ? 'active' : ''; // Primeira categoria ativa
-        
+
         menuContainer.innerHTML += `
           <div class="category-item ${isActive}" data-category-id="${category.id}">
             ${category.name} ${category.fileCount ? `(${category.fileCount})` : ''}
           </div>
         `;
-        
+
         console.log(`Categoria adicionada: ${category.name} (ID: ${category.id})`);
       });
 
@@ -144,13 +144,13 @@ function loadCategoryPhotos(categoryId) {
     // CORREÇÃO: Extrair apenas o array de fotos do cache
     const cachedData = categoryPhotoCache[categoryId];
     const photosArray = cachedData.photos || cachedData;
-    
+
     // CORREÇÃO CRÍTICA: Atualizar array global e registro de fotos
     photos = [...photosArray]; // Atualizar array global
     photosArray.forEach(photo => {
       photoRegistry[photo.id] = photo; // Atualizar registro
     });
-    
+
     renderPhotosForCategory(photosArray, categoryId);
     hideLoader();
     preloadCategoryImages(categoryId);
@@ -159,7 +159,7 @@ function loadCategoryPhotos(categoryId) {
 
   // CORREÇÃO: Carregar fotos com limite inicial
   const INITIAL_LOAD_LIMIT = 20; // Carregar apenas 20 fotos inicialmente
-  
+
   fetch(`/api/photos?category_id=${categoryId || ''}&customer_code=${currentCustomerCode}&limit=${INITIAL_LOAD_LIMIT}&offset=0`)
     .then(response => response.json())
     .then(photos => {
@@ -169,7 +169,7 @@ function loadCategoryPhotos(categoryId) {
         totalLoaded: photos.length || 0,
         hasMore: (photos.length || 0) >= INITIAL_LOAD_LIMIT
       };
-      
+
       console.log(`Loaded ${photos.length} photos for category: ${categoryId}`);
 
       // Atualizar o registro global e renderizar
@@ -191,19 +191,19 @@ function loadCategoryPhotos(categoryId) {
 function renderPhotosForCategory(categoryPhotos, categoryId) {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = '';
-  
+
   if (!categoryPhotos || categoryPhotos.length === 0) {
     contentDiv.innerHTML = '<div class="empty-message">No photos in this category.</div>';
     return;
   }
-  
+
   // RESTAURAR: Criar título da categoria
   if (activeCategory) {
     const categoryItem = document.querySelector(`.category-item[data-category-id="${activeCategory}"]`);
     if (categoryItem) {
       const categoryText = categoryItem.textContent.trim();
       const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
-      
+
       // Criar container para título e linha divisória
       const titleContainer = document.createElement('div');
       titleContainer.className = 'category-title-container';
@@ -214,7 +214,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
       contentDiv.appendChild(titleContainer);
     }
   }
-  
+
   // Criar o container da seção com aplicação forçada de estilos
   const sectionContainer = document.createElement('div');
   sectionContainer.id = 'category-section-main';
@@ -242,34 +242,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
   `;
 
   contentDiv.appendChild(sectionContainer);
-  
+
   // Renderizar as fotos usando a função existente
   renderCategoryPhotos(sectionContainer, categoryPhotos);
 
-  // SEMPRE adicionar botões de navegação entre categorias
-  const navigationContainer = document.createElement('div');
-  navigationContainer.className = 'category-navigation-container';
-  navigationContainer.style.cssText = `
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 40px;
-    padding: 30px 20px;
-    border-top: 1px solid rgba(212, 175, 55, 0.2);
-  `;
-
-  navigationContainer.innerHTML = `
-    <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-      ← Previous Category
-    </button>
-    <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')">
-      Next Category →
-    </button>
-  `;
-
-sectionContainer.appendChild(navigationContainer);
-  
   // NOVO: Verificar se há mais fotos para carregar
   const categoryCache = categoryPhotoCache[categoryId];
   if (categoryCache && categoryCache.hasMore) {
@@ -281,7 +257,7 @@ sectionContainer.appendChild(navigationContainer);
         // Vamos estimar o total baseado na categoria
         const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
         let totalPhotos = 50; // Estimativa padrão
-        
+
         if (categoryItem) {
           const text = categoryItem.textContent;
           const match = text.match(/\((\d+)\)/);
@@ -289,10 +265,10 @@ sectionContainer.appendChild(navigationContainer);
             totalPhotos = parseInt(match[1]);
           }
         }
-        
+
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
         const nextBatchSize = Math.min(30, remainingPhotos); // Carregar máximo 30 por vez
-        
+
         // Criar botão "More +XX photos"
         if (remainingPhotos > 0) {
           const loadMoreBtn = document.createElement('div');
@@ -304,6 +280,12 @@ sectionContainer.appendChild(navigationContainer);
             </button>
           `;
           sectionContainer.appendChild(loadMoreBtn);
+          
+          // Adicionar botões de navegação APÓS o botão "More"
+          addCategoryNavigationButtons(sectionContainer, categoryId);
+        } else {
+          // Se não há mais fotos, adicionar apenas botões de navegação
+          addCategoryNavigationButtons(sectionContainer, categoryId);
         }
       })
       .catch(error => {
@@ -320,13 +302,13 @@ sectionContainer.appendChild(navigationContainer);
         sectionContainer.appendChild(loadMoreBtn);
       });
   }
-  
+
   // Forçar atualização do layout
   setTimeout(() => {
     // Verificar se o grid foi aplicado corretamente
     const computedStyle = window.getComputedStyle(sectionContainer);
     console.log('Grid aplicado:', computedStyle.display, computedStyle.gridTemplateColumns);
-    
+
     // Atualizar botões do carrinho
     updateButtonsForCartItems();
   }, 100);
@@ -335,14 +317,14 @@ sectionContainer.appendChild(navigationContainer);
 // ADIÇÃO: Função auxiliar para obter o nome da categoria atual
 function getCurrentCategoryName() {
   if (!activeCategory) return 'All Items';
-  
+
   const activeItem = document.querySelector('.category-item.active');
   if (activeItem) {
     const text = activeItem.textContent.trim();
     // Remover contadores entre parênteses
     return text.replace(/\s*\(\d+\)\s*$/, '');
   }
-  
+
   // Fallback
   const category = categories.find(cat => cat.id === activeCategory);
   return category ? category.name : 'All Items';
@@ -386,11 +368,11 @@ function highlightActiveCategory(categoryId) {
 function updateCurrentCategoryHeader(categoryId) {
   // MUDANÇA: Não mostrar header separado, deixar apenas o título da galeria
   const headerDiv = document.getElementById('current-category-header');
-  
+
   if (headerDiv) {
     headerDiv.style.display = 'none'; // Esconder completamente
   }
-  
+
   // ADIÇÃO: Atualizar o título principal da galeria
   const mainCategoryTitle = document.querySelector('.category-title-container h2');
   if (mainCategoryTitle) {
@@ -718,7 +700,7 @@ function renderPhotosByCategory(photosByCategory) {
     const sectionContainer = document.createElement('div');
     sectionContainer.id = `category-section-${category.name.replace(/\s+/g, '-').toLowerCase()}`;
     sectionContainer.className = 'category-section';
-    
+
     // APLICAR: Estilos de grid com força
     sectionContainer.style.cssText = `
       display: grid !important;
@@ -728,7 +710,7 @@ function renderPhotosByCategory(photosByCategory) {
       margin-bottom: 40px !important;
       box-sizing: border-box !important;
     `;
-    
+
     contentDiv.appendChild(sectionContainer);
 
     // MODIFICADO: Renderizar fotos desta categoria com novo layout
@@ -747,7 +729,7 @@ function renderCategoryPhotosNewLayout(container, photos) {
     }
     return;
   }
-  
+
   // Aplicar estilos de grid de forma mais agressiva
   if (container) {
     container.style.display = 'grid';
@@ -759,14 +741,14 @@ function renderCategoryPhotosNewLayout(container, photos) {
     container.classList.add('category-section');
     container.setAttribute('data-grid-applied', 'true');
   }
-  
+
   let html = '';
-  
+
   // Adicionar cada foto com o NOVO LAYOUT
   photos.forEach((photo, index) => {
     const alreadyAdded = cartIds.includes(photo.id);
     const delay = (index % 10) * 0.05;
-    
+
     // Format price if available (agora será usado na parte inferior)
     let priceText = '';
     if (photo.price !== undefined) {
@@ -794,10 +776,10 @@ function renderCategoryPhotosNewLayout(container, photos) {
       </div>
     `;
   });
-  
+
   // Aplicar o HTML
   container.innerHTML = html;
-  
+
   // Verificação final: Forçar recálculo do layout
   setTimeout(() => {
     const computedStyle = window.getComputedStyle(container);
@@ -807,7 +789,7 @@ function renderCategoryPhotosNewLayout(container, photos) {
       width: computedStyle.width,
       photosCount: photos.length
     });
-    
+
     // Se o grid não foi aplicado, tentar novamente
     if (computedStyle.display !== 'grid') {
       console.warn('Grid não aplicado, reforçando...');
@@ -820,44 +802,44 @@ function renderCategoryPhotosNewLayout(container, photos) {
 function initializeStickysidebar() {
   const sidebar = document.querySelector('.category-sidebar');
   const categoriesMenu = document.querySelector('.categories-menu');
-  
+
   if (!sidebar || !categoriesMenu) return;
-  
+
   // Detectar quando o usuário está rolando dentro do menu de categorias
   let scrollTimeout;
-  categoriesMenu.addEventListener('scroll', function() {
+  categoriesMenu.addEventListener('scroll', function () {
     this.classList.add('scrolling');
-    
+
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
       this.classList.remove('scrolling');
     }, 150);
   });
-  
+
   // Ajustar altura do sidebar baseado na viewport
   function adjustSidebarHeight() {
     const viewportHeight = window.innerHeight;
     const sidebarTop = sidebar.getBoundingClientRect().top;
     const maxHeight = viewportHeight - sidebarTop - 40; // 40px de margem
-    
+
     sidebar.style.maxHeight = `${maxHeight}px`;
     categoriesMenu.style.maxHeight = `${maxHeight - 120}px`; // Subtraindo espaço do header e search
   }
-  
+
   // Ajustar na inicialização e quando redimensionar a janela
   adjustSidebarHeight();
   window.addEventListener('resize', adjustSidebarHeight);
-  
+
   // Observar mudanças no DOM que possam afetar o layout
   const resizeObserver = new ResizeObserver(adjustSidebarHeight);
   resizeObserver.observe(document.body);
 }
 
 // Chamar a função quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // Aguardar um pouco para garantir que todos os elementos foram carregados
   setTimeout(initializeStickysidebar, 100);
-  
+
   // Configurar pesquisa de categorias (se ainda não estiver configurado)
   setupCategorySearch();
 });
@@ -865,26 +847,26 @@ document.addEventListener('DOMContentLoaded', function() {
 // Melhorar a função de pesquisa existente
 function setupCategorySearch() {
   const searchInput = document.getElementById('category-search-input');
-  
+
   if (!searchInput) return;
-  
+
   // Limpar pesquisa com ESC
-  searchInput.addEventListener('keydown', function(e) {
+  searchInput.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       this.value = '';
       this.dispatchEvent(new Event('input'));
     }
   });
-  
+
   // Adicionar indicador de resultados
-  searchInput.addEventListener('input', function() {
+  searchInput.addEventListener('input', function () {
     const searchTerm = this.value.toLowerCase();
     const categoryItems = document.querySelectorAll('.category-item');
     let visibleCount = 0;
-    
+
     categoryItems.forEach(item => {
       const categoryName = item.textContent.trim().toLowerCase();
-      
+
       if (categoryName.includes(searchTerm)) {
         item.style.display = 'block';
         visibleCount++;
@@ -892,11 +874,11 @@ function setupCategorySearch() {
         item.style.display = 'none';
       }
     });
-    
+
     // Mostrar feedback visual se não encontrar resultados
     const categoriesMenu = document.querySelector('.categories-menu');
     let noResultsMsg = categoriesMenu.querySelector('.no-results-message');
-    
+
     if (visibleCount === 0 && searchTerm.length > 0) {
       if (!noResultsMsg) {
         noResultsMsg = document.createElement('div');
@@ -915,22 +897,22 @@ function setupCategorySearch() {
 function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
   const button = event.target;
   const originalText = button.textContent;
-  
+
   // Mostrar loading
   button.textContent = 'Loading...';
   button.disabled = true;
-  
+
   fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
     .then(response => response.json())
     .then(newPhotos => {
-    if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
-      // Não há mais fotos
-      button.parentElement.remove();
-      return;
-    }
-      
+      if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
+        // Não há mais fotos
+        button.parentElement.remove();
+        return;
+      }
+
       console.log(`Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
-      
+
       // Atualizar cache
       const categoryCache = categoryPhotoCache[categoryId];
       if (categoryCache) {
@@ -938,22 +920,22 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         categoryCache.totalLoaded += newPhotos.length;
         categoryCache.hasMore = newPhotos.length >= batchSize;
       }
-      
+
       // Registrar novas fotos
       newPhotos.forEach(photo => {
         photoRegistry[photo.id] = photo;
         photos.push(photo);
       });
-      
+
       // Encontrar container da categoria
       const sectionContainer = document.getElementById('category-section-main');
       const loadMoreBtn = sectionContainer.querySelector('.load-more-btn');
-      
+
       // Adicionar novas fotos antes do botão
       newPhotos.forEach((photo, index) => {
         const alreadyAdded = cartIds.includes(photo.id);
         const delay = (index % 10) * 0.05;
-        
+
         let priceText = '';
         if (photo.price !== undefined) {
           const formattedPrice = `$${parseFloat(photo.price).toFixed(2)}`;
@@ -965,7 +947,7 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         photoDiv.id = `photo-${photo.id}`;
         photoDiv.style.animation = `fadeIn 0.5s ease-out ${delay}s both`;
         photoDiv.onclick = () => openLightboxById(photo.id, false);
-        
+
         photoDiv.innerHTML = `
           <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy"
               style="width: 100%; height: auto;">
@@ -980,10 +962,10 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
             </div>
           </div>
         `;
-        
+
         sectionContainer.insertBefore(photoDiv, loadMoreBtn);
       });
-      
+
       // Atualizar botão ou remover se não há mais fotos
       if (categoryCache && categoryCache.hasMore) {
         // Calcular próximo batch
@@ -1005,22 +987,31 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
           button.textContent = `More +${nextBatchSize} photos`;
           button.disabled = false;
           button.onclick = () => loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
+          
+          // Reposicionar botões de navegação APÓS o botão More
+          addCategoryNavigationButtons(sectionContainer, categoryId);
         } else {
           button.parentElement.remove();
+          
+          // Adicionar botões finais quando não há mais fotos
+          addCategoryNavigationButtons(sectionContainer, categoryId);
         }
-        } else {
-          button.parentElement.remove();
-        }
-              
-              // Atualizar botões do carrinho
-              updateButtonsForCartItems();
-            })
-            .catch(error => {
-              console.error('Error loading more photos:', error);
-              button.textContent = originalText;
-              button.disabled = false;
-            });
-        }
+      } else {
+        button.parentElement.remove();
+        
+        // Adicionar botões finais quando não há mais fotos
+        addCategoryNavigationButtons(sectionContainer, categoryId);
+      }
+
+      // Atualizar botões do carrinho
+      updateButtonsForCartItems();
+    })
+    .catch(error => {
+      console.error('Error loading more photos:', error);
+      button.textContent = originalText;
+      button.disabled = false;
+    });
+}
 
 // Funções de navegação entre categorias
 function getNextCategoryFromId(currentCategoryId) {
@@ -1067,4 +1058,38 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
   } else {
     showToast('Esta é a primeira categoria!', 'info');
   }
+}
+
+// Função para adicionar/atualizar botões de navegação
+function addCategoryNavigationButtons(container, categoryId) {
+  // Remover botões existentes se houver
+  const existingNav = container.querySelector('.category-navigation-fixed');
+  if (existingNav) {
+    existingNav.remove();
+  }
+  
+  // Criar novos botões
+  const navigationContainer = document.createElement('div');
+  navigationContainer.className = 'category-navigation-fixed';
+  navigationContainer.innerHTML = `
+    <div style="
+      display: flex; 
+      justify-content: center; 
+      gap: 20px; 
+      margin-top: 30px; 
+      padding: 25px 20px; 
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
+      background: rgba(250, 250, 250, 0.5);
+      border-radius: 10px;
+    ">
+      <button class="btn btn-outline-secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')" style="min-width: 160px; padding: 12px 24px;">
+        ← Previous Category
+      </button>
+      <button class="btn btn-outline-gold" onclick="navigateToNextCategoryMain('${categoryId}')" style="min-width: 160px; padding: 12px 24px;">
+        Next Category →
+      </button>
+    </div>
+  `;
+  
+  container.appendChild(navigationContainer);
 }
