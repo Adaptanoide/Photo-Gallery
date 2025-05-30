@@ -3092,29 +3092,72 @@
   background: #6c757d !important;
 }
 
-/* ===== PRICE MANAGEMENT - ESTILOS CORRIGIDOS ===== */
-/* Substituir o CSS anterior por este */
+/* ===== PRICE MANAGEMENT - CSS LIMPO E CORRIGIDO ===== */
+/* SUBSTITUIR TODAS as seções relacionadas a Price Management no admin.css por este CSS: */
 
-/* Container principal do Price Management */
+/* Container principal - MAIOR FOCO NA LISTA */
 .category-price-container {
   margin-top: 0;
+  min-height: 650px; /* AUMENTADO: foco maior na lista */
 }
 
+/* Ações em lote - MAIS COMPACTA */
+.bulk-actions {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 15px 20px; /* REDUZIDO */
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #dee2e6;
+}
 
-/* SUBSTITUIR COMPLETAMENTE a seção .table-filter no admin.css por esta versão: */
+.bulk-actions h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; /* REDUZIDO */
+}
 
+.bulk-form {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bulk-form .form-control {
+  min-width: 150px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.bulk-form .form-control:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.bulk-form .btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Filtro à esquerda - VERTICAL */
 .table-filter {
   display: flex;
-  flex-direction: column; /* ALTERADO: coluna vertical */
-  align-items: flex-start; /* ALTERADO: alinha à esquerda */
-  margin-bottom: 20px;
-  gap: 10px; /* REDUZIDO: gap menor para elementos verticais */
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 15px; /* REDUZIDO */
+  gap: 8px;
 }
 
 .table-filter .form-control {
-  width: 300px; /* AJUSTADO: largura boa para filtro */
+  width: 300px;
   max-width: 300px;
-  order: 2; /* ADICIONADO: campo fica embaixo */
+  order: 2;
 }
 
 .filter-stats {
@@ -3122,20 +3165,20 @@
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  order: 1; /* ADICIONADO: estatísticas ficam em cima */
-  margin-bottom: 5px; /* ADICIONADO: pequeno espaço embaixo */
+  order: 1;
+  margin-bottom: 3px;
 }
 
-/* Container da tabela com scroll controlado */
+/* Container da tabela - MAIOR ALTURA E FOCO */
 .price-table-container {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
   
-  /* FOCO: Altura controlada similar ao Photo Storage */
-  min-height: 400px;
-  max-height: 60vh;
+  /* FOCO: Lista ocupa MUITO mais espaço */
+  min-height: 500px; /* AUMENTADO de 400px */
+  max-height: 75vh; /* AUMENTADO de 60vh */
   overflow-y: auto;
   
   /* Melhor scrollbar */
@@ -3199,7 +3242,7 @@
   background: #f8f9fa;
 }
 
-/* Larguras das colunas - AJUSTADO para botões menores */
+/* Larguras das colunas - BOTÕES MAIS À ESQUERDA */
 .checkbox-column {
   width: 50px;
   text-align: center;
@@ -3207,7 +3250,7 @@
 
 .category-column {
   width: auto;
-  min-width: 200px;
+  min-width: 280px; /* AUMENTADO para dar mais espaço */
 }
 
 .photos-column {
@@ -3221,8 +3264,9 @@
 }
 
 .actions-column {
-  width: 150px; /* REDUZIDO: só temos 2 botões agora */
-  text-align: left; /* ALTERADO: alinhado à esquerda */
+  width: 140px; /* REDUZIDO ainda mais */
+  text-align: left; /* IMPORTANTE: à esquerda */
+  padding-left: 8px !important; /* FORÇAR menos espaço à esquerda */
 }
 
 /* Checkboxes */
@@ -3236,7 +3280,7 @@
 /* Células de preço - COR PRETA */
 .price-display {
   font-weight: 600;
-  color: #333; /* CORRIGIDO: preto ao invés de dourado */
+  color: #333; /* PRETO - não dourado */
   font-size: 16px;
 }
 
@@ -3254,7 +3298,7 @@
   box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
 }
 
-/* Botões de ação - APENAS Edit/Set Price e Salvar */
+/* Botões de ação - APENAS Set Price e Save */
 .action-btn {
   background: var(--color-gold);
   color: white;
@@ -3264,7 +3308,7 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  margin-right: 8px;
+  margin-right: 6px; /* REDUZIDO */
   transition: all 0.2s ease;
   white-space: nowrap;
 }
@@ -3278,7 +3322,7 @@
   margin-right: 0;
 }
 
-/* Botão Edit/Set Price */
+/* Botão Set/Edit Price */
 .edit-price-btn {
   background: var(--color-gold);
 }
@@ -3287,7 +3331,7 @@
   background: #c5a647;
 }
 
-/* Botão Salvar */
+/* Botão Save */
 .save-price-btn {
   background: #28a745;
 }
@@ -3295,54 +3339,6 @@
 .save-price-btn:hover {
   background: #218838;
 }
-
-/* REMOVIDO: Estilos dos botões Renomear e Lixeira */
-
-/* Ações em lote - reestilizar para ser consistente */
-.bulk-actions {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 25px;
-  border: 1px solid #dee2e6;
-}
-
-.bulk-actions h4 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
-}
-
-.bulk-form {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.bulk-form .form-control {
-  min-width: 150px;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.bulk-form .form-control:focus {
-  outline: none;
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
-}
-
-.bulk-form .btn {
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* REMOVIDO: Estilos do botão "Carregar mais" */
 
 /* Estados de loading */
 .loading-folders {
@@ -3383,103 +3379,6 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-/* Responsividade */
-@media (max-width: 1024px) {
-  .actions-column {
-    width: 140px;
-  }
-  
-  .action-btn {
-    padding: 5px 10px;
-    font-size: 11px;
-    margin-right: 6px;
-  }
-}
-
-@media (max-width: 768px) {
-  .price-table-container {
-    max-height: 50vh;
-  }
-   
-  .filter-stats {
-    text-align: center;
-  }
-  
-  .bulk-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .bulk-form .form-control,
-  .bulk-form .btn {
-    width: 100%;
-  }
-  
-  /* Tabela responsiva para mobile */
-  .price-table {
-    font-size: 13px;
-  }
-  
-  .price-table th,
-  .price-table td {
-    padding: 8px 6px;
-  }
-  
-  .category-column {
-    min-width: 120px;
-  }
-  
-  .actions-column {
-    width: 120px;
-  }
-  
-  .action-btn {
-    padding: 4px 8px;
-    font-size: 10px;
-    margin-right: 4px;
-  }
-  
-  .price-input {
-    width: 80px;
-    padding: 4px 6px;
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .price-table-container {
-    max-height: 40vh;
-  }
-  
-  .price-table {
-    font-size: 12px;
-  }
-  
-  .price-table th,
-  .price-table td {
-    padding: 6px 4px;
-  }
-  
-  .actions-column {
-    width: 100px;
-  }
-  
-  .action-btn {
-    padding: 3px 6px;
-    font-size: 9px;
-    margin-right: 3px;
-  }
-  
-  .category-column {
-    min-width: 100px;
-  }
-  
-  .photos-column,
-  .price-column {
-    width: 80px;
-  }
 }
 
 /* Animações suaves */
@@ -3525,7 +3424,7 @@
   border-left: 4px solid var(--color-gold);
 }
 
-/* Loading progress para listas grandes */
+/* Loading progress */
 #loading-progress {
   color: #856404;
   font-size: 14px;
@@ -3537,4 +3436,105 @@
 @keyframes loadingPulse {
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 1024px) {
+  .actions-column {
+    width: 130px;
+  }
+  
+  .action-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    margin-right: 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .price-table-container {
+    max-height: 65vh;
+  }
+  
+  .table-filter {
+    align-items: stretch;
+  }
+  
+  .table-filter .form-control {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .bulk-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .bulk-form .form-control,
+  .bulk-form .btn {
+    width: 100%;
+  }
+  
+  .price-table {
+    font-size: 13px;
+  }
+  
+  .price-table th,
+  .price-table td {
+    padding: 8px 6px;
+  }
+  
+  .category-column {
+    min-width: 120px;
+  }
+  
+  .actions-column {
+    width: 110px;
+  }
+  
+  .action-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    margin-right: 3px;
+  }
+  
+  .price-input {
+    width: 80px;
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .price-table-container {
+    max-height: 55vh;
+  }
+  
+  .price-table {
+    font-size: 12px;
+  }
+  
+  .price-table th,
+  .price-table td {
+    padding: 6px 4px;
+  }
+  
+  .actions-column {
+    width: 100px;
+  }
+  
+  .action-btn {
+    padding: 3px 6px;
+    font-size: 9px;
+    margin-right: 2px;
+  }
+  
+  .category-column {
+    min-width: 100px;
+  }
+  
+  .photos-column,
+  .price-column {
+    width: 80px;
+  }
 }

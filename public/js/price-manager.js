@@ -1,65 +1,65 @@
-// price-manager.js
-// Variáveis globais
-let leafFolders = []; // Armazena todas as pastas finais
-let priceManagerCategoryPrices = {}; // Armazena os preços das categorias - Renomeado para evitar conflito
-let isLoadingFolders = false; // Flag para controlar carregamento
+// price-manager.js - ENGLISH VERSION
+// Global variables
+let leafFolders = []; // Stores all final folders
+let priceManagerCategoryPrices = {}; // Stores category prices - Renamed to avoid conflict
+let isLoadingFolders = false; // Flag to control loading
 
-// Função de inicialização
+// Initialization function
 function initPriceManager() {
   console.log("Initializing price manager...");
   
-  // Mostrar mensagem de carregamento com indicador de progresso
+  // Show loading message with progress indicator
   document.getElementById('category-price-container').innerHTML = 
-    '<div class="loading-folders">Carregando dados...<div id="loading-progress">Preparando...</div></div>';
+    '<div class="loading-folders">Loading data...<div id="loading-progress">Preparing...</div></div>';
   
   isLoadingFolders = true;
   
-  // Primeiro carregar preços (geralmente rápido)
+  // First load prices (usually fast)
   loadCategoryPrices()
     .then(() => {
-      // Verificar se já temos pastas em cache localmente
+      // Check if we already have folders cached locally
       const cachedFolders = sessionStorage.getItem('leaf_folders');
       const cacheTimestamp = sessionStorage.getItem('leaf_folders_timestamp');
       const cacheAge = cacheTimestamp ? (Date.now() - parseInt(cacheTimestamp)) : null;
       
-      // Usar cache se disponível e fresco (menos de 10 minutos)
+      // Use cache if available and fresh (less than 10 minutes)
       if (cachedFolders && cacheAge && cacheAge < 10 * 60 * 1000) {
         console.log('Using cached folders from session storage');
         leafFolders = JSON.parse(cachedFolders);
         renderCategoryPriceTable();
         isLoadingFolders = false;
         
-        // Adicionar evento de redimensionamento
+        // Add resize event
         setTimeout(adjustTableHeight, 100);
         window.addEventListener('resize', adjustTableHeight);
         
-        // Ainda buscar atualizações em segundo plano
+        // Still fetch updates in background
         backgroundRefreshFolders();
         return;
       }
       
-      // Se não temos cache, fazer carregamento normal com UI de progresso
+      // If no cache, do normal loading with progress UI
       loadLeafFoldersWithProgress();
     })
     .catch(error => {
       document.getElementById('category-price-container').innerHTML = 
-        `<div class="error-message">Erro ao carregar dados: ${error.message}</div>`;
+        `<div class="error-message">Error loading data: ${error.message}</div>`;
       isLoadingFolders = false;
     });
 }
 
-// Carregar pastas com progresso
+// Load folders with progress
 function loadLeafFoldersWithProgress() {
   const progressElement = document.getElementById('loading-progress');
   
-  // Atualizar mensagem de progresso
+  // Update progress message
   if (progressElement) {
-    progressElement.textContent = 'Buscando categorias...';
+    progressElement.textContent = 'Searching categories...';
   }
   
-  console.log('Fazendo requisição para: /api/admin/folders/leaf?include_empty=true');
+  console.log('Making request to: /api/admin/folders/leaf?include_empty=true');
   
-  // Fazer a requisição
+  // Make the request
   fetch('/api/admin/folders/leaf?include_empty=true')
     .then(response => {
       console.log('Response status:', response.status);
@@ -69,40 +69,40 @@ function loadLeafFoldersWithProgress() {
       return response.json();
     })
     .then(result => {
-      console.log('API Response completa:', result);
+      console.log('Complete API Response:', result);
       
       if (result.success) {
         leafFolders = result.folders || [];
         console.log(`Loaded ${leafFolders.length} leaf folders`);
-        console.log('Primeiras 3 pastas:', leafFolders.slice(0, 3));
+        console.log('First 3 folders:', leafFolders.slice(0, 3));
         
-        // Armazenar em cache na sessão
+        // Store in session cache
         sessionStorage.setItem('leaf_folders', JSON.stringify(leafFolders));
         sessionStorage.setItem('leaf_folders_timestamp', Date.now().toString());
         
-        // Atualizar UI
+        // Update UI
         renderCategoryPriceTable();
         
-        // Ajustar altura da tabela
+        // Adjust table height
         setTimeout(adjustTableHeight, 100);
         
-        // Adicionar evento de redimensionamento
+        // Add resize event
         window.addEventListener('resize', adjustTableHeight);
       } else {
-        throw new Error(result.message || 'Falha ao carregar pastas');
+        throw new Error(result.message || 'Failed to load folders');
       }
     })
     .catch(error => {
       console.error('Error loading leaf folders:', error);
       document.getElementById('category-price-container').innerHTML = 
-        `<div class="error-message">Erro ao carregar categorias: ${error.message}</div>`;
+        `<div class="error-message">Error loading categories: ${error.message}</div>`;
     })
     .finally(() => {
       isLoadingFolders = false;
     });
 }
 
-// Atualizar pastas em segundo plano sem interromper o usuário
+// Update folders in background without interrupting user
 function backgroundRefreshFolders() {
   fetch('/api/admin/folders/leaf?include_empty=true')
     .then(response => response.json())
@@ -110,11 +110,11 @@ function backgroundRefreshFolders() {
       if (result.success) {
         const newFolders = result.folders || [];
         
-        // Verificar se houve mudanças significativas
+        // Check for significant changes
         const oldLength = leafFolders.length;
         const newLength = newFolders.length;
         
-        // Se temos diferenças significativas, atualizar UI
+        // If we have significant differences, update UI
         if (Math.abs(oldLength - newLength) > 5 || newLength === 0) {
           leafFolders = newFolders;
           sessionStorage.setItem('leaf_folders', JSON.stringify(leafFolders));
@@ -125,11 +125,11 @@ function backgroundRefreshFolders() {
     })
     .catch(error => {
       console.error('Background refresh error:', error);
-      // Não mostramos erro na UI para atualizações em segundo plano
+      // Don't show UI error for background updates
     });
 }
 
-// Carregar preços das categorias
+// Load category prices
 function loadCategoryPrices() {
   return fetch('/api/admin/categories/prices')
     .then(response => {
@@ -140,50 +140,50 @@ function loadCategoryPrices() {
     })
     .then(result => {
       if (result.success) {
-        priceManagerCategoryPrices = {}; // ALTERADO: Renomeado para evitar conflito
+        priceManagerCategoryPrices = {};
         
-        // Transformar array em objeto para fácil acesso
+        // Transform array to object for easy access
         (result.prices || []).forEach(price => {
-          priceManagerCategoryPrices[price.folderId] = price; // ALTERADO: Renomeado para evitar conflito
+          priceManagerCategoryPrices[price.folderId] = price;
         });
         
-        console.log(`Loaded ${Object.keys(priceManagerCategoryPrices).length} category prices`); // ALTERADO: Renomeado para evitar conflito
-        return priceManagerCategoryPrices; // ALTERADO: Renomeado para evitar conflito
+        console.log(`Loaded ${Object.keys(priceManagerCategoryPrices).length} category prices`);
+        return priceManagerCategoryPrices;
       } else {
-        throw new Error(result.message || 'Falha ao carregar preços');
+        throw new Error(result.message || 'Failed to load prices');
       }
     });
 }
 
-// FUNÇÃO PRINCIPAL - LIMPA E CORRIGIDA
+// MAIN FUNCTION - CLEAN AND CORRECTED IN ENGLISH
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
   
   if (!leafFolders || leafFolders.length === 0) {
     if (isLoadingFolders) {
-      container.innerHTML = '<div class="loading-folders">Carregando categorias...<div id="loading-progress">Aguarde...</div></div>';
+      container.innerHTML = '<div class="loading-folders">Loading categories...<div id="loading-progress">Please wait...</div></div>';
     } else {
-      container.innerHTML = '<div class="empty-folder-message">Nenhuma categoria encontrada.</div>';
+      container.innerHTML = '<div class="empty-folder-message">No categories found.</div>';
     }
     return;
   }
   
   let html = `
     <div class="bulk-actions">
-      <h4>Atualização em Lote</h4>
+      <h4>Bulk Update</h4>
       <div class="bulk-form">
         <select id="bulk-update-type" class="form-control">
-          <option value="fixed">Definir Preço Fixo</option>
-          <option value="percentage">Ajustar por Porcentagem</option>
+          <option value="fixed">Set Fixed Price</option>
+          <option value="percentage">Adjust by Percentage</option>
         </select>
-        <input type="number" id="bulk-value" class="form-control" placeholder="Valor" step="0.01">
-        <button class="btn btn-gold" onclick="applyBulkUpdate()">Aplicar às Selecionadas</button>
+        <input type="number" id="bulk-value" class="form-control" placeholder="Value" step="0.01">
+        <button class="btn btn-gold" onclick="applyBulkUpdate()">Apply to Selected</button>
       </div>
     </div>
     
     <div class="table-filter">
-      <input type="text" id="category-filter" class="form-control" placeholder="Filtrar categorias..." onkeyup="filterCategories()">
-      <div class="filter-stats">Mostrando <span id="displayed-count">${leafFolders.length}</span> de ${leafFolders.length} categorias</div>
+      <div class="filter-stats">Showing <span id="displayed-count">${leafFolders.length}</span> of ${leafFolders.length} categories</div>
+      <input type="text" id="category-filter" class="form-control" placeholder="Filter categories..." onkeyup="filterCategories()">
     </div>
     
     <div class="price-table-container">
@@ -191,16 +191,16 @@ function renderCategoryPriceTable() {
         <thead>
           <tr>
             <th class="checkbox-column"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
-            <th class="category-column">Categoria</th>
-            <th class="photos-column">Qtd. Fotos</th>
-            <th class="price-column">Preço</th>
-            <th class="actions-column">Ações</th>
+            <th class="category-column">Category</th>
+            <th class="photos-column">Photos</th>
+            <th class="price-column">Price</th>
+            <th class="actions-column">Actions</th>
           </tr>
         </thead>
         <tbody id="price-table-body">
   `;
   
-  // Renderizar TODAS as pastas de uma vez - SÓ COM OS 2 BOTÕES
+  // Render ALL folders at once - ONLY WITH 2 BUTTONS IN ENGLISH
   leafFolders.forEach(folder => {
     const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : '';
     const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
@@ -219,7 +219,7 @@ function renderCategoryPriceTable() {
           <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
             ${hasPrice ? 'Edit Price' : 'Set Price'}
           </button>
-          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Salvar</button>
+          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Save</button>
         </td>
       </tr>
     `;
@@ -231,24 +231,24 @@ function renderCategoryPriceTable() {
     </div>
   `;
   
-  // DEFINIR O HTML UMA ÚNICA VEZ
+  // SET HTML ONLY ONCE
   container.innerHTML = html;
 }
 
-// Função para ajustar altura da tabela
+// Function to adjust table height
 function adjustTableHeight() {
   const container = document.querySelector('.price-table-container');
   if (!container) return;
   
   const windowHeight = window.innerHeight;
   const containerPosition = container.getBoundingClientRect().top;
-  const footerHeight = 100; // Espaço estimado para o rodapé
+  const footerHeight = 100; // Estimated footer space
   
   const availableHeight = windowHeight - containerPosition - footerHeight;
   container.style.height = `${Math.max(400, availableHeight)}px`;
 }
 
-// Função para filtrar categorias
+// Function to filter categories
 function filterCategories() {
   const filterValue = document.getElementById('category-filter').value.toLowerCase();
   const rows = document.querySelectorAll('#price-table-body tr');
@@ -264,14 +264,14 @@ function filterCategories() {
     }
   });
   
-  // Atualizar contador
+  // Update counter
   const countDisplay = document.getElementById('displayed-count');
   if (countDisplay) {
     countDisplay.textContent = displayedCount;
   }
 }
 
-// Alternar edição de preço
+// Toggle price editing
 function togglePriceEdit(folderId) {
   const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
   const priceDisplay = row.querySelector('.price-display');
@@ -287,14 +287,14 @@ function togglePriceEdit(folderId) {
   priceInput.focus();
 }
 
-// Salvar preço
+// Save price
 function savePrice(folderId) {
   const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
   const priceInput = row.querySelector('.price-input');
   const price = parseFloat(priceInput.value);
   
   if (isNaN(price) || price < 0) {
-    showToast('Por favor, insira um preço válido', 'error');
+    showToast('Please enter a valid price', 'error');
     return;
   }
   
@@ -310,9 +310,9 @@ function savePrice(folderId) {
     hideLoader();
     
     if (result.success) {
-      showToast(`Preço atualizado com sucesso para a categoria`, 'success');
+      showToast('Price updated successfully', 'success');
       
-      // Atualizar preço no objeto local
+      // Update price in local object
       if (priceManagerCategoryPrices[folderId]) {
         priceManagerCategoryPrices[folderId].price = price;
       } else {
@@ -322,49 +322,49 @@ function savePrice(folderId) {
         };
       }
       
-      // Atualizar UI
+      // Update UI
       const priceDisplay = row.querySelector('.price-display');
       priceDisplay.textContent = '$' + price.toFixed(2);
       priceDisplay.style.display = 'block';
       priceInput.style.display = 'none';
       
-      // Atualizar texto do botão, agora é "Edit Price" porque temos um preço
+      // Update button text, now it's "Edit Price" because we have a price
       const editBtn = row.querySelector('.edit-price-btn');
       editBtn.textContent = 'Edit Price';
       editBtn.style.display = 'inline-block';
       
       row.querySelector('.save-price-btn').style.display = 'none';
     } else {
-      showToast('Erro ao atualizar preço: ' + result.message, 'error');
+      showToast('Error updating price: ' + result.message, 'error');
     }
   })
   .catch(error => {
     hideLoader();
-    showToast('Erro ao atualizar preço: ' + error.message, 'error');
+    showToast('Error updating price: ' + error.message, 'error');
   });
 }
 
-// Aplicar atualização em lote
+// Apply bulk update
 function applyBulkUpdate() {
   const updateType = document.getElementById('bulk-update-type').value;
   const valueInput = document.getElementById('bulk-value');
   const value = parseFloat(valueInput.value);
   
   if (isNaN(value)) {
-    showToast('Por favor, insira um valor válido', 'error');
+    showToast('Please enter a valid value', 'error');
     return;
   }
   
-  // Obter todas as categorias selecionadas
+  // Get all selected categories
   const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
   if (selectedCheckboxes.length === 0) {
-    showToast('Por favor, selecione pelo menos uma categoria', 'error');
+    showToast('Please select at least one category', 'error');
     return;
   }
   
   const selectedFolderIds = Array.from(selectedCheckboxes).map(cb => cb.value);
   
-  // Preparar dados para atualização em lote
+  // Prepare data for bulk update
   const updateData = {
     type: updateType,
     value: value,
@@ -383,23 +383,23 @@ function applyBulkUpdate() {
     hideLoader();
     
     if (result.success) {
-      showToast(`Preços atualizados para ${selectedFolderIds.length} categorias`, 'success');
+      showToast(`Prices updated for ${selectedFolderIds.length} categories`, 'success');
       
-      // Recarregar preços
+      // Reload prices
       loadCategoryPrices().then(() => {
         renderCategoryPriceTable();
       });
     } else {
-      showToast('Erro ao atualizar preços: ' + result.message, 'error');
+      showToast('Error updating prices: ' + result.message, 'error');
     }
   })
   .catch(error => {
     hideLoader();
-    showToast('Erro ao atualizar preços: ' + error.message, 'error');
+    showToast('Error updating prices: ' + error.message, 'error');
   });
 }
 
-// Alternar seleção de todas as categorias
+// Toggle selection of all categories
 function toggleSelectAll() {
   const selectAllCheckbox = document.getElementById('select-all');
   const checkboxes = document.querySelectorAll('.category-checkbox');
@@ -409,19 +409,19 @@ function toggleSelectAll() {
   });
 }
 
-// Estender a função switchTab existente para inicializar o gerenciador de preços quando necessário
+// Extend existing switchTab function to initialize price manager when needed
 (function() {
-  // Armazenar a função original
+  // Store original function
   const currentSwitchTabFunc = window.switchTab;
   
-  // Definir a nova função que estende a original
+  // Define new function that extends the original
   window.switchTab = function(tabId) {
-    // Chamar a função original
+    // Call original function
     if (typeof currentSwitchTabFunc === 'function') {
       currentSwitchTabFunc(tabId);
     }
     
-    // Adicionar comportamento extra apenas para a tab de preços
+    // Add extra behavior only for price tab
     if (tabId === 'price-management') {
       console.log("Initializing price manager...");
       initPriceManager();
