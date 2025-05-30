@@ -1,4 +1,4 @@
-/* ===== PRICE MANAGEMENT MODULE - COLUNAS BEM DISTRIBUÍDAS ===== */
+/* ===== PRICE MANAGEMENT MODULE - CABEÇALHOS E CÉLULAS ALINHADOS ===== */
 /* public/assets/css/pages/admin/price-management.css */
 
 /* Container principal - SCROLL ÚNICO E OTIMIZADO */
@@ -200,33 +200,66 @@
   border-right: none;
 }
 
-/* LARGURAS DAS COLUNAS - BEM DISTRIBUÍDAS E EQUILIBRADAS */
+/* LARGURAS IDÊNTICAS PARA TH E TD - ALINHAMENTO PERFEITO */
 .checkbox-column {
-  flex: 0 0 60px; /* Aumentado um pouco */
+  flex: 0 0 60px;
   justify-content: center;
 }
 
 .category-column {
-  flex: 1; /* Flexível - ocupa todo o espaço disponível */
-  min-width: 350px; /* Mais espaço para nomes completos */
-  max-width: none; /* Sem limite máximo */
-  padding-right: 15px; /* Mais espaço */
+  flex: 1;
+  min-width: 350px;
+  max-width: none;
+  padding-right: 15px;
 }
 
 .photos-column {
-  flex: 0 0 120px; /* Aumentado de 80px para 120px */
+  flex: 0 0 120px;
   justify-content: center;
 }
 
 .price-column {
-  flex: 0 0 150px; /* Aumentado de 100px para 150px */
+  flex: 0 0 150px;
   justify-content: flex-end;
 }
 
 .actions-column {
-  flex: 0 0 180px; /* Aumentado para dar mais espaço */
-  justify-content: flex-end; /* Botões à direita */
-  padding-right: 10px !important; /* Espaçamento da borda */
+  flex: 0 0 180px;
+  justify-content: flex-end;
+  padding-right: 10px !important;
+}
+
+/* GARANTIR que TH e TD tenham EXATAMENTE as mesmas dimensões */
+.price-table th.checkbox-column,
+.price-table td.checkbox-column {
+  flex: 0 0 60px;
+  justify-content: center;
+}
+
+.price-table th.category-column,
+.price-table td.category-column {
+  flex: 1;
+  min-width: 350px;
+  padding-right: 15px;
+}
+
+.price-table th.photos-column,
+.price-table td.photos-column {
+  flex: 0 0 120px;
+  justify-content: center;
+}
+
+.price-table th.price-column,
+.price-table td.price-column {
+  flex: 0 0 150px;
+  justify-content: flex-end;
+}
+
+.price-table th.actions-column,
+.price-table td.actions-column {
+  flex: 0 0 180px;
+  justify-content: flex-end;
+  padding-right: 10px !important;
 }
 
 /* Checkboxes */
@@ -245,7 +278,7 @@
 }
 
 .price-input {
-  width: 100px; /* Aumentado para mais espaço */
+  width: 100px;
   padding: 4px 6px;
   border: 1px solid #ddd;
   border-radius: 3px;
@@ -263,12 +296,12 @@
   background: var(--color-gold);
   color: white;
   border: none;
-  padding: 6px 10px; /* Aumentado o padding */
+  padding: 6px 10px;
   border-radius: 3px;
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  margin-left: 6px; /* Espaçamento entre botões */
+  margin-left: 6px;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
@@ -279,7 +312,7 @@
 }
 
 .action-btn:first-child {
-  margin-left: 0; /* Primeiro botão sem margin */
+  margin-left: 0;
 }
 
 .edit-price-btn {
@@ -357,11 +390,15 @@
 
 /* RESPONSIVIDADE OTIMIZADA */
 @media (max-width: 1400px) {
-  .category-column {
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
     min-width: 300px;
   }
   
-  .actions-column {
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
     flex: 0 0 160px;
   }
 }
@@ -372,19 +409,27 @@
     max-width: 240px;
   }
   
-  .category-column {
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
     min-width: 250px;
   }
   
-  .photos-column {
+  .photos-column,
+  .price-table th.photos-column,
+  .price-table td.photos-column {
     flex: 0 0 100px;
   }
   
-  .price-column {
+  .price-column,
+  .price-table th.price-column,
+  .price-table td.price-column {
     flex: 0 0 130px;
   }
   
-  .actions-column {
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
     flex: 0 0 140px;
     padding-right: 8px !important;
   }
@@ -401,7 +446,9 @@
     height: calc(100vh - 140px);
   }
   
-  .category-column {
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
     min-width: 200px;
   }
   
@@ -459,19 +506,27 @@
     font-size: 12px;
   }
   
-  .category-column {
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
     min-width: 150px;
   }
   
-  .photos-column {
+  .photos-column,
+  .price-table th.photos-column,
+  .price-table td.photos-column {
     flex: 0 0 80px;
   }
   
-  .price-column {
+  .price-column,
+  .price-table th.price-column,
+  .price-table td.price-column {
     flex: 0 0 100px;
   }
   
-  .actions-column {
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
     flex: 0 0 120px;
     padding-right: 6px !important;
   }
@@ -505,7 +560,9 @@
     font-size: 11px;
   }
   
-  .actions-column {
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
     flex: 0 0 100px;
     padding-right: 4px !important;
   }
@@ -516,15 +573,21 @@
     margin-left: 2px;
   }
   
-  .category-column {
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
     min-width: 120px;
   }
   
-  .photos-column {
+  .photos-column,
+  .price-table th.photos-column,
+  .price-table td.photos-column {
     flex: 0 0 60px;
   }
   
-  .price-column {
+  .price-column,
+  .price-table th.price-column,
+  .price-table td.price-column {
     flex: 0 0 80px;
   }
 }

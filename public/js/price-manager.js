@@ -1,4 +1,4 @@
-// price-manager.js - ENGLISH VERSION - INTERFACE MELHORADA
+// price-manager.js - ENGLISH VERSION - COM CLASSES PARA ALINHAMENTO
 // Global variables
 let leafFolders = []; // Stores all final folders
 let priceManagerCategoryPrices = {}; // Stores category prices - Renamed to avoid conflict
@@ -166,7 +166,7 @@ function updateHeaderStats() {
   }
 }
 
-// MAIN FUNCTION - INTERFACE LIMPA SEM ESTATÍSTICAS INTERNAS
+// MAIN FUNCTION - COM CLASSES CORRETAS PARA ALINHAMENTO PERFEITO
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
   
@@ -210,7 +210,7 @@ function renderCategoryPriceTable() {
         <tbody id="price-table-body">
   `;
   
-  // Render ALL folders at once - ONLY WITH 2 BUTTONS IN ENGLISH
+  // Render ALL folders at once - COM CLASSES PARA ALINHAMENTO
   leafFolders.forEach(folder => {
     const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : '';
     const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
@@ -218,14 +218,14 @@ function renderCategoryPriceTable() {
     
     html += `
       <tr data-folder-id="${folder.id}" data-folder-name="${folder.name.toLowerCase()}">
-        <td><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
-        <td>${folder.name}</td>
-        <td>${folder.fileCount || '0'}</td>
-        <td>
+        <td class="checkbox-column"><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
+        <td class="category-column">${folder.name}</td>
+        <td class="photos-column">${folder.fileCount || '0'}</td>
+        <td class="price-column">
           <span class="price-display">${formattedPrice}</span>
           <input type="number" class="price-input form-control" value="${price}" style="display: none;" step="0.01">
         </td>
-        <td>
+        <td class="actions-column">
           <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
             ${hasPrice ? 'Edit Price' : 'Set Price'}
           </button>
