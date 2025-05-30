@@ -10,7 +10,7 @@ function preloadNextImages(count) {
       const id = photos[idx].id;
       // carrega thumb/versão média
       const med = new Image();
-      med.src = `https://drive.google.com/thumbnail?id=${id}&sz=w1024`;
+      med.src = `/api/photos/local/thumbnail/${id}`;
       med.onload = () => {
         // quando thumb chegar, já dispara a alta resolução
         const hi = new Image();
@@ -97,6 +97,7 @@ function openLightbox(index, fromCart = false) {
   imgElement.style.maxWidth = '100%';
   imgElement.style.maxHeight = '100%';
   imgElement.style.objectFit = 'contain';
+  imgElement.style.transition = 'opacity 0.3s ease-in-out';
   imgElement.dataset.zoomSrc = `/api/photos/local/image/${photo.id}`;
   imgElement.dataset.photoId = photo.id; // Adicionar ID da foto para referência
   imgElement.title = "Clique para ampliar. Use a roda do mouse para controlar o zoom."; // Dica visual
@@ -154,16 +155,26 @@ function openLightbox(index, fromCart = false) {
   // Carregar versão de alta qualidade em background
   const highResImage = new Image();
   highResImage.onload = function () {
-    // Atualizar src da imagem para alta resolução
-    imgElement.src = this.src;
+    // TRANSIÇÃO SUAVE: Fade out
+    imgElement.style.opacity = '0.6';
 
-    // Remover loader
-    if (loader.parentNode) {
-      loader.parentNode.removeChild(loader);
-    }
+    setTimeout(() => {
+      // Atualizar src da imagem para alta resolução
+      imgElement.src = this.src;
 
-    // Inicializar zoom após carregar a versão de alta qualidade
-    initializeZoom(imgElement.id);
+      // Fade in
+      imgElement.style.opacity = '1';
+
+      // Remover loader
+      if (loader.parentNode) {
+        loader.parentNode.removeChild(loader);
+      }
+
+      // Inicializar zoom após transição
+      setTimeout(() => {
+        initializeZoom(imgElement.id);
+      }, 200);
+    }, 100);
   };
 
   // Definir handlers de erro
@@ -288,7 +299,7 @@ function preloadAdjacentImages() {
 
         // Pré-carregar versão média (para navegação rápida)
         const mediumImg = new Image();
-        mediumImg.src = `https://drive.google.com/thumbnail?id=${photoId}&sz=w1024`;
+        mediumImg.src = `/api/photos/local/thumbnail/${photoId}`;
 
         // Após carregar versão média, começar a carregar alta resolução
         mediumImg.onload = function () {

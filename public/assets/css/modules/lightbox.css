@@ -380,3 +380,40 @@
     width: 100%;
   }
 }
+
+/* Transição suave para eliminara o "salto" */
+.lightbox-image {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  opacity: 0;
+}
+
+.lightbox-image.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lightbox-image.loading {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+/* Suavizar mudança de resolução */
+.lightbox-container img {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Fade-in suave quando imagem carrega */
+@keyframes smoothImageLoad {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lightbox-image-transition {
+  animation: smoothImageLoad 0.3s ease-out;
+}
