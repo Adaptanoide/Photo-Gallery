@@ -3100,18 +3100,22 @@
   margin-top: 0;
 }
 
-/* Cabeçalho com filtros */
+
+/* SUBSTITUIR o CSS da classe .table-filter no admin.css por este: */
+
 .table-filter {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  justify-content: flex-end; /* ALTERADO: alinha à direita */
+  margin-bottom: 15px; /* REDUZIDO: menos espaço embaixo */
   gap: 15px;
+  padding-right: 0; /* ADICIONADO: sem padding direito */
 }
 
 .table-filter .form-control {
-  flex: 1;
-  max-width: 300px;
+  flex: none; /* ALTERADO: não expande */
+  width: 250px; /* ADICIONADO: largura fixa */
+  max-width: 250px;
 }
 
 .filter-stats {
@@ -3119,6 +3123,8 @@
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
+  order: -1; /* ADICIONADO: coloca as estatísticas antes do campo */
+  margin-right: auto; /* ADICIONADO: empurra para a esquerda */
 }
 
 /* Container da tabela com scroll controlado */
