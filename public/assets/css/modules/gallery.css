@@ -332,51 +332,24 @@
   z-index: 2; /* ✅ Botões Select das fotos sempre visíveis */
   position: relative;
 }
-/* =============================================== */
-/* ADICIONAR NO FINAL DO gallery.css - Layout Flexível para Botões */
-/* =============================================== */
 
-/* Container principal com layout flexível */
-.category-main-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 200px); /* Altura mínima para empurrar footer */
-  width: 100%;
+/* CSS CORRIGIDO - Container para botões */
+
+/* Container para botões - simples e direto */
+.category-buttons-bottom {
+  margin-top: 60px !important;
+  padding: 40px 0 !important;
+  width: 100% !important;
+  min-height: 150px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
 }
 
-/* Área das fotos - mantém todo CSS existente + flex-grow */
-.category-section {
-  flex-grow: 1; /* CHAVE: Expande para ocupar espaço disponível */
-  /* Todo CSS existente do .category-section continua funcionando */
-}
-
-/* Área fixa do footer - sempre no bottom */
-.category-footer-fixed {
-  flex-shrink: 0; /* Não encolhe */
-  margin-top: auto; /* CHAVE: Empurra para o bottom */
-  width: 100%;
-  padding-top: 40px; /* Espaçamento das fotos */
-}
-
-/* Botão More Photos - posicionamento antes do footer */
-.load-more-btn.modern {
-  margin: 30px auto 20px auto; /* Espaçamento entre fotos e footer */
-  text-align: center;
-}
-
-/* GARANTIR que botões de navegação usem CSS existente */
-.category-footer-fixed .category-navigation-section {
-  /* Todo CSS existente do .category-navigation-section se aplica */
-  margin-top: 0; /* Remove margem extra */
-}
-
-/* Responsivo - Mobile */
+/* Responsivo */
 @media (max-width: 768px) {
-  .category-main-wrapper {
-    min-height: calc(100vh - 150px);
-  }
-  
-  .category-footer-fixed {
-    padding-top: 30px;
+  .category-buttons-bottom {
+    min-height: 120px !important;
+    padding: 30px 0 !important;
   }
 }

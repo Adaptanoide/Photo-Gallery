@@ -187,7 +187,8 @@ function loadCategoryPhotos(categoryId) {
     });
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Renderizar fotos para a categoria com paginação
+// ✅ CORREÇÃO SIMPLES - Substituir APENAS a função renderPhotosForCategory
+
 function renderPhotosForCategory(categoryPhotos, categoryId) {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = '';
@@ -197,14 +198,13 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     return;
   }
 
-  // RESTAURAR: Criar título da categoria
+  // ✅ MANTER: Todo código existente do título...
   if (activeCategory) {
     const categoryItem = document.querySelector(`.category-item[data-category-id="${activeCategory}"]`);
     if (categoryItem) {
       const categoryText = categoryItem.textContent.trim();
       const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
 
-      // Criar container para título e linha divisória
       const titleContainer = document.createElement('div');
       titleContainer.className = 'category-title-container';
       titleContainer.innerHTML = `
@@ -215,16 +215,12 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     }
   }
 
-  // ✅ NOVA ESTRUTURA: Container principal com layout flexível
-  const mainWrapper = document.createElement('div');
-  mainWrapper.className = 'category-main-wrapper';
-
-  // Criar o container da seção com aplicação forçada de estilos
+  // ✅ MANTER: Container das fotos EXATAMENTE como estava
   const sectionContainer = document.createElement('div');
   sectionContainer.id = 'category-section-main';
   sectionContainer.className = 'category-section';
 
-  // FORÇAR estilos de grid diretamente no elemento
+  // ✅ MANTER: Estilos forçados existentes (NÃO ALTERAR)
   sectionContainer.style.cssText = `
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
@@ -237,7 +233,6 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     grid-auto-flow: row !important;
   `;
 
-  // Aplicar estilos no container pai também
   contentDiv.style.cssText = `
     width: 100% !important;
     max-width: 100% !important;
@@ -245,33 +240,39 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     display: block !important;
   `;
 
-  // ✅ NOVA ESTRUTURA: Área fixa para botões
-  const footerArea = document.createElement('div');
-  footerArea.className = 'category-footer-fixed';
-  footerArea.id = 'category-footer-area';
+  // ✅ ADICIONAR: Container apenas para as fotos (sem afetar layout)
+  contentDiv.appendChild(sectionContainer);
 
-  // ✅ MONTAR: Nova estrutura
-  mainWrapper.appendChild(sectionContainer);
-  mainWrapper.appendChild(footerArea);
-  contentDiv.appendChild(mainWrapper);
-
-  // Renderizar as fotos usando a função existente
+  // ✅ MANTER: Renderizar fotos (função existente)
   renderCategoryPhotos(sectionContainer, categoryPhotos);
 
-  // ✅ MUDANÇA: Inserir botões na área fixa ao invés do contentDiv
+  // ✅ CRIAR: Área fixa para botões (SEPARADA do layout das fotos)
+  const footerArea = document.createElement('div');
+  footerArea.className = 'category-buttons-bottom';
+  footerArea.id = 'category-footer-area';
+  footerArea.style.cssText = `
+    margin-top: 60px;
+    padding: 40px 0;
+    width: 100%;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  `;
+  
+  contentDiv.appendChild(footerArea);
+
+  // ✅ INSERIR: Botões na área separada
   addCategoryNavigationButtons(footerArea, categoryId);
 
-  // DEPOIS verificar se há mais fotos para carregar
+  // ✅ MANTER: Todo resto do código existente...
   const categoryCache = categoryPhotoCache[categoryId];
   if (categoryCache && categoryCache.hasMore) {
-    // Fazer uma requisição rápida para saber quantas fotos há no total
     fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&limit=1&offset=1000`)
       .then(response => response.json())
       .then(data => {
-        // Se retornou dados, significa que há mais fotos do que esperávamos
-        // Vamos estimar o total baseado na categoria
         const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
-        let totalPhotos = 50; // Estimativa padrão
+        let totalPhotos = 50;
 
         if (categoryItem) {
           const text = categoryItem.textContent;
@@ -282,21 +283,24 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         }
 
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
-        const nextBatchSize = Math.min(15, remainingPhotos); // Carregar máximo 15 por vez
+        const nextBatchSize = Math.min(15, remainingPhotos);
 
-        // Criar botão "More Photos" apenas se há fotos restantes
         if (remainingPhotos > 0) {
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
-          loadMoreBtn.style.gridColumn = '1 / -1';
+          loadMoreBtn.style.cssText = `
+            text-align: center;
+            margin: 40px auto 20px auto;
+            grid-column: 1 / -1;
+          `;
           loadMoreBtn.innerHTML = `
             <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
               More Photos
             </button>
           `;
           
-          // ✅ MUDANÇA: Inserir ANTES da área de botões
-          mainWrapper.insertBefore(loadMoreBtn, footerArea);
+          // ✅ INSERIR: More Photos ANTES da área de botões
+          contentDiv.insertBefore(loadMoreBtn, footerArea);
         }
       })
       .catch(error => {
@@ -304,13 +308,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
       });
   }
 
-  // Forçar atualização do layout
+  // ✅ MANTER: Resto igual
   setTimeout(() => {
-    // Verificar se o grid foi aplicado corretamente
     const computedStyle = window.getComputedStyle(sectionContainer);
     console.log('Grid aplicado:', computedStyle.display, computedStyle.gridTemplateColumns);
-
-    // Atualizar botões do carrinho
     updateButtonsForCartItems();
   }, 100);
 }
