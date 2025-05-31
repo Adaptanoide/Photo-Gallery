@@ -279,7 +279,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
           loadMoreBtn.style.gridColumn = '1 / -1';
           loadMoreBtn.innerHTML = `
             <button class="btn-load-more" onclick="loadMorePhotosForCategory('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
-              More +${nextBatchSize} photos
+              More Photos
             </button>
           `;
           
@@ -978,10 +978,10 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         }
         
         const remainingPhotos = Math.max(0, totalPhotos - categoryCache.totalLoaded);
-        const nextBatchSize = Math.min(30, remainingPhotos);
+        const nextBatchSize = Math.min(15, remainingPhotos); // ✅ 15 em vez de 30
         
         if (remainingPhotos > 0) {
-          button.textContent = `More +${nextBatchSize} photos`;
+          button.textContent = `More Photos`;
           button.disabled = false;
           button.onclick = () => loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
           
