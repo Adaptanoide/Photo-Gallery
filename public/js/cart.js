@@ -141,7 +141,7 @@ function updateCartView() {
         <div id="cart-item-${photoId}" class="cart-item">
           <div class="cart-item-img-container">
             <img src="${photo.thumbnail}" alt="${photo.name}" class="cart-item-img" 
-                 onclick="openLightboxById('${photoId}', true)">
+                onclick="openCartLightbox('${photoId}')">
             <div class="preview-badge">Click to view</div>
           </div>
           <div style="flex-grow: 1;">
@@ -595,6 +595,39 @@ function ensureCartPhotosAvailable() {
       }
     }
   });
+}
+
+// ✅ FUNÇÃO PARA ABRIR LIGHTBOX EXCLUSIVO DO CARRINHO
+function openCartLightbox(photoId) {
+  console.log(`[CART] Opening cart lightbox for photo: ${photoId}`);
+  
+  // Criar array apenas com fotos do carrinho
+  const cartPhotosData = cartIds.map(id => {
+    // Se a foto já está no registry, usar ela
+    let photo = getPhotoById(id);
+    
+    // Se não está disponível, criar objeto básico
+    if (!photo) {
+      photo = {
+        id: id,
+        thumbnail: `/api/photos/local/thumbnail/${id}`,
+        name: `Photo ${id}`,
+        price: 0
+      };
+    }
+    
+    return photo;
+  });
+  
+  // Encontrar índice da foto clicada
+  const photoIndex = cartIds.indexOf(photoId);
+  
+  // Abrir lightbox específico do carrinho
+  if (typeof openCartOnlyLightbox === 'function') {
+    openCartOnlyLightbox(cartPhotosData, photoIndex);
+  } else {
+    console.error('[CART] Cart lightbox function not found in lightbox.js');
+  }
 }
 
 // Inicializar o handler beforeUnload quando a página carrega

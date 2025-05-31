@@ -508,6 +508,11 @@ function initializeNativeZoom(img) {
 
 // Close the lightbox
 function closeLightbox() {
+  // ✅ RESET modo carrinho se ativo
+  if (cartLightboxMode) {
+    closeCartLightbox();
+    return;
+  }
   // Remover instâncias de zoom se existirem
   if (typeof mediumZoom === 'function') {
     // Remover todas as instâncias Medium Zoom
@@ -1243,4 +1248,119 @@ function preloadMorePhotosInLightbox() {
       console.error('[Lightbox] Erro ao pré-carregar fotos:', error);
       window.isPreloadingLightbox = false;
     });
+}
+
+// ===== SISTEMA ISOLADO PARA CARRINHO - NÃO MEXE NO CÓDIGO EXISTENTE =====
+
+// Variáveis exclusivas para carrinho (isoladas)
+let cartLightboxMode = false;
+let cartPhotosArray = [];
+let cartCurrentIndex = 0;
+
+// ✅ FUNÇÃO PRINCIPAL: Lightbox exclusivo para carrinho
+function openCartOnlyLightbox(cartPhotosData, selectedIndex) {
+  console.log(`[CART LIGHTBOX] Opening with ${cartPhotosData.length} photos, index ${selectedIndex}`);
+  
+  // Ativar modo carrinho
+  cartLightboxMode = true;
+  cartPhotosArray = [...cartPhotosData];
+  cartCurrentIndex = selectedIndex;
+  
+  // Usar lightbox existente mas em modo especial
+  const photo = cartPhotosArray[selectedIndex];
+  if (!photo) {
+    console.error('[CART LIGHTBOX] Photo not found');
+    return;
+  }
+  
+  // Simular estrutura de foto para compatibilidade
+  const fakePhotos = [...cartPhotosArray];
+  const originalPhotos = window.photos;
+  const originalIndex = window.currentPhotoIndex;
+  const originalViewingFromCart = window.viewingFromCart;
+  
+  // Temporarily override global variables
+  window.photos = fakePhotos;
+  window.currentPhotoIndex = selectedIndex;
+  window.viewingFromCart = true;
+  
+  // Open lightbox normally
+  openLightbox(selectedIndex, true);
+  
+  // Mark as cart mode
+  cartLightboxMode = true;
+  
+  // Override navigation for cart mode
+  overrideNavigationForCart();
+}
+
+// ✅ FUNÇÃO AUXILIAR: Override da navegação para modo carrinho
+function overrideNavigationForCart() {
+  // Substituir handlers de navegação temporariamente
+  document.removeEventListener('keydown', handleKeyDown);
+  document.addEventListener('keydown', handleCartKeyDown);
+}
+
+// ✅ FUNÇÃO DE NAVEGAÇÃO: Exclusiva para carrinho
+function handleCartKeyDown(e) {
+  if (!cartLightboxMode) return;
+  
+  switch(e.key) {
+    case 'ArrowLeft':
+      navigateCartPhotosOnly(-1);
+      e.preventDefault();
+      break;
+    case 'ArrowRight':
+      navigateCartPhotosOnly(1);
+      e.preventDefault();
+      break;
+    case 'Escape':
+      closeCartLightbox();
+      e.preventDefault();
+      break;
+  }
+}
+
+// ✅ FUNÇÃO DE NAVEGAÇÃO: Apenas entre fotos do carrinho
+function navigateCartPhotosOnly(direction) {
+  if (!cartLightboxMode || cartPhotosArray.length === 0) return;
+  
+  // Calcular novo índice
+  let newIndex = cartCurrentIndex + direction;
+  
+  // Loop circular
+  if (newIndex < 0) newIndex = cartPhotosArray.length - 1;
+  if (newIndex >= cartPhotosArray.length) newIndex = 0;
+  
+  cartCurrentIndex = newIndex;
+  
+  // Atualizar foto atual
+  const newPhoto = cartPhotosArray[newIndex];
+  if (!newPhoto) return;
+  
+  // Atualizar lightbox atual
+  window.currentPhotoIndex = newIndex;
+  window.photos = [...cartPhotosArray];
+  
+  // Reabrir com nova foto
+  openLightbox(newIndex, true);
+  
+  console.log(`[CART LIGHTBOX] Navigated to ${newIndex + 1}/${cartPhotosArray.length}`);
+}
+
+// ✅ FUNÇÃO DE FECHAMENTO: Restaurar estado original
+function closeCartLightbox() {
+  console.log('[CART LIGHTBOX] Closing cart lightbox');
+  
+  // Desativar modo carrinho
+  cartLightboxMode = false;
+  cartPhotosArray = [];
+  cartCurrentIndex = 0;
+  
+  // Restaurar handlers originais
+  document.removeEventListener('keydown', handleCartKeyDown);
+  document.addEventListener('keydown', handleKeyDown);
+  
+  // Fechar lightbox normalmente
+  closeLightbox();
 }
