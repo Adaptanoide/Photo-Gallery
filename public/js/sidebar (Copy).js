@@ -187,7 +187,7 @@ function loadCategoryPhotos(categoryId) {
     });
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Renderizar fotos para a categoria com paginação
+// FUNÇÃO CORRIGIDA: Renderizar fotos para a categoria com paginação
 function renderPhotosForCategory(categoryPhotos, categoryId) {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = '';
@@ -215,10 +215,6 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     }
   }
 
-  // ✅ NOVA ESTRUTURA: Container principal com layout flexível
-  const mainWrapper = document.createElement('div');
-  mainWrapper.className = 'category-main-wrapper';
-
   // Criar o container da seção com aplicação forçada de estilos
   const sectionContainer = document.createElement('div');
   sectionContainer.id = 'category-section-main';
@@ -245,6 +241,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     display: block !important;
   `;
 
+  // ✅ NOVA ESTRUTURA: Container principal com flex layout
+  const mainWrapper = document.createElement('div');
+  mainWrapper.className = 'category-main-wrapper';
+
   // ✅ NOVA ESTRUTURA: Área fixa para botões
   const footerArea = document.createElement('div');
   footerArea.className = 'category-footer-fixed';
@@ -258,7 +258,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
   // Renderizar as fotos usando a função existente
   renderCategoryPhotos(sectionContainer, categoryPhotos);
 
-  // ✅ MUDANÇA: Inserir botões na área fixa ao invés do contentDiv
+  // ✅ MUDANÇA: Inserir botões na área fixa
   addCategoryNavigationButtons(footerArea, categoryId);
 
   // DEPOIS verificar se há mais fotos para carregar
@@ -284,7 +284,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
         const nextBatchSize = Math.min(15, remainingPhotos); // Carregar máximo 15 por vez
 
-        // Criar botão "More Photos" apenas se há fotos restantes
+        // Criar botão "More +XX photos" apenas se há fotos restantes
         if (remainingPhotos > 0) {
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
@@ -295,8 +295,13 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
             </button>
           `;
           
-          // ✅ MUDANÇA: Inserir ANTES da área de botões
-          mainWrapper.insertBefore(loadMoreBtn, footerArea);
+          // Inserir botão ANTES dos botões de navegação
+          const navigationSection = contentDiv.querySelector('.category-navigation-section');
+          if (navigationSection) {
+            contentDiv.insertBefore(loadMoreBtn, navigationSection);
+          } else {
+            contentDiv.appendChild(loadMoreBtn);
+          }
         }
       })
       .catch(error => {
@@ -894,10 +899,13 @@ function setupCategorySearch() {
   });
 }
 
-// ✅ NOVA FUNÇÃO: Carregar mais fotos para uma categoria específica
+// NOVA FUNÇÃO: Carregar mais fotos para uma categoria específica
 function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
   const button = event.target;
   const originalText = button.textContent;
+
+  // ✅ ADICIONAR ESTA LINHA AQUI:
+  const contentDiv = document.getElementById('content');
 
   // Mostrar loading
   button.textContent = 'Loading...';
@@ -982,35 +990,26 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
         }
         
         const remainingPhotos = Math.max(0, totalPhotos - categoryCache.totalLoaded);
-        const nextBatchSize = Math.min(15, remainingPhotos);
+        const nextBatchSize = Math.min(15, remainingPhotos); // ✅ 15 em vez de 30
         
         if (remainingPhotos > 0) {
           button.textContent = `More Photos`;
           button.disabled = false;
           button.onclick = () => loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
           
-          // ✅ MUDANÇA: Usar área fixa para botões
-          const footerArea = document.getElementById('category-footer-area');
-          if (footerArea) {
-            addCategoryNavigationButtons(footerArea, categoryId);
-          }
+          // Reposicionar botões de navegação APÓS o botão More
+          addCategoryNavigationButtons(contentDiv, categoryId);
         } else {
           button.parentElement.remove();
           
-          // ✅ MUDANÇA: Usar área fixa para botões
-          const footerArea = document.getElementById('category-footer-area');
-          if (footerArea) {
-            addCategoryNavigationButtons(footerArea, categoryId);
-          }
+          // Adicionar botões finais quando não há mais fotos
+          addCategoryNavigationButtons(contentDiv, categoryId);
         }
       } else {
         button.parentElement.remove();
         
-        // ✅ MUDANÇA: Usar área fixa para botões
-        const footerArea = document.getElementById('category-footer-area');
-        if (footerArea) {
-          addCategoryNavigationButtons(footerArea, categoryId);
-        }
+        // Adicionar botões finais quando não há mais fotos
+        addCategoryNavigationButtons(contentDiv, categoryId);
       }
 
       // Atualizar botões do carrinho
@@ -1095,13 +1094,15 @@ function addCategoryNavigationButtons(container, categoryId) {
   container.appendChild(navigationContainer);
 }
 
+// ✅ ADICIONAR NO FINAL DO sidebar.js
+
 // ==================== SISTEMA DE EFEITOS VISUAIS ====================
 
 // Variáveis globais para controle de loading
 let isSequentialLoading = false;
 let loadingCounter = 0;
 
-// Função 1: Criar skeleton loading
+// ✅ FUNÇÃO 1: Criar skeleton loading
 function createSkeletonPlaceholders(container, count) {
   console.log(`🎬 Creating ${count} skeleton placeholders`);
   
@@ -1114,11 +1115,11 @@ function createSkeletonPlaceholders(container, count) {
 }
 
 function showLoadingCounter(current, total) {
-  // DESABILITADO: Contador visual removido (mantém funcionalidade)
+  // ✅ DESABILITADO: Contador visual removido (mantém funcionalidade)
   return;
 }
 
-// Função 3: Esconder skeleton e mostrar foto
+// ✅ FUNÇÃO 3: Esconder skeleton e mostrar foto
 function replaceSkeletonWithPhoto(photo, container, index, delay = 0) {
   setTimeout(() => {
     const skeleton = container.querySelector(`[data-skeleton-index="${index}"]`);
@@ -1167,7 +1168,7 @@ function replaceSkeletonWithPhoto(photo, container, index, delay = 0) {
   }, delay);
 }
 
-// Função 4: Carregar fotos sequencialmente
+// ✅ FUNÇÃO 4: Carregar fotos sequencialmente
 function loadPhotosSequentially(photos, container, startDelay = 150) {
   if (!photos || photos.length === 0) return;
   
@@ -1193,7 +1194,7 @@ function loadPhotosSequentially(photos, container, startDelay = 150) {
   }, photos.length * startDelay + 500);
 }
 
-// Função 5: Melhorar feedback do botão More Photos
+// ✅ FUNÇÃO 5: Melhorar feedback do botão More Photos
 function enhanceMorePhotosButton(button, isLoading = false) {
   if (isLoading) {
     button.innerHTML = '🔄 Loading Photos...';
@@ -1206,10 +1207,11 @@ function enhanceMorePhotosButton(button, isLoading = false) {
   }
 }
 
-// ✅ Função 6: Override da função de carregamento de mais fotos
+// ✅ FUNÇÃO 6: Override da função de carregamento de mais fotos
 function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
   const button = event.target;
-  const sectionContainer = document.getElementById('category-section-main');
+  const contentDiv = document.getElementById('content');
+  const sectionContainer = contentDiv.querySelector('#category-section-main');
   
   // Feedback visual no botão
   enhanceMorePhotosButton(button, true);
@@ -1238,7 +1240,7 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
         photos.push(photo);
       });
       
-      // CARREGAR COM EFEITOS VISUAIS
+      // ✅ CARREGAR COM EFEITOS VISUAIS
       loadPhotosSequentially(newPhotos, sectionContainer, 100);
       
       // Restaurar botão
@@ -1251,20 +1253,10 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
         
         if (remainingPhotos > 0) {
           button.onclick = () => loadMorePhotosWithEffects(categoryId, categoryCache.totalLoaded, nextBatchSize);
-          
-          // ✅ MUDANÇA: Usar área fixa para botões
-          const footerArea = document.getElementById('category-footer-area');
-          if (footerArea) {
-            addCategoryNavigationButtons(footerArea, categoryId);
-          }
+          addCategoryNavigationButtons(contentDiv, categoryId);
         } else {
           button.parentElement.remove();
-          
-          // ✅ MUDANÇA: Usar área fixa para botões
-          const footerArea = document.getElementById('category-footer-area');
-          if (footerArea) {
-            addCategoryNavigationButtons(footerArea, categoryId);
-          }
+          addCategoryNavigationButtons(contentDiv, categoryId);
         }
         
         updateButtonsForCartItems();
@@ -1278,7 +1270,7 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
     });
 }
 
-// Função 7: Helper para obter total de fotos
+// ✅ FUNÇÃO 7: Helper para obter total de fotos
 function getTotalPhotos(categoryId) {
   const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
   if (categoryItem) {
