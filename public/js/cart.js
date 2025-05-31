@@ -577,22 +577,51 @@ function updateButtonsForCartItems() {
   });
 }
 
-// ✅ FUNÇÃO SEGURA: Garantir que fotos do carrinho estejam disponíveis
+// ✅ FUNÇÃO MELHORADA: Carregar fotos do carrinho com mais robustez
 function ensureCartPhotosAvailable() {
   cartIds.forEach(photoId => {
-    // Só agir se a foto realmente não estiver disponível
+    // Se a foto não estiver disponível, buscar dados completos
     if (!getPhotoById(photoId)) {
-      console.log(`Ensuring cart photo availability: ${photoId}`);
+      console.log(`Loading cart photo data: ${photoId}`);
       
-      // Criar entrada básica no registry para evitar erro
-      if (typeof photoRegistry !== 'undefined') {
-        photoRegistry[photoId] = {
-          id: photoId,
-          thumbnail: `/api/photos/local/thumbnail/${photoId}`,
-          name: `Photo ${photoId}`,
-          price: 0
-        };
-      }
+      // Buscar dados completos da foto via API
+      fetch(`/api/photos/local/thumbnail/${photoId}`)
+        .then(response => {
+          if (response.ok) {
+            // Também buscar metadados se possível
+            return fetch(`/api/photos/details/${photoId}`).catch(() => null);
+          }
+        })
+        .then(details => {
+          // Criar entrada robusta no registry
+          if (typeof photoRegistry !== 'undefined') {
+            photoRegistry[photoId] = {
+              id: photoId,
+              thumbnail: `/api/photos/local/thumbnail/${photoId}`,
+              name: details?.name || `Photo ${photoId}`,
+              price: details?.price || 0,
+              folderId: details?.folderId || null
+            };
+            
+            // Também adicionar ao array global se não estiver lá
+            if (!photos.find(p => p.id === photoId)) {
+              photos.push(photoRegistry[photoId]);
+            }
+          }
+        })
+        .catch(error => {
+          console.warn(`Failed to load cart photo ${photoId}:`, error);
+          
+          // Fallback básico
+          if (typeof photoRegistry !== 'undefined') {
+            photoRegistry[photoId] = {
+              id: photoId,
+              thumbnail: `/api/photos/local/thumbnail/${photoId}`,
+              name: `Photo ${photoId}`,
+              price: 0
+            };
+          }
+        });
     }
   });
 }

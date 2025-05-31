@@ -128,23 +128,16 @@ function openLightbox(index, fromCart = false) {
     document.getElementById('lightbox-name').innerHTML = nameText + ` <span class="lightbox-price">${formattedPrice}</span>`;
   }
 
-  // Configure add/remove button - MODO CARRINHO SIMPLES
+  // Configure add/remove button
   const addBtn = document.getElementById('lightbox-add-btn');
   const alreadyAdded = cartIds.includes(photo.id);
 
-  // Se estamos vendo do carrinho, sempre mostrar Remove
-  if (fromCart) {
-    addBtn.textContent = 'Remove from Cart';
+  if (alreadyAdded) {
+    addBtn.textContent = 'Remove from Selection';
     addBtn.className = 'btn btn-danger';
   } else {
-    // Modo galeria normal
-    if (alreadyAdded) {
-      addBtn.textContent = 'Remove from Selection';
-      addBtn.className = 'btn btn-danger';
-    } else {
-      addBtn.textContent = 'Add to Selection';
-      addBtn.className = 'btn btn-gold';
-    }
+    addBtn.textContent = 'Add to Selection';
+    addBtn.className = 'btn btn-gold';
   }
 
   // Update the cart count in the lightbox
