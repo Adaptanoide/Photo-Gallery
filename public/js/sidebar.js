@@ -256,7 +256,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
 
   // DEPOIS verificar se há mais fotos para carregar
   const categoryCache = categoryPhotoCache[categoryId];
-  if (categoryCache && categoryCache.hasMore) {
+  console.log('🔍 Cache da categoria:', categoryCache);
+
+  // ✅ CONDIÇÃO MELHORADA: Criar botão sempre que há cache suficiente
+  if (categoryCache && (categoryCache.hasMore || categoryCache.totalLoaded >= 15)) {
     fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&limit=1&offset=1000`)
       .then(response => response.json())
       .then(data => {
@@ -274,31 +277,86 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
         const nextBatchSize = Math.min(15, remainingPhotos);
 
-        if (remainingPhotos > 0) {
+        // ✅ SEMPRE CRIAR O BOTÃO se há fotos carregadas
+        if (remainingPhotos > 0 || categoryCache.totalLoaded >= 15) {
+          console.log('✅ Criando botão More Photos...');
+          
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
-          loadMoreBtn.innerHTML = `
-            <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
-              More Photos
-            </button>
-          `;
+          
+          // ✅ FORÇAR ESTILO INICIAL (invisível)
+          loadMoreBtn.style.opacity = '0';
+          loadMoreBtn.style.visibility = 'hidden';
+          loadMoreBtn.style.transform = 'translateY(20px)';
+          
+          if (remainingPhotos > 0) {
+            loadMoreBtn.innerHTML = `
+              <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
+                More Photos
+              </button>
+            `;
+          } else {
+            // Fallback: criar botão mesmo sem saber quantas fotos restam
+            loadMoreBtn.innerHTML = `
+              <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, 15)">
+                More Photos
+              </button>
+            `;
+          }
+          
+          console.log('✅ Botão More Photos criado com classes:', loadMoreBtn.className);
           
           // ✅ INSERIR: More Photos ANTES dos botões de navegação
           const navigationSection = contentDiv.querySelector('.category-navigation-section');
           if (navigationSection) {
             contentDiv.insertBefore(loadMoreBtn, navigationSection);
+            console.log('✅ Botão inserido antes da navegação');
           } else {
             contentDiv.appendChild(loadMoreBtn);
+            console.log('✅ Botão adicionado no final');
           }
-          
-          // ✅ INICIALIZAR controle de scroll após criar botão
+
+          // ✅ VERIFICAR se foi inserido corretamente e inicializar scroll
           setTimeout(() => {
-            initScrollMorePhotos();
-          }, 500);
+            const insertedBtn = document.querySelector('.load-more-btn.modern');
+            console.log('🔍 Botão no DOM após inserção:', insertedBtn);
+            
+            if (insertedBtn) {
+              console.log('✅ Botão encontrado, inicializando scroll...');
+              setTimeout(() => {
+                initScrollMorePhotos();
+              }, 500);
+            } else {
+              console.error('❌ Botão não foi inserido no DOM!');
+            }
+          }, 100);
         }
       })
       .catch(error => {
         console.log('Could not determine total photos');
+        
+        // ✅ CRIAR BOTÃO MESMO COM ERRO (fallback)
+        if (categoryCache.totalLoaded >= 15) {
+          console.log('✅ Criando botão More Photos (fallback)...');
+          
+          const loadMoreBtn = document.createElement('div');
+          loadMoreBtn.className = 'load-more-btn modern';
+          loadMoreBtn.style.opacity = '0';
+          loadMoreBtn.style.visibility = 'hidden';
+          loadMoreBtn.style.transform = 'translateY(20px)';
+          
+          loadMoreBtn.innerHTML = `
+            <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, 15)">
+              More Photos
+            </button>
+          `;
+          
+          contentDiv.appendChild(loadMoreBtn);
+          
+          setTimeout(() => {
+            initScrollMorePhotos();
+          }, 500);
+        }
       });
   }
 
@@ -1295,65 +1353,39 @@ function initScrollMorePhotos() {
   
   // Adicionar novo listener
   window.addEventListener('scroll', handleScrollMorePhotos);
-  }
-
-  // Função que controla quando mostrar/esconder More Photos
-  function handleScrollMorePhotos() {
-    const morePhotosBtn = document.querySelector('.load-more-btn.modern');
-    if (!morePhotosBtn) return;
-    
-    // Calcular posição do scroll
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
-    
-    // Calcular distância do final
-    const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-    const triggerDistance = 400; // Mostrar quando estiver a 400px do final
-    
-    // Mostrar/esconder baseado na posição
-    if (distanceFromBottom <= triggerDistance) {
-      // Perto do final - mostrar botão
-      morePhotosBtn.classList.add('show');
-    } else {
-      // Longe do final - esconder botão
-      morePhotosBtn.classList.remove('show');
-    }
 }
 
-
-
-// Função que executa no scroll
+// ✅ FUNÇÃO COMPLETA: Controla quando mostrar/esconder More Photos
 function handleScrollMorePhotos() {
   const morePhotosBtn = document.querySelector('.load-more-btn.modern');
-  if (!morePhotosBtn) return;
+  if (!morePhotosBtn) {
+    console.log('❌ Botão More Photos não encontrado');
+    return;
+  }
+  
+  console.log('✅ Botão encontrado, verificando scroll...');
   
   // Calcular posição do scroll
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   const windowHeight = window.innerHeight;
   const documentHeight = document.documentElement.scrollHeight;
   
-  // Calcular se está próximo do final (150px do final)
-  const nearBottom = scrollTop + windowHeight >= documentHeight - 150;
+  // Calcular distância do final  
+  const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+  const triggerDistance = 500; // ✅ AUMENTADO para 500px
   
-  // Mostrar/esconder botão
-  if (nearBottom) {
+  console.log(`📏 Distância do final: ${distanceFromBottom}px`);
+  
+  // Mostrar/esconder baseado na posição
+  if (distanceFromBottom <= triggerDistance) {
+    console.log('🟢 MOSTRAR botão More Photos');
     morePhotosBtn.classList.add('show');
+    morePhotosBtn.style.display = 'block'; // ✅ FORÇAR display
   } else {
+    console.log('🔴 ESCONDER botão More Photos');
     morePhotosBtn.classList.remove('show');
   }
 }
-
-// ✅ MODIFICAÇÃO: Integrar com o sistema existente
-// ENCONTRAR a função renderPhotosForCategory onde cria o loadMoreBtn
-// ADICIONAR APÓS criar o botão:
-
-/*
-// ✅ ADICIONAR APÓS CRIAR O LOADMOREBTN (dentro do then/catch):
-setTimeout(() => {
-  initScrollMorePhotos();
-}, 500);
-*/
 
 // ✅ FUNÇÃO: Cleanup quando muda categoria
 function cleanupScrollMorePhotos() {
@@ -1364,9 +1396,3 @@ function cleanupScrollMorePhotos() {
     morePhotosBtn.classList.remove('show');
   }
 }
-
-// ✅ ADICIONAR no início da função loadCategoryPhotos:
-/*
-// ✅ ADICIONAR NO INÍCIO DE loadCategoryPhotos:
-cleanupScrollMorePhotos();
-*/
