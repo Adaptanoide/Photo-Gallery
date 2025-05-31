@@ -284,10 +284,10 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
           
-          // ✅ FORÇAR ESTILO INICIAL (invisível)
-          loadMoreBtn.style.opacity = '0';
-          loadMoreBtn.style.visibility = 'hidden';
-          loadMoreBtn.style.transform = 'translateY(20px)';
+          // ✅ BOTÃO SEMPRE VISÍVEL (como funcionava antes)
+          loadMoreBtn.style.opacity = '1';
+          loadMoreBtn.style.visibility = 'visible';
+          loadMoreBtn.style.transform = 'translateY(0)';
           
           if (remainingPhotos > 0) {
             loadMoreBtn.innerHTML = `
@@ -341,9 +341,9 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
           
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
-          loadMoreBtn.style.opacity = '0';
-          loadMoreBtn.style.visibility = 'hidden';
-          loadMoreBtn.style.transform = 'translateY(20px)';
+          loadMoreBtn.style.opacity = '1';
+          loadMoreBtn.style.visibility = 'visible';
+          loadMoreBtn.style.transform = 'translateY(0)';
           
           loadMoreBtn.innerHTML = `
             <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, 15)">
