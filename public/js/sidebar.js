@@ -892,6 +892,9 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
   const button = event.target;
   const originalText = button.textContent;
 
+  // ✅ ADICIONAR ESTA LINHA AQUI:
+  const contentDiv = document.getElementById('content');
+
   // Mostrar loading
   button.textContent = 'Loading...';
   button.disabled = true;

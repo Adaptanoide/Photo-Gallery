@@ -1289,6 +1289,16 @@ function openCartOnlyLightbox(cartPhotosData, selectedIndex) {
   
   // Mark as cart mode
   cartLightboxMode = true;
+
+  // ✅ ADICIONAR ESTAS LINHAS:
+  // Forçar botão para estado correto (todas as fotos estão no carrinho)
+  setTimeout(() => {
+    const addBtn = document.getElementById('lightbox-add-btn');
+    if (addBtn) {
+      addBtn.textContent = 'Remove from Selection';
+      addBtn.className = 'btn btn-danger';
+    }
+  }, 100);
   
   // Override navigation for cart mode
   overrideNavigationForCart();
@@ -1344,6 +1354,16 @@ function navigateCartPhotosOnly(direction) {
   
   // Reabrir com nova foto
   openLightbox(newIndex, true);
+
+  // ✅ ADICIONAR ESTAS LINHAS:
+  // Garantir que botão esteja sempre correto
+  setTimeout(() => {
+    const addBtn = document.getElementById('lightbox-add-btn');
+    if (addBtn) {
+      addBtn.textContent = 'Remove from Selection';
+      addBtn.className = 'btn btn-danger';
+    }
+  }, 100);
   
   console.log(`[CART LIGHTBOX] Navigated to ${newIndex + 1}/${cartPhotosArray.length}`);
 }
