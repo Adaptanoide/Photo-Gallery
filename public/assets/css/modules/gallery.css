@@ -410,3 +410,39 @@
     left: 250px !important; /* Alinhado com botões em tablet */
   }
 }
+
+/* ✅ CORREÇÃO: Botão More Photos para TODOS os tamanhos */
+.load-more-btn.modern {
+  position: fixed !important;
+  bottom: 100px !important;
+  z-index: 10 !important;
+  text-align: center !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .load-more-btn.modern {
+    left: 280px !important;
+    right: 0 !important;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .load-more-btn.modern {
+    left: 250px !important;
+    right: 0 !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .load-more-btn.modern {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 120px !important;
+  }
+}
