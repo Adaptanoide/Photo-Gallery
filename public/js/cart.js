@@ -390,7 +390,7 @@ function loadCustomerSelections(code) {
     console.log(`Attempt ${selectionRestorationAttempts + 1} to restore user selections`);
     
     // Check maximum attempts (12 attempts = 1 minute)
-    if (selectionRestorationAttempts >= 12) {
+      if (selectionRestorationAttempts >= 3) { // ✅ REDUZIR de 12 para 3 tentativas
       console.warn("Maximum number of attempts reached. Some selections may not have been restored.");
       finishRestorationProcess();
       return;
@@ -557,71 +557,96 @@ function registerBeforeUnloadHandler() {
   });
 }
 
-// NOVA FUNÇÃO: Atualizar botões para refletir os itens no carrinho
+// ✅ FUNÇÃO PROTEGIDA: Atualizar botões com proteção contra múltiplos cliques
 function updateButtonsForCartItems() {
   console.log("Atualizando botões para refletir o carrinho:", cartIds);
+  
+  // ✅ PROTEÇÃO: Não atualizar durante restauração ativa
+  if (!selectionRestorationComplete && selectionRestorationAttempts > 0) {
+    console.log("Aguardando restauração completar antes de atualizar botões...");
+    setTimeout(() => updateButtonsForCartItems(), 1000);
+    return;
+  }
   
   // Para cada item no carrinho
   cartIds.forEach(photoId => {
     // Encontrar o botão correspondente
     const button = document.getElementById(`button-${photoId}`);
     if (button) {
-      // Atualizar o botão para mostrar "Remove" e a classe de perigo
-      button.textContent = 'Remove';
-      button.className = 'btn btn-danger';
-      button.onclick = function(event) {
-        event.stopPropagation();
-        removeFromCart(photoId);
-      };
+      try {
+        // Atualizar o botão para mostrar "Remove" e a classe de perigo
+        button.textContent = 'Remove';
+        button.className = 'btn btn-danger';
+        
+        // ✅ PROTEÇÃO COMPLETA: Debounce + disabled state
+        button.onclick = function(event) {
+          event.stopPropagation();
+          
+          // Verificar se botão já está processando
+          if (button.disabled || button.dataset.processing === 'true') {
+            console.log(`Button ${photoId} already processing, ignoring click`);
+            return;
+          }
+          
+          // Marcar como processando
+          button.disabled = true;
+          button.dataset.processing = 'true';
+          button.textContent = 'Removing...';
+          
+          // Executar remoção
+          removeFromCart(photoId);
+          
+          // Limpar estado após processamento
+          setTimeout(() => {
+            if (button) {
+              button.disabled = false;
+              button.dataset.processing = 'false';
+              // Texto será atualizado pela próxima chamada updateButtonsForCartItems
+            }
+          }, 800);
+        };
+        
+        // Garantir que botão está habilitado inicialmente
+        button.disabled = false;
+        button.dataset.processing = 'false';
+        
+      } catch (error) {
+        console.error(`Erro ao atualizar botão ${photoId}:`, error);
+      }
     }
   });
 }
 
-// ✅ FUNÇÃO MELHORADA: Carregar fotos do carrinho com mais robustez
+// ✅ FUNÇÃO CORRIGIDA: Garantir que fotos do carrinho estejam disponíveis
 function ensureCartPhotosAvailable() {
   cartIds.forEach(photoId => {
-    // Se a foto não estiver disponível, buscar dados completos
-    if (!getPhotoById(photoId)) {
-      console.log(`Loading cart photo data: ${photoId}`);
+    // Verificar se foto está no photoRegistry E no array global photos
+    const inRegistry = getPhotoById && getPhotoById(photoId);
+    const inGlobalArray = typeof photos !== 'undefined' && photos.find(p => p.id === photoId);
+    
+    if (!inRegistry || !inGlobalArray) {
+      console.log(`Ensuring cart photo availability: ${photoId}`);
       
-      // Buscar dados completos da foto via API
-      fetch(`/api/photos/local/thumbnail/${photoId}`)
-        .then(response => {
-          if (response.ok) {
-            // Também buscar metadados se possível
-            return fetch(`/api/photos/details/${photoId}`).catch(() => null);
-          }
-        })
-        .then(details => {
-          // Criar entrada robusta no registry
-          if (typeof photoRegistry !== 'undefined') {
-            photoRegistry[photoId] = {
-              id: photoId,
-              thumbnail: `/api/photos/local/thumbnail/${photoId}`,
-              name: details?.name || `Photo ${photoId}`,
-              price: details?.price || 0,
-              folderId: details?.folderId || null
-            };
-            
-            // Também adicionar ao array global se não estiver lá
-            if (!photos.find(p => p.id === photoId)) {
-              photos.push(photoRegistry[photoId]);
-            }
-          }
-        })
-        .catch(error => {
-          console.warn(`Failed to load cart photo ${photoId}:`, error);
-          
-          // Fallback básico
-          if (typeof photoRegistry !== 'undefined') {
-            photoRegistry[photoId] = {
-              id: photoId,
-              thumbnail: `/api/photos/local/thumbnail/${photoId}`,
-              name: `Photo ${photoId}`,
-              price: 0
-            };
-          }
-        });
+      // Criar objeto foto padrão
+      const photoData = {
+        id: photoId,
+        thumbnail: `/api/photos/local/thumbnail/${photoId}`,
+        name: `Photo ${photoId}`,
+        price: 0,
+        folderId: null
+      };
+      
+      // ✅ CRÍTICO: Adicionar ao photoRegistry se não existir
+      if (typeof photoRegistry !== 'undefined' && !inRegistry) {
+        photoRegistry[photoId] = photoData;
+        console.log(`Added photo ${photoId} to photoRegistry`);
+      }
+      
+      // ✅ SUPER CRÍTICO: Adicionar ao array global photos para lightbox funcionar
+      if (typeof photos !== 'undefined' && !inGlobalArray) {
+        photos.push(photoData);
+        console.log(`Added photo ${photoId} to global photos array for lightbox`);
+      }
     }
   });
 }

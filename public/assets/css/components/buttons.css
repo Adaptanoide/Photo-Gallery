@@ -195,3 +195,40 @@
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
+
+/* ✅ ESTILOS PARA BOTÕES DISABLED - Adicionar no final do buttons.css */
+
+/* Estado disabled para todos os botões */
+.btn:disabled,
+.btn[disabled],
+.btn[data-processing="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Específico para btn-danger disabled */
+.btn-danger:disabled,
+.btn-danger[disabled],
+.btn-danger[data-processing="true"] {
+  background: #999;
+  color: #fff;
+}
+
+/* Específico para btn-gold disabled */
+.btn-gold:disabled,
+.btn-gold[disabled],
+.btn-gold[data-processing="true"] {
+  background: #ccc;
+  color: #666;
+}
+
+/* Remover hover effects quando disabled */
+.btn:disabled:hover,
+.btn[disabled]:hover,
+.btn[data-processing="true"]:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
