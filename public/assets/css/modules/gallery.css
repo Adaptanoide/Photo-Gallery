@@ -233,116 +233,102 @@
   font-size: 1.1rem;
 }
 
-/* ✅ CSS CORRIGIDO - Botões de Navegação Integrados */
+/* ✅ CSS COMPLETAMENTE NOVO - Botões Integrados Sem Barra */
 
-/* Category Navigation Container - VERSÃO INTEGRADA */
+/* Category Navigation Container - INVISÍVEL/INTEGRADO */
 .category-navigation-section {
-  position: fixed;
-  bottom: 0;
-  left: 260px; /* ✅ CORREÇÃO: Deixar espaço para sidebar */
-  right: 0;
-  width: auto; /* ✅ CORREÇÃO: Não ocupar toda largura */
-  padding: 15px 20px;
-  background: rgba(245, 242, 235, 0.95); /* ✅ Tom bege suave */
-  backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(160, 130, 98, 0.2); /* ✅ Borda marrom suave */
-  box-shadow: 0 -2px 10px rgba(139, 115, 85, 0.15); /* ✅ Shadow marrom suave */
-  z-index: 50; /* ✅ CORREÇÃO: Z-index menor que sidebar */
-  margin-top: 0;
+  position: relative; /* ✅ MUDANÇA: Não mais fixed */
+  width: 100%;
+  margin-top: 60px; /* ✅ Espaçamento natural das fotos */
+  margin-bottom: 40px;
+  padding: 0; /* ✅ REMOVIDO: Sem padding */
+  background: transparent; /* ✅ REMOVIDO: Sem fundo */
+  border: none; /* ✅ REMOVIDO: Sem borda */
+  box-shadow: none; /* ✅ REMOVIDO: Sem shadow */
+  backdrop-filter: none; /* ✅ REMOVIDO: Sem blur */
+  z-index: auto; /* ✅ REMOVIDO: Z-index natural */
 }
 
 .category-navigation-buttons {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding: 0;
-  max-width: 500px;
+  gap: 20px;
+  padding: 20px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
-/* ✅ BOTÕES IGUAIS - Tom Marrom Pastel */
+/* ✅ BOTÕES MAIS SUTIS - Integrados Naturalmente */
 .category-nav-button,
 .category-nav-button--primary,
 .category-nav-button--secondary {
-  padding: 10px 20px;
-  border: 1.5px solid #a0826b; /* ✅ Marrom pastel */
-  border-radius: 20px;
-  background: rgba(245, 242, 235, 0.9); /* ✅ Fundo bege claro */
-  color: #8b7355; /* ✅ Texto marrom suave */
+  padding: 12px 24px;
+  border: 1px solid rgba(160, 130, 107, 0.4); /* ✅ Borda muito sutil */
+  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.8); /* ✅ Fundo muito sutil */
+  color: #8b7355; /* ✅ Marrom suave */
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 140px;
+  min-width: 150px;
   text-align: center;
   font-family: inherit;
+  box-shadow: 0 2px 8px rgba(139, 115, 85, 0.1); /* ✅ Shadow muito sutil */
 }
 
-/* ✅ HOVER IGUAL PARA AMBOS */
+/* ✅ HOVER SUTIL */
 .category-nav-button:hover,
 .category-nav-button--primary:hover,
 .category-nav-button--secondary:hover {
-  background: rgba(160, 130, 107, 0.2); /* ✅ Hover marrom muito suave */
-  color: #6d5d48; /* ✅ Texto mais escuro no hover */
-  transform: translateY(-1px); /* ✅ Movimento suave */
-  box-shadow: 0 2px 8px rgba(139, 115, 85, 0.2);
-  border-color: #8b7355;
+  background: rgba(160, 130, 107, 0.1); /* ✅ Hover muito sutil */
+  color: #6d5d48;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2);
+  border-color: rgba(160, 130, 107, 0.6);
 }
 
-/* ✅ ACTIVE/PRESSED state */
+/* ✅ ACTIVE/PRESSED */
 .category-nav-button:active,
 .category-nav-button--primary:active,
 .category-nav-button--secondary:active {
   transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(139, 115, 85, 0.3);
+  box-shadow: 0 2px 6px rgba(139, 115, 85, 0.25);
 }
 
-/* ✅ RESPONSIVO - Mobile */
-@media (max-width: 1024px) {
-  .category-navigation-section {
-    left: 200px; /* ✅ Sidebar menor em tablets */
-  }
-}
-
+/* ✅ RESPONSIVO */
 @media (max-width: 768px) {
   .category-navigation-section {
-    left: 0; /* ✅ Sidebar escondido em mobile */
-    right: 0;
-    padding: 12px 15px;
+    margin-top: 40px;
+    margin-bottom: 30px;
   }
   
   .category-navigation-buttons {
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
+    padding: 15px;
   }
   
   .category-nav-button,
   .category-nav-button--primary,
   .category-nav-button--secondary {
-    min-width: 180px;
-    padding: 12px 16px;
-    font-size: 0.85rem;
+    min-width: 200px;
+    padding: 14px 20px;
   }
 }
 
-/* ✅ ESPAÇAMENTO CORRIGIDO - Menos padding para não cobrir fotos */
+/* ✅ REMOVIDO: Padding-bottom do content (não mais necessário) */
 #content {
-  padding-bottom: 80px; /* ✅ REDUZIDO: Menos espaço */
+  padding-bottom: 0; /* ✅ REMOVIDO: Sem espaçamento extra */
 }
 
-@media (max-width: 768px) {
-  #content {
-    padding-bottom: 100px; /* ✅ Mobile um pouco mais */
-  }
+/* ✅ GARANTIR que não interfere com outros elementos */
+.photo-item {
+  z-index: 1; /* ✅ Fotos ficam acima dos botões se necessário */
 }
 
-/* ✅ EXTRA: Garantir que sidebar fique acima dos botões */
-.sidebar {
-  z-index: 100; /* ✅ Sidebar sempre acima */
-}
-
-/* ✅ EXTRA: Transição suave quando sidebar é expandido/recolhido */
-.category-navigation-section {
-  transition: left 0.3s ease;
+.photo-item .btn {
+  z-index: 2; /* ✅ Botões Select das fotos sempre visíveis */
+  position: relative;
 }
