@@ -115,6 +115,9 @@ function setupCategoryClickHandlers() {
 
 // Carregar fotos de uma categoria específica - VERSÃO COM PAGINAÇÃO
 function loadCategoryPhotos(categoryId) {
+  // ✅ LIMPAR scroll do More Photos ao trocar categoria
+  cleanupScrollMorePhotos();
+  
   showLoader();
 
   console.log(`Iniciando carregamento da categoria: ${categoryId}`);
@@ -287,6 +290,11 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
           } else {
             contentDiv.appendChild(loadMoreBtn);
           }
+          
+          // ✅ INICIALIZAR controle de scroll após criar botão
+          setTimeout(() => {
+            initScrollMorePhotos();
+          }, 500);
         }
       })
       .catch(error => {
@@ -1287,7 +1295,33 @@ function initScrollMorePhotos() {
   
   // Adicionar novo listener
   window.addEventListener('scroll', handleScrollMorePhotos);
+  }
+
+  // Função que controla quando mostrar/esconder More Photos
+  function handleScrollMorePhotos() {
+    const morePhotosBtn = document.querySelector('.load-more-btn.modern');
+    if (!morePhotosBtn) return;
+    
+    // Calcular posição do scroll
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    
+    // Calcular distância do final
+    const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+    const triggerDistance = 400; // Mostrar quando estiver a 400px do final
+    
+    // Mostrar/esconder baseado na posição
+    if (distanceFromBottom <= triggerDistance) {
+      // Perto do final - mostrar botão
+      morePhotosBtn.classList.add('show');
+    } else {
+      // Longe do final - esconder botão
+      morePhotosBtn.classList.remove('show');
+    }
 }
+
+
 
 // Função que executa no scroll
 function handleScrollMorePhotos() {
