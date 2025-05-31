@@ -1268,7 +1268,9 @@ function preloadMorePhotosInLightbox() {
     });
 }
 
-// ✅ NOVA FUNÇÃO: Sincronizar thumbnails a partir do lightbox
+// ✅ SUBSTITUIR apenas a função syncThumbnailsFromLightbox por esta versão corrigida
+
+// ✅ FUNÇÃO CORRIGIDA: Sincronizar thumbnails a partir do lightbox
 function syncThumbnailsFromLightbox(categoryId, newPhotos) {
   // Verificar se esta categoria está sendo exibida atualmente na interface
   const contentDiv = document.getElementById('content');
@@ -1300,48 +1302,111 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
 
   console.log(`🎨 [SYNC] Adding ${newPhotos.length} thumbnails to interface silently`);
 
-  // ✅ USAR SISTEMA DE EFEITOS VISUAIS EXISTENTE
+  // ✅ ABORDAGEM MAIS SEGURA: Verificar se loadPhotosSequentially existe
   if (typeof loadPhotosSequentially === 'function') {
-    // Encontrar onde inserir (antes dos botões de navegação)
-    const navigationSection = contentDiv.querySelector('.category-navigation-section');
-    const moreButton = contentDiv.querySelector('.load-more-btn');
+    console.log(`🎨 [SYNC] Using visual effects for thumbnail sync`);
     
-    // Criar container temporário
-    const tempContainer = document.createElement('div');
-    tempContainer.style.display = 'contents';
-    
-    // Inserir no local correto
-    if (moreButton) {
-      currentSection.insertBefore(tempContainer, moreButton);
-    } else if (navigationSection) {
-      currentSection.insertBefore(tempContainer, navigationSection);
-    } else {
-      currentSection.appendChild(tempContainer);
-    }
-    
-    // ✅ CARREGAR COM EFEITOS VISUAIS (delay menor para sync silencioso)
-    loadPhotosSequentially(newPhotos, tempContainer, 60);
-    
-    // Limpar container temporário após carregamento
-    setTimeout(() => {
-      const tempPhotos = tempContainer.querySelectorAll('.photo-item');
-      tempPhotos.forEach(photo => {
-        currentSection.insertBefore(photo, tempContainer);
+    // ✅ MÉTODO SEGURO: Adicionar diretamente ao currentSection
+    try {
+      // Encontrar ponto de inserção ANTES de criar elementos
+      const navigationSection = contentDiv.querySelector('.category-navigation-section');
+      const moreButton = contentDiv.querySelector('.load-more-btn');
+      const insertionPoint = moreButton || navigationSection || null;
+      
+      // ✅ USAR ABORDAGEM MAIS DIRETA: Adicionar elementos um por um
+      newPhotos.forEach((photo, index) => {
+        setTimeout(() => {
+          try {
+            // Verificar se ainda estamos na categoria correta
+            const currentFirstPhoto = currentSection.querySelector('.photo-item[id^="photo-"]');
+            if (!currentFirstPhoto) return;
+            
+            const currentFirstPhotoId = currentFirstPhoto.id.replace('photo-', '');
+            const currentFirst = photos.find(p => p.id === currentFirstPhotoId);
+            if (!currentFirst || currentFirst.folderId !== categoryId) {
+              console.log(`📱 [SYNC] Category changed during sync, stopping`);
+              return;
+            }
+            
+            // Criar elemento da foto
+            const photoElement = createThumbnailElement(photo);
+            
+            // ✅ INSERÇÃO SEGURA
+            if (insertionPoint && insertionPoint.parentNode === currentSection) {
+              currentSection.insertBefore(photoElement, insertionPoint);
+            } else {
+              // Fallback: adicionar no final
+              currentSection.appendChild(photoElement);
+            }
+            
+            // Animar entrada
+            photoElement.style.opacity = '0';
+            photoElement.style.transform = 'translateY(20px)';
+            photoElement.style.transition = 'all 0.4s ease';
+            
+            setTimeout(() => {
+              photoElement.style.opacity = '1';
+              photoElement.style.transform = 'translateY(0)';
+            }, 50);
+            
+            // Se for a última foto, atualizar botão e botões do carrinho
+            if (index === newPhotos.length - 1) {
+              setTimeout(() => {
+                updateMorePhotosButtonAfterLightboxSync(categoryId);
+                if (typeof updateButtonsForCartItems === 'function') {
+                  updateButtonsForCartItems();
+                }
+                console.log(`✅ [SYNC] Successfully synced ${newPhotos.length} thumbnails`);
+              }, 100);
+            }
+            
+          } catch (error) {
+            console.error(`❌ [SYNC] Error adding thumbnail ${index}:`, error);
+          }
+        }, index * 80); // Delay escalonado para efeito visual
       });
-      tempContainer.remove();
       
-      // ✅ ATUALIZAR BOTÃO "MORE PHOTOS" 
-      updateMorePhotosButtonAfterLightboxSync(categoryId);
-      
-      console.log(`✅ [SYNC] Successfully synced ${newPhotos.length} thumbnails to interface`);
-      
-    }, newPhotos.length * 60 + 200);
+    } catch (error) {
+      console.error(`❌ [SYNC] Error in visual sync:`, error);
+      // Fallback para método direto
+      addThumbnailsDirectlyFromLightbox(currentSection, newPhotos);
+    }
     
   } else {
     // Fallback: adicionar sem efeitos visuais
     console.log(`📱 [SYNC] Adding thumbnails without visual effects (fallback)`);
     addThumbnailsDirectlyFromLightbox(currentSection, newPhotos);
   }
+}
+
+// ✅ FUNÇÃO AUXILIAR: Criar elemento thumbnail de forma segura
+function createThumbnailElement(photo) {
+  const alreadyAdded = cartIds && cartIds.includes(photo.id);
+  const priceText = photo.price ? `$${photo.price}` : '';
+  
+  const photoElement = document.createElement('div');
+  photoElement.className = 'photo-item';
+  photoElement.id = `photo-${photo.id}`;
+  photoElement.onclick = () => openLightboxById(photo.id, false);
+  
+  photoElement.innerHTML = `
+    <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" 
+         alt="${photo.name}" 
+         loading="lazy"
+         onerror="this.parentNode.remove();">
+    <div class="photo-info">
+      <div class="photo-actions-container">
+        <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
+                id="button-${photo.id}"
+                onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
+          ${alreadyAdded ? 'Remove' : 'Select'}
+        </button>
+        ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
+      </div>
+    </div>
+  `;
+  
+  return photoElement;
 }
 
 // ✅ FUNÇÃO AUXILIAR: Atualizar botão "More Photos" após sync do lightbox
@@ -1400,58 +1465,103 @@ function getTotalPhotosForLightboxSync(categoryId) {
   return 100; // Fallback conservador
 }
 
-// ✅ FUNÇÃO FALLBACK: Adicionar thumbnails diretamente (sem efeitos)
+// ✅ SUBSTITUIR também a função addThumbnailsDirectlyFromLightbox por esta versão melhorada
+
+// ✅ FUNÇÃO FALLBACK MELHORADA: Adicionar thumbnails diretamente (sem efeitos)
 function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
-  const navigationSection = container.querySelector('.category-navigation-section');
-  const moreButton = container.querySelector('.load-more-btn');
+  console.log(`🔧 [SYNC] Using fallback method to add ${newPhotos.length} thumbnails`);
   
-  newPhotos.forEach((photo, index) => {
-    const alreadyAdded = cartIds && cartIds.includes(photo.id);
-    const priceText = photo.price ? `$${photo.price}` : '';
-    
-    const photoElement = document.createElement('div');
-    photoElement.className = 'photo-item';
-    photoElement.id = `photo-${photo.id}`;
-    photoElement.onclick = () => openLightboxById(photo.id, false);
-    photoElement.style.opacity = '0';
-    
-    photoElement.innerHTML = `
-      <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" 
-           alt="${photo.name}" 
-           loading="lazy"
-           onerror="this.parentNode.remove();">
-      <div class="photo-info">
-        <div class="photo-actions-container">
-          <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
-                  id="button-${photo.id}"
-                  onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
-            ${alreadyAdded ? 'Remove' : 'Select'}
-          </button>
-          ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
-        </div>
-      </div>
-    `;
-    
-    // Inserir antes dos botões
-    if (moreButton) {
-      container.insertBefore(photoElement, moreButton);
-    } else if (navigationSection) {
-      container.insertBefore(photoElement, navigationSection);
-    } else {
-      container.appendChild(photoElement);
+  try {
+    // ✅ VERIFICAÇÕES DE SEGURANÇA
+    if (!container || !container.appendChild) {
+      console.error(`❌ [SYNC] Invalid container provided`);
+      return;
     }
     
-    // Fade-in
+    if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
+      console.log(`📱 [SYNC] No photos to add`);
+      return;
+    }
+    
+    // Encontrar pontos de inserção com verificação
+    const navigationSection = container.querySelector('.category-navigation-section');
+    const moreButton = container.querySelector('.load-more-btn');
+    
+    newPhotos.forEach((photo, index) => {
+      try {
+        if (!photo || !photo.id) {
+          console.warn(`⚠️ [SYNC] Invalid photo at index ${index}:`, photo);
+          return;
+        }
+        
+        // Verificar se a foto já existe (evitar duplicatas)
+        const existingPhoto = container.querySelector(`#photo-${photo.id}`);
+        if (existingPhoto) {
+          console.log(`📱 [SYNC] Photo ${photo.id} already exists, skipping`);
+          return;
+        }
+        
+        const photoElement = createThumbnailElement(photo);
+        photoElement.style.opacity = '0';
+        
+        // ✅ INSERÇÃO SEGURA COM VERIFICAÇÕES
+        let inserted = false;
+        
+        // Tentar inserir antes do botão More
+        if (moreButton && moreButton.parentNode === container) {
+          try {
+            container.insertBefore(photoElement, moreButton);
+            inserted = true;
+          } catch (error) {
+            console.warn(`⚠️ [SYNC] Failed to insert before more button:`, error);
+          }
+        }
+        
+        // Se não conseguiu, tentar antes da navegação
+        if (!inserted && navigationSection && navigationSection.parentNode === container) {
+          try {
+            container.insertBefore(photoElement, navigationSection);
+            inserted = true;
+          } catch (error) {
+            console.warn(`⚠️ [SYNC] Failed to insert before navigation:`, error);
+          }
+        }
+        
+        // Fallback final: adicionar no final
+        if (!inserted) {
+          try {
+            container.appendChild(photoElement);
+            inserted = true;
+          } catch (error) {
+            console.error(`❌ [SYNC] Failed to append photo ${photo.id}:`, error);
+            return;
+          }
+        }
+        
+        // Animar entrada com delay
+        setTimeout(() => {
+          photoElement.style.transition = 'opacity 0.4s ease';
+          photoElement.style.opacity = '1';
+        }, index * 60);
+        
+      } catch (error) {
+        console.error(`❌ [SYNC] Error processing photo ${index}:`, error);
+      }
+    });
+    
+    // Atualizar botões após todas as fotos
     setTimeout(() => {
-      photoElement.style.transition = 'opacity 0.4s ease';
-      photoElement.style.opacity = '1';
-    }, index * 80);
-  });
-  
-  // Atualizar botões do carrinho
-  setTimeout(() => {
-    if (typeof updateButtonsForCartItems === 'function') {
-      updateButtonsForCartItems();
-    }
-  }, newPhotos.length * 80 + 100);
+      try {
+        if (typeof updateButtonsForCartItems === 'function') {
+          updateButtonsForCartItems();
+        }
+        console.log(`✅ [SYNC] Fallback method completed successfully`);
+      } catch (error) {
+        console.error(`❌ [SYNC] Error updating buttons:`, error);
+      }
+    }, newPhotos.length * 60 + 200);
+    
+  } catch (error) {
+    console.error(`❌ [SYNC] Critical error in fallback method:`, error);
+  }
 }
