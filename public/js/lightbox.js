@@ -128,16 +128,23 @@ function openLightbox(index, fromCart = false) {
     document.getElementById('lightbox-name').innerHTML = nameText + ` <span class="lightbox-price">${formattedPrice}</span>`;
   }
 
-  // Configure add/remove button
+  // Configure add/remove button - MODO CARRINHO SIMPLES
   const addBtn = document.getElementById('lightbox-add-btn');
   const alreadyAdded = cartIds.includes(photo.id);
 
-  if (alreadyAdded) {
-    addBtn.textContent = 'Remove from Selection';
+  // Se estamos vendo do carrinho, sempre mostrar Remove
+  if (fromCart) {
+    addBtn.textContent = 'Remove from Cart';
     addBtn.className = 'btn btn-danger';
   } else {
-    addBtn.textContent = 'Add to Selection';
-    addBtn.className = 'btn btn-gold';
+    // Modo galeria normal
+    if (alreadyAdded) {
+      addBtn.textContent = 'Remove from Selection';
+      addBtn.className = 'btn btn-danger';
+    } else {
+      addBtn.textContent = 'Add to Selection';
+      addBtn.className = 'btn btn-gold';
+    }
   }
 
   // Update the cart count in the lightbox
@@ -1248,139 +1255,4 @@ function preloadMorePhotosInLightbox() {
       console.error('[Lightbox] Erro ao pré-carregar fotos:', error);
       window.isPreloadingLightbox = false;
     });
-}
-
-// ===== SISTEMA ISOLADO PARA CARRINHO - NÃO MEXE NO CÓDIGO EXISTENTE =====
-
-// Variáveis exclusivas para carrinho (isoladas)
-let cartLightboxMode = false;
-let cartPhotosArray = [];
-let cartCurrentIndex = 0;
-
-// ✅ FUNÇÃO PRINCIPAL: Lightbox exclusivo para carrinho
-function openCartOnlyLightbox(cartPhotosData, selectedIndex) {
-  console.log(`[CART LIGHTBOX] Opening with ${cartPhotosData.length} photos, index ${selectedIndex}`);
-  
-  // Ativar modo carrinho
-  cartLightboxMode = true;
-  cartPhotosArray = [...cartPhotosData];
-  cartCurrentIndex = selectedIndex;
-  
-  // Usar lightbox existente mas em modo especial
-  const photo = cartPhotosArray[selectedIndex];
-  if (!photo) {
-    console.error('[CART LIGHTBOX] Photo not found');
-    return;
-  }
-  
-  // Simular estrutura de foto para compatibilidade
-  const fakePhotos = [...cartPhotosArray];
-  const originalPhotos = window.photos;
-  const originalIndex = window.currentPhotoIndex;
-  const originalViewingFromCart = window.viewingFromCart;
-  
-  // Temporarily override global variables
-  window.photos = fakePhotos;
-  window.currentPhotoIndex = selectedIndex;
-  window.viewingFromCart = true;
-  
-  // Open lightbox normally
-  openLightbox(selectedIndex, true);
-  
-  // Mark as cart mode
-  cartLightboxMode = true;
-
-  // ✅ ADICIONAR ESTAS LINHAS:
-  // Forçar botão para estado correto (todas as fotos estão no carrinho)
-  setTimeout(() => {
-    const addBtn = document.getElementById('lightbox-add-btn');
-    if (addBtn) {
-      addBtn.textContent = 'Remove from Selection';
-      addBtn.className = 'btn btn-danger';
-    }
-  }, 100);
-  
-  // Override navigation for cart mode
-  overrideNavigationForCart();
-}
-
-// ✅ FUNÇÃO AUXILIAR: Override da navegação para modo carrinho
-function overrideNavigationForCart() {
-  // Substituir handlers de navegação temporariamente
-  document.removeEventListener('keydown', handleKeyDown);
-  document.addEventListener('keydown', handleCartKeyDown);
-}
-
-// ✅ FUNÇÃO DE NAVEGAÇÃO: Exclusiva para carrinho
-function handleCartKeyDown(e) {
-  if (!cartLightboxMode) return;
-  
-  switch(e.key) {
-    case 'ArrowLeft':
-      navigateCartPhotosOnly(-1);
-      e.preventDefault();
-      break;
-    case 'ArrowRight':
-      navigateCartPhotosOnly(1);
-      e.preventDefault();
-      break;
-    case 'Escape':
-      closeCartLightbox();
-      e.preventDefault();
-      break;
-  }
-}
-
-// ✅ FUNÇÃO DE NAVEGAÇÃO: Apenas entre fotos do carrinho
-function navigateCartPhotosOnly(direction) {
-  if (!cartLightboxMode || cartPhotosArray.length === 0) return;
-  
-  // Calcular novo índice
-  let newIndex = cartCurrentIndex + direction;
-  
-  // Loop circular
-  if (newIndex < 0) newIndex = cartPhotosArray.length - 1;
-  if (newIndex >= cartPhotosArray.length) newIndex = 0;
-  
-  cartCurrentIndex = newIndex;
-  
-  // Atualizar foto atual
-  const newPhoto = cartPhotosArray[newIndex];
-  if (!newPhoto) return;
-  
-  // Atualizar lightbox atual
-  window.currentPhotoIndex = newIndex;
-  window.photos = [...cartPhotosArray];
-  
-  // Reabrir com nova foto
-  openLightbox(newIndex, true);
-
-  // ✅ ADICIONAR ESTAS LINHAS:
-  // Garantir que botão esteja sempre correto
-  setTimeout(() => {
-    const addBtn = document.getElementById('lightbox-add-btn');
-    if (addBtn) {
-      addBtn.textContent = 'Remove from Selection';
-      addBtn.className = 'btn btn-danger';
-    }
-  }, 100);
-  
-  console.log(`[CART LIGHTBOX] Navigated to ${newIndex + 1}/${cartPhotosArray.length}`);
-}
-
-// ✅ FUNÇÃO DE FECHAMENTO: Restaurar estado original
-function closeCartLightbox() {
-  console.log('[CART LIGHTBOX] Closing cart lightbox');
-  
-  // Desativar modo carrinho
-  cartLightboxMode = false;
-  cartPhotosArray = [];
-  cartCurrentIndex = 0;
-  
-  // Restaurar handlers originais
-  document.removeEventListener('keydown', handleCartKeyDown);
-  document.addEventListener('keydown', handleKeyDown);
-  
-  // Fechar lightbox normalmente
-  closeLightbox();
 }

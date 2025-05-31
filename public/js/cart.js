@@ -140,8 +140,8 @@ function updateCartView() {
       html += `
         <div id="cart-item-${photoId}" class="cart-item">
           <div class="cart-item-img-container">
-            <img src="${photo.thumbnail}" alt="${photo.name}" class="cart-item-img" 
-                onclick="openCartLightbox('${photoId}')">
+          <img src="${photo.thumbnail}" alt="${photo.name}" class="cart-item-img" 
+              onclick="openLightboxById('${photoId}', true)">
             <div class="preview-badge">Click to view</div>
           </div>
           <div style="flex-grow: 1;">
