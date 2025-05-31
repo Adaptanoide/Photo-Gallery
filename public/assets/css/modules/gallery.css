@@ -233,349 +233,116 @@
   font-size: 1.1rem;
 }
 
-/* ✅ SUBSTITUIR o CSS existente da navegação por esta versão corrigida */
+/* ✅ CSS CORRIGIDO - Botões de Navegação Integrados */
 
-/* Category Navigation Container - VERSÃO FIXA NO BOTTOM */
+/* Category Navigation Container - VERSÃO INTEGRADA */
 .category-navigation-section {
   position: fixed;
   bottom: 0;
-  left: 0;
+  left: 260px; /* ✅ CORREÇÃO: Deixar espaço para sidebar */
   right: 0;
-  width: 100%;
-  padding: 20px 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-top: 2px solid rgba(212, 175, 55, 0.3);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  margin-top: 0; /* Remove margem anterior */
+  width: auto; /* ✅ CORREÇÃO: Não ocupar toda largura */
+  padding: 15px 20px;
+  background: rgba(245, 242, 235, 0.95); /* ✅ Tom bege suave */
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(160, 130, 98, 0.2); /* ✅ Borda marrom suave */
+  box-shadow: 0 -2px 10px rgba(139, 115, 85, 0.15); /* ✅ Shadow marrom suave */
+  z-index: 50; /* ✅ CORREÇÃO: Z-index menor que sidebar */
+  margin-top: 0;
 }
 
 .category-navigation-buttons {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  padding: 0 20px;
-  max-width: 600px;
+  gap: 16px;
+  padding: 0;
+  max-width: 500px;
   margin: 0 auto;
 }
 
-/* Botões com melhor estilo */
-.category-nav-button {
-  padding: 12px 24px;
-  border: 2px solid var(--color-gold);
-  border-radius: 25px;
-  background: white;
-  color: var(--color-gold);
-  font-weight: 600;
-  font-size: 0.95rem;
+/* ✅ BOTÕES IGUAIS - Tom Marrom Pastel */
+.category-nav-button,
+.category-nav-button--primary,
+.category-nav-button--secondary {
+  padding: 10px 20px;
+  border: 1.5px solid #a0826b; /* ✅ Marrom pastel */
+  border-radius: 20px;
+  background: rgba(245, 242, 235, 0.9); /* ✅ Fundo bege claro */
+  color: #8b7355; /* ✅ Texto marrom suave */
+  font-weight: 500;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 160px;
+  min-width: 140px;
   text-align: center;
+  font-family: inherit;
 }
 
-.category-nav-button:hover {
-  background: var(--color-gold);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-}
-
-.category-nav-button--primary {
-  background: var(--color-gold);
-  color: white;
-}
-
-.category-nav-button--primary:hover {
-  background: #c5a642;
-  transform: translateY(-2px);
-}
-
+/* ✅ HOVER IGUAL PARA AMBOS */
+.category-nav-button:hover,
+.category-nav-button--primary:hover,
 .category-nav-button--secondary:hover {
-  background: var(--color-gold);
-  color: white;
+  background: rgba(160, 130, 107, 0.2); /* ✅ Hover marrom muito suave */
+  color: #6d5d48; /* ✅ Texto mais escuro no hover */
+  transform: translateY(-1px); /* ✅ Movimento suave */
+  box-shadow: 0 2px 8px rgba(139, 115, 85, 0.2);
+  border-color: #8b7355;
 }
 
-/* Responsivo para mobile */
+/* ✅ ACTIVE/PRESSED state */
+.category-nav-button:active,
+.category-nav-button--primary:active,
+.category-nav-button--secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(139, 115, 85, 0.3);
+}
+
+/* ✅ RESPONSIVO - Mobile */
+@media (max-width: 1024px) {
+  .category-navigation-section {
+    left: 200px; /* ✅ Sidebar menor em tablets */
+  }
+}
+
 @media (max-width: 768px) {
   .category-navigation-section {
-    padding: 15px 0;
+    left: 0; /* ✅ Sidebar escondido em mobile */
+    right: 0;
+    padding: 12px 15px;
   }
   
   .category-navigation-buttons {
     flex-direction: column;
-    gap: 12px;
-    padding: 0 15px;
+    gap: 10px;
   }
   
-  .category-nav-button {
-    min-width: 200px;
-    padding: 14px 20px;
-    font-size: 0.9rem;
+  .category-nav-button,
+  .category-nav-button--primary,
+  .category-nav-button--secondary {
+    min-width: 180px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
   }
 }
 
-/* ✅ ADICIONAL: Espaçamento no bottom do conteúdo para não sobrepor botões */
+/* ✅ ESPAÇAMENTO CORRIGIDO - Menos padding para não cobrir fotos */
 #content {
-  padding-bottom: 120px; /* Espaço para os botões fixos */
+  padding-bottom: 80px; /* ✅ REDUZIDO: Menos espaço */
 }
 
-/* Para telas mobile, menos espaçamento */
 @media (max-width: 768px) {
   #content {
-    padding-bottom: 140px; /* Mais espaço no mobile (botões empilhados) */
+    padding-bottom: 100px; /* ✅ Mobile um pouco mais */
   }
 }
 
-.category-navigation-buttons {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  padding: 0 20px;
+/* ✅ EXTRA: Garantir que sidebar fique acima dos botões */
+.sidebar {
+  z-index: 100; /* ✅ Sidebar sempre acima */
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .category-navigation-buttons {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .category-nav-button {
-    min-width: 200px;
-  }
-}
-
-/* ✅ ADICIONAR NO FINAL DO gallery.css - Loading Skeleton */
-
-/* Loading skeleton para fotos */
-.photo-skeleton {
-  width: 100%;
-  height: 200px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Botão more photos melhorado */
-.btn-load-more {
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-load-more:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.btn-load-more.loading {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.btn-load-more.loading::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-
-/* Fade-in suave para fotos */
-.photo-item {
-  transition: all 0.3s ease-out;
-}
-
-.photo-item.loading {
-  opacity: 0.3;
-  transform: scale(0.95);
-}
-
-.photo-item.loaded {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Indicador de carregamento geral */
-.category-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  color: var(--color-taupe);
-}
-
-.loading-dots {
-  display: inline-block;
-}
-
-.loading-dots::after {
-  content: '';
-  animation: dots 1.5s infinite;
-}
-
-@keyframes dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60%, 100% { content: '...'; }
-}
-
-/* ✅ ADICIONAR NO FINAL DO gallery.css */
-
-/* ==================== SKELETON LOADING ==================== */
-.photo-skeleton {
-  width: 100%;
-  height: 280px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-  border-radius: 8px;
-  position: relative;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Skeleton bottom area (button area) */
-.photo-skeleton::after {
-  content: '';
-  position: absolute;
-  bottom: 15px;
-  left: 15px;
-  right: 15px;
-  height: 35px;
-  background: linear-gradient(90deg, #e0e0e0 25%, #d0d0d0 50%, #e0e0e0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite 0.3s;
-  border-radius: 6px;
-}
-
-/* ==================== FADE-IN SEQUENCIAL ==================== */
-.photo-item {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.photo-item.loading-state {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.photo-item.loaded-state {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ==================== BOTÃO MORE PHOTOS MELHORADO ==================== */
-.btn-load-more {
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  transform: translateY(0);
-}
-
-.btn-load-more:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-
-.btn-load-more:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: translateY(0);
-}
-
-/* Shimmer effect no botão durante loading */
-.btn-load-more.loading-shimmer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: buttonShimmer 1.5s infinite;
-}
-
-@keyframes buttonShimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-
-/* ==================== CONTADOR DE LOADING ==================== */
-.loading-counter {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  background: rgba(139, 115, 85, 0.9);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  z-index: 1000;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
-}
-
-.loading-counter.hidden {
-  opacity: 0;
-  transform: translateY(-20px);
-  pointer-events: none;
-}
-
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 768px) {
-  .photo-skeleton {
-    height: 240px;
-  }
-  
-  .loading-counter {
-    top: 70px;
-    right: 15px;
-    font-size: 12px;
-    padding: 6px 12px;
-  }
-}
-
-/* ==================== GRID STABILITY ==================== */
-#photo-section,
-#category-section-main {
-  min-height: 300px; /* Evitar jump durante loading */
-}
-
-/* ==================== SMOOTH TRANSITIONS ==================== */
-.photo-item img {
-  transition: opacity 0.3s ease;
-}
-
-.photo-item img[src=""] {
-  opacity: 0;
-}
-
-.photo-item img:not([src=""]) {
-  opacity: 1;
+/* ✅ EXTRA: Transição suave quando sidebar é expandido/recolhido */
+.category-navigation-section {
+  transition: left 0.3s ease;
 }
