@@ -278,7 +278,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
           loadMoreBtn.className = 'load-more-btn modern';
           loadMoreBtn.style.gridColumn = '1 / -1';
           loadMoreBtn.innerHTML = `
-            <button class="btn-load-more" onclick="loadMorePhotosForCategory('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
+            <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
               More Photos
             </button>
           `;
@@ -1080,4 +1080,208 @@ function addCategoryNavigationButtons(container, categoryId) {
   `;
   
   container.appendChild(navigationContainer);
+}
+
+// ✅ ADICIONAR NO FINAL DO sidebar.js
+
+// ==================== SISTEMA DE EFEITOS VISUAIS ====================
+
+// Variáveis globais para controle de loading
+let isSequentialLoading = false;
+let loadingCounter = 0;
+
+// ✅ FUNÇÃO 1: Criar skeleton loading
+function createSkeletonPlaceholders(container, count) {
+  console.log(`🎬 Creating ${count} skeleton placeholders`);
+  
+  for (let i = 0; i < count; i++) {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'photo-skeleton';
+    skeleton.dataset.skeletonIndex = i;
+    container.appendChild(skeleton);
+  }
+}
+
+// ✅ FUNÇÃO 2: Mostrar contador de loading
+function showLoadingCounter(current, total) {
+  let counter = document.querySelector('.loading-counter');
+  
+  if (!counter) {
+    counter = document.createElement('div');
+    counter.className = 'loading-counter';
+    document.body.appendChild(counter);
+  }
+  
+  counter.textContent = `Loading ${current}/${total} photos`;
+  counter.classList.remove('hidden');
+  
+  if (current >= total) {
+    setTimeout(() => {
+      counter.classList.add('hidden');
+    }, 1000);
+  }
+}
+
+// ✅ FUNÇÃO 3: Esconder skeleton e mostrar foto
+function replaceSkeletonWithPhoto(photo, container, index, delay = 0) {
+  setTimeout(() => {
+    const skeleton = container.querySelector(`[data-skeleton-index="${index}"]`);
+    if (!skeleton) return;
+    
+    // Verificar se já está no carrinho
+    const alreadyAdded = cartIds.includes(photo.id);
+    const priceText = photo.price ? `$${photo.price}` : '';
+    
+    // Criar elemento da foto
+    const photoElement = document.createElement('div');
+    photoElement.className = 'photo-item loading-state';
+    photoElement.id = `photo-${photo.id}`;
+    photoElement.onclick = () => openLightboxById(photo.id, false);
+    
+    photoElement.innerHTML = `
+      <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" 
+           alt="${photo.name}" 
+           onload="this.parentNode.classList.add('loaded-state'); this.parentNode.classList.remove('loading-state')"
+           onerror="this.parentNode.remove(); checkEmptyCategory('${container.id}');">
+      <div class="photo-info">
+        <div class="photo-actions-container">
+          <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
+                  id="button-${photo.id}"
+                  onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
+            ${alreadyAdded ? 'Remove' : 'Select'}
+          </button>
+          ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
+        </div>
+      </div>
+    `;
+    
+    // Substituir skeleton por foto
+    skeleton.replaceWith(photoElement);
+    
+    // Animar entrada
+    setTimeout(() => {
+      photoElement.classList.add('loaded-state');
+      photoElement.classList.remove('loading-state');
+    }, 100);
+    
+    // Atualizar contador
+    loadingCounter++;
+    showLoadingCounter(loadingCounter, container.querySelectorAll('.photo-skeleton').length + loadingCounter);
+    
+  }, delay);
+}
+
+// ✅ FUNÇÃO 4: Carregar fotos sequencialmente
+function loadPhotosSequentially(photos, container, startDelay = 150) {
+  if (!photos || photos.length === 0) return;
+  
+  console.log(`🎬 Loading ${photos.length} photos sequentially`);
+  
+  isSequentialLoading = true;
+  loadingCounter = 0;
+  
+  // Criar skeletons primeiro
+  createSkeletonPlaceholders(container, photos.length);
+  
+  // Carregar fotos uma por vez
+  photos.forEach((photo, index) => {
+    const delay = index * startDelay;
+    replaceSkeletonWithPhoto(photo, container, index, delay);
+  });
+  
+  // Finalizar loading após todas as fotos
+  setTimeout(() => {
+    isSequentialLoading = false;
+    // Atualizar botões do carrinho
+    updateButtonsForCartItems();
+  }, photos.length * startDelay + 500);
+}
+
+// ✅ FUNÇÃO 5: Melhorar feedback do botão More Photos
+function enhanceMorePhotosButton(button, isLoading = false) {
+  if (isLoading) {
+    button.innerHTML = '🔄 Loading Photos...';
+    button.disabled = true;
+    button.classList.add('loading-shimmer');
+  } else {
+    button.innerHTML = 'More Photos';
+    button.disabled = false;
+    button.classList.remove('loading-shimmer');
+  }
+}
+
+// ✅ FUNÇÃO 6: Override da função de carregamento de mais fotos
+function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
+  const button = event.target;
+  const contentDiv = document.getElementById('content');
+  const sectionContainer = contentDiv.querySelector('#category-section-main');
+  
+  // Feedback visual no botão
+  enhanceMorePhotosButton(button, true);
+  
+  fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
+    .then(response => response.json())
+    .then(newPhotos => {
+      if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
+        button.parentElement.remove();
+        return;
+      }
+      
+      console.log(`📸 Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
+      
+      // Atualizar cache
+      const categoryCache = categoryPhotoCache[categoryId];
+      if (categoryCache) {
+        categoryCache.photos = categoryCache.photos.concat(newPhotos);
+        categoryCache.totalLoaded += newPhotos.length;
+        categoryCache.hasMore = newPhotos.length >= batchSize;
+      }
+      
+      // Registrar novas fotos
+      newPhotos.forEach(photo => {
+        photoRegistry[photo.id] = photo;
+        photos.push(photo);
+      });
+      
+      // ✅ CARREGAR COM EFEITOS VISUAIS
+      loadPhotosSequentially(newPhotos, sectionContainer, 100);
+      
+      // Restaurar botão
+      enhanceMorePhotosButton(button, false);
+      
+      // Verificar se há mais fotos
+      setTimeout(() => {
+        const remainingPhotos = Math.max(0, getTotalPhotos(categoryId) - categoryCache.totalLoaded);
+        const nextBatchSize = Math.min(15, remainingPhotos);
+        
+        if (remainingPhotos > 0) {
+          button.onclick = () => loadMorePhotosWithEffects(categoryId, categoryCache.totalLoaded, nextBatchSize);
+          addCategoryNavigationButtons(contentDiv, categoryId);
+        } else {
+          button.parentElement.remove();
+          addCategoryNavigationButtons(contentDiv, categoryId);
+        }
+        
+        updateButtonsForCartItems();
+      }, newPhotos.length * 100 + 300);
+      
+    })
+    .catch(error => {
+      console.error('Error loading more photos:', error);
+      enhanceMorePhotosButton(button, false);
+      button.innerHTML = '❌ Try Again';
+    });
+}
+
+// ✅ FUNÇÃO 7: Helper para obter total de fotos
+function getTotalPhotos(categoryId) {
+  const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+  if (categoryItem) {
+    const text = categoryItem.textContent;
+    const match = text.match(/\((\d+)\)/);
+    if (match) {
+      return parseInt(match[1]);
+    }
+  }
+  return 50; // Fallback
 }
