@@ -506,8 +506,9 @@ function initializeNativeZoom(img) {
   }
 }
 
-// Close the lightbox
+// ✅ FUNÇÃO closeLightbox CORRIGIDA - Sincroniza categoria automaticamente
 function closeLightbox() {
+  // ✅ CÓDIGO ORIGINAL (manter intacto)
   // Remover instâncias de zoom se existirem
   if (typeof mediumZoom === 'function') {
     // Remover todas as instâncias Medium Zoom
@@ -526,6 +527,21 @@ function closeLightbox() {
   // Remover qualquer overlay de navegação
   removeNavigationOverlay();
 
+  // ✅ NOVA LÓGICA: Verificar se categoria mudou durante navegação do lightbox
+  const interfaceCategory = detectCurrentCategoryInInterface();
+  
+  console.log(`🔄 [SYNC] Checking category sync: Interface=${interfaceCategory}, Lightbox=${activeCategory}`);
+  
+  if (activeCategory && interfaceCategory !== activeCategory) {
+    console.log(`🔄 [SYNC] Category changed during lightbox navigation: ${interfaceCategory} → ${activeCategory}`);
+    
+    // Sincronizar interface com categoria do lightbox
+    syncInterfaceWithLightboxCategory();
+  } else {
+    console.log(`✅ [SYNC] Categories are in sync, no update needed`);
+  }
+
+  // ✅ CÓDIGO ORIGINAL (manter intacto)
   // Esconder o lightbox
   document.getElementById('lightbox').style.display = 'none';
 
@@ -548,6 +564,106 @@ function closeLightbox() {
   }
 
   viewingFromCart = false;
+}
+
+// ✅ FUNÇÃO AUXILIAR: Detectar categoria atual da interface
+function detectCurrentCategoryInInterface() {
+  try {
+    // Método 1: Procurar por fotos visíveis na interface
+    const contentDiv = document.getElementById('content');
+    if (!contentDiv) return null;
+    
+    const firstVisiblePhoto = contentDiv.querySelector('.photo-item[id^="photo-"]');
+    if (firstVisiblePhoto) {
+      const photoId = firstVisiblePhoto.id.replace('photo-', '');
+      const photo = photoRegistry[photoId];
+      if (photo && photo.folderId) {
+        console.log(`📱 [SYNC] Detected interface category from photo: ${photo.folderId}`);
+        return photo.folderId;
+      }
+    }
+    
+    // Método 2: Verificar categoria ativa no sidebar
+    const activeMenuItem = document.querySelector('.category-item.active');
+    if (activeMenuItem) {
+      const categoryId = activeMenuItem.getAttribute('data-category-id');
+      if (categoryId) {
+        console.log(`📱 [SYNC] Detected interface category from sidebar: ${categoryId}`);
+        return categoryId;
+      }
+    }
+    
+    // Método 3: Verificar cabeçalho da categoria atual
+    const categoryHeader = document.querySelector('[data-current-category]');
+    if (categoryHeader) {
+      const categoryId = categoryHeader.getAttribute('data-current-category');
+      if (categoryId) {
+        console.log(`📱 [SYNC] Detected interface category from header: ${categoryId}`);
+        return categoryId;
+      }
+    }
+    
+    console.log(`⚠️ [SYNC] Could not detect current interface category`);
+    return null;
+    
+  } catch (error) {
+    console.error(`❌ [SYNC] Error detecting interface category:`, error);
+    return null;
+  }
+}
+
+// ✅ FUNÇÃO AUXILIAR: Sincronizar interface com categoria do lightbox  
+function syncInterfaceWithLightboxCategory() {
+  try {
+    if (!activeCategory) {
+      console.log(`⚠️ [SYNC] No active category to sync to`);
+      return;
+    }
+    
+    console.log(`🔄 [SYNC] Synchronizing interface to category: ${activeCategory}`);
+    
+    // ✅ MÉTODO SEGURO: Usar função existente loadCategoryPhotos
+    if (typeof loadCategoryPhotos === 'function') {
+      console.log(`✅ [SYNC] Using existing loadCategoryPhotos function`);
+      
+      // Carregar categoria com pequeno delay para não conflitar com fechamento do lightbox
+      setTimeout(() => {
+        loadCategoryPhotos(activeCategory);
+        console.log(`✅ [SYNC] Interface synchronized to category: ${activeCategory}`);
+      }, 200);
+      
+    } else {
+      // ✅ FALLBACK: Atualizar apenas o sidebar se função principal não existir
+      console.log(`🔧 [SYNC] Using fallback: updating sidebar only`);
+      
+      if (typeof highlightActiveCategory === 'function') {
+        highlightActiveCategory(activeCategory);
+      }
+      
+      // Mostrar mensagem para usuário
+      const contentDiv = document.getElementById('content');
+      if (contentDiv) {
+        contentDiv.innerHTML = `
+          <div style="text-align: center; padding: 40px; background: white; border-radius: 10px; margin-top: 30px;">
+            <h3>Category Changed</h3>
+            <p>Click on the highlighted category in the sidebar to load photos.</p>
+          </div>
+        `;
+      }
+    }
+    
+  } catch (error) {
+    console.error(`❌ [SYNC] Error synchronizing interface:`, error);
+    
+    // Fallback silencioso: pelo menos atualizar sidebar
+    try {
+      if (typeof highlightActiveCategory === 'function') {
+        highlightActiveCategory(activeCategory);
+      }
+    } catch (fallbackError) {
+      console.error(`❌ [SYNC] Fallback also failed:`, fallbackError);
+    }
+  }
 }
 
 function navigatePhotos(direction) {
