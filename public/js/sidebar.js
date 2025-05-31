@@ -1102,24 +1102,9 @@ function createSkeletonPlaceholders(container, count) {
   }
 }
 
-// ✅ FUNÇÃO 2: Mostrar contador de loading
 function showLoadingCounter(current, total) {
-  let counter = document.querySelector('.loading-counter');
-  
-  if (!counter) {
-    counter = document.createElement('div');
-    counter.className = 'loading-counter';
-    document.body.appendChild(counter);
-  }
-  
-  counter.textContent = `Loading ${current}/${total} photos`;
-  counter.classList.remove('hidden');
-  
-  if (current >= total) {
-    setTimeout(() => {
-      counter.classList.add('hidden');
-    }, 1000);
-  }
+  // ✅ DESABILITADO: Contador visual removido (mantém funcionalidade)
+  return;
 }
 
 // ✅ FUNÇÃO 3: Esconder skeleton e mostrar foto
