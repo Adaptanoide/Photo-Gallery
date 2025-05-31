@@ -233,130 +233,8 @@
   font-size: 1.1rem;
 }
 
-/* ✅ CSS COMPLETAMENTE NOVO - Botões Integrados Sem Barra */
-
-/* Category Navigation Container - INVISÍVEL/INTEGRADO */
-.category-navigation-section {
-  position: relative; /* ✅ MUDANÇA: Não mais fixed */
-  width: 100%;
-  margin-top: 60px; /* ✅ Espaçamento natural das fotos */
-  margin-bottom: 40px;
-  padding: 0; /* ✅ REMOVIDO: Sem padding */
-  background: transparent; /* ✅ REMOVIDO: Sem fundo */
-  border: none; /* ✅ REMOVIDO: Sem borda */
-  box-shadow: none; /* ✅ REMOVIDO: Sem shadow */
-  backdrop-filter: none; /* ✅ REMOVIDO: Sem blur */
-  z-index: auto; /* ✅ REMOVIDO: Z-index natural */
-}
-
-.category-navigation-buttons {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-/* ✅ BOTÕES MAIS SUTIS - Integrados Naturalmente */
-.category-nav-button,
-.category-nav-button--primary,
-.category-nav-button--secondary {
-  padding: 12px 24px;
-  border: 1px solid rgba(160, 130, 107, 0.4); /* ✅ Borda muito sutil */
-  border-radius: 25px;
-  background: rgba(255, 255, 255, 0.8); /* ✅ Fundo muito sutil */
-  color: #8b7355; /* ✅ Marrom suave */
-  font-weight: 500;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 150px;
-  text-align: center;
-  font-family: inherit;
-  box-shadow: 0 2px 8px rgba(139, 115, 85, 0.1); /* ✅ Shadow muito sutil */
-}
-
-/* ✅ HOVER SUTIL */
-.category-nav-button:hover,
-.category-nav-button--primary:hover,
-.category-nav-button--secondary:hover {
-  background: rgba(160, 130, 107, 0.1); /* ✅ Hover muito sutil */
-  color: #6d5d48;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2);
-  border-color: rgba(160, 130, 107, 0.6);
-}
-
-/* ✅ ACTIVE/PRESSED */
-.category-nav-button:active,
-.category-nav-button--primary:active,
-.category-nav-button--secondary:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(139, 115, 85, 0.25);
-}
-
-/* ✅ RESPONSIVO */
-@media (max-width: 768px) {
-  .category-navigation-section {
-    margin-top: 40px;
-    margin-bottom: 30px;
-  }
-  
-  .category-navigation-buttons {
-    flex-direction: column;
-    gap: 15px;
-    padding: 15px;
-  }
-  
-  .category-nav-button,
-  .category-nav-button--primary,
-  .category-nav-button--secondary {
-    min-width: 200px;
-    padding: 14px 20px;
-  }
-}
-
-/* ✅ REMOVIDO: Padding-bottom do content (não mais necessário) */
-#content {
-  padding-bottom: 0; /* ✅ REMOVIDO: Sem espaçamento extra */
-}
-
-/* ✅ GARANTIR que não interfere com outros elementos */
-.photo-item {
-  z-index: 1; /* ✅ Fotos ficam acima dos botões se necessário */
-}
-
-.photo-item .btn {
-  z-index: 2; /* ✅ Botões Select das fotos sempre visíveis */
-  position: relative;
-}
-
-/* CSS CORRIGIDO - Container para botões */
-
-/* Container para botões - simples e direto */
-.category-buttons-bottom {
-  margin-top: 60px !important;
-  padding: 40px 0 !important;
-  width: 100% !important;
-  min-height: 150px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-end !important;
-}
-
-/* Responsivo */
-@media (max-width: 768px) {
-  .category-buttons-bottom {
-    min-height: 120px !important;
-    padding: 30px 0 !important;
-  }
-}
-
 /* =============================================== */
-/* ADICIONAR NO FINAL DO modules/gallery.css */
-/* BOTÕES DE NAVEGAÇÃO FIXOS - SOLUÇÃO DEFINITIVA */
+/* BOTÕES DE NAVEGAÇÃO FIXOS - VERSÃO FINAL LIMPA */
 /* =============================================== */
 
 /* Botões de navegação sempre fixos no bottom */
@@ -386,47 +264,65 @@
   padding: 0 !important;
 }
 
-/* Estilos dos botões (mantendo o que já existe) */
+/* Estilos dos botões - cores marrom como logout */
 .category-nav-button,
 .category-nav-button--primary,
 .category-nav-button--secondary {
   padding: 12px 24px !important;
-  border: 1px solid rgba(160, 130, 107, 0.4) !important;
+  border: 1px solid #8b4513 !important; /* Borda marrom */
   border-radius: 25px !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  color: #8b7355 !important;
-  font-weight: 500 !important;
+  background: #8b4513 !important; /* Fundo marrom como logout */
+  color: white !important; /* Texto branco */
+  font-weight: 600 !important;
   font-size: 0.95rem !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
   min-width: 150px !important;
   text-align: center !important;
   font-family: inherit !important;
-  box-shadow: 0 2px 8px rgba(139, 115, 85, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3) !important;
 }
 
 .category-nav-button:hover,
 .category-nav-button--primary:hover,
 .category-nav-button--secondary:hover {
-  background: rgba(160, 130, 107, 0.1) !important;
-  color: #6d5d48 !important;
+  background: #a0522d !important; /* Marrom mais claro no hover */
+  color: white !important; /* Garantir texto branco no hover */
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2) !important;
-  border-color: rgba(160, 130, 107, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4) !important;
+  border-color: #a0522d !important;
 }
 
-/* More Photos Button - posicionamento correto */
+/* Garantir que ambos os botões tenham as mesmas cores */
+.category-nav-button:active,
+.category-nav-button--primary:active,
+.category-nav-button--secondary:active {
+  background: #8b4513 !important;
+  color: white !important;
+  transform: translateY(0) !important;
+}
+
+/* More Photos Button - alinhado com os botões de navegação */
 .load-more-btn.modern {
   position: fixed !important;
   bottom: 80px !important; /* Acima dos botões de navegação */
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  left: 280px !important; /* Mesma posição inicial dos botões */
+  right: 0 !important; /* Mesma largura dos botões */
   z-index: 6 !important;
+  text-align: center !important;
+  pointer-events: none !important; /* Permitir cliques apenas no botão */
+}
+
+.load-more-btn.modern button {
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(8px) !important;
   border-radius: 25px !important;
-  padding: 5px !important;
+  padding: 12px 32px !important;
   box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3) !important;
+  pointer-events: auto !important; /* Reativar cliques no botão */
+  border: none !important;
+  font-weight: 600 !important;
+  color: var(--color-gold) !important;
 }
 
 /* Garantir que fotos não sejam cobertas pelos botões */
@@ -451,10 +347,14 @@
   .category-nav-button--secondary {
     min-width: 200px !important;
     padding: 14px 20px !important;
+    background: #8b4513 !important; /* Manter marrom em mobile */
+    color: white !important; /* Manter texto branco */
   }
   
   .load-more-btn.modern {
     bottom: 120px !important; /* Mais espaço em mobile */
+    left: 0 !important; /* Largura total em mobile */
+    right: 0 !important;
   }
   
   .category-section {
@@ -466,5 +366,9 @@
 @media (max-width: 1024px) and (min-width: 769px) {
   .category-navigation-section {
     left: 250px !important; /* Sidebar menor em tablet */
+  }
+  
+  .load-more-btn.modern {
+    left: 250px !important; /* Alinhado com botões em tablet */
   }
 }
