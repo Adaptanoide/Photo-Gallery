@@ -1186,61 +1186,272 @@ function showBeginningOfGalleryMessage() {
   document.querySelector('.lightbox-content').appendChild(overlay);
 }
 
-// NOVA FUNÇÃO: Pré-carregar mais fotos automaticamente no lightbox (versão silenciosa)
+// ✅ SUBSTITUIR a função preloadMorePhotosInLightbox() existente por esta versão
+
+// NOVA FUNÇÃO: Pré-carregar mais fotos automaticamente no lightbox (versão silenciosa + sync)
 function preloadMorePhotosInLightbox() {
+  console.log(`🔄 [SYNC] Preloading more photos at lightbox index ${currentPhotoIndex}`);
+  
   // Evitar múltiplas requisições simultâneas
-  if (window.isPreloadingLightbox) return;
+  if (window.isPreloadingLightbox) {
+    console.log(`⏳ [SYNC] Already preloading, skipping`);
+    return;
+  }
   window.isPreloadingLightbox = true;
 
   // Identificar categoria atual
   const currentPhoto = photos[currentPhotoIndex];
   if (!currentPhoto || !currentPhoto.folderId) {
+    console.log(`❌ [SYNC] No current photo or folderId found`);
     window.isPreloadingLightbox = false;
     return;
   }
 
   const categoryId = currentPhoto.folderId;
+  console.log(`📂 [SYNC] Current category: ${categoryId}`);
 
   // Verificar cache para saber quantas fotos já carregamos
   const categoryCache = categoryPhotoCache[categoryId];
   if (!categoryCache) {
+    console.log(`❌ [SYNC] No cache found for category ${categoryId}`);
     window.isPreloadingLightbox = false;
     return;
   }
 
   const currentOffset = categoryCache.totalLoaded || photos.length;
+  const batchSize = 15; // Carregar 15 fotos por vez
+  
+  console.log(`📊 [SYNC] Loading ${batchSize} more photos from offset ${currentOffset}`);
 
-  console.log(`[Lightbox] Pré-carregando mais fotos silenciosamente... offset: ${currentOffset}`);
-
-  // Carregar mais 30 fotos (SEM avisos visuais)
-  fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=30`)
+  // Carregar mais fotos (sem avisos visuais no lightbox)
+  fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
     .then(response => response.json())
     .then(newPhotos => {
       if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
-        console.log(`[Lightbox] Não há mais fotos para carregar`);
+        console.log(`✅ [SYNC] No more photos available for category ${categoryId}`);
         window.isPreloadingLightbox = false;
         return;
       }
 
-      console.log(`[Lightbox] Pré-carregadas ${newPhotos.length} fotos adicionais silenciosamente`);
+      console.log(`📸 [SYNC] Loaded ${newPhotos.length} new photos silently`);
 
-      // Atualizar cache
-      categoryCache.photos = categoryCache.photos.concat(newPhotos);
-      categoryCache.totalLoaded += newPhotos.length;
-      categoryCache.hasMore = newPhotos.length >= 30;
-
-      // Atualizar arrays globais
+      // ✅ ATUALIZAR ARRAYS GLOBAIS (para lightbox continuar funcionando)
       newPhotos.forEach(photo => {
-        photoRegistry[photo.id] = photo;
+        if (photo && photo.id) {
+          photoRegistry[photo.id] = photo;
+          // Só adicionar se não existir já
+          if (!photos.find(p => p.id === photo.id)) {
+            photos.push(photo);
+          }
+        }
       });
-      photos = photos.concat(newPhotos);
+
+      // ✅ ATUALIZAR CACHE DA CATEGORIA
+      if (categoryCache.photos) {
+        categoryCache.photos = categoryCache.photos.concat(newPhotos);
+      } else {
+        categoryCache.photos = newPhotos;
+      }
+      categoryCache.totalLoaded = (categoryCache.totalLoaded || 0) + newPhotos.length;
+      categoryCache.hasMore = newPhotos.length >= batchSize;
+
+      console.log(`✅ [SYNC] Cache updated. Total loaded: ${categoryCache.totalLoaded}`);
+
+      // ✅ SINCRONIZAR THUMBNAILS NA INTERFACE (se categoria estiver visível)
+      syncThumbnailsFromLightbox(categoryId, newPhotos);
 
       window.isPreloadingLightbox = false;
-
-      console.log(`[Lightbox] Total de fotos agora: ${photos.length}`);
     })
     .catch(error => {
-      console.error('[Lightbox] Erro ao pré-carregar fotos:', error);
+      console.error(`❌ [SYNC] Error preloading photos:`, error);
       window.isPreloadingLightbox = false;
     });
+}
+
+// ✅ NOVA FUNÇÃO: Sincronizar thumbnails a partir do lightbox
+function syncThumbnailsFromLightbox(categoryId, newPhotos) {
+  // Verificar se esta categoria está sendo exibida atualmente na interface
+  const contentDiv = document.getElementById('content');
+  if (!contentDiv) {
+    console.log(`📱 [SYNC] No content div found`);
+    return;
+  }
+
+  const currentSection = contentDiv.querySelector('#category-section-main');
+  if (!currentSection) {
+    console.log(`📱 [SYNC] Category not currently displayed, skipping thumbnail sync`);
+    return;
+  }
+
+  // Verificar se é a categoria correta (olhar primeira foto visível)
+  const firstVisiblePhoto = currentSection.querySelector('.photo-item[id^="photo-"]');
+  if (!firstVisiblePhoto) {
+    console.log(`📱 [SYNC] No photos visible in section, skipping sync`);
+    return;
+  }
+
+  const firstPhotoId = firstVisiblePhoto.id.replace('photo-', '');
+  const firstPhoto = photos.find(p => p.id === firstPhotoId);
+  
+  if (!firstPhoto || firstPhoto.folderId !== categoryId) {
+    console.log(`📱 [SYNC] Different category displayed (${firstPhoto?.folderId} vs ${categoryId}), skipping sync`);
+    return;
+  }
+
+  console.log(`🎨 [SYNC] Adding ${newPhotos.length} thumbnails to interface silently`);
+
+  // ✅ USAR SISTEMA DE EFEITOS VISUAIS EXISTENTE
+  if (typeof loadPhotosSequentially === 'function') {
+    // Encontrar onde inserir (antes dos botões de navegação)
+    const navigationSection = contentDiv.querySelector('.category-navigation-section');
+    const moreButton = contentDiv.querySelector('.load-more-btn');
+    
+    // Criar container temporário
+    const tempContainer = document.createElement('div');
+    tempContainer.style.display = 'contents';
+    
+    // Inserir no local correto
+    if (moreButton) {
+      currentSection.insertBefore(tempContainer, moreButton);
+    } else if (navigationSection) {
+      currentSection.insertBefore(tempContainer, navigationSection);
+    } else {
+      currentSection.appendChild(tempContainer);
+    }
+    
+    // ✅ CARREGAR COM EFEITOS VISUAIS (delay menor para sync silencioso)
+    loadPhotosSequentially(newPhotos, tempContainer, 60);
+    
+    // Limpar container temporário após carregamento
+    setTimeout(() => {
+      const tempPhotos = tempContainer.querySelectorAll('.photo-item');
+      tempPhotos.forEach(photo => {
+        currentSection.insertBefore(photo, tempContainer);
+      });
+      tempContainer.remove();
+      
+      // ✅ ATUALIZAR BOTÃO "MORE PHOTOS" 
+      updateMorePhotosButtonAfterLightboxSync(categoryId);
+      
+      console.log(`✅ [SYNC] Successfully synced ${newPhotos.length} thumbnails to interface`);
+      
+    }, newPhotos.length * 60 + 200);
+    
+  } else {
+    // Fallback: adicionar sem efeitos visuais
+    console.log(`📱 [SYNC] Adding thumbnails without visual effects (fallback)`);
+    addThumbnailsDirectlyFromLightbox(currentSection, newPhotos);
+  }
+}
+
+// ✅ FUNÇÃO AUXILIAR: Atualizar botão "More Photos" após sync do lightbox
+function updateMorePhotosButtonAfterLightboxSync(categoryId) {
+  const contentDiv = document.getElementById('content');
+  const moreButton = contentDiv.querySelector('.btn-load-more');
+  
+  if (!moreButton) {
+    console.log(`🔘 [SYNC] No "More Photos" button found`);
+    return;
+  }
+  
+  const categoryCache = categoryPhotoCache[categoryId];
+  if (!categoryCache) return;
+  
+  // Calcular fotos restantes
+  const totalPhotos = getTotalPhotosForLightboxSync(categoryId);
+  const remainingPhotos = Math.max(0, totalPhotos - categoryCache.totalLoaded);
+  
+  console.log(`🔘 [SYNC] Remaining photos: ${remainingPhotos} of ${totalPhotos}`);
+  
+  if (remainingPhotos <= 0) {
+    // Não há mais fotos, remover botão suavemente
+    moreButton.style.transition = 'opacity 0.3s ease';
+    moreButton.style.opacity = '0';
+    setTimeout(() => {
+      if (moreButton.parentElement) {
+        moreButton.parentElement.remove();
+      }
+    }, 300);
+    console.log(`🗑️ [SYNC] Removed "More Photos" button - no more photos`);
+  } else {
+    // Atualizar onclick para próximo lote
+    const nextBatchSize = Math.min(15, remainingPhotos);
+    moreButton.onclick = () => {
+      if (typeof loadMorePhotosWithEffects === 'function') {
+        loadMorePhotosWithEffects(categoryId, categoryCache.totalLoaded, nextBatchSize);
+      } else if (typeof loadMorePhotosForCategory === 'function') {
+        loadMorePhotosForCategory(categoryId, categoryCache.totalLoaded, nextBatchSize);
+      }
+    };
+    console.log(`🔄 [SYNC] Updated "More Photos" button for ${remainingPhotos} remaining`);
+  }
+}
+
+// ✅ FUNÇÃO AUXILIAR: Obter total de fotos para sync do lightbox
+function getTotalPhotosForLightboxSync(categoryId) {
+  const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+  if (categoryItem) {
+    const text = categoryItem.textContent;
+    const match = text.match(/\((\d+)\)/);
+    if (match) {
+      return parseInt(match[1]);
+    }
+  }
+  return 100; // Fallback conservador
+}
+
+// ✅ FUNÇÃO FALLBACK: Adicionar thumbnails diretamente (sem efeitos)
+function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
+  const navigationSection = container.querySelector('.category-navigation-section');
+  const moreButton = container.querySelector('.load-more-btn');
+  
+  newPhotos.forEach((photo, index) => {
+    const alreadyAdded = cartIds && cartIds.includes(photo.id);
+    const priceText = photo.price ? `$${photo.price}` : '';
+    
+    const photoElement = document.createElement('div');
+    photoElement.className = 'photo-item';
+    photoElement.id = `photo-${photo.id}`;
+    photoElement.onclick = () => openLightboxById(photo.id, false);
+    photoElement.style.opacity = '0';
+    
+    photoElement.innerHTML = `
+      <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" 
+           alt="${photo.name}" 
+           loading="lazy"
+           onerror="this.parentNode.remove();">
+      <div class="photo-info">
+        <div class="photo-actions-container">
+          <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
+                  id="button-${photo.id}"
+                  onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
+            ${alreadyAdded ? 'Remove' : 'Select'}
+          </button>
+          ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
+        </div>
+      </div>
+    `;
+    
+    // Inserir antes dos botões
+    if (moreButton) {
+      container.insertBefore(photoElement, moreButton);
+    } else if (navigationSection) {
+      container.insertBefore(photoElement, navigationSection);
+    } else {
+      container.appendChild(photoElement);
+    }
+    
+    // Fade-in
+    setTimeout(() => {
+      photoElement.style.transition = 'opacity 0.4s ease';
+      photoElement.style.opacity = '1';
+    }, index * 80);
+  });
+  
+  // Atualizar botões do carrinho
+  setTimeout(() => {
+    if (typeof updateButtonsForCartItems === 'function') {
+      updateButtonsForCartItems();
+    }
+  }, newPhotos.length * 80 + 100);
 }
