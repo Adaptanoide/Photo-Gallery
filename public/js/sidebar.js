@@ -187,7 +187,7 @@ function loadCategoryPhotos(categoryId) {
     });
 }
 
-// ✅ CORREÇÃO SIMPLES - Substituir APENAS a função renderPhotosForCategory
+// ✅ ENCONTRAR função renderPhotosForCategory e SUBSTITUIR por esta versão LIMPA:
 
 function renderPhotosForCategory(categoryPhotos, categoryId) {
   const contentDiv = document.getElementById('content');
@@ -198,13 +198,14 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     return;
   }
 
-  // ✅ MANTER: Todo código existente do título...
+  // RESTAURAR: Criar título da categoria
   if (activeCategory) {
     const categoryItem = document.querySelector(`.category-item[data-category-id="${activeCategory}"]`);
     if (categoryItem) {
       const categoryText = categoryItem.textContent.trim();
       const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
 
+      // Criar container para título e linha divisória
       const titleContainer = document.createElement('div');
       titleContainer.className = 'category-title-container';
       titleContainer.innerHTML = `
@@ -215,12 +216,12 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     }
   }
 
-  // ✅ MANTER: Container das fotos EXATAMENTE como estava
+  // ✅ LAYOUT ORIGINAL: Container das fotos (sem flex problemático)
   const sectionContainer = document.createElement('div');
   sectionContainer.id = 'category-section-main';
   sectionContainer.className = 'category-section';
 
-  // ✅ MANTER: Estilos forçados existentes (NÃO ALTERAR)
+  // FORÇAR estilos de grid diretamente no elemento
   sectionContainer.style.cssText = `
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
@@ -229,43 +230,28 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     max-width: 100% !important;
     box-sizing: border-box !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 0 0 150px 0 !important;
     grid-auto-flow: row !important;
   `;
 
+  // Aplicar estilos no container pai também
   contentDiv.style.cssText = `
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     display: block !important;
+    padding-bottom: 150px !important;
   `;
 
-  // ✅ ADICIONAR: Container apenas para as fotos (sem afetar layout)
   contentDiv.appendChild(sectionContainer);
 
-  // ✅ MANTER: Renderizar fotos (função existente)
+  // Renderizar as fotos usando a função existente
   renderCategoryPhotos(sectionContainer, categoryPhotos);
 
-  // ✅ CRIAR: Área fixa para botões (SEPARADA do layout das fotos)
-  const footerArea = document.createElement('div');
-  footerArea.className = 'category-buttons-bottom';
-  footerArea.id = 'category-footer-area';
-  footerArea.style.cssText = `
-    margin-top: 60px;
-    padding: 40px 0;
-    width: 100%;
-    min-height: 150px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  `;
-  
-  contentDiv.appendChild(footerArea);
+  // ✅ BOTÕES: Usar nova classe CSS (será criada no CSS)
+  addCategoryNavigationButtons(contentDiv, categoryId);
 
-  // ✅ INSERIR: Botões na área separada
-  addCategoryNavigationButtons(footerArea, categoryId);
-
-  // ✅ MANTER: Todo resto do código existente...
+  // DEPOIS verificar se há mais fotos para carregar
   const categoryCache = categoryPhotoCache[categoryId];
   if (categoryCache && categoryCache.hasMore) {
     fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&limit=1&offset=1000`)
@@ -288,19 +274,19 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         if (remainingPhotos > 0) {
           const loadMoreBtn = document.createElement('div');
           loadMoreBtn.className = 'load-more-btn modern';
-          loadMoreBtn.style.cssText = `
-            text-align: center;
-            margin: 40px auto 20px auto;
-            grid-column: 1 / -1;
-          `;
           loadMoreBtn.innerHTML = `
             <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
               More Photos
             </button>
           `;
           
-          // ✅ INSERIR: More Photos ANTES da área de botões
-          contentDiv.insertBefore(loadMoreBtn, footerArea);
+          // ✅ INSERIR: More Photos ANTES dos botões de navegação
+          const navigationSection = contentDiv.querySelector('.category-navigation-section');
+          if (navigationSection) {
+            contentDiv.insertBefore(loadMoreBtn, navigationSection);
+          } else {
+            contentDiv.appendChild(loadMoreBtn);
+          }
         }
       })
       .catch(error => {
@@ -308,7 +294,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
       });
   }
 
-  // ✅ MANTER: Resto igual
+  // Forçar atualização do layout
   setTimeout(() => {
     const computedStyle = window.getComputedStyle(sectionContainer);
     console.log('Grid aplicado:', computedStyle.display, computedStyle.gridTemplateColumns);
