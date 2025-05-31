@@ -9,11 +9,16 @@ function hideLoader() {
   document.getElementById('loader').style.display = 'none';
 }
 
-// Close a modal
 function closeModal(modalId) {
   document.getElementById(modalId).style.display = 'none';
+  
   if (modalId === 'cart-modal') {
     cartModalOpen = false;
+  }
+  
+  // ✅ CORREÇÃO: Ao cancelar admin login, voltar para página de login
+  if (modalId === 'admin-login-modal') {
+    document.getElementById('code-entry-modal').style.display = 'block';
   }
 }
 
