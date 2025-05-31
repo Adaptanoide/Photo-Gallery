@@ -1277,3 +1277,62 @@ function getTotalPhotos(categoryId) {
   }
   return 50; // Fallback
 }
+
+// ✅ ADICIONAR NO FINAL DO sidebar.js - Controle simples de scroll
+
+// Função simples para controlar visibilidade do More Photos
+function initScrollMorePhotos() {
+  // Remover listener anterior se existir
+  window.removeEventListener('scroll', handleScrollMorePhotos);
+  
+  // Adicionar novo listener
+  window.addEventListener('scroll', handleScrollMorePhotos);
+}
+
+// Função que executa no scroll
+function handleScrollMorePhotos() {
+  const morePhotosBtn = document.querySelector('.load-more-btn.modern');
+  if (!morePhotosBtn) return;
+  
+  // Calcular posição do scroll
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const windowHeight = window.innerHeight;
+  const documentHeight = document.documentElement.scrollHeight;
+  
+  // Calcular se está próximo do final (150px do final)
+  const nearBottom = scrollTop + windowHeight >= documentHeight - 150;
+  
+  // Mostrar/esconder botão
+  if (nearBottom) {
+    morePhotosBtn.classList.add('show');
+  } else {
+    morePhotosBtn.classList.remove('show');
+  }
+}
+
+// ✅ MODIFICAÇÃO: Integrar com o sistema existente
+// ENCONTRAR a função renderPhotosForCategory onde cria o loadMoreBtn
+// ADICIONAR APÓS criar o botão:
+
+/*
+// ✅ ADICIONAR APÓS CRIAR O LOADMOREBTN (dentro do then/catch):
+setTimeout(() => {
+  initScrollMorePhotos();
+}, 500);
+*/
+
+// ✅ FUNÇÃO: Cleanup quando muda categoria
+function cleanupScrollMorePhotos() {
+  window.removeEventListener('scroll', handleScrollMorePhotos);
+  
+  const morePhotosBtn = document.querySelector('.load-more-btn.modern');
+  if (morePhotosBtn) {
+    morePhotosBtn.classList.remove('show');
+  }
+}
+
+// ✅ ADICIONAR no início da função loadCategoryPhotos:
+/*
+// ✅ ADICIONAR NO INÍCIO DE loadCategoryPhotos:
+cleanupScrollMorePhotos();
+*/
