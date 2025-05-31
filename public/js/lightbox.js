@@ -515,11 +515,6 @@ function initializeNativeZoom(img) {
 
 // Close the lightbox
 function closeLightbox() {
-  // ✅ RESET modo carrinho se ativo
-  if (cartLightboxMode) {
-    closeCartLightbox();
-    return;
-  }
   // Remover instâncias de zoom se existirem
   if (typeof mediumZoom === 'function') {
     // Remover todas as instâncias Medium Zoom
