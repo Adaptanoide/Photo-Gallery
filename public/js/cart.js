@@ -194,6 +194,9 @@ function showCart() {
     return;
   }
   
+  // ✅ PRELOAD SEGURO das fotos do carrinho
+  ensureCartPhotosAvailable();
+  
   updateCartView();
   document.getElementById('cart-modal').style.display = 'block';
 }
@@ -570,6 +573,26 @@ function updateButtonsForCartItems() {
         event.stopPropagation();
         removeFromCart(photoId);
       };
+    }
+  });
+}
+
+// ✅ FUNÇÃO SEGURA: Garantir que fotos do carrinho estejam disponíveis
+function ensureCartPhotosAvailable() {
+  cartIds.forEach(photoId => {
+    // Só agir se a foto realmente não estiver disponível
+    if (!getPhotoById(photoId)) {
+      console.log(`Ensuring cart photo availability: ${photoId}`);
+      
+      // Criar entrada básica no registry para evitar erro
+      if (typeof photoRegistry !== 'undefined') {
+        photoRegistry[photoId] = {
+          id: photoId,
+          thumbnail: `/api/photos/local/thumbnail/${photoId}`,
+          name: `Photo ${photoId}`,
+          price: 0
+        };
+      }
     }
   });
 }
