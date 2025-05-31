@@ -270,7 +270,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         }
 
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
-        const nextBatchSize = Math.min(30, remainingPhotos); // Carregar máximo 30 por vez
+        const nextBatchSize = Math.min(15, remainingPhotos); // Carregar máximo 15 por vez
 
         // Criar botão "More +XX photos" apenas se há fotos restantes
         if (remainingPhotos > 0) {
