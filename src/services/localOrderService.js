@@ -72,6 +72,7 @@ class LocalOrderService {
             if (sourcePath) {
               const destPath = path.join(categoryPath, `${photo.id}.webp`);
               await fs.copyFile(sourcePath, destPath);
+              await fs.unlink(sourcePath);
               copiedPhotos++;
               console.log(`📋 Foto copiada: ${photo.id}.webp`);
             } else {
