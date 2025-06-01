@@ -65,21 +65,29 @@ class LocalOrderService {
         const categoryPath = path.join(orderPath, categoryName);
         await fs.mkdir(categoryPath, { recursive: true });
 
-        // Copiar cada foto
         for (const photo of photos) {
           try {
+            console.log(`🔍 TESTE: Buscando foto ${photo.id}`);
             const sourcePath = await this.findPhotoPath(photo.id);
+            console.log(`📁 TESTE: sourcePath = ${sourcePath}`);
+            
             if (sourcePath) {
               const destPath = path.join(categoryPath, `${photo.id}.webp`);
+              console.log(`📋 TESTE: Copiando ${sourcePath} → ${destPath}`);
+              
               await fs.copyFile(sourcePath, destPath);
+              console.log(`📋 TESTE: copyFile concluído`);
+              
               await fs.unlink(sourcePath);
+              console.log(`🗑️ TESTE: unlink concluído`);
+              
               copiedPhotos++;
-              console.log(`📋 Foto copiada: ${photo.id}.webp`);
+              console.log(`✅ TESTE: Foto movida: ${photo.id}.webp`);
             } else {
-              console.warn(`⚠️ Foto não encontrada: ${photo.id}`);
+              console.warn(`⚠️ TESTE: Foto não encontrada: ${photo.id}`);
             }
           } catch (copyError) {
-            console.error(`❌ Erro ao copiar foto ${photo.id}:`, copyError);
+            console.error(`❌ TESTE: Erro ao mover foto ${photo.id}:`, copyError);
           }
         }
       }
