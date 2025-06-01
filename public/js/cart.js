@@ -309,11 +309,10 @@ function processOrder(customerName, comments) {
       cartIds = [];
       updateCartCounter();
       
-      // MODIFICAÇÃO: Limpar seleções no Firebase localmente, o backend também faz isso
+      // ✅ NOVA VERSÃO (apenas MongoDB):
       if (currentCustomerCode) {
-        db.collection('customerCodes').doc(currentCustomerCode).update({
-          items: []  // Clear the items array
-        }).catch(err => console.error("Erro ao limpar itens localmente:", err));
+        apiClient.saveCustomerSelections(currentCustomerCode, [])
+          .catch(err => console.error("Erro ao limpar seleções:", err));
       }
       
       // MODIFICAÇÃO: Atualizar mensagem de sucesso para indicar processamento em segundo plano
