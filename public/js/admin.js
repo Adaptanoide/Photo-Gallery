@@ -1123,35 +1123,151 @@ function searchReturnPhotos(searchTerm) {
   }
 }
 
-// Função para abrir foto em fullscreen (return to stock)
+// Função CORRIGIDA para abrir foto em fullscreen
 function openReturnPhotoFullscreen(photoId) {
-  // Usar o mesmo lightbox do photo storage
+  console.log(`Opening fullscreen for: ${photoId}`);
+  
+  // Verificar se já existe um lightbox e remover
+  const existingLightbox = document.getElementById('return-lightbox-modal');
+  if (existingLightbox) {
+    existingLightbox.remove();
+  }
+  
+  // URL da foto (mesmo padrão do sistema)
   const photoUrl = `/photo/${photoId}.webp`;
   
-  // Criar modal fullscreen simples
+  // Criar lightbox com z-index muito alto
   const lightboxHtml = `
-    <div id="return-lightbox-modal" class="modal" style="display: block; z-index: 300;">
-      <div class="modal-content" style="max-width: 95vw; max-height: 95vh; padding: 20px; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h3 style="margin: 0; color: #333;">${photoId}.webp</h3>
-          <button onclick="closeReturnLightbox()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+    <div id="return-lightbox-modal" class="modal" style="display: block !important; z-index: 999999 !important; background: rgba(0, 0, 0, 0.9);">
+      <div class="lightbox-content" style="
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100vw; 
+        height: 100vh; 
+        display: flex; 
+        flex-direction: column; 
+        z-index: 999999;
+        padding: 20px;
+        box-sizing: border-box;
+      ">
+        
+        <!-- Header com controles -->
+        <div class="lightbox-header" style="
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          margin-bottom: 20px;
+          color: white;
+          z-index: 1000000;
+        ">
+          <h3 style="margin: 0; color: white; font-size: 18px;">${photoId}.webp</h3>
+          
+          <div style="display: flex; gap: 15px; align-items: center;">
+            <button onclick="returnPhotoFromLightbox('${photoId}')" 
+                    style="
+                      padding: 8px 16px; 
+                      background: #d4a574; 
+                      color: white; 
+                      border: none; 
+                      border-radius: 4px; 
+                      cursor: pointer;
+                      font-size: 14px;
+                    ">
+              📦 Return This Photo
+            </button>
+            
+            <button onclick="closeReturnLightbox()" 
+                    style="
+                      background: none; 
+                      border: none; 
+                      font-size: 28px; 
+                      cursor: pointer; 
+                      color: white;
+                      line-height: 1;
+                    ">
+              ×
+            </button>
+          </div>
         </div>
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-          <img src="${photoUrl}" alt="${photoId}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        
+        <!-- Área da imagem -->
+        <div class="lightbox-image-container" style="
+          flex: 1; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          position: relative;
+        ">
+          <img src="${photoUrl}" 
+               alt="${photoId}" 
+               onload="console.log('Image loaded successfully')"
+               onerror="console.error('Failed to load image:', '${photoUrl}')"
+               style="
+                 max-width: 90%; 
+                 max-height: 90%; 
+                 object-fit: contain;
+                 border-radius: 8px;
+                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+               ">
+        </div>
+        
+        <!-- Footer com instruções -->
+        <div class="lightbox-footer" style="
+          text-align: center; 
+          color: white; 
+          font-size: 14px; 
+          margin-top: 20px;
+          opacity: 0.8;
+        ">
+          Click outside image or press × to close
         </div>
       </div>
     </div>
   `;
   
+  // Adicionar ao body
   document.body.insertAdjacentHTML('beforeend', lightboxHtml);
+  
+  // Fechar ao clicar fora da imagem
+  setTimeout(() => {
+    const lightboxModal = document.getElementById('return-lightbox-modal');
+    if (lightboxModal) {
+      lightboxModal.addEventListener('click', function(e) {
+        if (e.target === lightboxModal) {
+          closeReturnLightbox();
+        }
+      });
+    }
+  }, 100);
 }
 
 // Função para fechar lightbox
 function closeReturnLightbox() {
   const lightbox = document.getElementById('return-lightbox-modal');
   if (lightbox) {
-    lightbox.remove();
+    lightbox.style.opacity = '0';
+    lightbox.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => {
+      lightbox.remove();
+    }, 300);
   }
+}
+
+// Função para retornar foto específica do lightbox
+function returnPhotoFromLightbox(photoId) {
+  // Marcar a foto como selecionada
+  const checkbox = document.querySelector(`input.photo-checkbox[value="${photoId}"]`);
+  if (checkbox) {
+    checkbox.checked = true;
+    updateReturnSelection();
+  }
+  
+  // Fechar lightbox
+  closeReturnLightbox();
+  
+  // Mostrar feedback
+  console.log(`Photo ${photoId} marked for return`);
 }
 
 // Função para alternar seleção de categoria
