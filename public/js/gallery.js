@@ -172,7 +172,7 @@ function initializeGallery() {
   contentDiv.className = 'gallery';
   
   // Mostrar tutorial em vez da mensagem simples
-  showTutorial();
+  showWelcome();
   
   console.log("Gallery initialized with tutorial - awaiting category selection");
   
@@ -993,6 +993,23 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
   } else {
     showToast('Esta é a primeira categoria!', 'info');
   }
+}
+
+// NOVA FUNÇÃO: Boas-vindas simples
+function showWelcome() {
+  const contentDiv = document.getElementById('content');
+  
+  contentDiv.innerHTML = `
+    <div class="tutorial-container">
+      <div class="tutorial-header">
+        <h1 class="tutorial-title">Welcome</h1>
+      </div>
+      
+      <div class="tutorial-cta">
+        <button class="cta-button" onclick="focusOnFirstCategory()">Get Started</button>
+      </div>
+    </div>
+  `;
 }
 
 // FUNÇÃO ATUALIZADA: Tornar o botão de ajuda globalmente acessível
