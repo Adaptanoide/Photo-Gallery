@@ -836,11 +836,7 @@ async function checkCartAvailability() {
       });
       
       // Mostrar notificação
-      showToast(
-        `${unavailableItems.length} item(s) foram removidos do seu carrinho porque já foram vendidos por outros clientes.`, 
-        'warning',
-        5000
-      );
+      showCartUpdateNotification(unavailableItems.length);
     } else {
       console.log('✅ Todos os itens do carrinho ainda estão disponíveis');
     }
@@ -869,6 +865,63 @@ function markPhotoAsSoldInInterface(photoId) {
     }
     
     console.log(`🎨 Foto ${photoId} marcada como vendida na interface`);
+  }
+}
+
+// 🔧 NOVA FUNÇÃO: Notificação elegante para itens removidos
+function showCartUpdateNotification(removedCount) {
+  // Criar overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'cart-notification-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  `;
+  
+  // Criar modal
+  const modal = document.createElement('div');
+  modal.className = 'cart-notification-modal';
+  modal.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  `;
+  
+  modal.innerHTML = `
+    <h3 style="color: #ff6b6b; margin-bottom: 15px;">⚠️ Cart Updated</h3>
+    <p style="color: #333; margin-bottom: 20px;">
+      ${removedCount} item(s) were removed from your cart because they were purchased by other customers.
+    </p>
+    <button class="btn btn-gold" onclick="closeCartNotification(this)">
+      Close & Update Gallery
+    </button>
+  `;
+  
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+// Função auxiliar para fechar notificação
+function closeCartNotification(button) {
+  const overlay = button.closest('.cart-notification-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+  
+  // Atualizar interface removendo thumbnails vendidas
+  if (typeof checkAndRemoveSoldPhotosFromInterface === 'function') {
+    checkAndRemoveSoldPhotosFromInterface();
   }
 }
 
