@@ -92,28 +92,39 @@ try {
 // NOVO: Cache em memória para referências rápidas
 const imageCache = {};
 
-// ADICIONAR esta função auxiliar ANTES de processOrderInBackground:
+// CORRIGIDA: Encontrar categoria real da foto específica
 async function findPhotoInLocalIndex(index, photoId) {
-  // Função recursiva para procurar a foto no índice
-  const searchInFolder = (folder, parentPath = []) => {
+  console.log(`🔍 [DEBUG] Buscando categoria real para foto: ${photoId}`);
+  
+  // Função recursiva para procurar a foto FISICAMENTE
+  const searchInFolder = async (folder, parentPath = []) => {
     const currentPath = [...parentPath, folder.name];
 
-    // Se esta pasta tem fotos, verificar se nossa foto está aqui
-    if (folder.photoCount > 0) {
-      // Construir caminho da pasta
-      const folderPath = folder.relativePath;
-
-      return {
-        categoryName: folder.name,
-        categoryPath: folderPath,
-        fullPath: currentPath.join(' → ')
-      };
+    // Se esta pasta tem fotos, verificar FISICAMENTE se nossa foto está aqui
+    if (folder.photoCount > 0 && folder.relativePath) {
+      try {
+        const folderPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', folder.relativePath);
+        const photoPath = path.join(folderPath, `${photoId}.webp`);
+        
+        // ✅ VERIFICAR SE ARQUIVO EXISTE FISICAMENTE
+        await fs_promises.access(photoPath);
+        
+        console.log(`✅ [DEBUG] Foto ${photoId} encontrada em: ${folder.name}`);
+        return {
+          categoryName: folder.name,
+          categoryPath: folder.relativePath,
+          fullPath: currentPath.join(' → ')
+        };
+      } catch (error) {
+        // Foto não está nesta pasta, continuar procurando
+        console.log(`🔍 [DEBUG] Foto ${photoId} NÃO está em: ${folder.name}`);
+      }
     }
 
     // Buscar nas subpastas
     if (folder.children && folder.children.length > 0) {
       for (const child of folder.children) {
-        const result = searchInFolder(child, currentPath);
+        const result = await searchInFolder(child, currentPath);
         if (result) return result;
       }
     }
@@ -124,11 +135,12 @@ async function findPhotoInLocalIndex(index, photoId) {
   // Buscar em todas as pastas raiz
   if (index.folders) {
     for (const folder of index.folders) {
-      const result = searchInFolder(folder);
+      const result = await searchInFolder(folder);
       if (result) return result;
     }
   }
 
+  console.warn(`⚠️ [DEBUG] Foto ${photoId} não encontrada em nenhuma categoria`);
   return null;
 }
 
