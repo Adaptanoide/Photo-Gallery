@@ -999,10 +999,14 @@ function showWelcome() {
   const contentDiv = document.getElementById('content');
   
   contentDiv.innerHTML = `
-    <div class="tutorial-container">
+    <div class="tutorial-container" style="
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    ">
       <div class="tutorial-header">
         <h1 class="tutorial-title">Welcome to Our Gallery</h1>
-        <p class="tutorial-subtitle">Browse and select your premium leather products</p>
+        <p class="tutorial-subtitle">Browse and select your products</p>
       </div>
       
       <div class="welcome-instruction" style="text-align: center; margin: 50px 0; position: relative;">
@@ -1039,7 +1043,13 @@ function showWelcome() {
         </div>
       </div>
       
-      <div class="tutorial-cta" style="text-align: center; margin-top: 40px;">
+      <div class="tutorial-cta" style="
+        text-align: center; 
+        margin-top: 40px;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+      ">
         <button class="cta-button" onclick="focusOnFirstCategory()">Get Started</button>
       </div>
     </div>
