@@ -108,8 +108,7 @@ function showSoldPhotoLightbox(photoId) {
       <h3>⚠️ Already Sold</h3>
       <p>This item has been purchased by another customer and is no longer available.</p>
       <div style="margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeLightbox()">Close</button>
-        <button class="btn btn-gold" onclick="closeLightbox(); window.location.reload()">Refresh Gallery</button>
+        <button class="btn btn-secondary" onclick="closeLightbox(); updateGalleryAfterSold()">Close</button>
       </div>
     </div>
   `;
@@ -684,7 +683,21 @@ async function checkAndRemoveSoldPhotosFromInterface() {
       photoIds.forEach(photoId => {
         const availability = result.results[photoId];
         if (!availability || !availability.available) {
+          // Marcar como vendida primeiro
           markPhotoAsSoldInInterface(photoId);
+          
+          // REMOVER a thumbnail após um pequeno delay para efeito visual
+          setTimeout(() => {
+            const photoElement = document.getElementById(`photo-${photoId}`);
+            if (photoElement) {
+              photoElement.style.transition = 'opacity 0.3s ease-out';
+              photoElement.style.opacity = '0';
+              
+              setTimeout(() => {
+                photoElement.remove();
+              }, 300);
+            }
+          }, 100);
         }
       });
     }
@@ -1807,4 +1820,13 @@ function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
   } catch (error) {
     console.error(`❌ [SYNC] Critical error in fallback method:`, error);
   }
+}
+
+// 🔧 NOVA FUNÇÃO: Atualizar galeria sem refresh
+function updateGalleryAfterSold() {
+  // Verificar e remover todas as fotos vendidas
+  checkAndRemoveSoldPhotosFromInterface();
+  
+  // Mostrar notificação suave
+  showToast('Gallery updated - sold items removed', 'info');
 }
