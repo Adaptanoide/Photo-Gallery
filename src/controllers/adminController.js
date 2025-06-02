@@ -96,6 +96,11 @@ exports.getLeafFolders = async function(req, res) {
     }
     
     let folders = result.folders || [];
+
+    // 🔧 FILTRAR PASTAS ADMINISTRATIVAS para Photo Storage
+    const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
+    folders = folders.filter(folder => !adminFoldersToExclude.includes(folder.name));
+    console.log(`📋 Filtered out admin folders. Returning ${folders.length} folders`);
     
     console.log(`Found ${folders.length} folders (includeEmpty: ${includeEmptyFolders})`);
     
