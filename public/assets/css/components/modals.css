@@ -168,6 +168,33 @@
   border-radius: 6px;
 }
 
+/* Return to Stock Modal - CORREÇÃO */
+#return-to-stock-modal .modal-content {
+  max-width: 900px !important;
+  width: 95% !important;
+  max-height: 90vh !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#return-to-stock-modal #return-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+#return-to-stock-modal .modal-actions {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 15px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
 /* Media queries */
 @media (max-width: 768px) {
   .modal-content {
