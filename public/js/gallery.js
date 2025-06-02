@@ -1021,8 +1021,8 @@ function showWelcome() {
         </p>
         
         <p style="
-          font-size: 14px; 
-          color: #888; 
+          font-size: 18px; 
+          color: #555; 
           margin-bottom: 0;
           animation: fadeInUp 1s ease-out;
         ">
