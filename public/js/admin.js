@@ -1134,7 +1134,7 @@ function openReturnPhotoFullscreen(photoId) {
   }
   
   // URL da foto (mesmo padrão do sistema)
-  const photoUrl = `/photo/${photoId}.webp`;
+  const photoUrl = `/api/photos/local/thumbnail/${photoId}`;
   
   // Criar lightbox com z-index muito alto
   const lightboxHtml = `
