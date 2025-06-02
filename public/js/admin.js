@@ -962,7 +962,7 @@ async function loadOrderPhotosForReturn(folderId) {
   }
 }
 
-// Função para renderizar interface de seleção de fotos
+// NOVA FUNÇÃO: Interface hierárquica com pesquisa global
 function renderReturnPhotosInterface(categories) {
   const container = document.getElementById('return-categories-container');
   
@@ -974,47 +974,161 @@ function renderReturnPhotosInterface(categories) {
     `;
     return;
   }
-  
-  let html = '';
-  
+
+  // Estrutura principal com pesquisa global
+  let html = `
+    <!-- Barra de Pesquisa Global -->
+    <div class="return-search-section" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 14px; color: #666;">🔍</span>
+        <input 
+          type="text" 
+          id="return-photo-search" 
+          placeholder="Search photo by ID (e.g., 11055)" 
+          style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+          oninput="searchReturnPhotos(this.value)"
+        >
+        <span id="search-results-count" style="font-size: 12px; color: #666;"></span>
+      </div>
+    </div>
+
+    <!-- Categorias Colapsáveis -->
+    <div class="return-categories-list">
+  `;
+
+  // Renderizar cada categoria como colapsável
   categories.forEach(category => {
+    const photoCount = category.items ? category.items.length : 0;
+    
     html += `
-      <div class="category-section" data-category-id="${category.id}" style="margin-bottom: 25px; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
-        <div class="category-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h4 style="margin: 0; color: #333;">${category.name}</h4>
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666;">
+      <div class="return-category-item" data-category-id="${category.id}" style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        
+        <!-- Header da Categoria (Clicável) -->
+        <div class="category-header-clickable" 
+             onclick="toggleReturnCategory('${category.id}')" 
+             style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; cursor: pointer; transition: background 0.2s;">
+          
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="category-toggle-icon" id="toggle-${category.id}" style="font-size: 14px; color: #666;">▶️</span>
+            <h4 style="margin: 0; color: #333; font-size: 16px;">${category.name}</h4>
+            <span style="background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 12px; color: #666;">${photoCount} photos</span>
+          </div>
+          
+          <label onclick="event.stopPropagation()" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666;">
             <input type="checkbox" class="select-all-category" onchange="toggleCategorySelection('${category.id}', this.checked)">
-            Select All (${category.items ? category.items.length : 0})
+            Select All
           </label>
         </div>
-        
-        <div class="photos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;">
+
+        <!-- Lista de Fotos (Colapsada por padrão) -->
+        <div class="category-photos-list" 
+             id="photos-${category.id}" 
+             style="display: none; padding: 0; background: white;">
     `;
-    
+
+    // Renderizar fotos em formato de lista
     if (category.items && category.items.length > 0) {
       category.items.forEach(item => {
         html += `
-          <div class="photo-item" style="text-align: center; border: 1px solid #eee; border-radius: 4px; padding: 8px;">
-            <label style="display: block; cursor: pointer;">
-              <input type="checkbox" class="photo-checkbox" value="${item.id}" 
-                onchange="updateReturnSelection()" style="margin-bottom: 5px;">
-              <div style="width: 100px; height: 100px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
-                <span style="font-size: 12px; color: #666;">📷</span>
-              </div>
-              <div style="font-size: 11px; color: #666; word-break: break-all;">${item.name || item.id}.webp</div>
-            </label>
+          <div class="photo-list-item" 
+               data-photo-id="${item.id}"
+               style="display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s;"
+               onmouseover="this.style.background='#f8f9fa'" 
+               onmouseout="this.style.background='white'">
+            
+            <input type="checkbox" 
+                   class="photo-checkbox" 
+                   value="${item.id}" 
+                   onchange="updateReturnSelection()" 
+                   style="margin-right: 12px;">
+            
+            <div class="photo-icon" style="width: 24px; height: 24px; background: #e9ecef; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+              <span style="font-size: 12px; color: #666;">📷</span>
+            </div>
+            
+            <div class="photo-info" style="flex: 1;">
+              <div style="font-weight: 500; color: #333; font-size: 14px;">${item.id}.webp</div>
+              <div style="font-size: 12px; color: #666; margin-top: 2px;">Category: ${category.name}</div>
+            </div>
+            
+            <button class="photo-preview-btn" 
+                    onclick="previewReturnPhoto('${item.id}')"
+                    style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; background: white; color: #666; font-size: 12px; cursor: pointer;">
+              👁️ Preview
+            </button>
           </div>
         `;
       });
+    } else {
+      html += `
+        <div style="padding: 20px; text-align: center; color: #999; font-style: italic;">
+          No photos in this category
+        </div>
+      `;
     }
-    
+
     html += `
         </div>
       </div>
     `;
   });
-  
+
+  html += `</div>`;
   container.innerHTML = html;
+}
+
+// Função para expandir/colapsar categoria
+function toggleReturnCategory(categoryId) {
+  const photosList = document.getElementById(`photos-${categoryId}`);
+  const toggleIcon = document.getElementById(`toggle-${categoryId}`);
+  
+  if (photosList.style.display === 'none') {
+    photosList.style.display = 'block';
+    toggleIcon.textContent = '🔽';
+  } else {
+    photosList.style.display = 'none';
+    toggleIcon.textContent = '▶️';
+  }
+}
+
+// Função para pesquisa global
+function searchReturnPhotos(searchTerm) {
+  const allPhotoItems = document.querySelectorAll('.photo-list-item');
+  const resultCount = document.getElementById('search-results-count');
+  let visibleCount = 0;
+  
+  allPhotoItems.forEach(item => {
+    const photoId = item.dataset.photoId;
+    const isMatch = photoId.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    item.style.display = isMatch ? 'flex' : 'none';
+    if (isMatch) visibleCount++;
+  });
+  
+  // Expandir categorias que têm resultados se há busca
+  if (searchTerm.trim()) {
+    document.querySelectorAll('.return-category-item').forEach(category => {
+      const hasVisiblePhotos = category.querySelectorAll('.photo-list-item[style*="flex"]').length > 0;
+      if (hasVisiblePhotos) {
+        const categoryId = category.dataset.categoryId;
+        const photosList = document.getElementById(`photos-${categoryId}`);
+        const toggleIcon = document.getElementById(`toggle-${categoryId}`);
+        photosList.style.display = 'block';
+        toggleIcon.textContent = '🔽';
+      }
+    });
+    
+    resultCount.textContent = `${visibleCount} results found`;
+  } else {
+    resultCount.textContent = '';
+  }
+}
+
+// Função para preview de foto (placeholder)
+function previewReturnPhoto(photoId) {
+  // TODO: Implementar lightbox preview
+  console.log(`Preview photo: ${photoId}`);
+  alert(`Preview functionality for ${photoId} - Coming soon!`);
 }
 
 // Função para alternar seleção de categoria
