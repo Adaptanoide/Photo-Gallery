@@ -176,7 +176,8 @@ async function checkPhotosAvailability(photoIds) {
 
 exports.submitOrder = async (req, res) => {
   try {
-    const { code, comments, photoIds } = req.body;
+    const { code, comments } = req.body;
+    let photoIds = req.body.photoIds;
 
     if (!code || !photoIds || !Array.isArray(photoIds) || photoIds.length === 0) {
       return res.status(400).json({
