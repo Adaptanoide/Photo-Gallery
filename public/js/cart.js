@@ -297,7 +297,6 @@ function submitOrder() {
     });
 }
 
-// FUNÇÃO MODIFICADA: Process order com resposta mais rápida
 function processOrder(customerName, comments) {
   apiClient.sendOrder(customerName, comments, cartIds)
   .then(function(result) {
@@ -305,32 +304,97 @@ function processOrder(customerName, comments) {
     closeModal('cart-modal');
     
     if (result.success) {
-      // Limpar seleções na interface (a API já cuidará de limpar no Firebase)
+      // Limpar seleções na interface
       cartIds = [];
       updateCartCounter();
       
-      // ✅ NOVA VERSÃO (apenas MongoDB):
+      // Limpar seleções no MongoDB
       if (currentCustomerCode) {
         apiClient.saveCustomerSelections(currentCustomerCode, [])
           .catch(err => console.error("Erro ao limpar seleções:", err));
       }
       
-      // MODIFICAÇÃO: Atualizar mensagem de sucesso para indicar processamento em segundo plano
-      const successMessage = document.querySelector('#success-modal p');
-      if (successMessage) {
-        successMessage.innerHTML = `Your selection has been submitted to our sales team. The images are being processed and a representative will contact you shortly to discuss your selected premium hides.<br><br>You can close this page now, the processing will continue in the background.`;
+      // 🔧 NOVA LÓGICA: Verificar se houve conflitos
+      let successMessage = '';
+      
+      if (result.removedPhotos && result.removedPhotos > 0) {
+        // Houve conflitos - algumas fotos foram removidas
+        successMessage = `
+          <div style="margin-bottom: 15px;">
+            <strong>✅ Pedido enviado com sucesso!</strong>
+          </div>
+          
+          <div style="background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
+            <strong>⚠️ Atenção:</strong> ${result.removedPhotos} foto(s) já haviam sido vendidas por outros clientes e foram removidas automaticamente da sua seleção.
+          </div>
+          
+          <div>
+            <strong>📦 Seu pedido foi processado com ${result.processedPhotos} fotos.</strong><br><br>
+            Nossa equipe de vendas entrará em contato em breve para discutir os produtos selecionados.
+          </div>
+          
+          <div style="margin-top: 15px; font-size: 14px; color: #666;">
+            Você pode fechar esta página agora. O processamento continuará em segundo plano.
+          </div>
+        `;
+      } else {
+        // Sem conflitos - mensagem normal
+        successMessage = `
+          <div>
+            <strong>✅ Pedido enviado com sucesso!</strong><br><br>
+            Todas as ${result.processedPhotos} fotos selecionadas estão sendo processadas. 
+            Nossa equipe de vendas entrará em contato em breve.
+          </div>
+          
+          <div style="margin-top: 15px; font-size: 14px; color: #666;">
+            Você pode fechar esta página agora. O processamento continuará em segundo plano.
+          </div>
+        `;
       }
       
-      // Display success modal
+      // Atualizar modal de sucesso
+      const successMessageElement = document.querySelector('#success-modal p');
+      if (successMessageElement) {
+        successMessageElement.innerHTML = successMessage;
+      }
+      
+      // Mostrar modal de sucesso
       document.getElementById('success-modal').style.display = 'block';
+      
     } else {
-      alert('Error sending order: ' + result.message);
+      // Erro no processamento
+      handleOrderError(result);
     }
   })
   .catch(function(error) {
     hideLoader();
-    alert('Error sending order: ' + error);
+    handleOrderError(error);
   });
+}
+
+// 🔧 NOVA FUNÇÃO: Tratar erros de pedido
+function handleOrderError(error) {
+  console.error('Order error:', error);
+  
+  // Verificar se é erro de conflito total
+  if (error.conflictType === 'all_unavailable') {
+    // Todas as fotos foram vendidas
+    alert(`❌ Todas as fotos selecionadas já foram vendidas por outros clientes.\n\nSua seleção foi limpa automaticamente.\n\nPor favor, selecione outras fotos e tente novamente.`);
+    
+    // Limpar carrinho local
+    cartIds = [];
+    updateCartCounter();
+    
+    // Recarregar página para mostrar estado atualizado
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+    
+  } else {
+    // Outros tipos de erro
+    const message = error.message || 'Erro desconhecido ao processar pedido';
+    alert(`❌ Erro ao enviar pedido:\n\n${message}\n\nTente novamente.`);
+  }
 }
 
 // MODIFIED: Save customer selections - replace Firebase update()

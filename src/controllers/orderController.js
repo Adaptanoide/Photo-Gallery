@@ -144,7 +144,36 @@ async function findPhotoInLocalIndex(index, photoId) {
   return null;
 }
 
-// Enviar pedido
+/**
+ * Verificar se fotos ainda estão disponíveis fisicamente
+ */
+async function checkPhotosAvailability(photoIds) {
+  console.log(`🔍 Verificando disponibilidade de ${photoIds.length} fotos...`);
+  
+  const available = [];
+  const unavailable = [];
+  
+  for (const photoId of photoIds) {
+    try {
+      const sourcePath = await localOrderService.findPhotoPath(photoId);
+      
+      if (sourcePath) {
+        await fs_promises.access(sourcePath);
+        available.push(photoId);
+        console.log(`✅ Foto disponível: ${photoId}`);
+      } else {
+        unavailable.push(photoId);
+        console.log(`❌ Foto não encontrada: ${photoId}`);
+      }
+    } catch (error) {
+      unavailable.push(photoId);
+      console.log(`❌ Foto indisponível: ${photoId} (${error.message})`);
+    }
+  }
+  
+  return { available, unavailable };
+}
+
 exports.submitOrder = async (req, res) => {
   try {
     const { code, comments, photoIds } = req.body;
@@ -166,7 +195,42 @@ exports.submitOrder = async (req, res) => {
       });
     }
 
-    // MODIFICADO: Registrar o pedido no MongoDB e obter o ID gerado
+    // 🔒 NOVA VERIFICAÇÃO: Checar se fotos ainda estão disponíveis
+    console.log(`🔍 Verificando disponibilidade das fotos selecionadas...`);
+    const availabilityCheck = await checkPhotosAvailability(photoIds);
+    
+    // Se há fotos indisponíveis
+    if (availabilityCheck.unavailable.length > 0) {
+      console.log(`⚠️ Conflito detectado: ${availabilityCheck.unavailable.length} fotos já foram vendidas`);
+      
+      // Se TODAS as fotos estão indisponíveis
+      if (availabilityCheck.available.length === 0) {
+        // Limpar seleções do cliente
+        await mongoService.saveCustomerSelections(code, []);
+        
+        return res.status(409).json({
+          success: false,
+          message: 'Todas as fotos selecionadas já foram vendidas por outros clientes. Sua seleção foi limpa automaticamente.',
+          conflictType: 'all_unavailable',
+          unavailablePhotos: availabilityCheck.unavailable
+        });
+      }
+      
+      // Se ALGUMAS fotos estão indisponíveis
+      console.log(`✅ Continuando com ${availabilityCheck.available.length} fotos disponíveis`);
+      
+      // Atualizar seleções do cliente removendo fotos conflitantes
+      await mongoService.saveCustomerSelections(code, availabilityCheck.available);
+      
+      // Usar apenas fotos disponíveis
+      photoIds = availabilityCheck.available;
+      
+      // Continuar o processamento e avisar no final
+    } else {
+      console.log(`✅ Todas as ${photoIds.length} fotos estão disponíveis`);
+    }
+
+    // Registrar o pedido no MongoDB e obter o ID gerado
     const orderDoc = await Order.create({
       customerCode: code,
       customerName: customer.customerName,
@@ -176,7 +240,6 @@ exports.submitOrder = async (req, res) => {
       createdAt: new Date()
     });
 
-    // Usar o ID gerado pelo MongoDB
     const orderId = orderDoc._id;
 
     // Atualizar cliente para indicar processamento em andamento
@@ -192,11 +255,18 @@ exports.submitOrder = async (req, res) => {
     // Limpar seleções do cliente imediatamente
     await mongoService.saveCustomerSelections(code, []);
 
-    // Responder ao cliente rapidamente
+    // Responder ao cliente
+    const responseMessage = availabilityCheck.unavailable.length > 0 
+      ? `Seu pedido foi recebido com ${photoIds.length} fotos. ${availabilityCheck.unavailable.length} fotos já haviam sido vendidas e foram removidas automaticamente.`
+      : 'Seu pedido foi recebido e está sendo processado';
+
     res.status(200).json({
       success: true,
-      message: 'Seu pedido foi recebido e está sendo processado',
-      orderId: orderId
+      message: responseMessage,
+      orderId: orderId,
+      processedPhotos: photoIds.length,
+      removedPhotos: availabilityCheck.unavailable.length,
+      unavailablePhotos: availabilityCheck.unavailable
     });
 
     // Continuar o processamento após responder ao cliente
