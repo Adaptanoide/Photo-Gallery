@@ -979,7 +979,7 @@ function renderReturnPhotosInterface(categories) {
   
   categories.forEach(category => {
     html += `
-      <div class="category-section" style="margin-bottom: 25px; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
+      <div class="category-section" data-category-id="${category.id}" style="margin-bottom: 25px; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
         <div class="category-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h4 style="margin: 0; color: #333;">${category.name}</h4>
           <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666;">
