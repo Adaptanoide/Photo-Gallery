@@ -170,7 +170,7 @@ class LocalStorageService {
     }
 
     // Adicionar "All Items" para clientes
-    if (!isAdmin && folders.length > 0) {
+    if (!isAdmin && !useLeafFolders && folders.length > 0) {
       folders.unshift({
         id: 'all-items',
         name: 'All Items',
