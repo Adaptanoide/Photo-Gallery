@@ -70,17 +70,17 @@ class LocalOrderService {
             console.log(`🔍 TESTE: Buscando foto ${photo.id}`);
             const sourcePath = await this.findPhotoPath(photo.id);
             console.log(`📁 TESTE: sourcePath = ${sourcePath}`);
-            
+
             if (sourcePath) {
               const destPath = path.join(categoryPath, `${photo.id}.webp`);
               console.log(`📋 TESTE: Copiando ${sourcePath} → ${destPath}`);
-              
+
               await fs.copyFile(sourcePath, destPath);
               console.log(`📋 TESTE: copyFile concluído`);
-              
+
               await fs.unlink(sourcePath);
               console.log(`🗑️ TESTE: unlink concluído`);
-              
+
               copiedPhotos++;
               console.log(`✅ TESTE: Foto movida: ${photo.id}.webp`);
             } else {
@@ -93,6 +93,9 @@ class LocalOrderService {
       }
 
       console.log(`✅ ${copiedPhotos} fotos copiadas com sucesso`);
+
+      // 🔧 NOVO: Atualizar contadores das categorias originais
+      await this.updateSourceCategoriesCount(photosByCategory);
 
       // Atualizar índice
       const folderId = localStorageService.generateId();
@@ -590,6 +593,60 @@ class LocalOrderService {
     };
 
     return await searchInFolder(this.ordersPath);
+  }
+
+  // 🔧 NOVA FUNÇÃO: Atualizar contadores das categorias de origem
+  async updateSourceCategoriesCount(photosByCategory) {
+    try {
+      console.log(`📊 Atualizando contadores das categorias de origem...`);
+
+      const index = await localStorageService.getIndex();
+      let updated = false;
+
+      // Para cada categoria que teve fotos movidas
+      for (const [categoryName, photos] of Object.entries(photosByCategory)) {
+        const photoCount = photos.length;
+        console.log(`📉 Categoria "${categoryName}": diminuindo ${photoCount} fotos`);
+
+        // Encontrar categoria no índice
+        const category = this.findCategoryByNameInIndex(index, categoryName);
+        if (category) {
+          category.photoCount = Math.max(0, (category.photoCount || 0) - photoCount);
+          console.log(`✅ "${categoryName}": novo contador = ${category.photoCount}`);
+          updated = true;
+        } else {
+          console.warn(`⚠️ Categoria "${categoryName}" não encontrada no índice`);
+        }
+      }
+
+      if (updated) {
+        // Salvar índice atualizado
+        await localStorageService.saveIndex(index);
+        localStorageService.clearCache();
+        console.log(`✅ Contadores das categorias atualizados`);
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao atualizar contadores das categorias:', error);
+    }
+  }
+
+  // 🔧 FUNÇÃO AUXILIAR: Encontrar categoria por nome no índice
+  findCategoryByNameInIndex(index, categoryName) {
+    const searchInFolders = (folders) => {
+      for (const folder of folders) {
+        if (folder.name === categoryName) {
+          return folder;
+        }
+        if (folder.children && folder.children.length > 0) {
+          const found = searchInFolders(folder.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return searchInFolders(index.folders || []);
   }
 
 }
