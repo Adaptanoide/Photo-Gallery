@@ -1005,14 +1005,87 @@ function showWelcome() {
         <p class="tutorial-subtitle">Browse and select your premium leather products</p>
       </div>
       
-      <div class="welcome-instruction">
-        <p class="instruction-text">Choose a category from the sidebar to start exploring</p>
+      <div class="welcome-instruction" style="text-align: center; margin: 40px 0; position: relative;">
+        <div class="instruction-highlight" style="
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border: 2px solid #d4a574;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 30px;
+          box-shadow: 0 4px 15px rgba(212, 165, 116, 0.2);
+          animation: fadeInUp 0.8s ease-out;
+        ">
+          <p class="instruction-text" style="
+            font-size: 16px; 
+            color: #555; 
+            margin: 0;
+            font-weight: 500;
+          ">
+            Choose a category from the sidebar to start exploring
+          </p>
+          
+          <!-- Seta apontando para a sidebar -->
+          <div class="arrow-pointer" style="
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #d4a574;
+            animation: bounceLeft 2s infinite;
+          ">
+            ←
+          </div>
+        </div>
+        
+        <p style="font-size: 14px; color: #888; margin-bottom: 0;">
+          or click the button below to get started
+        </p>
       </div>
       
-      <div class="tutorial-cta">
-        <button class="cta-button" onclick="focusOnFirstCategory()">Get Started</button>
+      <div class="tutorial-cta" style="text-align: center;">
+        <button class="cta-button" onclick="focusOnFirstCategory()" style="
+          animation: pulse 2s infinite;
+        ">Get Started</button>
       </div>
     </div>
+    
+    <style>
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes bounceLeft {
+        0%, 20%, 50%, 80%, 100% {
+          transform: translateY(-50%) translateX(0);
+        }
+        40% {
+          transform: translateY(-50%) translateX(-10px);
+        }
+        60% {
+          transform: translateY(-50%) translateX(-5px);
+        }
+      }
+      
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(212, 165, 116, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(212, 165, 116, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(212, 165, 116, 0);
+        }
+      }
+    </style>
   `;
 }
 
