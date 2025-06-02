@@ -73,27 +73,62 @@ function openLightboxNormal(photoId, fromCart = false) {
   openLightbox(index, fromCart);
 }
 
-// 🚫 NOVA FUNÇÃO: Mostrar lightbox para foto vendida
+// 🚫 FUNÇÃO CORRIGIDA: Mostrar lightbox para foto vendida (preservando navegação)
 function showSoldPhotoLightbox(photoId) {
-  // Mostrar lightbox básico
+  // Encontrar índice da foto para navegação
+  const index = photos.findIndex(p => p.id === photoId);
+  if (index !== -1) {
+    currentPhotoIndex = index;
+  }
+  
+  // Mostrar lightbox básico normalmente PRIMEIRO
   document.getElementById('lightbox').style.display = 'block';
   
-  // Limpar conteúdo
+  // Configurar informações básicas
+  document.getElementById('lightbox-name').innerHTML = 'Item No Longer Available';
+  
+  // Obter container de imagem
   const lightboxImgContainer = document.querySelector('.lightbox-img-container');
-  lightboxImgContainer.innerHTML = `
-    <div class="lightbox-sold-overlay">
-      <div class="lightbox-sold-message">
-        <h3>⚠️ Already Sold</h3>
-        <p>This item has been purchased by another customer and is no longer available.</p>
+  
+  // PRESERVAR navegação existente
+  const existingNav = lightboxImgContainer.querySelector('.lightbox-nav');
+  
+  // Limpar apenas conteúdo de imagem (NÃO a navegação)
+  Array.from(lightboxImgContainer.children).forEach(child => {
+    if (!child.classList.contains('lightbox-nav')) {
+      lightboxImgContainer.removeChild(child);
+    }
+  });
+  
+  // Criar overlay mantendo navegação
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-sold-overlay';
+  overlay.innerHTML = `
+    <div class="lightbox-sold-message">
+      <h3>⚠️ Already Sold</h3>
+      <p>This item has been purchased by another customer and is no longer available.</p>
+      <div style="margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeLightbox()">Close</button>
-        <button class="btn btn-gold" onclick="closeLightbox(); focusOnFirstCategory()">Browse More</button>
+        <button class="btn btn-gold" onclick="navigatePhotos(1)">Next Photo →</button>
       </div>
     </div>
   `;
   
-  // Desabilitar navegação
-  document.getElementById('lightbox-name').innerHTML = 'Item No Longer Available';
-  document.getElementById('lightbox-add-btn').style.display = 'none';
+  // Adicionar overlay ANTES da navegação (se existir)
+  if (existingNav) {
+    lightboxImgContainer.insertBefore(overlay, existingNav);
+  } else {
+    lightboxImgContainer.appendChild(overlay);
+  }
+  
+  // Ocultar botão de adicionar temporariamente
+  const addBtn = document.getElementById('lightbox-add-btn');
+  if (addBtn) {
+    addBtn.style.display = 'none';
+  }
+  
+  // Atualizar contador do carrinho
+  updateLightboxCartCount();
 }
 
 // Open the lightbox com visualização em duas etapas
