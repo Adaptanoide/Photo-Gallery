@@ -995,14 +995,18 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
   }
 }
 
-// NOVA FUNÇÃO: Boas-vindas simples
 function showWelcome() {
   const contentDiv = document.getElementById('content');
   
   contentDiv.innerHTML = `
     <div class="tutorial-container">
       <div class="tutorial-header">
-        <h1 class="tutorial-title">Welcome</h1>
+        <h1 class="tutorial-title">Welcome to Our Gallery</h1>
+        <p class="tutorial-subtitle">Browse and select your premium leather products</p>
+      </div>
+      
+      <div class="welcome-instruction">
+        <p class="instruction-text">Choose a category from the sidebar to start exploring</p>
       </div>
       
       <div class="tutorial-cta">
