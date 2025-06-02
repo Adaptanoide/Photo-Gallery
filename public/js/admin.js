@@ -1031,31 +1031,30 @@ function renderReturnPhotosInterface(categories) {
       category.items.forEach(item => {
         html += `
           <div class="photo-list-item" 
-               data-photo-id="${item.id}"
-               style="display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s;"
-               onmouseover="this.style.background='#f8f9fa'" 
-               onmouseout="this.style.background='white'">
-            
+              data-photo-id="${item.id}"
+              style="display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s;"
+              onmouseover="this.style.background='#f8f9fa'" 
+              onmouseout="this.style.background='white'">
+
             <input type="checkbox" 
-                   class="photo-checkbox" 
-                   value="${item.id}" 
-                   onchange="updateReturnSelection()" 
-                   style="margin-right: 12px;">
-            
-            <div class="photo-icon" style="width: 24px; height: 24px; background: #e9ecef; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-              <span style="font-size: 12px; color: #666;">📷</span>
+                  class="photo-checkbox" 
+                  value="${item.id}" 
+                  onchange="updateReturnSelection()" 
+                  style="margin-right: 12px;"
+                  onclick="event.stopPropagation();">
+
+            <div class="photo-clickable" 
+                onclick="openReturnPhotoFullscreen('${item.id}')"
+                style="display: flex; align-items: center; flex: 1; cursor: pointer;">
+              
+              <div class="photo-icon" style="width: 24px; height: 24px; background: #e9ecef; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                <span style="font-size: 12px; color: #666;">📷</span>
+              </div>
+              
+              <div class="photo-info" style="flex: 1;">
+                <div style="font-weight: 500; color: #333; font-size: 14px;">${item.id}.webp</div>
+              </div>
             </div>
-            
-            <div class="photo-info" style="flex: 1;">
-              <div style="font-weight: 500; color: #333; font-size: 14px;">${item.id}.webp</div>
-              <div style="font-size: 12px; color: #666; margin-top: 2px;">Category: ${category.name}</div>
-            </div>
-            
-            <button class="photo-preview-btn" 
-                    onclick="previewReturnPhoto('${item.id}')"
-                    style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; background: white; color: #666; font-size: 12px; cursor: pointer;">
-              👁️ Preview
-            </button>
           </div>
         `;
       });
@@ -1124,11 +1123,35 @@ function searchReturnPhotos(searchTerm) {
   }
 }
 
-// Função para preview de foto (placeholder)
-function previewReturnPhoto(photoId) {
-  // TODO: Implementar lightbox preview
-  console.log(`Preview photo: ${photoId}`);
-  alert(`Preview functionality for ${photoId} - Coming soon!`);
+// Função para abrir foto em fullscreen (return to stock)
+function openReturnPhotoFullscreen(photoId) {
+  // Usar o mesmo lightbox do photo storage
+  const photoUrl = `/photo/${photoId}.webp`;
+  
+  // Criar modal fullscreen simples
+  const lightboxHtml = `
+    <div id="return-lightbox-modal" class="modal" style="display: block; z-index: 300;">
+      <div class="modal-content" style="max-width: 95vw; max-height: 95vh; padding: 20px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 style="margin: 0; color: #333;">${photoId}.webp</h3>
+          <button onclick="closeReturnLightbox()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+        </div>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+          <img src="${photoUrl}" alt="${photoId}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', lightboxHtml);
+}
+
+// Função para fechar lightbox
+function closeReturnLightbox() {
+  const lightbox = document.getElementById('return-lightbox-modal');
+  if (lightbox) {
+    lightbox.remove();
+  }
 }
 
 // Função para alternar seleção de categoria
