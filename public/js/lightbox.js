@@ -109,7 +109,7 @@ function showSoldPhotoLightbox(photoId) {
       <p>This item has been purchased by another customer and is no longer available.</p>
       <div style="margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeLightbox()">Close</button>
-        <button class="btn btn-gold" onclick="navigatePhotos(1)">Next Photo →</button>
+        <button class="btn btn-gold" onclick="closeLightbox(); window.location.reload()">Refresh Gallery</button>
       </div>
     </div>
   `;
@@ -233,6 +233,9 @@ function openLightbox(index, fromCart = false) {
     addBtn.textContent = 'Add to Selection';
     addBtn.className = 'btn btn-gold';
   }
+
+  // 🔧 GARANTIR que o botão esteja visível
+  addBtn.style.display = 'block';
 
   // Update the cart count in the lightbox
   updateLightboxCartCount();
@@ -602,7 +605,8 @@ function initializeNativeZoom(img) {
 
 // ✅ FUNÇÃO closeLightbox CORRIGIDA - Sincroniza categoria automaticamente
 function closeLightbox() {
-  // ✅ CÓDIGO ORIGINAL (manter intacto)
+  // 🔧 NOVA LÓGICA: Verificar e remover fotos vendidas da interface
+  checkAndRemoveSoldPhotosFromInterface();
   // Remover instâncias de zoom se existirem
   if (typeof mediumZoom === 'function') {
     // Remover todas as instâncias Medium Zoom
@@ -658,6 +662,35 @@ function closeLightbox() {
   }
 
   viewingFromCart = false;
+}
+
+// 🔧 NOVA FUNÇÃO: Verificar e remover fotos vendidas da interface
+async function checkAndRemoveSoldPhotosFromInterface() {
+  const visiblePhotos = document.querySelectorAll('.photo-item[id^="photo-"]');
+  const photoIds = Array.from(visiblePhotos).map(el => el.id.replace('photo-', ''));
+  
+  if (photoIds.length === 0) return;
+  
+  try {
+    const response = await fetch('/api/photos/check-availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoIds })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      photoIds.forEach(photoId => {
+        const availability = result.results[photoId];
+        if (!availability || !availability.available) {
+          markPhotoAsSoldInInterface(photoId);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao verificar fotos vendidas:', error);
+  }
 }
 
 // ✅ FUNÇÃO AUXILIAR: Detectar categoria atual da interface

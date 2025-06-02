@@ -75,7 +75,7 @@ function loadCategoriesMenu() {
 
         menuContainer.innerHTML += `
           <div class="category-item ${isActive}" data-category-id="${category.id}">
-            ${category.name} ${category.fileCount ? `(${category.fileCount})` : ''}
+          ${category.name}
           </div>
         `;
 
