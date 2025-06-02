@@ -446,3 +446,33 @@
     bottom: 120px !important;
   }
 }
+
+/* ===== FOTOS VENDIDAS/INDISPONÍVEIS ===== */
+.photo-item.sold {
+  position: relative;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  pointer-events: none;
+}
+
+.photo-item.sold::after {
+  content: "ALREADY SOLD";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.photo-item.sold button {
+  background: #6c757d !important;
+  border-color: #6c757d !important;
+  cursor: not-allowed;
+}

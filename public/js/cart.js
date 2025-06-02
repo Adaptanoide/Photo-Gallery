@@ -31,6 +31,12 @@ function addToCart(photoId) {
       saveCustomerSelections();
     }
   }
+
+  // Iniciar monitoramento se for o primeiro item
+    if (cartIds.length === 1) {
+      startCartMonitoring();
+    }
+
 }
 
 // Remove a photo from the cart
@@ -61,6 +67,11 @@ function removeFromCart(photoId) {
     // Save customer selections to Firebase
     if (currentCustomerCode) {
       saveCustomerSelections();
+    }
+    
+    // Parar monitoramento se carrinho ficou vazio
+    if (cartIds.length === 0) {
+      stopCartMonitoring();
     }
   }
 }
@@ -744,6 +755,120 @@ function openCartLightbox(photoId) {
     openCartOnlyLightbox(cartPhotosData, photoIndex);
   } else {
     console.error('[CART] Cart lightbox function not found in lightbox.js');
+  }
+}
+
+// 🔍 VERIFICAÇÃO INTELIGENTE DO CARRINHO
+let cartCheckInterval = null;
+
+// Iniciar verificação periódica (só se carrinho não vazio)
+function startCartMonitoring() {
+  // Parar monitoramento anterior se existir
+  if (cartCheckInterval) {
+    clearInterval(cartCheckInterval);
+  }
+  
+  // Só monitorar se há itens no carrinho
+  if (cartIds.length === 0) {
+    console.log('🔍 Carrinho vazio, não iniciando monitoramento');
+    return;
+  }
+  
+  console.log(`🔍 Iniciando monitoramento de ${cartIds.length} itens no carrinho`);
+  
+  // Verificar a cada 3 minutos
+  cartCheckInterval = setInterval(() => {
+    if (cartIds.length > 0) {
+      checkCartAvailability();
+    } else {
+      stopCartMonitoring();
+    }
+  }, 3 * 60 * 1000); // 3 minutos
+}
+
+// Parar verificação periódica
+function stopCartMonitoring() {
+  if (cartCheckInterval) {
+    clearInterval(cartCheckInterval);
+    cartCheckInterval = null;
+    console.log('🔍 Monitoramento do carrinho parado');
+  }
+}
+
+// Verificar disponibilidade dos itens no carrinho
+async function checkCartAvailability() {
+  if (cartIds.length === 0) return;
+  
+  try {
+    console.log(`🔍 Verificando disponibilidade de ${cartIds.length} itens do carrinho...`);
+    
+    const response = await fetch('/api/photos/check-availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoIds: cartIds })
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      console.error('Erro na verificação do carrinho:', result.message);
+      return;
+    }
+    
+    const unavailableItems = [];
+    
+    // Verificar cada item
+    cartIds.forEach(photoId => {
+      const availability = result.results[photoId];
+      if (!availability || !availability.available) {
+        unavailableItems.push(photoId);
+      }
+    });
+    
+    // Se há itens indisponíveis, remover e avisar
+    if (unavailableItems.length > 0) {
+      console.log(`⚠️ ${unavailableItems.length} itens do carrinho já foram vendidos`);
+      
+      // Remover itens indisponíveis
+      unavailableItems.forEach(photoId => {
+        removeFromCart(photoId);
+        markPhotoAsSoldInInterface(photoId);
+      });
+      
+      // Mostrar notificação
+      showToast(
+        `${unavailableItems.length} item(s) foram removidos do seu carrinho porque já foram vendidos por outros clientes.`, 
+        'warning',
+        5000
+      );
+    } else {
+      console.log('✅ Todos os itens do carrinho ainda estão disponíveis');
+    }
+    
+  } catch (error) {
+    console.error('Erro ao verificar disponibilidade do carrinho:', error);
+  }
+}
+
+// 🎨 Marcar foto como vendida na interface
+function markPhotoAsSoldInInterface(photoId) {
+  const photoElement = document.getElementById(`photo-${photoId}`);
+  if (photoElement) {
+    photoElement.classList.add('sold');
+    
+    // Desabilitar clique
+    photoElement.onclick = null;
+    photoElement.style.cursor = 'not-allowed';
+    
+    // Desabilitar botão
+    const button = photoElement.querySelector('button');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'SOLD';
+      button.onclick = null;
+    }
+    
+    console.log(`🎨 Foto ${photoId} marcada como vendida na interface`);
   }
 }
 

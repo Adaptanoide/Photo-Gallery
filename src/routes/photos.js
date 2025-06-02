@@ -3,12 +3,10 @@ const express = require('express');
 const router = express.Router();
 const photoController = require('../controllers/photoController');
 const localStorageService = require('../services/localStorageService');
-
-// Rotas existentes
+const localOrderService = require('../services/localOrderService');
+const fs = require('fs');
 router.get('/', photoController.getPhotos);
 router.get('/categories', photoController.getCategories);
-
-// NOVAS ROTAS PARA GERENCIAMENTO LOCAL
 
 // Servir thumbnail
 router.get('/local/thumbnail/:photoId', async (req, res) => {
@@ -96,5 +94,36 @@ router.post('/admin/folder/rename', photoController.renameFolder);
 // Gerenciamento de fotos
 router.post('/admin/photo/move', photoController.movePhoto);
 router.post('/admin/photo/delete', photoController.deletePhoto);
+
+// routes/photos.js - ADICIONAR esta rota
+router.post('/check-availability', async (req, res) => {
+  try {
+    const { photoIds } = req.body;
+    
+    if (!photoIds || !Array.isArray(photoIds)) {
+      return res.status(400).json({ success: false, message: 'photoIds required' });
+    }
+
+    const results = {};
+    
+    for (const photoId of photoIds) {
+      try {
+        const sourcePath = await localOrderService.findPhotoPath(photoId);
+        if (sourcePath) {
+          await fs.promises.access(sourcePath);
+          results[photoId] = { available: true };
+        } else {
+          results[photoId] = { available: false, reason: 'SOLD' };
+        }
+      } catch (error) {
+        results[photoId] = { available: false, reason: 'SOLD' };
+      }
+    }
+
+    res.json({ success: true, results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 module.exports = router;

@@ -14,7 +14,6 @@ function preloadNextImages(count) {
   }
 }
 
-// Nova função para abrir o lightbox por ID em vez de índice
 function openLightboxById(photoId, fromCart = false) {
   // Verificar se o array de fotos existe
   if (!photos || !Array.isArray(photos) || photos.length === 0) {
@@ -23,6 +22,43 @@ function openLightboxById(photoId, fromCart = false) {
     return;
   }
 
+  // 🔍 NOVA VERIFICAÇÃO: Checar se foto ainda está disponível
+  checkPhotoAvailabilityBeforeLightbox(photoId, fromCart);
+}
+
+// 🔍 NOVA FUNÇÃO: Verificar disponibilidade antes de abrir lightbox
+async function checkPhotoAvailabilityBeforeLightbox(photoId, fromCart) {
+  try {
+    console.log(`🔍 Verificando disponibilidade da foto: ${photoId}`);
+    
+    const response = await fetch('/api/photos/check-availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoIds: [photoId] })
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.results[photoId] || !result.results[photoId].available) {
+      // Foto não está mais disponível
+      console.log(`❌ Foto ${photoId} não está mais disponível`);
+      showSoldPhotoLightbox(photoId);
+      return;
+    }
+    
+    // Foto disponível, continuar normalmente
+    console.log(`✅ Foto ${photoId} está disponível`);
+    openLightboxNormal(photoId, fromCart);
+    
+  } catch (error) {
+    console.error('Erro ao verificar disponibilidade:', error);
+    // Em caso de erro, abrir normalmente (fallback)
+    openLightboxNormal(photoId, fromCart);
+  }
+}
+
+// 🔍 FUNÇÃO AUXILIAR: Abrir lightbox normalmente (versão original)
+function openLightboxNormal(photoId, fromCart = false) {
   // Encontrar a foto pelo ID
   const index = photos.findIndex(p => p.id === photoId);
 
@@ -33,8 +69,31 @@ function openLightboxById(photoId, fromCart = false) {
     return;
   }
 
-  // Abrir lightbox com o índice encontrado
+  // Abrir lightbox com o índice encontrado (usando função original)
   openLightbox(index, fromCart);
+}
+
+// 🚫 NOVA FUNÇÃO: Mostrar lightbox para foto vendida
+function showSoldPhotoLightbox(photoId) {
+  // Mostrar lightbox básico
+  document.getElementById('lightbox').style.display = 'block';
+  
+  // Limpar conteúdo
+  const lightboxImgContainer = document.querySelector('.lightbox-img-container');
+  lightboxImgContainer.innerHTML = `
+    <div class="lightbox-sold-overlay">
+      <div class="lightbox-sold-message">
+        <h3>⚠️ Already Sold</h3>
+        <p>This item has been purchased by another customer and is no longer available.</p>
+        <button class="btn btn-secondary" onclick="closeLightbox()">Close</button>
+        <button class="btn btn-gold" onclick="closeLightbox(); focusOnFirstCategory()">Browse More</button>
+      </div>
+    </div>
+  `;
+  
+  // Desabilitar navegação
+  document.getElementById('lightbox-name').innerHTML = 'Item No Longer Available';
+  document.getElementById('lightbox-add-btn').style.display = 'none';
 }
 
 // Open the lightbox com visualização em duas etapas
