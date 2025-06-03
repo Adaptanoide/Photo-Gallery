@@ -277,12 +277,14 @@ const photoManager = {
       return;
     }
 
-    console.log(`📦 Container found:`, childrenContainer);
-    console.log(`📋 Element found:`, folderElement);
-
+    // ✅ DECLARAR TODAS AS VARIÁVEIS NO INÍCIO
     const childrenContainer = document.getElementById(`children-${cleanId}`);
     const folderElement = document.querySelector(`[data-folder-id="${cleanId}"]`);
     const expandIcon = folderElement ? folderElement.querySelector('.expand-icon') : null;
+
+    console.log(`📦 Container found:`, childrenContainer);
+    console.log(`📋 Element found:`, folderElement);
+    console.log(`🎯 Expand icon found:`, expandIcon);
 
     if (!childrenContainer || !expandIcon) {
       console.warn(`Container (${!!childrenContainer}) ou ícone (${!!expandIcon}) não encontrado para folder: ${cleanId}`);
@@ -290,6 +292,7 @@ const photoManager = {
     }
 
     const isCurrentlyExpanded = this.expandedFolders.has(cleanId);
+    console.log(`📊 Currently expanded: ${isCurrentlyExpanded}`);
 
     if (isCurrentlyExpanded) {
       // ✅ RECOLHER
@@ -303,12 +306,17 @@ const photoManager = {
       childrenContainer.style.display = 'block';
       expandIcon.textContent = '🔽';
 
+      console.log(`📂 Container agora visível. Children: ${childrenContainer.children.length}`);
+
       // ✅ LAZY LOADING - usar ID original para busca na estrutura
       if (childrenContainer.children.length === 0) {
         const originalId = folderElement.getAttribute('data-original-id');
+        console.log(`🔄 Loading children for original ID: ${originalId}`);
+
         const folder = this.findFolderById(originalId);
         if (folder && folder.children) {
           const level = this.getFolderLevel(originalId);
+          console.log(`📋 Rendering ${folder.children.length} children at level ${level}`);
           this.renderFolderTree(folder.children, childrenContainer, level + 1);
         }
       }
