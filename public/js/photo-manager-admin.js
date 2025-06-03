@@ -267,6 +267,7 @@ const photoManager = {
 
   // ✅ CORREÇÃO: Função para expandir/recolher pastas
   toggleFolder(folderId) {
+    const cleanFolderId = folderId.toString().replace(/[^a-zA-Z0-9]/g, '_');
     console.log(`📁 Toggling folder: ${folderId}`);
     
     if (!folderId || folderId === 'null' || folderId === 'undefined') {
@@ -274,41 +275,41 @@ const photoManager = {
       return;
     }
     
-    const childrenContainer = document.getElementById(`children-${folderId}`);
+    const childrenContainer = document.getElementById(`children-${cleanFolderId}`);
     
     // ✅ CORREÇÃO: Buscar o ícone específico da pasta correta
-    const folderElement = document.querySelector(`[data-folder-id="${folderId}"]`);
+    const folderElement = document.querySelector(`[data-folder-id="${cleanFolderId}"]`);
     const expandIcon = folderElement ? folderElement.querySelector('.expand-icon') : null;
     
     if (!childrenContainer || !expandIcon) {
-      console.warn(`Container (${!!childrenContainer}) ou ícone (${!!expandIcon}) não encontrado para folder: ${folderId}`);
+      console.warn(`Container (${!!childrenContainer}) ou ícone (${!!expandIcon}) não encontrado para folder: ${cleanFolderId}`);
       return;
     }
 
-    const isCurrentlyExpanded = this.expandedFolders.has(folderId);
+    const isCurrentlyExpanded = this.expandedFolders.has(cleanFolderId);
     
     if (isCurrentlyExpanded) {
       // ✅ RECOLHER
-      this.expandedFolders.delete(folderId);
+      this.expandedFolders.delete(cleanFolderId);
       childrenContainer.style.display = 'none';
       expandIcon.textContent = '▶️';
-      console.log(`📁 Pasta recolhida: ${folderId}`);
+      console.log(`📁 Pasta recolhida: ${cleanFolderId}`);
     } else {
       // ✅ EXPANDIR
-      this.expandedFolders.add(folderId);
+      this.expandedFolders.add(cleanFolderId);
       childrenContainer.style.display = 'block';
       expandIcon.textContent = '🔽';
       
       // ✅ LAZY LOADING: Renderizar filhos apenas quando expandir
       if (childrenContainer.children.length === 0) {
-        const folder = this.findFolderById(folderId);
+        const folder = this.findFolderById(cleanFolderId);
         if (folder && folder.children) {
-          const level = this.getFolderLevel(folderId);
+          const level = this.getFolderLevel(cleanFolderId);
           this.renderFolderTree(folder.children, childrenContainer, level + 1);
         }
       }
       
-      console.log(`📁 Pasta expandida: ${folderId}`);
+      console.log(`📁 Pasta expandida: ${cleanFolderId}`);
     }
     
     // ✅ PERSISTIR estado localmente
