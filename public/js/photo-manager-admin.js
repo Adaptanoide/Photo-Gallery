@@ -181,8 +181,9 @@ const photoManager = {
     }
 
     folders.forEach(folder => {
-      // ✅ NOVO: Definir ID consistente
+      // ✅ NOVO: Definir ID consistente e limpo para DOM
       const folderId = folder.id || folder.name || 'folder-' + Math.random().toString(36).substr(2, 9);
+      const cleanFolderId = folderId.toString().replace(/[^a-zA-Z0-9]/g, '_'); // Limpar para usar no DOM
       // Container principal do item
       const folderDiv = document.createElement('div');
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
@@ -190,12 +191,12 @@ const photoManager = {
       folderDiv.setAttribute('data-folder-id', folderId);
       // Determinar ícones
       const hasChildren = folder.children && folder.children.length > 0;
-      const isExpanded = this.expandedFolders.has(folderId);
+      const isExpanded = this.expandedFolders.has(cleanFolderId);
 
       // ✅ NOVO: Ícone expand/collapse
       let expandIcon = '';
       if (hasChildren) {
-      expandIcon = `<span class="expand-icon" onclick="photoManager.toggleFolder('${folderId}')" style="cursor: pointer; margin-right: 8px; user-select: none; font-size: 12px; color: #666;">
+          expandIcon = `<span class="expand-icon" onclick="photoManager.toggleFolder('${cleanFolderId}')" style="cursor: pointer; margin-right: 8px; user-select: none; font-size: 12px; color: #666;">
           ${isExpanded ? '🔽' : '▶️'}
         </span>`;
       } else {
@@ -251,7 +252,7 @@ const photoManager = {
       if (hasChildren) {
         const childrenContainer = document.createElement('div');
         childrenContainer.className = 'folder-children';
-        childrenContainer.id = `children-${folderId}`;
+        folderDiv.setAttribute('data-folder-id', cleanFolderId);
         childrenContainer.style.display = isExpanded ? 'block' : 'none';
 
         // Renderizar filhos se expandido
