@@ -263,20 +263,23 @@ const photoManager = {
     });
   },
 
-  // ✅ NOVA: Função para expandir/recolher pastas
+  // ✅ CORREÇÃO: Função para expandir/recolher pastas
   toggleFolder(folderId) {
     console.log(`📁 Toggling folder: ${folderId}`);
-
+    
     const childrenContainer = document.getElementById(`children-${folderId}`);
-    const expandIcon = document.querySelector(`[onclick="photoManager.toggleFolder('${folderId}')"]`);
-
+    
+    // ✅ CORREÇÃO: Buscar o ícone específico da pasta correta
+    const folderElement = document.querySelector(`[data-folder-id="${folderId}"]`);
+    const expandIcon = folderElement ? folderElement.querySelector('.expand-icon') : null;
+    
     if (!childrenContainer || !expandIcon) {
-      console.warn('Container ou ícone não encontrado');
+      console.warn(`Container (${!!childrenContainer}) ou ícone (${!!expandIcon}) não encontrado para folder: ${folderId}`);
       return;
     }
 
     const isCurrentlyExpanded = this.expandedFolders.has(folderId);
-
+    
     if (isCurrentlyExpanded) {
       // ✅ RECOLHER
       this.expandedFolders.delete(folderId);
@@ -288,7 +291,7 @@ const photoManager = {
       this.expandedFolders.add(folderId);
       childrenContainer.style.display = 'block';
       expandIcon.textContent = '🔽';
-
+      
       // ✅ LAZY LOADING: Renderizar filhos apenas quando expandir
       if (childrenContainer.children.length === 0) {
         const folder = this.findFolderById(folderId);
@@ -297,10 +300,10 @@ const photoManager = {
           this.renderFolderTree(folder.children, childrenContainer, level + 1);
         }
       }
-
+      
       console.log(`📁 Pasta expandida: ${folderId}`);
     }
-
+    
     // ✅ PERSISTIR estado localmente
     this.saveExpandedState();
   },
@@ -393,7 +396,7 @@ const photoManager = {
     });
   },
 
-  // ✅ NOVA: Adicionar botões de controle
+  // ✅ NOVA: Adicionar barra de pesquisa em vez de botões
   addTreeControls() {
     const treeContainer = document.getElementById('folder-tree').parentElement;
     
@@ -404,27 +407,110 @@ const photoManager = {
     controlsDiv.className = 'tree-controls';
     controlsDiv.style.cssText = `
       display: flex;
-      gap: 10px;
+      gap: 15px;
       margin-bottom: 15px;
-      padding: 10px 15px;
+      padding: 12px 20px;
       background: #f8f9fa;
-      border-radius: 6px;
+      border-radius: 8px;
       border: 1px solid #dee2e6;
+      align-items: center;
     `;
     
     controlsDiv.innerHTML = `
+      <div style="flex: 1; position: relative;">
+        <input type="text" 
+              id="folder-search-input" 
+              placeholder="🔍 Search folders and photos..." 
+              style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px;"
+              oninput="photoManager.searchFolders(this.value)">
+      </div>
       <button class="btn btn-secondary btn-sm" onclick="photoManager.expandAll()" title="Expand all folders">
         📂 Expand All
       </button>
       <button class="btn btn-secondary btn-sm" onclick="photoManager.collapseAll()" title="Collapse all folders">
         📁 Collapse All
       </button>
-      <span style="margin-left: auto; color: #666; font-size: 12px; display: flex; align-items: center;">
-        Click ▶️ to expand folders
-      </span>
+      <button class="btn btn-secondary btn-sm" onclick="photoManager.clearSearch()" title="Clear search">
+        ✖️ Clear
+      </button>
     `;
     
     treeContainer.insertBefore(controlsDiv, document.getElementById('folder-tree'));
+  },
+
+  // ✅ NOVA: Função de pesquisa
+  searchFolders(searchTerm) {
+    const cleanTerm = searchTerm.toLowerCase().trim();
+    console.log(`🔍 Searching for: "${cleanTerm}"`);
+    
+    if (cleanTerm === '') {
+      this.clearSearch();
+      return;
+    }
+    
+    // Expandir todas as pastas para mostrar resultados
+    this.expandAll();
+    
+    // Filtrar elementos visíveis
+    const allFolderItems = document.querySelectorAll('.folder-item');
+    let foundCount = 0;
+    
+    allFolderItems.forEach(item => {
+      const folderName = item.querySelector('.folder-name');
+      const folderCount = item.querySelector('.folder-count');
+      
+      if (folderName) {
+        const nameText = folderName.textContent.toLowerCase();
+        const countText = folderCount ? folderCount.textContent.toLowerCase() : '';
+        const searchableText = nameText + ' ' + countText;
+        
+        if (searchableText.includes(cleanTerm)) {
+          // Encontrado - destacar
+          item.style.display = 'flex';
+          item.style.background = '#fff3cd';
+          item.style.border = '2px solid #ffc107';
+          item.style.borderRadius = '6px';
+          foundCount++;
+        } else {
+          // Não encontrado - esconder
+          item.style.display = 'none';
+        }
+      }
+    });
+    
+    console.log(`🎯 Encontrados ${foundCount} resultados para "${cleanTerm}"`);
+    
+    // Atualizar placeholder
+    const searchInput = document.getElementById('folder-search-input');
+    if (searchInput) {
+      searchInput.style.background = foundCount > 0 ? '#d4edda' : '#f8d7da';
+    }
+  },
+
+  // ✅ NOVA: Limpar pesquisa
+  clearSearch() {
+    console.log('🧹 Limpando pesquisa...');
+    
+    // Limpar input
+    const searchInput = document.getElementById('folder-search-input');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.style.background = 'white';
+    }
+    
+    // Restaurar todos os elementos
+    const allFolderItems = document.querySelectorAll('.folder-item');
+    allFolderItems.forEach(item => {
+      item.style.display = 'flex';
+      item.style.background = '';
+      item.style.border = '';
+      item.style.borderRadius = '';
+    });
+    
+    // Recolher todas as pastas
+    this.collapseAll();
+    
+    console.log('✅ Pesquisa limpa');
   },
 
   selectFolder(folder, element) {
