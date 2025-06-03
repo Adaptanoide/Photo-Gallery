@@ -689,6 +689,61 @@
   animation: fadeInLeft 0.3s ease-out;
 }
 
+/* ===== DROPDOWN HIERÁRQUICO ===== */
+.expand-icon {
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.expand-icon:hover {
+  transform: scale(1.2);
+  color: var(--color-gold) !important;
+}
+
+.folder-children {
+  animation: slideDown 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.tree-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.tree-controls .btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tree-controls .btn-secondary {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+.tree-controls .btn-secondary:hover {
+  background: #dee2e6;
+  border-color: #ced4da;
+  color: #343a40;
+}
+
 @keyframes fadeInLeft {
   from {
     opacity: 0;
@@ -832,3 +887,4 @@
     text-align: center;
   }
 }
+

@@ -1,6 +1,4 @@
-// photo-manager-admin.js - VERSÃO LIMPA SEM ALERTS
-// Removidos: alerts chatos, indicador do topo, texto "processing", proteção de saída
-// Mantido: setinha 📤, funcionalidade de upload, monitoramento
+// photo-manager-admin.js
 
 const photoManager = {
   currentStructure: null,
@@ -12,11 +10,15 @@ const photoManager = {
   viewMode: 'list',
   photosToMove: null,
   selectedDestinationFolder: null,
+  expandedFolders: new Set(),
 
   async init() {
     console.log('🚀 Initializing Photo Storage tab...');
 
     if (document.getElementById('photo-storage')) {
+      // ✅ CARREGAR estado de expansão
+      this.loadExpandedState();
+      
       await this.loadStorageStats();
       await this.loadFolderStructure();
       
@@ -32,15 +34,15 @@ const photoManager = {
       formData: typeof FormData !== 'undefined',
       fetch: typeof fetch !== 'undefined'
     };
-    
+
     const missingFeatures = Object.keys(features).filter(key => !features[key]);
-    
+
     if (missingFeatures.length > 0) {
       console.warn('⚠️ Browser compatibility issues:', missingFeatures);
       showToast('Your browser might not support all upload features. Please use a modern browser.', 'warning');
       return false;
     }
-    
+
     console.log('✅ Browser compatibility check passed');
     return true;
   },
@@ -54,7 +56,7 @@ const photoManager = {
       'webp': 'image/webp',
       'gif': 'image/gif'
     };
-    
+
     return typeMap[extension] || 'application/octet-stream';
   },
 
@@ -114,6 +116,10 @@ const photoManager = {
 
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
         this.currentStructure = organizedStructure;
+
+        // ✅ ADICIONAR botões de controle
+        this.addTreeControls();
+
         this.renderFolderTree(organizedStructure);
 
         console.log('✅ Folder structure rendered successfully');
@@ -175,39 +181,64 @@ const photoManager = {
     }
 
     folders.forEach(folder => {
+      // Container principal do item
       const folderDiv = document.createElement('div');
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
+      folderDiv.setAttribute('data-folder-id', folder.id || '');
 
-      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      // Determinar ícones
+      const hasChildren = folder.children && folder.children.length > 0;
+      const isExpanded = this.expandedFolders.has(folder.id);
+
+      // ✅ NOVO: Ícone expand/collapse
+      let expandIcon = '';
+      if (hasChildren) {
+        expandIcon = `<span class="expand-icon" onclick="photoManager.toggleFolder('${folder.id}')" style="cursor: pointer; margin-right: 8px; user-select: none; font-size: 12px; color: #666;">
+          ${isExpanded ? '🔽' : '▶️'}
+        </span>`;
+      } else {
+        expandIcon = '<span style="margin-right: 20px;"></span>'; // Espaçamento para alinhamento
+      }
+
+      const folderIcon = folder.isLeaf ? '📄' : '📁';
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
+      // Filtrar pastas administrativas
       const adminFolders = ['Waiting Payment', 'Sold'];
       const isAdminFolder = adminFolders.includes(folder.name);
 
+      // ✅ NOVO: HTML com botão expand/collapse
       folderDiv.innerHTML = `
-      <span class="folder-icon">${icon}</span>
-      <span class="folder-name">${folder.name}</span>
-      <span class="folder-count">${photoCount}</span>
-      ${folder.isLeaf ? `
-        <div class="folder-actions">
-          <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
-          ${!isAdminFolder ? `
-            <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-          ` : ''}
+        <div class="folder-content" style="display: flex; align-items: center; width: 100%;">
+          ${expandIcon}
+          <span class="folder-icon">${folderIcon}</span>
+          <span class="folder-name" style="flex-grow: 1; margin-left: 8px;">${folder.name}</span>
+          <span class="folder-count">${photoCount}</span>
+          ${folder.isLeaf ? `
+            <div class="folder-actions">
+              <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
+              ${!isAdminFolder ? `
+                <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+              ` : ''}
+            </div>
+          ` : `
+            <div class="folder-actions">
+              ${!isAdminFolder ? `
+                <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+              ` : ''}
+            </div>
+          `}
         </div>
-      ` : `
-        <div class="folder-actions">
-          ${!isAdminFolder ? `
-            <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-          ` : ''}
-        </div>
-      `}
-    `;
+      `;
 
+      // ✅ NOVO: Click handler apenas para pastas folha (com fotos)
       if (folder.isLeaf) {
-        folderDiv.onclick = (e) => {
-          if (!e.target.classList.contains('folder-action-btn')) {
+        const folderContent = folderDiv.querySelector('.folder-content');
+        folderContent.onclick = (e) => {
+          // Não interferir com cliques nos botões de ação ou expand
+          if (!e.target.classList.contains('folder-action-btn') &&
+            !e.target.classList.contains('expand-icon')) {
             this.selectFolder(folder, folderDiv);
           }
         };
@@ -215,13 +246,185 @@ const photoManager = {
 
       container.appendChild(folderDiv);
 
-      if (folder.children && folder.children.length > 0) {
-        const childContainer = document.createElement('div');
-        childContainer.className = 'folder-children';
-        container.appendChild(childContainer);
-        this.renderFolderTree(folder.children, childContainer, level + 1);
+      // ✅ NOVO: Container para filhos (inicialmente oculto)
+      if (hasChildren) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'folder-children';
+        childrenContainer.id = `children-${folder.id}`;
+        childrenContainer.style.display = isExpanded ? 'block' : 'none';
+
+        // Renderizar filhos se expandido
+        if (isExpanded) {
+          this.renderFolderTree(folder.children, childrenContainer, level + 1);
+        }
+
+        container.appendChild(childrenContainer);
       }
     });
+  },
+
+  // ✅ NOVA: Função para expandir/recolher pastas
+  toggleFolder(folderId) {
+    console.log(`📁 Toggling folder: ${folderId}`);
+
+    const childrenContainer = document.getElementById(`children-${folderId}`);
+    const expandIcon = document.querySelector(`[onclick="photoManager.toggleFolder('${folderId}')"]`);
+
+    if (!childrenContainer || !expandIcon) {
+      console.warn('Container ou ícone não encontrado');
+      return;
+    }
+
+    const isCurrentlyExpanded = this.expandedFolders.has(folderId);
+
+    if (isCurrentlyExpanded) {
+      // ✅ RECOLHER
+      this.expandedFolders.delete(folderId);
+      childrenContainer.style.display = 'none';
+      expandIcon.textContent = '▶️';
+      console.log(`📁 Pasta recolhida: ${folderId}`);
+    } else {
+      // ✅ EXPANDIR
+      this.expandedFolders.add(folderId);
+      childrenContainer.style.display = 'block';
+      expandIcon.textContent = '🔽';
+
+      // ✅ LAZY LOADING: Renderizar filhos apenas quando expandir
+      if (childrenContainer.children.length === 0) {
+        const folder = this.findFolderById(folderId);
+        if (folder && folder.children) {
+          const level = this.getFolderLevel(folderId);
+          this.renderFolderTree(folder.children, childrenContainer, level + 1);
+        }
+      }
+
+      console.log(`📁 Pasta expandida: ${folderId}`);
+    }
+
+    // ✅ PERSISTIR estado localmente
+    this.saveExpandedState();
+  },
+
+  // ✅ NOVA: Encontrar pasta por ID na estrutura
+  findFolderById(folderId, folders = null) {
+    if (!folders) folders = this.currentStructure;
+    if (!folders) return null;
+
+    for (const folder of folders) {
+      if (folder.id === folderId) return folder;
+
+      if (folder.children && folder.children.length > 0) {
+        const found = this.findFolderById(folderId, folder.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  },
+
+  // ✅ NOVA: Calcular nível da pasta
+  getFolderLevel(folderId, folders = null, currentLevel = 0) {
+    if (!folders) folders = this.currentStructure;
+    if (!folders) return 0;
+
+    for (const folder of folders) {
+      if (folder.id === folderId) return currentLevel;
+
+      if (folder.children && folder.children.length > 0) {
+        const level = this.getFolderLevel(folderId, folder.children, currentLevel + 1);
+        if (level > 0) return level;
+      }
+    }
+    return 0;
+  },
+
+  // ✅ NOVA: Salvar estado de expansão
+  saveExpandedState() {
+    try {
+      const expandedArray = Array.from(this.expandedFolders);
+      localStorage.setItem('photoManager_expandedFolders', JSON.stringify(expandedArray));
+      console.log(`💾 Estado de expansão salvo: ${expandedArray.length} pastas`);
+    } catch (error) {
+      console.warn('Erro ao salvar estado de expansão:', error);
+    }
+  },
+
+  // ✅ NOVA: Carregar estado de expansão
+  loadExpandedState() {
+    try {
+      const saved = localStorage.getItem('photoManager_expandedFolders');
+      if (saved) {
+        const expandedArray = JSON.parse(saved);
+        this.expandedFolders = new Set(expandedArray);
+        console.log(`📂 Estado de expansão carregado: ${expandedArray.length} pastas`);
+      }
+    } catch (error) {
+      console.warn('Erro ao carregar estado de expansão:', error);
+      this.expandedFolders = new Set();
+    }
+  },
+
+  // ✅ NOVA: Expandir todas as pastas
+  expandAll() {
+    console.log('📂 Expandindo todas as pastas...');
+    this.addAllFoldersToExpanded(this.currentStructure);
+    this.saveExpandedState();
+    this.renderFolderTree(this.currentStructure);
+    console.log(`✅ ${this.expandedFolders.size} pastas expandidas`);
+  },
+
+  // ✅ NOVA: Recolher todas as pastas
+  collapseAll() {
+    console.log('📁 Recolhendo todas as pastas...');
+    this.expandedFolders.clear();
+    this.saveExpandedState();
+    this.renderFolderTree(this.currentStructure);
+    console.log('✅ Todas as pastas recolhidas');
+  },
+
+  // ✅ AUXILIAR: Adicionar todas as pastas ao estado expandido
+  addAllFoldersToExpanded(folders) {
+    if (!folders) return;
+
+    folders.forEach(folder => {
+      if (folder.children && folder.children.length > 0) {
+        this.expandedFolders.add(folder.id);
+        this.addAllFoldersToExpanded(folder.children);
+      }
+    });
+  },
+
+  // ✅ NOVA: Adicionar botões de controle
+  addTreeControls() {
+    const treeContainer = document.getElementById('folder-tree').parentElement;
+    
+    // Verificar se já existem controles
+    if (treeContainer.querySelector('.tree-controls')) return;
+    
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'tree-controls';
+    controlsDiv.style.cssText = `
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    `;
+    
+    controlsDiv.innerHTML = `
+      <button class="btn btn-secondary btn-sm" onclick="photoManager.expandAll()" title="Expand all folders">
+        📂 Expand All
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="photoManager.collapseAll()" title="Collapse all folders">
+        📁 Collapse All
+      </button>
+      <span style="margin-left: auto; color: #666; font-size: 12px; display: flex; align-items: center;">
+        Click ▶️ to expand folders
+      </span>
+    `;
+    
+    treeContainer.insertBefore(controlsDiv, document.getElementById('folder-tree'));
   },
 
   selectFolder(folder, element) {
