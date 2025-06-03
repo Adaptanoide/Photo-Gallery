@@ -18,10 +18,10 @@ const photoManager = {
     if (document.getElementById('photo-storage')) {
       // ✅ CARREGAR estado de expansão
       this.loadExpandedState();
-      
+
       await this.loadStorageStats();
       await this.loadFolderStructure();
-      
+
       // 🔄 RESTAURAR UPLOAD EM PROGRESSO (sem alert chato)
       await this.restoreUploadIfNeeded();
     }
@@ -181,26 +181,29 @@ const photoManager = {
     }
 
     folders.forEach(folder => {
-      // ✅ NOVO: Definir ID consistente e limpo para DOM
-      const folderId = folder.id || folder.name || 'folder-' + Math.random().toString(36).substr(2, 9);
-      const cleanFolderId = folderId.toString().replace(/[^a-zA-Z0-9]/g, '_'); // Limpar para usar no DOM
+      // ✅ ID ORIGINAL E LIMPO - SEMPRE CONSISTENTE
+      const originalId = folder.id || folder.name || 'folder-' + Math.random().toString(36).substr(2, 9);
+      const cleanId = originalId.toString().replace(/[^a-zA-Z0-9]/g, '_');
+
       // Container principal do item
       const folderDiv = document.createElement('div');
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
-      folderDiv.setAttribute('data-folder-id', folderId);
+      folderDiv.setAttribute('data-folder-id', cleanId);
+      folderDiv.setAttribute('data-original-id', originalId); // GUARDAR ID ORIGINAL TAMBÉM
+
       // Determinar ícones
       const hasChildren = folder.children && folder.children.length > 0;
-      const isExpanded = this.expandedFolders.has(cleanFolderId);
+      const isExpanded = this.expandedFolders.has(cleanId);
 
-      // ✅ NOVO: Ícone expand/collapse
+      // ✅ ÍCONE expand/collapse
       let expandIcon = '';
       if (hasChildren) {
-          expandIcon = `<span class="expand-icon" onclick="photoManager.toggleFolder('${cleanFolderId}')" style="cursor: pointer; margin-right: 8px; user-select: none; font-size: 12px; color: #666;">
-          ${isExpanded ? '🔽' : '▶️'}
-        </span>`;
+        expandIcon = `<span class="expand-icon" onclick="photoManager.toggleFolder('${cleanId}')" style="cursor: pointer; margin-right: 8px; user-select: none; font-size: 12px; color: #666;">
+        ${isExpanded ? '🔽' : '▶️'}
+      </span>`;
       } else {
-        expandIcon = '<span style="margin-right: 20px;"></span>'; // Espaçamento para alinhamento
+        expandIcon = '<span style="margin-right: 20px;"></span>';
       }
 
       const folderIcon = folder.isLeaf ? '📄' : '📁';
@@ -210,35 +213,34 @@ const photoManager = {
       const adminFolders = ['Waiting Payment', 'Sold'];
       const isAdminFolder = adminFolders.includes(folder.name);
 
-      // ✅ NOVO: HTML com botão expand/collapse
+      // ✅ HTML com botão expand/collapse
       folderDiv.innerHTML = `
-        <div class="folder-content" style="display: flex; align-items: center; width: 100%;">
-          ${expandIcon}
-          <span class="folder-icon">${folderIcon}</span>
-          <span class="folder-name" style="flex-grow: 1; margin-left: 8px;">${folder.name}</span>
-          <span class="folder-count">${photoCount}</span>
-          ${folder.isLeaf ? `
-            <div class="folder-actions">
-              <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
-              ${!isAdminFolder ? `
-                <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-              ` : ''}
-            </div>
-          ` : `
-            <div class="folder-actions">
-              ${!isAdminFolder ? `
-                <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-              ` : ''}
-            </div>
-          `}
-        </div>
-      `;
+      <div class="folder-content" style="display: flex; align-items: center; width: 100%;">
+        ${expandIcon}
+        <span class="folder-icon">${folderIcon}</span>
+        <span class="folder-name" style="flex-grow: 1; margin-left: 8px;">${folder.name}</span>
+        <span class="folder-count">${photoCount}</span>
+        ${folder.isLeaf ? `
+          <div class="folder-actions">
+            <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${originalId}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
+            ${!isAdminFolder ? `
+              <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${originalId}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+            ` : ''}
+          </div>
+        ` : `
+          <div class="folder-actions">
+            ${!isAdminFolder ? `
+              <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${originalId}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+            ` : ''}
+          </div>
+        `}
+      </div>
+    `;
 
-      // ✅ NOVO: Click handler apenas para pastas folha (com fotos)
+      // ✅ Click handler apenas para pastas folha
       if (folder.isLeaf) {
         const folderContent = folderDiv.querySelector('.folder-content');
         folderContent.onclick = (e) => {
-          // Não interferir com cliques nos botões de ação ou expand
           if (!e.target.classList.contains('folder-action-btn') &&
             !e.target.classList.contains('expand-icon')) {
             this.selectFolder(folder, folderDiv);
@@ -248,11 +250,11 @@ const photoManager = {
 
       container.appendChild(folderDiv);
 
-      // ✅ NOVO: Container para filhos (inicialmente oculto)
+      // ✅ Container para filhos - USAR ID LIMPO
       if (hasChildren) {
         const childrenContainer = document.createElement('div');
         childrenContainer.className = 'folder-children';
-        folderDiv.setAttribute('data-folder-id', cleanFolderId);
+        childrenContainer.id = `children-${cleanId}`;
         childrenContainer.style.display = isExpanded ? 'block' : 'none';
 
         // Renderizar filhos se expandido
@@ -265,54 +267,50 @@ const photoManager = {
     });
   },
 
-  // ✅ CORREÇÃO: Função para expandir/recolher pastas
-  toggleFolder(folderId) {
-    const cleanFolderId = folderId.toString().replace(/[^a-zA-Z0-9]/g, '_');
-    console.log(`📁 Toggling folder: ${folderId}`);
-    
-    if (!folderId || folderId === 'null' || folderId === 'undefined') {
-      console.warn('FolderId inválido:', folderId);
-      return;
-    }
-    
-    const childrenContainer = document.getElementById(`children-${cleanFolderId}`);
-    
-    // ✅ CORREÇÃO: Buscar o ícone específico da pasta correta
-    const folderElement = document.querySelector(`[data-folder-id="${cleanFolderId}"]`);
-    const expandIcon = folderElement ? folderElement.querySelector('.expand-icon') : null;
-    
-    if (!childrenContainer || !expandIcon) {
-      console.warn(`Container (${!!childrenContainer}) ou ícone (${!!expandIcon}) não encontrado para folder: ${cleanFolderId}`);
+  toggleFolder(cleanId) {
+    console.log(`📁 Toggling folder: ${cleanId}`);
+
+    if (!cleanId || cleanId === 'null' || cleanId === 'undefined') {
+      console.warn('FolderId inválido:', cleanId);
       return;
     }
 
-    const isCurrentlyExpanded = this.expandedFolders.has(cleanFolderId);
-    
+    const childrenContainer = document.getElementById(`children-${cleanId}`);
+    const folderElement = document.querySelector(`[data-folder-id="${cleanId}"]`);
+    const expandIcon = folderElement ? folderElement.querySelector('.expand-icon') : null;
+
+    if (!childrenContainer || !expandIcon) {
+      console.warn(`Container (${!!childrenContainer}) ou ícone (${!!expandIcon}) não encontrado para folder: ${cleanId}`);
+      return;
+    }
+
+    const isCurrentlyExpanded = this.expandedFolders.has(cleanId);
+
     if (isCurrentlyExpanded) {
       // ✅ RECOLHER
-      this.expandedFolders.delete(cleanFolderId);
+      this.expandedFolders.delete(cleanId);
       childrenContainer.style.display = 'none';
       expandIcon.textContent = '▶️';
-      console.log(`📁 Pasta recolhida: ${cleanFolderId}`);
+      console.log(`📁 Pasta recolhida: ${cleanId}`);
     } else {
       // ✅ EXPANDIR
-      this.expandedFolders.add(cleanFolderId);
+      this.expandedFolders.add(cleanId);
       childrenContainer.style.display = 'block';
       expandIcon.textContent = '🔽';
-      
-      // ✅ LAZY LOADING: Renderizar filhos apenas quando expandir
+
+      // ✅ LAZY LOADING - usar ID original para busca na estrutura
       if (childrenContainer.children.length === 0) {
-        const folder = this.findFolderById(cleanFolderId);
+        const originalId = folderElement.getAttribute('data-original-id');
+        const folder = this.findFolderById(originalId);
         if (folder && folder.children) {
-          const level = this.getFolderLevel(cleanFolderId);
+          const level = this.getFolderLevel(originalId);
           this.renderFolderTree(folder.children, childrenContainer, level + 1);
         }
       }
-      
-      console.log(`📁 Pasta expandida: ${cleanFolderId}`);
+
+      console.log(`📁 Pasta expandida: ${cleanId}`);
     }
-    
-    // ✅ PERSISTIR estado localmente
+
     this.saveExpandedState();
   },
 
