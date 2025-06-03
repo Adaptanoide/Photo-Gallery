@@ -269,11 +269,16 @@ const photoManager = {
 
   toggleFolder(cleanId) {
     console.log(`📁 Toggling folder: ${cleanId}`);
+    console.log(`🔍 Looking for container: children-${cleanId}`);
+    console.log(`🔍 Looking for element: [data-folder-id="${cleanId}"]`);
 
     if (!cleanId || cleanId === 'null' || cleanId === 'undefined') {
       console.warn('FolderId inválido:', cleanId);
       return;
     }
+
+    console.log(`📦 Container found:`, childrenContainer);
+    console.log(`📋 Element found:`, folderElement);
 
     const childrenContainer = document.getElementById(`children-${cleanId}`);
     const folderElement = document.querySelector(`[data-folder-id="${cleanId}"]`);

@@ -702,17 +702,30 @@
 
 .folder-children {
   animation: slideDown 0.3s ease-out;
-  overflow: hidden;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  opacity: 1 !important;
+  margin-left: 0;
+  border-left: 2px solid #f0f0f0;
+  padding-left: 15px;
+  margin-top: 6px;
+}
+
+.folder-children[style*="block"] {
+  display: block !important;
+  visibility: visible !important;
+  height: auto !important;
 }
 
 @keyframes slideDown {
   from {
     opacity: 0;
-    max-height: 0;
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    max-height: 1000px;
+    transform: translateY(0);
   }
 }
 
