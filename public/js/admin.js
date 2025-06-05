@@ -1460,15 +1460,104 @@ function displayShipments(shipments) {
       <h4>Shipments (${shipments.length})</h4>
       <div id="shipments-list">
         ${shipments.map(shipment => `
-          <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px;">
-            <strong>${shipment.name}</strong><br>
-            Status: ${shipment.status}<br>
-            Created: ${new Date(shipment.uploadDate).toLocaleDateString()}
+          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 6px; background: white;">
+            <div style="display: flex; justify-content: between; align-items: center;">
+              <div style="flex: 1;">
+                <strong>${shipment.name}</strong><br>
+                <span style="color: #666;">Status: <strong>${shipment.status}</strong></span><br>
+                <span style="color: #666;">Created: ${new Date(shipment.uploadDate).toLocaleDateString()}</span><br>
+                <span style="color: #666;">Photos: ${shipment.totalPhotos || 0}</span>
+              </div>
+              <div style="display: flex; gap: 10px; flex-direction: column;">
+                ${getShipmentActions(shipment)}
+              </div>
+            </div>
           </div>
         `).join('')}
       </div>
     </div>
   `;
+}
+
+// Obter ações disponíveis para cada shipment
+function getShipmentActions(shipment) {
+  let actions = [];
+  
+  // Botão de detalhes sempre disponível
+  actions.push(`<button class="btn btn-secondary btn-sm" onclick="viewShipmentDetails('${shipment._id}')">Details</button>`);
+  
+  // Ações baseadas no status
+  switch (shipment.status) {
+    case 'incoming-air':
+      actions.push(`<button class="btn btn-gold btn-sm" onclick="moveShipmentTo('${shipment._id}', 'warehouse')">→ Warehouse</button>`);
+      break;
+    case 'incoming-sea':
+      actions.push(`<button class="btn btn-gold btn-sm" onclick="moveShipmentTo('${shipment._id}', 'warehouse')">→ Warehouse</button>`);
+      break;
+    case 'warehouse':
+      actions.push(`<button class="btn btn-success btn-sm" onclick="alert('Ready for distribution!')">Distribute</button>`);
+      break;
+  }
+  
+  return actions.join('<br>');
+}
+
+// Mover shipment para novo status
+async function moveShipmentTo(shipmentId, newStatus) {
+  if (!confirm(`Move shipment to ${newStatus}?`)) return;
+  
+  try {
+    console.log(`Moving shipment ${shipmentId} to ${newStatus}`);
+    
+    const response = await fetch(`/api/admin/shipments/${shipmentId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shipmentId: shipmentId,
+        newStatus: newStatus
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('Shipment moved successfully!');
+      alert(`Shipment moved to ${newStatus}!`);
+      loadShipments(); // Recarregar lista
+    } else {
+      console.error('Error moving shipment:', result.message);
+      alert('Error: ' + result.message);
+    }
+  } catch (error) {
+    console.error('Error moving shipment:', error);
+    alert('Error moving shipment!');
+  }
+}
+
+// Ver detalhes do shipment
+async function viewShipmentDetails(shipmentId) {
+  try {
+    console.log(`Getting details for shipment: ${shipmentId}`);
+    
+    const response = await fetch(`/api/admin/shipments/${shipmentId}`);
+    const result = await response.json();
+    
+    if (result.success) {
+      const shipment = result.shipment;
+      alert(`Shipment Details:
+Name: ${shipment.name}
+Status: ${shipment.status}
+Created: ${new Date(shipment.uploadDate).toLocaleString()}
+Photos: ${shipment.totalPhotos || 0}
+Notes: ${shipment.notes || 'None'}`);
+    } else {
+      console.error('Error getting details:', result.message);
+      alert('Error: ' + result.message);
+    }
+  } catch (error) {
+    console.error('Error getting details:', error);
+    alert('Error getting details!');
+  }
 }
 
 // Criar shipment de teste
