@@ -392,6 +392,190 @@ class ShipmentController {
     }
   }
 
+  // Obter conteúdo detalhado de um shipment para distribuição
+  async getShipmentContent(req, res) {
+    try {
+      const { shipmentId } = req.params;
+
+      console.log(`📋 Getting shipment content for distribution: ${shipmentId}`);
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      // Escanear pasta física para conteúdo atual
+      const shipmentPath = shipment.folderPath;
+      const categories = [];
+
+      try {
+        const items = await fs.readdir(shipmentPath, { withFileTypes: true });
+        
+        for (const item of items) {
+          if (item.isDirectory()) {
+            const categoryPath = path.join(shipmentPath, item.name);
+            const files = await fs.readdir(categoryPath);
+            const photoFiles = files.filter(f => f.endsWith('.webp'));
+            
+            if (photoFiles.length > 0) {
+              categories.push({
+                name: item.name,
+                photoCount: photoFiles.length,
+                photos: photoFiles.map(f => ({
+                  name: f,
+                  id: path.parse(f).name
+                }))
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error scanning shipment folder:', error);
+      }
+
+      res.status(200).json({
+        success: true,
+        shipment: {
+          ...shipment.toObject(),
+          categories: categories
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error getting shipment content:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error getting content: ${error.message}`
+      });
+    }
+  }
+
+  // Distribuir fotos do shipment para estoque
+  async distributePhotos(req, res) {
+    try {
+      const { shipmentId } = req.body;
+      const { distributions } = req.body; // { categoryName: destinationPath }
+
+      console.log(`🚚 Distributing photos from shipment: ${shipmentId}`);
+      console.log('Distribution mapping:', distributions);
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      if (shipment.status !== 'warehouse') {
+        return res.status(400).json({
+          success: false,
+          message: 'Shipment must be in warehouse to distribute'
+        });
+      }
+
+      let totalMoved = 0;
+      const results = {};
+
+      // Processar cada categoria
+      for (const [categoryName, destinationPath] of Object.entries(distributions)) {
+        try {
+          console.log(`📦 Moving ${categoryName} to ${destinationPath}`);
+
+          const sourcePath = path.join(shipment.folderPath, categoryName);
+          const fullDestinationPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', destinationPath);
+
+          // Verificar se pasta origem existe
+          try {
+            await fs.access(sourcePath);
+          } catch {
+            console.warn(`Source category not found: ${sourcePath}`);
+            continue;
+          }
+
+          // Criar pasta destino se não existir
+          await fs.mkdir(fullDestinationPath, { recursive: true });
+
+          // Mover todas as fotos da categoria
+          const files = await fs.readdir(sourcePath);
+          const photoFiles = files.filter(f => f.endsWith('.webp'));
+
+          let categoryMoved = 0;
+          for (const file of photoFiles) {
+            const sourceFile = path.join(sourcePath, file);
+            const destFile = path.join(fullDestinationPath, file);
+
+            try {
+              await fs.copyFile(sourceFile, destFile);
+              await fs.unlink(sourceFile);
+              categoryMoved++;
+              totalMoved++;
+            } catch (fileError) {
+              console.error(`Error moving file ${file}:`, fileError);
+            }
+          }
+
+          results[categoryName] = {
+            moved: categoryMoved,
+            destination: destinationPath
+          };
+
+          // Remover pasta vazia se necessário
+          try {
+            const remainingFiles = await fs.readdir(sourcePath);
+            if (remainingFiles.length === 0) {
+              await fs.rmdir(sourcePath);
+            }
+          } catch (rmError) {
+            console.warn('Could not remove empty category folder:', rmError);
+          }
+
+        } catch (categoryError) {
+          console.error(`Error processing category ${categoryName}:`, categoryError);
+          results[categoryName] = {
+            moved: 0,
+            error: categoryError.message
+          };
+        }
+      }
+
+      // Atualizar shipment
+      shipment.processedPhotos = totalMoved;
+      if (totalMoved >= shipment.totalPhotos) {
+        shipment.status = 'completed';
+        shipment.completedAt = new Date();
+      }
+      await shipment.save();
+
+      // Rebuild do índice local para refletir as mudanças
+      try {
+        await localStorageService.rebuildIndex();
+        console.log('✅ Local index rebuilt after distribution');
+      } catch (indexError) {
+        console.warn('Warning: Could not rebuild index:', indexError);
+      }
+
+      console.log(`✅ Distribution completed: ${totalMoved} photos moved`);
+
+      res.status(200).json({
+        success: true,
+        totalMoved: totalMoved,
+        results: results,
+        message: `Successfully distributed ${totalMoved} photos`
+      });
+
+    } catch (error) {
+      console.error('❌ Error distributing photos:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error distributing photos: ${error.message}`
+      });
+    }
+  }
+
 }
 
 // Exportar instância
@@ -406,5 +590,7 @@ module.exports = {
   deleteShipment: shipmentController.deleteShipment.bind(shipmentController),
   uploadPhotos: shipmentController.uploadPhotos.bind(shipmentController),
   getDestinationFolders: shipmentController.getDestinationFolders.bind(shipmentController),
-  getUploadMiddleware: shipmentController.getUploadMiddleware.bind(shipmentController)
+  getUploadMiddleware: shipmentController.getUploadMiddleware.bind(shipmentController),
+  getShipmentContent: shipmentController.getShipmentContent.bind(shipmentController),
+  distributePhotos: shipmentController.distributePhotos.bind(shipmentController)
 };

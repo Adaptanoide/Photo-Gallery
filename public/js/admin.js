@@ -1838,3 +1838,172 @@ async function getDestinationFolders() {
     return [];
   }
 }
+
+// Distribuir shipment - função principal
+async function distributeShipment(shipmentId) {
+  try {
+    console.log(`🚚 Starting distribution for shipment: ${shipmentId}`);
+    
+    // Buscar conteúdo do shipment e pastas disponíveis
+    const [shipmentData, foldersData] = await Promise.all([
+      fetch(`/api/admin/shipments/${shipmentId}/content`).then(r => r.json()),
+      fetch('/api/admin/shipments/destination/folders').then(r => r.json())
+    ]);
+    
+    if (!shipmentData.success || !foldersData.success) {
+      alert('Error loading shipment data');
+      return;
+    }
+    
+    showDistributionModal(shipmentData.shipment, foldersData.folders);
+    
+  } catch (error) {
+    console.error('Error starting distribution:', error);
+    alert('Error loading distribution interface');
+  }
+}
+
+// Mostrar modal de distribuição
+function showDistributionModal(shipment, availableFolders) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); z-index: 1000; display: flex;
+    align-items: center; justify-content: center; overflow-y: auto;
+  `;
+  
+  const categories = shipment.categories || [];
+  
+  modal.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <h3 style="margin-top: 0; color: #333;">Distribute: ${shipment.name}</h3>
+      <p style="color: #666;">Select destination folder for each category:</p>
+      
+      <div id="distribution-categories" style="margin-bottom: 25px;">
+        ${categories.map((category, index) => `
+          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 6px; background: #f9f9f9;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <strong>${category.name}</strong>
+              <span style="color: #666;">${category.photoCount} photos</span>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px;">Destination folder:</label>
+              <select id="destination-${index}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">Select destination...</option>
+                ${generateFolderOptions(availableFolders, category.name)}
+              </select>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button onclick="closeDistributionModal()" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">
+          Cancel
+        </button>
+        <button onclick="executeDistribution('${shipment._id}', ${categories.length})" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Distribute Photos
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Fechar ao clicar fora
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      closeDistributionModal();
+    }
+  });
+  
+  window.currentDistributionModal = modal;
+}
+
+// Gerar opções de pastas para o select
+function generateFolderOptions(folders, categoryName) {
+  let options = '';
+  
+  // Função recursiva para processar pastas hierárquicas
+  const processFolder = (folder, depth = 0) => {
+    const indent = '&nbsp;'.repeat(depth * 4);
+    const folderPath = folder.fullPath || folder.name;
+    
+    // Smart suggestion: destacar pastas similares ao nome da categoria
+    const isSuggested = categoryName && folder.name.toLowerCase().includes(categoryName.toLowerCase());
+    const style = isSuggested ? 'background: #ffffcc; font-weight: bold;' : '';
+    
+    options += `<option value="${folderPath}" style="${style}">${indent}${folder.name}</option>`;
+    
+    // Processar subpastas se existirem
+    if (folder.children && folder.children.length > 0) {
+      folder.children.forEach(child => processFolder(child, depth + 1));
+    }
+  };
+  
+  folders.forEach(folder => processFolder(folder));
+  
+  return options;
+}
+
+// Executar distribuição
+async function executeDistribution(shipmentId, categoryCount) {
+  const distributions = {};
+  let selectedCount = 0;
+  
+  // Coletar seleções
+  for (let i = 0; i < categoryCount; i++) {
+    const select = document.getElementById(`destination-${i}`);
+    if (select && select.value) {
+      const categoryName = select.closest('div').querySelector('strong').textContent;
+      distributions[categoryName] = select.value;
+      selectedCount++;
+    }
+  }
+  
+  if (selectedCount === 0) {
+    alert('Please select at least one destination folder');
+    return;
+  }
+  
+  if (selectedCount < categoryCount) {
+    if (!confirm(`Only ${selectedCount} of ${categoryCount} categories have destinations selected. Continue?`)) {
+      return;
+    }
+  }
+  
+  try {
+    console.log('Executing distribution:', distributions);
+    
+    const response = await fetch('/api/admin/shipments/distribute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shipmentId: shipmentId,
+        distributions: distributions
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      alert(`✅ Distribution completed! ${result.totalMoved} photos moved to their destinations.`);
+      closeDistributionModal();
+      loadShipments(); // Recarregar interface
+    } else {
+      alert('❌ Distribution error: ' + result.message);
+    }
+    
+  } catch (error) {
+    console.error('Distribution error:', error);
+    alert('❌ Distribution failed: ' + error.message);
+  }
+}
+
+// Fechar modal de distribuição
+function closeDistributionModal() {
+  if (window.currentDistributionModal) {
+    document.body.removeChild(window.currentDistributionModal);
+    window.currentDistributionModal = null;
+  }
+}

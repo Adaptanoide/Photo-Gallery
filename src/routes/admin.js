@@ -67,4 +67,10 @@ router.post('/shipments/:shipmentId/upload',
 // Obter pastas disponíveis para distribuição
 router.get('/shipments/destination/folders', shipmentController.getDestinationFolders);
 
+// Obter conteúdo detalhado do shipment para distribuição
+router.get('/shipments/:shipmentId/content', shipmentController.getShipmentContent);
+
+// Distribuir fotos do shipment para estoque final
+router.post('/shipments/distribute', shipmentController.distributePhotos);
+
 module.exports = router;
