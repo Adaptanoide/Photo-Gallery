@@ -1881,14 +1881,14 @@ function showDistributionModal(shipment, availableFolders) {
       
       <div id="distribution-categories" style="margin-bottom: 25px;">
         ${categories.map((category, index) => `
-          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 6px; background: #f9f9f9;">
+          <div class="distribution-category" data-category="${category.name}" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 6px; background: #f9f9f9;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <strong>${category.name}</strong>
+              <strong class="category-name">${category.name}</strong>
               <span style="color: #666;">${category.photoCount} photos</span>
             </div>
             <div>
               <label style="display: block; margin-bottom: 5px;">Destination folder:</label>
-              <select id="destination-${index}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              <select id="destination-${index}" class="destination-select" data-category-name="${category.name}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="">Select destination...</option>
                 ${generateFolderOptions(availableFolders, category.name)}
               </select>
@@ -1946,20 +1946,27 @@ function generateFolderOptions(folders, categoryName) {
   return options;
 }
 
-// Executar distribuição
+// Executar distribuição - VERSÃO MAIS SIMPLES
 async function executeDistribution(shipmentId, categoryCount) {
   const distributions = {};
   let selectedCount = 0;
   
-  // Coletar seleções
+  console.log(`🚚 Executing distribution for ${categoryCount} categories`);
+  
+  // Coletar seleções usando data attributes
   for (let i = 0; i < categoryCount; i++) {
     const select = document.getElementById(`destination-${i}`);
     if (select && select.value) {
-      const categoryName = select.closest('div').querySelector('strong').textContent;
-      distributions[categoryName] = select.value;
-      selectedCount++;
+      const categoryName = select.getAttribute('data-category-name');
+      if (categoryName) {
+        distributions[categoryName] = select.value;
+        selectedCount++;
+        console.log(`✅ Category "${categoryName}" → "${select.value}"`);
+      }
     }
   }
+  
+  console.log('Final distributions:', distributions);
   
   if (selectedCount === 0) {
     alert('Please select at least one destination folder');
@@ -1973,7 +1980,7 @@ async function executeDistribution(shipmentId, categoryCount) {
   }
   
   try {
-    console.log('Executing distribution:', distributions);
+    console.log('🚀 Sending distribution request...');
     
     const response = await fetch('/api/admin/shipments/distribute', {
       method: 'POST',
@@ -1985,6 +1992,7 @@ async function executeDistribution(shipmentId, categoryCount) {
     });
     
     const result = await response.json();
+    console.log('Distribution result:', result);
     
     if (result.success) {
       alert(`✅ Distribution completed! ${result.totalMoved} photos moved to their destinations.`);
