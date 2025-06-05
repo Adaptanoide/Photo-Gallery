@@ -3,6 +3,8 @@ const fs = require('fs').promises;
 const path = require('path');
 const Shipment = require('../models/shipment');
 const localStorageService = require('../services/localStorageService');
+const multer = require('multer');
+const sharp = require('sharp');
 
 class ShipmentController {
   constructor() {
@@ -222,6 +224,174 @@ class ShipmentController {
     }
   }
 
+  // Configurar multer para upload
+  getUploadMiddleware() {
+    const storage = multer.memoryStorage();
+    return multer({
+      storage: storage,
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB por arquivo
+        files: 1000 // Máximo 1000 arquivos
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files allowed'), false);
+        }
+      }
+    });
+  }
+
+  // Upload de fotos para shipment
+  async uploadPhotos(req, res) {
+    try {
+      const { shipmentId } = req.params;
+      const files = req.files;
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No files uploaded'
+        });
+      }
+
+      console.log(`📤 Processing ${files.length} files for shipment: ${shipmentId}`);
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      // Processar arquivos por categoria
+      const categoriesData = {};
+      let totalProcessed = 0;
+
+      for (const file of files) {
+        try {
+          // Detectar categoria do nome/caminho do arquivo
+          const categoryName = this.detectCategoryFromFile(file);
+          
+          if (!categoriesData[categoryName]) {
+            categoriesData[categoryName] = [];
+          }
+
+          // Converter para WebP se necessário
+          let fileBuffer = file.buffer;
+          if (file.mimetype !== 'image/webp') {
+            fileBuffer = await sharp(file.buffer)
+              .webp({ quality: 90, effort: 4 })
+              .toBuffer();
+          }
+
+          // Gerar nome único do arquivo
+          const fileName = `${Date.now()}_${totalProcessed}.webp`;
+          
+          // Salvar na pasta do shipment
+          const categoryPath = path.join(shipment.folderPath, categoryName);
+          await fs.mkdir(categoryPath, { recursive: true });
+          
+          const filePath = path.join(categoryPath, fileName);
+          await fs.writeFile(filePath, fileBuffer);
+          
+          categoriesData[categoryName].push({
+            originalName: file.originalname,
+            fileName: fileName,
+            size: fileBuffer.length
+          });
+          
+          totalProcessed++;
+          
+        } catch (fileError) {
+          console.error(`Error processing file ${file.originalname}:`, fileError);
+        }
+      }
+
+      // Atualizar shipment no banco
+      const categories = Object.entries(categoriesData).map(([name, files]) => ({
+        name,
+        photoCount: files.length,
+        processedPhotos: 0
+      }));
+
+      shipment.categories = categories;
+      shipment.totalPhotos = totalProcessed;
+      await shipment.save();
+
+      console.log(`✅ Upload completed: ${totalProcessed} photos in ${categories.length} categories`);
+
+      res.status(200).json({
+        success: true,
+        processedPhotos: totalProcessed,
+        categories: categories,
+        message: `Successfully uploaded ${totalProcessed} photos`
+      });
+
+    } catch (error) {
+      console.error('❌ Error uploading photos:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error uploading photos: ${error.message}`
+      });
+    }
+  }
+
+  // Smart Detection de categoria baseada no arquivo
+  detectCategoryFromFile(file) {
+    const fileName = file.originalname.toLowerCase();
+    const filePath = file.path || '';
+
+    // Padrões baseados na sua estrutura existente
+    const patterns = [
+      { pattern: /black.*white/i, category: 'Black & White' },
+      { pattern: /brown.*white/i, category: 'Brown & White' },
+      { pattern: /tricolor/i, category: 'Tricolor' },
+      { pattern: /brindle/i, category: 'Brindle' },
+      { pattern: /exotic/i, category: 'Exotic Tones' },
+      { pattern: /palomino/i, category: 'Palomino' },
+      { pattern: /salt.*pepper/i, category: 'Salt & Pepper' },
+      { pattern: /hereford/i, category: 'Hereford' },
+      { pattern: /calfskin/i, category: 'Calfskins' },
+      { pattern: /sheepskin/i, category: 'Sheepskins' },
+      { pattern: /medium/i, category: 'Medium' },
+      { pattern: /large/i, category: 'Large' },
+      { pattern: /small/i, category: 'Small' }
+    ];
+
+    for (const { pattern, category } of patterns) {
+      if (pattern.test(fileName) || pattern.test(filePath)) {
+        return category;
+      }
+    }
+
+    // Se não detectar, usar pasta pai ou genérico
+    return 'Mixed Category';
+  }
+
+  // Obter estrutura de pastas para distribuição
+  async getDestinationFolders(req, res) {
+    try {
+      console.log('📁 Getting destination folders...');
+      
+      const folderStructure = await localStorageService.getFolderStructure(true, false);
+      
+      res.status(200).json({
+        success: true,
+        folders: folderStructure
+      });
+
+    } catch (error) {
+      console.error('❌ Error getting destination folders:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error getting folders: ${error.message}`
+      });
+    }
+  }
+
 }
 
 // Exportar instância
@@ -233,5 +403,8 @@ module.exports = {
   listShipments: shipmentController.listShipments.bind(shipmentController),
   updateShipmentStatus: shipmentController.updateShipmentStatus.bind(shipmentController),
   getShipmentDetails: shipmentController.getShipmentDetails.bind(shipmentController),
-  deleteShipment: shipmentController.deleteShipment.bind(shipmentController)
+  deleteShipment: shipmentController.deleteShipment.bind(shipmentController),
+  uploadPhotos: shipmentController.uploadPhotos.bind(shipmentController),
+  getDestinationFolders: shipmentController.getDestinationFolders.bind(shipmentController),
+  getUploadMiddleware: shipmentController.getUploadMiddleware.bind(shipmentController)
 };

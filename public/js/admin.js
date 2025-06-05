@@ -1524,10 +1524,11 @@ function getKanbanActions(shipment) {
   switch (shipment.status) {
     case 'incoming-air':
     case 'incoming-sea':
+      actions.push(`<button class="btn btn-primary btn-sm" onclick="uploadPhotosToShipment('${shipment._id}')">📤 Upload</button>`);
       actions.push(`<button class="btn btn-gold btn-sm" onclick="moveShipmentTo('${shipment._id}', 'warehouse')">→ Warehouse</button>`);
       break;
     case 'warehouse':
-      actions.push(`<button class="btn btn-success btn-sm" onclick="alert('Distribution coming soon!')">Distribute</button>`);
+      actions.push(`<button class="btn btn-success btn-sm" onclick="distributeShipment('${shipment._id}')">Distribute</button>`);
       break;
   }
   
@@ -1673,5 +1674,74 @@ async function deleteShipment(shipmentId) {
   } catch (error) {
     console.error('Error deleting shipment:', error);
     alert('Error deleting shipment!');
+  }
+}
+
+// Upload de fotos para shipment
+async function uploadPhotosToShipment(shipmentId) {
+  // Criar input file para seleção de múltiplos arquivos
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = 'image/*';
+  input.webkitdirectory = true; // Permite seleção de pastas
+  
+  input.onchange = async function(event) {
+    const files = Array.from(event.target.files);
+    
+    if (files.length === 0) return;
+    
+    console.log(`📤 Uploading ${files.length} files to shipment ${shipmentId}`);
+    
+    // Mostrar loading
+    if (confirm(`Upload ${files.length} photos to this shipment?`)) {
+      
+      try {
+        // Criar FormData
+        const formData = new FormData();
+        files.forEach(file => {
+          formData.append('photos', file);
+        });
+        
+        alert(`Uploading ${files.length} photos... This may take a while.`);
+        
+        const response = await fetch(`/api/admin/shipments/${shipmentId}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert(`✅ Successfully uploaded ${result.processedPhotos} photos in ${result.categories.length} categories!`);
+          loadShipments(); // Recarregar lista
+        } else {
+          alert('❌ Upload error: ' + result.message);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('❌ Upload failed: ' + error.message);
+      }
+    }
+  };
+  
+  input.click();
+}
+
+// Obter pastas de destino disponíveis
+async function getDestinationFolders() {
+  try {
+    const response = await fetch('/api/admin/shipments/destination/folders');
+    const result = await response.json();
+    
+    if (result.success) {
+      return result.folders;
+    } else {
+      console.error('Error getting folders:', result.message);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error getting folders:', error);
+    return [];
   }
 }

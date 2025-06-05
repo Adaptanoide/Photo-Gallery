@@ -55,4 +55,16 @@ router.put('/shipments/:shipmentId/status', shipmentController.updateShipmentSta
 // Deletar shipment
 router.delete('/shipments/:shipmentId', shipmentController.deleteShipment);
 
+// Upload de fotos para shipment
+router.post('/shipments/:shipmentId/upload', 
+  (req, res, next) => {
+    const upload = shipmentController.getUploadMiddleware();
+    upload.array('photos', 1000)(req, res, next);
+  },
+  shipmentController.uploadPhotos
+);
+
+// Obter pastas disponíveis para distribuição
+router.get('/shipments/destination/folders', shipmentController.getDestinationFolders);
+
 module.exports = router;
