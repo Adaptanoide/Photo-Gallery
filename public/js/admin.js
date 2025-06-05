@@ -1453,30 +1453,87 @@ function displayShipments(shipments) {
   const adminSection = container.querySelector('.admin-section');
   if (!adminSection) return;
   
+  // Organizar shipments por status
+  const shipmentsByStatus = {
+    'incoming-air': [],
+    'incoming-sea': [],
+    'warehouse': []
+  };
+  
+  shipments.forEach(shipment => {
+    if (shipmentsByStatus[shipment.status]) {
+      shipmentsByStatus[shipment.status].push(shipment);
+    }
+  });
+  
   adminSection.innerHTML = `
-    <h3>Shipment Control</h3>
-    <button class="btn btn-gold" onclick="createTestShipment()">Create Test Shipment</button>
-    <div style="margin-top: 20px;">
-      <h4>Shipments (${shipments.length})</h4>
-      <div id="shipments-list">
-        ${shipments.map(shipment => `
-          <div class="shipment-item">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="flex: 1;">
-                <strong>${shipment.name}</strong><br>
-                <span class="status-${shipment.status}">Status: ${shipment.status}</span><br>
-                <span style="color: #666;">Created: ${new Date(shipment.uploadDate).toLocaleDateString()}</span><br>
-                <span style="color: #666;">Photos: ${shipment.totalPhotos || 0}</span>
-              </div>
-              <div class="shipment-actions">
-                ${getShipmentActions(shipment)}
-              </div>
-            </div>
-          </div>
-        `).join('')}
+    <div class="shipment-header">
+      <h3>Shipment Control</h3>
+      <button class="btn btn-gold" onclick="createTestShipment()">Create Test Shipment</button>
+    </div>
+    
+    <div class="shipments-kanban">
+      <div class="kanban-column incoming-air">
+        <h4>🛩️ Air Transit (${shipmentsByStatus['incoming-air'].length})</h4>
+        <div class="kanban-items">
+          ${renderKanbanCards(shipmentsByStatus['incoming-air'])}
+        </div>
+      </div>
+      
+      <div class="kanban-column incoming-sea">
+        <h4>🚢 Sea Transit (${shipmentsByStatus['incoming-sea'].length})</h4>
+        <div class="kanban-items">
+          ${renderKanbanCards(shipmentsByStatus['incoming-sea'])}
+        </div>
+      </div>
+      
+      <div class="kanban-column warehouse">
+        <h4>🏪 Warehouse (${shipmentsByStatus['warehouse'].length})</h4>
+        <div class="kanban-items">
+          ${renderKanbanCards(shipmentsByStatus['warehouse'])}
+        </div>
       </div>
     </div>
   `;
+}
+
+// Renderizar cards do Kanban
+function renderKanbanCards(shipments) {
+  if (!shipments || shipments.length === 0) {
+    return '<div class="kanban-empty">No shipments</div>';
+  }
+  
+  return shipments.map(shipment => `
+    <div class="kanban-card" onclick="viewShipmentDetails('${shipment._id}')">
+      <div class="kanban-card-title">${shipment.name}</div>
+      <div class="kanban-card-info">
+        Created: ${new Date(shipment.uploadDate).toLocaleDateString()}<br>
+        Photos: ${shipment.totalPhotos || 0}
+      </div>
+      <div class="kanban-card-actions" onclick="event.stopPropagation();">
+        ${getKanbanActions(shipment)}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Ações específicas para Kanban
+function getKanbanActions(shipment) {
+  let actions = [];
+  
+  switch (shipment.status) {
+    case 'incoming-air':
+    case 'incoming-sea':
+      actions.push(`<button class="btn btn-gold btn-sm" onclick="moveShipmentTo('${shipment._id}', 'warehouse')">→ Warehouse</button>`);
+      break;
+    case 'warehouse':
+      actions.push(`<button class="btn btn-success btn-sm" onclick="alert('Distribution coming soon!')">Distribute</button>`);
+      break;
+  }
+  
+  actions.push(`<button class="btn btn-delete btn-sm" onclick="deleteShipment('${shipment._id}')">Delete</button>`);
+  
+  return actions.join('');
 }
 
 // Obter ações disponíveis para cada shipment
