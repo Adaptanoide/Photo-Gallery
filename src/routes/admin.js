@@ -46,4 +46,10 @@ router.get('/shipments', shipmentController.listShipments);
 // Criar novo shipment
 router.post('/shipments', shipmentController.createShipment);
 
+// Obter detalhes de um shipment específico
+router.get('/shipments/:shipmentId', shipmentController.getShipmentDetails);
+
+// Atualizar status do shipment (Air → Sea → Warehouse)
+router.put('/shipments/:shipmentId/status', shipmentController.updateShipmentStatus);
+
 module.exports = router;

@@ -100,6 +100,84 @@ class ShipmentController {
       });
     }
   }
+
+  // Atualizar status do shipment
+  async updateShipmentStatus(req, res) {
+    try {
+      const { shipmentId, newStatus } = req.body;
+
+      console.log(`🔄 Atualizando shipment ${shipmentId} para: ${newStatus}`);
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      // Mover pasta física
+      const currentPath = path.join(this.shipmentsPath, shipment.status, shipment.name);
+      const newPath = path.join(this.shipmentsPath, newStatus, shipment.name);
+
+      try {
+        await fs.rename(currentPath, newPath);
+        console.log(`📦 Pasta movida: ${currentPath} → ${newPath}`);
+      } catch (moveError) {
+        console.error('❌ Erro ao mover pasta:', moveError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error moving shipment folder'
+        });
+      }
+
+      // Atualizar banco
+      shipment.status = newStatus;
+      shipment.folderPath = newPath;
+      await shipment.save();
+
+      res.status(200).json({
+        success: true,
+        shipment: shipment,
+        message: `Shipment moved to ${newStatus}`
+      });
+
+    } catch (error) {
+      console.error('❌ Error updating shipment status:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error updating status: ${error.message}`
+      });
+    }
+  }
+
+  // Obter detalhes de um shipment
+  async getShipmentDetails(req, res) {
+    try {
+      const { shipmentId } = req.params;
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        shipment: shipment
+      });
+
+    } catch (error) {
+      console.error('❌ Error getting shipment details:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error getting details: ${error.message}`
+      });
+    }
+  }
+
 }
 
 // Exportar instância
@@ -108,5 +186,7 @@ const shipmentController = new ShipmentController();
 // Exportar métodos individuais
 module.exports = {
   createShipment: shipmentController.createShipment.bind(shipmentController),
-  listShipments: shipmentController.listShipments.bind(shipmentController)
+  listShipments: shipmentController.listShipments.bind(shipmentController),
+  updateShipmentStatus: shipmentController.updateShipmentStatus.bind(shipmentController),
+  getShipmentDetails: shipmentController.getShipmentDetails.bind(shipmentController)
 };
