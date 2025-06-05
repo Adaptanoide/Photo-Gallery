@@ -37,4 +37,13 @@ router.post('/folders/delete', adminController.deleteFolder);
 // ROTA DE UPLOAD
 router.post('/photos/upload', adminController.uploadPhotos);
 
+// ==== SHIPMENT MANAGEMENT ROUTES ====
+const shipmentController = require('../controllers/shipmentController');
+
+// Listar shipments
+router.get('/shipments', shipmentController.listShipments);
+
+// Criar novo shipment
+router.post('/shipments', shipmentController.createShipment);
+
 module.exports = router;
