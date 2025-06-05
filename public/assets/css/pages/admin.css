@@ -8,6 +8,8 @@
 @import url('./admin/price-management.css');
 @import url('./admin/photo-storage.css');
 @import url('./admin/modals.css');
+@import url('./admin/shipments.css');
+
 
 /* Additional modules can be added here:
 @import url('./admin/order-management.css');

@@ -1,0 +1,18 @@
+/* ===== SHIPMENT CONTROL STYLES ===== */
+/* Estilos básicos para a aba de shipments */
+
+.shipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 5px;
+}
+
+.shipment-basic {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  text-align: center;
+}
