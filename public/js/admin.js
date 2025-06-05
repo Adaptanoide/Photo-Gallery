@@ -47,6 +47,11 @@ function switchTab(tabId) {
   // Show the selected tab pane
   document.getElementById(tabId).classList.add('active');
 
+  // Initialize specific tabs
+  if (tabId === 'shipment-control') {
+    initShipmentTab();
+  }
+
   // Activate the clicked tab button
   const activeButton = document.querySelector(`.tab-button[onclick="switchTab('${tabId}')"]`);
   if (activeButton) {
@@ -1412,4 +1417,85 @@ function closeReturnAndShowAdmin() {
   window.currentReturnOrderName = null;
   
   console.log('✅ Returned to admin panel');
+}
+
+// ==== SHIPMENT MANAGEMENT FUNCTIONS ====
+
+// Inicializar aba de shipments
+function initShipmentTab() {
+  console.log('🚀 Initializing Shipment Control tab');
+  loadShipments();
+}
+
+// Carregar shipments
+async function loadShipments() {
+  try {
+    console.log('📋 Loading shipments...');
+    
+    const response = await fetch('/api/admin/shipments');
+    const result = await response.json();
+    
+    if (result.success) {
+      displayShipments(result.shipments);
+    } else {
+      console.error('Error loading shipments:', result.message);
+    }
+  } catch (error) {
+    console.error('Error loading shipments:', error);
+  }
+}
+
+// Exibir shipments na interface
+function displayShipments(shipments) {
+  const container = document.getElementById('shipment-control');
+  if (!container) return;
+  
+  const adminSection = container.querySelector('.admin-section');
+  if (!adminSection) return;
+  
+  adminSection.innerHTML = `
+    <h3>Shipment Control</h3>
+    <button class="btn btn-gold" onclick="createTestShipment()">Create Test Shipment</button>
+    <div style="margin-top: 20px;">
+      <h4>Shipments (${shipments.length})</h4>
+      <div id="shipments-list">
+        ${shipments.map(shipment => `
+          <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px;">
+            <strong>${shipment.name}</strong><br>
+            Status: ${shipment.status}<br>
+            Created: ${new Date(shipment.uploadDate).toLocaleDateString()}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Criar shipment de teste
+async function createTestShipment() {
+  try {
+    const name = `Test Shipment ${Date.now()}`;
+    console.log('Creating test shipment:', name);
+    
+    const response = await fetch('/api/admin/shipments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        status: 'incoming-air',
+        notes: 'Test shipment created from admin panel'
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('Shipment created successfully!');
+      loadShipments(); // Recarregar lista
+    } else {
+      console.error('Error creating shipment:', result.message);
+    }
+  } catch (error) {
+    console.error('Error creating shipment:', error);
+  }
 }
