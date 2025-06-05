@@ -1457,7 +1457,8 @@ function displayShipments(shipments) {
   const shipmentsByStatus = {
     'incoming-air': [],
     'incoming-sea': [],
-    'warehouse': []
+    'warehouse': [],
+    'completed': []
   };
   
   shipments.forEach(shipment => {
@@ -1491,6 +1492,13 @@ function displayShipments(shipments) {
         <h4>🏪 Warehouse (${shipmentsByStatus['warehouse'].length})</h4>
         <div class="kanban-items">
           ${renderKanbanCards(shipmentsByStatus['warehouse'])}
+        </div>
+      </div>
+      
+      <div class="kanban-column completed">
+        <h4>✅ Completed (${shipmentsByStatus['completed'].length})</h4>
+        <div class="kanban-items">
+          ${renderKanbanCards(shipmentsByStatus['completed'])}
         </div>
       </div>
     </div>
