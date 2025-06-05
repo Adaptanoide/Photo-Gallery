@@ -1623,17 +1623,104 @@ Notes: ${shipment.notes || 'None'}`);
 
 // Criar shipment de teste
 async function createTestShipment() {
+  // Mostrar modal de seleção
+  showCreateShipmentModal();
+}
+
+// Mostrar modal para criar shipment
+function showCreateShipmentModal() {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 1000; display: flex;
+    align-items: center; justify-content: center;
+  `;
+  
+  modal.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%;">
+      <h3 style="margin-top: 0; color: #333;">Create New Shipment</h3>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Shipment Name:</label>
+        <input type="text" id="shipment-name-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" 
+               placeholder="e.g., COURO & ARTE S21 1940-2025 250un">
+      </div>
+      
+      <div style="margin-bottom: 25px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Transit Type:</label>
+        <div style="display: flex; gap: 15px;">
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="radio" name="transit-type" value="incoming-air" checked style="margin-right: 8px;">
+            🛩️ Air Transit
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="radio" name="transit-type" value="incoming-sea" style="margin-right: 8px;">
+            🚢 Sea Transit
+          </label>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button onclick="closeCreateShipmentModal()" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">
+          Cancel
+        </button>
+        <button onclick="submitNewShipment()" style="padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Create Shipment
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Focar no input de nome
+  setTimeout(() => {
+    document.getElementById('shipment-name-input').focus();
+  }, 100);
+  
+  // Fechar ao clicar fora
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      closeCreateShipmentModal();
+    }
+  });
+  
+  // Guardar referência do modal
+  window.currentShipmentModal = modal;
+}
+
+// Fechar modal de criação
+function closeCreateShipmentModal() {
+  if (window.currentShipmentModal) {
+    document.body.removeChild(window.currentShipmentModal);
+    window.currentShipmentModal = null;
+  }
+}
+
+// Submeter novo shipment
+async function submitNewShipment() {
+  const nameInput = document.getElementById('shipment-name-input');
+  const transitType = document.querySelector('input[name="transit-type"]:checked');
+  
+  const name = nameInput.value.trim();
+  const status = transitType.value;
+  
+  if (!name) {
+    alert('Please enter a shipment name');
+    nameInput.focus();
+    return;
+  }
+  
   try {
-    const name = `Test Shipment ${Date.now()}`;
-    console.log('Creating test shipment:', name);
+    console.log('Creating shipment:', { name, status });
     
     const response = await fetch('/api/admin/shipments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: name,
-        status: 'incoming-air',
-        notes: 'Test shipment created from admin panel'
+        status: status,
+        notes: `Created via admin panel - ${status}`
       })
     });
     
@@ -1641,12 +1728,18 @@ async function createTestShipment() {
     
     if (result.success) {
       console.log('Shipment created successfully!');
+      closeCreateShipmentModal();
       loadShipments(); // Recarregar lista
+      
+      const transitTypeName = status === 'incoming-air' ? 'Air Transit' : 'Sea Transit';
+      alert(`✅ Shipment "${name}" created in ${transitTypeName}!`);
     } else {
       console.error('Error creating shipment:', result.message);
+      alert('❌ Error: ' + result.message);
     }
   } catch (error) {
     console.error('Error creating shipment:', error);
+    alert('❌ Error creating shipment!');
   }
 }
 
