@@ -52,4 +52,7 @@ router.get('/shipments/:shipmentId', shipmentController.getShipmentDetails);
 // Atualizar status do shipment (Air → Sea → Warehouse)
 router.put('/shipments/:shipmentId/status', shipmentController.updateShipmentStatus);
 
+// Deletar shipment
+router.delete('/shipments/:shipmentId', shipmentController.deleteShipment);
+
 module.exports = router;

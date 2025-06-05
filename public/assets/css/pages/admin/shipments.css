@@ -1,5 +1,4 @@
 /* ===== SHIPMENT CONTROL STYLES ===== */
-/* Estilos básicos para a aba de shipments */
 
 .shipment-header {
   display: flex;
@@ -15,4 +14,89 @@
   border-radius: 6px;
   border: 1px solid #e9ecef;
   text-align: center;
+}
+
+/* NOVO: Scroll para lista de shipments */
+#shipments-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 10px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  background: #f8f9fa;
+  padding: 15px;
+}
+
+#shipments-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#shipments-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#shipments-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+#shipments-list::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Estilo melhorado para shipment cards */
+.shipment-item {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.shipment-item:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  border-color: var(--color-gold, #d4af37);
+}
+
+.shipment-actions {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.shipment-actions .btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  margin: 2px 0;
+}
+
+/* Status indicators */
+.status-incoming-air {
+  color: #007bff;
+  font-weight: bold;
+}
+
+.status-incoming-sea {
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+.status-warehouse {
+  color: #28a745;
+  font-weight: bold;
+}
+
+/* Delete button specific styling */
+.btn-delete {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
 }

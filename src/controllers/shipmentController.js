@@ -178,6 +178,50 @@ class ShipmentController {
     }
   }
 
+  // Deletar shipment
+  async deleteShipment(req, res) {
+    try {
+      const { shipmentId } = req.params;
+
+      console.log(`🗑️ Deletando shipment: ${shipmentId}`);
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      // Deletar pasta física se existir
+      if (shipment.folderPath) {
+        try {
+          await fs.rmdir(shipment.folderPath, { recursive: true });
+          console.log(`📁 Pasta física deletada: ${shipment.folderPath}`);
+        } catch (error) {
+          console.warn('Aviso: Erro ao deletar pasta física:', error.message);
+        }
+      }
+
+      // Deletar do banco
+      await Shipment.findByIdAndDelete(shipmentId);
+
+      console.log(`✅ Shipment deletado: ${shipment.name}`);
+
+      res.status(200).json({
+        success: true,
+        message: `Shipment "${shipment.name}" deleted successfully`
+      });
+
+    } catch (error) {
+      console.error('❌ Error deleting shipment:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error deleting shipment: ${error.message}`
+      });
+    }
+  }
+
 }
 
 // Exportar instância
@@ -188,5 +232,6 @@ module.exports = {
   createShipment: shipmentController.createShipment.bind(shipmentController),
   listShipments: shipmentController.listShipments.bind(shipmentController),
   updateShipmentStatus: shipmentController.updateShipmentStatus.bind(shipmentController),
-  getShipmentDetails: shipmentController.getShipmentDetails.bind(shipmentController)
+  getShipmentDetails: shipmentController.getShipmentDetails.bind(shipmentController),
+  deleteShipment: shipmentController.deleteShipment.bind(shipmentController)
 };

@@ -1460,15 +1460,15 @@ function displayShipments(shipments) {
       <h4>Shipments (${shipments.length})</h4>
       <div id="shipments-list">
         ${shipments.map(shipment => `
-          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 6px; background: white;">
-            <div style="display: flex; justify-content: between; align-items: center;">
+          <div class="shipment-item">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
               <div style="flex: 1;">
                 <strong>${shipment.name}</strong><br>
-                <span style="color: #666;">Status: <strong>${shipment.status}</strong></span><br>
+                <span class="status-${shipment.status}">Status: ${shipment.status}</span><br>
                 <span style="color: #666;">Created: ${new Date(shipment.uploadDate).toLocaleDateString()}</span><br>
                 <span style="color: #666;">Photos: ${shipment.totalPhotos || 0}</span>
               </div>
-              <div style="display: flex; gap: 10px; flex-direction: column;">
+              <div class="shipment-actions">
                 ${getShipmentActions(shipment)}
               </div>
             </div>
@@ -1499,7 +1499,10 @@ function getShipmentActions(shipment) {
       break;
   }
   
-  return actions.join('<br>');
+  // Botão delete sempre disponível
+  actions.push(`<button class="btn btn-delete btn-sm" onclick="deleteShipment('${shipment._id}')">Delete</button>`);
+  
+  return actions.join('');
 }
 
 // Mover shipment para novo status
@@ -1586,5 +1589,32 @@ async function createTestShipment() {
     }
   } catch (error) {
     console.error('Error creating shipment:', error);
+  }
+}
+
+// Deletar shipment
+async function deleteShipment(shipmentId) {
+  if (!confirm('Are you sure you want to delete this shipment? This action cannot be undone.')) return;
+  
+  try {
+    console.log(`Deleting shipment: ${shipmentId}`);
+    
+    const response = await fetch(`/api/admin/shipments/${shipmentId}`, {
+      method: 'DELETE'
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('Shipment deleted successfully!');
+      alert('Shipment deleted successfully!');
+      loadShipments(); // Recarregar lista
+    } else {
+      console.error('Error deleting shipment:', result.message);
+      alert('Error: ' + result.message);
+    }
+  } catch (error) {
+    console.error('Error deleting shipment:', error);
+    alert('Error deleting shipment!');
   }
 }
