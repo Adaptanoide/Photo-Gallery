@@ -210,7 +210,3 @@
     min-width: unset;
   }
 }
-
-.kanban-column.completed h4 {
-  background: linear-gradient(135deg, #6c757d, #495057);
-}

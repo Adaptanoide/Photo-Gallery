@@ -1458,7 +1458,6 @@ function displayShipments(shipments) {
     'incoming-air': [],
     'incoming-sea': [],
     'warehouse': [],
-    'completed': []
   };
   
   shipments.forEach(shipment => {
@@ -1470,8 +1469,7 @@ function displayShipments(shipments) {
   adminSection.innerHTML = `
     <div class="shipment-header">
       <h3>Shipment Control</h3>
-      <button class="btn btn-gold" onclick="createTestShipment()">Create Test Shipment</button>
-    </div>
+      <button class="btn btn-gold" onclick="createShipment()">Create Shipment</button>
     
     <div class="shipments-kanban">
       <div class="kanban-column incoming-air">
@@ -1492,13 +1490,6 @@ function displayShipments(shipments) {
         <h4>🏪 Warehouse (${shipmentsByStatus['warehouse'].length})</h4>
         <div class="kanban-items">
           ${renderKanbanCards(shipmentsByStatus['warehouse'])}
-        </div>
-      </div>
-      
-      <div class="kanban-column completed">
-        <h4>✅ Completed (${shipmentsByStatus['completed'].length})</h4>
-        <div class="kanban-items">
-          ${renderKanbanCards(shipmentsByStatus['completed'])}
         </div>
       </div>
     </div>
@@ -1629,8 +1620,7 @@ Notes: ${shipment.notes || 'None'}`);
   }
 }
 
-// Criar shipment de teste
-async function createTestShipment() {
+async function createShipment() {
   // Mostrar modal de seleção
   showCreateShipmentModal();
 }

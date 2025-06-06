@@ -8,7 +8,7 @@ const ShipmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['incoming-air', 'incoming-sea', 'warehouse', 'processing', 'completed'],
+    enum: ['incoming-air', 'incoming-sea', 'warehouse', 'processing'],
     default: 'incoming-air'
   },
   uploadDate: {

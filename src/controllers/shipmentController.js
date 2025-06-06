@@ -653,8 +653,8 @@ class ShipmentController {
       // Atualizar shipment
       shipment.processedPhotos = totalMoved;
       if (totalMoved >= shipment.totalPhotos) {
-        shipment.status = 'completed';
-        shipment.completedAt = new Date();
+        shipment.status = 'warehouse';
+        // Removido: shipment.completedAt = new Date();
       }
       await shipment.save();
 
