@@ -171,3 +171,65 @@
     justify-content: center;
   }
 }
+/* Custom Confirm Modal - Cores do Sistema */
+#custom-confirm {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#custom-confirm .modal-content {
+  background: var(--color-cream);
+  border-radius: 10px;
+  padding: 30px;
+  max-width: 450px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+#custom-confirm h2 {
+  color: var(--color-dark);
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 15px;
+}
+
+#custom-confirm p {
+  color: var(--color-dark);
+  margin-bottom: 25px;
+}
+
+#custom-confirm button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+#confirm-cancel {
+  background: var(--color-taupe);
+  color: white;
+  margin-right: 15px;
+}
+
+#confirm-cancel:hover {
+  background: #3a2f26;
+}
+
+#confirm-ok {
+  background: var(--color-gold);
+  color: var(--color-dark);
+}
+
+#confirm-ok:hover {
+  background: var(--color-gold-light);
+}
