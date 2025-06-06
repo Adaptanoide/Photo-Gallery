@@ -1778,8 +1778,7 @@ async function deleteShipment(shipmentId) {
   }
 }
 
-// SUBSTITUA a função uploadPhotosToShipment no admin.js por esta versão com debug:
-
+// Upload de fotos para shipment - FUNÇÃO COMPLETA DO FRONTEND CORRIGIDA
 async function uploadPhotosToShipment(shipmentId) {
   // Criar input file para seleção de múltiplos arquivos
   const input = document.createElement('input');
@@ -1827,11 +1826,22 @@ async function uploadPhotosToShipment(shipmentId) {
     if (confirm(`Upload ${files.length} photos to this shipment?`)) {
       
       try {
-        // Criar FormData
+        // 🔧 SOLUÇÃO: Criar FormData com paths preservados
         const formData = new FormData();
-        files.forEach(file => {
+        
+        files.forEach((file, index) => {
+          // Adicionar arquivo
           formData.append('photos', file);
+          
+          // 🔧 ADICIONAR PATH COMO CAMPO SEPARADO
+          if (file.webkitRelativePath) {
+            formData.append(`filePaths`, file.webkitRelativePath);
+          } else {
+            formData.append(`filePaths`, file.name);
+          }
         });
+        
+        console.log('📤 Enviando FormData com paths preservados...');
         
         alert(`Uploading ${files.length} photos... This may take a while.`);
         

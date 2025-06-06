@@ -243,7 +243,7 @@ class ShipmentController {
     });
   }
 
-  // Upload de fotos para shipment - PRESERVANDO HIERARQUIA (FUNÇÃO COMPLETA CORRIGIDA)
+  // Upload de fotos para shipment - FUNÇÃO COMPLETA COM DETECÇÃO DE PATHS CORRIGIDA
   async uploadPhotos(req, res) {
     try {
       const { shipmentId } = req.params;
@@ -288,27 +288,41 @@ class ShipmentController {
           let categoryName = 'Mixed Category'; // fallback
           let detectionMethod = 'fallback';
 
-          // 🔧 PRIORIDADE CORRETA: webkitRelativePath PRIMEIRO (para upload de pasta)
-          if (file.webkitRelativePath && file.webkitRelativePath.includes('/')) {
-            const pathParts = file.webkitRelativePath.split('/');
-            console.log(`🔍 webkitRelativePath: "${file.webkitRelativePath}" → parts:`, pathParts);
+          // 🔧 NOVA SOLUÇÃO: Ler paths do campo filePaths
+          const fileIndex = files.indexOf(file);
+          const filePaths = req.body.filePaths || [];
+          const customPath = Array.isArray(filePaths) ? filePaths[fileIndex] : filePaths;
 
-            if (pathParts.length >= 3) {
-              // Para "PastaPrincipal/Subpasta1/foto.jpg" → pegar "Subpasta1"
+          console.log(`🔍 File ${fileIndex}: "${file.originalname}"`);
+          console.log(`🔍 Custom path: "${customPath || 'undefined'}"`);
+
+          // MÉTODO 1: Usar path customizado (enviado do frontend)
+          if (customPath && customPath.includes('/')) {
+            const pathParts = customPath.split('/');
+            console.log(`🔍 Custom path parts:`, pathParts);
+
+            if (pathParts.length >= 2) {
+              // Para "PASTA/5302B BR/foto.jpg" → pegar "5302B BR"
+              categoryName = pathParts[pathParts.length - 2];
+              detectionMethod = 'customPath';
+              console.log(`✅ Detected category: "${categoryName}" from customPath`);
+            }
+          }
+          // MÉTODO 2: Tentar webkitRelativePath (fallback)
+          else if (file.webkitRelativePath && file.webkitRelativePath !== 'undefined' && file.webkitRelativePath.includes('/')) {
+            const pathParts = file.webkitRelativePath.split('/');
+            console.log(`🔍 webkitRelativePath parts:`, pathParts);
+
+            if (pathParts.length >= 2) {
               categoryName = pathParts[pathParts.length - 2];
               detectionMethod = 'webkitRelativePath';
               console.log(`✅ Detected category: "${categoryName}" from webkitRelativePath`);
-            } else if (pathParts.length === 2) {
-              // Para "Subpasta1/foto.jpg" → pegar "Subpasta1"  
-              categoryName = pathParts[0];
-              detectionMethod = 'webkitRelativePath-root';
-              console.log(`✅ Detected category: "${categoryName}" from webkitRelativePath (root)`);
             }
           }
-          // MÉTODO 2: originalname como fallback
+          // MÉTODO 3: originalname como último recurso
           else if (file.originalname && file.originalname.includes('/')) {
             const pathParts = file.originalname.split('/');
-            console.log(`🔍 originalname: "${file.originalname}" → parts:`, pathParts);
+            console.log(`🔍 originalname parts:`, pathParts);
 
             if (pathParts.length >= 2) {
               categoryName = pathParts[pathParts.length - 2];
@@ -320,6 +334,7 @@ class ShipmentController {
           // Log detalhado de debug para primeiros arquivos
           if (totalProcessed < 3) {
             console.log(`📁 File: ${file.originalname}`);
+            console.log(`   customPath: "${customPath || 'undefined'}"`);
             console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
             console.log(`   Detection: ${detectionMethod} → Category: "${categoryName}"`);
             console.log(`   ---`);
@@ -359,7 +374,7 @@ class ShipmentController {
             originalName: file.originalname,
             fileName: fileName,
             size: fileBuffer.length,
-            originalPath: file.webkitRelativePath || file.originalname,
+            originalPath: customPath || file.webkitRelativePath || file.originalname,
             detectionMethod: detectionMethod
           });
 
