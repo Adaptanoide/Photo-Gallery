@@ -64,7 +64,7 @@
 .shipment-actions {
   display: flex;
   gap: 8px;
-  flex-direction: column;
+  /* flex-direction: column; */
 }
 
 .shipment-actions .btn {
@@ -102,15 +102,6 @@
 }
 
 /* ===== KANBAN LAYOUT ===== */
-.shipments-kanban {
-  display: flex;
-  gap: 20px;
-  margin-top: 20px;
-  min-height: 500px;
-  overflow-x: auto;
-  padding: 10px 0;
-  justify-content: flex-start;
-}
 
 .kanban-column {
   flex: 0 0 300px;
@@ -144,7 +135,7 @@
 
 .kanban-items {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   gap: 12px;
   max-height: 450px;
   overflow-y: auto;
@@ -203,9 +194,6 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .shipments-kanban {
-    flex-direction: column;
-  }
   
   .kanban-column {
     min-width: unset;
