@@ -1691,7 +1691,7 @@ function showCreateShipmentModal() {
   `;
   
   modal.innerHTML = `
-    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
       <h3 style="margin-top: 0; color: #333;">Create New Shipment</h3>
       
       <div style="margin-bottom: 20px;">
@@ -1700,7 +1700,7 @@ function showCreateShipmentModal() {
                placeholder="e.g., COURO & ARTE S21 1940-2025 250un">
       </div>
       
-      <div style="margin-bottom: 25px;">
+      <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 8px; font-weight: 500;">Transit Type:</label>
         <div style="display: flex; gap: 15px;">
           <label style="display: flex; align-items: center; cursor: pointer;">
@@ -1711,6 +1711,17 @@ function showCreateShipmentModal() {
             <input type="radio" name="transit-type" value="incoming-sea" style="margin-right: 8px;">
             🚢 Sea Transit
           </label>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Departure Date:</label>
+          <input type="date" id="departure-date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Expected Arrival:</label>
+          <input type="date" id="arrival-date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
         </div>
       </div>
       
