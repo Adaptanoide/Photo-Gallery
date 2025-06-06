@@ -243,8 +243,7 @@ class ShipmentController {
     });
   }
 
-  // SUBSTITUA a função uploadPhotos atual por esta versão com debug:
-
+  // Upload de fotos para shipment - PRESERVANDO HIERARQUIA (FUNÇÃO COMPLETA CORRIGIDA)
   async uploadPhotos(req, res) {
     try {
       const { shipmentId } = req.params;
@@ -267,8 +266,8 @@ class ShipmentController {
         });
       }
 
-      // NOVO: Debug detalhado dos arquivos recebidos
-      console.log('\n🔍 DEBUG: Analisando arquivos recebidos...');
+      // Debug detalhado dos arquivos recebidos
+      console.log('\n🔍 DEBUG: Analisando primeiros 3 arquivos...');
       files.slice(0, 3).forEach((file, index) => {
         console.log(`📁 Arquivo ${index + 1}:`);
         console.log(`   originalname: "${file.originalname}"`);
@@ -289,41 +288,48 @@ class ShipmentController {
           let categoryName = 'Mixed Category'; // fallback
           let detectionMethod = 'fallback';
 
-          // MÉTODO 1: Tentar webkitRelativePath primeiro
+          // 🔧 PRIORIDADE CORRETA: webkitRelativePath PRIMEIRO (para upload de pasta)
           if (file.webkitRelativePath && file.webkitRelativePath.includes('/')) {
             const pathParts = file.webkitRelativePath.split('/');
-            console.log(`🔍 webkitRelativePath parts:`, pathParts);
+            console.log(`🔍 webkitRelativePath: "${file.webkitRelativePath}" → parts:`, pathParts);
 
-            if (pathParts.length >= 2) {
-              // Pegar a pasta imediatamente antes do arquivo
+            if (pathParts.length >= 3) {
+              // Para "PastaPrincipal/Subpasta1/foto.jpg" → pegar "Subpasta1"
               categoryName = pathParts[pathParts.length - 2];
               detectionMethod = 'webkitRelativePath';
+              console.log(`✅ Detected category: "${categoryName}" from webkitRelativePath`);
+            } else if (pathParts.length === 2) {
+              // Para "Subpasta1/foto.jpg" → pegar "Subpasta1"  
+              categoryName = pathParts[0];
+              detectionMethod = 'webkitRelativePath-root';
+              console.log(`✅ Detected category: "${categoryName}" from webkitRelativePath (root)`);
             }
           }
-          // MÉTODO 2: Tentar originalname se webkitRelativePath falhar
+          // MÉTODO 2: originalname como fallback
           else if (file.originalname && file.originalname.includes('/')) {
             const pathParts = file.originalname.split('/');
-            console.log(`🔍 originalname parts:`, pathParts);
+            console.log(`🔍 originalname: "${file.originalname}" → parts:`, pathParts);
 
             if (pathParts.length >= 2) {
               categoryName = pathParts[pathParts.length - 2];
               detectionMethod = 'originalname';
+              console.log(`✅ Detected category: "${categoryName}" from originalname`);
             }
           }
 
-          // MÉTODO 3: Tentar extrair do fieldname se disponível
-          else if (file.fieldname && file.fieldname !== 'photos') {
-            categoryName = file.fieldname;
-            detectionMethod = 'fieldname';
+          // Log detalhado de debug para primeiros arquivos
+          if (totalProcessed < 3) {
+            console.log(`📁 File: ${file.originalname}`);
+            console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
+            console.log(`   Detection: ${detectionMethod} → Category: "${categoryName}"`);
+            console.log(`   ---`);
           }
 
-          // Log da detecção
+          // Estatísticas de debug
           if (categoryName === 'Mixed Category') {
             debugStats.failedDetections++;
-            console.log(`❌ FALHA na detecção para: ${file.originalname}`);
           } else {
             debugStats.detectedCategories.add(categoryName);
-            console.log(`✅ ${detectionMethod}: ${file.originalname} → ${categoryName}`);
           }
 
           if (!categoriesData[categoryName]) {
