@@ -1523,12 +1523,19 @@ function getKanbanActions(shipment) {
   
   switch (shipment.status) {
     case 'incoming-air':
+      actions.push(`<button class="btn btn-primary btn-sm" onclick="uploadPhotosToShipment('${shipment._id}')">📤 Upload</button>`);
+      actions.push(`<button class="btn btn-info btn-sm" onclick="moveShipmentTo('${shipment._id}', 'incoming-sea')">🚢 To Sea</button>`);
+      actions.push(`<button class="btn btn-gold btn-sm" onclick="moveShipmentTo('${shipment._id}', 'warehouse')">→ Warehouse</button>`);
+      break;
     case 'incoming-sea':
       actions.push(`<button class="btn btn-primary btn-sm" onclick="uploadPhotosToShipment('${shipment._id}')">📤 Upload</button>`);
+      actions.push(`<button class="btn btn-info btn-sm" onclick="moveShipmentTo('${shipment._id}', 'incoming-air')">🛩️ To Air</button>`);
       actions.push(`<button class="btn btn-gold btn-sm" onclick="moveShipmentTo('${shipment._id}', 'warehouse')">→ Warehouse</button>`);
       break;
     case 'warehouse':
       actions.push(`<button class="btn btn-success btn-sm" onclick="distributeShipment('${shipment._id}')">Distribute</button>`);
+      actions.push(`<button class="btn btn-info btn-sm" onclick="moveShipmentTo('${shipment._id}', 'incoming-air')">🛩️ Back to Air</button>`);
+      actions.push(`<button class="btn btn-info btn-sm" onclick="moveShipmentTo('${shipment._id}', 'incoming-sea')">🚢 Back to Sea</button>`);
       break;
   }
   
