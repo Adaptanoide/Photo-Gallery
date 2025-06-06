@@ -109,12 +109,11 @@
   min-height: 500px;
   overflow-x: auto;
   padding: 10px 0;
-  justify-content: flex-start;
 }
 
 .kanban-column {
-  flex: 0 0 300px;
-  width: 300px;
+  flex: 1;
+  min-width: 300px;
   background: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
@@ -210,4 +209,8 @@
   .kanban-column {
     min-width: unset;
   }
+}
+
+.kanban-column.completed h4 {
+  background: linear-gradient(135deg, #6c757d, #495057);
 }
