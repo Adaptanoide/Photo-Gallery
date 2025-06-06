@@ -1744,29 +1744,29 @@ async function submitNewShipment() {
 
 // Deletar shipment
 async function deleteShipment(shipmentId) {
-  if (!confirm('Are you sure you want to delete this shipment? This action cannot be undone.')) return;
-  
-  try {
-    console.log(`Deleting shipment: ${shipmentId}`);
-    
-    const response = await fetch(`/api/admin/shipments/${shipmentId}`, {
-      method: 'DELETE'
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      console.log('Shipment deleted successfully!');
-      alert('Shipment deleted successfully!');
-      loadShipments(); // Recarregar lista
-    } else {
-      console.error('Error deleting shipment:', result.message);
-      showToast('Error: ' + result.message, 'error');
+  showConfirm('Are you sure you want to delete this shipment? This action cannot be undone.', async () => {
+    try {
+      console.log(`Deleting shipment: ${shipmentId}`);
+      
+      const response = await fetch(`/api/admin/shipments/${shipmentId}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Shipment deleted successfully!');
+        showToast('Shipment deleted successfully!', 'success');
+        loadShipments(); // Recarregar lista
+      } else {
+        console.error('Error deleting shipment:', result.message);
+        showToast('Error: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting shipment:', error);
+      showToast('Error deleting shipment!', 'error');
     }
-  } catch (error) {
-    console.error('Error deleting shipment:', error);
-    alert('Error deleting shipment!');
-  }
+  });
 }
 
 // Upload de fotos para shipment - FUNÇÃO COMPLETA DO FRONTEND CORRIGIDA
