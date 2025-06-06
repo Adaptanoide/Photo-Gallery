@@ -1605,19 +1605,60 @@ async function viewShipmentDetails(shipmentId) {
     
     if (result.success) {
       const shipment = result.shipment;
-      alert(`Shipment Details:
-Name: ${shipment.name}
-Status: ${shipment.status}
-Created: ${new Date(shipment.uploadDate).toLocaleString()}
-Photos: ${shipment.totalPhotos || 0}
-Notes: ${shipment.notes || 'None'}`);
+      
+      // Criar modal customizado
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); z-index: 2000; display: flex;
+        align-items: center; justify-content: center;
+      `;
+      
+      modal.innerHTML = `
+        <div style="background: var(--color-cream); padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          <h2 style="color: var(--color-dark); font-family: 'Playfair Display', serif; margin-bottom: 20px; text-align: center;">Shipment Details</h2>
+          
+          <div style="color: var(--color-dark); line-height: 1.6; margin-bottom: 25px;">
+            <p><strong>Name:</strong> ${shipment.name}</p>
+            <p><strong>Status:</strong> <span style="color: var(--color-gold); font-weight: 600;">${shipment.status}</span></p>
+            <p><strong>Created:</strong> ${new Date(shipment.uploadDate).toLocaleString()}</p>
+            <p><strong>Photos:</strong> ${shipment.totalPhotos || 0}</p>
+            <p><strong>Notes:</strong> ${shipment.notes || 'None'}</p>
+          </div>
+          
+          <div style="text-align: center;">
+            <button onclick="this.closest('.modal').remove()" style="
+              padding: 10px 25px; 
+              background: var(--color-gold); 
+              color: var(--color-dark); 
+              border: none; 
+              border-radius: 4px; 
+              cursor: pointer; 
+              font-weight: 500;
+              transition: all 0.3s ease;
+            " onmouseover="this.style.background='var(--color-gold-light)'" onmouseout="this.style.background='var(--color-gold)'">
+              Close
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // Fechar ao clicar fora
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      document.body.appendChild(modal);
+      
     } else {
       console.error('Error getting details:', result.message);
       showToast('Error: ' + result.message, 'error');
     }
   } catch (error) {
     console.error('Error getting details:', error);
-    alert('Error getting details!');
+    showToast('Error getting details!', 'error');
   }
 }
 
@@ -2005,11 +2046,11 @@ async function executeDistribution(shipmentId, categoryCount) {
     console.log('Distribution result:', result);
     
     if (result.success) {
-      alert(`✅ Distribution completed! ${result.totalMoved} photos moved to their destinations.`);
+      showToast(`✅ Distribution completed! ${result.totalMoved} photos moved to their destinations.`, "success");
       closeDistributionModal();
       loadShipments(); // Recarregar interface
     } else {
-      alert('❌ Distribution error: ' + result.message);
+      showToast('❌ Distribution error: ' + result.message, 'error');
     }
     
   } catch (error) {
