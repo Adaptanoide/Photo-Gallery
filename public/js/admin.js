@@ -1608,6 +1608,7 @@ async function viewShipmentDetails(shipmentId) {
       
       // Criar modal customizado
       const modal = document.createElement('div');
+      modal.className = 'shipment-details-modal';
       modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6); z-index: 2000; display: flex;
@@ -1627,7 +1628,7 @@ async function viewShipmentDetails(shipmentId) {
           </div>
           
           <div style="text-align: center;">
-            <button onclick="this.closest('.modal').remove()" style="
+            <button class="close-details-btn" style="
               padding: 10px 25px; 
               background: var(--color-gold); 
               color: var(--color-dark); 
@@ -1642,6 +1643,12 @@ async function viewShipmentDetails(shipmentId) {
           </div>
         </div>
       `;
+      
+      // Event listener para o botão close
+      const closeBtn = modal.querySelector('.close-details-btn');
+      closeBtn.addEventListener('click', () => {
+        modal.remove();
+      });
       
       // Fechar ao clicar fora
       modal.addEventListener('click', function(e) {
