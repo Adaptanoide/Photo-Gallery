@@ -1565,34 +1565,34 @@ function getShipmentActions(shipment) {
 
 // Mover shipment para novo status
 async function moveShipmentTo(shipmentId, newStatus) {
-  if (!confirm(`Move shipment to ${newStatus}?`)) return;
-  
-  try {
-    console.log(`Moving shipment ${shipmentId} to ${newStatus}`);
-    
-    const response = await fetch(`/api/admin/shipments/${shipmentId}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        shipmentId: shipmentId,
-        newStatus: newStatus
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      console.log('Shipment moved successfully!');
-      showToast(`Shipment moved to ${newStatus}!`, "success");
-      loadShipments(); // Recarregar lista
-    } else {
-      console.error('Error moving shipment:', result.message);
-      showToast('Error: ' + result.message, 'error');
+  showConfirm(`Move shipment to ${newStatus}?`, async () => {
+    try {
+      console.log(`Moving shipment ${shipmentId} to ${newStatus}`);
+      
+      const response = await fetch(`/api/admin/shipments/${shipmentId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipmentId: shipmentId,
+          newStatus: newStatus
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Shipment moved successfully!');
+        showToast(`Shipment moved to ${newStatus}!`, "success");
+        loadShipments(); // Recarregar lista
+      } else {
+        console.error('Error moving shipment:', result.message);
+        showToast('Error: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error moving shipment:', error);
+      showToast('Error moving shipment!', 'error');
     }
-  } catch (error) {
-    console.error('Error moving shipment:', error);
-    alert('Error moving shipment!');
-  }
+  });
 }
 
 // Ver detalhes do shipment
