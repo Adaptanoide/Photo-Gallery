@@ -201,16 +201,23 @@
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
-  .shipments-kanban {
-    flex-direction: column;
-  }
-  
-  .kanban-column {
-    min-width: unset;
-  }
+
+
+/* Layout melhorado do header */
+.shipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 0 5px;
 }
 
-.kanban-column.completed h4 {
-  background: linear-gradient(135deg, #6c757d, #495057);
+.shipments-kanban {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  min-height: 500px;
+  overflow-x: auto;
+  padding: 10px 0;
+  justify-content: center;
 }
