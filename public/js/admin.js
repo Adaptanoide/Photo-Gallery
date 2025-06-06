@@ -1583,11 +1583,11 @@ async function moveShipmentTo(shipmentId, newStatus) {
     
     if (result.success) {
       console.log('Shipment moved successfully!');
-      alert(`Shipment moved to ${newStatus}!`);
+      showToast(`Shipment moved to ${newStatus}!`, "success");
       loadShipments(); // Recarregar lista
     } else {
       console.error('Error moving shipment:', result.message);
-      alert('Error: ' + result.message);
+      showToast('Error: ' + result.message, 'error');
     }
   } catch (error) {
     console.error('Error moving shipment:', error);
@@ -1613,7 +1613,7 @@ Photos: ${shipment.totalPhotos || 0}
 Notes: ${shipment.notes || 'None'}`);
     } else {
       console.error('Error getting details:', result.message);
-      alert('Error: ' + result.message);
+      showToast('Error: ' + result.message, 'error');
     }
   } catch (error) {
     console.error('Error getting details:', error);
@@ -1705,7 +1705,7 @@ async function submitNewShipment() {
   const status = transitType.value;
   
   if (!name) {
-    alert('Please enter a shipment name');
+    showToast('Please enter a shipment name', 'warning');
     nameInput.focus();
     return;
   }
@@ -1731,10 +1731,10 @@ async function submitNewShipment() {
       loadShipments(); // Recarregar lista
       
       const transitTypeName = status === 'incoming-air' ? 'Air Transit' : 'Sea Transit';
-      alert(`✅ Shipment "${name}" created in ${transitTypeName}!`);
+      showToast(`✅ Shipment "${name}" created in ${transitTypeName}!`, "success");
     } else {
       console.error('Error creating shipment:', result.message);
-      alert('❌ Error: ' + result.message);
+      showToast('❌ Error: ' + result.message, 'error');
     }
   } catch (error) {
     console.error('Error creating shipment:', error);
@@ -1761,7 +1761,7 @@ async function deleteShipment(shipmentId) {
       loadShipments(); // Recarregar lista
     } else {
       console.error('Error deleting shipment:', result.message);
-      alert('Error: ' + result.message);
+      showToast('Error: ' + result.message, 'error');
     }
   } catch (error) {
     console.error('Error deleting shipment:', error);
