@@ -1778,7 +1778,8 @@ async function deleteShipment(shipmentId) {
   }
 }
 
-// Upload de fotos para shipment
+// SUBSTITUA a função uploadPhotosToShipment no admin.js por esta versão com debug:
+
 async function uploadPhotosToShipment(shipmentId) {
   // Criar input file para seleção de múltiplos arquivos
   const input = document.createElement('input');
@@ -1793,6 +1794,34 @@ async function uploadPhotosToShipment(shipmentId) {
     if (files.length === 0) return;
     
     console.log(`📤 Uploading ${files.length} files to shipment ${shipmentId}`);
+    
+    // 🔍 DEBUG: Analisar arquivos no FRONTEND antes de enviar
+    console.log('\n🔍 FRONTEND DEBUG: Analisando primeiros 3 arquivos...');
+    files.slice(0, 3).forEach((file, index) => {
+      console.log(`📁 Frontend Arquivo ${index + 1}:`);
+      console.log(`   name: "${file.name}"`);
+      console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
+      console.log(`   size: ${file.size}`);
+      console.log(`   type: "${file.type}"`);
+      console.log(`   ---`);
+    });
+    
+    // Verificar se há estrutura de pastas
+    const hasStructure = files.some(file => file.webkitRelativePath && file.webkitRelativePath.includes('/'));
+    console.log(`🔍 Estrutura de pastas detectada: ${hasStructure ? 'SIM' : 'NÃO'}`);
+    
+    if (hasStructure) {
+      const uniquePaths = new Set();
+      files.forEach(file => {
+        if (file.webkitRelativePath && file.webkitRelativePath.includes('/')) {
+          const pathParts = file.webkitRelativePath.split('/');
+          if (pathParts.length >= 2) {
+            uniquePaths.add(pathParts[pathParts.length - 2]);
+          }
+        }
+      });
+      console.log(`📁 Categorias detectadas no frontend: [${Array.from(uniquePaths).join(', ')}]`);
+    }
     
     // Mostrar loading
     if (confirm(`Upload ${files.length} photos to this shipment?`)) {
