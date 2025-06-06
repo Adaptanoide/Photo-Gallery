@@ -203,15 +203,8 @@
 /* Responsive */
 
 
-/* Layout melhorado do header */
-.shipment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 0 5px;
-}
 
+/* Layout final correto */
 .shipments-kanban {
   display: flex;
   gap: 20px;
@@ -220,4 +213,13 @@
   overflow-x: auto;
   padding: 10px 0;
   justify-content: center;
+}
+
+.kanban-column {
+  flex: 0 0 300px;
+  width: 300px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  border: 2px solid #e9ecef;
 }

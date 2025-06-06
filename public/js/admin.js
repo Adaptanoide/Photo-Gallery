@@ -1470,6 +1470,7 @@ function displayShipments(shipments) {
     <div class="shipment-header">
       <h3>Shipment Control</h3>
       <button class="btn btn-gold" onclick="createShipment()">Create Shipment</button>
+    </div>
     
     <div class="shipments-kanban">
       <div class="kanban-column incoming-air">
