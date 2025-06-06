@@ -243,121 +243,167 @@ class ShipmentController {
     });
   }
 
-    // Upload de fotos para shipment - PRESERVANDO HIERARQUIA
-    async uploadPhotos(req, res) {
+  // SUBSTITUA a função uploadPhotos atual por esta versão com debug:
+
+  async uploadPhotos(req, res) {
+    try {
+      const { shipmentId } = req.params;
+      const files = req.files;
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No files uploaded'
+        });
+      }
+
+      console.log(`📤 Processing ${files.length} files for shipment: ${shipmentId}`);
+
+      const shipment = await Shipment.findById(shipmentId);
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment not found'
+        });
+      }
+
+      // NOVO: Debug detalhado dos arquivos recebidos
+      console.log('\n🔍 DEBUG: Analisando arquivos recebidos...');
+      files.slice(0, 3).forEach((file, index) => {
+        console.log(`📁 Arquivo ${index + 1}:`);
+        console.log(`   originalname: "${file.originalname}"`);
+        console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
+        console.log(`   fieldname: "${file.fieldname}"`);
+        console.log(`   mimetype: "${file.mimetype}"`);
+      });
+
+      const categoriesData = {};
+      let totalProcessed = 0;
+      let debugStats = {
+        detectedCategories: new Set(),
+        failedDetections: 0
+      };
+
+      for (const file of files) {
         try {
-        const { shipmentId } = req.params;
-        const files = req.files;
+          let categoryName = 'Mixed Category'; // fallback
+          let detectionMethod = 'fallback';
 
-        if (!files || files.length === 0) {
-            return res.status(400).json({
-            success: false,
-            message: 'No files uploaded'
-            });
-        }
+          // MÉTODO 1: Tentar webkitRelativePath primeiro
+          if (file.webkitRelativePath && file.webkitRelativePath.includes('/')) {
+            const pathParts = file.webkitRelativePath.split('/');
+            console.log(`🔍 webkitRelativePath parts:`, pathParts);
 
-        console.log(`📤 Processing ${files.length} files for shipment: ${shipmentId}`);
-
-        const shipment = await Shipment.findById(shipmentId);
-        if (!shipment) {
-            return res.status(404).json({
-            success: false,
-            message: 'Shipment not found'
-            });
-        }
-
-        // NOVO: Preservar estrutura hierárquica usando webkitRelativePath
-        const categoriesData = {};
-        let totalProcessed = 0;
-
-        for (const file of files) {
-            try {
-            // USAR CAMINHO REAL DA PASTA em vez de detecção automática
-            let categoryName = 'Mixed Category'; // fallback
-            
-            if (file.originalname && file.originalname.includes('/')) {
-                // Extrair pasta pai do caminho: "pasta1/subpasta/foto.jpg" → "subpasta"
-                const pathParts = file.originalname.split('/');
-                if (pathParts.length >= 2) {
-                // Pegar a pasta imediatamente antes do arquivo
-                categoryName = pathParts[pathParts.length - 2];
-                }
-            } else if (file.webkitRelativePath) {
-                // Usar webkitRelativePath se disponível
-                const pathParts = file.webkitRelativePath.split('/');
-                if (pathParts.length >= 2) {
-                categoryName = pathParts[pathParts.length - 2];
-                }
+            if (pathParts.length >= 2) {
+              // Pegar a pasta imediatamente antes do arquivo
+              categoryName = pathParts[pathParts.length - 2];
+              detectionMethod = 'webkitRelativePath';
             }
-            
-            console.log(`📁 File: ${file.originalname} → Category: ${categoryName}`);
-            
-            if (!categoriesData[categoryName]) {
-                categoriesData[categoryName] = [];
-            }
+          }
+          // MÉTODO 2: Tentar originalname se webkitRelativePath falhar
+          else if (file.originalname && file.originalname.includes('/')) {
+            const pathParts = file.originalname.split('/');
+            console.log(`🔍 originalname parts:`, pathParts);
 
-            // Converter para WebP se necessário
-            let fileBuffer = file.buffer;
-            if (file.mimetype !== 'image/webp') {
-                fileBuffer = await sharp(file.buffer)
-                .webp({ quality: 90, effort: 4 })
-                .toBuffer();
+            if (pathParts.length >= 2) {
+              categoryName = pathParts[pathParts.length - 2];
+              detectionMethod = 'originalname';
             }
+          }
 
-            // Gerar nome único do arquivo
-            const originalBaseName = path.parse(file.originalname.split('/').pop()).name;
-            const fileName = `${originalBaseName}_${Date.now()}_${totalProcessed}.webp`;
-            
-            // Salvar na pasta do shipment preservando estrutura
-            const categoryPath = path.join(shipment.folderPath, categoryName);
-            await fs.mkdir(categoryPath, { recursive: true });
-            
-            const filePath = path.join(categoryPath, fileName);
-            await fs.writeFile(filePath, fileBuffer);
-            
-            categoriesData[categoryName].push({
-                originalName: file.originalname,
-                fileName: fileName,
-                size: fileBuffer.length,
-                originalPath: file.webkitRelativePath || file.originalname
-            });
-            
-            totalProcessed++;
-            
-            } catch (fileError) {
-            console.error(`Error processing file ${file.originalname}:`, fileError);
-            }
+          // MÉTODO 3: Tentar extrair do fieldname se disponível
+          else if (file.fieldname && file.fieldname !== 'photos') {
+            categoryName = file.fieldname;
+            detectionMethod = 'fieldname';
+          }
+
+          // Log da detecção
+          if (categoryName === 'Mixed Category') {
+            debugStats.failedDetections++;
+            console.log(`❌ FALHA na detecção para: ${file.originalname}`);
+          } else {
+            debugStats.detectedCategories.add(categoryName);
+            console.log(`✅ ${detectionMethod}: ${file.originalname} → ${categoryName}`);
+          }
+
+          if (!categoriesData[categoryName]) {
+            categoriesData[categoryName] = [];
+          }
+
+          // Converter para WebP se necessário
+          let fileBuffer = file.buffer;
+          if (file.mimetype !== 'image/webp') {
+            fileBuffer = await sharp(file.buffer)
+              .webp({ quality: 90, effort: 4 })
+              .toBuffer();
+          }
+
+          // Gerar nome único do arquivo
+          const originalBaseName = path.parse(file.originalname.split('/').pop()).name;
+          const fileName = `${originalBaseName}_${Date.now()}_${totalProcessed}.webp`;
+
+          // Salvar na pasta do shipment preservando estrutura
+          const categoryPath = path.join(shipment.folderPath, categoryName);
+          await fs.mkdir(categoryPath, { recursive: true });
+
+          const filePath = path.join(categoryPath, fileName);
+          await fs.writeFile(filePath, fileBuffer);
+
+          categoriesData[categoryName].push({
+            originalName: file.originalname,
+            fileName: fileName,
+            size: fileBuffer.length,
+            originalPath: file.webkitRelativePath || file.originalname,
+            detectionMethod: detectionMethod
+          });
+
+          totalProcessed++;
+
+        } catch (fileError) {
+          console.error(`Error processing file ${file.originalname}:`, fileError);
         }
+      }
 
-        // Atualizar shipment no banco
-        const categories = Object.entries(categoriesData).map(([name, files]) => ({
-            name,
-            photoCount: files.length,
-            processedPhotos: 0
-        }));
+      // Debug final
+      console.log('\n📊 RESULTADO DA DETECÇÃO:');
+      console.log(`   Categorias detectadas: ${debugStats.detectedCategories.size}`);
+      console.log(`   Lista: [${Array.from(debugStats.detectedCategories).join(', ')}]`);
+      console.log(`   Falhas de detecção: ${debugStats.failedDetections}`);
+      console.log(`   Total processado: ${totalProcessed}`);
 
-        shipment.categories = categories;
-        shipment.totalPhotos = totalProcessed;
-        await shipment.save();
+      // Atualizar shipment no banco
+      const categories = Object.entries(categoriesData).map(([name, files]) => ({
+        name,
+        photoCount: files.length,
+        processedPhotos: 0
+      }));
 
-        console.log(`✅ Upload completed: ${totalProcessed} photos in ${categories.length} categories`);
-        console.log('📁 Categories found:', categories.map(c => `${c.name} (${c.photoCount} photos)`));
+      shipment.categories = categories;
+      shipment.totalPhotos = totalProcessed;
+      await shipment.save();
 
-        res.status(200).json({
-            success: true,
-            processedPhotos: totalProcessed,
-            categories: categories,
-            message: `Successfully uploaded ${totalProcessed} photos in ${categories.length} folders`
-        });
+      console.log(`✅ Upload completed: ${totalProcessed} photos in ${categories.length} categories`);
+      console.log('📁 Categories found:', categories.map(c => `${c.name} (${c.photoCount} photos)`));
 
-        } catch (error) {
-        console.error('❌ Error uploading photos:', error);
-        res.status(500).json({
-            success: false,
-            message: `Error uploading photos: ${error.message}`
-        });
-        }
+      res.status(200).json({
+        success: true,
+        processedPhotos: totalProcessed,
+        categories: categories,
+        debugInfo: {
+          detectedCategories: Array.from(debugStats.detectedCategories),
+          failedDetections: debugStats.failedDetections
+        },
+        message: `Successfully uploaded ${totalProcessed} photos in ${categories.length} folders`
+      });
+
+    } catch (error) {
+      console.error('❌ Error uploading photos:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error uploading photos: ${error.message}`
+      });
     }
+  }
 
   // Smart Detection de categoria baseada no arquivo
   detectCategoryFromFile(file) {
