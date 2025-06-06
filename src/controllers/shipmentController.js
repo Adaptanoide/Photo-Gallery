@@ -16,9 +16,9 @@ class ShipmentController {
   // Garantir que as pastas de shipment existam
   async ensureShipmentFolders() {
     console.log('📁 Verificando pastas de shipment...');
-    
+
     const shipmentFolders = ['incoming-air', 'incoming-sea', 'warehouse'];
-    
+
     for (const folderName of shipmentFolders) {
       const folderPath = path.join(this.shipmentsPath, folderName);
       try {
@@ -34,7 +34,7 @@ class ShipmentController {
   async createShipment(req, res) {
     try {
       const { name, status = 'incoming-air', notes } = req.body;
-      
+
       if (!name) {
         return res.status(400).json({
           success: false,
@@ -441,9 +441,9 @@ class ShipmentController {
   async getDestinationFolders(req, res) {
     try {
       console.log('📁 Getting destination folders...');
-      
+
       const folderStructure = await localStorageService.getFolderStructure(true, false);
-      
+
       res.status(200).json({
         success: true,
         folders: folderStructure
@@ -479,13 +479,13 @@ class ShipmentController {
 
       try {
         const items = await fs.readdir(shipmentPath, { withFileTypes: true });
-        
+
         for (const item of items) {
           if (item.isDirectory()) {
             const categoryPath = path.join(shipmentPath, item.name);
             const files = await fs.readdir(categoryPath);
             const photoFiles = files.filter(f => f.endsWith('.webp'));
-            
+
             if (photoFiles.length > 0) {
               categories.push({
                 name: item.name,
@@ -519,7 +519,8 @@ class ShipmentController {
     }
   }
 
-  // Distribuir fotos do shipment para estoque
+  // SUBSTITUA a função distributePhotos no shipmentController.js por esta versão corrigida:
+
   async distributePhotos(req, res) {
     try {
       const { shipmentId } = req.body;
@@ -552,7 +553,22 @@ class ShipmentController {
           console.log(`📦 Moving ${categoryName} to ${destinationPath}`);
 
           const sourcePath = path.join(shipment.folderPath, categoryName);
-          const fullDestinationPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', destinationPath);
+
+          // 🔧 FIX: Converter path com "→" para estrutura de pasta real
+          let realDestinationPath;
+          if (destinationPath.includes('→')) {
+            // Converter "1. Colombian Cowhides → 1. Medium → Black & White M"
+            // Para: "1. Colombian Cowhides/1. Medium/Black & White M"
+            realDestinationPath = destinationPath.replace(/\s*→\s*/g, '/');
+            console.log(`🔄 Converted path: "${destinationPath}" → "${realDestinationPath}"`);
+          } else {
+            realDestinationPath = destinationPath;
+          }
+
+          const fullDestinationPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', realDestinationPath);
+
+          console.log(`📁 Source: ${sourcePath}`);
+          console.log(`📁 Destination: ${fullDestinationPath}`);
 
           // Verificar se pasta origem existe
           try {
@@ -579,6 +595,7 @@ class ShipmentController {
               await fs.unlink(sourceFile);
               categoryMoved++;
               totalMoved++;
+              console.log(`✅ Moved: ${file}`);
             } catch (fileError) {
               console.error(`Error moving file ${file}:`, fileError);
             }
@@ -586,14 +603,18 @@ class ShipmentController {
 
           results[categoryName] = {
             moved: categoryMoved,
-            destination: destinationPath
+            destination: realDestinationPath, // Usar path real, não o com "→"
+            originalDestination: destinationPath
           };
+
+          console.log(`✅ Category ${categoryName}: ${categoryMoved} photos moved`);
 
           // Remover pasta vazia se necessário
           try {
             const remainingFiles = await fs.readdir(sourcePath);
             if (remainingFiles.length === 0) {
               await fs.rmdir(sourcePath);
+              console.log(`🗑️ Removed empty source folder: ${sourcePath}`);
             }
           } catch (rmError) {
             console.warn('Could not remove empty category folder:', rmError);
