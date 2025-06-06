@@ -1783,48 +1783,76 @@ async function uploadPhotosToShipment(shipmentId) {
     
     if (files.length === 0) return;
     
-    console.log(`�� Uploading ${files.length} files to shipment ${shipmentId}`);
+    console.log(`📤 Uploading ${files.length} files to shipment ${shipmentId}`);
+    
+    // 🔍 DEBUG: Analisar arquivos no FRONTEND antes de enviar
+    console.log('\n🔍 FRONTEND DEBUG: Analisando primeiros 3 arquivos...');
+    files.slice(0, 3).forEach((file, index) => {
+      console.log(`📁 Frontend Arquivo ${index + 1}:`);
+      console.log(`   name: "${file.name}"`);
+      console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
+      console.log(`   size: ${file.size}`);
+      console.log(`   type: "${file.type}"`);
+      console.log(`   ---`);
+    });
     
     // Verificar se há estrutura de pastas
     const hasStructure = files.some(file => file.webkitRelativePath && file.webkitRelativePath.includes('/'));
     console.log(`🔍 Estrutura de pastas detectada: ${hasStructure ? 'SIM' : 'NÃO'}`);
     
-    try {
-      // Criar FormData com paths preservados
-      const formData = new FormData();
-      
-      files.forEach((file, index) => {
-        // Adicionar arquivo
-        formData.append('photos', file);
-        
-        // Adicionar path como campo separado
-        if (file.webkitRelativePath) {
-          formData.append(`filePaths`, file.webkitRelativePath);
-        } else {
-          formData.append(`filePaths`, file.name);
+    if (hasStructure) {
+      const uniquePaths = new Set();
+      files.forEach(file => {
+        if (file.webkitRelativePath && file.webkitRelativePath.includes('/')) {
+          const pathParts = file.webkitRelativePath.split('/');
+          if (pathParts.length >= 2) {
+            uniquePaths.add(pathParts[pathParts.length - 2]);
+          }
         }
       });
+      console.log(`📁 Categorias detectadas no frontend: [${Array.from(uniquePaths).join(', ')}]`);
+    }
+    
+    // Mostrar loading
+    if (confirm(`Upload ${files.length} photos to this shipment?`)) {
       
-      console.log('📤 Enviando FormData com paths preservados...');
-      
-      showToast(`Uploading ${files.length} photos...`, 'info');
-      
-      const response = await fetch(`/api/admin/shipments/${shipmentId}/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        showToast(`✅ Successfully uploaded ${result.processedPhotos} photos in ${result.categories.length} categories!`, 'success');
-        loadShipments(); // Recarregar lista
-      } else {
-        showToast('❌ Upload error: ' + result.message, 'error');
+      try {
+        // 🔧 SOLUÇÃO: Criar FormData com paths preservados
+        const formData = new FormData();
+        
+        files.forEach((file, index) => {
+          // Adicionar arquivo
+          formData.append('photos', file);
+          
+          // 🔧 ADICIONAR PATH COMO CAMPO SEPARADO
+          if (file.webkitRelativePath) {
+            formData.append(`filePaths`, file.webkitRelativePath);
+          } else {
+            formData.append(`filePaths`, file.name);
+          }
+        });
+        
+        console.log('📤 Enviando FormData com paths preservados...');
+        
+        alert(`Uploading ${files.length} photos... This may take a while.`);
+        
+        const response = await fetch(`/api/admin/shipments/${shipmentId}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert(`✅ Successfully uploaded ${result.processedPhotos} photos in ${result.categories.length} categories!`);
+          loadShipments(); // Recarregar lista
+        } else {
+          alert('❌ Upload error: ' + result.message);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('❌ Upload failed: ' + error.message);
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      showToast('❌ Upload failed: ' + error.message, 'error');
     }
   };
   
