@@ -2,7 +2,7 @@
 
 .shipment-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; gap: 30px;
   align-items: center;
   margin-bottom: 20px;
   padding: 0 5px;
@@ -108,12 +108,14 @@
   margin-top: 20px;
   min-height: 500px;
   overflow-x: auto;
-  padding: 10px 0;
+  padding: 10px 20px;
+  justify-content: space-evenly;
 }
 
 .kanban-column {
   flex: 1;
-  min-width: 300px;
+  min-width: 280px;
+  max-width: 400px;
   background: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
@@ -211,15 +213,41 @@
   margin-top: 20px;
   min-height: 500px;
   overflow-x: auto;
-  padding: 10px 0;
-  justify-content: center;
+  padding: 10px 20px;
+  justify-content: space-evenly;
 }
 
 .kanban-column {
-  flex: 0 0 300px;
-  width: 300px;
+  flex: 1;
+  min-width: 280px;
+  max-width: 400px;
   background: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
   border: 2px solid #e9ecef;
+}
+
+/* Responsividade melhorada */
+@media (max-width: 768px) {
+  .shipments-kanban {
+    flex-direction: column;
+    padding: 10px;
+  }
+  
+  .kanban-column {
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .shipment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .shipments-kanban {
+    padding: 10px 40px;
+  }
 }
