@@ -423,6 +423,7 @@ let categoryAccessData = { categoryAccess: [] };
 let allCategories = [];
 let categoryPrices = {};
 
+
 // Função para abrir o modal de edição de acesso
 function editCustomerAccess(code, name) {
   // ALTERADO: Usando editingCustomerCode em vez de currentCustomerCode
@@ -442,7 +443,6 @@ function editCustomerAccess(code, name) {
   // Carregar dados
   loadCustomerCategoryData(code);
 }
-console.log("=== INICIO loadCustomerCategoryData ===", code);
 
 // Carregar dados de categorias e acesso do cliente
 async function loadCustomerCategoryData(code) {
@@ -2106,7 +2106,6 @@ function closeDistributionModal() {
 // =============================================================================
 
 // Variável global para armazenar volume discounts
-let volumeDiscounts = [];
 
 // Adicionar nova faixa de desconto por volume
 function addVolumeDiscount() {
