@@ -210,7 +210,8 @@ async function getCustomerCategoryAccess(customerCode) {
       return {
         success: true,
         data: {
-          categoryAccess: []
+          categoryAccess: [],
+          volumeDiscounts: []  // 🆕 NOVO: Incluir campo volumeDiscounts vazio
         }
       };
     }

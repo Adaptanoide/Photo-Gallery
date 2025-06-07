@@ -513,46 +513,13 @@
 
   <!-- Customer Category Access Modal -->
   <div id="category-access-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 900px; width: 95%;">
+    <div class="modal-content" style="max-width: 800px; width: 90%;">
       <h2>Edit Access for <span id="customer-name-title"></span></h2>
       <p>Configure which categories this customer can access and set custom prices.</p>
 
       <div class="global-actions">
         <button class="btn btn-gold" onclick="authorizeAllCategories()">Authorize All</button>
         <button class="btn btn-secondary" onclick="clearAllCategories()">Clear All</button>
-      </div>
-
-      <!-- 🆕 NOVA SEÇÃO: VOLUME DISCOUNTS -->
-      <div class="volume-discounts-section" style="margin: 20px 0; padding: 15px; border: 2px solid #D4AF37; border-radius: 8px; background-color: #fefdf8;">
-        <h3 style="margin-top: 0; color: #8B4513;">📊 Volume Discounts (Total Order)</h3>
-        <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Set discounts based on total quantity of photos in the order</p>
-        
-        <div class="volume-discount-controls" style="margin-bottom: 15px;">
-          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="number" id="volume-min-qty" placeholder="Min Qty" min="1" style="width: 100px;">
-            <input type="number" id="volume-max-qty" placeholder="Max Qty (optional)" min="1" style="width: 120px;">
-            <input type="number" id="volume-discount-percent" placeholder="Discount %" min="0" max="100" step="0.1" style="width: 120px;">
-            <button class="btn btn-gold" onclick="addVolumeDiscount()" style="padding: 8px 15px;">Add Range</button>
-          </div>
-        </div>
-
-        <div class="volume-discounts-list">
-          <table class="volume-discounts-table" style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background-color: #f8f9fa;">
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Min Qty</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Max Qty</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Discount %</th>
-                <th style="padding: 8px; text-align: center; border: 1px solid #ddd;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="volume-discounts-tbody">
-              <tr id="no-volume-discounts">
-                <td colspan="4" style="padding: 15px; text-align: center; color: #666; font-style: italic;">No volume discounts configured</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
 
       <div class="table-filter">

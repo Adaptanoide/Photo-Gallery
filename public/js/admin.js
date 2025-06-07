@@ -473,21 +473,19 @@ async function loadCustomerCategoryData(code) {
     }
 
     // Carregar configurações de acesso do cliente
+// Carregar configurações de acesso do cliente
     const accessResponse = await apiClient.getCustomerCategoryAccess(code);
-
     if (accessResponse.success) {
-      categoryAccessData = accessResponse.data || { categoryAccess: [] };
-
-      // Garantir que temos um array de acesso
-      if (!categoryAccessData.categoryAccess) {
-        categoryAccessData.categoryAccess = [];
-      }
+      categoryAccessData = accessResponse.data || { categoryAccess: [], volumeDiscounts: [] };
       
-      // Log para depuração
-      console.log("Configurações de acesso obtidas:", JSON.stringify(categoryAccessData));
+      // 🆕 NOVO: Carregar volume discounts
+      loadVolumeDiscounts(categoryAccessData);
+      
     } else {
-      categoryAccessData = { categoryAccess: [] };
-      console.warn("Erro ao obter configurações de acesso, usando objeto vazio");
+      categoryAccessData = { categoryAccess: [], volumeDiscounts: [] };
+      
+      // 🆕 NOVO: Carregar volume discounts vazios
+      loadVolumeDiscounts(categoryAccessData);
     }
 
     // Renderizar a tabela de categorias
@@ -730,7 +728,6 @@ function clearAllCategories() {
   showToast('All categories unauthorized', 'info');
 }
 
-// Salvar configurações de acesso
 async function saveCustomerCategoryAccess() {
   showLoader();
 
@@ -740,6 +737,9 @@ async function saveCustomerCategoryAccess() {
     if (habilitados.length === 0 && categoryAccessData.categoryAccess.length > 0) {
       showToast("Aviso: Todas as categorias foram desabilitadas. O cliente não verá nenhum conteúdo.", "warning");
     }
+    
+    // 🆕 NOVO: Incluir volume discounts nos dados a serem salvos
+    categoryAccessData.volumeDiscounts = volumeDiscounts;
     
     console.log("Salvando configurações de acesso:", categoryAccessData);
     
@@ -2095,5 +2095,140 @@ function closeDistributionModal() {
   if (window.currentDistributionModal) {
     document.body.removeChild(window.currentDistributionModal);
     window.currentDistributionModal = null;
+  }
+}
+
+// =============================================================================
+// 🆕 VOLUME DISCOUNTS FUNCTIONS
+// =============================================================================
+
+// Variável global para armazenar volume discounts
+let volumeDiscounts = [];
+
+// Adicionar nova faixa de desconto por volume
+function addVolumeDiscount() {
+  const minQty = parseInt(document.getElementById('volume-min-qty').value);
+  const maxQtyInput = document.getElementById('volume-max-qty').value;
+  const maxQty = maxQtyInput ? parseInt(maxQtyInput) : null;
+  const discountPercent = parseFloat(document.getElementById('volume-discount-percent').value);
+
+  // Validações
+  if (!minQty || minQty <= 0) {
+    showToast('Please enter a valid minimum quantity', 'error');
+    return;
+  }
+
+  if (maxQty && maxQty <= minQty) {
+    showToast('Maximum quantity must be greater than minimum quantity', 'error');
+    return;
+  }
+
+  if (!discountPercent || discountPercent <= 0 || discountPercent > 100) {
+    showToast('Please enter a valid discount percentage (0.1 - 100)', 'error');
+    return;
+  }
+
+  // Verificar sobreposição com faixas existentes
+  const hasOverlap = volumeDiscounts.some(discount => {
+    const existingMin = discount.minQuantity;
+    const existingMax = discount.maxQuantity || 999999;
+    const newMax = maxQty || 999999;
+
+    return (minQty >= existingMin && minQty <= existingMax) ||
+           (newMax >= existingMin && newMax <= existingMax) ||
+           (minQty <= existingMin && newMax >= existingMax);
+  });
+
+  if (hasOverlap) {
+    showToast('This range overlaps with an existing discount range', 'error');
+    return;
+  }
+
+  // Adicionar nova faixa
+  const newDiscount = {
+    minQuantity: minQty,
+    maxQuantity: maxQty,
+    discountPercent: discountPercent
+  };
+
+  volumeDiscounts.push(newDiscount);
+  
+  // Ordenar por minQuantity
+  volumeDiscounts.sort((a, b) => a.minQuantity - b.minQuantity);
+  
+  // Atualizar exibição
+  renderVolumeDiscounts();
+  
+  // Limpar campos
+  document.getElementById('volume-min-qty').value = '';
+  document.getElementById('volume-max-qty').value = '';
+  document.getElementById('volume-discount-percent').value = '';
+  
+  showToast('Volume discount range added successfully', 'success');
+}
+
+// Remover faixa de desconto por volume
+function removeVolumeDiscount(index) {
+  if (confirm('Are you sure you want to remove this discount range?')) {
+    volumeDiscounts.splice(index, 1);
+    renderVolumeDiscounts();
+    showToast('Volume discount range removed', 'success');
+  }
+}
+
+// Renderizar tabela de volume discounts
+function renderVolumeDiscounts() {
+  const tbody = document.getElementById('volume-discounts-tbody');
+  
+  if (volumeDiscounts.length === 0) {
+    tbody.innerHTML = `
+      <tr id="no-volume-discounts">
+        <td colspan="4" style="padding: 15px; text-align: center; color: #666; font-style: italic;">
+          No volume discounts configured
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = '';
+  volumeDiscounts.forEach((discount, index) => {
+    const maxQtyDisplay = discount.maxQuantity ? discount.maxQuantity : '∞';
+    
+    html += `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">${discount.minQuantity}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${maxQtyDisplay}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${discount.discountPercent}%</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+          <button class="btn btn-danger" onclick="removeVolumeDiscount(${index})" 
+                  style="padding: 4px 8px; font-size: 12px;">
+            Remove
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  tbody.innerHTML = html;
+}
+
+// Carregar volume discounts do servidor
+function loadVolumeDiscounts(accessData) {
+  volumeDiscounts = accessData.volumeDiscounts || [];
+  renderVolumeDiscounts();
+}
+
+// Limpar todos os volume discounts
+function clearAllVolumeDiscounts() {
+  if (volumeDiscounts.length === 0) {
+    showToast('No volume discounts to clear', 'info');
+    return;
+  }
+  
+  if (confirm('Are you sure you want to remove all volume discount ranges?')) {
+    volumeDiscounts = [];
+    renderVolumeDiscounts();
+    showToast('All volume discounts cleared', 'success');
   }
 }
