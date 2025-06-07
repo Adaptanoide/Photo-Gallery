@@ -2232,11 +2232,4 @@ function clearAllVolumeDiscounts() {
     showToast('All volume discounts cleared', 'success');
   }
 }
-// 🚨 DEBUG TEMPORÁRIO
-window.debugModal = function() {
-  console.log('=== DEBUG MODAL ===');
-  console.log('allCategories:', allCategories);
-  console.log('categoryAccessData:', categoryAccessData);
-  console.log('categoryPrices:', categoryPrices);
-  console.log('editingCustomerCode:', editingCustomerCode);
-};
+
