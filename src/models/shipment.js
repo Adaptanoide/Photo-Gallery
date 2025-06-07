@@ -38,6 +38,8 @@ const ShipmentSchema = new mongoose.Schema({
   folderId: String,        // ID único da pasta física
   folderPath: String,      // Caminho completo da pasta
   notes: String,           // Observações do admin
+  departureDate: Date,     // Data de envio
+  expectedArrival: Date,   // Data prevista de chegada
   completedAt: Date,       // Quando foi totalmente distribuído
   createdBy: String        // Admin que fez upload
 });

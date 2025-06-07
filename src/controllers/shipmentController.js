@@ -33,7 +33,7 @@ class ShipmentController {
   // Criar novo shipment
   async createShipment(req, res) {
     try {
-      const { name, status = 'incoming-air', notes } = req.body;
+      const { name, status = "incoming-air", notes, departureDate, expectedArrival } = req.body;
 
       if (!name) {
         return res.status(400).json({
@@ -61,7 +61,9 @@ class ShipmentController {
         folderId,
         folderPath,
         notes,
-        createdBy: 'admin'
+        createdBy: "admin",
+        departureDate: departureDate ? new Date(departureDate) : undefined,
+        expectedArrival: expectedArrival ? new Date(expectedArrival) : undefined
       });
 
       console.log(`✅ Shipment criado: ${name} (ID: ${folderId})`);
