@@ -142,18 +142,41 @@
   padding: 5px 10px;
 }
 
-/* Layout no modal de carrinho */
+/* MELHORIAS DO MODAL CARRINHO - CORRIGIDO */
 .cart-modal .modal-content {
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
+  max-width: 800px !important;
+  width: 90% !important;
+  max-height: 90vh !important;  /* Aumentar altura máxima */
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 #cart-items-container {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 10px;
-  max-height: 60vh;
+  max-height: 45vh !important;  /* Reduzir de 70vh para 45vh */
+  min-height: 200px !important;
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+}
+
+/* Garantir que a área de resumo seja compacta */
+#cart-total-container {
+  flex-shrink: 0 !important;
+  margin: 10px 0 !important;
+}
+
+/* Botões sempre visíveis */
+.cart-modal .modal-content > div:last-child {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+  padding-top: 15px !important;
+  border-top: 1px solid #eee !important;
+  background: white !important;
+}
+
+/* Textarea mais compacta */
+.cart-modal #observations {
+  min-height: 60px !important;
+  max-height: 80px !important;
 }
 
 /* Animation to fade out cart item */
