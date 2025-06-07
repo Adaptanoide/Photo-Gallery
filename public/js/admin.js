@@ -442,6 +442,7 @@ function editCustomerAccess(code, name) {
   // Carregar dados
   loadCustomerCategoryData(code);
 }
+console.log("=== INICIO loadCustomerCategoryData ===", code);
 
 // Carregar dados de categorias e acesso do cliente
 async function loadCustomerCategoryData(code) {
@@ -488,7 +489,9 @@ async function loadCustomerCategoryData(code) {
       loadVolumeDiscounts(categoryAccessData);
     }
 
+console.log("=== ANTES DE RENDERIZAR TABELA ===");
     // Renderizar a tabela de categorias
+console.log("=== TABELA RENDERIZADA COM SUCESSO ===");
     renderCategoryAccessTable();
 
   } catch (error) {
