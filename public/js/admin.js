@@ -2273,19 +2273,27 @@ function switchTab(tabId, buttonElement) {
   }
 }
 
-// Função para resetar tabs ao abrir o modal
+// Função para resetar tabs ao abrir o modal - VERSÃO LIMPA
 function resetModalTabs() {
-  // Esconder todas as tabs
-  const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
-  allTabs.forEach(tab => {
-    tab.style.display = 'none';
-    tab.classList.remove('active');
-  });
+  // Limpar TODOS os estilos inline do container das tabs
+  const tabsContainer = document.querySelector('#category-access-modal .admin-tabs');
+  if (tabsContainer) {
+    tabsContainer.removeAttribute('style');
+  }
 
-  // Remover classe active de todos os botões
+  // Limpar TODOS os estilos inline dos botões
   const allButtons = document.querySelectorAll('#category-access-modal .tab-button');
   allButtons.forEach(button => {
+    button.removeAttribute('style');
     button.classList.remove('active');
+  });
+
+  // Esconder todas as tabs e limpar estilos inline
+  const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
+  allTabs.forEach(tab => {
+    tab.removeAttribute('style');
+    tab.style.display = 'none';
+    tab.classList.remove('active');
   });
 
   // Ativar a primeira tab (Volume Discounts) por padrão
