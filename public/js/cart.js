@@ -9,6 +9,42 @@ let selectionRestorationAttempts = 0;
 let pendingSelections = []; // IDs de fotos selecionadas que ainda não foram carregadas
 let selectionRestorationComplete = false;
 
+// Função para buscar volume discounts do cliente atual
+async function getCustomerVolumeDiscounts() {
+  if (!currentCustomerCode) return [];
+  
+  try {
+    const response = await fetch(`/api/db/customerCodes/${currentCustomerCode}`);
+    if (!response.ok) return [];
+    
+    const customerData = await response.json();
+    return customerData.volumeDiscounts || [];
+  } catch (error) {
+    console.error('Erro ao buscar volume discounts:', error);
+    return [];
+  }
+}
+
+// Função para calcular desconto baseado na quantidade
+function calculateVolumeDiscount(quantity, volumeDiscounts) {
+  if (!volumeDiscounts || volumeDiscounts.length === 0) return 0;
+  
+  // Encontrar o range aplicável
+  let applicableDiscount = 0;
+  
+  for (const discount of volumeDiscounts) {
+    const minQty = discount.minQuantity;
+    const maxQty = discount.maxQuantity;
+    
+    // Verificar se a quantidade está no range
+    if (quantity >= minQty && (maxQty === null || quantity <= maxQty)) {
+      applicableDiscount = Math.max(applicableDiscount, discount.discountPercent);
+    }
+  }
+  
+  return applicableDiscount;
+}
+
 // Add a photo to the cart
 function addToCart(photoId) {
   if (!cartIds.includes(photoId)) {
@@ -119,7 +155,7 @@ function updateCartCounter() {
 }
 
 // Rebuild the cart view
-function updateCartView() {
+async function updateCartView() {
   const cartItemsElement = document.getElementById('cart-items');
   if (!cartItemsElement) return;
   
@@ -168,27 +204,57 @@ function updateCartView() {
   cartItemsElement.innerHTML = html;
   
   // Atualizar o total - agora sem adicionar div.cart-summary dentro do container de itens
-  updateCartTotal(totalPrice);
+  await updateCartTotal(totalPrice);
 }
 
-// FUNÇÃO ATUALIZADA: Atualiza apenas o total no carrinho
-function updateCartTotal(totalPrice) {
-  // Agora vamos colocar o total em um container dedicado
+// FUNÇÃO ATUALIZADA: Atualiza o total no carrinho COM volume discounts
+async function updateCartTotal(totalPrice) {
   const totalContainer = document.getElementById('cart-total-container');
   
   if (!totalContainer) return;
   
   if (totalPrice > 0) {
-    // Criar ou atualizar o resumo - removendo caixa flutuante e reduzindo espaçamento
-    totalContainer.innerHTML = `
+    // Buscar volume discounts do cliente
+    const volumeDiscounts = await getCustomerVolumeDiscounts();
+    
+    // Calcular desconto baseado na quantidade de fotos
+    const photoQuantity = cartIds.length;
+    const discountPercent = calculateVolumeDiscount(photoQuantity, volumeDiscounts);
+    
+    // Calcular valores
+    const discountAmount = (totalPrice * discountPercent) / 100;
+    const finalPrice = totalPrice - discountAmount;
+    
+    // Criar HTML do resumo
+    let summaryHtml = `
       <div class="cart-summary" style="margin-top: 5px; margin-bottom: 0;">
         <div class="luxury-divider"></div>
+    `;
+    
+    // Mostrar subtotal se houver desconto
+    if (discountPercent > 0) {
+      summaryHtml += `
+        <div style="display: flex; justify-content: space-between; padding: 4px 5px; color: #666;">
+          <span>Subtotal (${photoQuantity} photos):</span>
+          <span>$${totalPrice.toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 5px; color: #e74c3c;">
+          <span>Volume Discount (${discountPercent}%):</span>
+          <span>-$${discountAmount.toFixed(2)}</span>
+        </div>
+      `;
+    }
+    
+    // Total final
+    summaryHtml += `
         <div class="cart-total" style="display: flex; justify-content: space-between; padding: 8px 5px 5px 5px;">
           <span style="font-weight: bold;">Total:</span>
-          <span style="font-weight: bold;">$${totalPrice.toFixed(2)}</span>
+          <span style="font-weight: bold;">$${finalPrice.toFixed(2)}</span>
         </div>
       </div>
     `;
+    
+    totalContainer.innerHTML = summaryHtml;
   } else {
     // Se o total é zero, limpar o container
     totalContainer.innerHTML = '';
