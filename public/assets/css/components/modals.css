@@ -117,15 +117,27 @@
 
 /* Category Access Modal - CORREÇÃO */
 #category-access-modal .modal-content {
-  max-width: 90% !important;
-  width: 1200px !important;
-  height: 80vh !important;
+  max-width: 1200px !important;
+  width: 95% !important;
+  max-height: 90vh !important;
+  /* CORREÇÃO: Usar altura automática com scroll */
+  height: auto !important;
   display: flex;
   flex-direction: column;
-  /* CORREÇÃO: Remover scroll interno */
-  overflow: visible;
+  /* CORREÇÃO: Permitir scroll */
+  overflow-y: auto !important;
   position: relative;
   padding-bottom: 80px;
+}
+
+/* NOVO: Container da tabela com scroll próprio */
+#category-access-modal .category-access-container {
+  height: auto !important;
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  margin: 20px 0 !important;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 #category-access-modal .modal-buttons {
