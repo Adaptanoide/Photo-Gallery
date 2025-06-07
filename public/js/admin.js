@@ -2235,20 +2235,41 @@ function clearAllVolumeDiscounts() {
   }
 }
 
+// Função para alternar entre tabs do modal
+function switchTab(tabId, buttonElement) {
+  // Esconder todas as tabs
+  const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
+  allTabs.forEach(tab => {
+    tab.style.display = 'none';
+    tab.classList.remove('active');
+  });
 
-// 🚨 DEBUG: Adicionar debug na renderCategoryAccessTable
-const originalRender = renderCategoryAccessTable;
-renderCategoryAccessTable = function() {
-  console.log('=== DEBUG RENDER TABLE ===');
-  console.log('Executando renderCategoryAccessTable...');
-  console.log('allCategories.length:', allCategories.length);
-  console.log('categoryAccessData:', categoryAccessData);
-  
-  const tableBody = document.getElementById('category-access-list');
-  console.log('tableBody encontrado:', !!tableBody);
-  
-  const result = originalRender.apply(this, arguments);
-  
-  console.log('HTML final da tabela:', tableBody.innerHTML.substring(0, 200));
-  return result;
-};
+  // Remover classe active de todos os botões
+  const allButtons = document.querySelectorAll('#category-access-modal .tab-button');
+  allButtons.forEach(button => {
+    button.classList.remove('active');
+  });
+
+  // Mostrar a tab selecionada
+  const selectedTab = document.getElementById(tabId);
+  if (selectedTab) {
+    selectedTab.style.display = 'block';
+    selectedTab.classList.add('active');
+  }
+
+  // Ativar o botão clicado
+  if (buttonElement) {
+    buttonElement.classList.add('active');
+  }
+
+  // Se mudou para a tab de categorias, garantir que a tabela seja renderizada
+  if (tabId === 'categories-tab') {
+    // Aguardar um momento para o DOM se atualizar
+    setTimeout(() => {
+      if (typeof renderCategoryAccessTable === 'function') {
+        renderCategoryAccessTable();
+      }
+    }, 100);
+  }
+}
+
