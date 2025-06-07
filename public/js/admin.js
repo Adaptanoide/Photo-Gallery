@@ -439,7 +439,7 @@ function editCustomerAccess(code, name) {
 
   // Abrir modal
   document.getElementById('category-access-modal').style.display = 'block';
-
+  resetModalTabs();
   // Carregar dados
   loadCustomerCategoryData(code);
 }
@@ -2273,3 +2273,72 @@ function switchTab(tabId, buttonElement) {
   }
 }
 
+// Função para resetar tabs ao abrir o modal
+function resetModalTabs() {
+  // Esconder todas as tabs
+  const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
+  allTabs.forEach(tab => {
+    tab.style.display = 'none';
+    tab.classList.remove('active');
+  });
+
+  // Remover classe active de todos os botões
+  const allButtons = document.querySelectorAll('#category-access-modal .tab-button');
+  allButtons.forEach(button => {
+    button.classList.remove('active');
+  });
+
+  // Ativar a primeira tab (Volume Discounts) por padrão
+  const volumeTab = document.getElementById('volume-tab');
+  const volumeButton = document.querySelector('#category-access-modal .tab-button:first-child');
+  
+  if (volumeTab) {
+    volumeTab.style.display = 'block';
+    volumeTab.classList.add('active');
+  }
+  
+  if (volumeButton) {
+    volumeButton.classList.add('active');
+  }
+}
+
+// Função melhorada para alternar entre tabs
+function switchTab(tabId, buttonElement) {
+  console.log('Switching to tab:', tabId); // Debug
+  
+  // Esconder todas as tabs
+  const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
+  allTabs.forEach(tab => {
+    tab.style.display = 'none';
+    tab.classList.remove('active');
+  });
+
+  // Remover classe active de todos os botões
+  const allButtons = document.querySelectorAll('#category-access-modal .tab-button');
+  allButtons.forEach(button => {
+    button.classList.remove('active');
+  });
+
+  // Mostrar a tab selecionada
+  const selectedTab = document.getElementById(tabId);
+  if (selectedTab) {
+    selectedTab.style.display = 'block';
+    selectedTab.classList.add('active');
+    console.log('Tab displayed:', tabId); // Debug
+  }
+
+  // Ativar o botão clicado
+  if (buttonElement) {
+    buttonElement.classList.add('active');
+    console.log('Button activated'); // Debug
+  }
+
+  // Se mudou para a tab de categorias, garantir que a tabela seja renderizada
+  if (tabId === 'categories-tab') {
+    setTimeout(() => {
+      if (typeof renderCategoryAccessTable === 'function') {
+        renderCategoryAccessTable();
+      }
+    }, 100);
+  }
+}
