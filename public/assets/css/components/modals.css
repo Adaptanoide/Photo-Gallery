@@ -245,3 +245,48 @@
     padding-bottom: 80px;
   }
 }
+/* CSS específico para as tabs do modal category-access */
+#category-access-modal .admin-tabs {
+  display: flex !important;
+  height: auto !important;
+  min-height: 50px !important;
+  margin-bottom: 20px !important;
+  padding: 10px 0 !important;
+  border-bottom: 2px solid #D4AF37 !important;
+  gap: 5px !important;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#category-access-modal .tab-button {
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  color: #333 !important;
+  border-radius: 4px 4px 0 0 !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap;
+  font-family: 'Montserrat', sans-serif;
+}
+
+#category-access-modal .tab-button:hover {
+  background-color: rgba(212, 175, 55, 0.1) !important;
+}
+
+#category-access-modal .tab-button.active {
+  background-color: #D4AF37 !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* Estilos das tab-content */
+#category-access-modal .tab-content {
+  display: none;
+}
+
+#category-access-modal .tab-content.active {
+  display: block !important;
+}
