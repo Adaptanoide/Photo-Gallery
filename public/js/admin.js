@@ -2235,44 +2235,6 @@ function clearAllVolumeDiscounts() {
   }
 }
 
-// Função para alternar entre tabs do modal
-function switchTab(tabId, buttonElement) {
-  // Esconder todas as tabs
-  const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
-  allTabs.forEach(tab => {
-    tab.style.display = 'none';
-    tab.classList.remove('active');
-  });
-
-  // Remover classe active de todos os botões
-  const allButtons = document.querySelectorAll('#category-access-modal .tab-button');
-  allButtons.forEach(button => {
-    button.classList.remove('active');
-  });
-
-  // Mostrar a tab selecionada
-  const selectedTab = document.getElementById(tabId);
-  if (selectedTab) {
-    selectedTab.style.display = 'block';
-    selectedTab.classList.add('active');
-  }
-
-  // Ativar o botão clicado
-  if (buttonElement) {
-    buttonElement.classList.add('active');
-  }
-
-  // Se mudou para a tab de categorias, garantir que a tabela seja renderizada
-  if (tabId === 'categories-tab') {
-    // Aguardar um momento para o DOM se atualizar
-    setTimeout(() => {
-      if (typeof renderCategoryAccessTable === 'function') {
-        renderCategoryAccessTable();
-      }
-    }, 100);
-  }
-}
-
 // Função para resetar tabs ao abrir o modal - VERSÃO LIMPA
 function resetModalTabs() {
   // Limpar TODOS os estilos inline do container das tabs
@@ -2310,18 +2272,18 @@ function resetModalTabs() {
   }
 }
 
-// Função melhorada para alternar entre tabs
-function switchTab(tabId, buttonElement) {
-  console.log('Switching to tab:', tabId); // Debug
+// Função específica para o modal de categorias
+function switchModalTab(tabId, buttonElement) {
+  console.log('Switching to modal tab:', tabId);
   
-  // Esconder todas as tabs
+  // Esconder todas as tabs do modal
   const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
   allTabs.forEach(tab => {
     tab.style.display = 'none';
     tab.classList.remove('active');
   });
 
-  // Remover classe active de todos os botões
+  // Remover classe active de todos os botões do modal
   const allButtons = document.querySelectorAll('#category-access-modal .tab-button');
   allButtons.forEach(button => {
     button.classList.remove('active');
@@ -2332,16 +2294,14 @@ function switchTab(tabId, buttonElement) {
   if (selectedTab) {
     selectedTab.style.display = 'block';
     selectedTab.classList.add('active');
-    console.log('Tab displayed:', tabId); // Debug
   }
 
   // Ativar o botão clicado
   if (buttonElement) {
     buttonElement.classList.add('active');
-    console.log('Button activated'); // Debug
   }
 
-  // Se mudou para a tab de categorias, garantir que a tabela seja renderizada
+  // Se mudou para categorias, renderizar tabela
   if (tabId === 'categories-tab') {
     setTimeout(() => {
       if (typeof renderCategoryAccessTable === 'function') {
