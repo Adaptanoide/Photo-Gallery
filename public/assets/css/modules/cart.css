@@ -270,3 +270,61 @@
   position: sticky !important;
   bottom: 0 !important;
 }
+
+/* ========================================= */
+/* SOLUÇÃO RADICAL - OVERRIDE TOTAL */
+/* ========================================= */
+
+#cart-modal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+}
+
+#cart-modal .modal-content {
+  width: 800px !important;
+  height: 600px !important;
+  max-width: 90vw !important;
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 25px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+#cart-modal #cart-items-container {
+  height: 250px !important;
+  overflow-y: auto !important;
+  margin-bottom: 15px !important;
+  border: 1px solid #ddd !important;
+  padding: 15px !important;
+  border-radius: 6px !important;
+}
+
+#cart-modal #cart-total-container {
+  margin: 10px 0 !important;
+}
+
+#cart-modal .form-group {
+  margin: 15px 0 !important;
+}
+
+#cart-modal #observations {
+  height: 60px !important;
+  resize: none !important;
+}
+
+#cart-modal div[style*="justify-content: flex-end"] {
+  position: absolute !important;
+  bottom: 25px !important;
+  right: 25px !important;
+  left: 25px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 15px !important;
+  padding-top: 15px !important;
+  border-top: 2px solid #ddd !important;
+  background: white !important;
+}
