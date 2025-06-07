@@ -21,35 +21,6 @@
   color: var(--color-dark);
 }
 
-/* Scrollable cart items container */
-#cart-items-container {
-  max-height: 65vh;
-  overflow-y: auto;
-  margin-bottom: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 6px;
-  padding: 15px;
-}
-
-/* Custom scrollbar */
-#cart-items-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-#cart-items-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-#cart-items-container::-webkit-scrollbar-thumb {
-  background: var(--color-taupe);
-  border-radius: 10px;
-}
-
-#cart-items-container::-webkit-scrollbar-thumb:hover {
-  background: #3c3329;
-}
-
 /* Cart item styling */
 .cart-item {
   display: flex;
@@ -142,41 +113,78 @@
   padding: 5px 10px;
 }
 
-/* MELHORIAS DO MODAL CARRINHO - CORRIGIDO */
+/* ========================================= */
+/* MODAL DO CARRINHO - VERSÃO CONSOLIDADA */
+/* ========================================= */
+
+/* Layout no modal de carrinho */
 .cart-modal .modal-content {
   max-width: 800px !important;
   width: 90% !important;
-  max-height: 90vh !important;  /* Aumentar altura máxima */
+  max-height: 85vh !important;
   display: flex !important;
   flex-direction: column !important;
+  padding: 25px !important;
 }
 
+/* Scrollable cart items container */
 #cart-items-container {
-  max-height: 45vh !important;  /* Reduzir de 70vh para 45vh */
-  min-height: 200px !important;
+  max-height: 40vh !important;
+  min-height: 180px !important;
   flex: 1 1 auto !important;
   overflow-y: auto !important;
+  margin-bottom: 10px !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 15px;
 }
 
-/* Garantir que a área de resumo seja compacta */
+/* Custom scrollbar */
+#cart-items-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+#cart-items-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#cart-items-container::-webkit-scrollbar-thumb {
+  background: var(--color-taupe);
+  border-radius: 10px;
+}
+
+#cart-items-container::-webkit-scrollbar-thumb:hover {
+  background: #3c3329;
+}
+
+/* Container do total - compacto */
 #cart-total-container {
   flex-shrink: 0 !important;
-  margin: 10px 0 !important;
+  margin: 8px 0 !important;
 }
 
-/* Botões sempre visíveis */
+#cart-total-container .cart-summary {
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Área de botões sempre fixa no bottom */
 .cart-modal .modal-content > div:last-child {
-  flex-shrink: 0 !important;
-  margin-top: auto !important;
-  padding-top: 15px !important;
-  border-top: 1px solid #eee !important;
+  position: sticky !important;
+  bottom: 0 !important;
   background: white !important;
+  padding: 15px 0 0 0 !important;
+  margin-top: auto !important;
+  border-top: 2px solid #eee !important;
+  flex-shrink: 0 !important;
 }
 
-/* Textarea mais compacta */
+/* Textarea compacta */
 .cart-modal #observations {
-  min-height: 60px !important;
-  max-height: 80px !important;
+  min-height: 50px !important;
+  max-height: 60px !important;
+  resize: vertical !important;
 }
 
 /* Animation to fade out cart item */
@@ -185,7 +193,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-
   to {
     opacity: 0;
     transform: translateY(-20px);
@@ -199,29 +206,13 @@
     bottom: 15px;
     padding: 15px;
   }
-}
-
-/* MELHORIAS DO MODAL CARRINHO */
-.cart-modal .modal-content {
-  max-width: 800px !important;
-  width: 90% !important;
-  max-height: 95vh !important;  /* Aumentar altura do modal */
-}
-
-#cart-items-container {
-  max-height: 55vh !important;  /* Reduzir de 70vh para 55vh */
-  min-height: 250px !important;
-  flex: 1 1 auto !important;    /* Flexível */
-}
-
-/* Reduzir espaçamentos quando há desconto */
-#cart-total-container .cart-summary {
-  margin-top: 10px !important;
-  margin-bottom: 10px !important;
-}
-
-/* Garantir que botões sempre fiquem visíveis */
-.cart-modal .modal-content > div:last-child {
-  margin-top: 15px !important;
-  flex-shrink: 0 !important;  /* Não encolher os botões */
+  
+  .cart-modal .modal-content {
+    padding: 20px !important;
+  }
+  
+  #cart-items-container {
+    max-height: 35vh !important;
+    min-height: 150px !important;
+  }
 }
