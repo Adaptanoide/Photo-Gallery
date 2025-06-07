@@ -14,11 +14,14 @@ async function getCustomerVolumeDiscounts() {
   if (!currentCustomerCode) return [];
   
   try {
-    const response = await fetch(`/api/db/customerCodes/${currentCustomerCode}`);
+    const response = await fetch(`/api/admin/customers/${currentCustomerCode}/category-access`);
     if (!response.ok) return [];
     
-    const customerData = await response.json();
-    return customerData.volumeDiscounts || [];
+    const result = await response.json();
+    if (result.success && result.data) {
+      return result.data.volumeDiscounts || [];
+    }
+    return [];
   } catch (error) {
     console.error('Erro ao buscar volume discounts:', error);
     return [];
