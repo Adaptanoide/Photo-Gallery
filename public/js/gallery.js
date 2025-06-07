@@ -697,15 +697,14 @@ function findPhotoIndexById(photoId) {
 
 // Obter foto por ID (NOVA FUNÇÃO AUXILIAR)
 function getPhotoById(photoId) {
-  // Procurar no array global
-  const photo = photos.find(p => p.id === photoId);
-  
-  // Se não encontrou, verificar no registro
-  if (!photo && photoRegistry[photoId]) {
+  // PRIORIZAR photoRegistry que tem dados completos
+  if (photoRegistry[photoId]) {
     return photoRegistry[photoId];
   }
   
-  return photo;
+  // Fallback para array global se não estiver no registry
+  const photo = photos.find(p => p.id === photoId);
+  return photo || null;
 }
 
 // Handle key presses (mantida do original)
