@@ -434,7 +434,7 @@ function editCustomerAccess(code, name) {
 
   // Mostrar loader
   document.getElementById('category-access-list').innerHTML =
-    '<tr><td colspan="6" class="loading-text">Loading categories...</td></tr>';
+    '<tr><td colspan="7" class="loading-text">Loading categories...</td></tr>';
 
   // Abrir modal
   document.getElementById('category-access-modal').style.display = 'block';
@@ -453,7 +453,7 @@ async function loadCustomerCategoryData(code) {
 
     if (!leafFoldersResponse.success) {
       document.getElementById('category-access-list').innerHTML =
-        `<tr><td colspan="6" class="loading-text">Error loading categories: ${leafFoldersResponse.message}</td></tr>`;
+        `<tr><td colspan="7" class="loading-text">Error loading categories: ${leafFoldersResponse.message}</td></tr>`;
       hideLoader();
       return;
     }
@@ -494,7 +494,7 @@ async function loadCustomerCategoryData(code) {
   } catch (error) {
     console.error('Error loading data:', error);
     document.getElementById('category-access-list').innerHTML =
-      `<tr><td colspan="6" class="loading-text">Error loading data: ${error.message}</td></tr>`;
+      `<tr><td colspan="7" class="loading-text">Error loading data: ${error.message}</td></tr>`;
   }
 
   hideLoader();
