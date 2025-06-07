@@ -2233,3 +2233,20 @@ function clearAllVolumeDiscounts() {
   }
 }
 
+
+// 🚨 DEBUG: Adicionar debug na renderCategoryAccessTable
+const originalRender = renderCategoryAccessTable;
+renderCategoryAccessTable = function() {
+  console.log('=== DEBUG RENDER TABLE ===');
+  console.log('Executando renderCategoryAccessTable...');
+  console.log('allCategories.length:', allCategories.length);
+  console.log('categoryAccessData:', categoryAccessData);
+  
+  const tableBody = document.getElementById('category-access-list');
+  console.log('tableBody encontrado:', !!tableBody);
+  
+  const result = originalRender.apply(this, arguments);
+  
+  console.log('HTML final da tabela:', tableBody.innerHTML.substring(0, 200));
+  return result;
+};
