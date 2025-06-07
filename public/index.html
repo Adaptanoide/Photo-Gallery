@@ -8,7 +8,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap"
     rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/main-modular.css">
+  <link rel="stylesheet" href="/assets/css/main-modular.css">
   <!-- Biblioteca Medium Zoom para zoom de alta qualidade -->
   <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script>
 
@@ -120,7 +120,11 @@
 
       <!-- Criar novo container para o total FORA da área de scroll -->
       <div id="cart-total-container"></div>
-
+      <div style="text-align: center; margin: 10px 0;">
+        <button class="btn btn-outline-secondary" onclick="showOrderBreakdown()" style="font-size: 14px; padding: 8px 16px;">
+          📊 View Details
+        </button>
+      </div>
       <div class="luxury-divider"></div>
 
       <div class="form-group">
@@ -128,7 +132,7 @@
         <textarea id="observations" class="form-control"
           placeholder="Add any special requirements or comments"></textarea>
       </div>
-      
+
       <div style="display: flex; justify-content: flex-end; gap: 15px;">
         <button class="btn btn-secondary" onclick="closeModal('cart-modal')">Cancel</button>
         <button class="btn btn-gold" onclick="submitOrder()">Submit Order</button>
@@ -197,14 +201,14 @@
           <div class="message-item">Preparing your exclusive collection...</div>
           <div class="message-item">Revealing nature's finest textures...</div>
         </div>
-        
+
         <!-- Título -->
         <div class="loader-title">Sunshine Cowhides</div>
         <div class="loader-subtitle">Gallery</div>
-        
+
         <!-- ÚNICA linha dourada -->
         <div class="golden-line"></div>
-        
+
         <!-- Barra de progresso -->
         <div class="loader-progress">
           <div class="progress-bar"></div>
@@ -344,7 +348,7 @@
               <span id="price-header-stats" class="header-stats">Loading...</span>
             </div>
           </div>
-          
+
           <!-- Container principal do price management -->
           <div id="category-price-container">
             <!-- Conteúdo será carregado dinamicamente pelo JavaScript -->
@@ -352,86 +356,86 @@
         </div>
 
         <style>
-        /* Estilos para o header com estatísticas */
-        .admin-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 15px;
-          padding: 0 2px;
-        }
-
-        .admin-title-section {
-          flex: 1;
-        }
-
-        .admin-title {
-          margin: 0;
-          color: #333;
-          font-family: 'Playfair Display', serif;
-          font-size: 24px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .admin-title i {
-          color: var(--color-gold);
-          font-size: 22px;
-        }
-
-        .admin-stats-section {
-          flex: 0 0 auto;
-        }
-
-        .header-stats {
-          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-          padding: 6px 12px;
-          border-radius: 6px;
-          border: 1px solid #dee2e6;
-          font-size: 13px;
-          font-weight: 500;
-          color: #666;
-          white-space: nowrap;
-        }
-
-        /* Responsividade do header */
-        @media (max-width: 768px) {
+          /* Estilos para o header com estatísticas */
           .admin-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 2px;
           }
-          
-          .admin-title {
-            font-size: 20px;
-          }
-          
-          .admin-stats-section {
-            align-self: flex-end;
-          }
-          
-          .header-stats {
-            font-size: 12px;
-            padding: 4px 8px;
-          }
-        }
 
-        @media (max-width: 480px) {
+          .admin-title-section {
+            flex: 1;
+          }
+
           .admin-title {
-            font-size: 18px;
+            margin: 0;
+            color: #333;
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
           }
-          
+
           .admin-title i {
-            font-size: 16px;
+            color: var(--color-gold);
+            font-size: 22px;
           }
-          
+
+          .admin-stats-section {
+            flex: 0 0 auto;
+          }
+
           .header-stats {
-            font-size: 11px;
-            padding: 3px 6px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            white-space: nowrap;
           }
-        }
+
+          /* Responsividade do header */
+          @media (max-width: 768px) {
+            .admin-header {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 8px;
+            }
+
+            .admin-title {
+              font-size: 20px;
+            }
+
+            .admin-stats-section {
+              align-self: flex-end;
+            }
+
+            .header-stats {
+              font-size: 12px;
+              padding: 4px 8px;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .admin-title {
+              font-size: 18px;
+            }
+
+            .admin-title i {
+              font-size: 16px;
+            }
+
+            .header-stats {
+              font-size: 11px;
+              padding: 3px 6px;
+            }
+          }
         </style>
 
         <!-- NOVA ABA: Photo Storage -->
@@ -476,11 +480,11 @@
       </div>
     </div>
 
-      </div>
-    </div>
+  </div>
+  </div>
 
-    <!-- Hidden footer div (replaced by top-right logout button) -->
-    <div class="admin-footer" style="display: none;"></div>
+  <!-- Hidden footer div (replaced by top-right logout button) -->
+  <div class="admin-footer" style="display: none;"></div>
   </div>
 
   <!-- Custom Notification Toast -->
@@ -523,15 +527,18 @@
 
       <!-- TAB 1: Volume Discounts -->
       <div id="volume-tab" class="tab-content active">
-        <div class="volume-discounts-section" style="margin: 20px 0; padding: 15px; border: 2px solid #D4AF37; border-radius: 8px; background-color: #fefdf8;">
+        <div class="volume-discounts-section"
+          style="margin: 20px 0; padding: 15px; border: 2px solid #D4AF37; border-radius: 8px; background-color: #fefdf8;">
           <h3 style="margin-top: 0; color: #8B4513;">📊 Volume Discounts (Total Order)</h3>
-          <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Set discounts based on total quantity of photos in the order</p>
-          
+          <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Set discounts based on total quantity of photos
+            in the order</p>
+
           <div class="volume-discount-controls" style="margin-bottom: 15px;">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <input type="number" id="volume-min-qty" placeholder="Min Qty" min="1" style="width: 100px;">
               <input type="number" id="volume-max-qty" placeholder="Max Qty (optional)" min="1" style="width: 120px;">
-              <input type="number" id="volume-discount-percent" placeholder="Discount %" min="0" max="100" step="0.1" style="width: 120px;">
+              <input type="number" id="volume-discount-percent" placeholder="Discount %" min="0" max="100" step="0.1"
+                style="width: 120px;">
               <button class="btn btn-gold" onclick="addVolumeDiscount()" style="padding: 8px 15px;">Add Range</button>
             </div>
           </div>
@@ -548,7 +555,8 @@
               </thead>
               <tbody id="volume-discounts-tbody">
                 <tr id="no-volume-discounts">
-                  <td colspan="4" style="padding: 15px; text-align: center; color: #666; font-style: italic;">No volume discounts configured</td>
+                  <td colspan="4" style="padding: 15px; text-align: center; color: #666; font-style: italic;">No volume
+                    discounts configured</td>
                 </tr>
               </tbody>
             </table>
@@ -600,99 +608,113 @@
     </div>
   </div>
 
-<!-- Return to Stock Modal - SEPARADO -->
-<div id="return-to-stock-modal" class="modal" style="display: none;">
-  <div class="modal-content" style="max-width: 900px; width: 95%;">
-    <h2>Return Photos to Stock</h2>
-    <p>Select which photos you want to return to the main gallery from: <strong><span id="return-order-name"></span></strong></p>
-    
-    <div id="return-modal-loading" class="loading-message">Loading order photos...</div>
-    
-    <div id="return-modal-content" style="display: none;">
-      <!-- Categories will be loaded here -->
-      <div id="return-categories-container">
-        <!-- Dynamic content -->
-      </div>
-      
-      <div class="luxury-divider"></div>
-      
-      <div class="return-summary">
-        <p><strong>Selected:</strong> <span id="return-selected-count">0</span> photos</p>
-      </div>
-    </div>
-    
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeReturnAndShowAdmin()">Cancel</button>
-      <button class="btn btn-gold" onclick="processReturnToStock()" id="process-return-btn" disabled>
-        Return Selected Photos
-      </button>
-    </div>
-  </div>
-</div>
+  <!-- Return to Stock Modal - SEPARADO -->
+  <div id="return-to-stock-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; width: 95%;">
+      <h2>Return Photos to Stock</h2>
+      <p>Select which photos you want to return to the main gallery from: <strong><span
+            id="return-order-name"></span></strong></p>
 
-<!-- Order Details Modal - SEPARADO -->
-<div id="order-details-modal" class="modal">
-  <div class="modal-content" style="max-width: 800px;">
-    <h2>Order Details</h2>
-    <div id="order-loading" class="loading-message">Loading order details...</div>
+      <div id="return-modal-loading" class="loading-message">Loading order photos...</div>
 
-    <div id="order-details-content" style="display: none;">
-      <div class="order-info">
-        <p><strong>Order:</strong> <span id="order-name"></span></p>
-        <p><strong>Client:</strong> <span id="order-client"></span></p>
-        <p><strong>Date:</strong> <span id="order-date"></span></p>
-      </div>
-
-      <div class="luxury-divider"></div>
-
-      <!-- Cabeçalho centralizado para categorias -->
-      <h3 class="section-title">Items by Category</h3>
-
-      <div id="category-breakdown" class="category-breakdown">
-        <!-- Categorias serão inseridas aqui dinamicamente -->
-      </div>
-
-      <div class="luxury-divider"></div>
-
-      <div class="order-totals">
-        <div class="order-total-row">
-          <span><strong>Total Items:</strong></span>
-          <span id="total-items"></span>
+      <div id="return-modal-content" style="display: none;">
+        <!-- Categories will be loaded here -->
+        <div id="return-categories-container">
+          <!-- Dynamic content -->
         </div>
-        <div class="order-total-row">
-          <span><strong>Total Amount:</strong></span>
-          <span id="total-amount"></span>
-        </div>
-      </div>
 
-      <div id="order-comments-section" style="display: none;">
         <div class="luxury-divider"></div>
-        <h3>Client Comments</h3>
-        <div id="order-comments" class="order-comments"></div>
-      </div>
 
-      <div class="luxury-divider"></div>
+        <div class="return-summary">
+          <p><strong>Selected:</strong> <span id="return-selected-count">0</span> photos</p>
+        </div>
+      </div>
 
       <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
-        <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+        <button class="btn btn-secondary" onclick="closeReturnAndShowAdmin()">Cancel</button>
+        <button class="btn btn-gold" onclick="processReturnToStock()" id="process-return-btn" disabled>
+          Return Selected Photos
+        </button>
       </div>
     </div>
   </div>
-</div>
 
-      <!-- App Scripts -->
-      <script src="/js/database-service.js"></script>
-      <script src="/js/utils.js"></script>
-      <script src="/js/api-client.js"></script>
-      <script src="/js/gallery.js"></script>
-      <script src="/js/cart.js"></script>
-      <script src="/js/lightbox.js"></script>
-      <script src="/js/auth.js"></script>
-      <script src="/js/admin.js"></script>
-      <script src="/js/photo-manager-admin.js"></script>
-      <script src="/js/price-manager.js"></script>
-      <script src="/js/sidebar.js"></script>
+  <!-- Order Details Modal - SEPARADO -->
+  <div id="order-details-modal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <h2>Order Details</h2>
+      <div id="order-loading" class="loading-message">Loading order details...</div>
+
+      <div id="order-details-content" style="display: none;">
+        <div class="order-info">
+          <p><strong>Order:</strong> <span id="order-name"></span></p>
+          <p><strong>Client:</strong> <span id="order-client"></span></p>
+          <p><strong>Date:</strong> <span id="order-date"></span></p>
+        </div>
+
+        <div class="luxury-divider"></div>
+
+        <!-- Cabeçalho centralizado para categorias -->
+        <h3 class="section-title">Items by Category</h3>
+
+        <div id="category-breakdown" class="category-breakdown">
+          <!-- Categorias serão inseridas aqui dinamicamente -->
+        </div>
+
+        <div class="luxury-divider"></div>
+
+        <div class="order-totals">
+          <div class="order-total-row">
+            <span><strong>Total Items:</strong></span>
+            <span id="total-items"></span>
+          </div>
+          <div class="order-total-row">
+            <span><strong>Total Amount:</strong></span>
+            <span id="total-amount"></span>
+          </div>
+        </div>
+
+        <div id="order-comments-section" style="display: none;">
+          <div class="luxury-divider"></div>
+          <h3>Client Comments</h3>
+          <div id="order-comments" class="order-comments"></div>
+        </div>
+
+        <div class="luxury-divider"></div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
+          <a id="view-in-drive" href="#" target="_blank" class="btn btn-gold">View in Google Drive</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Breakdown Modal -->
+  <div id="order-breakdown-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px; width: 90%;">
+      <h2>Order Breakdown</h2>
+      <div id="breakdown-content">
+        <!-- Breakdown será gerado aqui -->
+      </div>
+      <div style="margin-top: 20px; text-align: center;">
+        <button class="btn btn-secondary" onclick="closeModal('order-breakdown-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Scripts -->
+  <script src="/js/database-service.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/api-client.js"></script>
+  <script src="/js/gallery.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/lightbox.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/photo-manager-admin.js"></script>
+  <script src="/js/price-manager.js"></script>
+  <script src="/js/sidebar.js"></script>
 </body>
 
 </html>

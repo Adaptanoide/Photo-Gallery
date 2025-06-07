@@ -998,3 +998,137 @@ function closeCartNotification(button) {
 document.addEventListener('DOMContentLoaded', function() {
   registerBeforeUnloadHandler();
 });
+
+// Função para mostrar breakdown detalhado do pedido
+function showOrderBreakdown() {
+  const breakdown = calculateOrderBreakdown();
+  renderBreakdownModal(breakdown);
+  document.getElementById('order-breakdown-modal').style.display = 'block';
+}
+
+// Função para calcular breakdown por categoria
+function calculateOrderBreakdown() {
+  const categoryBreakdown = {};
+  let totalPrice = 0;
+  let totalPhotos = 0;
+  
+  // Agrupar fotos por categoria
+  cartIds.forEach(photoId => {
+    const photo = getPhotoById(photoId);
+    if (!photo) return;
+    
+    const folderId = photo.folderId || 'uncategorized';
+    const price = parseFloat(photo.price) || 0;
+    
+    if (!categoryBreakdown[folderId]) {
+      categoryBreakdown[folderId] = {
+        name: getCategoryNameById(folderId),
+        photos: [],
+        count: 0,
+        totalPrice: 0
+      };
+    }
+    
+    categoryBreakdown[folderId].photos.push(photo);
+    categoryBreakdown[folderId].count++;
+    categoryBreakdown[folderId].totalPrice += price;
+    
+    totalPrice += price;
+    totalPhotos++;
+  });
+  
+  return {
+    categories: categoryBreakdown,
+    totalPrice,
+    totalPhotos
+  };
+}
+
+// Função para obter nome da categoria pelo ID
+function getCategoryNameById(folderId) {
+  if (folderId === 'uncategorized') {
+    return 'Uncategorized';
+  }
+  
+  if (typeof categories !== 'undefined' && categories.length > 0) {
+    const category = categories.find(cat => cat.id === folderId);
+    return category ? category.name : `Category ${folderId.substring(0, 8)}...`;
+  }
+  
+  return `Category ${folderId.substring(0, 8)}...`;
+}
+
+// Função para renderizar o modal de breakdown
+async function renderBreakdownModal(breakdown) {
+  const container = document.getElementById('breakdown-content');
+  
+  // Buscar volume discounts para mostrar desconto aplicado
+  const volumeDiscounts = await getCustomerVolumeDiscounts();
+  const discountPercent = calculateVolumeDiscount(breakdown.totalPhotos, volumeDiscounts);
+  const discountAmount = (breakdown.totalPrice * discountPercent) / 100;
+  const finalPrice = breakdown.totalPrice - discountAmount;
+  
+  let html = `
+    <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead>
+          <tr style="background-color: #f8f9fa; border-bottom: 2px solid #ddd;">
+            <th style="padding: 12px 8px; text-align: left; border-right: 1px solid #ddd;">Category</th>
+            <th style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd;">Photos</th>
+            <th style="padding: 12px 8px; text-align: right;">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  // Ordenar categorias por preço (maior primeiro)
+  const sortedCategories = Object.entries(breakdown.categories)
+    .sort(([,a], [,b]) => b.totalPrice - a.totalPrice);
+  
+  sortedCategories.forEach(([folderId, category]) => {
+    html += `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 10px 8px; border-right: 1px solid #eee;">
+          <strong>${category.name}</strong>
+        </td>
+        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #eee;">
+          ${category.count}
+        </td>
+        <td style="padding: 10px 8px; text-align: right;">
+          <strong>$${category.totalPrice.toFixed(2)}</strong>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+    
+    <div style="border-top: 2px solid #ddd; padding-top: 15px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span><strong>Subtotal (${breakdown.totalPhotos} photos):</strong></span>
+        <span><strong>$${breakdown.totalPrice.toFixed(2)}</strong></span>
+      </div>
+  `;
+  
+  if (discountPercent > 0) {
+    html += `
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #e74c3c;">
+        <span>Volume Discount (${discountPercent}%):</span>
+        <span>-$${discountAmount.toFixed(2)}</span>
+      </div>
+    `;
+  }
+  
+  html += `
+      <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 10px;">
+        <span>Final Total:</span>
+        <span>$${finalPrice.toFixed(2)}</span>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = html;
+}
