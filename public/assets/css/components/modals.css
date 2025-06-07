@@ -277,9 +277,10 @@
 }
 
 #category-access-modal .tab-button.active {
-  background-color: #D4AF37 !important;
-  color: white !important;
   font-weight: 600 !important;
+  color: #333 !important;
+  /* Sem background dourado - apenas borda inferior */
+  border-bottom: 3px solid #D4AF37 !important;
 }
 
 /* Estilos das tab-content */
