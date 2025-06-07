@@ -180,11 +180,25 @@
 
 /* MELHORIAS DO MODAL CARRINHO */
 .cart-modal .modal-content {
-  max-width: 800px !important;  /* Era ~600px, agora 800px */
+  max-width: 800px !important;
   width: 90% !important;
+  max-height: 95vh !important;  /* Aumentar altura do modal */
 }
 
 #cart-items-container {
-  max-height: 70vh !important;  /* Era 60vh, agora 70vh */
-  min-height: 300px !important; /* Altura mínima garantida */
+  max-height: 55vh !important;  /* Reduzir de 70vh para 55vh */
+  min-height: 250px !important;
+  flex: 1 1 auto !important;    /* Flexível */
+}
+
+/* Reduzir espaçamentos quando há desconto */
+#cart-total-container .cart-summary {
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Garantir que botões sempre fiquem visíveis */
+.cart-modal .modal-content > div:last-child {
+  margin-top: 15px !important;
+  flex-shrink: 0 !important;  /* Não encolher os botões */
 }
