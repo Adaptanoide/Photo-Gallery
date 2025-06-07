@@ -1507,7 +1507,7 @@ function renderKanbanCards(shipments) {
     <div class="kanban-card" onclick="viewShipmentDetails('${shipment._id}')">
       <div class="kanban-card-title">${shipment.name}</div>
       <div class="kanban-card-info">
-        Created: ${new Date(shipment.uploadDate).toLocaleDateString()}<br>
+        Departure: ${shipment.departureDate ? new Date(shipment.departureDate).toLocaleDateString() : "Not set"}<br>Arrival: ${shipment.expectedArrival ? new Date(shipment.expectedArrival).toLocaleDateString() : "Not set"}<br>
         Photos: ${shipment.totalPhotos || 0}
       </div>
       <div class="kanban-card-actions" onclick="event.stopPropagation();">
@@ -1766,9 +1766,13 @@ function closeCreateShipmentModal() {
 async function submitNewShipment() {
   const nameInput = document.getElementById('shipment-name-input');
   const transitType = document.querySelector('input[name="transit-type"]:checked');
+  const departureDate = document.getElementById('departure-date');
+  const arrivalDate = document.getElementById('arrival-date');
   
   const name = nameInput.value.trim();
   const status = transitType.value;
+  const departure = departureDate.value;
+  const arrival = arrivalDate.value;
   
   if (!name) {
     showToast('Please enter a shipment name', 'warning');
@@ -1777,7 +1781,7 @@ async function submitNewShipment() {
   }
   
   try {
-    console.log('Creating shipment:', { name, status });
+    console.log('Creating shipment:', { name, status, departure, arrival });
     
     const response = await fetch('/api/admin/shipments', {
       method: 'POST',
@@ -1785,6 +1789,8 @@ async function submitNewShipment() {
       body: JSON.stringify({
         name: name,
         status: status,
+        departureDate: departure,
+        expectedArrival: arrival,
         notes: `Created via admin panel - ${status}`
       })
     });
@@ -1804,7 +1810,7 @@ async function submitNewShipment() {
     }
   } catch (error) {
     console.error('Error creating shipment:', error);
-    alert('❌ Error creating shipment!');
+    showToast('❌ Error creating shipment: ' + error.message, 'error');
   }
 }
 
