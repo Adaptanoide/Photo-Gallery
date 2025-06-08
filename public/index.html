@@ -111,7 +111,12 @@
   <!-- Cart Modal -->
   <div id="cart-modal" class="modal cart-modal">
     <div class="modal-content">
-      <h2>Your Selection</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin: 0;">Your Selection</h2>
+      <button class="btn btn-outline-secondary" onclick="showOrderBreakdown()" style="font-size: 12px; padding: 6px 12px;">
+        📊 Details
+      </button>
+    </div>
       <div id="cart-items-container">
         <div id="cart-items">
           <!-- Cart items will be added here -->
@@ -120,11 +125,6 @@
 
       <!-- Criar novo container para o total FORA da área de scroll -->
       <div id="cart-total-container"></div>
-      <div style="text-align: center; margin: 10px 0;">
-        <button class="btn btn-outline-secondary" onclick="showOrderBreakdown()" style="font-size: 14px; padding: 8px 16px;">
-          📊 View Details
-        </button>
-      </div>
       <div class="luxury-divider"></div>
 
       <div class="form-group">
