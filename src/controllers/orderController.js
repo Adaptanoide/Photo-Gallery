@@ -550,7 +550,7 @@ exports.getOrderDetails = async (req, res) => {
         for (const photo of category.photos) {
           // Buscar preço da categoria no MongoDB
           const categoryPrice = await CategoryPrice.findOne({ 
-            name: category.name 
+            folderId: category.id  // ← USAR folderId em vez de name
           });
           
           const price = categoryPrice ? categoryPrice.price : 99.99;

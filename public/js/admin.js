@@ -787,8 +787,7 @@ async function viewOrderDetails(folderId, folderName) {
     document.getElementById('order-name').textContent = folderName;
     document.getElementById('order-client').textContent = orderInfo.customerName || 'N/A';
     document.getElementById('order-date').textContent = orderInfo.orderDate || 'N/A';
-    document.getElementById('view-in-drive').href = `https://drive.google.com/drive/folders/${folderId}`;
-    
+       
     // Buscar informações detalhadas do pedido
     const orderDetails = await apiClient.getOrderDetails(folderId);
     

@@ -539,8 +539,8 @@ class LocalOrderService {
 
       // Salvar índice atualizado
       await localStorageService.saveIndex(index);
-      await localStorageService.rebuildIndex(); // Rebuild para atualizar contadores
-      localStorageService.clearCache();
+      //await localStorageService.rebuildIndex(); // Rebuild para atualizar contadores
+      //localStorageService.clearCache();
 
       console.log(`✅ ${movedPhotos} fotos retornadas ao estoque`);
 
