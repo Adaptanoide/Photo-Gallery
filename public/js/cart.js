@@ -394,48 +394,41 @@ function processOrder(customerName, comments) {
           .catch(err => console.error("Erro ao limpar seleções:", err));
       }
       
-      // 🔧 NOVA LÓGICA: Verificar se houve conflitos
+      // 🔧 LÓGICA DE CONFLITOS - TRADUZIDA PARA INGLÊS
       let successMessage = '';
       
       if (result.removedPhotos && result.removedPhotos > 0) {
         // Houve conflitos - algumas fotos foram removidas
         successMessage = `
           <div style="margin-bottom: 15px;">
-            <strong>✅ Pedido enviado com sucesso!</strong>
+            <strong>✅ Order submitted successfully!</strong>
           </div>
           
           <div style="background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
-            <strong>⚠️ Atenção:</strong> ${result.removedPhotos} foto(s) já haviam sido vendidas por outros clientes e foram removidas automaticamente da sua seleção.
+            <strong>⚠️ Notice:</strong> ${result.removedPhotos} photo(s) had already been sold to other customers and were automatically removed from your selection.
           </div>
           
           <div>
-            <strong>📦 Seu pedido foi processado com ${result.processedPhotos} fotos.</strong><br><br>
-            Nossa equipe de vendas entrará em contato em breve para discutir os produtos selecionados.
+            <strong>📦 Your order has been processed with ${result.processedPhotos} photos.</strong><br><br>
+            Our sales team will contact you shortly to discuss the selected products.
           </div>
           
           <div style="margin-top: 15px; font-size: 14px; color: #666;">
-            Você pode fechar esta página agora. O processamento continuará em segundo plano.
+            You can close this page now. Processing will continue in the background.
           </div>
         `;
       } else {
-        // Sem conflitos - mensagem normal
-        successMessage = `
-          <div>
-            <strong>✅ Pedido enviado com sucesso!</strong><br><br>
-            Todas as ${result.processedPhotos} fotos selecionadas estão sendo processadas. 
-            Nossa equipe de vendas entrará em contato em breve.
-          </div>
-          
-          <div style="margin-top: 15px; font-size: 14px; color: #666;">
-            Você pode fechar esta página agora. O processamento continuará em segundo plano.
-          </div>
-        `;
+        // Sem conflitos - usar o HTML inglês existente (não sobrescrever)
+        // O modal já tem o conteúdo correto em inglês
+        successMessage = null; // Não sobrescrever o HTML existente
       }
       
-      // Atualizar modal de sucesso
-      const successMessageElement = document.querySelector('#success-modal p');
-      if (successMessageElement) {
-        successMessageElement.innerHTML = successMessage;
+      // Atualizar modal de sucesso APENAS se houver conflitos
+      if (successMessage) {
+        const successMessageElement = document.querySelector('#success-modal .modal-content > div');
+        if (successMessageElement) {
+          successMessageElement.innerHTML = successMessage;
+        }
       }
       
       // Mostrar modal de sucesso
