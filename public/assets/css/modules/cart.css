@@ -216,3 +216,60 @@
     min-height: 150px !important;
   }
 }
+
+/* ========================================= */
+/* CORREÇÃO DEFINITIVA PARA BOTÕES CART */
+/* ========================================= */
+
+/* Modal maior para acomodar tudo */
+#cart-modal .modal-content {
+  max-height: 90vh !important;
+  height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 25px !important;
+  overflow: hidden !important;
+}
+
+/* Container de fotos com altura limitada */
+#cart-modal #cart-items-container {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  flex: 0 0 auto !important;
+  margin-bottom: 15px !important;
+}
+
+/* Total container compacto */
+#cart-modal #cart-total-container {
+  flex: 0 0 auto !important;
+  margin: 10px 0 !important;
+}
+
+/* Form group flexível mas limitado */
+#cart-modal .form-group {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 15px 0 20px 0 !important;
+}
+
+#cart-modal .form-group label {
+  margin-bottom: 8px !important;
+}
+
+#cart-modal #observations {
+  flex: 1 !important;
+  min-height: 60px !important;
+  max-height: 100px !important;
+  resize: vertical !important;
+}
+
+/* Botões sempre no bottom com espaço garantido */
+#cart-modal div[style*="justify-content: flex-end"] {
+  flex: 0 0 auto !important;
+  margin-top: 20px !important;
+  padding-top: 15px !important;
+  border-top: 2px solid #ddd !important;
+  background: white !important;
+  z-index: 10 !important;
+}
