@@ -699,35 +699,35 @@ class LocalStorageService {
       };
     }
   }
-
+  
   // Deletar pasta completamente
   async deleteFolderCompletely(folder, includePhotos) {
     const fs = require('fs').promises;
     const path = require('path');
-    
+
     try {
       console.log(`🗑️ Deleting folder completely: ${folder.name} (includePhotos: ${includePhotos})`);
-      
+
       const folderPath = path.join(this.photosPath, folder.relativePath);
       console.log(`📁 Folder path: ${folderPath}`);
-      
+
       // Verificar se pasta existe
       try {
         await fs.access(folderPath);
       } catch (error) {
         throw new Error(`Folder does not exist: ${folderPath}`);
       }
-      
+
       let deletedPhotos = 0;
-      
+
       if (includePhotos) {
         // Contar e deletar todas as fotos na pasta
         try {
           const files = await fs.readdir(folderPath);
           const photoFiles = files.filter(file => this.isImageFile(file));
-          
+
           console.log(`📸 Found ${photoFiles.length} photos to delete`);
-          
+
           for (const file of photoFiles) {
             try {
               const filePath = path.join(folderPath, file);
@@ -742,26 +742,51 @@ class LocalStorageService {
           console.error('❌ Error reading folder contents:', error);
         }
       }
-      
+
       // Verificar se pasta está vazia agora
       try {
         const remainingFiles = await fs.readdir(folderPath);
         const remainingPhotos = remainingFiles.filter(file => this.isImageFile(file));
-        
+
         if (remainingPhotos.length === 0) {
-          // 🗑️ DELETAR PASTA FISICAMENTE
-          await fs.rmdir(folderPath);
-          console.log(`✅ Deleted folder: ${folder.name}`);
-          
-          // Remover do índice
-          await this.removeFolderFromIndex(folder);
-          
-          return {
-            success: true,
-            deletedPhotos: deletedPhotos,
-            folderDeleted: true,
-            message: `Successfully deleted folder "${folder.name}" with ${deletedPhotos} photos`
-          };
+          // 📝 VERIFICAR SE É PASTA ADMINISTRATIVA OU CATEGORIA NORMAL
+          const adminFolders = ['Waiting Payment', 'Sold', 'Developing'];
+          const isAdminFolder = adminFolders.some(admin => folder.relativePath.includes(admin));
+
+          if (isAdminFolder) {
+            // 🗑️ DELETAR PASTA ADMINISTRATIVA FISICAMENTE
+            await fs.rmdir(folderPath);
+            console.log(`✅ Deleted admin folder: ${folder.name}`);
+
+            // Remover do índice
+            await this.removeFolderFromIndex(folder);
+
+            return {
+              success: true,
+              deletedPhotos: deletedPhotos,
+              folderDeleted: true,
+              message: `Successfully deleted admin folder "${folder.name}" with ${deletedPhotos} photos`
+            };
+          } else {
+            // 📁 PRESERVAR CATEGORIA NORMAL MESMO VAZIA
+            console.log(`📁 Category empty but preserved: ${folder.name}`);
+
+            // Não remover pasta física nem do índice - apenas zerar contador
+            // Atualizar contador no índice para 0
+            const index = await this.getIndex();
+            const folderInIndex = this.findCategoryById(index, folder.id);
+            if (folderInIndex) {
+              folderInIndex.photoCount = 0;
+              await this.saveIndex(index);
+            }
+
+            return {
+              success: true,
+              deletedPhotos: deletedPhotos,
+              folderDeleted: false,
+              message: `Successfully deleted ${deletedPhotos} photos from "${folder.name}". Category preserved for admin.`
+            };
+          }
         } else {
           throw new Error(`Folder still contains ${remainingPhotos.length} photos. Cannot delete folder.`);
         }
@@ -771,7 +796,7 @@ class LocalStorageService {
         }
         throw error;
       }
-      
+
     } catch (error) {
       console.error('❌ Error in deleteFolderCompletely:', error);
       return {
