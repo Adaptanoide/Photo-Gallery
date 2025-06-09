@@ -1355,12 +1355,17 @@ async function processReturnToStock() {
         'success'
       );
       
-      // ADICIONAR ESTA LINHA:
       closeReturnAndShowAdmin();
       
-      // Atualizar lista de pedidos
-      const status = document.getElementById('order-status').value;
-      loadOrderFolders(status);
+      // ✅ SOLUÇÃO 2 CORRETA: Verificar se ordem foi deletada
+      if (result.orderDeleted) {
+        console.log('🗑️ Order was deleted, removing from interface');
+        removeOrderFromInterface(window.currentReturnOrderId);
+      } else {
+        console.log('📋 Order still has photos, reloading list');
+        const status = document.getElementById('order-status').value;
+        loadOrderFolders(status);
+      }
       
     } else {
       showToast(`Error: ${result.message}`, 'error');
@@ -2307,5 +2312,30 @@ function switchModalTab(tabId, buttonElement) {
         renderCategoryAccessTable();
       }
     }, 100);
+  }
+}
+
+// Remover ordem específica da interface
+function removeOrderFromInterface(orderId) {
+  console.log(`🗑️ Removing order ${orderId} from interface`);
+  
+  // Buscar linha da tabela correspondente ao pedido
+  const allRows = document.querySelectorAll('#order-folders-list tr');
+  
+  allRows.forEach(row => {
+    const buttons = row.querySelectorAll('button');
+    buttons.forEach(button => {
+      if (button.onclick && button.onclick.toString().includes(orderId)) {
+        console.log('✅ Found and removing order row');
+        row.remove();
+      }
+    });
+  });
+  
+  // Se não restaram linhas, mostrar mensagem de "nenhum pedido"
+  const remainingRows = document.querySelectorAll('#order-folders-list tr');
+  if (remainingRows.length <= 1) { // <= 1 porque pode ter header
+    const listElement = document.getElementById('order-folders-list');
+    listElement.innerHTML = '<p>No order folders found for this status.</p>';
   }
 }
