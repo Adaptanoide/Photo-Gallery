@@ -752,15 +752,21 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
+    // CORREÇÃO MELHORADA - enviar apenas categorias realmente configuradas
+    const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
+      // Só enviar se tem preço personalizado, desconto, ou foi explicitamente desabilitada
+      return item.customPrice !== null || 
+            item.minQuantityForDiscount !== null || 
+            item.discountPercentage !== null ||
+            item.enabled === false;
+    });
+
+    console.log(`📤 Enviando ${relevantCategories.length} categorias configuradas`);
+
     const result = await apiClient.saveCustomerCategoryAccess(
       editingCustomerCode,
       {
-        categoryAccess: categoryAccessData.categoryAccess.filter(item => 
-          item.enabled === true || 
-          item.customPrice !== null || 
-          item.minQuantityForDiscount !== null || 
-          item.discountPercentage !== null
-        ),
+        categoryAccess: relevantCategories,
         volumeDiscounts: categoryAccessData.volumeDiscounts || []
       }
     );
