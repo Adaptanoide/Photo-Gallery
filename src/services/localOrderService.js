@@ -519,13 +519,31 @@ class LocalOrderService {
         }
       }
 
-      // Verificar se pasta do pedido ficou vazia
+      // ✅ CORREÇÃO: Verificar se pasta do pedido ficou vazia (com fotos reais)
       const remainingContents = await fs.readdir(orderPath, { withFileTypes: true });
       const remainingDirectories = remainingContents.filter(item => item.isDirectory());
 
-      if (remainingDirectories.length === 0) {
+      // Verificar se subpastas têm fotos reais, não apenas se existem
+      let hasPhotosInSubfolders = false;
+      for (const dir of remainingDirectories) {
+        const subfolderPath = path.join(orderPath, dir.name);
+        try {
+          const subfolderContents = await fs.readdir(subfolderPath);
+          const photosInSubfolder = subfolderContents.filter(f => f.endsWith('.webp'));
+          if (photosInSubfolder.length > 0) {
+            hasPhotosInSubfolders = true;
+            break;
+          }
+        } catch (error) {
+          console.log(`Warning: Could not read subfolder ${dir.name}`);
+        }
+      }
+
+      const shouldDeleteOrder = remainingDirectories.length === 0 || !hasPhotosInSubfolders;
+
+      if (shouldDeleteOrder) {
         console.log(`📁 Pedido vazio, removendo pasta: ${orderFolder.name}`);
-        await fs.rmdir(orderPath);
+        await fs.rmdir(orderPath, { recursive: true });
 
         // Remover do índice
         const parentFolder = index.folders.find(f => f.name === parentFolderName);
@@ -548,7 +566,7 @@ class LocalOrderService {
         success: true,
         movedPhotos: movedPhotos,
         emptyCategories: emptyCategories,
-        orderDeleted: remainingDirectories.length === 0,
+        orderDeleted: shouldDeleteOrder,
         message: `Successfully returned ${movedPhotos} photos to stock`
       };
 
