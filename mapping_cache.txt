@@ -1,0 +1,1293 @@
+const photoController = require('../controllers/photoController');
+
+// Rota para dados iniciais do cliente
+router.get('/initial-data', photoController.getClientInitialData);
+
+// End point para limpeza de cache
+router.post('/clear-cache', photoController.clearCache);
+
+// Nova rota para salvar seleções do cliente
+router.post('/selections', photoController.saveCustomerSelections);
+
+module.exports = router;
+      console.log(`[Routes] Thumbnail not found for: ${photoId}`);
+      return res.status(404).send('Thumbnail not found');
+    }
+    
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(result.buffer);
+  } catch (error) {
+    console.error('Error serving thumbnail:', error);
+    res.status(500).send('Error serving thumbnail');
+  }
+--
+      console.log(`[Routes] Image not found for: ${photoId}`);
+      return res.status(404).send('Image not found');
+    }
+    
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(result.buffer);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(500).send('Error serving image');
+  }
+--
+      console.log(`[Routes] Image not found for: ${photoId}`);
+      return res.status(404).send('Image not found');
+    }
+    
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(result.buffer);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(500).send('Error serving image');
+  }
+// src/services/smartCache.js
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+// Importar monitoramento (com proteção contra import circular)
+let monitoringService;
+try {
+  monitoringService = require('./monitoringService');
+} catch (error) {
+  console.log('Monitoring service not available during cache initialization');
+}
+
+class SmartCache {
+  constructor(maxSizeGB = 50) {
+    this.maxSize = maxSizeGB * 1024 * 1024 * 1024; // 50GB em bytes
+    
+    // Usar path persistente da Render ou local
+    this.cacheDir = process.env.CACHE_STORAGE_PATH || path.join(__dirname, '../../cache/optimized');
+    this.persistentDir = path.join(this.cacheDir, 'persistent');
+    this.tempDir = path.join(this.cacheDir, 'temp');
+    this.metadataFile = path.join(this.cacheDir, 'cache-metadata.json');
+    
+    // Níveis de prioridade
+    this.priorityLevels = {
+      HIGH: 'high',    // Categorias populares
+      MEDIUM: 'medium', // Acessadas recentemente
+      LOW: 'low'       // Raramente acessadas
+    };
+    
+    // Cache em memória
+    this.memoryCache = {};
+    this.memoryCacheSize = 0;
+    this.maxMemoryCacheSize = 500 * 1024 * 1024; // 500MB em bytes
+    this.maxMemoryCacheItems = 500; // Máximo de itens em memória
+    
+    // Garantir que diretórios existam
+    this.ensureCacheDir();
+    
+    // Carregar metadados
+    this.metadata = this.loadMetadata();
+    
+    // Limpeza automática a cada 24 horas
+    setInterval(() => this.autoCleanup(), 24 * 60 * 60 * 1000);
+    
+    // Limpeza do cache em memória a cada 30 minutos
+    setInterval(() => this.cleanupMemoryCache(), 30 * 60 * 1000);
+    
+    console.log(`✅ SmartCache initialized with ${maxSizeGB}GB limit at ${this.cacheDir}`);
+  }
+  
+  ensureCacheDir() {
+    try {
+      const dirs = [this.cacheDir, this.persistentDir, this.tempDir];
+      dirs.forEach(dir => {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+          console.log(`📁 Created cache directory: ${dir}`);
+        }
+      });
+    } catch (error) {
+      console.error('Error creating cache directories:', error);
+    }
+  }
+  
+  loadMetadata() {
+    try {
+--
+          totalSize: data.totalSize || 0,
+          categoryStats: data.categoryStats || {}
+        };
+      }
+    } catch (error) {
+      console.error('Error loading cache metadata:', error);
+    }
+    return { files: {}, totalSize: 0, categoryStats: {} };
+  }
+  
+  saveMetadata() {
+--
+        categoryStats: this.metadata.categoryStats,
+        lastUpdate: new Date().toISOString()
+      };
+      fs.writeFileSync(this.metadataFile, JSON.stringify(dataToSave, null, 2));
+    } catch (error) {
+      console.error('Error saving cache metadata:', error);
+    }
+  }
+  
+  // Determinar prioridade baseado em categoria e uso
+  getPriority(filename, categoryId) {
+--
+    }
+    
+    return this.priorityLevels.MEDIUM;
+  }
+  
+  // Adicionar ao cache em memória
+  addToMemoryCache(filename, buffer) {
+    // Verificar se precisamos limpar o cache em memória
+    if (this.memoryCacheSize + buffer.length > this.maxMemoryCacheSize || 
+        Object.keys(this.memoryCache).length >= this.maxMemoryCacheItems) {
+      this.cleanupMemoryCache(buffer.length);
+    }
+    
+    this.memoryCache[filename] = {
+      data: buffer,
+      size: buffer.length,
+      lastAccessed: Date.now(),
+      accessCount: 1
+    };
+    
+    this.memoryCacheSize += buffer.length;
+    console.log(`📝 Memory Cache: Added ${filename} (${Math.round(buffer.length / 1024)}KB)`);
+  }
+  
+  // Limpar o cache em memória
+  cleanupMemoryCache(neededSpace = 0) {
+    console.log('🧠 Memory cache cleanup starting...');
+    
+    if (Object.keys(this.memoryCache).length === 0) return;
+    
+    const entries = Object.entries(this.memoryCache)
+      .sort(([,a], [,b]) => {
+        const valueA = a.accessCount / Math.max(1, (Date.now() - a.lastAccessed) / 3600000);
+        const valueB = b.accessCount / Math.max(1, (Date.now() - b.lastAccessed) / 3600000);
+        return valueA - valueB;
+      });
+--
+    let freedSpace = 0;
+    let freedItems = 0;
+    
+    for (const [filename, info] of entries) {
+      if (neededSpace > 0 && freedSpace >= neededSpace && 
+          this.memoryCacheSize - freedSpace <= this.maxMemoryCacheSize * 0.7) break;
+      
+      freedSpace += info.size;
+      this.memoryCacheSize -= info.size;
+      delete this.memoryCache[filename];
+      freedItems++;
+      
+      if ((neededSpace === 0 && freedSpace >= this.maxMemoryCacheSize * 0.3) ||
+          (neededSpace > 0 && freedSpace >= neededSpace * 1.2)) {
+        break;
+      }
+    }
+    
+    console.log(`🧠 Memory cache: Freed ${Math.round(freedSpace / 1024 / 1024)}MB (${freedItems} items)`);
+  }
+  
+  async addFile(filename, buffer, categoryId = null) {
+    const priority = this.getPriority(filename, categoryId);
+    const targetDir = priority === this.priorityLevels.HIGH ? this.persistentDir : this.tempDir;
+--
+    const fileSize = buffer.length;
+    
+    // Atualizar estatísticas da categoria
+    if (categoryId) {
+      if (!this.metadata.categoryStats[categoryId]) {
+        this.metadata.categoryStats[categoryId] = { accessCount: 0, cacheHits: 0 };
+      }
+      this.metadata.categoryStats[categoryId].accessCount++;
+    }
+    
+    // Verificar se arquivo já existe
+--
+      this.metadata.files[filename].lastAccessed = Date.now();
+      this.metadata.files[filename].accessCount = (this.metadata.files[filename].accessCount || 0) + 1;
+      this.saveMetadata();
+      
+      if (fileSize < 5 * 1024 * 1024) { // Apenas arquivos < 5MB
+        this.addToMemoryCache(filename, buffer);
+      }
+      
+      return filepath;
+    }
+    
+    // Verificar se precisamos limpar cache
+    if (this.metadata.totalSize + fileSize > this.maxSize) {
+      await this.cleanup(fileSize);
+    }
+    
+    try {
+--
+        accessCount: 1
+      };
+      this.metadata.totalSize += fileSize;
+      this.saveMetadata();
+      
+      // Adicionar ao cache em memória se for pequeno o suficiente
+      if (fileSize < 5 * 1024 * 1024) {
+        this.addToMemoryCache(filename, buffer);
+      }
+      
+      console.log(`✅ Cache: Added ${filename} (${Math.round(fileSize / 1024)}KB) with ${priority} priority`);
+      return filepath;
+    } catch (error) {
+      console.error('Error adding file to cache:', error);
+      throw error;
+    }
+  }
+  
+  getFile(filename) {
+    // Verificar cache em memória primeiro
+    if (this.memoryCache[filename]) {
+      this.memoryCache[filename].lastAccessed = Date.now();
+      this.memoryCache[filename].accessCount++;
+      
+      // Atualizar estatísticas
+      if (this.metadata.files[filename] && this.metadata.files[filename].categoryId) {
+        const categoryId = this.metadata.files[filename].categoryId;
+        if (this.metadata.categoryStats[categoryId]) {
+          this.metadata.categoryStats[categoryId].cacheHits++;
+        }
+      }
+      
+      return {
+        inMemory: true,
+        data: this.memoryCache[filename].data
+      };
+    }
+    
+    // Procurar em disco
+    if (this.metadata.files[filename]) {
+      const fileInfo = this.metadata.files[filename];
+      const filepath = fileInfo.path || path.join(this.cacheDir, filename);
+      
+      if (fs.existsSync(filepath)) {
+        // Atualizar último acesso
+        fileInfo.lastAccessed = Date.now();
+        fileInfo.accessCount = (fileInfo.accessCount || 0) + 1;
+--
+        try {
+          const buffer = fs.readFileSync(filepath);
+          
+          // Adicionar à memória se for usado frequentemente e pequeno
+          if (fileInfo.accessCount > 5 && buffer.length < 5 * 1024 * 1024) {
+            this.addToMemoryCache(filename, buffer);
+          }
+          
+          return {
+            inMemory: false,
+            path: filepath,
+            data: buffer
+          };
+        } catch (err) {
+          console.error(`Error reading file from disk cache: ${err.message}`);
+          return null;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  async cleanup(neededSpace = 0) {
+    console.log('🧹 Cache cleanup starting...');
+    
+    // Ordenar arquivos por prioridade e último acesso
+    const files = Object.entries(this.metadata.files)
+      .filter(([, info]) => info.priority !== this.priorityLevels.HIGH) // Não remover alta prioridade
+      .sort(([,a], [,b]) => {
+--
+    
+    for (const [filename, info] of files) {
+      if (neededSpace > 0 && freedSpace >= neededSpace) break;
+      
+      try {
+        const filepath = info.path || path.join(this.cacheDir, filename);
+        
+        if (fs.existsSync(filepath)) {
+          fs.unlinkSync(filepath);
+          freedSpace += info.size;
+          deletedCount++;
+          
+          if (this.memoryCache[filename]) {
+            this.memoryCacheSize -= this.memoryCache[filename].size;
+            delete this.memoryCache[filename];
+          }
+        }
+        
+        this.metadata.totalSize -= info.size;
+        delete this.metadata.files[filename];
+        
+      } catch (error) {
+        console.error(`Error deleting cache file ${filename}:`, error);
+      }
+    }
+    
+    this.saveMetadata();
+    console.log(`✅ Cache cleanup: Freed ${Math.round(freedSpace / 1024 / 1024)}MB (${deletedCount} files)`);
+    
+    if (monitoringService) {
+      monitoringService.addCacheStats(this.getStatus());
+    }
+  }
+  
+  async autoCleanup() {
+    console.log('🔄 Auto cleanup starting...');
+--
+      // Não remover arquivos de alta prioridade mesmo se antigos
+      if (info.priority === this.priorityLevels.HIGH) continue;
+      
+      if (info.lastAccessed < thirtyDaysAgo) {
+        try {
+          const filepath = info.path || path.join(this.cacheDir, filename);
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+            this.metadata.totalSize -= info.size;
+            delete this.metadata.files[filename];
+            
+            if (this.memoryCache[filename]) {
+              this.memoryCacheSize -= this.memoryCache[filename].size;
+              delete this.memoryCache[filename];
+            }
+            
+            cleaned++;
+          }
+        } catch (error) {
+--
+    const totalFiles = Object.keys(this.metadata.files).length;
+    const totalSizeMB = Math.round(this.metadata.totalSize / 1024 / 1024);
+    const maxSizeMB = Math.round(this.maxSize / 1024 / 1024);
+    const usagePercent = Math.round((this.metadata.totalSize / this.maxSize) * 100);
+    
+    const memCacheItems = Object.keys(this.memoryCache).length;
+    const memCacheSizeMB = Math.round(this.memoryCacheSize / 1024 / 1024);
+    const maxMemCacheSizeMB = Math.round(this.maxMemoryCacheSize / 1024 / 1024);
+    const memUsagePercent = Math.round((this.memoryCacheSize / this.maxMemoryCacheSize) * 100);
+    
+    // Calcular estatísticas de categorias
+    const topCategories = Object.entries(this.metadata.categoryStats)
+      .sort(([,a], [,b]) => b.accessCount - a.accessCount)
+      .slice(0, 5)
+      .map(([id, stats]) => ({ id, ...stats }));
+    
+    return {
+      // Estatísticas do cache em disco
+      totalFiles,
+      totalSizeMB,
+      maxSizeMB,
+      usagePercent,
+      available: this.maxSize - this.metadata.totalSize,
+      
+      // Estatísticas do cache em memória
+      memoryCache: {
+        items: memCacheItems,
+        sizeMB: memCacheSizeMB,
+        maxSizeMB: maxMemCacheSizeMB,
+        usagePercent: memUsagePercent
+      },
+      
+      // Top categorias
+      topCategories
+    };
+  }
+}
+
+module.exports = SmartCache;
+// driveService.js - Recriado baseado no uso no photoController.js
+const { google } = require('googleapis');
+
+// Cache em memória
+let foldersCache = null;
+let photosCache = new Map();
+let cacheExpiry = null;
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
+
+// Inicializar Google Drive API
+let drive = null;
+
+--
+} catch (error) {
+  console.error('⚠️ Erro ao inicializar Google Drive API:', error);
+  console.log('📝 Sistema continuará usando apenas localStorage');
+}
+
+// Verificar se o cache está válido
+function isCacheValid() {
+  return cacheExpiry && Date.now() < cacheExpiry;
+}
+
+// Limpar todos os caches
+function clearAllCaches() {
+  console.log('🧹 Limpando todos os caches do driveService');
+  foldersCache = null;
+  photosCache.clear();
+  cacheExpiry = null;
+}
+
+// Obter estrutura de pastas
+async function getFolderStructure(isAdmin = false, useLeafFolders = false) {
+  try {
+--
+    if (!drive) {
+      console.log('⚠️ Google Drive não configurado, retornando estrutura vazia');
+      return [];
+    }
+    
+    // Verificar cache
+    if (isCacheValid() && foldersCache) {
+      console.log('📦 Retornando estrutura de pastas do cache');
+      return foldersCache;
+    }
+    
+    // Buscar pastas do Google Drive
+    const response = await drive.files.list({
+      q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
+--
+    console.log(`📁 Encontradas ${folders.length} pastas no Google Drive`);
+    
+    // Processar estrutura hierárquica
+    const structuredFolders = buildFolderHierarchy(folders, isAdmin, useLeafFolders);
+    
+    // Atualizar cache
+    foldersCache = structuredFolders;
+    cacheExpiry = Date.now() + CACHE_DURATION;
+    
+    return structuredFolders;
+    
+  } catch (error) {
+    console.error('❌ Erro ao obter estrutura de pastas do Google Drive:', error);
+    // Retornar cache antigo se disponível, senão array vazio
+    return foldersCache || [];
+  }
+}
+
+// Construir hierarquia de pastas
+function buildFolderHierarchy(folders, isAdmin, useLeafFolders) {
+--
+  }
+  
+  return rootFolders;
+}
+
+// Obter fotos com cache
+async function getPhotosCached(categoryId) {
+  try {
+    console.log(`🖼️ getPhotosCached para categoria: ${categoryId}`);
+    
+    // Se não tiver drive, retornar array vazio
+    if (!drive) {
+      console.log('⚠️ Google Drive não configurado, retornando fotos vazias');
+      return [];
+    }
+    
+    // Verificar cache
+    if (photosCache.has(categoryId) && isCacheValid()) {
+      console.log('📦 Retornando fotos do cache');
+      return photosCache.get(categoryId);
+    }
+    
+    // Buscar fotos da pasta específica
+    let query = `'${categoryId}' in parents and trashed=false and mimeType contains 'image/'`;
+    
+--
+      thumbnail: file.thumbnailLink,
+      webViewLink: file.webViewLink,
+      source: 'drive'
+    }));
+    
+    // Adicionar ao cache
+    photosCache.set(categoryId, photos);
+    
+    return photos;
+    
+  } catch (error) {
+    console.error(`❌ Erro ao obter fotos da categoria ${categoryId}:`, error);
+    // Retornar cache antigo se disponível, senão array vazio
+    return photosCache.get(categoryId) || [];
+  }
+}
+
+// Obter todas as pastas folha com cache
+async function getAllLeafFoldersCached() {
+  try {
+    console.log('🍃 getAllLeafFoldersCached');
+    
+    // Obter estrutura completa
+    const folders = await getFolderStructure(false, true);
+    
+    return {
+--
+}
+
+// Exportar funções
+module.exports = {
+  getFolderStructure,
+  getPhotosCached,
+  getAllLeafFoldersCached,
+  getPhotoById,
+  clearAllCaches
+};
+          <h2 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">Novo Pedido Recebido</h2>
+          
+          <p><strong>Cliente:</strong> ${customerName}</p>
+          <p><strong>Data:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+          <p><strong>Pasta:</strong> ${orderDetails.folderName}</p>
+          <p><strong>Local:</strong> /storage/cache/fotos/imagens-webp/Waiting Payment/${orderDetails.folderName}</p>
+          
+          ${categorySummaryHTML}
+          
+          <p><strong>Observações:</strong> ${orderDetails.comments || 'Nenhuma observação'}</p>
+          
+
+class LocalOrderService {
+  constructor() {
+    this.ordersPath = process.env.CACHE_STORAGE_PATH
+      ? path.join(process.env.CACHE_STORAGE_PATH, 'fotos/imagens-webp')
+      : '/opt/render/project/storage/cache/fotos/imagens-webp';
+
+    console.log(`📁 LocalOrderService initialized with path: ${this.ordersPath}`);
+  }
+
+  // Garantir que as pastas administrativas existam
+--
+
+      currentFolder.relativePath = path.join(targetFolderName, currentFolder.name);
+      targetFolder.children.push(currentFolder);
+
+      await localStorageService.saveIndex(index);
+      localStorageService.clearCache();
+
+      console.log(`✅ Pedido movido para ${targetFolderName}`);
+
+      return {
+        success: true,
+--
+      });
+
+      console.log(`✅ Pedido adicionado ao índice: ${folderName}`);
+
+      await localStorageService.saveIndex(index);
+      localStorageService.clearCache();
+
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Erro ao atualizar índice:', error);
+      throw error;
+--
+      }
+
+      // Salvar índice atualizado
+      await localStorageService.saveIndex(index);
+      //await localStorageService.rebuildIndex(); // Rebuild para atualizar contadores
+      localStorageService.clearCache();
+
+      console.log(`✅ ${movedPhotos} fotos retornadas ao estoque`);
+
+      return {
+        success: true,
+--
+      }
+
+      if (updated) {
+        // Salvar índice atualizado
+        await localStorageService.saveIndex(index);
+        localStorageService.clearCache();
+        console.log(`✅ Contadores das categorias atualizados`);
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao atualizar contadores das categorias:', error);
+      startTime: Date.now(),
+      requests: 0,
+      errors: 0,
+      memoryPeaks: [],
+      cpuHistory: [],
+      cacheStats: []
+    };
+    
+    this.alerts = {
+      memoryThreshold: 20 * 1024 * 1024 * 1024, // 20GB limite
+      cpuThreshold: 80, // 80% CPU
+--
+    
+    // NOVO: Limites de histórico para economizar memória
+    this.historyLimits = {
+      memoryPeaks: 20,    // Reduzido de 100 para 20
+      cpuHistory: 20,     // Reduzido de 100 para 20
+      cacheStats: 10      // Reduzido de 50 para 10
+    };
+    
+    // Iniciar monitoramento automático
+    this.startMonitoring();
+  }
+--
+  // NOVA FUNÇÃO: Limpeza forçada de memória
+  forceMemoryCleanup() {
+    // Limpar todas as métricas históricas
+    this.metrics.memoryPeaks = this.metrics.memoryPeaks.slice(-5);
+    this.metrics.cpuHistory = this.metrics.cpuHistory.slice(-5);
+    this.metrics.cacheStats = this.metrics.cacheStats.slice(-3);
+    
+    // Forçar coleta de lixo se disponível
+    if (global.gc) {
+      console.log('🧹 Forcing garbage collection');
+      global.gc();
+--
+    this.checkDiskSpace();
+  }
+  
+  checkDiskSpace() {
+    try {
+      const cacheDir = path.join(__dirname, '../../cache');
+      const stats = fs.statSync(cacheDir);
+      
+      // Nota: Esta é uma verificação básica
+      // Para uma verificação real de disco, seria necessário usar bibliotecas específicas
+      
+    } catch (error) {
+      // Cache dir pode não existir ainda
+    }
+  }
+  
+  // Contar requisição
+  countRequest() {
+--
+  // Contar erro
+  countError() {
+    this.metrics.errors++;
+  }
+  
+  // Adicionar estatísticas de cache - MODIFICADO
+  addCacheStats(stats) {
+    this.metrics.cacheStats.push({
+      timestamp: Date.now(),
+      ...stats
+    });
+    
+    // MODIFICADO: Limite de histórico mais rigoroso
+    if (this.metrics.cacheStats.length > this.historyLimits.cacheStats) {
+      this.metrics.cacheStats.shift();
+    }
+  }
+  
+  // Obter status atual
+  getStatus() {
+--
+      startTime: Date.now(),
+      requests: 0,
+      errors: 0,
+      memoryPeaks: [],
+      cpuHistory: [],
+      cacheStats: []
+    };
+    console.log('📊 Monitoring metrics reset');
+  }
+}
+
+const path = require('path');
+const sharp = require('sharp');
+
+class LocalStorageService {
+  constructor() {
+    this.baseStoragePath = process.env.CACHE_STORAGE_PATH || '/opt/render/project/storage/cache';
+    this.photosPath = '/opt/render/project/storage/cache/fotos/imagens-webp'; // CAMINHO FIXO CORRETO
+    this.metadataPath = path.join(this.baseStoragePath, 'metadata');
+    this.indexFile = path.join(this.baseStoragePath, 'folder-index.json');
+    
+    this.folderCache = null;
+    this.folderCacheTime = null;
+    this.CACHE_DURATION = 5 * 60 * 1000;
+  }
+
+  async initialize() {
+    console.log('🚀 Initializing LocalStorageService...');
+--
+  // REVERTER - SUBSTITUA a função getFolderStructure por esta versão:
+  async getFolderStructure(isAdmin = false, useLeafFolders = true) {
+    try {
+      console.log(`[LocalStorage] Getting folder structure (admin=${isAdmin})`);
+      
+      if (this.folderCache && Date.now() - this.folderCacheTime < this.CACHE_DURATION) {
+        return this.formatFolderStructure(this.folderCache, isAdmin, useLeafFolders);
+      }
+
+      let index;
+      try {
+        const indexData = await fs.readFile(this.indexFile, 'utf8');
+--
+      } catch {
+        console.log('📋 Index not found, rebuilding...');
+        index = await this.rebuildIndex();
+      }
+
+      this.folderCache = index;
+      this.folderCacheTime = Date.now();
+
+      // VOLTAR A RETORNAR ARRAY DIRETO (como era antes)
+      return this.formatFolderStructure(index, isAdmin, useLeafFolders);
+    } catch (error) {
+      console.error('Error getting folder structure:', error);
+--
+
+  generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  clearCache() {
+    this.folderCache = null;
+    this.folderCacheTime = null;
+  }
+
+  async getStorageStats() {
+    return {
+      totalSize: 0,
+--
+      index.lastUpdate = new Date().toISOString();
+      
+      // Salvar índice atualizado
+      await this.saveIndex(index);
+      
+      // Limpar cache para forçar recarregamento
+      this.clearCache();
+      
+      console.log('✅ Photo counts updated successfully');
+      
+    } catch (error) {
+      console.error('❌ Error updating photo counts:', error);
+--
+      index.lastUpdate = new Date().toISOString();
+      
+      // Salvar índice atualizado
+      await this.saveIndex(index);
+      
+      // Limpar cache para forçar recarregamento
+      this.clearCache();
+      
+      console.log('✅ Photo counts updated after deletion');
+      
+    } catch (error) {
+      console.error('❌ Error updating photo counts after deletion:', error);
+--
+        index.lastUpdate = new Date().toISOString();
+
+        // Salvar índice atualizado
+        await this.saveIndex(index);
+
+        // Limpar cache
+        this.clearCache();
+
+        console.log('✅ Folder removed from index');
+      } else {
+        console.warn('⚠️ Folder not found in index for removal');
+      }
+// Middlewares básicos
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Middleware de cache para arquivos estáticos
+app.use('/api/orders/thumbnail', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+
+app.use('/api/orders/image', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
+  next();
+});
+
+// Configurar paths de storage na inicialização
+const ensureStoragePaths = () => {
+  const fs = require('fs');
+  const storagePath = process.env.CACHE_STORAGE_PATH || './storage/cache';
+  const paths = [
+    storagePath,
+    path.join(storagePath, 'persistent'),
+    path.join(storagePath, 'temp'),
+    path.join(storagePath, 'thumbnails', 'webp'),
+--
+
+// Servir arquivos estáticos
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Servir imagens WebP do disco
+app.use('/images', express.static('/opt/render/project/storage/cache', {
+  maxAge: '1y',
+  etag: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    }
+  }
+}));
+
+// Servir fotos diretamente do disco
+app.use('/fotos', express.static('/opt/render/project/storage/cache/fotos/imagens-webp', {
+  maxAge: '1y',
+  etag: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+
+class ShipmentController {
+  constructor() {
+    this.shipmentsPath = process.env.CACHE_STORAGE_PATH
+      ? path.join(process.env.CACHE_STORAGE_PATH, 'shipments')
+      : '/opt/render/project/storage/cache/shipments';
+  }
+
+  // Garantir que as pastas de shipment existam
+  async ensureShipmentFolders() {
+    console.log('📁 Verificando pastas de shipment...');
+--
+            console.log(`🔄 Converted path: "${destinationPath}" → "${realDestinationPath}"`);
+          } else {
+            realDestinationPath = destinationPath;
+          }
+
+          const fullDestinationPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', realDestinationPath);
+
+          console.log(`📁 Source: ${sourcePath}`);
+          console.log(`📁 Destination: ${fullDestinationPath}`);
+
+          // Verificar se pasta origem existe
+const emailService = require('../services/emailService');
+const fs = require('fs');
+const fs_promises = require('fs').promises; // Para diferenciar do fs normal
+const crypto = require('crypto');
+const sharp = require('sharp');
+const SmartCache = require('../services/smartCache');
+const smartCache = new SmartCache(5); // 5GB limite
+const { imageQueue, fileQueue } = require('../services/queueService');
+const CustomerCode = require('../models/customerCode');
+const Order = require('../models/order');
+const CategoryPrice = require('../models/categoryPrice');
+const path = require('path');
+--
+    let webpPath;
+    
+    if (type === 'thumbnail') {
+      const sizes = ['medium', 'large', 'small'];
+      for (const size of sizes) {
+        webpPath = path.join('/opt/render/project/storage/cache/thumbnails', size, `${fileId}.webp`);
+        if (fs.existsSync(webpPath)) {
+          return fs.readFileSync(webpPath);
+        }
+      }
+    } else {
+      webpPath = path.join('/opt/render/project/storage/cache/webp/hd', `${fileId}.webp`);
+      if (fs.existsSync(webpPath)) {
+        return fs.readFileSync(webpPath);
+      }
+    }
+    
+--
+    return null;
+  }
+}
+
+// Constantes para otimização de imagem
+const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
+const DEFAULT_QUALITY = 90;
+const MAX_WIDTH = 2048;
+
+// Adicionar após os requires no topo do arquivo
+const WEBP_DIR = process.env.CACHE_STORAGE_PATH ? 
+  path.join(process.env.CACHE_STORAGE_PATH, 'webp') : 
+  path.join(__dirname, '../../cache/webp');
+
+// Nova função para buscar WebP pré-convertido
+async function getPreConvertedWebP(fileId, size = 'hd') {
+  try {
+    let webpPath;
+--
+    console.error('Error getting pre-converted WebP:', error);
+    return null;
+  }
+}
+
+// Garantir que o diretório de cache exista
+try {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+} catch (error) {
+  console.error('Erro ao criar diretório de cache:', error);
+}
+
+// NOVO: Cache em memória para referências rápidas
+const imageCache = {};
+
+// CORRIGIDA: Encontrar categoria real da foto específica
+async function findPhotoInLocalIndex(index, photoId) {
+  console.log(`🔍 [DEBUG] Buscando categoria real para foto: ${photoId}`);
+  
+--
+    const currentPath = [...parentPath, folder.name];
+
+    // Se esta pasta tem fotos, verificar FISICAMENTE se nossa foto está aqui
+    if (folder.photoCount > 0 && folder.relativePath) {
+      try {
+        const folderPath = path.join('/opt/render/project/storage/cache/fotos/imagens-webp', folder.relativePath);
+        const photoPath = path.join(folderPath, `${photoId}.webp`);
+        
+        // ✅ VERIFICAR SE ARQUIVO EXISTE FISICAMENTE
+        await fs_promises.access(photoPath);
+        
+--
+    console.error('Image optimization failed:', error);
+    return inputBuffer; // Fallback para original
+  }
+};
+
+// Função para servir imagens do Google Drive em alta resolução com cache - OTIMIZADA
+exports.getHighResImage = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    
+    if (!fileId) {
+--
+    }
+    
+    // Constantes mantidas para alta qualidade
+    const DEFAULT_QUALITY = 90;  // Mantém alta qualidade para visualização em tela cheia
+    const MAX_WIDTH = 2048;
+    const CACHE_DIR = path.join(__dirname, '../../cache/optimized');
+    
+    // Garantir que o diretório de cache existe
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+    
+    // Determinar formato baseado no suporte do navegador
+    const acceptHeader = req.headers.accept || '';
+    const supportsWebP = acceptHeader.includes('image/webp');
+    const format = supportsWebP ? 'webp' : 'jpeg';
+    const quality = parseInt(req.query.quality) || DEFAULT_QUALITY;
+    
+    // Criar nomes de arquivo para cache
+    const cacheFilename = `${fileId}_${format}_q${quality}`;
+    const cachePath = path.join(CACHE_DIR, cacheFilename);
+    const metadataPath = cachePath + '.json';
+    
+    // Verificar cache existente
+    if (fs.existsSync(cachePath) && fs.existsSync(metadataPath)) {
+      try {
+        // Ler metadados do cache
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+        
+        console.log(`Serving optimized ${format} from cache: ${fileId}`);
+        res.setHeader('Content-Type', metadata.mimeType);
+        res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
+        
+        // Streaming do arquivo em cache
+        fs.createReadStream(cachePath).pipe(res);
+        return;
+      } catch (cacheError) {
+        console.error('Error reading from cache:', cacheError);
+        // Continue para baixar e otimizar se houver erro no cache
+      }
+    }
+    
+    // Se não estiver em cache, buscar do Google Drive
+    const drive = await getDriveInstance();
+    
+    // Obter metadados do arquivo primeiro usando imageQueue
+    const fileMetadata = await imageQueue.add(() => drive.files.get({
+      fileId: fileId,
+--
+    
+    // Verificar tamanho - se muito grande, servir diretamente para economizar memória
+    if (response.data.length > 25 * 1024 * 1024) { // 25MB
+      console.log(`Image too large (${Math.round(response.data.length/1024/1024)}MB), serving without optimization`);
+      res.setHeader('Content-Type', fileMetadata.data.mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(Buffer.from(response.data));
+      return;
+    }
+    
+    // Otimizar a imagem com sharp
+--
+      });
+      
+      // Liberar buffer original para economizar memória
+      response.data = null;
+      
+      // Salvar versão otimizada no cache
+      fs.writeFileSync(cachePath, optimizedBuffer);
+      
+      // Salvar metadados
+      const metadata = {
+        mimeType: `image/${format}`,
+        originalSize: fileMetadata.data.size,
+        optimizedSize: optimizedBuffer.length,
+        name: fileMetadata.data.name,
+        quality: quality,
+        format: format,
+        cachedAt: new Date().toISOString()
+      };
+      
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+      
+      // Calcular taxa de compressão para log
+      const compressionRate = Math.round((1 - optimizedBuffer.length / fileMetadata.data.size) * 100);
+      console.log(`Image optimized: ${fileMetadata.data.size} -> ${optimizedBuffer.length} bytes (${compressionRate}% reduction)`);
+      
+      // Definir cabeçalhos
+      res.setHeader('Content-Type', `image/${format}`);
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 dias
+      
+      // Enviar a imagem otimizada
+      res.send(optimizedBuffer);
+      
+    } catch (optimizationError) {
+      console.error('Error optimizing image:', optimizationError);
+      
+      // Fallback: enviar a imagem original se a otimização falhar
+      res.setHeader('Content-Type', fileMetadata.data.mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(Buffer.from(response.data));
+    }
+    
+  } catch (error) {
+    console.error('Error serving high resolution image:', error);
+--
+    
+    if (!fileId) {
+      return res.status(400).send('File ID is required');
+    }
+    
+    // Headers de cache agressivos logo no início
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 ano
+    res.setHeader('Vary', 'Accept'); // Para WebP
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Verificar ETag imediatamente
+    const etag = `"thumb-${fileId}-v2"`;
+--
+    // NOVO: Tentar buscar WebP pré-convertido primeiro
+    const preConverted = await getPreConvertedWebP(fileId, 'thumbnail');
+    if (preConverted) {
+      console.log(`Serving pre-converted thumbnail for ${fileId}`);
+      res.setHeader('Content-Type', 'image/webp');
+      res.setHeader('X-Cache-Source', 'pre-converted');
+      return res.send(preConverted);
+    }
+    
+    // Constantes otimizadas para thumbnails
+    const THUMBNAIL_SIZE = 300;
+    const THUMBNAIL_QUALITY = 80; // Aumentado para melhor qualidade
+    const CACHE_DIR = process.env.CACHE_STORAGE_PATH || path.join(__dirname, '../../cache/optimized');
+    
+    // Garantir que o diretório de cache existe
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+    
+    // Determinar formato baseado no suporte do navegador
+    const acceptHeader = req.headers.accept || '';
+    const supportsWebP = acceptHeader.includes('image/webp');
+    const format = supportsWebP && process.env.ENABLE_WEBP_CONVERSION === 'true' ? 'webp' : 'jpeg';
+    
+    // Criar nomes de arquivo para cache
+    const cacheFilename = `thumb_${fileId}_${format}_${THUMBNAIL_SIZE}`;
+    const cachePath = path.join(CACHE_DIR, 'thumbnails', format, cacheFilename);
+    const metadataPath = `${cachePath}.meta`;
+    
+    // Verificar cache
+    if (fs.existsSync(cachePath)) {
+      console.log(`Serving thumbnail from cache: ${fileId}`);
+      
+      // Streaming do arquivo em cache
+      const stream = fs.createReadStream(cachePath);
+      res.setHeader('Content-Type', `image/${format}`);
+      stream.pipe(res);
+      return;
+    }
+    
+--
+      }, {
+        responseType: 'arraybuffer'
+      }));
+      
+      // Garantir que o diretório existe
+      const thumbDir = path.dirname(cachePath);
+      if (!fs.existsSync(thumbDir)) {
+        fs.mkdirSync(thumbDir, { recursive: true });
+      }
+      
+      // Processar imagem com Sharp
+--
+        });
+      }
+      
+      const thumbnail = await sharpInstance.toBuffer();
+      
+      // Salvar no cache usando SmartCache
+      await smartCache.addFile(cacheFilename, thumbnail, categoryId);
+      
+      // Criar metadados
+      const metadata = {
+        etag: etag,
+        created: new Date().toISOString(),
+
+
+// Adicionar acesso à constante FOLDER_ID
+const { FOLDER_ID } = process.env;
+
+// Cache de imagens processadas em memória
+const processedImageCache = new Map();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutos
+const MAX_CACHE_SIZE = 200; // Máximo de imagens no cache
+
+// Função para limpar cache antigo
+function cleanupImageCache() {
+  const now = Date.now();
+  const entriesToDelete = [];
+  
+  processedImageCache.forEach((value, key) => {
+    if (now - value.timestamp > CACHE_TTL) {
+      entriesToDelete.push(key);
+    }
+  });
+  
+  entriesToDelete.forEach(key => processedImageCache.delete(key));
+  
+  // Se ainda estiver muito grande, remover os mais antigos
+  if (processedImageCache.size > MAX_CACHE_SIZE) {
+    const sortedEntries = Array.from(processedImageCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    
+    const toRemove = sortedEntries.slice(0, processedImageCache.size - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => processedImageCache.delete(key));
+  }
+}
+
+// Limpar cache periodicamente
+setInterval(cleanupImageCache, 5 * 60 * 1000); // A cada 5 minutos
+
+// Obter fotos
+// FUNÇÃO COMPLETA PARA SUBSTITUIR exports.getPhotos no photoController.js
+
+exports.getPhotos = async (req, res) => {
+--
+    const batch = photos.slice(i, i + BATCH_SIZE);
+    
+    // Processar batch em paralelo
+    const promises = batch.map(async (photo) => {
+      try {
+        // Verificar se já está em cache
+        if (processedImageCache.has(photo.id)) {
+          console.log(`[Preload] Imagem ${photo.id} já está em cache`);
+          return;
+        }
+        
+        // Simular processamento (aqui você adicionaria a lógica real de conversão WebP)
+        // Por agora, apenas marcamos como processada
+--
+        // Aqui você adicionaria a lógica real de:
+        // 1. Download da imagem do Google Drive
+        // 2. Conversão para WebP com qualidade otimizada
+        // 3. Armazenamento temporário
+        
+        // Adicionar ao cache
+        processedImageCache.set(photo.id, {
+          timestamp: Date.now(),
+          processed: true,
+          // Adicione aqui os dados da imagem processada
+        });
+        
+--
+// NOVA FUNÇÃO: Verificar status de imagem processada
+exports.checkImageStatus = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    
+    // Verificar se está em cache
+    const cached = processedImageCache.get(photoId);
+    
+    if (cached) {
+      res.status(200).json({
+        success: true,
+        processed: true,
+        cached: true
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        processed: false,
+        cached: false
+      });
+    }
+    
+  } catch (error) {
+    console.error('Erro ao verificar status da imagem:', error);
+--
+        }
+      } catch (e) {
+        console.log('[InitialData] Erro ao carregar local, tentando Google Drive...');
+      }
+      // Fallback para Drive
+      return driveService.getAllLeafFoldersCached();
+    })();
+    
+    // Aguardar todas as promessas
+    const [accessResult, pricesData, foldersResult] = await Promise.all([
+      accessPromise, pricesPromise, foldersPromise
+--
+        try {
+          // Tentar local
+          photos = await localStorageService.getPhotos(category.id);
+          if (photos.length === 0) {
+            // Fallback para Drive
+            photos = await driveService.getPhotosCached(category.id);
+          }
+        } catch (e) {
+          // Em caso de erro, tentar Drive
+          photos = await driveService.getPhotosCached(category.id);
+        }
+        
+        console.log(`Obtidas ${photos.length} fotos para categoria ${category.name}`);
+        
+        // Processar preços para as fotos
+--
+      message: 'Server error: ' + error.message
+    });
+  }
+};
+
+// NOVA FUNÇÃO: Limpar cache do servidor - MOVIDA PARA FORA DE getClientInitialData
+exports.clearCache = async (req, res) => {
+  try {
+    // Limpar todos os caches
+    driveService.clearAllCaches();
+    
+    // Limpar cache de imagens processadas
+    processedImageCache.clear();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Cache limpo com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao limpar cache:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao limpar cache: ' + error.message
+    });
+  }
+};
+
+// Nova função para salvar seleções do cliente
