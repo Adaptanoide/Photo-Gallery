@@ -73,4 +73,19 @@ router.get('/shipments/:shipmentId/content', shipmentController.getShipmentConte
 // Distribuir fotos do shipment para estoque final
 router.post('/shipments/distribute', shipmentController.distributePhotos);
 
+// DEBUG CategoryAccess (ADICIONAR AQUI)
+router.get('/debug/8290', async (req, res) => {
+  const CategoryAccess = require('../models/categoryAccess');
+  const records = await CategoryAccess.find({ customerCode: "8290" });
+  res.json({ 
+    total: records.length, 
+    records: records.map(r => ({
+      id: r._id,
+      customerCode: r.customerCode,
+      accessCount: r.categoryAccess.length,
+      firstAccess: r.categoryAccess[0] || null
+    }))
+  });
+});
+
 module.exports = router;

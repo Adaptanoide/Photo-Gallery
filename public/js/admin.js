@@ -1360,7 +1360,8 @@ async function processReturnToStock() {
       // ✅ SOLUÇÃO 2 CORRETA: Verificar se ordem foi deletada
       if (result.orderDeleted) {
         console.log('🗑️ Order was deleted, removing from interface');
-        removeOrderFromInterface(window.currentReturnOrderId);
+        const orderIdToRemove = window.currentReturnOrderId; // Salvar antes de limpar
+        removeOrderFromInterface(orderIdToRemove);
       } else {
         console.log('📋 Order still has photos, reloading list');
         const status = document.getElementById('order-status').value;
