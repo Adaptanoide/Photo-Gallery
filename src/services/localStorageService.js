@@ -77,7 +77,7 @@ class LocalStorageService {
     try {
       console.log('[LocalStorage] Getting admin folder structure');
       
-      const folders = await this.getFolderStructure(false, true);
+      const folders = await this.getFolderStructure(true, true);
       
       // Filtrar pastas vazias se necessário
       let filteredFolders = folders;
