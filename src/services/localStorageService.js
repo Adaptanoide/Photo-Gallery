@@ -116,7 +116,7 @@ class LocalStorageService {
       
       const currentPath = [...parentPath, folderData.name];
       
-      if (!isAdmin && adminFolders.includes(folderData.name)) {
+      if (adminFolders.includes(folderData.name)) {
         console.log(`[DEBUG] Skipping admin folder: ${folderData.name}`);
         return;
       }
@@ -699,7 +699,7 @@ class LocalStorageService {
       };
     }
   }
-  
+
   // Deletar pasta completamente
   async deleteFolderCompletely(folder, includePhotos) {
     const fs = require('fs').promises;
