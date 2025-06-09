@@ -511,11 +511,11 @@ class LocalOrderService {
           const remainingFiles = await fs.readdir(categoryPath);
           const remainingPhotos = remainingFiles.filter(f => f.endsWith('.webp'));
 
-          if (remainingPhotos.length === 0) {
-            console.log(`📁 Categoria vazia, removendo: ${categoryName}`);
-            await fs.rmdir(categoryPath);
-            emptyCategories.push(categoryName);
-          }
+          //if (remainingPhotos.length === 0) {
+          //  console.log(`📁 Categoria vazia, removendo: ${categoryName}`);
+          //  await fs.rmdir(categoryPath);
+          //  emptyCategories.push(categoryName);
+          //}
         }
       }
 
