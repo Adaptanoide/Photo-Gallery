@@ -752,10 +752,17 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // ALTERADO: Usando editingCustomerCode em vez de currentCustomerCode
     const result = await apiClient.saveCustomerCategoryAccess(
       editingCustomerCode,
-      categoryAccessData
+      {
+        categoryAccess: categoryAccessData.categoryAccess.filter(item => 
+          item.enabled === true || 
+          item.customPrice !== null || 
+          item.minQuantityForDiscount !== null || 
+          item.discountPercentage !== null
+        ),
+        volumeDiscounts: categoryAccessData.volumeDiscounts || []
+      }
     );
 
     hideLoader();
