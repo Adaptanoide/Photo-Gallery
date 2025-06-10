@@ -754,11 +754,9 @@ async function saveCustomerCategoryAccess() {
     
     // CORREÇÃO MELHORADA - enviar apenas categorias realmente configuradas
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      // Só enviar se tem preço personalizado, desconto, ou foi explicitamente desabilitada
-      return item.customPrice !== null || 
-            item.minQuantityForDiscount !== null || 
-            item.discountPercentage !== null ||
-            item.enabled === false;
+      return item.customPrice > 0 || 
+            item.minQuantityForDiscount > 0 || 
+            item.discountPercentage > 0;
     });
 
     console.log(`📤 Enviando ${relevantCategories.length} categorias configuradas`);
