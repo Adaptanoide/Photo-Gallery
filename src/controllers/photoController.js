@@ -89,12 +89,14 @@ exports.getPhotos = async (req, res) => {
     
     // Get default category prices
     const categoryPricesData = await CategoryPrice.find();
+    console.log(`[DEBUG] Found ${categoryPricesData.length} prices in database`);
     const categoryPrices = {};
     
     categoryPricesData.forEach(price => {
       categoryPrices[price.folderId] = price.price || 0;
     });
     
+    console.log(`[DEBUG] First 5 prices:`, Object.entries(categoryPrices).slice(0, 5));  
     console.log(`getPhotos - Obtained prices for ${Object.keys(categoryPrices).length} categories`);
     
     // Get client access settings

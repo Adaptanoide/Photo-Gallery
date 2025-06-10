@@ -615,16 +615,19 @@ function updateCategoryAccess(categoryId, enabled) {
   const accessIndex = categoryAccessData.categoryAccess.findIndex(item => item.categoryId === categoryId);
 
   if (accessIndex >= 0) {
-    // Atualizar configuração existente
-    categoryAccessData.categoryAccess[accessIndex].enabled = enabled;
+    // Atualizar configuração existente e marcar modificação
+    const access = categoryAccessData.categoryAccess[accessIndex];
+    access.enabled = enabled;
+    access._wasModified = true;
   } else {
-    // Criar nova configuração
+    // Criar nova configuração já marcada como modificada
     categoryAccessData.categoryAccess.push({
       categoryId: categoryId,
       enabled: enabled,
       customPrice: null,
       minQuantityForDiscount: null,
-      discountPercentage: null
+      discountPercentage: null,
+      _wasModified: true
     });
   }
 }
@@ -752,13 +755,19 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
+    // Filtrar apenas categorias que foram REALMENTE modificadas
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      // IMPORTANTE: Só enviar categorias que foram REALMENTE configuradas
-      // NÃO enviar categorias apenas desabilitadas
-      return (item.customPrice && item.customPrice > 0) || 
-            (item.minQuantityForDiscount && item.minQuantityForDiscount > 0) || 
-            (item.discountPercentage && item.discountPercentage > 0);
+      // Verificar se foi modificada em relação ao padrão
+      const hasCustomPrice = item.customPrice && item.customPrice > 0;
+      const hasDiscount = (item.minQuantityForDiscount && item.minQuantityForDiscount > 0) || 
+                        (item.discountPercentage && item.discountPercentage > 0);
+      const wasExplicitlyDisabled = item.enabled === false && item._wasModified === true;
+      
+      return hasCustomPrice || hasDiscount || wasExplicitlyDisabled;
     });
+
+    console.log('Categorias ANTES do filtro:', categoryAccessData.categoryAccess.length);
+    console.log('Categorias DEPOIS do filtro:', relevantCategories.length);
 
     // Log para debug
     console.log('Categorias ANTES do filtro:', categoryAccessData.categoryAccess.length);
