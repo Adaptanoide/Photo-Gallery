@@ -307,6 +307,18 @@ function savePrice(folderId) {
   const priceInput = row.querySelector('.price-input');
   const price = parseFloat(priceInput.value);
   
+  // Verificar se a pasta é uma folha
+  const folder = leafFolders.find(f => f.id === folderId);
+  if (!folder) {
+    showToast('Category not found', 'error');
+    return;
+  }
+  
+  if (!folder.isLeaf) {
+    showToast('Cannot set price for category groups. Please select a specific category.', 'error');
+    return;
+  }
+
   if (isNaN(price) || price < 0) {
     showToast('Please enter a valid price', 'error');
     return;

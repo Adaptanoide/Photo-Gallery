@@ -752,12 +752,17 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // CORREÇÃO MELHORADA - enviar apenas categorias realmente configuradas
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      return item.customPrice > 0 || 
-            item.minQuantityForDiscount > 0 || 
-            item.discountPercentage > 0;
+      // IMPORTANTE: Só enviar categorias que foram REALMENTE configuradas
+      // NÃO enviar categorias apenas desabilitadas
+      return (item.customPrice && item.customPrice > 0) || 
+            (item.minQuantityForDiscount && item.minQuantityForDiscount > 0) || 
+            (item.discountPercentage && item.discountPercentage > 0);
     });
+
+    // Log para debug
+    console.log('Categorias ANTES do filtro:', categoryAccessData.categoryAccess.length);
+    console.log('Categorias DEPOIS do filtro:', relevantCategories.length);
 
     console.log(`📤 Enviando ${relevantCategories.length} categorias configuradas`);
 
