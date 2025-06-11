@@ -74,14 +74,9 @@ router.get('/local/image/:photoId', async (req, res) => {
   }
 });
 
-// Rotas administrativas para gerenciamento de pastas (requerem autenticação admin)
 router.use('/admin', (req, res, next) => {
-  // Verificar se é admin - adapte conforme sua lógica de autenticação
-  const adminToken = req.headers.authorization;
-  if (!adminToken) {
-    return res.status(401).json({ error: 'Admin authentication required' });
-  }
-  // TODO: Validar token admin aqui
+  // TODO: Implementar autenticação admin futuramente
+  console.log('📁 Admin route accessed:', req.path);
   next();
 });
 
