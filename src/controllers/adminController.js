@@ -742,3 +742,30 @@ exports.recalculatePhotoCounts = async function(req, res) {
     });
   }
 };
+
+// Forçar rebuild do índice de fotos
+exports.forceRebuildIndex = async function(req, res) {
+  try {
+    console.log('🔄 Forçando rebuild do índice...');
+    
+    // Forçar novo scan do disco
+    const newIndex = await localStorageService.rebuildIndex();
+    
+    // Limpar cache
+    localStorageService.clearCache();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Index rebuilt successfully',
+      totalPhotos: newIndex.totalPhotos,
+      totalFolders: newIndex.folders.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro no rebuild:', error);
+    res.status(500).json({
+      success: false,
+      message: `Erro: ${error.message}`
+    });
+  }
+};
