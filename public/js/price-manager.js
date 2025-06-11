@@ -462,13 +462,13 @@ function toggleSelectAll() {
   };
 })();
 
-// NOVA FUNÇÃO: Refresh counters para Price Management
+// VERSÃO SIMPLES: Refresh counters para Price Management
 async function refreshPriceCounters() {
   try {
     console.log('🔄 Refreshing price management counters...');
     showToast('Recalculating photo counts...', 'info');
     
-    // Usar a mesma função que funciona no Photo Storage
+    // Forçar rebuild do índice
     const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
@@ -479,11 +479,8 @@ async function refreshPriceCounters() {
     if (rebuildResult.success) {
       console.log(`✅ Contadores atualizados: ${rebuildResult.totalPhotos} fotos`);
       
-      // Recarregar dados do Price Management
-      await loadLeafFolders();
-      await loadCategoryPrices();
-      renderCategoryPriceTable();
-      updateHeaderStats();
+      // 🔧 SOLUÇÃO SIMPLES: Reinicializar todo o Price Manager
+      initPriceManager();
       
       showToast(`Counters updated! ${rebuildResult.totalPhotos} photos in ${rebuildResult.totalFolders} categories`, 'success');
     } else {
