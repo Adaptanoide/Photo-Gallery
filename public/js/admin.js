@@ -755,25 +755,27 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // NOVO FILTRO - Mais restritivo
+    // FILTRO CORRIGIDO - Salva tanto habilitadas quanto desabilitadas
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      // Só incluir se tem configuração real
+      // Incluir se tem preço personalizado
       if (item.customPrice && item.customPrice > 0) {
-        console.log(`✅ Incluindo ${item.categoryId} - tem preço: $${item.customPrice}`);
+        console.log(`✅ Incluindo ${item.categoryId} - preço: $${item.customPrice}`);
         return true;
       }
       
-      if (item.minQuantityForDiscount && item.minQuantityForDiscount > 0) {
-        console.log(`✅ Incluindo ${item.categoryId} - tem desconto por quantidade`);
+      // Incluir se tem desconto
+      if (item.minQuantityForDiscount > 0 || item.discountPercentage > 0) {
+        console.log(`✅ Incluindo ${item.categoryId} - tem desconto`);
         return true;
       }
       
-      // NÃO incluir categorias apenas desabilitadas
-      if (item.enabled === false && item._wasModified === true) {
-        console.log(`❌ IGNORANDO ${item.categoryId} - apenas desabilitada`);
-        return false;
+      // IMPORTANTE: Incluir se foi modificada (habilitada ou desabilitada)
+      if (item._wasModified === true) {
+        console.log(`✅ Incluindo ${item.categoryId} - foi modificada (enabled=${item.enabled})`);
+        return true;
       }
       
+      console.log(`❌ Ignorando ${item.categoryId} - não foi modificada`);
       return false;
     });
 
