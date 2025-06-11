@@ -591,3 +591,61 @@
     flex: 0 0 80px;
   }
 }
+
+/* ===== DISCRETE STATS - PRICE MANAGEMENT HEADER ===== */
+/* Estilo do contador e botão refresh (consistente com Photo Storage) */
+
+.discrete-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.discrete-stats span {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* Admin Stats Section específico para Price Management */
+.admin-stats-section .discrete-stats {
+  justify-content: flex-end;
+}
+
+/* Responsividade para o header com botão */
+@media (max-width: 768px) {
+  .discrete-stats {
+    gap: 8px;
+  }
+  
+  .discrete-stats span {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .discrete-stats .btn {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .discrete-stats {
+    gap: 6px;
+  }
+  
+  .discrete-stats span {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  .discrete-stats .btn {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}

@@ -461,3 +461,37 @@ function toggleSelectAll() {
     }
   };
 })();
+
+// NOVA FUNÇÃO: Refresh counters para Price Management
+async function refreshPriceCounters() {
+  try {
+    console.log('🔄 Refreshing price management counters...');
+    showToast('Recalculating photo counts...', 'info');
+    
+    // Usar a mesma função que funciona no Photo Storage
+    const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const rebuildResult = await rebuildResponse.json();
+    
+    if (rebuildResult.success) {
+      console.log(`✅ Contadores atualizados: ${rebuildResult.totalPhotos} fotos`);
+      
+      // Recarregar dados do Price Management
+      await loadLeafFolders();
+      await loadCategoryPrices();
+      renderCategoryPriceTable();
+      updateHeaderStats();
+      
+      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos in ${rebuildResult.totalFolders} categories`, 'success');
+    } else {
+      throw new Error(rebuildResult.message);
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro no refresh:', error);
+    showToast(`Error refreshing: ${error.message}`, 'error');
+  }
+}

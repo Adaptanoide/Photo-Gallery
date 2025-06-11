@@ -2394,3 +2394,53 @@ function removeOrderFromInterface(orderId) {
     listElement.innerHTML = '<p>No order folders found for this status.</p>';
   }
 }
+
+// Função global para refresh de contadores (pode ser chamada de qualquer aba)
+async function globalRefreshCounters() {
+  try {
+    console.log('🔄 Global refresh counters...');
+    showToast('Recalculating photo counts...', 'info');
+    
+    const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const rebuildResult = await rebuildResponse.json();
+    
+    if (rebuildResult.success) {
+      console.log(`✅ Contadores atualizados: ${rebuildResult.totalPhotos} fotos`);
+      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos in ${rebuildResult.totalFolders} categories`, 'success');
+      
+      // Recarregar aba ativa
+      const activeTab = document.querySelector('.tab-button.active');
+      if (activeTab) {
+        const tabText = activeTab.textContent.toLowerCase();
+        
+        if (tabText.includes('price')) {
+          // Recarregar Price Management
+          if (typeof initPriceManager === 'function') {
+            initPriceManager();
+          }
+        }
+        
+        if (tabText.includes('photo')) {
+          // Recarregar Photo Storage  
+          if (typeof photoManager !== 'undefined' && photoManager.refreshStructure) {
+            photoManager.refreshStructure();
+          }
+        }
+      }
+      
+    } else {
+      throw new Error(rebuildResult.message);
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro no refresh:', error);
+    showToast(`Error refreshing: ${error.message}`, 'error');
+  }
+}
+
+// Alias para compatibilidade
+window.refreshPriceCounters = globalRefreshCounters;
