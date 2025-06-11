@@ -503,7 +503,8 @@ console.log("=== TABELA RENDERIZADA COM SUCESSO ===");
   hideLoader();
 }
 
-// Renderizar tabela de acesso a categorias
+// SUBSTITUIR a função renderCategoryAccessTable() por esta versão:
+
 function renderCategoryAccessTable() {
   const tableBody = document.getElementById('category-access-list');
 
@@ -523,18 +524,16 @@ function renderCategoryAccessTable() {
   // Para cada categoria, criar uma linha na tabela
   allCategories.forEach(category => {
     const categoryId = category.id;
-    // MODIFICADO: Usar apenas o nome da pasta final, não o caminho completo
     const categoryName = category.name;
-    // ADICIONADO: Incluir contagem de arquivos
     const fileCount = category.fileCount || 0;
 
     // Obter preço padrão
     const defaultPrice = categoryPrices[categoryId] ? categoryPrices[categoryId].price || 0 : 0;
 
-    // Obter configurações de acesso ou criar um novo
+    // 🆕 CORREÇÃO: Para categorias não configuradas, default é DISABLED (false)
     const access = accessMap[categoryId] || {
       categoryId: categoryId,
-      enabled: true,
+      enabled: false, // ← MUDANÇA CRÍTICA: Default é FALSE!
       customPrice: null,
       minQuantityForDiscount: null,
       discountPercentage: null
@@ -552,7 +551,6 @@ function renderCategoryAccessTable() {
         <td>
           <div class="category-name">${categoryName}</div>
         </td>
-        <!-- ADICIONADO: Coluna para contagem de fotos -->
         <td class="file-count">
           ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'}
         </td>
@@ -607,9 +605,10 @@ function filterAccessCategories() {
   document.getElementById('access-displayed-count').textContent = displayedCount;
 }
 
-// Atualizar configuração de acesso para uma categoria
+// SUBSTITUIR a função updateCategoryAccess() por esta versão:
+
 function updateCategoryAccess(categoryId, enabled) {
-  console.log(`Atualizando acesso para categoria ${categoryId}: ${enabled ? 'habilitada' : 'desabilitada'}`);
+  console.log(`🔄 Atualizando acesso para categoria ${categoryId}: ${enabled ? 'habilitada' : 'desabilitada'}`);
   
   // Procurar configuração existente
   const accessIndex = categoryAccessData.categoryAccess.findIndex(item => item.categoryId === categoryId);
@@ -619,17 +618,23 @@ function updateCategoryAccess(categoryId, enabled) {
     const access = categoryAccessData.categoryAccess[accessIndex];
     access.enabled = enabled;
     access._wasModified = true;
+    console.log(`✅ Configuração existente atualizada: ${categoryId} -> enabled=${enabled}, _wasModified=true`);
   } else {
     // Criar nova configuração já marcada como modificada
-    categoryAccessData.categoryAccess.push({
+    const newConfig = {
       categoryId: categoryId,
       enabled: enabled,
       customPrice: null,
       minQuantityForDiscount: null,
       discountPercentage: null,
       _wasModified: true
-    });
+    };
+    categoryAccessData.categoryAccess.push(newConfig);
+    console.log(`✅ Nova configuração criada: ${categoryId} -> enabled=${enabled}, _wasModified=true`);
   }
+  
+  // Log do estado atual completo
+  console.log(`📊 Estado atual do categoryAccessData:`, categoryAccessData.categoryAccess.length, "categorias");
 }
 
 // Atualizar preço personalizado
@@ -734,56 +739,70 @@ function clearAllCategories() {
   showToast('All categories unauthorized', 'info');
 }
 
+// SUBSTITUIR a função saveCustomerCategoryAccess() por esta versão:
+
 async function saveCustomerCategoryAccess() {
   showLoader();
 
   try {
+    // 🆕 DEPURAÇÃO: Log completo dos dados antes do filtro
+    console.log("=== DADOS ANTES DO FILTRO ===");
+    console.log("Total de categorias em categoryAccessData:", categoryAccessData.categoryAccess.length);
+    
+    categoryAccessData.categoryAccess.forEach((item, index) => {
+      console.log(`[${index}] ${item.categoryId}: enabled=${item.enabled}, _wasModified=${item._wasModified}, customPrice=${item.customPrice}`);
+    });
+
     // Verificar se há pelo menos um item habilitado para evitar bloqueio total
     const habilitados = categoryAccessData.categoryAccess.filter(item => item.enabled === true);
     if (habilitados.length === 0 && categoryAccessData.categoryAccess.length > 0) {
       showToast("Aviso: Todas as categorias foram desabilitadas. O cliente não verá nenhum conteúdo.", "warning");
     }
     
-    // 🆕 NOVO: Incluir volume discounts nos dados a serem salvos
+    // Incluir volume discounts nos dados a serem salvos
     categoryAccessData.volumeDiscounts = volumeDiscounts;
     
-    console.log("Salvando configurações de acesso:", categoryAccessData);
-    
-    // Limpar cache antes de salvar para garantir dados atualizados após salvamento
+    // Limpar cache antes de salvar
     await fetch('/api/client/clear-cache', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // 🆕 POR ESTE BLOCO CORRIGIDO:
+    // 🆕 FILTRO SUPER RIGOROSO - APENAS categorias REALMENTE configuradas
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      // ✅ SOMENTE incluir categorias que REALMENTE precisam ser salvas
-      
       // 1. Tem preço personalizado
       if (item.customPrice && item.customPrice > 0) {
+        console.log(`✅ Incluindo ${item.categoryId} - preço customizado: $${item.customPrice}`);
         return true;
       }
       
       // 2. Tem configuração de desconto
       if (item.minQuantityForDiscount > 0 || item.discountPercentage > 0) {
+        console.log(`✅ Incluindo ${item.categoryId} - tem desconto`);
         return true;
       }
       
-      // 3. FOI EXPLICITAMENTE DESABILITADA pelo admin
+      // 3. Foi EXPLICITAMENTE HABILITADA (enabled=true E _wasModified=true)
+      if (item.enabled === true && item._wasModified === true) {
+        console.log(`✅ Incluindo ${item.categoryId} - foi habilitada explicitamente`);
+        return true;
+      }
+      
+      // 4. Foi EXPLICITAMENTE DESABILITADA (enabled=false E _wasModified=true)
       if (item.enabled === false && item._wasModified === true) {
+        console.log(`✅ Incluindo ${item.categoryId} - foi desabilitada explicitamente`);
         return true;
       }
       
-      // ❌ NÃO incluir categorias que estão habilitadas por padrão
+      // ❌ Ignorar tudo que não foi explicitamente modificado
+      console.log(`❌ Ignorando ${item.categoryId} - não foi modificada ou configurada`);
       return false;
     });
 
+    console.log("=== DADOS DEPOIS DO FILTRO ===");
     console.log('Categorias ANTES do filtro:', categoryAccessData.categoryAccess.length);
     console.log('Categorias DEPOIS do filtro:', relevantCategories.length);
-
-    // Log para debug
-    console.log('Categorias ANTES do filtro:', categoryAccessData.categoryAccess.length);
-    console.log('Categorias DEPOIS do filtro:', relevantCategories.length);
+    console.log('Categorias sendo enviadas:', relevantCategories.map(c => `${c.categoryId}(enabled=${c.enabled})`));
 
     console.log(`📤 Enviando ${relevantCategories.length} categorias configuradas`);
 
