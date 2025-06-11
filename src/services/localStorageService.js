@@ -275,8 +275,9 @@ class LocalStorageService {
     
     const scanFolder = async (folderPath, relativePath = '') => {
       const items = await fs.readdir(folderPath, { withFileTypes: true });
+      // 🆕 SUBSTITUA POR:
       const folder = {
-        id: this.generateId(),
+        id: this.generateConsistentId(relativePath), // ← SOLUÇÃO: ID baseado no caminho
         name: path.basename(folderPath),
         relativePath: relativePath,
         photoCount: 0,
@@ -319,6 +320,13 @@ class LocalStorageService {
     console.log(`✅ Index rebuilt: ${index.totalPhotos} photos in ${index.folders.length} root folders`);
     
     return index;
+  }
+
+  // 🆕 ADICIONE ESTA FUNÇÃO na classe LocalStorageService:
+  generateConsistentId(relativePath) {
+    // Gerar ID baseado no caminho, sempre o mesmo para o mesmo caminho
+    const crypto = require('crypto');
+    return crypto.createHash('md5').update(relativePath || 'root').digest('hex').substring(0, 16);
   }
 
   // FUNÇÕES AUXILIARES

@@ -195,7 +195,7 @@ async function deleteCustomerCode(code) {
   }
 }
 
-// Obter configurações de acesso a categorias para um cliente
+// 🆕 POR ESTA VERSÃO CORRIGIDA:
 async function getCustomerCategoryAccess(customerCode) {
   try {
     const access = await CategoryAccess.findOne({ customerCode });
@@ -206,13 +206,11 @@ async function getCustomerCategoryAccess(customerCode) {
         data: access
       };
     } else {
-      // Se não existir, retornar um objeto vazio (todas as categorias permitidas por padrão)
+      // ✅ SOLUÇÃO: Null indica "não configurado" em vez de "todas permitidas"
       return {
         success: true,
-        data: {
-          categoryAccess: [],
-          volumeDiscounts: []  // 🆕 NOVO: Incluir campo volumeDiscounts vazio
-        }
+        data: null,
+        isNew: true // Flag para indicar que é um cliente novo
       };
     }
   } catch (error) {

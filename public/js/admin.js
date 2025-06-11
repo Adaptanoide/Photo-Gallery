@@ -755,27 +755,26 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // FILTRO CORRIGIDO - Salva tanto habilitadas quanto desabilitadas
+    // 🆕 POR ESTE BLOCO CORRIGIDO:
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      // Incluir se tem preço personalizado
+      // ✅ SOMENTE incluir categorias que REALMENTE precisam ser salvas
+      
+      // 1. Tem preço personalizado
       if (item.customPrice && item.customPrice > 0) {
-        console.log(`✅ Incluindo ${item.categoryId} - preço: $${item.customPrice}`);
         return true;
       }
       
-      // Incluir se tem desconto
+      // 2. Tem configuração de desconto
       if (item.minQuantityForDiscount > 0 || item.discountPercentage > 0) {
-        console.log(`✅ Incluindo ${item.categoryId} - tem desconto`);
         return true;
       }
       
-      // IMPORTANTE: Incluir se foi modificada (habilitada ou desabilitada)
-      if (item._wasModified === true) {
-        console.log(`✅ Incluindo ${item.categoryId} - foi modificada (enabled=${item.enabled})`);
+      // 3. FOI EXPLICITAMENTE DESABILITADA pelo admin
+      if (item.enabled === false && item._wasModified === true) {
         return true;
       }
       
-      console.log(`❌ Ignorando ${item.categoryId} - não foi modificada`);
+      // ❌ NÃO incluir categorias que estão habilitadas por padrão
       return false;
     });
 
