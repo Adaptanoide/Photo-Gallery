@@ -2410,7 +2410,7 @@ async function globalRefreshCounters() {
     
     if (rebuildResult.success) {
       console.log(`✅ Contadores atualizados: ${rebuildResult.totalPhotos} fotos`);
-      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos in ${rebuildResult.totalFolders} categories`, 'success');
+      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos`, 'success');
       
       // Recarregar aba ativa
       const activeTab = document.querySelector('.tab-button.active');

@@ -19,7 +19,7 @@ const photoManager = {
     if (document.getElementById('photo-storage')) {
       await this.loadStorageStats();
       await this.loadFolderStructure();
-      
+
       // 🔄 RESTAURAR UPLOAD EM PROGRESSO (sem alert chato)
       await this.restoreUploadIfNeeded();
     }
@@ -32,15 +32,15 @@ const photoManager = {
       formData: typeof FormData !== 'undefined',
       fetch: typeof fetch !== 'undefined'
     };
-    
+
     const missingFeatures = Object.keys(features).filter(key => !features[key]);
-    
+
     if (missingFeatures.length > 0) {
       console.warn('⚠️ Browser compatibility issues:', missingFeatures);
       showToast('Your browser might not support all upload features. Please use a modern browser.', 'warning');
       return false;
     }
-    
+
     console.log('✅ Browser compatibility check passed');
     return true;
   },
@@ -54,7 +54,7 @@ const photoManager = {
       'webp': 'image/webp',
       'gif': 'image/gif'
     };
-    
+
     return typeMap[extension] || 'application/octet-stream';
   },
 
@@ -876,21 +876,21 @@ const photoManager = {
 
   async refreshStructure() {
     console.log('🔄 Refreshing folder structure...');
-    
+
     try {
       // 🆕 NOVO: Forçar rebuild do índice primeiro
       showToast('Recalculating photo counts...', 'info');
-      
+
       const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      
+
       const rebuildResult = await rebuildResponse.json();
-      
+
       if (rebuildResult.success) {
         console.log(`✅ Índice reconstruído: ${rebuildResult.totalPhotos} fotos`);
-        
+
         // Agora recarregar interface com dados corretos
         await this.loadStorageStats();
         await this.loadFolderStructure();
@@ -898,7 +898,7 @@ const photoManager = {
       } else {
         throw new Error(rebuildResult.message);
       }
-      
+
     } catch (error) {
       console.error('❌ Erro no refresh:', error);
       showToast(`Error refreshing: ${error.message}`, 'error');
@@ -1221,17 +1221,17 @@ const photoManager = {
 
   openUploadModal() {
     console.log('🔺 Opening upload modal...');
-    
+
     if (!this.checkBrowserCompatibility()) {
       return;
     }
-    
+
     if (!document.getElementById('photo-upload-modal')) {
       this.createUploadModal();
     }
-    
+
     this.loadFoldersForUpload();
-    
+
     document.getElementById('photo-upload-modal').style.display = 'flex';
   },
 
@@ -1392,32 +1392,32 @@ const photoManager = {
 
   selectUploadDestination(folderId, folderName) {
     console.log(`📁 Selecting upload destination: ${folderName} (${folderId})`);
-    
+
     this.selectedUploadDestination = {
       id: folderId,
       name: folderName,
       path: []
     };
-    
+
     document.querySelectorAll('.upload-folder-item').forEach(item => {
       item.classList.remove('selected');
     });
-    
+
     if (event && event.currentTarget) {
       event.currentTarget.closest('.upload-folder-item').classList.add('selected');
     }
-    
+
     const destinationNameSpan = document.getElementById('upload-destination-name');
     const selectedFolderDiv = document.querySelector('.upload-selected-folder');
-    
+
     if (destinationNameSpan) {
       destinationNameSpan.textContent = folderName;
     }
-    
+
     if (selectedFolderDiv) {
       selectedFolderDiv.style.display = 'block';
     }
-    
+
     console.log('✅ Upload destination selected:', this.selectedUploadDestination);
   },
 
@@ -1667,12 +1667,12 @@ const photoManager = {
       const fileCount = files.length;
       const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
       const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
-      
+
       console.log(`📦 Starting upload of ${fileCount} files (${totalSizeMB}MB) to "${destination.name}"`);
 
       const currentPhotoCount = await this.getCurrentPhotoCount(destination.id);
       const expectedFinalCount = currentPhotoCount + fileCount;
-      
+
       console.log(`📊 Current photos in destination: ${currentPhotoCount}`);
       console.log(`📊 Expected final count: ${expectedFinalCount}`);
 
@@ -1697,7 +1697,7 @@ const photoManager = {
 
       console.log('📡 Sending upload request...');
       console.log('⏰ This may take several minutes for large files...');
-      
+
       const response = await fetch('/api/admin/photos/upload', {
         method: 'POST',
         body: formData
@@ -1718,7 +1718,7 @@ const photoManager = {
         console.log('✅ Upload request successful!');
         console.log('⏰ Files are now being processed on server...');
         console.log('🔄 Monitoring will continue until photos appear in folder...');
-        
+
         // 🎯 SEM ALERT CHATO - SÓ TOAST SIMPLES
         showToast(`Upload started! ${result.uploadedCount} photos being processed.`, 'success');
 
@@ -1727,18 +1727,18 @@ const photoManager = {
       } else {
         console.error('❌ Upload failed:', result);
         showToast(`Upload failed: ${result.message || 'Unknown error'}`, 'error');
-        
+
         this.stopUploadMonitoring(destination.id);
       }
 
     } catch (error) {
       console.error('❌ Upload error:', error);
       showToast(`Upload failed: ${error.message}`, 'error');
-      
+
       if (this.selectedUploadDestination) {
         this.stopUploadMonitoring(this.selectedUploadDestination.id);
       }
-      
+
     } finally {
       if (uploadBtn && originalText) {
         uploadBtn.disabled = false;
@@ -1848,17 +1848,17 @@ const photoManager = {
   // 🎯 VERSÃO LIMPA - SÓ MARCA A SETINHA 📤 (SEM TEXTO CHATO)
   markFolderAsUploading(folderId, folderName, fileCount) {
     console.log(`🔄 Marking folder as uploading: ${folderName} (${fileCount} files)`);
-    
+
     const folderElements = document.querySelectorAll('.folder-item');
     folderElements.forEach(element => {
       const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
       if (viewButton) {
         // ✅ MANTER APENAS: Classe de upload (para a setinha 📤)
         element.classList.add('folder-uploading');
-        
+
         // ❌ REMOVIDO: O texto chato "Processing X photos... (may take ~10min)"
         // Agora só mantém o contador original
-        
+
         const eyeButton = element.querySelector('.view-btn');
         if (eyeButton) {
           eyeButton.disabled = true;
@@ -1871,19 +1871,19 @@ const photoManager = {
 
   unmarkFolderAsUploading(folderId) {
     console.log(`✅ Removing upload loading state from folder: ${folderId}`);
-    
+
     const folderElements = document.querySelectorAll('.folder-item.folder-uploading');
     folderElements.forEach(element => {
       const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
       if (viewButton) {
         element.classList.remove('folder-uploading');
-        
+
         const countSpan = element.querySelector('.folder-count');
         if (countSpan && countSpan.dataset.originalText) {
           countSpan.textContent = countSpan.dataset.originalText;
           delete countSpan.dataset.originalText;
         }
-        
+
         const eyeButton = element.querySelector('.view-btn');
         if (eyeButton) {
           eyeButton.disabled = false;
@@ -1897,9 +1897,9 @@ const photoManager = {
   async updateInterfaceAfterUpload(destination, uploadedCount) {
     try {
       console.log('🔄 Interface update - REAL monitoring will handle this...');
-      
+
       console.log('✅ Interface update delegated to real monitoring system');
-      
+
     } catch (error) {
       console.error('❌ Error in interface update:', error);
     }
@@ -1936,7 +1936,7 @@ const photoManager = {
   async getCurrentPhotoCount(folderId) {
     try {
       console.log(`🔍 Getting photo count for folder: ${folderId}`);
-      
+
       const photosResponse = await fetch(`/api/photos?category_id=${folderId}`);
       if (photosResponse.ok) {
         const photos = await photosResponse.json();
@@ -1945,7 +1945,7 @@ const photoManager = {
           return photos.length;
         }
       }
-      
+
       const statsResponse = await fetch(`/api/admin/folders/leaf`);
       if (statsResponse.ok) {
         const data = await statsResponse.json();
@@ -1957,7 +1957,7 @@ const photoManager = {
           }
         }
       }
-      
+
       if (this.allFolders) {
         const folder = this.allFolders.find(f => f.id === folderId);
         if (folder) {
@@ -1965,10 +1965,10 @@ const photoManager = {
           return folder.fileCount || 0;
         }
       }
-      
+
       console.warn(`⚠️ Could not get photo count for folder: ${folderId}`);
       return 0;
-      
+
     } catch (error) {
       console.error('❌ Error getting current photo count:', error);
       return 0;
@@ -1979,45 +1979,45 @@ const photoManager = {
   startRealUploadMonitoring(folderId, folderName, uploadingCount, expectedFinalCount, isRestoring = false) {
     console.log(`🔄 Starting REAL upload monitoring for: ${folderName} (restoring: ${isRestoring})`);
     console.log(`📊 Expecting ${expectedFinalCount} photos when complete`);
-    
+
     // ❌ REMOVIDO: Salvar estado persistente (sem proteção contra saída)
     // ❌ REMOVIDO: Proteção contra saída da página
-    
+
     // ✅ MANTER APENAS: Setinha na pasta
     this.markFolderAsUploading(folderId, folderName, uploadingCount);
-    
+
     // ❌ REMOVIDO: Indicador grande no topo direito
-    
+
     if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
       clearInterval(this.uploadMonitoringIntervals.get(folderId));
     }
-    
+
     const monitoringInterval = setInterval(async () => {
       try {
         console.log(`🔍 Checking photo count for ${folderName}...`);
-        
+
         const currentCount = await this.getCurrentPhotoCount(folderId);
         console.log(`📊 Current count: ${currentCount}, Expected: ${expectedFinalCount}`);
-        
+
         if (currentCount >= expectedFinalCount) {
           console.log(`✅ Upload completed! ${folderName} now has ${currentCount} photos`);
-          
+
           clearInterval(monitoringInterval);
           this.stopUploadMonitoring(folderId);
-          
+
           this.updateSpecificFolder(folderId, currentCount);
-          
+
           // 🎯 SEM ALERT CHATO - SÓ TOAST SIMPLES
           showToast(`Upload completed! "${folderName}" now has ${currentCount} photos.`, 'success');
-          
+
           await this.loadStorageStats(true);
         }
-        
+
       } catch (error) {
         console.error('Error in upload monitoring:', error);
       }
     }, 30000);
-    
+
     if (!this.uploadMonitoringIntervals) {
       this.uploadMonitoringIntervals = new Map();
     }
@@ -2027,14 +2027,14 @@ const photoManager = {
   // 🎯 VERSÃO LIMPA DO STOP MONITORING
   stopUploadMonitoring(folderId) {
     console.log(`🛑 Stopping upload monitoring for folder: ${folderId}`);
-    
+
     if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
       clearInterval(this.uploadMonitoringIntervals.get(folderId));
       this.uploadMonitoringIntervals.delete(folderId);
     }
-    
+
     this.unmarkFolderAsUploading(folderId);
-    
+
     // ❌ REMOVIDO: Indicador do topo direito
     // ❌ REMOVIDO: Proteção contra saída
     // ❌ REMOVIDO: Estado persistente
@@ -2042,7 +2042,7 @@ const photoManager = {
 
   updateSpecificFolder(folderId, newPhotoCount) {
     console.log(`🔄 Updating specific folder ${folderId} with count: ${newPhotoCount}`);
-    
+
     const folderElements = document.querySelectorAll('.folder-item');
     folderElements.forEach(element => {
       const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
@@ -2051,7 +2051,7 @@ const photoManager = {
         if (countSpan) {
           countSpan.textContent = ` (${newPhotoCount} photos)`;
         }
-        
+
         console.log(`✅ Updated folder display: ${newPhotoCount} photos`);
       }
     });
@@ -2063,6 +2063,233 @@ const photoManager = {
     // Agora não há proteção contra saída, então não precisa restaurar nada
     console.log('📝 Upload restoration system disabled (simplified version)');
   },
+
+  // ===== NOVA FUNCIONALIDADE: CRIAR PASTAS =====
+
+  openCreateFolderModal() {
+    console.log('📁 Opening create folder modal...');
+
+    if (!document.getElementById('create-folder-modal')) {
+      this.createFolderModal();
+    }
+
+    // Resetar formulário
+    document.getElementById('new-folder-name').value = '';
+    this.selectedParentFolder = null;
+    document.getElementById('selected-parent-name').textContent = 'No parent selected (root level)';
+
+    document.getElementById('create-folder-modal').style.display = 'flex';
+
+    // Carregar pastas disponíveis como pai
+    this.loadParentFolders();
+  },
+
+  createFolderModal() {
+    const modalHTML = `
+    <div id="create-folder-modal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <h3>Create New Folder</h3>
+        
+        <div class="form-group">
+          <label for="new-folder-name">Folder Name:</label>
+          <input type="text" id="new-folder-name" class="form-control" 
+                 placeholder="Enter folder name..." maxlength="100">
+        </div>
+        
+        <div class="form-group">
+          <label>Parent Folder (destination):</label>
+          <div class="parent-selection">
+            <p id="selected-parent-name" class="selected-parent">No parent selected (root level)</p>
+            <button type="button" class="btn btn-secondary" onclick="photoManager.toggleParentSelector()">
+              Choose Parent
+            </button>
+          </div>
+        </div>
+        
+        <div id="parent-selector" class="parent-selector" style="display: none;">
+          <h4>Select Parent Folder:</h4>
+          <div id="parent-folders-loading" class="loading-message">Loading folders...</div>
+          <div id="parent-folders-tree" class="parent-folders-tree" style="display: none;"></div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="photoManager.closeCreateFolderModal()">Cancel</button>
+          <button class="btn btn-gold" onclick="photoManager.createNewFolder()">Create Folder</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('✅ Create folder modal created');
+  },
+
+  async loadParentFolders() {
+    console.log('📂 Loading parent folders...');
+
+    const loadingDiv = document.getElementById('parent-folders-loading');
+    const treeDiv = document.getElementById('parent-folders-tree');
+
+    loadingDiv.style.display = 'block';
+    treeDiv.style.display = 'none';
+
+    try {
+      // Usar estrutura atual, mas permitir seleção de pastas não-leaf também
+      const foldersForParent = this.filterFoldersForParent(this.currentStructure);
+
+      if (foldersForParent.length === 0) {
+        treeDiv.innerHTML = '<div class="empty-message">No available parent folders</div>';
+      } else {
+        this.renderParentTree(foldersForParent, treeDiv);
+      }
+
+      loadingDiv.style.display = 'none';
+      treeDiv.style.display = 'block';
+
+    } catch (error) {
+      console.error('❌ Error loading parent folders:', error);
+      treeDiv.innerHTML = `<div class="error">Failed to load folders: ${error.message}</div>`;
+      loadingDiv.style.display = 'none';
+      treeDiv.style.display = 'block';
+    }
+  },
+
+  filterFoldersForParent(folders) {
+    const adminFoldersToExclude = ['Waiting Payment', 'Sold'];
+
+    const filterRecursive = (folderList) => {
+      return folderList.filter(folder => {
+        if (adminFoldersToExclude.includes(folder.name)) {
+          return false;
+        }
+
+        if (folder.children && folder.children.length > 0) {
+          folder.children = filterRecursive(folder.children);
+        }
+
+        return true;
+      });
+    };
+
+    return filterRecursive(folders);
+  },
+
+  renderParentTree(folders, container, level = 0) {
+    container.innerHTML = '';
+
+    // Opção "Root Level"
+    if (level === 0) {
+      const rootDiv = document.createElement('div');
+      rootDiv.className = 'parent-folder-item root-option';
+      rootDiv.innerHTML = `
+      <div class="parent-folder-content" onclick="photoManager.selectParentFolder(null, 'Root Level')">
+        <span class="parent-folder-icon">🏠</span>
+        <span class="parent-folder-name">Root Level</span>
+        <span class="parent-folder-note">(Create at top level)</span>
+      </div>
+    `;
+      container.appendChild(rootDiv);
+    }
+
+    folders.forEach(folder => {
+      const folderDiv = document.createElement('div');
+      folderDiv.className = 'parent-folder-item';
+      folderDiv.style.paddingLeft = `${(level + 1) * 20}px`;
+
+      const icon = folder.isLeaf ? '📄' : '📁';
+      const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
+
+      folderDiv.innerHTML = `
+      <div class="parent-folder-content" onclick="photoManager.selectParentFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" data-selectable="true">
+        <span class="parent-folder-icon">${icon}</span>
+        <span class="parent-folder-name">${folder.name}</span>
+        <span class="parent-folder-count">${photoCount}</span>
+      </div>
+    `;
+
+      container.appendChild(folderDiv);
+
+      if (folder.children && folder.children.length > 0) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'parent-folder-children';
+        container.appendChild(childContainer);
+        this.renderParentTree(folder.children, childContainer, level + 1);
+      }
+    });
+  },
+
+  selectParentFolder(folderId, folderName) {
+    // Remover seleção anterior
+    document.querySelectorAll('.parent-folder-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+
+    // Selecionar novo
+    event.target.closest('.parent-folder-item').classList.add('selected');
+
+    this.selectedParentFolder = folderId;
+    document.getElementById('selected-parent-name').textContent = folderName;
+
+    console.log(`📁 Selected parent: ${folderName} (${folderId})`);
+  },
+
+  toggleParentSelector() {
+    const selector = document.getElementById('parent-selector');
+    const isVisible = selector.style.display !== 'none';
+    selector.style.display = isVisible ? 'none' : 'block';
+  },
+
+  async createNewFolder() {
+    const folderName = document.getElementById('new-folder-name').value.trim();
+
+    if (!folderName) {
+      showToast('Please enter a folder name', 'error');
+      return;
+    }
+
+    // Validar nome da pasta
+    if (!/^[a-zA-Z0-9\s\-_.()]+$/.test(folderName)) {
+      showToast('Folder name can only contain letters, numbers, spaces, and basic punctuation', 'error');
+      return;
+    }
+
+    try {
+      showToast('Creating folder...', 'info');
+
+      const response = await fetch('/api/photos/admin/folder/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          parentId: this.selectedParentFolder,
+          name: folderName
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showToast(`Folder "${folderName}" created successfully!`, 'success');
+        this.closeCreateFolderModal();
+
+        // Refresh estrutura
+        await this.refreshStructure();
+
+      } else {
+        showToast(`Error creating folder: ${result.message}`, 'error');
+      }
+
+    } catch (error) {
+      console.error('❌ Error creating folder:', error);
+      showToast(`Error creating folder: ${error.message}`, 'error');
+    }
+  },
+
+  closeCreateFolderModal() {
+    document.getElementById('create-folder-modal').style.display = 'none';
+    this.selectedParentFolder = null;
+  }
 
 };
 
@@ -2076,7 +2303,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (originalSwitchTab) {
       window.switchTab = function (tabId) {
         // ❌ REMOVIDO: Verificação de proteção contra saída
-        
+
         originalSwitchTab(tabId);
 
         if (tabId === 'photo-storage') {
