@@ -482,7 +482,7 @@ async function refreshPriceCounters() {
       // 🔧 SOLUÇÃO SIMPLES: Reinicializar todo o Price Manager
       initPriceManager();
       
-      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos in ${rebuildResult.totalFolders} categories`, 'success');
+      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos`, 'success');
     } else {
       throw new Error(rebuildResult.message);
     }
