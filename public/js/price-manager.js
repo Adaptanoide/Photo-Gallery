@@ -303,7 +303,16 @@ function togglePriceEdit(folderId) {
 
 // Save price
 function savePrice(folderId) {
+  // ADICIONE ESTE LOG:
+  console.log(`[PRICE] Tentando salvar preço para folder: ${folderId}`);
+  
   const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
+  if (!row) {
+    console.error(`[PRICE] Row não encontrada para folder: ${folderId}`);
+    showToast('Category not found in table', 'error');
+    return;
+  }
+  
   const priceInput = row.querySelector('.price-input');
   const price = parseFloat(priceInput.value);
   
@@ -311,6 +320,14 @@ function savePrice(folderId) {
   const folder = leafFolders.find(f => f.id === folderId);
   if (!folder) {
     showToast('Category not found', 'error');
+    return;
+  }
+  
+  // ADICIONE MAIS ESTE LOG:
+  console.log(`[PRICE] Folder encontrado: ${folder.name}, preço a salvar: $${price}`);
+  
+  if (isNaN(price) || price < 0) {
+    showToast('Please enter a valid price', 'error');
     return;
   }
   

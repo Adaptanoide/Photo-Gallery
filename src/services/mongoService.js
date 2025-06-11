@@ -227,6 +227,9 @@ async function getCustomerCategoryAccess(customerCode) {
 // Salvar configurações de acesso a categorias para um cliente
 async function saveCustomerCategoryAccess(customerCode, categoryAccessData) {
   try {
+    console.log(`[MONGO] Salvando CategoryAccess para ${customerCode}:`);
+    console.log(`- Total de categorias recebidas: ${categoryAccessData.categoryAccess.length}`);
+    console.log(`- Primeiras 3 categorias:`, categoryAccessData.categoryAccess.slice(0, 3));
     await CategoryAccess.findOneAndUpdate(
       { customerCode },
       categoryAccessData,

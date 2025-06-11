@@ -755,15 +755,26 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // Filtrar apenas categorias que foram REALMENTE modificadas
+    // NOVO FILTRO - Mais restritivo
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
-      // Verificar se foi modificada em relação ao padrão
-      const hasCustomPrice = item.customPrice && item.customPrice > 0;
-      const hasDiscount = (item.minQuantityForDiscount && item.minQuantityForDiscount > 0) || 
-                        (item.discountPercentage && item.discountPercentage > 0);
-      const wasExplicitlyDisabled = item.enabled === false && item._wasModified === true;
+      // Só incluir se tem configuração real
+      if (item.customPrice && item.customPrice > 0) {
+        console.log(`✅ Incluindo ${item.categoryId} - tem preço: $${item.customPrice}`);
+        return true;
+      }
       
-      return hasCustomPrice || hasDiscount || wasExplicitlyDisabled;
+      if (item.minQuantityForDiscount && item.minQuantityForDiscount > 0) {
+        console.log(`✅ Incluindo ${item.categoryId} - tem desconto por quantidade`);
+        return true;
+      }
+      
+      // NÃO incluir categorias apenas desabilitadas
+      if (item.enabled === false && item._wasModified === true) {
+        console.log(`❌ IGNORANDO ${item.categoryId} - apenas desabilitada`);
+        return false;
+      }
+      
+      return false;
     });
 
     console.log('Categorias ANTES do filtro:', categoryAccessData.categoryAccess.length);
