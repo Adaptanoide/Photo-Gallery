@@ -444,13 +444,12 @@ function editCustomerAccess(code, name) {
   loadCustomerCategoryData(code);
 }
 
-// Carregar dados de categorias e acesso do cliente
 async function loadCustomerCategoryData(code) {
   showLoader();
 
   try {
-    // Carregar todas as categorias (leaf folders) - MODIFICADO: adicionar parâmetro include_empty=true
-    const leafFoldersResponse = await apiClient.getLeafFolders(true); // Incluir pastas vazias
+    // Carregar todas as categorias (leaf folders)
+    const leafFoldersResponse = await apiClient.getLeafFolders(true);
 
     if (!leafFoldersResponse.success) {
       document.getElementById('category-access-list').innerHTML =
@@ -463,10 +462,8 @@ async function loadCustomerCategoryData(code) {
 
     // Carregar preços padrão das categorias
     const pricesResponse = await apiClient.getCategoryPrices();
-
     if (pricesResponse.success) {
       const prices = pricesResponse.prices || [];
-      // Converter para um mapa para fácil acesso
       categoryPrices = {};
       prices.forEach(price => {
         categoryPrices[price.folderId] = price;
@@ -474,24 +471,34 @@ async function loadCustomerCategoryData(code) {
     }
 
     // Carregar configurações de acesso do cliente
-// Carregar configurações de acesso do cliente
     const accessResponse = await apiClient.getCustomerCategoryAccess(code);
-    if (accessResponse.success) {
-      categoryAccessData = accessResponse.data || { categoryAccess: [], volumeDiscounts: [] };
+    
+    if (accessResponse.success && accessResponse.data && accessResponse.data.categoryAccess) {
+      // 🆕 CORREÇÃO: Marcar todas as configurações existentes como "já salvas"
+      categoryAccessData = {
+        categoryAccess: accessResponse.data.categoryAccess.map(item => ({
+          ...item,
+          _isSaved: true // ← Nova flag para indicar que já foi salva
+        })),
+        volumeDiscounts: accessResponse.data.volumeDiscounts || []
+      };
       
-      // 🆕 NOVO: Carregar volume discounts
+      console.log(`📥 Carregadas ${categoryAccessData.categoryAccess.length} configurações existentes do MongoDB`);
+      
+      // Log das configurações carregadas
+      categoryAccessData.categoryAccess.forEach((item, index) => {
+        console.log(`[${index}] ${item.categoryId}: enabled=${item.enabled}, _isSaved=true`);
+      });
+      
       loadVolumeDiscounts(categoryAccessData);
-      
     } else {
+      // Cliente novo - sem configurações
       categoryAccessData = { categoryAccess: [], volumeDiscounts: [] };
-      
-      // 🆕 NOVO: Carregar volume discounts vazios
       loadVolumeDiscounts(categoryAccessData);
+      console.log(`📝 Cliente novo - sem configurações existentes`);
     }
 
-console.log("=== ANTES DE RENDERIZAR TABELA ===");
     // Renderizar a tabela de categorias
-console.log("=== TABELA RENDERIZADA COM SUCESSO ===");
     renderCategoryAccessTable();
 
   } catch (error) {
@@ -503,8 +510,6 @@ console.log("=== TABELA RENDERIZADA COM SUCESSO ===");
   hideLoader();
 }
 
-// SUBSTITUIR a função renderCategoryAccessTable() por esta versão:
-
 function renderCategoryAccessTable() {
   const tableBody = document.getElementById('category-access-list');
 
@@ -515,7 +520,7 @@ function renderCategoryAccessTable() {
 
   let html = '';
 
-  // Criar um mapa para acesso rápido às configurações
+  // Criar um mapa para acesso rápido às configurações SALVAS
   const accessMap = {};
   categoryAccessData.categoryAccess.forEach(item => {
     accessMap[item.categoryId] = item;
@@ -530,10 +535,10 @@ function renderCategoryAccessTable() {
     // Obter preço padrão
     const defaultPrice = categoryPrices[categoryId] ? categoryPrices[categoryId].price || 0 : 0;
 
-    // 🆕 CORREÇÃO: Para categorias não configuradas, default é DISABLED (false)
+    // 🆕 CORREÇÃO: Se existe configuração salva, usar ela; senão default é FALSE
     const access = accessMap[categoryId] || {
       categoryId: categoryId,
-      enabled: false, // ← MUDANÇA CRÍTICA: Default é FALSE!
+      enabled: false, // Default é FALSE para categorias não configuradas
       customPrice: null,
       minQuantityForDiscount: null,
       discountPercentage: null
@@ -577,8 +582,6 @@ function renderCategoryAccessTable() {
   });
 
   tableBody.innerHTML = html;
-
-  // Atualizar contadores para o filtro
   document.getElementById('access-total-count').textContent = allCategories.length;
   document.getElementById('access-displayed-count').textContent = allCategories.length;
 }
@@ -739,27 +742,23 @@ function clearAllCategories() {
   showToast('All categories unauthorized', 'info');
 }
 
-// SUBSTITUIR a função saveCustomerCategoryAccess() por esta versão:
-
 async function saveCustomerCategoryAccess() {
   showLoader();
 
   try {
-    // 🆕 DEPURAÇÃO: Log completo dos dados antes do filtro
     console.log("=== DADOS ANTES DO FILTRO ===");
     console.log("Total de categorias em categoryAccessData:", categoryAccessData.categoryAccess.length);
     
     categoryAccessData.categoryAccess.forEach((item, index) => {
-      console.log(`[${index}] ${item.categoryId}: enabled=${item.enabled}, _wasModified=${item._wasModified}, customPrice=${item.customPrice}`);
+      console.log(`[${index}] ${item.categoryId}: enabled=${item.enabled}, _wasModified=${item._wasModified}, _isSaved=${item._isSaved}`);
     });
 
-    // Verificar se há pelo menos um item habilitado para evitar bloqueio total
+    // Verificar se há pelo menos um item habilitado
     const habilitados = categoryAccessData.categoryAccess.filter(item => item.enabled === true);
     if (habilitados.length === 0 && categoryAccessData.categoryAccess.length > 0) {
       showToast("Aviso: Todas as categorias foram desabilitadas. O cliente não verá nenhum conteúdo.", "warning");
     }
     
-    // Incluir volume discounts nos dados a serem salvos
     categoryAccessData.volumeDiscounts = volumeDiscounts;
     
     // Limpar cache antes de salvar
@@ -768,7 +767,7 @@ async function saveCustomerCategoryAccess() {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    // 🆕 FILTRO SUPER RIGOROSO - APENAS categorias REALMENTE configuradas
+    // 🆕 FILTRO CORRIGIDO - Incluir configurações já salvas + novas modificações
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
       // 1. Tem preço personalizado
       if (item.customPrice && item.customPrice > 0) {
@@ -782,20 +781,19 @@ async function saveCustomerCategoryAccess() {
         return true;
       }
       
-      // 3. Foi EXPLICITAMENTE HABILITADA (enabled=true E _wasModified=true)
-      if (item.enabled === true && item._wasModified === true) {
-        console.log(`✅ Incluindo ${item.categoryId} - foi habilitada explicitamente`);
+      // 3. Foi habilitada/desabilitada AGORA (_wasModified=true)
+      if (item._wasModified === true) {
+        console.log(`✅ Incluindo ${item.categoryId} - foi modificada agora (enabled=${item.enabled})`);
         return true;
       }
       
-      // 4. Foi EXPLICITAMENTE DESABILITADA (enabled=false E _wasModified=true)
-      if (item.enabled === false && item._wasModified === true) {
-        console.log(`✅ Incluindo ${item.categoryId} - foi desabilitada explicitamente`);
+      // 🆕 4. JÁ ESTAVA SALVA ANTERIORMENTE (_isSaved=true)
+      if (item._isSaved === true) {
+        console.log(`✅ Incluindo ${item.categoryId} - já estava salva (enabled=${item.enabled})`);
         return true;
       }
       
-      // ❌ Ignorar tudo que não foi explicitamente modificado
-      console.log(`❌ Ignorando ${item.categoryId} - não foi modificada ou configurada`);
+      console.log(`❌ Ignorando ${item.categoryId} - não tem configuração relevante`);
       return false;
     });
 

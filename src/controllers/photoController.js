@@ -553,6 +553,12 @@ exports.getClientInitialData = async (req, res) => {
         return false;
       }
       
+      // MODIFICADO: Verificação para fileCount primeiro
+      if (!folder.fileCount || folder.fileCount <= 0) {
+        console.log(`Excluindo categoria ${folder.name} por estar vazia (fileCount=${folder.fileCount})`);
+        return false;
+      }
+      
       // CORREÇÃO CRÍTICA: Verificar se tem uma configuração de acesso e se está habilitada
       const access = accessMap[folder.id];
       
@@ -560,23 +566,15 @@ exports.getClientInitialData = async (req, res) => {
       if (access) {
         console.log(`Verificando acesso para ${folder.name}: access.enabled=${access.enabled}`);
         
-        // AQUI ESTÁ O BUG: precisamos verificar se é EXPLICITAMENTE false
-        if (access.enabled === false) {
-          console.log(`Categoria ${folder.name} negada explicitamente`);
-          return false;
-        }
+        // Se tem configuração, usar ela
+        const isAllowed = access.enabled === true;
+        console.log(`Categoria ${folder.name}: configuração encontrada, enabled=${access.enabled}, permitida=${isAllowed}`);
+        return isAllowed;
       } else {
-        console.log(`Sem configuração de acesso para ${folder.name}, permitindo por padrão`);
-      }
-      
-      // MODIFICADO: Verificação mais robusta para fileCount
-      if (!folder.fileCount || folder.fileCount <= 0) {
-        console.log(`Excluindo categoria ${folder.name} por estar vazia (fileCount=${folder.fileCount})`);
+        // 🆕 CORREÇÃO: SEM configuração = NEGAR acesso (antes era permitir)
+        console.log(`Categoria ${folder.name}: sem configuração, negando acesso`);
         return false;
       }
-      
-      // CORREÇÃO: Por padrão, permitir acesso (incluir a categoria)
-      return true;
     });
     
     console.log(`Categorias permitidas após filtragem: ${allowedCategories.length}`);
