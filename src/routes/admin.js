@@ -88,4 +88,6 @@ router.get('/debug/8290', async (req, res) => {
   });
 });
 
+router.post('/force-rebuild-index', adminController.forceRebuildIndex);
+
 module.exports = router;

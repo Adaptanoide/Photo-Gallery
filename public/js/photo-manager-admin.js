@@ -876,9 +876,33 @@ const photoManager = {
 
   async refreshStructure() {
     console.log('🔄 Refreshing folder structure...');
-    await this.loadStorageStats();
-    await this.loadFolderStructure();
-    showToast('Folder structure refreshed', 'success');
+    
+    try {
+      // 🆕 NOVO: Forçar rebuild do índice primeiro
+      showToast('Recalculating photo counts...', 'info');
+      
+      const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const rebuildResult = await rebuildResponse.json();
+      
+      if (rebuildResult.success) {
+        console.log(`✅ Índice reconstruído: ${rebuildResult.totalPhotos} fotos`);
+        
+        // Agora recarregar interface com dados corretos
+        await this.loadStorageStats();
+        await this.loadFolderStructure();
+        showToast(`Counters updated! ${rebuildResult.totalPhotos} photos in ${rebuildResult.totalFolders} categories`, 'success');
+      } else {
+        throw new Error(rebuildResult.message);
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro no refresh:', error);
+      showToast(`Error refreshing: ${error.message}`, 'error');
+    }
   },
 
   renderStorageStats(stats) {

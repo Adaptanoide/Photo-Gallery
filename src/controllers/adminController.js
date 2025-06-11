@@ -714,3 +714,31 @@ exports.uploadPhotos = [
     }
   }
 ];
+
+exports.recalculatePhotoCounts = async function(req, res) {
+  try {
+    console.log('🔄 Recalculando contadores de fotos...');
+    
+    // Forçar rebuild do índice
+    const newIndex = await localStorageService.rebuildIndex();
+    
+    // Limpar cache para forçar uso do novo índice
+    localStorageService.clearCache();
+    
+    console.log(`✅ Contadores recalculados: ${newIndex.totalPhotos} fotos em ${newIndex.folders.length} categorias`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Photo counts recalculated successfully',
+      totalPhotos: newIndex.totalPhotos,
+      totalCategories: newIndex.folders.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao recalcular contadores:', error);
+    res.status(500).json({
+      success: false,
+      message: `Erro ao recalcular contadores: ${error.message}`
+    });
+  }
+};
