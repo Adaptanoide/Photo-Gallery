@@ -2162,8 +2162,10 @@ const photoManager = {
     // ✅ MANTER APENAS: Setinha na pasta
     this.markFolderAsUploading(folderId, folderName, uploadingCount);
 
-    // ✅ SALVAR ESTADO PARA PERSISTÊNCIA DA SETINHA
-    this.saveUploadState(folderId, folderName, uploadingCount, expectedFinalCount);
+    // Criar objeto destination temporário para usar função existente
+    const destination = { id: folderId, name: folderName };
+    const files = new Array(uploadingCount); // Array vazio com length
+    this.saveUploadState(destination, files, expectedFinalCount);
 
     // ❌ REMOVIDO: Indicador grande no topo direito
 
@@ -2719,18 +2721,6 @@ const photoManager = {
     }
 
     console.log('✅ Direct modal events setup completed');
-  },
-
-  // NOVA FUNÇÃO: Salvar estado mínimo para persistência
-  saveUploadState(folderId, folderName, uploadingCount, expectedFinalCount) {
-    const uploadStates = JSON.parse(localStorage.getItem('activeUploads') || '{}');
-    uploadStates[folderId] = {
-      folderName,
-      uploadingCount,
-      expectedFinalCount,
-      timestamp: Date.now()
-    };
-    localStorage.setItem('activeUploads', JSON.stringify(uploadStates));
   },
 
   // NOVA FUNÇÃO: Restaurar apenas as setinhas visuais
