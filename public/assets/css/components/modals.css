@@ -219,7 +219,7 @@
   min-height: 200px !important; /* Altura mínima aumentada */
 }
 
-/* Categorias mais compactas */
+/* Categorias mais compactas - SEM EFEITOS HOVER */
 .category-breakdown-scrollable {
   min-height: 50px !important;
 }
@@ -230,23 +230,87 @@
   background: #fff !important;
   border: 1px solid #eee !important;
   border-radius: 4px !important;
+  /* Remover qualquer aparência de botão */
+  cursor: default !important;
+  transition: none !important;
+  transform: none !important;
 }
 
+/* Garantir que NÃO há efeitos hover */
+.category-breakdown-scrollable .category-item:hover {
+  background: #fff !important;
+  border-color: #eee !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: default !important;
+}
+
+/* Remover hover de qualquer elemento filho */
+.category-breakdown-scrollable .category-item * {
+  cursor: default !important;
+  transition: none !important;
+}
+
+.category-breakdown-scrollable .category-item *:hover {
+  background: transparent !important;
+  color: inherit !important;
+  transform: none !important;
+}
+
+/* Summary sem efeitos interativos */
 .category-breakdown-scrollable .category-summary {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
+  cursor: default !important;
+  transition: none !important;
 }
 
+.category-breakdown-scrollable .category-summary:hover {
+  background: transparent !important;
+  transform: none !important;
+}
+
+/* Nome e total sem efeitos */
 .category-breakdown-scrollable .category-name {
   font-size: 0.95rem !important;
   color: #333 !important;
+  cursor: default !important;
+  transition: none !important;
+}
+
+.category-breakdown-scrollable .category-name:hover {
+  color: #333 !important;
+  transform: none !important;
 }
 
 .category-breakdown-scrollable .category-total {
   font-size: 0.9rem !important;
   font-weight: 600 !important;
   color: black !important;
+  cursor: default !important;
+  transition: none !important;
+}
+
+.category-breakdown-scrollable .category-total:hover {
+  color: black !important;
+  transform: none !important;
+}
+
+/* Garantir que elementos vazios também não tenham hover */
+.category-breakdown-scrollable .empty-message {
+  padding: 20px !important;
+  text-align: center !important;
+  color: #666 !important;
+  font-style: italic !important;
+  cursor: default !important;
+  transition: none !important;
+}
+
+.category-breakdown-scrollable .empty-message:hover {
+  background: transparent !important;
+  color: #666 !important;
+  transform: none !important;
 }
 
 /* Footer mais compacto */
@@ -299,8 +363,89 @@
   height: 1px !important;
 }
 
+/* Cart Modal - CORREÇÃO IMPORTANTE */
+.cart-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  /* CORREÇÃO: Container de itens com scroll limitado, resto sem scroll */
+}
+
+#cart-items-container {
+  flex: 1;
+  /* CORREÇÃO: Apenas esta seção específica terá scroll interno limitado */
+  overflow-y: auto;
+  margin-bottom: 10px;
+  max-height: 60vh;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+/* Return to Stock Modal - CORREÇÃO */
+#return-to-stock-modal .modal-content {
+  max-width: 900px !important;
+  width: 95% !important;
+  max-height: 90vh !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#return-to-stock-modal #return-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+#return-to-stock-modal .modal-actions {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 15px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
 /* Responsividade otimizada */
 @media (max-width: 768px) {
+  .modal-content {
+    padding: 25px;
+  }
+  
+  #admin-panel-modal .modal-content {
+    padding: 20px 15px;
+  }
+  
+  #admin-panel-modal h2 {
+    font-size: 1.8rem;
+    margin-top: 10px;
+  }
+  
+  #admin-panel-modal h3 {
+    font-size: 1.3rem;
+    margin-top: 15px;
+  }
+  
+  #admin-panel-modal .form-group {
+    margin-bottom: 15px;
+  }
+  
+  #admin-panel-modal .btn {
+    padding: 10px 15px;
+  }
+  
+  #admin-panel-modal .logout-top-right {
+    top: 10px;
+    right: 10px;
+  }
+  
+  #admin-panel-modal .admin-footer {
+    margin-top: 20px;
+    padding-bottom: 80px;
+  }
+  
   .order-details-modal-content {
     height: 90vh !important;
     max-height: 90vh !important;
@@ -326,4 +471,17 @@
     font-size: 0.85rem !important;
     padding: 8px !important;
   }
+}
+
+/* CORREÇÃO ESPECÍFICA - Apenas para o modal category-access */
+#category-access-modal .admin-tabs {
+  min-height: 40px !important;
+}
+
+#category-access-modal .tab-content {
+  display: none;
+}
+
+#category-access-modal .tab-content.active {
+  display: block !important;
 }
