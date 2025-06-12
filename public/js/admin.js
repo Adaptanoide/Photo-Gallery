@@ -1138,6 +1138,23 @@ function renderReturnPhotosInterface(categories) {
 
     <!-- Categorias Colapsáveis -->
     <div class="return-categories-list">
+    <!-- Botões de Seleção Global -->
+    <div class="return-global-actions" style="margin-bottom: 15px; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 14px; color: #666; font-weight: 500;">
+        Quick Actions:
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-outline-primary btn-sm" onclick="selectAllReturnPhotos()" style="padding: 6px 12px; font-size: 12px;">
+          ✓ Select All
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="clearAllReturnPhotos()" style="padding: 6px 12px; font-size: 12px;">
+          ✗ Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Categorias Colapsáveis -->
+    <div class="return-categories-list">
   `;
 
   // Renderizar cada categoria como colapsável
@@ -1153,7 +1170,7 @@ function renderReturnPhotosInterface(categories) {
              style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; cursor: pointer; transition: background 0.2s;">
           
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="category-toggle-icon" id="toggle-${category.id}" style="font-size: 14px; color: #666;">▶️</span>
+            <span class="category-toggle-icon" id="toggle-${category.id}" style="display: inline-block; width: 12px; height: 12px; border-right: 2px solid #666; border-bottom: 2px solid #666; transform: rotate(-45deg); transition: transform 0.2s ease; margin-right: 5px;"></span>
             <h4 style="margin: 0; color: #333; font-size: 16px;">${category.name}</h4>
             <span style="background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 12px; color: #666;">${photoCount} photos</span>
           </div>
@@ -1227,10 +1244,12 @@ function toggleReturnCategory(categoryId) {
   
   if (photosList.style.display === 'none') {
     photosList.style.display = 'block';
-    toggleIcon.textContent = '🔽';
+    // Chevron para baixo (expandido)
+    toggleIcon.style.transform = 'rotate(45deg)';
   } else {
     photosList.style.display = 'none';
-    toggleIcon.textContent = '▶️';
+    // Chevron para direita (colapsado)
+    toggleIcon.style.transform = 'rotate(-45deg)';
   }
 }
 
@@ -2523,6 +2542,61 @@ async function globalRefreshCounters() {
     console.error('❌ Erro no refresh:', error);
     showToast(`Error refreshing: ${error.message}`, 'error');
   }
+}
+
+// Função para selecionar todas as fotos
+function selectAllReturnPhotos() {
+  const allCheckboxes = document.querySelectorAll('#return-categories-container .photo-checkbox');
+  const categoryCheckboxes = document.querySelectorAll('#return-categories-container .select-all-category');
+  
+  // Marcar todos os checkboxes
+  allCheckboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  
+  // Marcar todos os "Select All" das categorias
+  categoryCheckboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  
+  // Expandir todas as categorias para mostrar seleção
+  const allCategories = document.querySelectorAll('.return-category-item');
+  allCategories.forEach(category => {
+    const categoryId = category.dataset.categoryId;
+    const photosList = document.getElementById(`photos-${categoryId}`);
+    const toggleIcon = document.getElementById(`toggle-${categoryId}`);
+    
+    if (photosList && toggleIcon) {
+      photosList.style.display = 'block';
+      toggleIcon.style.transform = 'rotate(45deg)';
+    }
+  });
+  
+  // Atualizar contador
+  updateReturnSelection();
+  
+  showToast('All photos selected for return', 'success');
+}
+
+// Função para limpar todas as seleções
+function clearAllReturnPhotos() {
+  const allCheckboxes = document.querySelectorAll('#return-categories-container .photo-checkbox');
+  const categoryCheckboxes = document.querySelectorAll('#return-categories-container .select-all-category');
+  
+  // Desmarcar todos os checkboxes
+  allCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Desmarcar todos os "Select All" das categorias
+  categoryCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Atualizar contador
+  updateReturnSelection();
+  
+  showToast('All selections cleared', 'info');
 }
 
 // Alias para compatibilidade
