@@ -1021,6 +1021,116 @@ const photoManager = {
     }
   },
 
+  // NOVA FUNÇÃO: Executar rename da categoria
+  async executeRenameFolder(folderId, currentName) {
+    try {
+      const input = document.getElementById('new-folder-name');
+      const newName = input.value.trim();
+
+      // Validações
+      if (!newName) {
+        showToast('Category name cannot be empty', 'error');
+        input.focus();
+        return;
+      }
+
+      if (newName === currentName) {
+        showToast('New name must be different from current name', 'error');
+        input.focus();
+        return;
+      }
+
+      // Validar caracteres permitidos
+      const validNameRegex = /^[a-zA-Z0-9\s\-_&]+$/;
+      if (!validNameRegex.test(newName)) {
+        showToast('Category name can only contain letters, numbers, spaces, hyphens, underscores and ampersands', 'error');
+        input.focus();
+        return;
+      }
+
+      if (newName.length > 100) {
+        showToast('Category name must be 100 characters or less', 'error');
+        input.focus();
+        return;
+      }
+
+      console.log(`✏️ Executing rename: "${currentName}" → "${newName}"`);
+
+      // Fechar modal antes da requisição
+      this.closeRenameFolderModal();
+
+      // Mostrar loading
+      showToast(`Renaming category to "${newName}"...`, 'info');
+
+      // Fazer requisição para API
+      const response = await fetch('/api/photos/admin/folder/rename', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          folderId: folderId,
+          newName: newName
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log(`✅ Category renamed successfully: ${result.message}`);
+        
+        // Mostrar sucesso
+        showToast(`Category renamed to "${newName}" successfully!`, 'success');
+        
+        // Atualizar interface
+        await this.updateInterfaceAfterRename(folderId, newName);
+        
+      } else {
+        console.error('❌ Rename failed:', result);
+        
+        // Verificar se é erro de nome duplicado
+        if (result.message && result.message.includes('already exists')) {
+          showToast(`A category named "${newName}" already exists. Please choose a different name.`, 'error');
+        } else {
+          showToast(`Failed to rename category: ${result.message || 'Unknown error'}`, 'error');
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Error renaming category:', error);
+      showToast(`Error renaming category: ${error.message}`, 'error');
+    }
+  },
+
+  // NOVA FUNÇÃO: Atualizar interface após rename
+  async updateInterfaceAfterRename(folderId, newName) {
+    try {
+      console.log(`🔄 Updating interface after rename: ${folderId} → ${newName}`);
+
+      // Atualizar nome na árvore de pastas
+      const folderElements = document.querySelectorAll('.folder-item');
+      folderElements.forEach(element => {
+        const viewButton = element.querySelector(`[onclick*="${folderId}"]`);
+        if (viewButton) {
+          const nameSpan = element.querySelector('.folder-name');
+          if (nameSpan) {
+            nameSpan.textContent = newName;
+            console.log(`✅ Updated folder name in tree: ${newName}`);
+          }
+        }
+      });
+
+      // Recarregar estrutura completa para garantir consistência
+      setTimeout(async () => {
+        await this.loadFolderStructure();
+        console.log('✅ Folder structure reloaded after rename');
+      }, 1000);
+
+    } catch (error) {
+      console.error('❌ Error updating interface after rename:', error);
+    }
+  },
+
   confirmDeleteFolder(folderId, folderName) {
     console.log(`🗑️ Delete folder requested: ${folderName} (${folderId})`);
 
