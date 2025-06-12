@@ -157,6 +157,39 @@
   transform: scale(1.05);
 }
 
+/* Botão View - Marrom */
+.folder-action-btn.view-btn {
+  background: #8B4513;
+  color: white;
+}
+
+.folder-action-btn.view-btn:hover {
+  background: #6B4423;
+  transform: scale(1.05);
+}
+
+/* Botão Rename - Marrom (igual ao View) */
+.folder-action-btn.rename-btn {
+  background: #8B4513;
+  color: white;
+}
+
+.folder-action-btn.rename-btn:hover {
+  background: #6B4423;
+  transform: scale(1.05);
+}
+
+/* Botão Upload mantém o estilo padrão dourado */
+.folder-action-btn.upload-btn {
+  background: var(--color-gold);
+  color: white;
+}
+
+.folder-action-btn.upload-btn:hover {
+  background: #c5a647;
+  transform: scale(1.05);
+}
+
 .folder-children {
   margin-left: 0;
   border-left: 2px solid #f0f0f0;

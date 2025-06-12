@@ -959,12 +959,12 @@ const photoManager = {
 
   // NOVA FUNÇÃO: Iniciar processo de rename
   confirmRenameFolder(folderId, folderName) {
-    console.log(`✏️ Rename folder requested: ${folderName} (${folderId})`);
+    console.log(`✏️ Rename category requested: ${folderName} (${folderId})`);
 
     // Verificar se é pasta administrativa
     const adminFolders = ['Waiting Payment', 'Sold'];
     if (adminFolders.includes(folderName)) {
-      showToast('Cannot rename administrative folders', 'error');
+      showToast('Cannot rename administrative categories', 'error');
       return;
     }
 
@@ -982,11 +982,11 @@ const photoManager = {
     const modalHTML = `
       <div id="rename-folder-modal" class="modal" style="display: flex; z-index: 15000;">
         <div class="modal-content" style="max-width: 500px;">
-          <h2 style="color: #d4af37;">✏️ Rename Folder</h2>
+          <h2 style="color: #333;">Rename Category</h2>
           
           <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 15px 0;">
             <p><strong>Current Name:</strong> ${folderName}</p>
-            <p style="color: #856404; margin: 0;"><strong>Enter new name for this folder:</strong></p>
+            <p style="color: #856404; margin: 0;"><strong>Enter new name for this category:</strong></p>
           </div>
           
           <div style="margin: 15px 0;">
@@ -997,7 +997,7 @@ const photoManager = {
           
           <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
             <button class="btn btn-secondary" onclick="photoManager.closeRenameFolderModal()">Cancel</button>
-            <button class="btn btn-gold" onclick="photoManager.executeRenameFolder('${folderId}', '${folderName.replace(/'/g, '\\\'')}')" id="confirm-rename-btn">✏️ Rename Folder</button>
+            <button class="btn btn-gold" onclick="photoManager.executeRenameFolder('${folderId}', '${folderName.replace(/'/g, '\\\'')}')" id="confirm-rename-btn">Rename Category</button>
           </div>
         </div>
       </div>
