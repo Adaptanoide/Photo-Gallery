@@ -116,12 +116,12 @@
   color: #333;
   font-size: 13px;
   white-space: nowrap;
-  border-right: 1px solid #e9ecef;
+  border-right: none; /* REMOVIDO: Sem bordas verticais */
 }
 
 .price-table th:last-child {
   border-right: none;
-  text-align: right; /* Alinha "Actions" à direita */
+  text-align: right;
 }
 
 /* TBODY com scroll único e suave + ACABAMENTO NO FINAL */
