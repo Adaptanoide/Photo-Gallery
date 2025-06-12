@@ -242,12 +242,41 @@ const photoManager = {
     this.currentFolderName = folderName;
     this.selectedPhotos.clear();
 
-    if (!document.getElementById('photo-folder-modal')) {
+    // CORREÇÃO: Verificação robusta e recriação se necessário
+    let modal = document.getElementById('photo-folder-modal');
+    let titleElement = document.getElementById('modal-folder-title');
+
+    if (!modal || !titleElement) {
+      console.log('🔧 Modal or title element missing, creating/recreating modal...');
+
+      // Remover modal existente se estiver corrompido
+      if (modal) {
+        modal.remove();
+      }
+
+      // Criar novo modal
       this.createFolderModal();
+
+      // AGUARDAR criação completa do DOM
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Reobter referências
+      modal = document.getElementById('photo-folder-modal');
+      titleElement = document.getElementById('modal-folder-title');
     }
 
-    document.getElementById('modal-folder-title').textContent = folderName;
-    document.getElementById('photo-folder-modal').style.display = 'flex';
+    // VERIFICAÇÃO FINAL antes de usar
+    if (titleElement) {
+      titleElement.textContent = folderName;
+    } else {
+      console.error('❌ modal-folder-title still not found after recreation');
+      showToast('Error opening folder. Please refresh the page.', 'error');
+      return;
+    }
+
+    if (modal) {
+      modal.style.display = 'flex';
+    }
 
     await this.loadFolderPhotos(folderId, folderName);
   },
@@ -278,7 +307,16 @@ const photoManager = {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('✅ Folder modal created');
+
+    // VERIFICAÇÃO pós-criação
+    setTimeout(() => {
+      const titleCheck = document.getElementById('modal-folder-title');
+      if (titleCheck) {
+        console.log('✅ Folder modal created successfully');
+      } else {
+        console.error('❌ Modal title element not found after creation');
+      }
+    }, 10);
   },
 
   async loadFolderPhotos(folderId, folderName) {
@@ -1082,10 +1120,10 @@ const photoManager = {
       if (result.success) {
         const deletedCount = result.deletedPhotos || 0;
         const deletedFoldersCount = result.deletedFolders || 0;
-        
+
         // Criar mensagem dinâmica baseada no que foi deletado
         let message = `Successfully deleted folder "${folderName}"`;
-        
+
         const details = [];
         if (deletedCount > 0) {
           details.push(`${deletedCount} photo${deletedCount !== 1 ? 's' : ''}`);
@@ -1093,7 +1131,7 @@ const photoManager = {
         if (deletedFoldersCount > 0) {
           details.push(`${deletedFoldersCount} subfolder${deletedFoldersCount !== 1 ? 's' : ''}`);
         }
-        
+
         if (details.length > 0) {
           message += ` with ${details.join(' and ')}`;
         }
