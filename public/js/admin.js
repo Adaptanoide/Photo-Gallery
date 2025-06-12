@@ -1138,19 +1138,14 @@ function renderReturnPhotosInterface(categories) {
 
     <!-- Categorias Colapsáveis -->
     <div class="return-categories-list">
-    <!-- Botões de Seleção Global -->
-    <div class="return-global-actions" style="margin-bottom: 15px; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-      <div style="font-size: 14px; color: #666; font-weight: 500;">
-        Quick Actions:
-      </div>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn btn-outline-primary btn-sm" onclick="selectAllReturnPhotos()" style="padding: 6px 12px; font-size: 12px;">
-          ✓ Select All
-        </button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="clearAllReturnPhotos()" style="padding: 6px 12px; font-size: 12px;">
-          ✗ Clear All
-        </button>
-      </div>
+    <!-- Botões de Seleção Global - Versão Limpa -->
+    <div class="return-global-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="btn btn-outline-primary btn-sm" onclick="selectAllReturnPhotos()" style="padding: 8px 15px; font-size: 13px;">
+        ✓ Select All
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="clearAllReturnPhotos()" style="padding: 8px 15px; font-size: 13px;">
+        ✗ Clear All
+      </button>
     </div>
 
     <!-- Categorias Colapsáveis -->
