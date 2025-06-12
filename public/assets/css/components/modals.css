@@ -154,12 +154,95 @@
   z-index: 10;
 }
 
-/* Order Details Modal - CORREÇÃO */
+/* ===== ORDER DETAILS MODAL - ESTRUTURA FIXA E RESPONSIVA ===== */
 #order-details-modal .modal-content {
   max-width: 800px !important;
   width: 95% !important;
-  /* CORREÇÃO: Remover scroll interno */
-  overflow: visible !important;
+  max-height: 90vh !important;
+  overflow: hidden !important; /* Evita scroll duplo */
+}
+
+/* Estrutura flexbox para Order Details */
+.order-details-modal-content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  max-height: 90vh !important;
+  overflow: hidden !important;
+}
+
+/* Header fixo - não rola */
+.order-details-header {
+  flex-shrink: 0 !important; /* Não comprime */
+  padding: 0 0 10px 0 !important;
+  background: white !important;
+  z-index: 2 !important;
+}
+
+/* Body com scroll - apenas esta área rola */
+.order-details-body {
+  flex: 1 !important; /* Ocupa espaço disponível */
+  overflow-y: auto !important; /* Scroll apenas aqui */
+  overflow-x: hidden !important;
+  padding: 10px 0 !important;
+  margin: 10px 0 !important;
+  min-height: 100px !important;
+}
+
+/* Container das categorias */
+.category-breakdown-scrollable {
+  min-height: 50px !important;
+}
+
+/* Footer fixo - sempre visível */
+.order-details-footer {
+  flex-shrink: 0 !important; /* Não comprime */
+  padding: 10px 0 0 0 !important;
+  background: white !important;
+  border-top: 1px solid #eee !important;
+  z-index: 2 !important;
+}
+
+/* Scroll customizado para a área de categorias */
+.order-details-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.order-details-body::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.order-details-body::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.order-details-body::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+/* Responsividade para Order Details */
+@media (max-width: 768px) {
+  .order-details-modal-content {
+    max-height: 95vh !important;
+  }
+  
+  .order-details-header,
+  .order-details-footer {
+    padding: 10px 0 !important;
+  }
+  
+  .order-details-body {
+    margin: 5px 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-details-modal-content {
+    max-height: 98vh !important;
+  }
 }
 
 /* Cart Modal - CORREÇÃO IMPORTANTE */

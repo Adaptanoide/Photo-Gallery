@@ -653,30 +653,38 @@
     </div>
   </div>
 
-  <!-- Order Details Modal - SEPARADO -->
+  <!-- Order Details Modal - ESTRUTURA OTIMIZADA -->
   <div id="order-details-modal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
-      <h2>Order Details</h2>
-      <div id="order-loading" class="loading-message">Loading order details...</div>
+    <div class="modal-content order-details-modal-content">
+      
+      <!-- CABEÇALHO FIXO -->
+      <div class="order-details-header">
+        <h2>Order Details</h2>
+        <div id="order-loading" class="loading-message">Loading order details...</div>
 
-      <div id="order-details-content" style="display: none;">
-        <div class="order-info">
-          <p><strong>Order:</strong> <span id="order-name"></span></p>
-          <p><strong>Client:</strong> <span id="order-client"></span></p>
-          <p><strong>Date:</strong> <span id="order-date"></span></p>
+        <div id="order-details-content" style="display: none;">
+          <div class="order-info">
+            <p><strong>Order:</strong> <span id="order-name"></span></p>
+            <p><strong>Client:</strong> <span id="order-client"></span></p>
+            <p><strong>Date:</strong> <span id="order-date"></span></p>
+          </div>
+          
+          <div class="luxury-divider"></div>
+          <h3 class="section-title">Items by Category</h3>
         </div>
+      </div>
 
-        <div class="luxury-divider"></div>
-
-        <!-- Cabeçalho centralizado para categorias -->
-        <h3 class="section-title">Items by Category</h3>
-
-        <div id="category-breakdown" class="category-breakdown">
+      <!-- ÁREA DE SCROLL - APENAS AS CATEGORIAS -->
+      <div class="order-details-body">
+        <div id="category-breakdown" class="category-breakdown-scrollable">
           <!-- Categorias serão inseridas aqui dinamicamente -->
         </div>
+      </div>
 
+      <!-- FOOTER FIXO - SEMPRE VISÍVEL -->
+      <div class="order-details-footer">
         <div class="luxury-divider"></div>
-
+        
         <div class="order-totals">
           <div class="order-total-row">
             <span><strong>Total Items:</strong></span>
@@ -695,7 +703,7 @@
         </div>
 
         <div class="luxury-divider"></div>
-
+        
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
         </div>
