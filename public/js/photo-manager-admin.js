@@ -2623,33 +2623,6 @@ const photoManager = {
     document.getElementById('photo-files').click();
   },
 
-  // NOVA FUNÇÃO: Handle seleção de arquivos
-  handleFileSelection(files) {
-    if (files && files.length > 0) {
-      this.selectedFiles = files;
-      this.updateFilesPreview(files);
-      document.getElementById('start-upload-btn').disabled = false;
-    }
-  },
-
-  // NOVA FUNÇÃO: Atualizar preview dos arquivos
-  updateFilesPreview(files) {
-    const preview = document.getElementById('selected-files-preview');
-    const filesList = document.getElementById('files-list');
-
-    let html = '';
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const size = this.formatFileSize(file.size);
-      html += `<div class="file-item">📸 ${file.name} (${size})</div>`;
-    }
-
-    filesList.innerHTML = html;
-    preview.style.display = 'block';
-
-    console.log(`📁 Selected ${files.length} files for upload`);
-  },
-
   // NOVAS FUNÇÕES PARA MODAL DIRETO
   selectDirectFiles() {
     document.getElementById('direct-photo-files').click();
