@@ -2542,41 +2542,105 @@ const photoManager = {
 
   // NOVA FUNÇÃO: Abrir modal de upload para pasta específica
   openUploadModalForFolder(folderId, folderName) {
-    console.log(`📤 Opening upload modal for folder: ${folderName} (${folderId})`);
+    console.log(`📤 Opening direct upload for: ${folderName} (${folderId})`);
 
-    // Abrir modal de upload normal
-    this.openUploadModal();
+    // Definir destino imediatamente
+    this.selectedUploadDestination = {
+      id: folderId,
+      name: folderName
+    };
 
-    // Aguardar o modal aparecer e então pré-selecionar a pasta
-    setTimeout(() => {
-      this.preselectUploadDestination(folderId, folderName);
-    }, 100);
+    // Criar modal direto de seleção de arquivos (sem Step 1)
+    this.createDirectUploadModal(folderName);
   },
 
-  // NOVA FUNÇÃO: Pré-selecionar pasta de destino no modal
-  preselectUploadDestination(folderId, folderName) {
-    try {
-      // Encontrar a pasta na lista de destinos
-      const destinationSelect = document.getElementById('destination-folder-select');
-      if (destinationSelect) {
-        // Selecionar a pasta
-        destinationSelect.value = folderId;
-
-        // Disparar evento de mudança para atualizar interface
-        destinationSelect.dispatchEvent(new Event('change'));
-
-        // Definir como destino selecionado
-        this.selectedUploadDestination = {
-          id: folderId,
-          name: folderName
-        };
-
-        console.log(`✅ Pre-selected destination: ${folderName}`);
-        showToast(`Upload destination: ${folderName}`, 'info');
-      }
-    } catch (error) {
-      console.warn('Could not pre-select destination:', error);
+  // NOVA FUNÇÃO: Modal direto para seleção de arquivos
+  createDirectUploadModal(folderName) {
+    // Remover modal existente se houver
+    const existingModal = document.getElementById('photo-upload-modal');
+    if (existingModal) {
+      existingModal.remove();
     }
+
+    const modalHTML = `
+      <div id="photo-upload-modal" class="photo-upload-modal" style="display: flex;">
+        <div class="upload-modal-content">
+          <div class="upload-modal-header">
+            <h3>🔺 Upload Photos to: ${folderName}</h3>
+            <button class="upload-modal-close" onclick="photoManager.closeUploadModal()">&times;</button>
+          </div>
+          
+          <div class="upload-modal-body">
+            <div class="upload-step">
+              <h4>Select Photos to Upload</h4>
+              <p>Choose photos to upload to <strong>${folderName}</strong>:</p>
+              
+              <div class="file-drop-zone" id="file-drop-zone">
+                <div class="drop-zone-content">
+                  <div class="drop-icon">📁</div>
+                  <p>Drag & drop photos here</p>
+                  <p>or</p>
+                  <button type="button" class="btn btn-gold" onclick="photoManager.selectFiles()">Choose Files</button>
+                </div>
+                <input type="file" id="photo-files" multiple accept="image/*" style="display: none;" onchange="photoManager.handleFileSelection(this.files)">
+              </div>
+              
+              <div id="selected-files-preview" style="display: none; margin-top: 20px;">
+                <h5>Selected Files:</h5>
+                <div id="files-list" class="files-list"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="upload-modal-footer">
+            <button class="btn btn-secondary" onclick="photoManager.closeUploadModal()">Cancel</button>
+            <button class="btn btn-gold" id="start-upload-btn" onclick="photoManager.startUpload()" disabled>Upload Photos</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Setup drag & drop se a função existir
+    if (typeof this.setupDragAndDrop === 'function') {
+      this.setupDragAndDrop();
+    }
+
+    console.log(`✅ Direct upload modal opened for: ${folderName}`);
+    showToast(`Ready to upload to: ${folderName}`, 'info');
+  },
+
+  // NOVA FUNÇÃO: Selecionar arquivos via botão
+  selectFiles() {
+    document.getElementById('photo-files').click();
+  },
+
+  // NOVA FUNÇÃO: Handle seleção de arquivos
+  handleFileSelection(files) {
+    if (files && files.length > 0) {
+      this.selectedFiles = files;
+      this.updateFilesPreview(files);
+      document.getElementById('start-upload-btn').disabled = false;
+    }
+  },
+
+  // NOVA FUNÇÃO: Atualizar preview dos arquivos
+  updateFilesPreview(files) {
+    const preview = document.getElementById('selected-files-preview');
+    const filesList = document.getElementById('files-list');
+
+    let html = '';
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const size = this.formatFileSize(file.size);
+      html += `<div class="file-item">📸 ${file.name} (${size})</div>`;
+    }
+
+    filesList.innerHTML = html;
+    preview.style.display = 'block';
+
+    console.log(`📁 Selected ${files.length} files for upload`);
   },
 };
 
