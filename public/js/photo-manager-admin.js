@@ -2470,6 +2470,29 @@ const photoManager = {
     }
   },
 
+  // FUNÇÃO FALTANTE: Abrir modal de criação de pasta
+  openCreateFolderModal() {
+    console.log('📁 Opening create folder modal...');
+
+    if (!document.getElementById('create-folder-modal')) {
+      this.createNewFolderModal();
+    }
+
+    // Resetar formulário
+    const nameInput = document.getElementById('new-folder-name');
+    if (nameInput) nameInput.value = '';
+
+    this.selectedParentFolder = null;
+
+    const parentNameSpan = document.getElementById('selected-parent-name');
+    if (parentNameSpan) parentNameSpan.textContent = 'No parent selected (root level)';
+
+    const modal = document.getElementById('create-folder-modal');
+    if (modal) modal.style.display = 'flex';
+
+    console.log('✅ Create folder modal opened');
+  },
+
   closeCreateFolderModal() {
     document.getElementById('create-folder-modal').style.display = 'none';
     this.selectedParentFolder = null;
