@@ -154,189 +154,176 @@
   z-index: 10;
 }
 
-/* ===== ORDER DETAILS MODAL - ESTRUTURA FIXA E RESPONSIVA ===== */
+/* ===== ORDER DETAILS MODAL - ESTRUTURA OTIMIZADA PARA MAIS CONTEÚDO ===== */
 #order-details-modal .modal-content {
   max-width: 800px !important;
   width: 95% !important;
-  max-height: 90vh !important;
-  overflow: hidden !important; /* Evita scroll duplo */
-}
-
-/* Estrutura flexbox para Order Details */
-.order-details-modal-content {
-  display: flex !important;
-  flex-direction: column !important;
-  height: auto !important;
-  max-height: 90vh !important;
+  max-height: 85vh !important; /* Aumentado de 90vh para 85vh */
   overflow: hidden !important;
 }
 
-/* Header fixo - não rola */
+/* Estrutura flexbox otimizada */
+.order-details-modal-content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 85vh !important; /* Altura fixa para controle total */
+  max-height: 85vh !important;
+  overflow: hidden !important;
+}
+
+/* Header mais compacto */
 .order-details-header {
-  flex-shrink: 0 !important; /* Não comprime */
-  padding: 0 0 10px 0 !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
   background: white !important;
   z-index: 2 !important;
 }
 
-/* Body com scroll - apenas esta área rola */
-.order-details-body {
-  flex: 1 !important; /* Ocupa espaço disponível */
-  overflow-y: auto !important; /* Scroll apenas aqui */
-  overflow-x: hidden !important;
-  padding: 10px 0 !important;
-  margin: 10px 0 !important;
-  min-height: 100px !important;
+/* Título mais compacto */
+.order-details-header h2 {
+  margin: 0 0 15px 0 !important;
+  padding: 0 0 10px 0 !important;
+  font-size: 1.4rem !important;
 }
 
-/* Container das categorias */
+.order-details-header .section-title {
+  margin: 10px 0 5px 0 !important;
+  padding: 8px 0 !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  background: #f8f9fa !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+}
+
+.order-details-header .order-info {
+  margin: 0 0 10px 0 !important;
+  padding: 10px !important;
+  background: #f8f9fa !important;
+  border-radius: 4px !important;
+  font-size: 0.9rem !important;
+}
+
+.order-details-header .order-info p {
+  margin: 5px 0 !important;
+}
+
+/* Body expandido - MUITO mais espaço */
+.order-details-body {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 5px 0 !important;
+  margin: 0 !important;
+  min-height: 200px !important; /* Altura mínima aumentada */
+}
+
+/* Categorias mais compactas */
 .category-breakdown-scrollable {
   min-height: 50px !important;
 }
 
-/* Footer fixo - sempre visível */
+.category-breakdown-scrollable .category-item {
+  margin: 0 0 8px 0 !important;
+  padding: 12px !important;
+  background: #fff !important;
+  border: 1px solid #eee !important;
+  border-radius: 4px !important;
+}
+
+.category-breakdown-scrollable .category-summary {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.category-breakdown-scrollable .category-name {
+  font-size: 0.95rem !important;
+  color: #333 !important;
+}
+
+.category-breakdown-scrollable .category-total {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: #D4AF37 !important;
+}
+
+/* Footer mais compacto */
 .order-details-footer {
-  flex-shrink: 0 !important; /* Não comprime */
+  flex-shrink: 0 !important;
   padding: 10px 0 0 0 !important;
   background: white !important;
   border-top: 1px solid #eee !important;
   z-index: 2 !important;
 }
 
-/* Scroll customizado para a área de categorias */
+.order-details-footer .order-totals {
+  margin: 0 0 10px 0 !important;
+  padding: 10px !important;
+  background: #f8f9fa !important;
+  border-radius: 4px !important;
+}
+
+.order-details-footer .order-total-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin: 5px 0 !important;
+  font-size: 0.95rem !important;
+}
+
+/* Scroll mais sutil */
 .order-details-body::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .order-details-body::-webkit-scrollbar-track {
-  background: #f5f5f5;
-  border-radius: 4px;
+  background: #f8f9fa;
+  border-radius: 3px;
 }
 
 .order-details-body::-webkit-scrollbar-thumb {
-  background: #bbb;
-  border-radius: 4px;
+  background: #ccc;
+  border-radius: 3px;
   transition: background 0.2s ease;
 }
 
 .order-details-body::-webkit-scrollbar-thumb:hover {
-  background: #888;
+  background: #999;
 }
 
-/* Responsividade para Order Details */
+/* Luxury divider mais compacto */
+.order-details-header .luxury-divider,
+.order-details-footer .luxury-divider {
+  margin: 8px 0 !important;
+  height: 1px !important;
+}
+
+/* Responsividade otimizada */
 @media (max-width: 768px) {
   .order-details-modal-content {
-    max-height: 95vh !important;
+    height: 90vh !important;
+    max-height: 90vh !important;
   }
   
-  .order-details-header,
-  .order-details-footer {
-    padding: 10px 0 !important;
+  .order-details-header h2 {
+    font-size: 1.2rem !important;
   }
   
-  .order-details-body {
-    margin: 5px 0 !important;
+  .order-details-header .section-title {
+    font-size: 1rem !important;
+    padding: 6px 0 !important;
   }
 }
 
 @media (max-width: 480px) {
   .order-details-modal-content {
-    max-height: 98vh !important;
-  }
-}
-
-/* Cart Modal - CORREÇÃO IMPORTANTE */
-.cart-modal .modal-content {
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  /* CORREÇÃO: Container de itens com scroll limitado, resto sem scroll */
-}
-
-#cart-items-container {
-  flex: 1;
-  /* CORREÇÃO: Apenas esta seção específica terá scroll interno limitado */
-  overflow-y: auto;
-  margin-bottom: 10px;
-  max-height: 60vh;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-}
-
-/* Return to Stock Modal - CORREÇÃO */
-#return-to-stock-modal .modal-content {
-  max-width: 900px !important;
-  width: 95% !important;
-  max-height: 90vh !important;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-#return-to-stock-modal #return-modal-content {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 10px;
-}
-
-#return-to-stock-modal .modal-actions {
-  flex-shrink: 0;
-  margin-top: auto;
-  padding: 15px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  background: white;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-
-/* Media queries */
-@media (max-width: 768px) {
-  .modal-content {
-    padding: 25px;
+    height: 95vh !important;
+    max-height: 95vh !important;
   }
   
-  #admin-panel-modal .modal-content {
-    padding: 20px 15px;
+  .order-details-header .order-info {
+    font-size: 0.85rem !important;
+    padding: 8px !important;
   }
-  
-  #admin-panel-modal h2 {
-    font-size: 1.8rem;
-    margin-top: 10px;
-  }
-  
-  #admin-panel-modal h3 {
-    font-size: 1.3rem;
-    margin-top: 15px;
-  }
-  
-  #admin-panel-modal .form-group {
-    margin-bottom: 15px;
-  }
-  
-  #admin-panel-modal .btn {
-    padding: 10px 15px;
-  }
-  
-  #admin-panel-modal .logout-top-right {
-    top: 10px;
-    right: 10px;
-  }
-  
-  #admin-panel-modal .admin-footer {
-    margin-top: 20px;
-    padding-bottom: 80px;
-  }
-}
-/* CORREÇÃO ESPECÍFICA - Apenas para o modal category-access */
-#category-access-modal .admin-tabs {
-  min-height: 40px !important;
-}
-
-#category-access-modal .tab-content {
-  display: none;
-}
-
-#category-access-modal .tab-content.active {
-  display: block !important;
 }
