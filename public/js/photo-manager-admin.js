@@ -194,7 +194,6 @@ const photoManager = {
       <span class="folder-count">${photoCount}</span>
       ${folder.isLeaf ? `
         <div class="folder-actions">
-        <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
         <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
         ${!isAdminFolder ? `
           <button class="folder-action-btn rename-btn" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Rename Folder">✏️ Rename</button>
@@ -213,7 +212,10 @@ const photoManager = {
       if (folder.isLeaf) {
         folderDiv.onclick = (e) => {
           if (!e.target.classList.contains('folder-action-btn')) {
+            // Adicionar efeito visual de seleção
             this.selectFolder(folder, folderDiv);
+            // Abrir modal de fotos
+            this.openFolderModal(folder.id, folder.name);
           }
         };
       }
@@ -2206,16 +2208,6 @@ const photoManager = {
       if (viewButton) {
         // ✅ MANTER APENAS: Classe de upload (para a setinha 📤)
         element.classList.add('folder-uploading');
-
-        // ❌ REMOVIDO: O texto chato "Processing X photos... (may take ~10min)"
-        // Agora só mantém o contador original
-
-        const eyeButton = element.querySelector('.view-btn');
-        if (eyeButton) {
-          eyeButton.disabled = true;
-          eyeButton.style.opacity = '0.5';
-          eyeButton.title = 'Upload in progress...';
-        }
       }
     });
   },
