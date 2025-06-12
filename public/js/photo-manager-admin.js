@@ -22,7 +22,7 @@ const photoManager = {
 
       // 🔄 RESTAURAR UPLOAD EM PROGRESSO (sem alert chato)
       await this.restoreUploadIfNeeded();
-      
+
       // NOVO: Ativar proteção contra saída
       this.setupUploadProtection();
     }
@@ -1762,19 +1762,27 @@ const photoManager = {
     }
   },
 
-  // NOVA FUNÇÃO: Upload em background com retry
+  // NOVA FUNÇÃO: Upload em background com retry E detecção de rede
   async performBackgroundUpload(formData, destination, fileCount, expectedFinalCount) {
     const maxRetries = 2;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`📡 Upload attempt ${attempt}/${maxRetries}...`);
         console.log('📡 Sending upload request...');
         console.log('⏰ This may take several minutes for large files...');
-        
-        // Timeout de 10 minutos para uploads grandes
+
+        // Verificar conectividade antes do upload
+        if (!navigator.onLine) {
+          throw new Error('No internet connection detected');
+        }
+
+        // Timeout de 10 minutos + detecção de rede
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 600000);
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+          console.log('⏰ Upload timeout - network may be slow or disconnected');
+        }, 600000);
 
         const response = await fetch('/api/admin/photos/upload', {
           method: 'POST',
@@ -1799,7 +1807,7 @@ const photoManager = {
           console.log('✅ Upload request successful!');
           console.log('⏰ Files are now being processed on server...');
           console.log('🔄 Monitoring will continue until photos appear in folder...');
-          
+
           // Limpar estado salvo
           this.clearUploadState(destination.id);
           return; // Sucesso, sair do loop
@@ -1809,16 +1817,55 @@ const photoManager = {
 
       } catch (error) {
         console.error(`❌ Upload attempt ${attempt} failed:`, error);
-        
+
+        // Detectar tipos específicos de erro
+        let errorMessage = '';
+        let retryRecommended = true;
+
+        if (error.name === 'AbortError') {
+          errorMessage = 'Upload timed out - check your internet connection';
+          retryRecommended = true;
+        } else if (!navigator.onLine) {
+          errorMessage = 'Internet connection lost';
+          retryRecommended = false; // Não adianta retry sem internet
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+          errorMessage = 'Network error - check your connection';
+          retryRecommended = true;
+        } else if (error.message.includes('No internet connection')) {
+          errorMessage = 'No internet connection detected';
+          retryRecommended = false;
+        } else if (error.message.includes('Server error 5')) {
+          errorMessage = 'Server error - please try again later';
+          retryRecommended = true;
+        } else {
+          errorMessage = error.message || 'Unknown upload error';
+          retryRecommended = true;
+        }
+
         if (attempt === maxRetries) {
           // Última tentativa falhou
-          showToast(`Upload failed after ${maxRetries} attempts. Please try again.`, 'error');
+          if (!navigator.onLine) {
+            showToast('❌ Upload failed: No internet connection. Please check your connection and try again.', 'error');
+          } else {
+            showToast(`❌ Upload failed: ${errorMessage}. Please try again.`, 'error');
+          }
           this.stopUploadMonitoring(destination.id);
           this.clearUploadState(destination.id);
         } else {
-          // Tentar novamente
-          showToast(`Upload failed, retrying... (${attempt}/${maxRetries})`, 'warning');
-          await new Promise(resolve => setTimeout(resolve, 3000)); // Espera 3s
+          // Decidir se vale a pena tentar novamente
+          if (!retryRecommended && !navigator.onLine) {
+            showToast('❌ Upload failed: No internet connection. Please check your connection and try again.', 'error');
+            this.stopUploadMonitoring(destination.id);
+            this.clearUploadState(destination.id);
+            break; // Sair do loop - não adianta retry
+          } else {
+            // Tentar novamente
+            showToast(`⚠️ ${errorMessage}, retrying... (${attempt}/${maxRetries})`, 'warning');
+
+            // Esperar mais tempo se for erro de rede
+            const retryDelay = errorMessage.includes('Network') || errorMessage.includes('connection') ? 5000 : 3000;
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+          }
         }
       }
     }
@@ -1834,11 +1881,11 @@ const photoManager = {
         expectedFinalCount: expectedFinalCount,
         timestamp: Date.now()
       };
-      
+
       let activeUploads = JSON.parse(localStorage.getItem('activeUploads') || '{}');
       activeUploads[destination.id] = uploadState;
       localStorage.setItem('activeUploads', JSON.stringify(activeUploads));
-      
+
       console.log('💾 Upload state saved for protection');
     } catch (error) {
       console.warn('Could not save upload state:', error);
@@ -1851,7 +1898,7 @@ const photoManager = {
       let activeUploads = JSON.parse(localStorage.getItem('activeUploads') || '{}');
       delete activeUploads[destinationId];
       localStorage.setItem('activeUploads', JSON.stringify(activeUploads));
-      
+
       console.log('🧹 Upload state cleared');
     } catch (error) {
       console.warn('Could not clear upload state:', error);
@@ -2178,35 +2225,51 @@ const photoManager = {
     });
   },
 
-  // 🎯 VERSÃO LIMPA DO RESTORE - SEM ALERT CHATO
+  // 🎯 VERSÃO COMPLETA DO RESTORE - COM PERSISTÊNCIA DA SETINHA
   async restoreUploadIfNeeded() {
-    // ❌ REMOVIDO: Sistema de persistência e alerts de restauração
-    // Agora não há proteção contra saída, então não precisa restaurar nada
-    console.log('📝 Upload restoration system disabled (simplified version)');
-  },
+    try {
+      const activeUploads = JSON.parse(localStorage.getItem('activeUploads') || '{}');
+      const uploadIds = Object.keys(activeUploads);
 
-  // ===== NOVA FUNCIONALIDADE: CRIAR PASTAS =====
+      if (uploadIds.length === 0) {
+        console.log('📝 No active uploads to restore');
+        return;
+      }
 
-  openCreateFolderModal() {
-    console.log('📁 Opening create folder modal...');
+      console.log(`🔄 Restoring ${uploadIds.length} active uploads...`);
 
-    if (!document.getElementById('create-folder-modal')) {
-      this.createNewFolderModal();
+      for (const folderId of uploadIds) {
+        const uploadState = activeUploads[folderId];
+
+        // Verificar se o estado não é muito antigo (max 2 horas)
+        const uploadAge = Date.now() - uploadState.timestamp;
+        const maxAge = 2 * 60 * 60 * 1000; // 2 horas
+
+        if (uploadAge > maxAge) {
+          console.log(`⏰ Upload state too old, cleaning up: ${uploadState.destinationName}`);
+          this.clearUploadState(folderId);
+          continue;
+        }
+
+        console.log(`🔄 Restoring upload monitoring for: ${uploadState.destinationName}`);
+
+        // Restaurar monitoramento visual E funcional
+        this.startRealUploadMonitoring(
+          folderId,
+          uploadState.destinationName,
+          uploadState.fileCount,
+          uploadState.expectedFinalCount,
+          true // isRestoring = true
+        );
+      }
+
+    } catch (error) {
+      console.warn('Error restoring uploads:', error);
     }
-
-    // Resetar formulário
-    document.getElementById('new-folder-name').value = '';
-    this.selectedParentFolder = null;
-    document.getElementById('selected-parent-name').textContent = 'No parent selected (root level)';
-
-    document.getElementById('create-folder-modal').style.display = 'flex';
-
-    // Carregar pastas disponíveis como pai
-    this.loadParentFolders();
   },
 
   createNewFolderModal() {
-  const modalHTML = `
+    const modalHTML = `
   <div id="create-folder-modal" class="modal" style="display: none;">
       <div class="modal-content" style="max-width: 600px;">
         <h3>Create New Folder</h3>
@@ -2412,8 +2475,9 @@ const photoManager = {
     this.selectedParentFolder = null;
   },
 
-   // NOVA FUNÇÃO: Proteção contra saída durante uploads
+  // NOVA FUNÇÃO: Proteção completa contra saída durante uploads
   setupUploadProtection() {
+    // Proteção contra fechar navegador/aba
     window.addEventListener('beforeunload', (e) => {
       if (this.hasActiveUploads()) {
         e.preventDefault();
@@ -2421,9 +2485,36 @@ const photoManager = {
         return 'You have uploads in progress. They may be lost if you leave.';
       }
     });
-    
+
+    // Proteção contra logout do admin
+    this.protectAdminLogout();
+
     console.log('🛡️ Upload protection enabled');
-  }
+  },
+
+  // NOVA FUNÇÃO: Proteger logout durante upload
+  protectAdminLogout() {
+    // Interceptar função de logout
+    const originalLogout = window.adminLogout;
+
+    if (originalLogout) {
+      window.adminLogout = () => {
+        if (this.hasActiveUploads()) {
+          showConfirm(
+            'You have uploads in progress. They will be lost if you logout.\n\nAre you sure you want to continue?',
+            () => {
+              // Limpar uploads ativos e fazer logout
+              localStorage.removeItem('activeUploads');
+              originalLogout();
+            },
+            'Logout with active uploads?'
+          );
+        } else {
+          originalLogout();
+        }
+      };
+    }
+  },
 
 };
 
