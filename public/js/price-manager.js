@@ -23,7 +23,7 @@ function initPriceManager() {
       const cacheAge = cacheTimestamp ? (Date.now() - parseInt(cacheTimestamp)) : null;
       
       // Use cache if available and fresh (less than 10 minutes)
-      if (cachedFolders && cacheAge && cacheAge < 10 * 60 * 1000) {
+      if (cachedFolders && cacheAge && cacheAge < 30 * 1000) {
         console.log('Using cached folders from session storage');
         leafFolders = JSON.parse(cachedFolders);
         renderCategoryPriceTable();
@@ -117,7 +117,8 @@ function backgroundRefreshFolders() {
         const newLength = newFolders.length;
         
         // If we have significant differences, update UI
-        if (Math.abs(oldLength - newLength) > 5 || newLength === 0) {
+        if (Math.abs(oldLength - newLength) > 0 || newLength === 0) {
+          console.log(`📊 Updating UI: ${oldLength} → ${newLength} folders`);
           leafFolders = newFolders;
           sessionStorage.setItem('leaf_folders', JSON.stringify(leafFolders));
           sessionStorage.setItem('leaf_folders_timestamp', Date.now().toString());
@@ -462,30 +463,26 @@ function toggleSelectAll() {
   };
 })();
 
-// VERSÃO SIMPLES: Refresh counters para Price Management
+// 🆕 VERSÃO OTIMIZADA: Refresh mais eficiente
 async function refreshPriceCounters() {
   try {
-    console.log('🔄 Refreshing price management counters...');
-    showToast('Recalculating photo counts...', 'info');
+    console.log('🔄 Refreshing price management...');
+    showToast('Refreshing categories...', 'info');
     
-    // Forçar rebuild do índice
-    const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
+    // 1. Limpar cache local
+    sessionStorage.removeItem('leaf_folders');
+    sessionStorage.removeItem('leaf_folders_timestamp');
     
-    const rebuildResult = await rebuildResponse.json();
+    // 2. Resetar variáveis
+    leafFolders = [];
+    priceManagerCategoryPrices = {};
     
-    if (rebuildResult.success) {
-      console.log(`✅ Contadores atualizados: ${rebuildResult.totalPhotos} fotos`);
-      
-      // 🔧 SOLUÇÃO SIMPLES: Reinicializar todo o Price Manager
-      initPriceManager();
-      
-      showToast(`Counters updated! ${rebuildResult.totalPhotos} photos`, 'success');
-    } else {
-      throw new Error(rebuildResult.message);
-    }
+    // 3. Recarregar tudo do zero
+    isLoadingFolders = true;
+    await loadCategoryPrices();
+    await loadLeafFoldersWithProgress();
+    
+    showToast('✅ Categories refreshed!', 'success');
     
   } catch (error) {
     console.error('❌ Erro no refresh:', error);
