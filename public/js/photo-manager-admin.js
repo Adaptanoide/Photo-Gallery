@@ -2162,6 +2162,9 @@ const photoManager = {
     // ✅ MANTER APENAS: Setinha na pasta
     this.markFolderAsUploading(folderId, folderName, uploadingCount);
 
+    // ✅ SALVAR ESTADO PARA PERSISTÊNCIA DA SETINHA
+    this.saveUploadState(folderId, folderName, uploadingCount, expectedFinalCount);
+
     // ❌ REMOVIDO: Indicador grande no topo direito
 
     if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
@@ -2662,10 +2665,10 @@ const photoManager = {
 
   startDirectUpload() {
     console.log('🚀 Starting direct upload and closing modal...');
-    
+
     // Fazer upload PRIMEIRO (enquanto ainda tem arquivos)
     this.startUpload();
-    
+
     // Fechar modal DEPOIS do upload começar
     this.closeDirectUploadModal();
   },
@@ -2718,9 +2721,37 @@ const photoManager = {
     console.log('✅ Direct modal events setup completed');
   },
 
+  // NOVA FUNÇÃO: Salvar estado mínimo para persistência
+  saveUploadState(folderId, folderName, uploadingCount, expectedFinalCount) {
+    const uploadStates = JSON.parse(localStorage.getItem('activeUploads') || '{}');
+    uploadStates[folderId] = {
+      folderName,
+      uploadingCount,
+      expectedFinalCount,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('activeUploads', JSON.stringify(uploadStates));
+  },
+
+  // NOVA FUNÇÃO: Restaurar apenas as setinhas visuais
+  restoreUploadIndicators() {
+    try {
+      const uploadStates = JSON.parse(localStorage.getItem('activeUploads') || '{}');
+
+      Object.entries(uploadStates).forEach(([folderId, state]) => {
+        // Verificar se não é muito antigo (máximo 2 horas)
+        if (Date.now() - state.timestamp < 7200000) {
+          console.log(`🔄 Restoring upload indicator for: ${state.folderName}`);
+          this.markFolderAsUploading(folderId, state.folderName, state.uploadingCount);
+        }
+      });
+    } catch (error) {
+      console.log('No upload states to restore');
+    }
+  },
+
 };
 
-// ❌ REMOVIDO: Sistema de proteção contra navegação entre tabs
 
 // Integração com o sistema existente
 document.addEventListener('DOMContentLoaded', () => {
@@ -2734,6 +2765,8 @@ document.addEventListener('DOMContentLoaded', () => {
         originalSwitchTab(tabId);
 
         if (tabId === 'photo-storage') {
+          // ✅ RESTAURAR SETINHAS QUANDO VOLTA PARA ABA
+          setTimeout(() => photoManager.restoreUploadIndicators(), 500);
           console.log('🎯 Photo Storage tab activated');
           setTimeout(() => {
             photoManager.init();
