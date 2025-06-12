@@ -2663,11 +2663,11 @@ const photoManager = {
   startDirectUpload() {
     console.log('🚀 Starting direct upload and closing modal...');
     
-    // Fechar modal direto ANTES do upload
-    this.closeDirectUploadModal();
-    
-    // Usar a mesma lógica de upload
+    // Fazer upload PRIMEIRO (enquanto ainda tem arquivos)
     this.startUpload();
+    
+    // Fechar modal DEPOIS do upload começar
+    this.closeDirectUploadModal();
   },
 
   // NOVA FUNÇÃO: Setup dos eventos do modal direto
