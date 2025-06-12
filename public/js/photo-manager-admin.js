@@ -2156,18 +2156,8 @@ const photoManager = {
     console.log(`🔄 Starting REAL upload monitoring for: ${folderName} (restoring: ${isRestoring})`);
     console.log(`📊 Expecting ${expectedFinalCount} photos when complete`);
 
-    // ❌ REMOVIDO: Salvar estado persistente (sem proteção contra saída)
-    // ❌ REMOVIDO: Proteção contra saída da página
-
     // ✅ MANTER APENAS: Setinha na pasta
     this.markFolderAsUploading(folderId, folderName, uploadingCount);
-
-    // Criar objeto destination temporário para usar função existente
-    const destination = { id: folderId, name: folderName };
-    const files = new Array(uploadingCount); // Array vazio com length
-    this.saveUploadState(destination, files, expectedFinalCount);
-
-    // ❌ REMOVIDO: Indicador grande no topo direito
 
     if (this.uploadMonitoringIntervals && this.uploadMonitoringIntervals.has(folderId)) {
       clearInterval(this.uploadMonitoringIntervals.get(folderId));
@@ -2723,23 +2713,6 @@ const photoManager = {
     console.log('✅ Direct modal events setup completed');
   },
 
-  // NOVA FUNÇÃO: Restaurar apenas as setinhas visuais
-  restoreUploadIndicators() {
-    try {
-      const uploadStates = JSON.parse(localStorage.getItem('activeUploads') || '{}');
-
-      Object.entries(uploadStates).forEach(([folderId, state]) => {
-        // Verificar se não é muito antigo (máximo 2 horas)
-        if (Date.now() - state.timestamp < 7200000) {
-          console.log(`🔄 Restoring upload indicator for: ${state.folderName}`);
-          this.markFolderAsUploading(folderId, state.folderName, state.uploadingCount);
-        }
-      });
-    } catch (error) {
-      console.log('No upload states to restore');
-    }
-  },
-
 };
 
 
@@ -2756,7 +2729,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (tabId === 'photo-storage') {
           // ✅ RESTAURAR SETINHAS QUANDO VOLTA PARA ABA
-          setTimeout(() => photoManager.restoreUploadIndicators(), 500);
           console.log('🎯 Photo Storage tab activated');
           setTimeout(() => {
             photoManager.init();
