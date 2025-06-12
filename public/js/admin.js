@@ -197,30 +197,50 @@ function loadOrderFolders(status, retryCount = 0) {
       html += '<tr><th style="text-align: left; padding: 8px;">Order Name</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: left; padding: 8px;">Action</th></tr>';
 
       folders.forEach(folder => {
-        // 🛡️ PROTEÇÃO CONTRA DATAS INVÁLIDAS
-        let formattedDate = 'N/A';
-        
+      // 🛡️ EXTRAIR DATA DO NOME DA PASTA
+      let formattedDate = 'N/A';
+
+      // Tentar extrair data do nome da pasta primeiro
+      if (folder.name) {
+        try {
+          const orderInfo = parseOrderFolderName(folder.name);
+          if (orderInfo.orderDate) {
+            formattedDate = orderInfo.orderDate;
+          } else {
+            // Fallback: tentar regex manual para padrão "Mês Dia Ano"
+            const dateMatch = folder.name.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})$/);
+            if (dateMatch) {
+              const [, month, day, year] = dateMatch;
+              const dateObj = new Date(`${month} ${day}, ${year}`);
+              if (!isNaN(dateObj.getTime())) {
+                formattedDate = dateObj.toLocaleDateString();
+              }
+            }
+          }
+        } catch (parseError) {
+          console.log('Error parsing folder name for date:', parseError);
+        }
+      }
+
+      // Se ainda não conseguiu, tentar propriedades do objeto
+      if (formattedDate === 'N/A') {
         if (folder.dateCreated) {
           const date = new Date(folder.dateCreated);
           if (!isNaN(date.getTime())) {
             formattedDate = date.toLocaleDateString();
           }
-        }
-        
-        // Se ainda não temos data válida, tentar outras fontes
-        if (formattedDate === 'N/A') {
-          if (folder.createdAt) {
-            const date = new Date(folder.createdAt);
-            if (!isNaN(date.getTime())) {
-              formattedDate = date.toLocaleDateString();
-            }
-          } else if (folder.lastModified) {
-            const date = new Date(folder.lastModified);
-            if (!isNaN(date.getTime())) {
-              formattedDate = date.toLocaleDateString();
-            }
+        } else if (folder.createdAt) {
+          const date = new Date(folder.createdAt);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString();
+          }
+        } else if (folder.lastModified) {
+          const date = new Date(folder.lastModified);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString();
           }
         }
+      }
       
         // Different action buttons based on current status
         let actionButtons = '';
@@ -313,30 +333,50 @@ function loadFoldersAlternative(status) {
       html += '<tr><th style="text-align: left; padding: 8px;">Order Name</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: left; padding: 8px;">Action</th></tr>';
 
       folders.forEach(folder => {
-        // 🛡️ PROTEÇÃO CONTRA DATAS INVÁLIDAS
-        let formattedDate = 'N/A';
-        
+      // 🛡️ EXTRAIR DATA DO NOME DA PASTA
+      let formattedDate = 'N/A';
+
+      // Tentar extrair data do nome da pasta primeiro
+      if (folder.name) {
+        try {
+          const orderInfo = parseOrderFolderName(folder.name);
+          if (orderInfo.orderDate) {
+            formattedDate = orderInfo.orderDate;
+          } else {
+            // Fallback: tentar regex manual para padrão "Mês Dia Ano"
+            const dateMatch = folder.name.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})$/);
+            if (dateMatch) {
+              const [, month, day, year] = dateMatch;
+              const dateObj = new Date(`${month} ${day}, ${year}`);
+              if (!isNaN(dateObj.getTime())) {
+                formattedDate = dateObj.toLocaleDateString();
+              }
+            }
+          }
+        } catch (parseError) {
+          console.log('Error parsing folder name for date:', parseError);
+        }
+      }
+
+      // Se ainda não conseguiu, tentar propriedades do objeto
+      if (formattedDate === 'N/A') {
         if (folder.dateCreated) {
           const date = new Date(folder.dateCreated);
           if (!isNaN(date.getTime())) {
             formattedDate = date.toLocaleDateString();
           }
-        }
-        
-        // Se ainda não temos data válida, tentar outras fontes
-        if (formattedDate === 'N/A') {
-          if (folder.createdAt) {
-            const date = new Date(folder.createdAt);
-            if (!isNaN(date.getTime())) {
-              formattedDate = date.toLocaleDateString();
-            }
-          } else if (folder.lastModified) {
-            const date = new Date(folder.lastModified);
-            if (!isNaN(date.getTime())) {
-              formattedDate = date.toLocaleDateString();
-            }
+        } else if (folder.createdAt) {
+          const date = new Date(folder.createdAt);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString();
+          }
+        } else if (folder.lastModified) {
+          const date = new Date(folder.lastModified);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString();
           }
         }
+      }
 
         let actionButton = '';
         if (status === 'waiting') {
