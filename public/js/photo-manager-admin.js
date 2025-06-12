@@ -2121,7 +2121,7 @@ const photoManager = {
     console.log('📁 Opening create folder modal...');
 
     if (!document.getElementById('create-folder-modal')) {
-      this.createFolderModal();
+      this.createNewFolderModal();
     }
 
     // Resetar formulário
@@ -2135,9 +2135,9 @@ const photoManager = {
     this.loadParentFolders();
   },
 
-  createFolderModal() {
-    const modalHTML = `
-    <div id="create-folder-modal" class="modal" style="display: none;">
+  createNewFolderModal() {
+  const modalHTML = `
+  <div id="create-folder-modal" class="modal" style="display: none;">
       <div class="modal-content" style="max-width: 600px;">
         <h3>Create New Folder</h3>
         
