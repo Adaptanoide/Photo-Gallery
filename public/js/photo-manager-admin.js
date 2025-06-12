@@ -2688,7 +2688,12 @@ const photoManager = {
   },
 
   startDirectUpload() {
-    // Usar a mesma lógica de upload mas sem validar destinação
+    console.log('🚀 Starting direct upload and closing modal...');
+    
+    // Fechar modal direto ANTES do upload
+    this.closeDirectUploadModal();
+    
+    // Usar a mesma lógica de upload
     this.startUpload();
   },
 
