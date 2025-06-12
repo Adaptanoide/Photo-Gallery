@@ -2561,7 +2561,7 @@ const photoManager = {
     this.createDirectUploadModal(folderName);
   },
 
-  // NOVA FUNÇÃO: Modal direto para seleção de arquivos - COM ID DIFERENTE
+  // NOVA FUNÇÃO: Modal direto para seleção de arquivos - COM EVENT LISTENERS
   createDirectUploadModal(folderName) {
     // Remover apenas o modal direto se houver
     const existingDirectModal = document.getElementById('direct-upload-modal');
@@ -2574,7 +2574,7 @@ const photoManager = {
       <div class="upload-modal-content">
         <div class="upload-modal-header">
           <h3>🔺 Upload Photos to: ${folderName}</h3>
-          <button class="upload-modal-close" onclick="photoManager.closeDirectUploadModal()">&times;</button>
+          <button class="upload-modal-close" id="direct-modal-close">&times;</button>
         </div>
         
         <div class="upload-modal-body">
@@ -2587,9 +2587,9 @@ const photoManager = {
                 <div class="drop-icon">📁</div>
                 <p>Drag & drop photos here</p>
                 <p>or</p>
-                <button type="button" class="btn btn-gold" onclick="photoManager.selectDirectFiles()">Choose Files</button>
+                <button type="button" class="btn btn-gold" id="direct-choose-files-btn">Choose Files</button>
               </div>
-              <input type="file" id="direct-photo-files" multiple accept="image/*" style="display: none;" onchange="photoManager.handleDirectFileSelection(this.files)">
+              <input type="file" id="direct-photo-files" multiple accept="image/*" style="display: none;">
             </div>
             
             <div id="direct-selected-files-preview" style="display: none; margin-top: 20px;">
@@ -2600,14 +2600,17 @@ const photoManager = {
         </div>
         
         <div class="upload-modal-footer">
-          <button class="btn btn-secondary" onclick="photoManager.closeDirectUploadModal()">Cancel</button>
-          <button class="btn btn-gold" id="direct-start-upload-btn" onclick="photoManager.startDirectUpload()" disabled>Upload Photos</button>
+          <button class="btn btn-secondary" id="direct-cancel-btn">Cancel</button>
+          <button class="btn btn-gold" id="direct-start-upload-btn" disabled>Upload Photos</button>
         </div>
       </div>
     </div>
   `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // ADICIONAR EVENT LISTENERS após criar o modal
+    this.setupDirectModalEvents();
 
     console.log(`✅ Direct upload modal opened for: ${folderName}`);
     showToast(`Ready to upload to: ${folderName}`, 'info');
@@ -2686,6 +2689,55 @@ const photoManager = {
     // Usar a mesma lógica de upload mas sem validar destinação
     this.startUpload();
   },
+
+  // NOVA FUNÇÃO: Setup dos eventos do modal direto
+  setupDirectModalEvents() {
+    console.log('🔧 Setting up direct modal events...');
+
+    // Botão Choose Files
+    const chooseBtn = document.getElementById('direct-choose-files-btn');
+    if (chooseBtn) {
+      chooseBtn.addEventListener('click', () => {
+        console.log('🔍 Choose Files button clicked!');
+        this.selectDirectFiles();
+      });
+    }
+
+    // Input de arquivo
+    const fileInput = document.getElementById('direct-photo-files');
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        this.handleDirectFileSelection(e.target.files);
+      });
+    }
+
+    // Botão Close
+    const closeBtn = document.getElementById('direct-modal-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.closeDirectUploadModal();
+      });
+    }
+
+    // Botão Cancel
+    const cancelBtn = document.getElementById('direct-cancel-btn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        this.closeDirectUploadModal();
+      });
+    }
+
+    // Botão Upload
+    const uploadBtn = document.getElementById('direct-start-upload-btn');
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', () => {
+        this.startDirectUpload();
+      });
+    }
+
+    console.log('✅ Direct modal events setup completed');
+  },
+
 };
 
 // ❌ REMOVIDO: Sistema de proteção contra navegação entre tabs
