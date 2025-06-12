@@ -1270,6 +1270,99 @@ class LocalStorageService {
     }
   }
 
+  // ===== NOVA FUNÇÃO: DELEÇÃO FORÇADA E RECURSIVA =====
+  
+  async deleteFolderForced(folder, deletePhysically = true) {
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    try {
+      console.log(`🗑️ FORCED DELETE: ${folder.name} (recursive: ${deletePhysically})`);
+      console.log(`📁 Target path: ${folder.relativePath}`);
+
+      const folderPath = path.join(this.photosPath, folder.relativePath);
+      let deletedPhotos = 0;
+      let deletedFolders = 0;
+
+      if (deletePhysically) {
+        // 🗑️ DELETAR TUDO RECURSIVAMENTE (pasta + subpastas + fotos)
+        const deleteRecursive = async (dirPath, dirName = '') => {
+          try {
+            console.log(`🔍 Processing directory: ${dirPath}`);
+            
+            // Verificar se diretório existe
+            try {
+              await fs.access(dirPath);
+            } catch {
+              console.log(`⚠️ Directory not found: ${dirPath}`);
+              return;
+            }
+
+            const items = await fs.readdir(dirPath, { withFileTypes: true });
+            console.log(`📋 Found ${items.length} items in ${dirName || 'target folder'}`);
+
+            // Primeiro, processar todos os arquivos e subpastas
+            for (const item of items) {
+              const itemPath = path.join(dirPath, item.name);
+
+              if (item.isDirectory()) {
+                console.log(`📁 Processing subfolder: ${item.name}`);
+                // Recursão para subpastas
+                await deleteRecursive(itemPath, item.name);
+                deletedFolders++;
+              } else if (this.isImageFile(item.name)) {
+                // Deletar foto
+                console.log(`🗑️ Deleting photo: ${item.name}`);
+                await fs.unlink(itemPath);
+                deletedPhotos++;
+              } else {
+                // Deletar outros arquivos
+                console.log(`🗑️ Deleting file: ${item.name}`);
+                await fs.unlink(itemPath);
+              }
+            }
+
+            // Depois de processar conteúdo, deletar a pasta vazia
+            console.log(`🗑️ Deleting empty folder: ${dirPath}`);
+            await fs.rmdir(dirPath);
+            console.log(`✅ Deleted folder: ${dirName || folderPath}`);
+
+          } catch (error) {
+            console.error(`❌ Error deleting directory ${dirPath}:`, error);
+            // Continuar mesmo com erro em uma subpasta
+          }
+        };
+
+        // Iniciar deleção recursiva
+        await deleteRecursive(folderPath, folder.name);
+      }
+
+      // 🗑️ REMOVER DO ÍNDICE (sempre, mesmo se deleção física falhar)
+      console.log(`📊 Removing folder from index: ${folder.name}`);
+      await this.removeFolderFromIndex(folder);
+
+      console.log(`✅ FORCED DELETE completed: ${deletedPhotos} photos, ${deletedFolders} folders`);
+
+      return {
+        success: true,
+        deletedPhotos: deletedPhotos,
+        deletedFolders: deletedFolders,
+        folderDeleted: true,
+        message: `Folder "${folder.name}" and all contents (${deletedPhotos} photos, ${deletedFolders} subfolders) deleted permanently`
+      };
+
+    } catch (error) {
+      console.error('❌ Error in forced delete:', error);
+      return {
+        success: false,
+        deletedPhotos: 0,
+        deletedFolders: 0,
+        folderDeleted: false,
+        message: `Failed to delete folder: ${error.message}`
+      };
+    }
+  }
+
 }
 
 module.exports = new LocalStorageService();

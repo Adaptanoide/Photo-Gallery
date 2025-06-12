@@ -1081,9 +1081,22 @@ const photoManager = {
 
       if (result.success) {
         const deletedCount = result.deletedPhotos || 0;
-        const message = includePhotos
-          ? `Successfully deleted folder "${folderName}" and ${deletedCount} photos`
-          : `Successfully deleted empty folder "${folderName}"`;
+        const deletedFoldersCount = result.deletedFolders || 0;
+        
+        // Criar mensagem dinâmica baseada no que foi deletado
+        let message = `Successfully deleted folder "${folderName}"`;
+        
+        const details = [];
+        if (deletedCount > 0) {
+          details.push(`${deletedCount} photo${deletedCount !== 1 ? 's' : ''}`);
+        }
+        if (deletedFoldersCount > 0) {
+          details.push(`${deletedFoldersCount} subfolder${deletedFoldersCount !== 1 ? 's' : ''}`);
+        }
+        
+        if (details.length > 0) {
+          message += ` with ${details.join(' and ')}`;
+        }
 
         showToast(message, 'success');
 

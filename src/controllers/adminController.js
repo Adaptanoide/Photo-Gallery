@@ -544,10 +544,10 @@ exports.deleteFolder = async function(req, res) {
     
     console.log(`📁 Target folder: ${folder.name} (${folder.relativePath})`);
     
-    // Chamar função de exclusão do serviço
-    const result = await localStorageService.deleteFolderCompletely(
+    // Chamar função de exclusão FORÇADA do serviço
+    const result = await localStorageService.deleteFolderForced(
       folder,
-      includePhotos
+      true // sempre deletar fisicamente
     );
     
     if (result.success) {
