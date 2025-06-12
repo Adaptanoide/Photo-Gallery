@@ -195,6 +195,7 @@ const photoManager = {
       ${folder.isLeaf ? `
         <div class="folder-actions">
           <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
+          <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
           ${!isAdminFolder ? `
             <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
           ` : ''}
@@ -2539,6 +2540,44 @@ const photoManager = {
     }
   },
 
+  // NOVA FUNÇÃO: Abrir modal de upload para pasta específica
+  openUploadModalForFolder(folderId, folderName) {
+    console.log(`📤 Opening upload modal for folder: ${folderName} (${folderId})`);
+
+    // Abrir modal de upload normal
+    this.openUploadModal();
+
+    // Aguardar o modal aparecer e então pré-selecionar a pasta
+    setTimeout(() => {
+      this.preselectUploadDestination(folderId, folderName);
+    }, 100);
+  },
+
+  // NOVA FUNÇÃO: Pré-selecionar pasta de destino no modal
+  preselectUploadDestination(folderId, folderName) {
+    try {
+      // Encontrar a pasta na lista de destinos
+      const destinationSelect = document.getElementById('destination-folder-select');
+      if (destinationSelect) {
+        // Selecionar a pasta
+        destinationSelect.value = folderId;
+
+        // Disparar evento de mudança para atualizar interface
+        destinationSelect.dispatchEvent(new Event('change'));
+
+        // Definir como destino selecionado
+        this.selectedUploadDestination = {
+          id: folderId,
+          name: folderName
+        };
+
+        console.log(`✅ Pre-selected destination: ${folderName}`);
+        showToast(`Upload destination: ${folderName}`, 'info');
+      }
+    } catch (error) {
+      console.warn('Could not pre-select destination:', error);
+    }
+  },
 };
 
 // ❌ REMOVIDO: Sistema de proteção contra navegação entre tabs
