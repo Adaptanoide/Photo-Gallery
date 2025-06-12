@@ -22,6 +22,9 @@ const photoManager = {
 
       // 🔄 RESTAURAR UPLOAD EM PROGRESSO (sem alert chato)
       await this.restoreUploadIfNeeded();
+      
+      // NOVO: Ativar proteção contra saída
+      this.setupUploadProtection();
     }
   },
 
@@ -1690,7 +1693,7 @@ const photoManager = {
     return truncatedName + '.' + extension;
   },
 
-  // 🎯 VERSÃO LIMPA DA FUNÇÃO startUpload() - SEM ALERTS E INDICADORES CHATOS
+  // 🎯 VERSÃO ASSÍNCRONA DA FUNÇÃO startUpload() - MODAL FECHA IMEDIATAMENTE
   async startUpload() {
     let uploadBtn = null;
     let originalText = '';
@@ -1727,12 +1730,8 @@ const photoManager = {
       console.log(`📊 Current photos in destination: ${currentPhotoCount}`);
       console.log(`📊 Expected final count: ${expectedFinalCount}`);
 
-      uploadBtn = document.getElementById('start-upload-btn');
-      if (uploadBtn) {
-        originalText = uploadBtn.textContent;
-        uploadBtn.disabled = true;
-        uploadBtn.textContent = `🔄 Uploading ${fileCount} photos...`;
-      }
+      // NOVO: Salvar estado do upload para proteção
+      this.saveUploadState(destination, files, expectedFinalCount);
 
       // 🎯 MARCAR PASTA COMO UPLOADANDO (SÓ A SETINHA 📤)
       this.startRealUploadMonitoring(destination.id, destination.name, fileCount, expectedFinalCount);
@@ -1746,41 +1745,12 @@ const photoManager = {
         formData.append('photos', file);
       });
 
-      console.log('📡 Sending upload request...');
-      console.log('⏰ This may take several minutes for large files...');
+      // NOVO: Toast imediato e fechar modal
+      showToast(`Upload started! ${fileCount} photos uploading in background...`, 'success');
+      this.closeUploadModal(); // FECHAR MODAL IMEDIATAMENTE
 
-      const response = await fetch('/api/admin/photos/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      console.log(`📡 Response status: ${response.status}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('📡 Error response:', errorText);
-        throw new Error(`Server error ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('📡 Server response:', result);
-
-      if (result.success && result.uploadedCount > 0) {
-        console.log('✅ Upload request successful!');
-        console.log('⏰ Files are now being processed on server...');
-        console.log('🔄 Monitoring will continue until photos appear in folder...');
-
-        // 🎯 SEM ALERT CHATO - SÓ TOAST SIMPLES
-        showToast(`Upload started! ${result.uploadedCount} photos being processed.`, 'success');
-
-        this.closeUploadModal();
-
-      } else {
-        console.error('❌ Upload failed:', result);
-        showToast(`Upload failed: ${result.message || 'Unknown error'}`, 'error');
-
-        this.stopUploadMonitoring(destination.id);
-      }
+      // NOVO: Iniciar upload em background (sem await)
+      this.performBackgroundUpload(formData, destination, fileCount, expectedFinalCount);
 
     } catch (error) {
       console.error('❌ Upload error:', error);
@@ -1789,12 +1759,112 @@ const photoManager = {
       if (this.selectedUploadDestination) {
         this.stopUploadMonitoring(this.selectedUploadDestination.id);
       }
+    }
+  },
 
-    } finally {
-      if (uploadBtn && originalText) {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = originalText;
+  // NOVA FUNÇÃO: Upload em background com retry
+  async performBackgroundUpload(formData, destination, fileCount, expectedFinalCount) {
+    const maxRetries = 2;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📡 Upload attempt ${attempt}/${maxRetries}...`);
+        console.log('📡 Sending upload request...');
+        console.log('⏰ This may take several minutes for large files...');
+        
+        // Timeout de 10 minutos para uploads grandes
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 600000);
+
+        const response = await fetch('/api/admin/photos/upload', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        console.log(`📡 Response status: ${response.status}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log('📡 Error response:', errorText);
+          throw new Error(`Server error ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('📡 Server response:', result);
+
+        if (result.success && result.uploadedCount > 0) {
+          console.log('✅ Upload request successful!');
+          console.log('⏰ Files are now being processed on server...');
+          console.log('🔄 Monitoring will continue until photos appear in folder...');
+          
+          // Limpar estado salvo
+          this.clearUploadState(destination.id);
+          return; // Sucesso, sair do loop
+        } else {
+          throw new Error(result.message || 'Upload failed');
+        }
+
+      } catch (error) {
+        console.error(`❌ Upload attempt ${attempt} failed:`, error);
+        
+        if (attempt === maxRetries) {
+          // Última tentativa falhou
+          showToast(`Upload failed after ${maxRetries} attempts. Please try again.`, 'error');
+          this.stopUploadMonitoring(destination.id);
+          this.clearUploadState(destination.id);
+        } else {
+          // Tentar novamente
+          showToast(`Upload failed, retrying... (${attempt}/${maxRetries})`, 'warning');
+          await new Promise(resolve => setTimeout(resolve, 3000)); // Espera 3s
+        }
       }
+    }
+  },
+
+  // NOVA FUNÇÃO: Salvar estado do upload
+  saveUploadState(destination, files, expectedFinalCount) {
+    try {
+      const uploadState = {
+        destinationId: destination.id,
+        destinationName: destination.name,
+        fileCount: files.length,
+        expectedFinalCount: expectedFinalCount,
+        timestamp: Date.now()
+      };
+      
+      let activeUploads = JSON.parse(localStorage.getItem('activeUploads') || '{}');
+      activeUploads[destination.id] = uploadState;
+      localStorage.setItem('activeUploads', JSON.stringify(activeUploads));
+      
+      console.log('💾 Upload state saved for protection');
+    } catch (error) {
+      console.warn('Could not save upload state:', error);
+    }
+  },
+
+  // NOVA FUNÇÃO: Limpar estado do upload
+  clearUploadState(destinationId) {
+    try {
+      let activeUploads = JSON.parse(localStorage.getItem('activeUploads') || '{}');
+      delete activeUploads[destinationId];
+      localStorage.setItem('activeUploads', JSON.stringify(activeUploads));
+      
+      console.log('🧹 Upload state cleared');
+    } catch (error) {
+      console.warn('Could not clear upload state:', error);
+    }
+  },
+
+  // NOVA FUNÇÃO: Verificar se há uploads ativos
+  hasActiveUploads() {
+    try {
+      const activeUploads = JSON.parse(localStorage.getItem('activeUploads') || '{}');
+      return Object.keys(activeUploads).length > 0;
+    } catch (error) {
+      return false;
     }
   },
 
@@ -2340,6 +2410,19 @@ const photoManager = {
   closeCreateFolderModal() {
     document.getElementById('create-folder-modal').style.display = 'none';
     this.selectedParentFolder = null;
+  },
+
+   // NOVA FUNÇÃO: Proteção contra saída durante uploads
+  setupUploadProtection() {
+    window.addEventListener('beforeunload', (e) => {
+      if (this.hasActiveUploads()) {
+        e.preventDefault();
+        e.returnValue = 'You have uploads in progress. They may be lost if you leave.';
+        return 'You have uploads in progress. They may be lost if you leave.';
+      }
+    });
+    
+    console.log('🛡️ Upload protection enabled');
   }
 
 };
