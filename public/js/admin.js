@@ -197,8 +197,30 @@ function loadOrderFolders(status, retryCount = 0) {
       html += '<tr><th style="text-align: left; padding: 8px;">Order Name</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: left; padding: 8px;">Action</th></tr>';
 
       folders.forEach(folder => {
-        const date = new Date(folder.dateCreated);
-        const formattedDate = date.toLocaleDateString();
+        // 🛡️ PROTEÇÃO CONTRA DATAS INVÁLIDAS
+        let formattedDate = 'N/A';
+        
+        if (folder.dateCreated) {
+          const date = new Date(folder.dateCreated);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString();
+          }
+        }
+        
+        // Se ainda não temos data válida, tentar outras fontes
+        if (formattedDate === 'N/A') {
+          if (folder.createdAt) {
+            const date = new Date(folder.createdAt);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          } else if (folder.lastModified) {
+            const date = new Date(folder.lastModified);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          }
+        }
       
         // Different action buttons based on current status
         let actionButtons = '';
@@ -291,9 +313,30 @@ function loadFoldersAlternative(status) {
       html += '<tr><th style="text-align: left; padding: 8px;">Order Name</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: left; padding: 8px;">Action</th></tr>';
 
       folders.forEach(folder => {
-        const date = new Date(folder.dateCreated);
-        const formattedDate = date.toLocaleDateString();
-
+        // 🛡️ PROTEÇÃO CONTRA DATAS INVÁLIDAS
+        let formattedDate = 'N/A';
+        
+        if (folder.dateCreated) {
+          const date = new Date(folder.dateCreated);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString();
+          }
+        }
+        
+        // Se ainda não temos data válida, tentar outras fontes
+        if (formattedDate === 'N/A') {
+          if (folder.createdAt) {
+            const date = new Date(folder.createdAt);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          } else if (folder.lastModified) {
+            const date = new Date(folder.lastModified);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          }
+        }
 
         let actionButton = '';
         if (status === 'waiting') {
