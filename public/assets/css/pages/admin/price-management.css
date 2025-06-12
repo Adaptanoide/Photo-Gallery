@@ -1,24 +1,19 @@
 /* ===== PRICE MANAGEMENT MODULE - CABEÇALHOS E CÉLULAS ALINHADOS ===== */
 /* public/assets/css/pages/admin/price-management.css */
 
-/* Container principal - SCROLL ÚNICO E OTIMIZADO */
+/* Container principal - MAIS ESPAÇO PARA TABELA */
 .category-price-container {
   margin-top: 0;
   min-height: 100%;
-  height: calc(100vh - 160px); /* Altura fixa para eliminar scroll duplo */
+  height: calc(100vh - 140px); /* Mais espaço disponível */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Importante: sem scroll no container pai */
+  overflow: hidden;
 }
 
-/* Ações em lote - COMPACTAS */
+/* Ações em lote - ESCONDIDAS (agora no modal) */
 .bulk-actions {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 10px 16px;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  border: 1px solid #dee2e6;
-  flex-shrink: 0; /* Não comprime */
+  display: none !important;
 }
 
 .bulk-actions h4 {
@@ -59,20 +54,20 @@
   height: 30px;
 }
 
-/* Filtro simples - SÓ À ESQUERDA */
+/* Filtro simples - MAIOR E MAIS VISÍVEL */
 .table-filter-simple {
-  margin-bottom: 8px;
-  flex-shrink: 0; /* Não comprime */
+  margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .table-filter-simple .form-control {
-  width: 280px;
-  max-width: 280px;
-  padding: 6px 10px;
-  font-size: 13px;
-  height: 32px;
+  width: 350px;
+  max-width: 350px;
+  padding: 10px 15px;
+  font-size: 14px;
+  height: 40px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .table-filter-simple .form-control:focus {

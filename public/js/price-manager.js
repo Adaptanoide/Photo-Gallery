@@ -181,18 +181,6 @@ function renderCategoryPriceTable() {
   }
   
   let html = `
-    <div class="bulk-actions">
-      <h4>Bulk Update</h4>
-      <div class="bulk-form">
-        <select id="bulk-update-type" class="form-control">
-          <option value="fixed">Set Fixed Price</option>
-          <option value="percentage">Adjust by Percentage</option>
-        </select>
-        <input type="number" id="bulk-value" class="form-control" placeholder="Value" step="0.01">
-        <button class="btn btn-gold" onclick="applyBulkUpdate()">Apply to Selected</button>
-      </div>
-    </div>
-    
     <div class="table-filter-simple">
       <input type="text" id="category-filter" class="form-control" placeholder="Filter categories..." onkeyup="filterCategories()">
     </div>
@@ -489,3 +477,162 @@ async function refreshPriceCounters() {
     showToast(`Error refreshing: ${error.message}`, 'error');
   }
 }
+
+// ===== BULK ACTIONS MODAL FUNCTIONS =====
+
+// Abrir modal de bulk actions
+function openBulkActionsModal() {
+  // Verificar se há categorias selecionadas
+  const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
+  
+  if (selectedCheckboxes.length === 0) {
+    showToast('Please select at least one category first', 'warning');
+    return;
+  }
+  
+  // Atualizar contador e preview
+  updateBulkModalInfo(selectedCheckboxes);
+  
+  // Resetar form
+  document.getElementById('bulk-update-type-modal').value = 'fixed';
+  document.getElementById('bulk-value-modal').value = '';
+  document.getElementById('apply-bulk-modal-btn').disabled = true;
+  
+  // Atualizar texto de ajuda
+  updateBulkHelpText('fixed');
+  
+  // Mostrar modal
+  document.getElementById('bulk-actions-modal').style.display = 'block';
+}
+
+// Fechar modal bulk
+function closeBulkModal() {
+  document.getElementById('bulk-actions-modal').style.display = 'none';
+}
+
+// Atualizar informações do modal
+function updateBulkModalInfo(selectedCheckboxes) {
+  const count = selectedCheckboxes.length;
+  document.getElementById('bulk-selected-count').textContent = count;
+  
+  // Criar preview das categorias selecionadas
+  const categoryNames = Array.from(selectedCheckboxes).map(checkbox => {
+    const row = checkbox.closest('tr');
+    const categoryName = row.querySelector('.category-column').textContent;
+    return categoryName;
+  }).slice(0, 3); // Mostrar apenas as 3 primeiras
+  
+  let previewText = categoryNames.join(', ');
+  if (count > 3) {
+    previewText += ` and ${count - 3} more...`;
+  }
+  
+  document.getElementById('bulk-selected-preview').textContent = previewText;
+}
+
+// Aplicar bulk update do modal
+function applyBulkFromModal() {
+  const updateType = document.getElementById('bulk-update-type-modal').value;
+  const value = parseFloat(document.getElementById('bulk-value-modal').value);
+  
+  if (isNaN(value)) {
+    showToast('Please enter a valid value', 'error');
+    return;
+  }
+  
+  // Usar a função existente applyBulkUpdate mas com os valores do modal
+  const oldTypeElement = document.getElementById('bulk-update-type');
+  const oldValueElement = document.getElementById('bulk-value');
+  
+  // Simular os valores antigos temporariamente
+  const tempType = { value: updateType };
+  const tempValue = { value: value };
+  
+  // Chamar função existente com os novos valores
+  applyBulkUpdateWithValues(updateType, value);
+  
+  // Fechar modal
+  closeBulkModal();
+}
+
+// Função auxiliar para aplicar bulk com valores específicos
+function applyBulkUpdateWithValues(updateType, value) {
+  const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
+  
+  if (selectedCheckboxes.length === 0) {
+    showToast('No categories selected', 'error');
+    return;
+  }
+  
+  const selectedFolderIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+  
+  const updateData = {
+    type: updateType,
+    value: value,
+    folderIds: selectedFolderIds
+  };
+  
+  showLoader();
+  
+  fetch('/api/admin/categories/batch-update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updateData)
+  })
+  .then(response => response.json())
+  .then(result => {
+    hideLoader();
+    
+    if (result.success) {
+      showToast(`Prices updated for ${selectedFolderIds.length} categories`, 'success');
+      
+      // Reload prices
+      loadCategoryPrices().then(() => {
+        renderCategoryPriceTable();
+        
+        // Limpar seleções
+        const selectAllCheckbox = document.getElementById('select-all');
+        if (selectAllCheckbox) {
+          selectAllCheckbox.checked = false;
+        }
+        selectedCheckboxes.forEach(cb => cb.checked = false);
+      });
+    } else {
+      showToast('Error updating prices: ' + result.message, 'error');
+    }
+  })
+  .catch(error => {
+    hideLoader();
+    showToast('Error updating prices: ' + error.message, 'error');
+  });
+}
+
+// Atualizar texto de ajuda baseado no tipo
+function updateBulkHelpText(type) {
+  const helpText = document.getElementById('bulk-help-text');
+  if (type === 'fixed') {
+    helpText.textContent = 'Enter the new fixed price for all selected categories';
+  } else {
+    helpText.textContent = 'Enter percentage change (e.g., 10 for +10%, -15 for -15%)';
+  }
+}
+
+// Event listeners para o modal
+document.addEventListener('DOMContentLoaded', function() {
+  // Listener para mudança de tipo de update
+  const typeSelect = document.getElementById('bulk-update-type-modal');
+  if (typeSelect) {
+    typeSelect.addEventListener('change', function() {
+      updateBulkHelpText(this.value);
+    });
+  }
+  
+  // Listener para habilitar/desabilitar botão Apply
+  const valueInput = document.getElementById('bulk-value-modal');
+  if (valueInput) {
+    valueInput.addEventListener('input', function() {
+      const applyBtn = document.getElementById('apply-bulk-modal-btn');
+      applyBtn.disabled = !this.value || isNaN(parseFloat(this.value));
+    });
+  }
+});

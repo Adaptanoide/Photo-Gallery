@@ -354,8 +354,13 @@
             </div>
             <div class="admin-stats-section">
               <span id="price-header-stats" class="header-stats">Loading...</span>
-              <button class="btn btn-secondary btn-sm" onclick="refreshPriceCounters()" 
+              <button class="btn btn-gold btn-sm" onclick="openBulkActionsModal()" 
                       style="margin-left: 10px; padding: 5px 10px; font-size: 12px;" 
+                      title="Bulk price actions">
+                📊 Bulk Actions
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="refreshPriceCounters()" 
+                      style="margin-left: 8px; padding: 5px 10px; font-size: 12px;" 
                       title="Refresh photo counters">
                    Refresh
               </button>
@@ -618,6 +623,45 @@
       <div class="modal-buttons">
         <button class="btn btn-secondary" onclick="closeModal('category-access-modal')">Cancel</button>
         <button class="btn btn-gold" onclick="saveCustomerCategoryAccess()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions Modal -->
+  <div id="bulk-actions-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; width: 90%;">
+      <h2>📊 Bulk Price Actions</h2>
+      <p>Apply price changes to multiple categories at once.</p>
+
+      <div class="form-group">
+        <label for="bulk-update-type-modal">Update Type:</label>
+        <select id="bulk-update-type-modal" class="form-control">
+          <option value="fixed">Set Fixed Price</option>
+          <option value="percentage">Adjust by Percentage</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="bulk-value-modal">Value:</label>
+        <input type="number" id="bulk-value-modal" class="form-control" 
+               placeholder="Enter value" step="0.01" style="font-size: 16px;">
+        <small class="form-text text-muted">
+          <span id="bulk-help-text">Enter the new fixed price for all selected categories</span>
+        </small>
+      </div>
+
+      <div class="bulk-selection-info" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+        <strong>Selected Categories: <span id="bulk-selected-count">0</span></strong>
+        <div id="bulk-selected-preview" style="font-size: 13px; color: #666; margin-top: 5px;">
+          Please select categories from the table first.
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px;">
+        <button class="btn btn-secondary" onclick="closeBulkModal()">Cancel</button>
+        <button class="btn btn-gold" onclick="applyBulkFromModal()" id="apply-bulk-modal-btn" disabled>
+          Apply Changes
+        </button>
       </div>
     </div>
   </div>
