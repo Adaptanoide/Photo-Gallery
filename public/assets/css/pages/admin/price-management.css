@@ -5,7 +5,7 @@
 .category-price-container {
   margin-top: 0;
   min-height: 100%;
-  height: calc(100vh - 140px); /* Mais espaço disponível */
+  height: calc(100vh - 120px); /* MUDANÇA: Aumentado ainda mais */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -54,9 +54,9 @@
   height: 30px;
 }
 
-/* Filtro simples - MAIOR E MAIS VISÍVEL */
+/* Filtro simples - MAIS COMPACTO */
 .table-filter-simple {
-  margin-bottom: 15px;
+  margin-bottom: 10px; /* MUDANÇA: Reduzido de 15px para 10px */
   flex-shrink: 0;
 }
 
@@ -85,6 +85,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 500px; /* ADICIONADO: Altura mínima maior */
 }
 
 /* Tabela principal - SEM SCROLL PRÓPRIO */
@@ -128,6 +129,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  min-height: 400px; /* ADICIONADO: Altura mínima aumentada */
   
   /* Scroll customizado e suave */
   scrollbar-width: thin;
