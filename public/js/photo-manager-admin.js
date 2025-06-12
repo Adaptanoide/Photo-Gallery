@@ -2587,9 +2587,11 @@ const photoManager = {
                 <div class="drop-icon">📁</div>
                 <p>Drag & drop photos here</p>
                 <p>or</p>
-                <button type="button" class="btn btn-gold" id="direct-choose-files-btn">Choose Files</button>
               </div>
               <input type="file" id="direct-photo-files" multiple accept="image/*" style="display: none;">
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+              <button type="button" class="btn btn-gold" id="direct-choose-files-btn">Choose Files</button>
             </div>
             
             <div id="direct-selected-files-preview" style="display: none; margin-top: 20px;">
