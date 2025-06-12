@@ -194,11 +194,12 @@ const photoManager = {
       <span class="folder-count">${photoCount}</span>
       ${folder.isLeaf ? `
         <div class="folder-actions">
-          <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
-          <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
-          ${!isAdminFolder ? `
-            <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-          ` : ''}
+        <button class="folder-action-btn view-btn" onclick="photoManager.openFolderModal('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="View Photos">View</button>
+        <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
+        ${!isAdminFolder ? `
+          <button class="folder-action-btn rename-btn" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Rename Folder">✏️ Rename</button>
+          <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
+        ` : ''}
         </div>
       ` : `
         <div class="folder-actions">
@@ -954,6 +955,70 @@ const photoManager = {
     }
 
     console.log(`📊 Discrete stats updated: ${stats.totalPhotos} photos`);
+  },
+
+  // NOVA FUNÇÃO: Iniciar processo de rename
+  confirmRenameFolder(folderId, folderName) {
+    console.log(`✏️ Rename folder requested: ${folderName} (${folderId})`);
+
+    // Verificar se é pasta administrativa
+    const adminFolders = ['Waiting Payment', 'Sold'];
+    if (adminFolders.includes(folderName)) {
+      showToast('Cannot rename administrative folders', 'error');
+      return;
+    }
+
+    this.showRenameFolderModal(folderId, folderName);
+  },
+
+  // NOVA FUNÇÃO: Mostrar modal de rename
+  showRenameFolderModal(folderId, folderName) {
+    // Remover modal existente se houver
+    const existingModal = document.getElementById('rename-folder-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    const modalHTML = `
+      <div id="rename-folder-modal" class="modal" style="display: flex; z-index: 15000;">
+        <div class="modal-content" style="max-width: 500px;">
+          <h2 style="color: #d4af37;">✏️ Rename Folder</h2>
+          
+          <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 15px 0;">
+            <p><strong>Current Name:</strong> ${folderName}</p>
+            <p style="color: #856404; margin: 0;"><strong>Enter new name for this folder:</strong></p>
+          </div>
+          
+          <div style="margin: 15px 0;">
+            <label for="new-folder-name" style="display: block; margin-bottom: 5px; font-weight: 600;">New Folder Name:</label>
+            <input type="text" id="new-folder-name" class="form-control" value="${folderName}" placeholder="Enter new folder name" style="margin: 10px 0;" maxlength="100">
+            <small style="color: #6c757d;">Letters, numbers, spaces, hyphens, and underscores allowed</small>
+          </div>
+          
+          <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="photoManager.closeRenameFolderModal()">Cancel</button>
+            <button class="btn btn-gold" onclick="photoManager.executeRenameFolder('${folderId}', '${folderName.replace(/'/g, '\\\'')}')" id="confirm-rename-btn">✏️ Rename Folder</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Focar no input e selecionar o texto
+    const input = document.getElementById('new-folder-name');
+    setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 100);
+  },
+
+  // NOVA FUNÇÃO: Fechar modal de rename
+  closeRenameFolderModal() {
+    const modal = document.getElementById('rename-folder-modal');
+    if (modal) {
+      modal.remove();
+    }
   },
 
   confirmDeleteFolder(folderId, folderName) {
