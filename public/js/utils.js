@@ -117,7 +117,7 @@ function handleConfirmResponse(confirmed) {
 // Main initialization function
 document.addEventListener('DOMContentLoaded', function () {
   // Initialize categories and photos
-  loadCategories();
+  //loadCategories();
 
   // Add keyboard events for navigation
   document.addEventListener('keydown', handleKeyDown);
