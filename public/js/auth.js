@@ -96,6 +96,9 @@ function accessGallery() {
       // Show the main content
       document.querySelector('.container').style.display = 'block';
       
+      // ATIVAR header da galeria
+      document.body.classList.add('gallery-active');
+
       // MODIFICAÇÃO: Chamar a nova função de inicialização
       initializeGallery();
     })
