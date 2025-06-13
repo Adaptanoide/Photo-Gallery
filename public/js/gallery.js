@@ -1080,20 +1080,6 @@ function showWelcome() {
   `;
 }
 
-// === CONTROLE DO HEADER ===
-function controlTopHeader() {
-  const header = document.getElementById('top-header');
-  if (header) {
-    if (window.pageYOffset > 50) {
-      header.classList.add('hidden');
-    } else {
-      header.classList.remove('hidden');
-    }
-  }
-}
-window.addEventListener('scroll', controlTopHeader);
-console.log('✅ Header control ativado!');
-
 // FUNÇÃO ATUALIZADA: Tornar o botão de ajuda globalmente acessível
 window.showTutorial = showTutorial;
 
