@@ -2021,20 +2021,26 @@ async function uploadPhotosToShipment(shipmentId) {
     console.log(`🔍 Estrutura de pastas detectada: ${hasStructure ? 'SIM' : 'NÃO'}`);
     
     try {
-      // Criar FormData com paths preservados
+      // Criar FormData com paths preservados - DEBUG
       const formData = new FormData();
-      
+      const pathsArray = [];
+
       files.forEach((file, index) => {
-        // Adicionar arquivo
+        // Adicionar arquivo  
         formData.append('photos', file);
         
-        // Adicionar path como campo separado
+        // Coletar paths em array
         if (file.webkitRelativePath) {
-          formData.append(`filePaths`, file.webkitRelativePath);
+          pathsArray.push(file.webkitRelativePath);
         } else {
-          formData.append(`filePaths`, file.name);
+          pathsArray.push(file.name);
         }
       });
+
+      // Enviar paths como JSON string
+      formData.append('filePathsJson', JSON.stringify(pathsArray));
+
+      console.log('📦 Sending paths:', pathsArray.slice(0, 5));
       
       console.log('📤 Enviando FormData com paths preservados...');
       
