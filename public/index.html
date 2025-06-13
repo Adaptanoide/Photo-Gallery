@@ -70,13 +70,15 @@
 
 <body>
   <div class="container">
-    <!-- Botões de navegação no canto superior direito -->
-    <button id="logout-button" class="logout-button" onclick="returnToLogin()" title="Return to login">
-      Logout
-    </button>
-    <button id="help-button" class="help-button" onclick="showTutorial()" title="How to use this gallery">
-      <span class="help-icon">?</span>
-    </button>
+    <!-- Header fixo com botões que some ao rolar -->
+    <div id="top-header" class="top-header">
+      <button id="logout-button" class="logout-button" onclick="returnToLogin()" title="Return to login">
+        Logout
+      </button>
+      <button id="help-button" class="help-button" onclick="showTutorial()" title="How to use this gallery">
+        <span class="help-icon">?</span>
+      </button>
+    </div>
 
     <!-- Nova estrutura com menu lateral e conteúdo -->
     <div class="catalog-layout">

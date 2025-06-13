@@ -1,6 +1,28 @@
+/* === HEADER COM BOTÕES === */
+.top-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: transparent;
+  z-index: 1000;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.top-header button {
+  pointer-events: all;
+}
+
+.top-header.hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
 /* Tutorial Styles */
 .help-button {
-  position: fixed;
+  position: absolute;
   top: 8px;
   right: 30px;
   width: 45px;
@@ -263,7 +285,7 @@
 
 /* Logout Button */
 .logout-button {
-  position: fixed;
+  position: absolute;
   top: 8px;
   right: 90px;
   height: 45px;
@@ -303,22 +325,11 @@
   }
 }
 
-/* === CLASSE CORRETA PARA ESCONDER BOTÕES === */
-
-/* Esconder botões quando rolar (usando display: none) */
+/* === CLASSES HIDDEN === */
 .help-button.hidden {
   display: none !important;
 }
 
 .logout-button.hidden {
   display: none !important;
-}
-
-/* Transições suaves quando aparecer */
-.help-button {
-  transition: all 0.3s ease !important;
-}
-
-.logout-button {
-  transition: all 0.3s ease !important;
 }

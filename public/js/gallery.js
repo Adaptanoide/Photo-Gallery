@@ -1080,78 +1080,19 @@ function showWelcome() {
   `;
 }
 
-// =============================================================================
-// 🎯 BOTÕES LOGOUT E HELP - CONTROLE DE VISIBILIDADE POR SCROLL
-// =============================================================================
-
-// Função para controlar visibilidade dos botões baseado no scroll
-function handleButtonsVisibility() {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  const helpButton = document.getElementById('help-button');
-  const logoutButton = document.getElementById('logout-button');
-  
-  // Threshold: mostrar apenas quando estiver próximo do topo (menos de 50px rolados)
-  const showButtons = scrollTop < 50;
-  
-  if (helpButton) {
-    if (showButtons) {
-      helpButton.classList.remove('hidden');
+// === CONTROLE DO HEADER ===
+function controlTopHeader() {
+  const header = document.getElementById('top-header');
+  if (header) {
+    if (window.pageYOffset > 50) {
+      header.classList.add('hidden');
     } else {
-      helpButton.classList.add('hidden');
-    }
-  }
-  
-  if (logoutButton) {
-    if (showButtons) {
-      logoutButton.classList.remove('hidden');
-    } else {
-      logoutButton.classList.add('hidden');
+      header.classList.remove('hidden');
     }
   }
 }
-
-// Throttle function para otimizar performance do scroll
-function throttle(func, limit) {
-  let inThrottle;
-  return function() {
-    const args = arguments;
-    const context = this;
-    if (!inThrottle) {
-      func.apply(context, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  }
-}
-
-// Inicializar controle de scroll quando a página carregar
-function initButtonsScrollControl() {
-  // Verificar se os botões existem na página
-  const helpButton = document.getElementById('help-button');
-  const logoutButton = document.getElementById('logout-button');
-  
-  if (helpButton || logoutButton) {
-    console.log('🎯 Inicializando controle de scroll para botões Logout e Help');
-    
-    // Adicionar listener de scroll com throttle (executa no máximo a cada 100ms)
-    const throttledHandler = throttle(handleButtonsVisibility, 100);
-    window.addEventListener('scroll', throttledHandler);
-    
-    // Chamar uma vez para definir estado inicial
-    handleButtonsVisibility();
-    
-    console.log('✅ Controle de scroll dos botões ativado');
-  }
-}
-
-// Executar quando o DOM estiver pronto
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initButtonsScrollControl);
-} else {
-  // DOM já está pronto
-  initButtonsScrollControl();
-}
-
+window.addEventListener('scroll', controlTopHeader);
+console.log('✅ Header control ativado!');
 
 // FUNÇÃO ATUALIZADA: Tornar o botão de ajuda globalmente acessível
 window.showTutorial = showTutorial;
