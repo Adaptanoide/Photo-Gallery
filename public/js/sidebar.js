@@ -1136,11 +1136,11 @@ function addCategoryNavigationButtons(container, categoryId) {
   navigationContainer.className = 'category-navigation-section';
   navigationContainer.innerHTML = `
     <div class="category-navigation-buttons">
-      <button class="category-nav-button category-nav-button--secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-        ← Previous Category
+      <button class="category-nav-button category-nav-button--secondary btn-nav-arrow" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+        ←
       </button>
-      <button class="category-nav-button category-nav-button--primary" onclick="navigateToNextCategoryMain('${categoryId}')">
-        Next Category →
+      <button class="category-nav-button category-nav-button--primary btn-nav-arrow" onclick="navigateToNextCategoryMain('${categoryId}')">
+        →
       </button>
     </div>
   `;

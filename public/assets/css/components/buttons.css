@@ -247,3 +247,18 @@
   justify-content: center;
   line-height: 1;
 }
+
+/* Botões de navegação categoria - setas */
+.btn-nav-arrow {
+  min-width: 50px !important;
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  font-size: 20px !important;
+  font-weight: bold !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
