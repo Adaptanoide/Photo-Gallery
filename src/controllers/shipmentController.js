@@ -290,10 +290,26 @@ class ShipmentController {
           let categoryName = 'Mixed Category'; // fallback
           let detectionMethod = 'fallback';
 
-          // 🔧 NOVA SOLUÇÃO: Ler paths do campo filePaths
+          // 🔧 SOLUÇÃO CORRIGIDA: Ler paths do novo formato JSON
           const fileIndex = files.indexOf(file);
-          const filePaths = req.body.filePaths || [];
-          const customPath = Array.isArray(filePaths) ? filePaths[fileIndex] : filePaths;
+          let filePaths = [];
+
+          // Tentar ler do novo formato JSON primeiro
+          if (req.body.filePathsJson) {
+            try {
+              filePaths = JSON.parse(req.body.filePathsJson);
+              console.log(`🔍 Parsed ${filePaths.length} paths from JSON`);
+            } catch (parseError) {
+              console.warn('Error parsing filePathsJson:', parseError);
+              filePaths = [];
+            }
+          }
+          // Fallback para formato antigo
+          else if (req.body.filePaths) {
+            filePaths = Array.isArray(req.body.filePaths) ? req.body.filePaths : [req.body.filePaths];
+          }
+
+          const customPath = filePaths[fileIndex] || null;
 
           console.log(`🔍 File ${fileIndex}: "${file.originalname}"`);
           console.log(`🔍 Custom path: "${customPath || 'undefined'}"`);
