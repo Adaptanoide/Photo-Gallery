@@ -113,6 +113,7 @@ function accessGallery() {
 
 // Function to return to login screen after order completion
 function returnToLogin() {
+  document.body.classList.remove('gallery-active');
   // Clear the cart locally
   cartIds = [];
   updateCartCounter();

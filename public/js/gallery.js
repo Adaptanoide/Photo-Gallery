@@ -678,6 +678,7 @@ function loadCategories(forcedAdminStatus = null) {
   allCategoriesLoaded = false; // Reset da flag
   
   // Para clientes, carregar com o novo método otimizado
+  document.body.classList.add('gallery-active');
   initializeGallery();
 }
 
