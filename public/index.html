@@ -67,17 +67,14 @@
     }
   </style>
 </head>
-
 <body>
-  <div class="container">
-    <!-- Botões de navegação no canto superior direito -->
-    <button id="logout-button" class="logout-button" onclick="returnToLogin()" title="Return to login">
-      Logout
-    </button>
-    <button id="help-button" class="help-button" onclick="showTutorial()" title="How to use this gallery">
-      <span class="help-icon">?</span>
-    </button>
+  <!-- BOTÕES NOVOS - TOPO DA PÁGINA -->
+  <div class="top-buttons">
+    <button id="new-logout" onclick="returnToLogin()">Logout</button>
+    <button id="new-help" onclick="showTutorial()">?</button>
+  </div>
 
+  <div class="container">
     <!-- Nova estrutura com menu lateral e conteúdo -->
     <div class="catalog-layout">
       <!-- Menu lateral de categorias -->
