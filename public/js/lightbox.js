@@ -1091,8 +1091,7 @@ function showNextCategoryOption() {
       <p>Continue to <strong>${nextCategory.name}</strong>?</p>
       <div class="category-nav-buttons">
         <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Stay Here</button>
-        <button class="btn btn-gold" onclick="navigateToNextCategory()">Next Category</button>
-      </div>
+        <button class="btn btn-gold btn-arrow" onclick="navigateToNextCategory()">→</button>      </div>
     </div>
   `;
 
@@ -1123,7 +1122,7 @@ function showPreviousCategoryOption() {
       <p>Go back to <strong>${previousCategory.name}</strong>?</p>
       <div class="category-nav-buttons">
         <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Stay Here</button>
-        <button class="btn btn-gold" onclick="navigateToPreviousCategory()">Previous Category</button>
+        <button class="btn btn-gold btn-arrow" onclick="navigateToPreviousCategory()">←</button>
       </div>
     </div>
   `;
