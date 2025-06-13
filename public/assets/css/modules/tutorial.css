@@ -9,7 +9,7 @@
 }
 
 #new-logout {
-  position: static;
+  position: fixed;
   background: #8b7355;
   color: white;
   border: none;
@@ -20,7 +20,7 @@
 }
 
 #new-help {
-  position: static;
+  position: fixed;
   background: #d4af37;
   color: #333;
   border: none;
