@@ -1,6 +1,6 @@
 /* === HEADER COM BOTÕES === */
 .top-header {
-  position: fixed;
+  position: absolute !important;
   top: 0;
   left: 0;
   right: 0;
@@ -285,7 +285,7 @@
 
 /* Logout Button */
 .logout-button {
-  position: absolute;
+  position: absolute !important;
   top: 8px;
   right: 90px;
   height: 45px;
@@ -328,8 +328,21 @@
 /* === CLASSES HIDDEN === */
 .help-button.hidden {
   display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 .logout-button.hidden {
   display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* FORÇA EXTRA */
+.top-header .help-button {
+  position: absolute !important;
+}
+
+.top-header .logout-button {
+  position: absolute !important;
 }
