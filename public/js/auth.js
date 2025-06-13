@@ -44,6 +44,9 @@ function adminLogout() {
   // NOVO: Remover estado do localStorage
   localStorage.removeItem('adminLoggedIn');
   
+  // REMOVER header da galeria ao voltar para login
+  document.body.classList.remove('gallery-active');
+
   closeModal('admin-panel-modal');
   document.getElementById('code-entry-modal').style.display = 'block';
   
