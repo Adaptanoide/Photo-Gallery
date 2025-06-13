@@ -251,3 +251,67 @@
     padding: 10px 40px;
   }
 }
+
+
+/* ===== SHIPMENT UPLOAD INDICATOR - SETINHA PULSANTE ===== */
+/* ADICIONAR ao final do arquivo: public/assets/css/pages/admin/shipments.css */
+
+/* Garantir que kanban-card tenha position relative para posicionamento absoluto da setinha */
+.kanban-card {
+  position: relative;
+  /* Mantém todos os estilos existentes */
+}
+
+/* Setinha de upload - aparece no canto superior direito */
+.kanban-card .upload-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 16px;
+  color: #28a745;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  
+  /* Garantir que não interfira com cliques no card */
+  pointer-events: none;
+}
+
+/* Estado ativo - setinha aparece e pulsa */
+.kanban-card.uploading .upload-indicator {
+  opacity: 1;
+  visibility: visible;
+  animation: uploadPulse 1.5s infinite ease-in-out;
+}
+
+/* Animação de pulsação suave */
+@keyframes uploadPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Efeito adicional no card durante upload (opcional - borda sutil) */
+.kanban-card.uploading {
+  border-color: #28a745 !important;
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.15) !important;
+}
+
+/* Responsividade - ajustar tamanho da setinha em mobile */
+@media (max-width: 768px) {
+  .kanban-card .upload-indicator {
+    font-size: 14px;
+    top: 6px;
+    right: 6px;
+  }
+}

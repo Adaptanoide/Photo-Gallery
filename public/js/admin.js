@@ -1656,14 +1656,14 @@ function displayShipments(shipments) {
   `;
 }
 
-// Renderizar cards do Kanban
 function renderKanbanCards(shipments) {
   if (!shipments || shipments.length === 0) {
     return '<div class="kanban-empty">No shipments</div>';
   }
   
   return shipments.map(shipment => `
-    <div class="kanban-card" onclick="viewShipmentDetails('${shipment._id}')">
+    <div class="kanban-card" onclick="viewShipmentDetails('${shipment._id}')" data-shipment-id="${shipment._id}">
+      <div class="upload-indicator">📤</div>
       <div class="kanban-card-title">${shipment.name}</div>
       <div class="kanban-card-info">
         Departure: ${shipment.departureDate ? new Date(shipment.departureDate).toLocaleDateString() : "Not set"}<br>Arrival: ${shipment.expectedArrival ? new Date(shipment.expectedArrival).toLocaleDateString() : "Not set"}<br>
@@ -2014,7 +2014,10 @@ async function uploadPhotosToShipment(shipmentId) {
     
     if (files.length === 0) return;
     
-    console.log(`�� Uploading ${files.length} files to shipment ${shipmentId}`);
+    console.log(`🚀 Uploading ${files.length} files to shipment ${shipmentId}`);
+    
+    // 🆕 MARCAR SHIPMENT COMO FAZENDO UPLOAD (mostrar setinha)
+    markShipmentAsUploading(shipmentId);
     
     // Verificar se há estrutura de pastas
     const hasStructure = files.some(file => file.webkitRelativePath && file.webkitRelativePath.includes('/'));
@@ -2062,6 +2065,9 @@ async function uploadPhotosToShipment(shipmentId) {
     } catch (error) {
       console.error('Upload error:', error);
       showToast('❌ Upload failed: ' + error.message, 'error');
+    } finally {
+      // 🆕 SEMPRE DESMARCAR SHIPMENT (esconder setinha) - mesmo se der erro
+      unmarkShipmentAsUploading(shipmentId);
     }
   };
   
@@ -2598,6 +2604,48 @@ function clearAllReturnPhotos() {
   updateReturnSelection();
   
   showToast('All selections cleared', 'info');
+}
+
+// =============================================================================
+// 🚀 SHIPMENT UPLOAD INDICATOR SYSTEM (baseado no Photo Storage)
+// =============================================================================
+
+// Marcar shipment como fazendo upload (mostrar setinha pulsante)
+function markShipmentAsUploading(shipmentId) {
+  console.log(`🔄 Marking shipment as uploading: ${shipmentId}`);
+  
+  // Encontrar o card do shipment específico
+  const shipmentCard = document.querySelector(`[data-shipment-id="${shipmentId}"]`);
+  
+  if (shipmentCard) {
+    // Adicionar classe que faz a setinha aparecer e pulsar
+    shipmentCard.classList.add('uploading');
+    console.log(`✅ Shipment card marked as uploading`);
+  } else {
+    console.warn(`⚠️ Shipment card not found for ID: ${shipmentId}`);
+  }
+}
+
+// Desmarcar shipment como fazendo upload (esconder setinha)
+function unmarkShipmentAsUploading(shipmentId) {
+  console.log(`✅ Removing upload state from shipment: ${shipmentId}`);
+  
+  // Encontrar o card do shipment específico
+  const shipmentCard = document.querySelector(`[data-shipment-id="${shipmentId}"]`);
+  
+  if (shipmentCard) {
+    // Remover classe que faz a setinha aparecer
+    shipmentCard.classList.remove('uploading');
+    console.log(`✅ Shipment card unmarked as uploading`);
+  } else {
+    console.warn(`⚠️ Shipment card not found for ID: ${shipmentId}`);
+  }
+}
+
+// Verificar se algum shipment está fazendo upload (para proteção contra sair)
+function hasActiveShipmentUploads() {
+  const uploadingCards = document.querySelectorAll('.kanban-card.uploading');
+  return uploadingCards.length > 0;
 }
 
 // Alias para compatibilidade
