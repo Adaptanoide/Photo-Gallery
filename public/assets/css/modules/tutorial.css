@@ -2,9 +2,9 @@
 
 /* BOTÕES NOVOS - SIMPLES E FUNCIONAIS */
 .top-buttons {
-  position: static;
-  float: right;
-  margin: 10px;
+  position: fixed;
+  top: 10px;
+  right: 10px;
   z-index: 1000;
 }
 
