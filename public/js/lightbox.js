@@ -242,6 +242,7 @@ function openLightbox(index, fromCart = false) {
 
   // Show the lightbox
   document.getElementById('lightbox').style.display = 'block';
+  document.body.classList.add('lightbox-open');
 
   // Carregar versão de alta qualidade em background
   const highResImage = new Image();
