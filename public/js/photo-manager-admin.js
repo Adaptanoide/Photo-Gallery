@@ -330,7 +330,7 @@ const photoManager = {
     try {
       console.log(`📋 Loading photos for folder: ${folderName || folderId}`);
 
-      const response = await fetch(`/api/photos?category_id=${folderId}`);
+      const response = await fetch(`/api/photos?category_id=${folderId}&limit=1000`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
