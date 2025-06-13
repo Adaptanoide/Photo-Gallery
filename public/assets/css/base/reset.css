@@ -34,3 +34,9 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+/* Controle de scroll - apenas na galeria */
+html, body {
+  height: 100vh !important;
+  overflow: hidden !important;
+}

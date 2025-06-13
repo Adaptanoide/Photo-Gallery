@@ -132,12 +132,10 @@
   flex-grow: 1;
   overflow: hidden;
   min-width: 0;
-  /* CORREÇÃO: Margem para compensar a sidebar fixa */
   margin-left: 280px;
   padding-left: 30px;
   padding-right: 20px;
-  /* CORREÇÃO: Altura mínima para evitar espaço vazio */
-  min-height: 100vh;
+  height: 100vh;
 }
 
 /* CORREÇÃO: Remover duplicação de títulos */
