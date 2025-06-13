@@ -238,12 +238,12 @@
   background: none !important;
   border: none !important;
   color: #666 !important;
-  min-width: 30px !important;
-  width: 30px !important;
-  height: 30px !important;
+  min-width: 50px !important;  /* AUMENTADO de 30px para 50px */
+  width: 50px !important;      /* AUMENTADO de 30px para 50px */
+  height: 50px !important;     /* AUMENTADO de 30px para 50px */
   border-radius: 0 !important;
   padding: 0 !important;
-  font-size: 24px !important;
+  font-size: 32px !important;  /* AUMENTADO de 24px para 32px */
   font-weight: 300 !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -253,6 +253,7 @@
   cursor: pointer !important;
   outline: none !important;
   box-shadow: none !important;
+  margin: 0 15px !important;   /* NOVO: 15px de margem de cada lado */
 }
 
 .btn-nav-arrow:hover {
