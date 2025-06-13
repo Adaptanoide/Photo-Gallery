@@ -435,6 +435,7 @@ function processOrder(customerName, comments) {
       
       // Mostrar modal de sucesso
       document.getElementById('success-modal').style.display = 'block';
+      document.body.classList.add('success-open');
       
     } else {
       // Erro no processamento

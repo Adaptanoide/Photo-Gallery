@@ -25,6 +25,10 @@ function closeModal(modalId) {
   if (modalId === 'admin-login-modal') {
     document.getElementById('code-entry-modal').style.display = 'block';
   }
+
+  if (modalId === 'success-modal') {
+    document.body.classList.remove('success-open');
+  }
 }
 
 // Custom toast notification system
