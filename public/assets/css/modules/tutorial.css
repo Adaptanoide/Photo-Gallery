@@ -1,6 +1,6 @@
 /* Tutorial Styles */
 .help-button {
-  position: fixed;
+  position: absolute;
   top: 8px;
   right: 30px;
   width: 45px;
@@ -263,7 +263,7 @@
 
 /* Logout Button */
 .logout-button {
-  position: fixed;
+  position: absolute;
   top: 8px;
   right: 90px;
   height: 45px;
@@ -301,4 +301,30 @@
     font-size: 12px;
     min-width: 70px;
   }
+}
+
+/* === ADICIONADO: Controle de visibilidade por scroll === */
+
+/* Estados escondidos quando rolar a página */
+.help-button.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.logout-button.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+/* Melhorar transições dos botões */
+.help-button {
+  transition: all 0.3s ease !important;
+}
+
+.logout-button {
+  transition: all 0.3s ease !important;
 }
