@@ -245,36 +245,69 @@ class ShipmentController {
     });
   }
 
-  // Upload de fotos para shipment - FUNÇÃO COMPLETA COM DETECÇÃO DE PATHS CORRIGIDA
+  // Upload de fotos para shipment - VERSÃO COM DEBUG EXTENSIVO
   async uploadPhotos(req, res) {
+    console.log('\n🚀 === SHIPMENT UPLOAD DEBUG START ===');
+    console.log('📊 Request info:');
+    console.log('   shipmentId:', req.params.shipmentId);
+    console.log('   files count:', req.files?.length || 0);
+    console.log('   body keys:', Object.keys(req.body));
+    console.log('   filePathsJson exists:', !!req.body.filePathsJson);
+    
     try {
       const { shipmentId } = req.params;
       const files = req.files;
+      
+      console.log('✅ Step 1: Variables initialized');
 
       if (!files || files.length === 0) {
+        console.log('❌ No files received');
         return res.status(400).json({
           success: false,
           message: 'No files uploaded'
         });
       }
 
+      console.log('✅ Step 2: Files validation passed');
       console.log(`📤 Processing ${files.length} files for shipment: ${shipmentId}`);
 
       const shipment = await Shipment.findById(shipmentId);
       if (!shipment) {
+        console.log('❌ Shipment not found');
         return res.status(404).json({
           success: false,
           message: 'Shipment not found'
         });
       }
 
+      console.log('✅ Step 3: Shipment found:', shipment.name);
+      console.log('   folderPath:', shipment.folderPath);
+      console.log('   status:', shipment.status);
+
+      // Verificar se folderPath existe fisicamente
+      try {
+        await fs.access(shipment.folderPath);
+        console.log('✅ Step 4: Shipment folder exists');
+      } catch (accessError) {
+        console.log('⚠️  Step 4: Shipment folder missing, creating...');
+        try {
+          await fs.mkdir(shipment.folderPath, { recursive: true });
+          console.log('✅ Step 4b: Shipment folder created');
+        } catch (mkdirError) {
+          console.error('❌ Step 4b: Failed to create shipment folder:', mkdirError);
+          return res.status(500).json({
+            success: false,
+            message: `Failed to create shipment folder: ${mkdirError.message}`
+          });
+        }
+      }
+
       // Debug detalhado dos arquivos recebidos
-      console.log('\n🔍 DEBUG: Analisando primeiros 3 arquivos...');
+      console.log('\n🔍 Step 5: Analyzing first 3 files...');
       files.slice(0, 3).forEach((file, index) => {
-        console.log(`📁 Arquivo ${index + 1}:`);
+        console.log(`📁 File ${index + 1}:`);
         console.log(`   originalname: "${file.originalname}"`);
-        console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
-        console.log(`   fieldname: "${file.fieldname}"`);
+        console.log(`   size: ${file.size} bytes`);
         console.log(`   mimetype: "${file.mimetype}"`);
       });
 
@@ -282,11 +315,17 @@ class ShipmentController {
       let totalProcessed = 0;
       let debugStats = {
         detectedCategories: new Set(),
-        failedDetections: 0
+        failedDetections: 0,
+        sharpErrors: 0,
+        fsErrors: 0
       };
+
+      console.log('\n🔍 Step 6: Starting file processing loop...');
 
       for (const file of files) {
         try {
+          console.log(`\n📄 Processing file ${totalProcessed + 1}/${files.length}: ${file.originalname}`);
+          
           let categoryName = 'Mixed Category'; // fallback
           let detectionMethod = 'fallback';
 
@@ -294,73 +333,45 @@ class ShipmentController {
           const fileIndex = files.indexOf(file);
           let filePaths = [];
 
+          console.log(`   🔍 fileIndex: ${fileIndex}`);
+          console.log(`   🔍 filePathsJson exists: ${!!req.body.filePathsJson}`);
+
           // Tentar ler do novo formato JSON primeiro
           if (req.body.filePathsJson) {
             try {
               filePaths = JSON.parse(req.body.filePathsJson);
-              console.log(`🔍 Parsed ${filePaths.length} paths from JSON`);
+              console.log(`   ✅ Parsed ${filePaths.length} paths from JSON`);
             } catch (parseError) {
-              console.warn('Error parsing filePathsJson:', parseError);
+              console.error('   ❌ Error parsing filePathsJson:', parseError.message);
               filePaths = [];
             }
           }
           // Fallback para formato antigo
           else if (req.body.filePaths) {
             filePaths = Array.isArray(req.body.filePaths) ? req.body.filePaths : [req.body.filePaths];
+            console.log(`   ✅ Using legacy filePaths: ${filePaths.length} paths`);
           }
 
           const customPath = filePaths[fileIndex] || null;
-
-          console.log(`🔍 File ${fileIndex}: "${file.originalname}"`);
-          console.log(`🔍 Custom path: "${customPath || 'undefined'}"`);
+          console.log(`   🔍 customPath: "${customPath}"`);
 
           // MÉTODO 1: Usar path customizado (enviado do frontend)
           if (customPath && customPath.includes('/')) {
             const pathParts = customPath.split('/');
-            console.log(`🔍 Custom path parts:`, pathParts);
+            console.log(`   🔍 Custom path parts:`, pathParts);
 
             if (pathParts.length >= 2) {
               // Para "PASTA/5302B BR/foto.jpg" → pegar "5302B BR"
               categoryName = pathParts[pathParts.length - 2];
               detectionMethod = 'customPath';
-              console.log(`✅ Detected category: "${categoryName}" from customPath`);
+              console.log(`   ✅ Detected category: "${categoryName}" from customPath`);
             }
-          }
-          // MÉTODO 2: Tentar webkitRelativePath (fallback)
-          else if (file.webkitRelativePath && file.webkitRelativePath !== 'undefined' && file.webkitRelativePath.includes('/')) {
-            const pathParts = file.webkitRelativePath.split('/');
-            console.log(`🔍 webkitRelativePath parts:`, pathParts);
-
-            if (pathParts.length >= 2) {
-              categoryName = pathParts[pathParts.length - 2];
-              detectionMethod = 'webkitRelativePath';
-              console.log(`✅ Detected category: "${categoryName}" from webkitRelativePath`);
-            }
-          }
-          // MÉTODO 3: originalname como último recurso
-          else if (file.originalname && file.originalname.includes('/')) {
-            const pathParts = file.originalname.split('/');
-            console.log(`🔍 originalname parts:`, pathParts);
-
-            if (pathParts.length >= 2) {
-              categoryName = pathParts[pathParts.length - 2];
-              detectionMethod = 'originalname';
-              console.log(`✅ Detected category: "${categoryName}" from originalname`);
-            }
-          }
-
-          // Log detalhado de debug para primeiros arquivos
-          if (totalProcessed < 3) {
-            console.log(`📁 File: ${file.originalname}`);
-            console.log(`   customPath: "${customPath || 'undefined'}"`);
-            console.log(`   webkitRelativePath: "${file.webkitRelativePath || 'undefined'}"`);
-            console.log(`   Detection: ${detectionMethod} → Category: "${categoryName}"`);
-            console.log(`   ---`);
           }
 
           // Estatísticas de debug
           if (categoryName === 'Mixed Category') {
             debugStats.failedDetections++;
+            console.log(`   ⚠️  Failed to detect category for: ${file.originalname}`);
           } else {
             debugStats.detectedCategories.add(categoryName);
           }
@@ -369,46 +380,89 @@ class ShipmentController {
             categoriesData[categoryName] = [];
           }
 
+          console.log(`   🔄 Converting to WebP...`);
+          
           // Converter para WebP se necessário
           let fileBuffer = file.buffer;
-          if (file.mimetype !== 'image/webp') {
-            fileBuffer = await sharp(file.buffer)
-              .webp({ quality: 90, effort: 4 })
-              .toBuffer();
+          try {
+            if (file.mimetype !== 'image/webp') {
+              fileBuffer = await sharp(file.buffer)
+                .webp({ quality: 90, effort: 4 })
+                .toBuffer();
+              console.log(`   ✅ WebP conversion successful (${fileBuffer.length} bytes)`);
+            } else {
+              console.log(`   ✅ File already WebP, skipping conversion`);
+            }
+          } catch (sharpError) {
+            console.error(`   ❌ Sharp conversion error:`, sharpError.message);
+            debugStats.sharpErrors++;
+            continue; // Skip this file
           }
 
           // Gerar nome único do arquivo
           const originalBaseName = path.parse(file.originalname.split('/').pop()).name;
           const fileName = `${originalBaseName}_${Date.now()}_${totalProcessed}.webp`;
+          console.log(`   📝 Generated filename: ${fileName}`);
 
           // Salvar na pasta do shipment preservando estrutura
           const categoryPath = path.join(shipment.folderPath, categoryName);
-          await fs.mkdir(categoryPath, { recursive: true });
+          console.log(`   📁 Category path: ${categoryPath}`);
+          
+          try {
+            await fs.mkdir(categoryPath, { recursive: true });
+            console.log(`   ✅ Category folder created/verified`);
+          } catch (mkdirError) {
+            console.error(`   ❌ Failed to create category folder:`, mkdirError.message);
+            debugStats.fsErrors++;
+            continue; // Skip this file
+          }
 
           const filePath = path.join(categoryPath, fileName);
-          await fs.writeFile(filePath, fileBuffer);
+          console.log(`   💾 Writing file to: ${filePath}`);
+          
+          try {
+            await fs.writeFile(filePath, fileBuffer);
+            console.log(`   ✅ File written successfully`);
+          } catch (writeError) {
+            console.error(`   ❌ Failed to write file:`, writeError.message);
+            debugStats.fsErrors++;
+            continue; // Skip this file
+          }
 
           categoriesData[categoryName].push({
             originalName: file.originalname,
             fileName: fileName,
             size: fileBuffer.length,
-            originalPath: customPath || file.webkitRelativePath || file.originalname,
+            originalPath: customPath || file.originalname,
             detectionMethod: detectionMethod
           });
 
           totalProcessed++;
+          console.log(`   ✅ File processed successfully (${totalProcessed}/${files.length})`);
 
         } catch (fileError) {
-          console.error(`Error processing file ${file.originalname}:`, fileError);
+          console.error(`❌ Error processing file ${file.originalname}:`, fileError.message);
+          console.error(`   Stack trace:`, fileError.stack);
         }
       }
 
       // Debug final
-      console.log('\n📊 RESULTADO DA DETECÇÃO:');
-      console.log(`   Categorias detectadas: ${debugStats.detectedCategories.size}`);
-      console.log(`   Lista: [${Array.from(debugStats.detectedCategories).join(', ')}]`);
-      console.log(`   Falhas de detecção: ${debugStats.failedDetections}`);
-      console.log(`   Total processado: ${totalProcessed}`);
+      console.log('\n📊 FINAL PROCESSING RESULTS:');
+      console.log(`   Total files processed: ${totalProcessed}/${files.length}`);
+      console.log(`   Categories detected: ${debugStats.detectedCategories.size}`);
+      console.log(`   Category list: [${Array.from(debugStats.detectedCategories).join(', ')}]`);
+      console.log(`   Failed detections: ${debugStats.failedDetections}`);
+      console.log(`   Sharp errors: ${debugStats.sharpErrors}`);
+      console.log(`   FS errors: ${debugStats.fsErrors}`);
+
+      if (totalProcessed === 0) {
+        console.log('❌ No files were processed successfully');
+        return res.status(400).json({
+          success: false,
+          message: 'No files could be processed',
+          debugInfo: debugStats
+        });
+      }
 
       // Atualizar shipment no banco
       const categories = Object.entries(categoriesData).map(([name, files]) => ({
@@ -417,12 +471,21 @@ class ShipmentController {
         processedPhotos: 0
       }));
 
-      shipment.categories = categories;
-      shipment.totalPhotos = totalProcessed;
-      await shipment.save();
+      console.log('\n💾 Updating shipment in database...');
+      try {
+        shipment.categories = categories;
+        shipment.totalPhotos = totalProcessed;
+        await shipment.save();
+        console.log('✅ Shipment updated in database');
+      } catch (dbError) {
+        console.error('❌ Failed to update shipment in database:', dbError.message);
+        // Continue anyway, files are already saved
+      }
 
-      console.log(`✅ Upload completed: ${totalProcessed} photos in ${categories.length} categories`);
-      console.log('📁 Categories found:', categories.map(c => `${c.name} (${c.photoCount} photos)`));
+      console.log(`\n🎉 Upload completed successfully!`);
+      console.log(`   Processed: ${totalProcessed} photos`);
+      console.log(`   Categories: ${categories.length}`);
+      console.log('📁 Categories:', categories.map(c => `${c.name} (${c.photoCount} photos)`));
 
       res.status(200).json({
         success: true,
@@ -430,16 +493,26 @@ class ShipmentController {
         categories: categories,
         debugInfo: {
           detectedCategories: Array.from(debugStats.detectedCategories),
-          failedDetections: debugStats.failedDetections
+          failedDetections: debugStats.failedDetections,
+          sharpErrors: debugStats.sharpErrors,
+          fsErrors: debugStats.fsErrors
         },
         message: `Successfully uploaded ${totalProcessed} photos in ${categories.length} folders`
       });
 
     } catch (error) {
-      console.error('❌ Error uploading photos:', error);
+      console.error('\n💥 CRITICAL ERROR in uploadPhotos:');
+      console.error('   Message:', error.message);
+      console.error('   Stack:', error.stack);
+      
       res.status(500).json({
         success: false,
-        message: `Error uploading photos: ${error.message}`
+        message: `Error uploading photos: ${error.message}`,
+        errorDetails: {
+          name: error.name,
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }
       });
     }
   }
