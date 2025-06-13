@@ -314,9 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(hideEmptyCategories, 5000);
 });
 
-// Modificar a função hideLoader para limpar o intervalo
 function hideLoader() {
   document.getElementById('loader').style.display = 'none';
+  document.body.classList.remove('loader-open'); // ← ADICIONAR ESTA LINHA
   
   // Limpar o intervalo de transição de mensagens
   if (window.messageInterval) {
