@@ -18,9 +18,9 @@
   padding: 20px;
   /* CORREÇÃO: Posicionamento fixo para ocupar toda altura da tela */
   position: fixed;
-  top: 0;
+  top: 60px;
   left: 0;
-  height: 100vh;
+  height: calc(100vh - 60px);
   max-height: 100vh;
   display: flex;
   flex-direction: column;
