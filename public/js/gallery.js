@@ -579,12 +579,12 @@ function loadMoreForCategory(categoryId, offset) {
           <div class="end-message">
             <p>Fim desta categoria. Explore outras categorias para mais opções!</p>
             <div class="category-navigation-buttons">
-              <button class="btn btn-outline-secondary btn-nav-arrow" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-                ←
-              </button>
-              <button class="btn btn-outline-gold btn-nav-arrow" onclick="navigateToNextCategoryMain('${categoryId}')">
-                →
-              </button>
+            <button class="btn btn-nav-arrow" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+              ‹
+            </button>
+            <button class="btn btn-nav-arrow" onclick="navigateToNextCategoryMain('${categoryId}')">
+              ›
+            </button>
             </div>
           </div>
         `;
