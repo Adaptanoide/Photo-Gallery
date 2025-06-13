@@ -1,26 +1,26 @@
 /* Tutorial Styles */
-
-/* BOTÕES NOVOS - SIMPLES E FUNCIONAIS */
+/* BOTÕES NOVOS - CORRIGIDO */
 .top-buttons {
   position: fixed;
   top: 10px;
   right: 10px;
   z-index: 1000;
+  display: flex;
+  gap: 10px;
 }
 
 #new-logout {
-  position: fixed;
+  position: static;  /* MUDANÇA: static em vez de fixed */
   background: #8b7355;
   color: white;
   border: none;
   padding: 8px 15px;
   border-radius: 20px;
-  margin-right: 10px;
   cursor: pointer;
 }
 
 #new-help {
-  position: fixed;
+  position: static;  /* MUDANÇA: static em vez de fixed */
   background: #d4af37;
   color: #333;
   border: none;
