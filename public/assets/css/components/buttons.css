@@ -233,37 +233,44 @@
   box-shadow: none !important;
 }
 
-/* Setas de navegação - apenas ícones puros */
+/* Setas de navegação - visíveis e elegantes */
 .btn-nav-arrow {
   background: none !important;
   border: none !important;
-  color: #666 !important;
-  min-width: 50px !important;  /* AUMENTADO de 30px para 50px */
-  width: 50px !important;      /* AUMENTADO de 30px para 50px */
-  height: 50px !important;     /* AUMENTADO de 30px para 50px */
+  color: #d4af37 !important;   /* COR DOURADA - mais visível */
+  min-width: 60px !important;  /* MAIOR ainda */
+  width: 60px !important;
+  height: 60px !important;
   border-radius: 0 !important;
   padding: 0 !important;
-  font-size: 32px !important;  /* AUMENTADO de 24px para 32px */
-  font-weight: 300 !important;
+  font-size: 40px !important;  /* SETA BEM GRANDE */
+  font-weight: 400 !important; /* Mais pesada */
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   line-height: 1 !important;
-  transition: color 0.2s ease !important;
+  transition: all 0.3s ease !important;
   cursor: pointer !important;
   outline: none !important;
   box-shadow: none !important;
-  margin: 0 15px !important;   /* NOVO: 15px de margem de cada lado */
+  margin: 0 25px !important;   /* ESPAÇAMENTO GRANDE - 50px entre setas */
+  opacity: 0.8 !important;
 }
 
 .btn-nav-arrow:hover {
   background: none !important;
   border: none !important;
-  color: #333 !important;
+  color: #c19b26 !important;   /* DOURADO MAIS ESCURO no hover */
   box-shadow: none !important;
+  opacity: 1 !important;       /* OPACIDADE TOTAL no hover */
+  transform: scale(1.1) !important; /* CRESCE 10% no hover */
 }
 
 .btn-nav-arrow:focus {
   outline: none !important;
   box-shadow: none !important;
+}
+
+.btn-nav-arrow:active {
+  transform: scale(0.95) !important; /* DIMINUI quando clica */
 }
