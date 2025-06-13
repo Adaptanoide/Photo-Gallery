@@ -83,6 +83,7 @@ function showSoldPhotoLightbox(photoId) {
   
   // Mostrar lightbox básico normalmente PRIMEIRO
   document.getElementById('lightbox').style.display = 'block';
+  document.body.classList.add('lightbox-open');
   
   // Configurar informações básicas
   document.getElementById('lightbox-name').innerHTML = 'Item No Longer Available';
@@ -641,6 +642,7 @@ function closeLightbox() {
   // ✅ CÓDIGO ORIGINAL (manter intacto)
   // Esconder o lightbox
   document.getElementById('lightbox').style.display = 'none';
+  document.body.classList.remove('lightbox-open');
 
   // Se estava visualizando a partir do carrinho, atualizar o modal
   if (viewingFromCart && cartModalOpen) {

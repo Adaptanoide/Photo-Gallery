@@ -271,6 +271,7 @@ function showCart() {
   if (cartIds.length === 0) {
     document.getElementById('cart-items').innerHTML = '<div class="empty-cart-message">Your selection is empty</div>';
     document.getElementById('cart-modal').style.display = 'block';
+    document.body.classList.add('cart-open');
     return;
   }
   
@@ -279,6 +280,7 @@ function showCart() {
   
   updateCartView();
   document.getElementById('cart-modal').style.display = 'block';
+  document.body.classList.add('cart-open');
 }
 
 // Remove an item from cart and update display

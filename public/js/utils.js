@@ -14,6 +14,11 @@ function closeModal(modalId) {
   
   if (modalId === 'cart-modal') {
     cartModalOpen = false;
+    document.body.classList.remove('cart-open');
+  }
+  
+  if (modalId === 'admin-panel-modal') {
+    document.body.classList.remove('admin-open');
   }
   
   // ✅ CORREÇÃO: Ao cancelar admin login, voltar para página de login

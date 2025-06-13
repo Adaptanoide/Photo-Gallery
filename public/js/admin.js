@@ -2,6 +2,7 @@
 // Load admin panel
 function loadAdminPanel() {
   document.getElementById('admin-panel-modal').style.display = 'block';
+  document.body.classList.add('admin-open');
   loadActiveCodes();
   setupResponsiveAdminPanel();
 

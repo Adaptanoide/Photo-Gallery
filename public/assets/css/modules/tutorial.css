@@ -284,3 +284,10 @@
     font-size: 2rem;
   }
 }
+
+/* ESCONDER header quando modals estão abertos */
+.cart-open .top-buttons,
+.admin-open .top-buttons,
+.lightbox-open .top-buttons {
+  display: none !important;
+}
