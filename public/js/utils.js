@@ -2,11 +2,12 @@
 // Show the loader
 function showLoader() {
   document.getElementById('loader').style.display = 'block';
+  document.body.classList.add('loader-open');
 }
 
-// Hide the loader
 function hideLoader() {
   document.getElementById('loader').style.display = 'none';
+  document.body.classList.remove('loader-open');
 }
 
 function closeModal(modalId) {

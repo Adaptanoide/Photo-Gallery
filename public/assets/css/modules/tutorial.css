@@ -289,6 +289,7 @@
 .cart-open .top-buttons,
 .admin-open .top-buttons,
 .lightbox-open .top-buttons,
-.success-open .top-buttons {
+.success-open .top-buttons,
+.loader-open .top-buttons {
   display: none !important;
 }
