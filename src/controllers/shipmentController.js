@@ -232,8 +232,11 @@ class ShipmentController {
     return multer({
       storage: storage,
       limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB por arquivo
-        files: 1000 // Máximo 1000 arquivos
+        fileSize: 100 * 1024 * 1024, // 100MB por arquivo (era 10MB)
+        files: 1000, // Máximo 1000 arquivos
+        fieldSize: 10 * 1024 * 1024, // 10MB para campos de texto
+        fieldNameSize: 1000, // Tamanho do nome do campo
+        fields: 50 // Máximo 50 campos não-file
       },
       fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
