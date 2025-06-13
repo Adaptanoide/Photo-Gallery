@@ -462,6 +462,18 @@
             <!-- Cabeçalho minimalista com contador discreto -->
             <div class="photo-storage-header">
               <h3>Photo Storage Management</h3>
+              
+              <!-- NOVA BARRA DE PESQUISA -->
+              <div class="admin-search-container">
+                <div class="search-input-wrapper">
+                  <input type="text" id="admin-photo-search" class="admin-search-input" placeholder="Search photos or categories..." autocomplete="off">
+                  <span class="search-icon">🔍</span>
+                </div>
+                <div id="admin-search-results" class="admin-search-results" style="display: none;">
+                  <!-- Resultados aparecerão aqui -->
+                </div>
+              </div>
+              
               <div class="discrete-stats">
                 <span id="discrete-photo-count">Loading...</span>
                 <button class="btn btn-secondary btn-sm" onclick="photoManager.refreshStructure()">Refresh</button>

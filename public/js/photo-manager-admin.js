@@ -25,6 +25,9 @@ const photoManager = {
 
       // NOVO: Ativar proteção contra saída
       this.setupUploadProtection();
+      
+      // NOVO: Inicializar pesquisa
+      this.setupAdminSearch();
     }
   },
 
@@ -2878,6 +2881,189 @@ const photoManager = {
     }
 
     console.log('✅ Direct modal events setup completed');
+  },
+
+  // NOVA FUNÇÃO: Configurar pesquisa do admin
+  setupAdminSearch() {
+    console.log('🔍 Setting up admin search...');
+    
+    const searchInput = document.getElementById('admin-photo-search');
+    const resultsDiv = document.getElementById('admin-search-results');
+    
+    if (!searchInput || !resultsDiv) {
+      console.warn('Search elements not found');
+      return;
+    }
+
+    // Pesquisa em tempo real
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.trim();
+      this.performAdminSearch(searchTerm);
+    });
+
+    // Fechar resultados ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+        resultsDiv.style.display = 'none';
+      }
+    });
+
+    // Focar na pesquisa ao clicar
+    searchInput.addEventListener('focus', (e) => {
+      if (e.target.value.trim()) {
+        this.performAdminSearch(e.target.value.trim());
+      }
+    });
+  },
+
+  // NOVA FUNÇÃO: Executar pesquisa
+  async performAdminSearch(searchTerm) {
+    const resultsDiv = document.getElementById('admin-search-results');
+    
+    if (!searchTerm || searchTerm.length < 2) {
+      resultsDiv.style.display = 'none';
+      return;
+    }
+
+    console.log(`🔍 Searching for: "${searchTerm}"`);
+    
+    try {
+      // Buscar em todas as categorias
+      const results = await this.searchPhotosAndCategories(searchTerm);
+      this.displaySearchResults(results, searchTerm);
+    } catch (error) {
+      console.error('Search error:', error);
+      resultsDiv.innerHTML = '<div class="search-no-results">Search error occurred</div>';
+      resultsDiv.style.display = 'block';
+    }
+  },
+
+  // NOVA FUNÇÃO: Buscar fotos e categorias
+  async searchPhotosAndCategories(searchTerm) {
+    const results = [];
+    const searchLower = searchTerm.toLowerCase();
+
+    // 1. Buscar categorias por nome
+    if (this.currentStructure) {
+      this.searchCategoriesRecursive(this.currentStructure, searchLower, results);
+    }
+
+    // 2. Buscar fotos por ID/nome em categorias que têm fotos
+    const leafFolders = this.getLeafFolders(this.currentStructure || []);
+    
+    for (const folder of leafFolders.slice(0, 10)) { // Limite inicial
+      try {
+        const response = await fetch(`/api/photos?category_id=${folder.id}&limit=100`);
+        if (response.ok) {
+          const photos = await response.json();
+          
+          photos.forEach(photo => {
+            const photoId = photo.id || '';
+            const photoName = photo.name || photoId;
+            
+            if (photoId.toLowerCase().includes(searchLower) || 
+                photoName.toLowerCase().includes(searchLower)) {
+              results.push({
+                type: 'photo',
+                photoId: photoId,
+                photoName: photoName,
+                categoryId: folder.id,
+                categoryName: folder.name
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.warn(`Error searching in folder ${folder.name}:`, error);
+      }
+    }
+
+    return results.slice(0, 20); // Máximo 20 resultados
+  },
+
+  // NOVA FUNÇÃO: Buscar categorias recursivamente
+  searchCategoriesRecursive(folders, searchTerm, results) {
+    folders.forEach(folder => {
+      if (folder.name.toLowerCase().includes(searchTerm)) {
+        results.push({
+          type: 'category',
+          categoryId: folder.id,
+          categoryName: folder.name,
+          photoCount: folder.fileCount || 0
+        });
+      }
+      
+      if (folder.children && folder.children.length > 0) {
+        this.searchCategoriesRecursive(folder.children, searchTerm, results);
+      }
+    });
+  },
+
+  // NOVA FUNÇÃO: Exibir resultados
+  displaySearchResults(results, searchTerm) {
+    const resultsDiv = document.getElementById('admin-search-results');
+    
+    if (results.length === 0) {
+      resultsDiv.innerHTML = `<div class="search-no-results">No results found for "${searchTerm}"</div>`;
+      resultsDiv.style.display = 'block';
+      return;
+    }
+
+    let html = '';
+    
+    results.forEach(result => {
+      if (result.type === 'category') {
+        html += `
+          <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="category">
+            <div class="search-result-photo">📁 ${result.categoryName}</div>
+            <div class="search-result-category">${result.photoCount} photos</div>
+          </div>
+        `;
+      } else if (result.type === 'photo') {
+        html += `
+          <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="photo">
+            <div class="search-result-photo">📸 ${result.photoName}</div>
+            <div class="search-result-category">in ${result.categoryName}</div>
+          </div>
+        `;
+      }
+    });
+
+    resultsDiv.innerHTML = html;
+    resultsDiv.style.display = 'block';
+  },
+
+  // NOVA FUNÇÃO: Abrir resultado da pesquisa
+  async openSearchResult(categoryId, categoryName) {
+    console.log(`🎯 Opening search result: ${categoryName} (${categoryId})`);
+    
+    // Fechar resultados da pesquisa
+    document.getElementById('admin-search-results').style.display = 'none';
+    
+    // Limpar campo de pesquisa
+    document.getElementById('admin-photo-search').value = '';
+    
+    // Abrir categoria
+    await this.openFolderModal(categoryId, categoryName);
+  },
+
+  // NOVA FUNÇÃO: Obter pastas com fotos
+  getLeafFolders(folders) {
+    const leafFolders = [];
+    
+    const collectLeaves = (folderList) => {
+      folderList.forEach(folder => {
+        if (folder.isLeaf && folder.fileCount > 0) {
+          leafFolders.push(folder);
+        }
+        if (folder.children && folder.children.length > 0) {
+          collectLeaves(folder.children);
+        }
+      });
+    };
+    
+    collectLeaves(folders);
+    return leafFolders;
   },
 
 };
