@@ -321,3 +321,37 @@
   border-top: 2px solid #eee !important;
   z-index: 100 !important;
 }
+
+/* ========================================= */
+/* ANIMAÇÃO PULSANTE PARA BOTÃO DETAILS */
+/* ========================================= */
+
+/* Animação pulsante discreta */
+@keyframes detailsPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+    border-color: #6c757d;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+    border-color: #6c757d;
+  }
+}
+
+/* Classe para ativar o pulso */
+.details-pulse {
+  animation: detailsPulse 2s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+/* Hover state mais elegante */
+.details-pulse:hover {
+  border-color: var(--color-gold) !important;
+  color: var(--color-gold) !important;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2) !important;
+  animation-play-state: paused;
+}
