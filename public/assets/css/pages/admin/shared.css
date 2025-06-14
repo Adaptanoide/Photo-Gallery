@@ -140,24 +140,24 @@
 }
 
 .btn-icon.delete-photo-btn {
-  color: #dc3545;
+  color: #d75c68;
 }
 
 .btn-icon.delete-photo-btn:hover {
-  background: #dc3545;
+  background: #d75c68;
   color: white;
   transform: scale(1.1);
 }
 
 .btn-danger {
-  background: #dc3545;
+  background: #d75c68;
   color: white;
-  border: 1px solid #dc3545;
+  border: 1px solid #d75c68;
 }
 
 .btn-danger:hover {
-  background: #c82333;
-  border-color: #bd2130;
+  background: #d75c68;
+  border-color: #d75c68;
   transform: translateY(-1px);
 }
 
