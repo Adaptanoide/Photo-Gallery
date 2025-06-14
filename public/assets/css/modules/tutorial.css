@@ -26,7 +26,7 @@
 
 #new-logout {
   position: static;
-  background: #8b7355;
+  background: #6f5c45;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -37,7 +37,7 @@
 }
 
 #new-logout:hover {
-  background: #7a6349;
+  background: #6f5c45;
   transform: translateY(-1px);
 }
 

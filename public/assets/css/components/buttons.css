@@ -24,12 +24,12 @@
 }
 
 .btn-secondary {
-  background: #5F4A38;
+  background: #6f5c45;
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #6B573F;
+  background: #6f5c45;
   transform: translateY(-2px);
 }
 
@@ -39,7 +39,7 @@
 }
 
 .btn-danger:hover {
-  background: #8B0000;
+  background: #d75c68;
   transform: translateY(-2px);
 }
 
@@ -88,7 +88,7 @@
 }
 
 .trash-button:hover {
-  background-color: #8B0000 !important;
+  background-color: #d75c68 !important;
 }
 
 /* Botões de ação nas tabelas */
