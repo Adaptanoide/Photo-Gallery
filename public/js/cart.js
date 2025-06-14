@@ -268,6 +268,9 @@ async function updateCartTotal(totalPrice) {
 function showCart() {
   cartModalOpen = true;
   
+  // Iniciar pulso quando carrinho abre
+  setTimeout(startDetailsPulse, 500);
+
   if (cartIds.length === 0) {
     document.getElementById('cart-items').innerHTML = '<div class="empty-cart-message">Your selection is empty</div>';
     document.getElementById('cart-modal').style.display = 'block';
@@ -1127,4 +1130,19 @@ async function renderBreakdownModal(breakdown) {
   `;
   
   container.innerHTML = html;
+}
+
+// CONTROLE BÁSICO DO PULSO DO BOTÃO DETAILS
+function startDetailsPulse() {
+  const detailsBtn = document.getElementById('details-btn');
+  if (detailsBtn) {
+    detailsBtn.classList.add('details-pulse');
+  }
+}
+
+function stopDetailsPulse() {
+  const detailsBtn = document.getElementById('details-btn');
+  if (detailsBtn) {
+    detailsBtn.classList.remove('details-pulse');
+  }
 }
