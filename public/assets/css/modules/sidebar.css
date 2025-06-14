@@ -13,7 +13,7 @@
   width: 280px;
   flex-shrink: 0;
   background-color: white;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 0 8px 0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
   /* CORREÇÃO: Posicionamento fixo para ocupar toda altura da tela */
