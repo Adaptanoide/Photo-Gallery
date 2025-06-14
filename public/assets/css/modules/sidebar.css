@@ -15,7 +15,7 @@
   background-color: white;
   border-radius: 0 0 8px 0;
   box-shadow: none;
-  padding: 48px 20px 20px 20px;
+  padding: 20px 20px 20px 20px;
   /* CORREÇÃO: Posicionamento fixo para ocupar toda altura da tela */
   position: fixed;
   top: 0;
