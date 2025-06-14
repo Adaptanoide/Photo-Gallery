@@ -185,7 +185,7 @@ const photoManager = {
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
 
-      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       const adminFolders = ['Waiting Payment', 'Sold'];
@@ -752,7 +752,7 @@ const photoManager = {
       folderDiv.className = 'move-folder-item';
       folderDiv.style.paddingLeft = `${level * 20}px`;
 
-      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       folderDiv.innerHTML = `
@@ -1609,7 +1609,7 @@ const photoManager = {
       folderDiv.className = 'upload-folder-item';
       folderDiv.style.paddingLeft = `${level * 20}px`;
 
-      const icon = folder.isLeaf ? '📄' : (folder.children.length > 0 ? '📁' : '📂');
+      const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       folderDiv.innerHTML = `
@@ -2553,7 +2553,7 @@ const photoManager = {
       folderDiv.className = 'parent-folder-item';
       folderDiv.style.paddingLeft = `${(level + 1) * 20}px`;
 
-      const icon = folder.isLeaf ? '📄' : '📁';
+      const icon = folder.isLeaf ? '📂' : '📁';
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       folderDiv.innerHTML = `
