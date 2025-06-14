@@ -15,12 +15,12 @@
   background-color: white;
   border-radius: 0 0 8px 0;
   box-shadow: none;
-  padding: 20px;
+  padding: 80px 20px 20px 20px;
   /* CORREÇÃO: Posicionamento fixo para ocupar toda altura da tela */
   position: fixed;
-  top: 60px;
+  top: 0;
   left: 0;
-  height: calc(100vh - 60px);
+  height: 100vh;
   max-height: 100vh;
   display: flex;
   flex-direction: column;
