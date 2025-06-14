@@ -20,8 +20,9 @@
   position: fixed;
   top: 0;
   left: 0;
+  bottom: 0;
   height: 100vh;
-  max-height: none;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   z-index: 1500;
