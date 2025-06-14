@@ -55,9 +55,7 @@ async function sendOrderConfirmation(customerName, orderDetails) {
           <p><strong>Local:</strong> /storage/cache/fotos/imagens-webp/Waiting Payment/${orderDetails.folderName}</p>
           
           ${categorySummaryHTML}
-          
-          <p><strong>Observações:</strong> ${orderDetails.comments || 'Nenhuma observação'}</p>
-          
+                    
           <div style="margin: 25px 0; text-align: center;">
             <a href="${adminPanelLink}" style="background-color: #D4AF37; color: #212529; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
               Acessar Painel Administrativo

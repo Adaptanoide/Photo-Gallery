@@ -345,7 +345,7 @@ function showRemovedNotification(photoName) {
 
 // MODIFIED: Submit order function - replace Firebase doc.get() 
 function submitOrder() {
-  const comments = document.getElementById('observations').value.trim();
+  const comments = ''; // Removed special instructions functionality
   
   if (!currentCustomerCode) {
     alert('Session error. Please refresh the page and try again.');
