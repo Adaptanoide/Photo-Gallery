@@ -246,7 +246,7 @@
   background: rgba(255, 255, 255, 0.98) !important;
   backdrop-filter: blur(10px) !important;
   border-top: 1px solid rgba(212, 175, 55, 0.2) !important;
-  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: none !important;
   z-index: 5 !important; /* Abaixo do sidebar (z-index: 10) */
   padding: 15px 20px !important;
   margin: 0 !important;

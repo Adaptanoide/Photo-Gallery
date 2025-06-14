@@ -10,7 +10,7 @@
   background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,248,248,0.95));
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: none;
   z-index: 1000;
   display: none; /* ADICIONAR: escondido por padrão */
   justify-content: flex-end;
