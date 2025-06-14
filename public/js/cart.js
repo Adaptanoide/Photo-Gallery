@@ -275,6 +275,7 @@ function showCart() {
     document.getElementById('cart-items').innerHTML = '<div class="empty-cart-message">Your selection is empty</div>';
     document.getElementById('cart-modal').style.display = 'block';
     document.body.classList.add('cart-open');
+    document.body.classList.add('modal-cart-open');
     return;
   }
   
@@ -362,6 +363,8 @@ function submitOrder() {
   
   showLoader();
   
+  document.body.classList.add('modal-submit-order');
+
   // MODIFIED: Get customer name from MongoDB instead of Firebase
   fetch(`/api/db/customerCodes/${currentCustomerCode}`)
     .then(response => {
@@ -387,6 +390,7 @@ function processOrder(customerName, comments) {
   .then(function(result) {
     hideLoader();
     closeModal('cart-modal');
+    document.body.classList.remove('modal-submit-order');
     
     if (result.success) {
       // Limpar seleções na interface

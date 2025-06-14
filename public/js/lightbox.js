@@ -143,6 +143,7 @@ function openLightbox(index, fromCart = false) {
   currentPhotoIndex = index;
   const photo = photos[index];
   viewingFromCart = fromCart;
+  document.body.classList.add('modal-photo-fullscreen');
 
   // Show or hide the return to cart button
   document.querySelector('.return-to-cart').style.display = fromCart ? 'block' : 'none';
@@ -664,6 +665,7 @@ function closeLightbox() {
   }
 
   viewingFromCart = false;
+  document.body.classList.remove('modal-photo-fullscreen');
 }
 
 // 🔧 NOVA FUNÇÃO: Verificar e remover fotos vendidas da interface

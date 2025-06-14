@@ -16,6 +16,7 @@ function closeModal(modalId) {
   if (modalId === 'cart-modal') {
     cartModalOpen = false;
     document.body.classList.remove('cart-open');
+    document.body.classList.remove('modal-cart-open');
   }
   
   if (modalId === 'admin-panel-modal') {

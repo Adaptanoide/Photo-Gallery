@@ -210,3 +210,10 @@
   background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
   background-attachment: local, local, scroll, scroll;
 }
+
+/* ===== ESCONDER SIDEBAR EM SITUAÇÕES ESPECÍFICAS ===== */
+body.modal-cart-open .category-sidebar,
+body.modal-photo-fullscreen .category-sidebar,
+body.modal-submit-order .category-sidebar {
+  display: none !important;
+}
