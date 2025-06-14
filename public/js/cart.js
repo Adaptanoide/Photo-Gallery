@@ -232,15 +232,15 @@ async function updateCartTotal(totalPrice) {
     let summaryHtml = `
       <div class="cart-summary" style="margin-top: 5px; margin-bottom: 0;">
         <div class="luxury-divider"></div>
-    `;
-    
-    // Mostrar subtotal se houver desconto
-    if (discountPercent > 0) {
-      summaryHtml += `
         <div style="display: flex; justify-content: space-between; padding: 4px 5px; color: #666;">
           <span>Subtotal (${photoQuantity} photos):</span>
           <span>$${totalPrice.toFixed(2)}</span>
         </div>
+    `;
+    
+    // Mostrar desconto apenas se houver
+    if (discountPercent > 0) {
+      summaryHtml += `
         <div style="display: flex; justify-content: space-between; padding: 4px 5px; color: #e74c3c;">
           <span>Volume Discount (${discountPercent}%):</span>
           <span>-$${discountAmount.toFixed(2)}</span>
