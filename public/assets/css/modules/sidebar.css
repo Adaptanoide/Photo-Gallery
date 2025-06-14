@@ -214,6 +214,7 @@
 /* ===== ESCONDER SIDEBAR EM SITUAÇÕES ESPECÍFICAS ===== */
 body.modal-cart-open .category-sidebar,
 body.modal-photo-fullscreen .category-sidebar,
-body.modal-submit-order .category-sidebar {
+body.modal-submit-order .category-sidebar,
+body.success-open .category-sidebar {
   display: none !important;
 }
