@@ -67,6 +67,7 @@
     }
   </style>
 </head>
+
 <body>
   <!-- BOTÕES NOVOS - TOPO DA PÁGINA -->
   <div class="top-buttons">
@@ -108,12 +109,9 @@
   <!-- Cart Modal -->
   <div id="cart-modal" class="modal cart-modal">
     <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0;">Your Selection</h2>
-      <button id="details-btn" class="btn btn-outline-secondary" onclick="showOrderBreakdown()" style="font-size: 12px; padding: 6px 12px;">
-        📊 Details
-      </button>
-    </div>
+      <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Your Selection</h2>
+      </div>
       <div id="cart-items-container">
         <div id="cart-items">
           <!-- Cart items will be added here -->
@@ -121,10 +119,16 @@
       </div>
 
       <!-- Criar novo container para o total FORA da área de scroll -->
-    <div id="cart-total-container"></div>
-    <div style="display: flex; justify-content: flex-end; gap: 15px;">
-        <button class="btn btn-secondary" onclick="closeModal('cart-modal')">Cancel</button>
-        <button class="btn btn-gold" onclick="submitOrder()">Submit Order</button>
+      <div id="cart-total-container"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+        <button id="details-btn" class="btn btn-outline-secondary" onclick="showOrderBreakdown()"
+          style="font-size: 12px; padding: 6px 12px;">
+          📊 Details
+        </button>
+        <div style="display: flex; gap: 15px;">
+          <button class="btn btn-secondary" onclick="closeModal('cart-modal')">Cancel</button>
+          <button class="btn btn-gold" onclick="submitOrder()">Submit Order</button>
+        </div>
       </div>
     </div>
   </div>
@@ -343,15 +347,13 @@
             </div>
             <div class="admin-stats-section">
               <span id="price-header-stats" class="header-stats">Loading...</span>
-              <button class="btn btn-gold btn-sm" onclick="openBulkActionsModal()" 
-                      style="margin-left: 10px; padding: 5px 10px; font-size: 12px;" 
-                      title="Bulk price actions">
+              <button class="btn btn-gold btn-sm" onclick="openBulkActionsModal()"
+                style="margin-left: 10px; padding: 5px 10px; font-size: 12px;" title="Bulk price actions">
                 📊 Bulk Actions
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="refreshPriceCounters()" 
-                      style="margin-left: 8px; padding: 5px 10px; font-size: 12px;" 
-                      title="Refresh photo counters">
-                   Refresh
+              <button class="btn btn-secondary btn-sm" onclick="refreshPriceCounters()"
+                style="margin-left: 8px; padding: 5px 10px; font-size: 12px;" title="Refresh photo counters">
+                Refresh
               </button>
             </div>
           </div>
@@ -363,14 +365,16 @@
         </div>
 
         <style>
-        .admin-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px; /* MUDANÇA: Reduzido de 15px para 10px */
-          padding: 0 2px;
-          flex-shrink: 0; /* ADICIONADO: Não comprime */
-        }
+          .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            /* MUDANÇA: Reduzido de 15px para 10px */
+            padding: 0 2px;
+            flex-shrink: 0;
+            /* ADICIONADO: Não comprime */
+          }
 
           .admin-title-section {
             flex: 1;
@@ -451,18 +455,19 @@
             <!-- Cabeçalho minimalista com contador discreto -->
             <div class="photo-storage-header">
               <h3>Photo Storage Management</h3>
-              
+
               <!-- NOVA BARRA DE PESQUISA -->
               <div class="admin-search-container">
                 <div class="search-input-wrapper">
-                  <input type="text" id="admin-photo-search" class="admin-search-input" placeholder="Search photos or categories..." autocomplete="off">
+                  <input type="text" id="admin-photo-search" class="admin-search-input"
+                    placeholder="Search photos or categories..." autocomplete="off">
                   <span class="search-icon">🔍</span>
                 </div>
                 <div id="admin-search-results" class="admin-search-results" style="display: none;">
                   <!-- Resultados aparecerão aqui -->
                 </div>
               </div>
-              
+
               <div class="discrete-stats">
                 <span id="discrete-photo-count">Loading...</span>
                 <button class="btn btn-secondary btn-sm" onclick="photoManager.refreshStructure()">Refresh</button>
@@ -644,8 +649,8 @@
 
       <div class="form-group">
         <label for="bulk-value-modal">Value:</label>
-        <input type="number" id="bulk-value-modal" class="form-control" 
-               placeholder="Enter value" step="0.01" style="font-size: 16px;">
+        <input type="number" id="bulk-value-modal" class="form-control" placeholder="Enter value" step="0.01"
+          style="font-size: 16px;">
         <small class="form-text text-muted">
           <span id="bulk-help-text">Enter the new fixed price for all selected categories</span>
         </small>
@@ -701,7 +706,7 @@
   <!-- Order Details Modal - ESTRUTURA OTIMIZADA -->
   <div id="order-details-modal" class="modal">
     <div class="modal-content order-details-modal-content">
-      
+
       <!-- CABEÇALHO FIXO -->
       <div class="order-details-header">
         <h2>Order Details</h2>
@@ -713,7 +718,7 @@
             <p><strong>Client:</strong> <span id="order-client"></span></p>
             <p><strong>Date:</strong> <span id="order-date"></span></p>
           </div>
-          
+
           <div class="luxury-divider"></div>
           <h3 class="section-title">Items by Category</h3>
         </div>
@@ -729,7 +734,7 @@
       <!-- FOOTER FIXO - SEMPRE VISÍVEL -->
       <div class="order-details-footer">
         <div class="luxury-divider"></div>
-        
+
         <div class="order-totals">
           <div class="order-total-row">
             <span><strong>Total Items:</strong></span>
@@ -748,7 +753,7 @@
         </div>
 
         <div class="luxury-divider"></div>
-        
+
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
         </div>
