@@ -285,6 +285,7 @@ function showCart() {
   updateCartView();
   document.getElementById('cart-modal').style.display = 'block';
   document.body.classList.add('cart-open');
+  document.body.classList.add('modal-cart-open');
 }
 
 // Remove an item from cart and update display
