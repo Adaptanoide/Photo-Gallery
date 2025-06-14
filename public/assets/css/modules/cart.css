@@ -283,3 +283,41 @@
   background: white !important;
   z-index: 10 !important;
 }
+
+/* ========================================= */
+/* CORREÇÃO FINAL - LAYOUT FIXO DO CARRINHO */
+/* ========================================= */
+
+/* Modal com altura fixa */
+#cart-modal .modal-content {
+  max-width: 800px !important;
+  width: 90% !important;
+  height: 80vh !important;
+  max-height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 25px !important;
+  overflow: hidden !important;
+}
+
+/* Container de totais com altura fixa */
+#cart-total-container {
+  flex: 0 0 auto !important;
+  min-height: 80px !important;
+  margin: 15px 0 !important;
+}
+
+/* Botões SEMPRE no bottom - posição absoluta */
+#cart-modal div[style*="justify-content: flex-end"] {
+  position: absolute !important;
+  bottom: 25px !important;
+  right: 25px !important;
+  left: 25px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 15px !important;
+  background: white !important;
+  padding-top: 15px !important;
+  border-top: 2px solid #eee !important;
+  z-index: 100 !important;
+}
