@@ -4,12 +4,12 @@
 :root {
   /* Cores */
   --color-dark: #262a2e;
-  --color-gold: #c4af6b;
-  --color-gold-light: #e9d998;
+  --color-gold: #d3b861;
+  --color-gold-light: #d3b861;
   --color-cream: #F8F5F0;
-  --color-taupe: #8b7355;
+  --color-taupe: #7e664a;
   --color-charcoal: #36454F;
-  --color-danger: #974545;
+  --color-danger: #b45a5a;
   
   /* Sombras */
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.08);
