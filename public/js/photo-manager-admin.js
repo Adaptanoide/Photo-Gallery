@@ -2590,10 +2590,16 @@ const photoManager = {
     console.log(`📁 Selected parent: ${folderName} (${folderId})`);
   },
 
-  toggleParentSelector() {
+  async toggleParentSelector() {
     const selector = document.getElementById('parent-selector');
     const isVisible = selector.style.display !== 'none';
-    selector.style.display = isVisible ? 'none' : 'block';
+    
+    if (isVisible) {
+      selector.style.display = 'none';
+    } else {
+      selector.style.display = 'block';
+      await this.loadParentFolders();
+    }
   },
 
   async createNewFolder() {
