@@ -3,13 +3,13 @@
 
 :root {
   /* Cores */
-  --color-dark: #212529;
-  --color-gold: #D4AF37;
+  --color-dark: #262a2e;
+  --color-gold: #c4af6b;
   --color-gold-light: #e9d998;
   --color-cream: #F8F5F0;
-  --color-taupe: #483C32;
+  --color-taupe: #8b7355;
   --color-charcoal: #36454F;
-  --color-danger: #A52A2A;
+  --color-danger: #974545;
   
   /* Sombras */
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.08);

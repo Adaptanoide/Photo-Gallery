@@ -269,9 +269,9 @@
 .category-nav-button--primary,
 .category-nav-button--secondary {
   padding: 12px 24px !important;
-  border: 1px solid var(--color-taupe) !important; /* ✅ CORRIGIDO: Cor exata do logout */
+  border: 1px solid #8b7355 !important;
   border-radius: 25px !important;
-  background: var(--color-taupe) !important; /* ✅ CORRIGIDO: Fundo igual logout */
+  background: #8b7355 !important;
   color: white !important;
   font-weight: 600 !important;
   font-size: 0.95rem !important;
@@ -280,7 +280,7 @@
   min-width: 150px !important;
   text-align: center !important;
   font-family: inherit !important;
-  box-shadow: 0 2px 8px rgba(72, 60, 50, 0.3) !important; /* ✅ CORRIGIDO: Shadow com cor taupe */
+  box-shadow: 0 2px 8px rgba(72, 60, 50, 0.3) !important;
 }
 
 .category-nav-button:hover,
@@ -296,7 +296,7 @@
 .category-nav-button:active,
 .category-nav-button--primary:active,
 .category-nav-button--secondary:active {
-  background: var(--color-taupe) !important; /* ✅ CORRIGIDO: Active igual base */
+  background: #8b7355 !important; /* ✅ CORRIGIDO: Active igual base */
   color: white !important;
   transform: translateY(0) !important;
 }
@@ -379,7 +379,7 @@
   .category-nav-button--secondary {
     min-width: 200px !important;
     padding: 14px 20px !important;
-    background: var(--color-taupe) !important; /* ✅ CORRIGIDO: Manter taupe em mobile */
+    background: #8b7355 !important; /* ✅ CORRIGIDO: Manter taupe em mobile */
     color: white !important; /* Manter texto branco */
   }
   
