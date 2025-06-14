@@ -114,14 +114,14 @@
   text-align: left;
   font-weight: 600;
   color: #333;
-  font-size: 13px;
+  font-size: 16x;
   white-space: nowrap;
   border-right: none; /* REMOVIDO: Sem bordas verticais */
 }
 
 .price-table th:last-child {
   border-right: none;
-  text-align: right;
+  text-align: center;
 }
 
 /* TBODY com scroll único e suave + ACABAMENTO NO FINAL */
@@ -249,13 +249,13 @@
 .price-table th.price-column,
 .price-table td.price-column {
   flex: 0 0 150px;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .price-table th.actions-column,
 .price-table td.actions-column {
   flex: 0 0 180px;
-  justify-content: flex-end;
+  justify-content: center;
   padding-right: 10px !important;
 }
 
@@ -291,11 +291,11 @@
 /* Botões de ação - ALINHADOS À DIREITA COM ESPAÇAMENTO */
 .action-btn {
   background: var(--color-gold);
-  color: white;
+  color: var(--color-dark);
   border: none;
-  padding: 6px 10px;
+  padding: 6px 14px;
   border-radius: 3px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   margin-left: 6px;

@@ -418,16 +418,15 @@
 
 #active-codes-list table th:nth-child(3),
 #active-codes-list table td:nth-child(3) {
-  width: 120px !important; /* Created */
   text-align: center !important;
   color: #666;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 #active-codes-list table th:nth-child(4),
 #active-codes-list table td:nth-child(4) {
   width: 200px !important; /* Actions */
-  text-align: right !important; /* Mover para a direita */
+  text-align: center !important; /* Mover para a direita */
   padding-right: 15px !important;
 }
 
@@ -441,8 +440,8 @@
 
 /* Melhorar aparência dos botões */
 #active-codes-list .action-btn {
-  font-size: 11px !important;
-  padding: 5px 10px !important;
+  font-size: 14px !important;
+  padding: 7px 15px !important;
   border-radius: 4px !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
