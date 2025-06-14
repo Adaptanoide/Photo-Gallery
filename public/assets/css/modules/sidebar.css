@@ -110,14 +110,14 @@
 .category-item:hover {
   background-color: rgba(0, 0, 0, 0.05);
   transform: translateX(5px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .category-item.active {
   background-color: var(--color-gold);
   color: var(--color-dark);
   font-weight: 600;
-  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.4);
+  box-shadow: none;
   transform: translateX(5px);
 }
 
@@ -166,7 +166,7 @@
     max-height: 250px;
     margin-bottom: 20px;
     border-radius: 8px;
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
     margin-left: 15px;
     margin-right: 15px;
     width: calc(100% - 30px);
