@@ -132,3 +132,14 @@ div[id^="category-section-"] {
     gap: 10px !important;
   }
 }
+
+/* FORÇA SIDEBAR EDGE-TO-EDGE */
+.category-sidebar {
+  height: 100vh !important;
+  max-height: none !important;
+  min-height: 100vh !important;
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  z-index: 1500 !important;
+}
