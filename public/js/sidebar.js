@@ -1486,13 +1486,20 @@ function getTotalPhotos(categoryId) {
 
 // ✅ ADICIONAR NO FINAL DO sidebar.js - Controle simples de scroll
 
-// Função simples para controlar visibilidade do More Photos
+// ✅ NOVA FUNÇÃO: Inicializar scroll no container correto
 function initScrollMorePhotos() {
-  // Remover listener anterior se existir
-  window.removeEventListener('scroll', handleScrollMorePhotos);
+  const contentElement = document.getElementById('content');
+  if (!contentElement) {
+    console.log('❌ Container #content não encontrado para scroll');
+    return;
+  }
   
-  // Adicionar novo listener
-  window.addEventListener('scroll', handleScrollMorePhotos);
+  // Remover listener anterior se existir
+  contentElement.removeEventListener('scroll', handleScrollMorePhotos);
+  
+  // Adicionar novo listener NO CONTAINER
+  contentElement.addEventListener('scroll', handleScrollMorePhotos);
+  console.log('✅ Scroll listener adicionado ao container #content');
 }
 
 // ✅ NOVA FUNÇÃO: Infinite scroll no container correto
