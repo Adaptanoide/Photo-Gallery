@@ -148,12 +148,12 @@
 }
 
 .folder-action-btn.delete-btn {
+  background: transparent;
+  color: #dc3545;
+}
+.folder-action-btn.delete-btn:hover {
   background: #dc3545;
   color: white;
-}
-
-.folder-action-btn.delete-btn:hover {
-  background: #c82333;
   transform: scale(1.05);
 }
 
