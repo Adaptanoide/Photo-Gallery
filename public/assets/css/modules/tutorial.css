@@ -26,38 +26,46 @@
 
 #new-logout {
   position: static;
-  background: #6f5c45;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 25px;
+  display: flex;
+  padding: 10px 16px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid #F9F7ED;
+  background: #F9F7ED;
+  color: #5D3C26;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 500;
   transition: all 0.3s ease;
 }
-
 #new-logout:hover {
-  background: #6f5c45;
-  transform: translateY(-1px);
+  background: #F0EDE3;
+  color: #5D3C26;
+  transform: none;
 }
-
 #new-help {
   position: static;
-  background: #d4af37;
-  color: #333;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  border: 1px solid #F9F7ED;
+  background: #F9F7ED;
+  color: #5D3C26;
+  font-family: 'Nunito', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
   transition: all 0.3s ease;
 }
-
 #new-help:hover {
-  background: #c19b26;
-  transform: scale(1.1);
+  background: #F0EDE3;
+  color: #5D3C26;
+  transform: none;
 }
 
 .tutorial-container {
