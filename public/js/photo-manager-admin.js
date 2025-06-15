@@ -2575,8 +2575,10 @@ const photoManager = {
     event.target.closest('.parent-folder-item').classList.add('selected');
 
     this.selectedParentFolder = folderId;
-    document.getElementById('selected-parent-name').textContent = folderName;
-
+    const selectedParentElement = document.getElementById('selected-parent-name');
+    if (selectedParentElement) {
+      selectedParentElement.textContent = folderName;
+    }
     console.log(`📁 Selected parent: ${folderName} (${folderId})`);
   },
 
