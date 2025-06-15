@@ -1273,8 +1273,13 @@ function loadPhotosSequentially(photos, container, startDelay = 150) {
   }, photos.length * startDelay + 500);
 }
 
-// Função 5: Melhorar feedback do botão More Photos
 function enhanceMorePhotosButton(button, isLoading = false) {
+  // ✅ VERIFICAR se botão existe (para infinite scroll)
+  if (!button) {
+    console.log('⚠️ enhanceMorePhotosButton: botão não fornecido (infinite scroll)');
+    return;
+  }
+  
   if (isLoading) {
     button.innerHTML = '🔄 Loading Photos...';
     button.disabled = true;
@@ -1490,7 +1495,7 @@ function initScrollMorePhotos() {
   window.addEventListener('scroll', handleScrollMorePhotos);
 }
 
-// ✅ NOVA FUNÇÃO: Infinite scroll automático
+// ✅ NOVA FUNÇÃO: Infinite scroll no container correto
 function handleScrollMorePhotos() {
   // Verificar se há uma categoria ativa e se não está carregando
   if (!activeCategory || isLoadingMorePhotos) {
@@ -1499,15 +1504,23 @@ function handleScrollMorePhotos() {
   
   console.log('🔄 Verificando scroll para infinite loading...');
   
-  // Calcular posição do scroll
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  const windowHeight = window.innerHeight;
-  const documentHeight = document.documentElement.scrollHeight;
+  // ✅ DETECTAR SCROLL DO CONTAINER CORRETO (#content)
+  const contentElement = document.getElementById('content');
+  if (!contentElement) {
+    console.log('❌ Container #content não encontrado');
+    return;
+  }
   
-  // Calcular distância do final  
-  const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+  // Calcular posição do scroll DO CONTAINER
+  const scrollTop = contentElement.scrollTop;
+  const containerHeight = contentElement.clientHeight;
+  const scrollHeight = contentElement.scrollHeight;
+  
+  // Calcular distância do final DO CONTAINER
+  const distanceFromBottom = scrollHeight - (scrollTop + containerHeight);
   const triggerDistance = 300; // Carregar quando está a 300px do final
   
+  console.log(`📏 Container scroll - Top: ${scrollTop}, Height: ${containerHeight}, ScrollHeight: ${scrollHeight}`);
   console.log(`📏 Distância do final: ${distanceFromBottom}px`);
   
   // Carregar automaticamente quando próximo do final
@@ -1518,7 +1531,7 @@ function handleScrollMorePhotos() {
     const categoryCache = getCategoryCache(activeCategory);
     if (categoryCache && categoryCache.hasMore !== false) {
       console.log(`📸 Carregando mais fotos da categoria: ${activeCategory}`);
-      loadMorePhotosAutomatically(activeCategory);
+      loadMorePhotosAutomaticamente(activeCategory);
     } else {
       console.log('📭 Não há mais fotos para carregar nesta categoria');
     }
