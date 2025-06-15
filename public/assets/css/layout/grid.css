@@ -143,3 +143,44 @@ div[id^="category-section-"] {
   bottom: 0 !important;
   z-index: 1500 !important;
 }
+
+/* ===== SCROLLBAR CUSTOMIZADA - TEMA BEGE/MARROM ===== */
+
+/* Scrollbar principal da content-area */
+.content-area::-webkit-scrollbar,
+#content::-webkit-scrollbar,
+.gallery::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-area::-webkit-scrollbar-track,
+#content::-webkit-scrollbar-track,
+.gallery::-webkit-scrollbar-track {
+  background: #F9F7ED;
+  border-radius: 4px;
+  border: 1px solid #F0EDE3;
+}
+
+.content-area::-webkit-scrollbar-thumb,
+#content::-webkit-scrollbar-thumb,
+.gallery::-webkit-scrollbar-thumb {
+  background: #D4C5A0;
+  border-radius: 4px;
+  border: 1px solid #C5B893;
+  transition: all 0.3s ease;
+}
+
+.content-area::-webkit-scrollbar-thumb:hover,
+#content::-webkit-scrollbar-thumb:hover,
+.gallery::-webkit-scrollbar-thumb:hover {
+  background: #5D3C26;
+  border-color: #4A2E1A;
+}
+
+/* Firefox support */
+.content-area,
+#content,
+.gallery {
+  scrollbar-width: thin;
+  scrollbar-color: #D4C5A0 #F9F7ED;
+}
