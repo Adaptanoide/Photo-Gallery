@@ -451,7 +451,6 @@
   transform: translateY(-1px) !important;
 }
 
-/* Botão de lixeira mais compacto */
 #active-codes-list .trash-button {
   width: 32px !important;
   min-width: 32px !important;
@@ -459,6 +458,13 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  background: transparent !important;
+  color: #d75c68 !important;
+}
+
+#active-codes-list .trash-button:hover {
+  background: #d75c68 !important;
+  color: white !important;
 }
 
 /* Melhorar hover das linhas */
