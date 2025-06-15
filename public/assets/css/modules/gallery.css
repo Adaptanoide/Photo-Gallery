@@ -303,7 +303,9 @@
   transform: translateY(0) !important;
 }
 
-/* More Photos Button - Estilo dourado original + controle de scroll */
+/* 
+COMENTADO - Botão More Photos removido para infinite scroll
+More Photos Button - Estilo dourado original + controle de scroll
 .load-more-btn.modern {
   position: fixed !important;
   bottom: 80px !important;
@@ -312,14 +314,13 @@
   z-index: 6 !important;
   text-align: center !important;
   pointer-events: none !important;
-  /* Inicialmente escondido */
   opacity: 0 !important;
   visibility: hidden !important;
   transform: translateY(20px) !important;
   transition: all 0.3s ease !important;
 }
 
-/* Classe para mostrar o botão */
+Classe para mostrar o botão
 .load-more-btn.modern.show {
   opacity: 1 !important;
   visibility: visible !important;
@@ -327,9 +328,8 @@
 }
 
 .load-more-btn.modern .btn-load-more {
-  /* Estilo dourado original */
   background: linear-gradient(135deg, var(--color-gold) 0%, #e9d998 100%) !important;
-  color: var(--color-dark) !important; /* Texto escuro como antes */
+  color: var(--color-dark) !important;
   border: none !important;
   padding: 14px 28px !important;
   border-radius: 50px !important;
@@ -348,6 +348,7 @@
   box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4) !important;
   background: linear-gradient(135deg, #e9d998 0%, var(--color-gold) 100%) !important;
 }
+*/
 
 .load-more-btn.modern .btn-load-more:active {
   transform: translateY(0) !important;
