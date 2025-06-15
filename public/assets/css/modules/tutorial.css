@@ -52,8 +52,8 @@
   height: 44px;
   justify-content: center;
   align-items: center;
-  border-radius: 8px;
-  border: 1px solid #F9F7ED;
+  border-radius: 50%;
+  border: 2px solid #5D3C26;
   background: #F9F7ED;
   color: #5D3C26;
   font-family: 'Nunito', sans-serif;
@@ -63,8 +63,8 @@
   transition: all 0.3s ease;
 }
 #new-help:hover {
-  background: #F0EDE3;
-  color: #5D3C26;
+  background: #5D3C26;
+  color: #F9F7ED;
   transform: none;
 }
 
