@@ -10,49 +10,6 @@ function getCategoryCache(categoryId) {
   return categoryPhotoCache[categoryId] || null;
 }
 
-// ✅ NOVA FUNÇÃO: Carregamento automático para infinite scroll
-function loadMorePhotosAutomatically(categoryId) {
-  // Evitar múltiplos carregamentos simultâneos
-  if (isLoadingMorePhotos) {
-    console.log('⏳ Já está carregando fotos, aguardando...');
-    return;
-  }
-
-  // Marcar como carregando
-  isLoadingMorePhotos = true;
-  console.log(`🔄 Iniciando carregamento automático para categoria: ${categoryId}`);
-
-  // Obter cache da categoria
-  const categoryCache = getCategoryCache(categoryId);
-  if (!categoryCache) {
-    console.log('❌ Cache da categoria não encontrado');
-    isLoadingMorePhotos = false;
-    return;
-  }
-
-  // Calcular próximo batch
-  const currentOffset = categoryCache.totalLoaded || 0;
-  const batchSize = 15; // Carregar 15 fotos por vez
-
-  console.log(`📊 Carregando batch: offset=${currentOffset}, size=${batchSize}`);
-
-  // Mostrar indicador discreto de carregamento
-  showDiscreteLoadingIndicator();
-
-  // Usar a função existente de carregamento com efeitos
-  loadMorePhotosWithEffects(categoryId, currentOffset, batchSize)
-    .then(() => {
-      console.log('✅ Carregamento automático concluído');
-      hideDiscreteLoadingIndicator();
-      isLoadingMorePhotos = false;
-    })
-    .catch((error) => {
-      console.error('❌ Erro no carregamento automático:', error);
-      hideDiscreteLoadingIndicator();
-      isLoadingMorePhotos = false;
-    });
-}
-
 // Função de pré-carregamento de categoria
 function preloadCategoryImages(categoryId) {
   // ex.: buscar thumbnails e hi-res em background
@@ -1378,40 +1335,39 @@ function hideDiscreteLoadingIndicator() {
   }
 }
 
-// ✅ Função 6: Override da função de carregamento de mais fotos (ADAPTADA PARA INFINITE SCROLL)
-function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
-  // ✅ NOVO: Detectar se foi chamada por botão ou infinite scroll
-  const isInfiniteScroll = !event || !event.target;
-  const button = isInfiniteScroll ? null : event.target;
-  // ✅ CORRIGIDO: Buscar container correto para novas fotos
+// ✅ FUNÇÃO LIMPA: Carregamento com detecção explícita de infinite scroll
+function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfiniteScroll = false) {
+  // Determinar se é botão ou infinite scroll
+  const button = isInfiniteScroll ? null : (typeof event !== 'undefined' && event ? event.target : null);
+  
+  // Buscar container correto
   let sectionContainer = document.getElementById('category-section-main');
   if (!sectionContainer) {
-    // Se não existir, criar um dentro do #content
     const contentDiv = document.getElementById('content');
     sectionContainer = contentDiv.querySelector('.category-section') || contentDiv;
   }
+  
   console.log(`🔄 Loading photos - Infinite scroll: ${isInfiniteScroll}`);
-
+  
   // Feedback visual no botão (apenas se não for infinite scroll)
-  if (button) {
+  if (button && !isInfiniteScroll) {
     enhanceMorePhotosButton(button, true);
   }
-
-  // ✅ RETORNAR PROMISE para infinite scroll
+  
+  // Fazer requisição
   return fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
     .then(response => response.json())
     .then(newPhotos => {
       if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
-        // ✅ APENAS remover botão se não for infinite scroll
-        if (button) {
+        if (button && !isInfiniteScroll) {
           button.parentElement.remove();
         }
         console.log('📭 Não há mais fotos para carregar');
         return Promise.resolve();
       }
-
+      
       console.log(`📸 Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
-
+      
       // Atualizar cache
       const categoryCache = categoryPhotoCache[categoryId];
       if (categoryCache) {
@@ -1419,66 +1375,35 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
         categoryCache.totalLoaded += newPhotos.length;
         categoryCache.hasMore = newPhotos.length >= batchSize;
       }
-
+      
       // Registrar novas fotos
       newPhotos.forEach(photo => {
         photoRegistry[photo.id] = photo;
         photos.push(photo);
       });
-
-      // ✅ VERIFICAR se container existe
+      
+      // Verificar container
       if (!sectionContainer) {
         console.error('❌ Container para fotos não encontrado');
-        isLoadingMorePhotos = false;
         return Promise.reject('Container não encontrado');
       }
-
-      // CARREGAR COM EFEITOS VISUAIS
+      
+      // Carregar fotos
       loadPhotosSequentially(newPhotos, sectionContainer, 100);
-
-      // ✅ APENAS restaurar botão se não for infinite scroll
-      if (button) {
+      
+      // Restaurar botão se não for infinite scroll
+      if (button && !isInfiniteScroll) {
         enhanceMorePhotosButton(button, false);
       }
-
-      // Verificar se há mais fotos
-      setTimeout(() => {
-        const remainingPhotos = Math.max(0, getTotalPhotos(categoryId) - categoryCache.totalLoaded);
-        const nextBatchSize = Math.min(15, remainingPhotos);
-
-        // ✅ APENAS manipular botão se não for infinite scroll
-        if (button) {
-          if (remainingPhotos > 0) {
-            button.onclick = () => loadMorePhotosWithEffects(categoryId, categoryCache.totalLoaded, nextBatchSize);
-
-            const footerArea = document.getElementById('category-footer-area');
-            if (footerArea) {
-              addCategoryNavigationButtons(footerArea, categoryId);
-            }
-          } else {
-            button.parentElement.remove();
-
-            const footerArea = document.getElementById('category-footer-area');
-            if (footerArea) {
-              addCategoryNavigationButtons(footerArea, categoryId);
-            }
-          }
-        }
-
-        updateButtonsForCartItems();
-      }, newPhotos.length * 100 + 300);
-
+      
       return Promise.resolve();
     })
     .catch(error => {
       console.error('Error loading more photos:', error);
-
-      // ✅ APENAS feedback no botão se não for infinite scroll
-      if (button) {
+      if (button && !isInfiniteScroll) {
         enhanceMorePhotosButton(button, false);
         button.innerHTML = '❌ Try Again';
       }
-
       return Promise.reject(error);
     });
 }
@@ -1577,7 +1502,9 @@ function handleScrollMorePhotos() {
         console.log(`📊 Carregando batch: offset=${currentOffset}, size=${batchSize}`);
 
         // Usar a função existente de carregamento com efeitos
-        loadMorePhotosWithEffects(categoryId, currentOffset, batchSize)
+        // ✅ FORÇAR infinite scroll mode
+        window.tempEvent = undefined; // Limpar event global
+        loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, true)
           .then(() => {
             console.log('✅ Carregamento automático concluído');
             isLoadingMorePhotos = false;
