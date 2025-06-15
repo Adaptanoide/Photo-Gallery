@@ -2453,13 +2453,6 @@ const photoManager = {
                  placeholder="Enter folder name..." maxlength="100">
         </div>
         
-        <div class="form-group">
-          <label>Parent Folder (destination):</label>
-          <div class="parent-selection">
-            <p id="selected-parent-name" class="selected-parent">No parent selected (root level)</p>
-          </div>
-        </div>
-        
         <div id="parent-selector" class="parent-selector" style="display: block;">
           <h4>Select Parent Folder:</h4>
           <div id="parent-folders-loading" class="loading-message">Loading folders...</div>
