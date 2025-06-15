@@ -264,33 +264,35 @@
   padding: 0 !important;
 }
 
-/* Estilos dos botões - cores EXATAS do logout */
 .category-nav-button,
 .category-nav-button--primary,
 .category-nav-button--secondary {
-  padding: 12px 24px !important;
-  border: 1px solid #6f5c45 !important;
-  border-radius: 25px !important;
-  background: #6f5c45 !important;
-  color: white !important;
+  padding: 10px 16px !important;
+  border: 1px solid #F9F7ED !important;
+  border-radius: 8px !important;
+  background: #F9F7ED !important;
+  color: #5D3C26 !important;
   font-weight: 600 !important;
-  font-size: 0.95rem !important;
+  font-size: 16px !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
-  min-width: 150px !important;
+  min-width: auto !important;
   text-align: center !important;
-  font-family: inherit !important;
-  box-shadow: 0 2px 8px rgba(72, 60, 50, 0.3) !important;
+  font-family: 'Nunito', sans-serif !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: center !important;
 }
 
 .category-nav-button:hover,
 .category-nav-button--primary:hover,
 .category-nav-button--secondary:hover {
-  background: #6f5c45 !important; /* ✅ CORRIGIDO: Hover igual logout */
-  color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(122, 99, 73, 0.4) !important; /* ✅ CORRIGIDO: Shadow hover */
-  border-color: #6f5c45 !important; /* ✅ CORRIGIDO: Border hover */
+  background: #F0EDE3 !important;
+  color: #5D3C26 !important;
+  transform: none !important;
+  box-shadow: 0 2px 4px rgba(93, 60, 38, 0.1) !important;
 }
 
 .category-nav-button:active,

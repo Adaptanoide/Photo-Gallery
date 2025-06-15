@@ -416,7 +416,7 @@
 }
 
 .photo-list-item.selected .photo-list-name {
-  color: #0d47a1;
+  color: var(--color-charcoal);
   font-weight: 600;
 }
 
