@@ -2457,13 +2457,10 @@ const photoManager = {
           <label>Parent Folder (destination):</label>
           <div class="parent-selection">
             <p id="selected-parent-name" class="selected-parent">No parent selected (root level)</p>
-            <button type="button" class="btn btn-secondary" onclick="photoManager.toggleParentSelector()">
-              Choose Parent
-            </button>
           </div>
         </div>
         
-        <div id="parent-selector" class="parent-selector" style="display: none;">
+        <div id="parent-selector" class="parent-selector" style="display: block;">
           <h4>Select Parent Folder:</h4>
           <div id="parent-folders-loading" class="loading-message">Loading folders...</div>
           <div id="parent-folders-tree" class="parent-folders-tree" style="display: none;"></div>
@@ -2668,8 +2665,12 @@ const photoManager = {
 
     const modal = document.getElementById('create-folder-modal');
     if (modal) modal.style.display = 'flex';
-
     console.log('✅ Create folder modal opened');
+    
+    // Auto-carregar lista de pastas
+    setTimeout(async () => {
+      await this.loadParentFolders();
+    }, 100);
   },
 
   closeCreateFolderModal() {
