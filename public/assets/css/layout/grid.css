@@ -62,7 +62,7 @@ div[id^="category-section-"] {
 .category-title-container h2 {
   font-family: 'Playfair Display', serif;
   font-size: 2rem;
-  color: var(--color-dark);
+  color: #312825;
   margin: 0;
   padding: 0;
   position: relative;
