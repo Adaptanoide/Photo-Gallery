@@ -1383,8 +1383,8 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
   // ✅ NOVO: Detectar se foi chamada por botão ou infinite scroll
   const isInfiniteScroll = !event || !event.target;
   const button = isInfiniteScroll ? null : event.target;
-  const sectionContainer = document.getElementById('category-section-main');
-  
+  // ✅ CORRIGIDO: Usar o mesmo container onde fotos são renderizadas
+  const sectionContainer = document.getElementById('content') || document.getElementById('category-section-main');  
   console.log(`🔄 Loading photos - Infinite scroll: ${isInfiniteScroll}`);
   
   // Feedback visual no botão (apenas se não for infinite scroll)
@@ -1421,6 +1421,13 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
         photos.push(photo);
       });
       
+      // ✅ VERIFICAR se container existe
+      if (!sectionContainer) {
+        console.error('❌ Container para fotos não encontrado');
+        isLoadingMorePhotos = false;
+        return Promise.reject('Container não encontrado');
+      }
+
       // CARREGAR COM EFEITOS VISUAIS
       loadPhotosSequentially(newPhotos, sectionContainer, 100);
       
