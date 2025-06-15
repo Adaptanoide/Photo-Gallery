@@ -411,7 +411,7 @@
 }
 
 .photo-list-name:hover {
-  color: var(--color-gold);
+  color: var(--color-charcoal);
   text-decoration: underline;
 }
 
@@ -452,9 +452,9 @@
 }
 
 .photo-thumbnail-item.selected {
-  border-color: var(--color-gold);
-  background: #fff3cd;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  border-color: #c9c9c9;
+  background: #ffffff;
+  box-shadow: 0 4px 15px rgb(0 0 0 / 30%);
 }
 
 .photo-thumbnail-checkbox {
@@ -514,8 +514,8 @@
 }
 
 .photo-thumbnail-item.selected .photo-thumbnail-name {
-  background: #fff3cd;
-  color: #856404;
+  background: #ffffff;
+  color: #262a2e;
   font-weight: 600;
 }
 
