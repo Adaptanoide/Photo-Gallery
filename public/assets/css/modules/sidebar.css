@@ -70,7 +70,7 @@
   height: calc(100vh - 140px);
   padding-right: 5px;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-gold) rgba(0, 0, 0, 0.05);
+  scrollbar-color: #D4C5A0 #F9F7ED;
   /* CORREÇÃO: Remover margin/padding que cria espaço vazio */
   margin-bottom: 0;
   padding-bottom: 0;
@@ -115,11 +115,17 @@
 }
 
 .category-item.active {
-  background-color: var(--color-gold);
-  color: var(--color-dark);
+  background-color: #F2ECCF;
+  border: 1px solid #CAA545;
+  color: #5D3C26;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
   font-weight: 600;
+  border-radius: 8px;
+  padding: 10px 16px;
   box-shadow: none;
   transform: translateX(5px);
+  transition: var(--transition-smooth);
 }
 
 .category-loading {
