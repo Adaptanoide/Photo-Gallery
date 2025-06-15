@@ -5,6 +5,10 @@ let isLoadingMorePhotos = false;
 let isLoadingCategory = false;
 let categoryPhotoCache = {};
 
+// ✅ FUNÇÃO QUE FALTAVA (SIMPLES)
+function getCategoryCache(categoryId) {
+  return categoryPhotoCache[categoryId] || null;
+}
 
 // Função de pré-carregamento de categoria
 function preloadCategoryImages(categoryId) {
