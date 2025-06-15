@@ -10,6 +10,49 @@ function getCategoryCache(categoryId) {
   return categoryPhotoCache[categoryId] || null;
 }
 
+// ✅ NOVA FUNÇÃO: Carregamento automático para infinite scroll
+function loadMorePhotosAutomatically(categoryId) {
+  // Evitar múltiplos carregamentos simultâneos
+  if (isLoadingMorePhotos) {
+    console.log('⏳ Já está carregando fotos, aguardando...');
+    return;
+  }
+  
+  // Marcar como carregando
+  isLoadingMorePhotos = true;
+  console.log(`🔄 Iniciando carregamento automático para categoria: ${categoryId}`);
+  
+  // Obter cache da categoria
+  const categoryCache = getCategoryCache(categoryId);
+  if (!categoryCache) {
+    console.log('❌ Cache da categoria não encontrado');
+    isLoadingMorePhotos = false;
+    return;
+  }
+  
+  // Calcular próximo batch
+  const currentOffset = categoryCache.totalLoaded || 0;
+  const batchSize = 15; // Carregar 15 fotos por vez
+  
+  console.log(`📊 Carregando batch: offset=${currentOffset}, size=${batchSize}`);
+  
+  // Mostrar indicador discreto de carregamento
+  showDiscreteLoadingIndicator();
+  
+  // Usar a função existente de carregamento com efeitos
+  loadMorePhotosWithEffects(categoryId, currentOffset, batchSize)
+    .then(() => {
+      console.log('✅ Carregamento automático concluído');
+      hideDiscreteLoadingIndicator();
+      isLoadingMorePhotos = false;
+    })
+    .catch((error) => {
+      console.error('❌ Erro no carregamento automático:', error);
+      hideDiscreteLoadingIndicator();
+      isLoadingMorePhotos = false;
+    });
+}
+
 // Função de pré-carregamento de categoria
 function preloadCategoryImages(categoryId) {
   // ex.: buscar thumbnails e hi-res em background
@@ -1291,49 +1334,6 @@ function enhanceMorePhotosButton(button, isLoading = false) {
   }
 }
 
-// ✅ NOVA FUNÇÃO: Carregamento automático para infinite scroll
-function loadMorePhotosAutomatically(categoryId) {
-  // Evitar múltiplos carregamentos simultâneos
-  if (isLoadingMorePhotos) {
-    console.log('⏳ Já está carregando fotos, aguardando...');
-    return;
-  }
-  
-  // Marcar como carregando
-  isLoadingMorePhotos = true;
-  console.log(`🔄 Iniciando carregamento automático para categoria: ${categoryId}`);
-  
-  // Obter cache da categoria
-  const categoryCache = getCategoryCache(categoryId);
-  if (!categoryCache) {
-    console.log('❌ Cache da categoria não encontrado');
-    isLoadingMorePhotos = false;
-    return;
-  }
-  
-  // Calcular próximo batch
-  const currentOffset = categoryCache.totalLoaded || 0;
-  const batchSize = 15; // Carregar 15 fotos por vez
-  
-  console.log(`📊 Carregando batch: offset=${currentOffset}, size=${batchSize}`);
-  
-  // Mostrar indicador discreto de carregamento
-  showDiscreteLoadingIndicator();
-  
-  // Usar a função existente de carregamento com efeitos
-  loadMorePhotosWithEffects(categoryId, currentOffset, batchSize)
-    .then(() => {
-      console.log('✅ Carregamento automático concluído');
-      hideDiscreteLoadingIndicator();
-      isLoadingMorePhotos = false;
-    })
-    .catch((error) => {
-      console.error('❌ Erro no carregamento automático:', error);
-      hideDiscreteLoadingIndicator();
-      isLoadingMorePhotos = false;
-    });
-}
-
 // ✅ FUNÇÃO: Mostrar loading discreto no final da página
 function showDiscreteLoadingIndicator() {
   // Remover indicador anterior se existir
@@ -1383,8 +1383,13 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize) {
   // ✅ NOVO: Detectar se foi chamada por botão ou infinite scroll
   const isInfiniteScroll = !event || !event.target;
   const button = isInfiniteScroll ? null : event.target;
-  // ✅ CORRIGIDO: Usar o mesmo container onde fotos são renderizadas
-  const sectionContainer = document.getElementById('content') || document.getElementById('category-section-main');  
+  // ✅ CORRIGIDO: Buscar container correto para novas fotos
+  let sectionContainer = document.getElementById('category-section-main');
+  if (!sectionContainer) {
+    // Se não existir, criar um dentro do #content
+    const contentDiv = document.getElementById('content');
+    sectionContainer = contentDiv.querySelector('.category-section') || contentDiv;
+  }  
   console.log(`🔄 Loading photos - Infinite scroll: ${isInfiniteScroll}`);
   
   // Feedback visual no botão (apenas se não for infinite scroll)
