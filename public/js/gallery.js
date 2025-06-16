@@ -901,7 +901,7 @@ function showTutorial() {
       </div>
 
       <div class="tutorial-cta">
-        <p class="cta-text">Ready to start shopping? Choose a category to begin browsing our premium collection!</p>
+        <p class="cta-text">Ready to start? Choose a category to begin browsing our collection!</p>
         <button class="cta-button" onclick="focusOnFirstCategory()">Get Started</button>
       </div>
     </div>
@@ -1006,7 +1006,6 @@ function showWelcome() {
     ">
       <div class="tutorial-header">
         <h1 class="tutorial-title">Welcome to Our Gallery</h1>
-        <p class="tutorial-subtitle">Browse and select your products</p>
       </div>
       
       <div class="welcome-instruction" style="text-align: center; margin: 50px 0; position: relative;">
