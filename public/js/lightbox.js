@@ -442,28 +442,36 @@ function initializeNativeZoom(img) {
     }
   }
 
-  // Função para fazer zoom no ponto do mouse (não no centro)
+  // Função para fazer zoom no ponto do mouse (VERSÃO CORRIGIDA)
   function zoomAtPoint(targetScale, mouseX, mouseY) {
     // Obter dimensões atuais
     const imgRect = img.getBoundingClientRect();
     const containerRect = img.parentElement.getBoundingClientRect();
     
-    // Se não foi fornecido ponto do mouse, usar centro
+    // Se não foi fornecido ponto do mouse, usar centro do WRAPPER
     if (mouseX === undefined || mouseY === undefined) {
       mouseX = containerRect.width / 2;
       mouseY = containerRect.height / 2;
     }
     
-    // Calcular ponto na imagem antes do zoom
-    const imageX = (mouseX - pointX) / scale;
-    const imageY = (mouseY - pointY) / scale;
+    // CORREÇÃO: Converter coordenadas do wrapper para relativas à imagem
+    const imgOffsetX = imgRect.left - containerRect.left;
+    const imgOffsetY = imgRect.top - containerRect.top;
+    
+    // Coordenadas relativas à imagem
+    const imageMouseX = mouseX - imgOffsetX;
+    const imageMouseY = mouseY - imgOffsetY;
+    
+    // Calcular ponto na imagem antes do zoom (normalizado)
+    const imageX = (imageMouseX - pointX) / scale;
+    const imageY = (imageMouseY - pointY) / scale;
     
     // Aplicar novo scale
     scale = targetScale;
     
-    // Recalcular posição para manter o ponto do mouse no mesmo lugar
-    pointX = mouseX - imageX * scale;
-    pointY = mouseY - imageY * scale;
+    // Recalcular posição para manter o ponto do mouse fixo
+    pointX = imageMouseX - imageX * scale;
+    pointY = imageMouseY - imageY * scale;
     
     // Aplicar transformação
     setTransform();
