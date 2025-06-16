@@ -555,11 +555,10 @@ function initializeNativeZoom(img) {
     
     // Determinar direção do zoom
     const delta = -e.deltaY * 0.0002;  // 5x mais lento
-    const newScale = Math.min(Math.max(1, scale + delta * 1.5), 2.5);  // Mais suave
+    const newScale = Math.min(Math.max(1, scale + delta * 1.5), 3);  // 2.5 → 3
     
     // Se voltando ao zoom normal, resetar
-    if (Math.abs(newScale - 1) < 0.05) {
-      resetZoom();
+    if (Math.abs(newScale - 1) < 0.01) {  // 0.05 → 0.01 (mais restritivo)      resetZoom();
     } else {
       // Fazer zoom no ponto do mouse
       zoomAtPoint(newScale, mouseX, mouseY);
