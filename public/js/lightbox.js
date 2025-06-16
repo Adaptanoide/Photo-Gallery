@@ -228,10 +228,10 @@ function openLightbox(index, fromCart = false) {
   const alreadyAdded = cartIds.includes(photo.id);
 
   if (alreadyAdded) {
-    addBtn.textContent = 'Remove from Selection';
+    addBtn.textContent = 'Remove';
     addBtn.className = 'btn btn-danger';
   } else {
-    addBtn.textContent = 'Add to Selection';
+    addBtn.textContent = 'Add';
     addBtn.className = 'btn btn-gold';
   }
 
@@ -928,7 +928,7 @@ function addRemoveLightbox() {
       removeFromCart(photo.id);
 
       // Atualizar UI do lightbox
-      document.getElementById('lightbox-add-btn').textContent = 'Add to Selection';
+      document.getElementById('lightbox-add-btn').textContent = 'Add';
       document.getElementById('lightbox-add-btn').className = 'btn btn-gold';
 
       // Atualizar o modal do carrinho se estiver aberto
@@ -953,8 +953,8 @@ function addRemoveLightbox() {
     addToCart(photo.id);
 
     // Atualizar UI do lightbox
-    document.getElementById('lightbox-add-btn').textContent = 'Remove from Selection';
-    document.getElementById('lightbox-add-btn').className = 'btn btn-danger';
+    document.getElementById('lightbox-add-btn').textContent = 'Remove';
+    document.getElementById('lightbox-add-btn').className = 'btn btn-gold btn-remove';
 
     // Atualizar o modal do carrinho se estiver aberto
     if (cartModalOpen) {
