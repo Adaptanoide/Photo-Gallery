@@ -70,7 +70,7 @@
   height: calc(100vh - 140px);
   padding-right: 5px;
   scrollbar-width: thin;
-  scrollbar-color: #D4C5A0 #F9F7ED;
+  scrollbar-color: #5d3c26a8 #F9F7ED;
   /* CORREÇÃO: Remover margin/padding que cria espaço vazio */
   margin-bottom: 0;
   padding-bottom: 0;

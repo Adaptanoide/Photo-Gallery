@@ -1415,7 +1415,6 @@ function showEndOfGalleryMessage() {
   overlay.className = 'category-navigation-overlay';
   overlay.innerHTML = `
     <div class="category-nav-content">
-      <div class="category-nav-icon">🏁</div>
       <h3>End of Gallery</h3>
       <p>You've reached the end of all categories!</p>
       <div class="category-nav-buttons">
@@ -1434,7 +1433,6 @@ function showBeginningOfGalleryMessage() {
   overlay.className = 'category-navigation-overlay';
   overlay.innerHTML = `
     <div class="category-nav-content">
-      <div class="category-nav-icon">🏁</div>
       <h3>Beginning of Gallery</h3>
       <p>You're at the beginning of all categories!</p>
       <div class="category-nav-buttons">

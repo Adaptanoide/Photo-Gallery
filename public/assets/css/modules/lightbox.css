@@ -37,29 +37,6 @@
   margin: 0 auto; /* Centralizar */
 }
 
-/* Botão de fechar */
-.lightbox-close {
-  position: absolute;
-  top: 25px;
-  right: 25px;
-  color: white;
-  font-size: 35px;
-  cursor: pointer;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  transition: var(--transition-smooth);
-}
-
-.lightbox-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: rotate(90deg);
-}
-
 /* ✅ CONTROLES - ADICIONADO */
 .lightbox-controls {
   display: flex;
@@ -135,7 +112,7 @@
   font-weight: 600;
   border-radius: 8px;
   width: 100px; /* ✅ LARGURA FIXA */
-  min-width: 100px; /* ✅ LARGURA MÍNIMA */
+  min-width: 120px; /* ✅ LARGURA MÍNIMA */
   max-width: 100px; /* ✅ LARGURA MÁXIMA */
   text-align: center; /* ✅ CENTRALIZAR TEXTO */
   transition: all 0.2s ease; /* ✅ TRANSIÇÃO MAIS SUAVE */
@@ -150,16 +127,16 @@
 
 /* Estado Remove - MESMO TAMANHO */
 .lightbox-controls .btn-remove {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+  background: #d75c68 !important;
   color: white !important;
   box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
   width: 100px !important;
-  min-width: 100px !important;
+  min-width: 120px !important;
   max-width: 100px !important;
 }
 
 .lightbox-controls .btn-remove:hover {
-  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%) !important;
+  background: #d75c68 !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4) !important;
 }
