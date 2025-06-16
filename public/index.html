@@ -185,10 +185,23 @@
           <div id="lightbox-cart-count" class="count">0</div>
         </div>
 
+        <!-- Botão Anterior -->
+        <button class="lightbox-nav-btn" onclick="navigatePhotos(-1)" title="Previous photo">
+          &#8249;
+        </button>
+
+        <!-- Botão Principal -->
         <button id="lightbox-add-btn" class="btn btn-gold" onclick="addRemoveLightbox()">
           Add to Selection
         </button>
-        <button class="btn btn-secondary" onclick="closeLightbox()">
+
+        <!-- Botão Próximo -->
+        <button class="lightbox-nav-btn" onclick="navigatePhotos(1)" title="Next photo">
+          &#8250;
+        </button>
+
+        <!-- Botão Secundário (menor) -->
+        <button class="btn btn-secondary btn-discrete" onclick="closeLightbox()">
           Back to Gallery
         </button>
       </div>
