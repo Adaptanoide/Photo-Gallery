@@ -442,29 +442,30 @@ function initializeNativeZoom(img) {
     }
   }
 
-  // Função para centralizar corretamente a imagem
-  function centerImageOnPoint(targetScale) {
-    // Obter dimensões do container e da imagem
+  // Função para fazer zoom no ponto do mouse (não no centro)
+  function zoomAtPoint(targetScale, mouseX, mouseY) {
+    // Obter dimensões atuais
     const imgRect = img.getBoundingClientRect();
     const containerRect = img.parentElement.getBoundingClientRect();
-
-    // Calcular o centro da imagem visível
-    const centerX = imgRect.width / 2;
-    const centerY = imgRect.height / 2;
-
-    // Calcular a diferença entre o centro do container e o centro da imagem
-    const offsetX = (containerRect.width - imgRect.width) / 2;
-    const offsetY = (containerRect.height - imgRect.height) / 2;
-
-    // Calcular quanto a imagem vai crescer
-    const growthFactor = targetScale - 1;
-
-    // Ajustar o ponto X e Y para manter o centro no zoom
-    pointX = -centerX * growthFactor + offsetX * targetScale;
-    pointY = -centerY * growthFactor + offsetY * targetScale;
-
-    // Aplicar a transformação
+    
+    // Se não foi fornecido ponto do mouse, usar centro
+    if (mouseX === undefined || mouseY === undefined) {
+      mouseX = containerRect.width / 2;
+      mouseY = containerRect.height / 2;
+    }
+    
+    // Calcular ponto na imagem antes do zoom
+    const imageX = (mouseX - pointX) / scale;
+    const imageY = (mouseY - pointY) / scale;
+    
+    // Aplicar novo scale
     scale = targetScale;
+    
+    // Recalcular posição para manter o ponto do mouse no mesmo lugar
+    pointX = mouseX - imageX * scale;
+    pointY = mouseY - imageY * scale;
+    
+    // Aplicar transformação
     setTransform();
   }
 
@@ -514,53 +515,25 @@ function initializeNativeZoom(img) {
   // Evento de roda do mouse para zoom
   img.addEventListener('wheel', function (e) {
     e.preventDefault();
-
-    // Se estamos no nível de zoom normal, use o método de centralização
-    if (Math.abs(scale - 1) < 0.05) {
-      // Determinar direção e aplicar zoom mais suave
-      const delta = -e.deltaY * 0.001; // Sensibilidade reduzida
-
-      // Aplicar zoom com limites mais baixos
-      const newScale = Math.min(Math.max(1, scale + delta * 5), 2.5);
-
-      // Se estamos aumentando o zoom do nível normal
-      if (newScale > 1) {
-        centerImageOnPoint(newScale);
-      }
+    
+    // Calcular posição do mouse no container
+    const containerRect = img.parentElement.getBoundingClientRect();
+    const mouseX = e.clientX - containerRect.left;
+    const mouseY = e.clientY - containerRect.top;
+    
+    // Determinar direção do zoom
+    const delta = -e.deltaY * 0.001;
+    const newScale = Math.min(Math.max(1, scale + delta * 3), 3);
+    
+    // Se voltando ao zoom normal, resetar
+    if (Math.abs(newScale - 1) < 0.05) {
+      resetZoom();
     } else {
-      // Já estamos com algum zoom, fazer ajustes finos
-
-      // Obter coordenadas da imagem
-      const rect = img.getBoundingClientRect();
-
-      // CORREÇÃO: Calcular a posição do mouse em relação ao CONTAINER (não à imagem)
-      const containerRect = img.parentElement.getBoundingClientRect();
-      const mouseX = e.clientX - containerRect.left;
-      const mouseY = e.clientY - containerRect.top;
-
-      // Calcular ponto de referência antes do zoom
-      const x = (mouseX - pointX) / scale;
-      const y = (mouseY - pointY) / scale;
-
-      // Determinar fator de zoom (mais suave)
-      const delta = -e.deltaY * 0.0008;
-
-      // Aplicar zoom com limite
-      const prevScale = scale;
-      scale = Math.min(Math.max(1, scale + delta * scale), 2.5);
-
-      // Se voltamos ao zoom normal
-      if (Math.abs(scale - 1) < 0.05) {
-        resetZoom();
-      } else {
-        // CORREÇÃO: Ajustar posição para manter foco no ponto correto
-        pointX = mouseX - x * scale;
-        pointY = mouseY - y * scale;
-        setTransform();
-      }
+      // Fazer zoom no ponto do mouse
+      zoomAtPoint(newScale, mouseX, mouseY);
     }
-
-    // Atualizar indicador de zoom
+    
+    // Atualizar indicador
     updateZoomIndicator();
   }, { passive: false });
 
@@ -577,16 +550,21 @@ function initializeNativeZoom(img) {
     }
   }
 
-  // Adicionar dblclick para centralizar zoom
+  // Adicionar dblclick para zoom no ponto clicado
   img.addEventListener('dblclick', function (e) {
+    // Calcular posição do clique
+    const containerRect = img.parentElement.getBoundingClientRect();
+    const clickX = e.clientX - containerRect.left;
+    const clickY = e.clientY - containerRect.top;
+    
     if (scale > 1.05) {
       // Se já tiver zoom, voltar ao normal
       resetZoom();
     } else {
-      // Aplicar zoom médio centralizado
-      centerImageOnPoint(2);
+      // Fazer zoom 2x no ponto clicado
+      zoomAtPoint(2, clickX, clickY);
     }
-
+    
     // Atualizar indicador
     updateZoomIndicator();
   });
