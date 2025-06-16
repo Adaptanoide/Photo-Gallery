@@ -127,7 +127,9 @@
   /* CORREÇÃO: Permitir scroll */
   overflow-y: auto !important;
   position: relative;
-  padding-bottom: 80px;
+  padding-bottom: 20px;
+  padding-left: 25px;
+  padding-right: 10px;
 }
 
 /* NOVO: Container da tabela com scroll próprio */
