@@ -610,3 +610,18 @@
 .lightbox-sold-message button {
   margin: 0 10px;
 }
+
+/* Hover effect para cart-icon */
+.cart-icon:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+.cart-icon:hover .count {
+  background-color: #e6c97a; /* Dourado mais claro */
+  transform: scale(1.1);
+}
+
+.cart-icon:active {
+  transform: scale(0.98);
+}

@@ -1047,3 +1047,8 @@
     font-size: 14px;
   }
 }
+
+/* Cart Modal acima do Lightbox */
+#cart-modal.modal {
+  z-index: 400 !important;
+}
