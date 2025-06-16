@@ -915,56 +915,105 @@ async function ensurePhotoDataComplete(photoId) {
   return photo;
 }
 
-// Abrir lightbox do carrinho com validação de dados
+// Abrir lightbox do carrinho com validação de dados e sincronização dinâmica
 async function openCartLightbox(photoId) {
   console.log(`🔵 DEBUG: openCartLightbox called for photo: ${photoId}`);
 
   // ✅ NOVO: Garantir que temos dados completos antes de abrir
   await ensurePhotoDataComplete(photoId);
 
-  // Criar array apenas com fotos do carrinho
-  const cartPhotosData = cartIds.map(id => {
-    // Se a foto já está no registry, usar ela
-    let photo = getPhotoById(id);
-    
-    console.log(`🔵 DEBUG: Processing cart photo ${id}:`, photo); // ← ADICIONAR ESTE LOG
+  // Função para criar array atualizado do carrinho
+  function createCartPhotosArray() {
+    return cartIds.map(id => {
+      let photo = getPhotoById(id);
+      if (!photo) {
+        photo = {
+          id: id,
+          name: `Photo ${id}`,
+          price: 0,
+          folderId: null
+        };
+      }
+      return photo;
+    }).filter(photo => photo);
+  }
 
-    // Se não está disponível, criar objeto básico
-    if (!photo) {
-      photo = {
-        id: id,
-        name: `Photo ${id}`,
-        price: 0,
-        folderId: null
-      };
-      console.log(`🔴 DEBUG: Created basic photo object for ${id}`); // ← ADICIONAR ESTE LOG
-    }
-
-    return photo;
-  }).filter(photo => photo); // Remover nulls
-
-  console.log(`🔵 DEBUG: Final cartPhotosData:`, cartPhotosData); // ← ADICIONAR ESTE LOG
-
-  console.log(`[CART] Cart photos data:`, cartPhotosData.length, "photos");
-
-  // Substituir array global temporariamente
+  // Criar array inicial com fotos do carrinho
   const originalPhotos = photos;
   const originalPhotoIndex = currentPhotoIndex;
+  let cartPhotosData = createCartPhotosArray();
+  
+  console.log(`🔵 DEBUG: Final cartPhotosData:`, cartPhotosData);
+
+  // Substituir array global temporariamente
   photos = cartPhotosData;
 
   // Encontrar índice da foto atual no carrinho
   const cartPhotoIndex = cartPhotosData.findIndex(p => p.id === photoId);
   currentPhotoIndex = cartPhotoIndex >= 0 ? cartPhotoIndex : 0;
 
+  // ✅ NOVA FUNCIONALIDADE: Monitorar mudanças no carrinho durante navegação
+  let lastCartIds = [...cartIds]; // Snapshot inicial
+  
+  function syncCartPhotos() {
+    // Verificar se cartIds mudou
+    if (JSON.stringify(cartIds) !== JSON.stringify(lastCartIds)) {
+      console.log(`🔄 Cart changed, syncing photos array`);
+      
+      const currentPhotoId = photos[currentPhotoIndex]?.id;
+      
+      // Recriar array com dados atualizados
+      cartPhotosData = createCartPhotosArray();
+      photos = cartPhotosData;
+      
+      // Ajustar currentPhotoIndex para manter posição
+      if (currentPhotoId && cartIds.includes(currentPhotoId)) {
+        // Foto atual ainda existe, manter nela
+        const newIndex = photos.findIndex(p => p.id === currentPhotoId);
+        if (newIndex >= 0) {
+          currentPhotoIndex = newIndex;
+          console.log(`✅ Maintained position at photo: ${currentPhotoId}`);
+        }
+      } else {
+        // Foto atual foi removida, ir para anterior ou próxima
+        if (currentPhotoIndex >= photos.length) {
+          currentPhotoIndex = Math.max(0, photos.length - 1);
+        }
+        console.log(`📍 Adjusted position to index: ${currentPhotoIndex}`);
+        
+        // Recarregar lightbox na nova posição se ainda temos fotos
+        if (photos.length > 0 && currentPhotoIndex < photos.length) {
+          setTimeout(() => {
+            openLightbox(currentPhotoIndex, true);
+          }, 100);
+        } else {
+          // Não há mais fotos, fechar lightbox
+          closeLightbox();
+          return;
+        }
+      }
+      
+      // Atualizar snapshot
+      lastCartIds = [...cartIds];
+    }
+  }
+
+  // Iniciar monitoramento (verificar a cada 500ms)
+  const syncInterval = setInterval(syncCartPhotos, 500);
+
   // Abrir lightbox
   openLightboxById(photoId, true);
 
   // Restaurar dados originais quando lightbox fechar
-  window.addEventListener('lightboxClosed', function restorePhotosArray() {
+  function restoreOriginalState() {
+    clearInterval(syncInterval); // Parar monitoramento
     photos = originalPhotos;
     currentPhotoIndex = originalPhotoIndex;
-    window.removeEventListener('lightboxClosed', restorePhotosArray);
-  }, { once: true });
+    window.removeEventListener('lightboxClosed', restoreOriginalState);
+    console.log(`🔄 Restored original photos array`);
+  }
+
+  window.addEventListener('lightboxClosed', restoreOriginalState, { once: true });
 }
 
 // 🔍 VERIFICAÇÃO INTELIGENTE DO CARRINHO
