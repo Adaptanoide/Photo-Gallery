@@ -185,9 +185,11 @@
           <div id="lightbox-cart-count" class="count">0</div>
         </div>
 
-        <!-- Botão Anterior -->
+        <!-- Botão Anterior com SVG -->
         <button class="lightbox-nav-btn" onclick="navigatePhotos(-1)" title="Previous photo">
-          &#8249;
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
         </button>
 
         <!-- Botão Principal -->
@@ -195,12 +197,14 @@
           Add to Selection
         </button>
 
-        <!-- Botão Próximo -->
+        <!-- Botão Próximo com SVG -->
         <button class="lightbox-nav-btn" onclick="navigatePhotos(1)" title="Next photo">
-          &#8250;
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+          </svg>
         </button>
 
-        <!-- Botão Secundário (menor) -->
+        <!-- Botão Secundário -->
         <button class="btn btn-secondary btn-discrete" onclick="closeLightbox()">
           Back to Gallery
         </button>

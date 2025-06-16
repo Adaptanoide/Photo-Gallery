@@ -60,21 +60,43 @@
   transform: rotate(90deg);
 }
 
-/* Controles */
-.lightbox-controls {
+/* Botões de navegação com SVG elegante */
+.lightbox-nav-btn {
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px; /* 50% → 8px = retangular como o design */
+  width: 42px; /* 45px → 42px = mais compacto */
+  height: 36px; /* 45px → 36px = mais baixo */
+  cursor: pointer;
   display: flex;
-  gap: 15px;
-  margin-top: 20px; /* 25px → 20px = mais próximo da imagem */
-  align-items: center;
   justify-content: center;
-  padding: 15px 20px;
-  background: rgba(255, 255, 255, 0.05); /* Fundo sutil */
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  max-width: 550px;
-  margin-left: auto;
-  margin-right: auto;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.lightbox-nav-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.lightbox-nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.lightbox-nav-btn:hover svg {
+  fill: white;
+}
+
+.lightbox-nav-btn:active {
+  transform: translateY(0);
 }
 
 .lightbox-controls button {
@@ -136,20 +158,23 @@
   transform: scale(0.95);
 }
 
-/* Tornar Back to Gallery mais discreto */
+/* Tornar Back to Gallery mais discreto e corrigido */
 .btn-discrete {
-  background: rgba(255, 255, 255, 0.08) !important; /* Mais sutil */
-  color: rgba(255, 255, 255, 0.75) !important; /* Texto menos vibrante */
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  padding: 10px 16px !important; /* Menor */
-  font-size: 0.85rem !important; /* Texto menor */
-  font-weight: 500 !important; /* Menos bold */
-  min-width: 110px !important; /* Mais compacto */
+  padding: 8px 14px !important; /* 10px 16px → 8px 14px = menor */
+  font-size: 0.8rem !important; /* 0.85rem → 0.8rem = ainda menor */
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  min-width: 100px !important; /* 110px → 100px = mais compacto */
+  flex-shrink: 0; /* ✅ Não encolher */
+  margin: 0 !important;
 }
 
 .btn-discrete:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: white !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 /* Informações da foto */
@@ -166,19 +191,20 @@
   letter-spacing: 0.5px;
 }
 
-/* Cart Icon */
+/* Cart Icon corrigido */
 .cart-icon {
   display: flex;
   align-items: center;
-  margin-right: 20px;
+  margin: 0; /* margin-right: 20px → 0 */
   position: relative;
   color: white;
+  flex-shrink: 0; /* ✅ Não encolher */
 }
 
 .cart-icon .icon {
   position: relative;
-  font-size: 24px;
-  margin-right: 10px;
+  font-size: 20px; /* 24px → 20px = menor */
+  margin-right: 6px; /* 10px → 6px = mais compacto */
 }
 
 .cart-icon .icon:before {
@@ -189,13 +215,13 @@
   background-color: var(--color-gold);
   color: var(--color-dark);
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 24px; /* 28px → 24px = menor */
+  height: 24px; /* 28px → 24px = menor */
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px; /* 14px → 12px = menor */
 }
 
 /* Botões de navegação */
