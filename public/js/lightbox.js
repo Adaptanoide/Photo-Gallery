@@ -229,8 +229,7 @@ function openLightbox(index, fromCart = false) {
 
   if (alreadyAdded) {
     addBtn.textContent = 'Remove';
-    addBtn.className = 'btn btn-danger';
-  } else {
+    addBtn.className = 'btn btn-gold btn-remove';  } else {
     addBtn.textContent = 'Add';
     addBtn.className = 'btn btn-gold';
   }
