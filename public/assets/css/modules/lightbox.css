@@ -626,13 +626,13 @@
   transform: scale(0.98);
 }
 
-/* Botões de Zoom sobre a imagem */
 .zoom-controls {
   position: absolute;
   bottom: 15px;
-  right: 15px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: 10px;
   z-index: 10;
 }
 
