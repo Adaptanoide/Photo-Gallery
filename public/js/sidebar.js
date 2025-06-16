@@ -133,9 +133,6 @@ function loadCategoryPhotos(categoryId) {
   // Marcar item no menu como ativo
   highlightActiveCategory(categoryId);
 
-  // ✅ NOVA LÓGICA: Remover mensagem de fim da categoria anterior
-  removeEndOfCategoryMessage();
-
   // Atualizar cabeçalho da categoria atual
   updateCurrentCategoryHeader(categoryId);
 
@@ -1366,13 +1363,6 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfin
         }
         console.log('📭 Não há mais fotos para carregar');
         
-        // ✅ NOVA LÓGICA: Mostrar mensagem de fim de categoria
-        if (categoryId && hasCategoryReachedEnd(categoryId)) {
-          setTimeout(() => {
-            showEndOfCategoryMessage(categoryId);
-          }, 500);
-        }
-        
         return Promise.resolve();
       }
       
@@ -1384,13 +1374,6 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfin
         categoryCache.photos = categoryCache.photos.concat(newPhotos);
         categoryCache.totalLoaded += newPhotos.length;
         categoryCache.hasMore = newPhotos.length >= batchSize;
-      }
-      
-      // ✅ NOVA LÓGICA: Verificar se chegou ao fim após atualizar cache
-      if (categoryCache && categoryCache.hasMore === false) {
-        setTimeout(() => {
-          showEndOfCategoryMessage(categoryId);
-        }, 1000);
       }
       
       // Registrar novas fotos
@@ -1533,13 +1516,6 @@ function handleScrollMorePhotos() {
       })(activeCategory);
     } else {
       console.log('📭 Não há mais fotos para carregar nesta categoria');
-      
-      // ✅ NOVA LÓGICA: Mostrar mensagem de fim no infinite scroll
-      if (activeCategory && hasCategoryReachedEnd(activeCategory)) {
-        setTimeout(() => {
-          showEndOfCategoryMessage(activeCategory);
-        }, 300);
-      }
     }
   }
 }
@@ -1552,115 +1528,4 @@ function cleanupScrollMorePhotos() {
   if (morePhotosBtn) {
     morePhotosBtn.classList.remove('show');
   }
-  
-  // ✅ NOVA LÓGICA: Limpar mensagem de fim ao trocar categoria
-  removeEndOfCategoryMessage();
-}
-
-// ===============================================
-// FUNÇÕES PARA MENSAGEM DE FIM DE CATEGORIA
-// ===============================================
-
-/**
- * Mostra uma mensagem informando que chegou ao fim da categoria
- * @param {string} categoryId - ID da categoria atual
- */
-function showEndOfCategoryMessage(categoryId) {
-  console.log(`🏁 Mostrando mensagem de fim para categoria: ${categoryId}`);
-  
-  // Verificar se já existe uma mensagem de fim (evitar duplicatas)
-  const existingMessage = document.querySelector('.end-of-category-message');
-  if (existingMessage) {
-    console.log('⚠️ Mensagem de fim já existe, não criando outra');
-    return;
-  }
-
-  // Buscar o container principal onde as fotos são exibidas
-  let sectionContainer = document.getElementById('category-section-main');
-  if (!sectionContainer) {
-    const contentDiv = document.getElementById('content');
-    sectionContainer = contentDiv.querySelector('.category-section');
-  }
-
-  if (!sectionContainer) {
-    console.log('❌ Container não encontrado para mostrar mensagem de fim');
-    return;
-  }
-
-  // Obter nome da categoria limpo (sem contadores)
-  const categoryName = getCategoryNameFromId(categoryId);
-
-  // Criar elemento da mensagem
-  const messageElement = document.createElement('div');
-  messageElement.className = 'end-of-category-message';
-  messageElement.innerHTML = `
-    <div class="end-of-category-content">
-      <h3 class="end-category-title">End of ${categoryName}</h3>
-      <p class="end-category-text">You've viewed all available photos in this category</p>
-    </div>
-  `;
-
-  // Adicionar a mensagem ao final do container
-  sectionContainer.appendChild(messageElement);
-
-  console.log(`✅ Mensagem de fim adicionada para categoria: ${categoryName}`);
-}
-
-/**
- * Remove qualquer mensagem de fim de categoria existente
- */
-function removeEndOfCategoryMessage() {
-  const existingMessage = document.querySelector('.end-of-category-message');
-  if (existingMessage) {
-    existingMessage.remove();
-    console.log('🗑️ Mensagem de fim removida');
-  }
-}
-
-/**
- * Verifica se uma categoria chegou ao fim (todas as fotos carregadas)
- * @param {string} categoryId - ID da categoria a verificar
- * @returns {boolean} - true se chegou ao fim, false caso contrário
- */
-function hasCategoryReachedEnd(categoryId) {
-  const categoryCache = getCategoryCache(categoryId);
-  
-  if (!categoryCache) {
-    return false;
-  }
-
-  // Verificar se hasMore é explicitamente false
-  if (categoryCache.hasMore === false) {
-    console.log(`✅ Categoria ${categoryId} chegou ao fim (hasMore = false)`);
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Obtém o nome limpo da categoria a partir do ID
- * @param {string} categoryId - ID da categoria
- * @returns {string} - Nome da categoria sem contadores
- */
-function getCategoryNameFromId(categoryId) {
-  // Buscar pelo elemento do sidebar
-  const categoryElement = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
-  
-  if (categoryElement) {
-    const fullText = categoryElement.textContent.trim();
-    // Remover contadores entre parênteses (ex: "Category Name (25)" -> "Category Name")
-    return fullText.replace(/\s*\(\d+\)\s*$/, '');
-  }
-
-  // Fallback: buscar nas categorias globais
-  if (window.categories && Array.isArray(window.categories)) {
-    const category = window.categories.find(cat => cat.id === categoryId);
-    if (category) {
-      return category.name;
-    }
-  }
-
-  // Fallback final
-  return 'This Category';
 }
