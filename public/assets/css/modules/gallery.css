@@ -289,7 +289,7 @@
 .category-nav-button:hover,
 .category-nav-button--primary:hover,
 .category-nav-button--secondary:hover {
-  background: #5D3C26 !important;
+  background: #644632cc !important;
   color: #F9F7ED !important;
   transform: none !important;
   box-shadow: 0 2px 4px rgba(93, 60, 38, 0.1) !important;

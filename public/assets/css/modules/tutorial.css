@@ -27,7 +27,7 @@
 #new-logout {
   position: static;
   display: flex;
-  padding: 10px 16px;
+  padding: 5px 14px;
   align-items: center;
   gap: 8px;
   border-radius: 8px;
@@ -48,8 +48,8 @@
 #new-help {
   position: static;
   display: flex;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   justify-content: center;
   align-items: center;
   border-radius: 50%;
