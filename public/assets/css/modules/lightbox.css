@@ -27,12 +27,13 @@
 /* Container da imagem */
 .lightbox-img-container {
   position: relative;
-  width: 85%;
-  height: 75vh;
+  width: 90%; /* 85% → 90% = +5% mais largura */
+  height: 85vh; /* 75vh → 85vh = +10vh mais altura */
   background: white;
   overflow: hidden;
   border-radius: 6px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  max-width: 1400px; /* Limite máximo para telas muito grandes */
 }
 
 /* Botão de fechar */
@@ -264,8 +265,8 @@
 /* Media queries */
 @media (max-width: 768px) {
   .lightbox-img-container {
-    width: 95%;
-    height: 60vh;
+    width: 98%; /* 95% → 98% = mais espaço no mobile */
+    height: 70vh; /* 60vh → 70vh = +10vh no mobile */
   }
 
   .lightbox-nav button {
