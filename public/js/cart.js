@@ -918,7 +918,6 @@ async function ensurePhotoDataComplete(photoId) {
 // Abrir lightbox do carrinho com validação de dados
 async function openCartLightbox(photoId) {
   console.log(`🔵 DEBUG: openCartLightbox called for photo: ${photoId}`);
-  console.log(`[CART] Opening cart lightbox for photo: ${photoId}`);
 
   // ✅ NOVO: Garantir que temos dados completos antes de abrir
   await ensurePhotoDataComplete(photoId);
@@ -927,6 +926,8 @@ async function openCartLightbox(photoId) {
   const cartPhotosData = cartIds.map(id => {
     // Se a foto já está no registry, usar ela
     let photo = getPhotoById(id);
+    
+    console.log(`🔵 DEBUG: Processing cart photo ${id}:`, photo); // ← ADICIONAR ESTE LOG
 
     // Se não está disponível, criar objeto básico
     if (!photo) {
@@ -936,10 +937,13 @@ async function openCartLightbox(photoId) {
         price: 0,
         folderId: null
       };
+      console.log(`🔴 DEBUG: Created basic photo object for ${id}`); // ← ADICIONAR ESTE LOG
     }
 
     return photo;
   }).filter(photo => photo); // Remover nulls
+
+  console.log(`🔵 DEBUG: Final cartPhotosData:`, cartPhotosData); // ← ADICIONAR ESTE LOG
 
   console.log(`[CART] Cart photos data:`, cartPhotosData.length, "photos");
 
