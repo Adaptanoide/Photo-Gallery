@@ -434,130 +434,77 @@
 }
 
 /* =============================================== */
-/* MENSAGEM DE FIM DE CATEGORIA - NOVA FUNCIONALIDADE */
+/* MENSAGEM DE FIM DE CATEGORIA - DESIGN SIMPLES  */
 /* =============================================== */
 
-/* Container da mensagem de fim de categoria */
 .end-of-category-message {
-  grid-column: 1 / -1; /* Ocupar toda a largura do grid */
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(212, 175, 55, 0.12));
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 12px;
-  padding: 30px 25px;
+  grid-column: 1 / -1;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 6px;
+  padding: 16px 20px;
   text-align: center;
-  margin: 40px 0 60px 0;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  margin: 20px 0 30px 0;
+  transition: opacity 0.3s ease;
+  animation: fadeInSimple 0.4s ease-out;
 }
 
-/* Efeito de brilho sutil */
-.end-of-category-message::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent 30%, rgba(212, 175, 55, 0.1) 50%, transparent 70%);
-  transform: rotate(45deg);
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-/* Conteúdo da mensagem */
-.end-of-category-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* Ícone de fim */
 .end-category-icon {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
-  display: block;
-  opacity: 0.8;
+  display: none;
 }
 
-/* Título da mensagem */
 .end-category-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   color: var(--color-dark, #312825);
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  font-weight: 500;
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+}
+
+.end-category-text {
+  font-size: 0.9rem;
+  color: #8B7355;
+  margin: 0;
+  font-weight: 400;
   line-height: 1.3;
 }
 
-/* Texto da mensagem */
-.end-category-text {
-  font-size: 1rem;
-  color: #6B5B4F;
-  margin: 0;
-  font-weight: 400;
-  line-height: 1.4;
-}
-
-/* Animação de brilho */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  50% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-}
-
-/* Animação de entrada */
-@keyframes fadeInUp {
+@keyframes fadeInSimple {
   from {
     opacity: 0;
-    transform: translateY(30px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-.end-of-category-message {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-/* Responsivo */
 @media (max-width: 768px) {
   .end-of-category-message {
-    margin: 30px 0 50px 0;
-    padding: 25px 20px;
-  }
-  
-  .end-category-icon {
-    font-size: 2rem;
-    margin-bottom: 12px;
+    margin: 15px 0 25px 0;
+    padding: 12px 16px;
   }
   
   .end-category-title {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
   
   .end-category-text {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
   .end-of-category-message {
-    margin: 25px 0 40px 0;
-    padding: 20px 15px;
-  }
-  
-  .end-category-icon {
-    font-size: 1.8rem;
+    margin: 12px 0 20px 0;
+    padding: 10px 14px;
   }
   
   .end-category-title {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
+  }
+  
+  .end-category-text {
+    font-size: 0.8rem;
   }
 }

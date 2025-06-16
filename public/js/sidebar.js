@@ -1595,7 +1595,6 @@ function showEndOfCategoryMessage(categoryId) {
   messageElement.className = 'end-of-category-message';
   messageElement.innerHTML = `
     <div class="end-of-category-content">
-      <span class="end-category-icon">🏁</span>
       <h3 class="end-category-title">End of ${categoryName}</h3>
       <p class="end-category-text">You've viewed all available photos in this category</p>
     </div>
