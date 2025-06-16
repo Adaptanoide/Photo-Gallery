@@ -128,13 +128,6 @@
   transition: var(--transition-smooth);
 }
 
-.category-loading {
-  padding: 20px 0;
-  text-align: center;
-  color: var(--color-taupe);
-  font-style: italic;
-}
-
 .content-area {
   flex-grow: 1;
   overflow: hidden;
