@@ -274,6 +274,10 @@ function showCart() {
   if (cartIds.length === 0) {
     document.getElementById('cart-items').innerHTML = '<div class="empty-cart-message">Your selection is empty</div>';
     document.getElementById('cart-modal').style.display = 'block';
+    // Ajustar z-index se lightbox estiver aberto
+    if (document.getElementById('lightbox').style.display === 'block') {
+      document.getElementById('cart-modal').style.zIndex = '400';
+    }
     document.body.classList.add('cart-open');
     document.body.classList.add('modal-cart-open');
     return;
@@ -284,6 +288,10 @@ function showCart() {
   
   updateCartView();
   document.getElementById('cart-modal').style.display = 'block';
+  // Ajustar z-index se lightbox estiver aberto
+  if (document.getElementById('lightbox').style.display === 'block') {
+    document.getElementById('cart-modal').style.zIndex = '400';
+  }
   document.body.classList.add('cart-open');
   document.body.classList.add('modal-cart-open');
 }
