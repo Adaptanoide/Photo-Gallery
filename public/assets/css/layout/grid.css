@@ -173,7 +173,7 @@ div[id^="category-section-"] {
 .content-area::-webkit-scrollbar-thumb:hover,
 #content::-webkit-scrollbar-thumb:hover,
 .gallery::-webkit-scrollbar-thumb:hover {
-  background: #5D3C26;
+  background: #644632cc;
   border-color: #4A2E1A;
 }
 
@@ -182,5 +182,5 @@ div[id^="category-section-"] {
 #content,
 .gallery {
   scrollbar-width: thin;
-  scrollbar-color: #5d3c26a8  #F9F7ED;
+  scrollbar-color: #644632cc #F9F7ED;
 }

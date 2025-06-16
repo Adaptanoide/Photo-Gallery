@@ -33,7 +33,7 @@
   border-radius: 8px;
   border: 1px solid #F9F7ED;
   background: #F9F7ED;
-  color: #5D3C26;
+  color: #644632cc;
   font-family: 'Nunito', sans-serif;
   font-size: 18px;
   font-weight: 600;
@@ -41,7 +41,7 @@
   transition: all 0.3s ease;
 }
 #new-logout:hover {
-  background: #5D3C26;
+  background: #644632cc;
   color: #F9F7ED;
   transform: none;
 }
@@ -53,9 +53,9 @@
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  border: 2px solid #5D3C26;
+  border: 2px solid #644632cc;
   background: #F9F7ED;
-  color: #5D3C26;
+  color: #644632cc;
   font-family: 'Nunito', sans-serif;
   font-size: 20px;
   font-weight: 600;
@@ -63,7 +63,7 @@
   transition: all 0.3s ease;
 }
 #new-help:hover {
-  background: #5D3C26;
+  background: #644632cc;
   color: #F9F7ED;
   transform: none;
 }
