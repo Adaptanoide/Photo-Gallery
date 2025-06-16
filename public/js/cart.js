@@ -50,9 +50,11 @@ function calculateVolumeDiscount(quantity, volumeDiscounts) {
 
 // Add a photo to the cart - COM VALIDAÇÃO DE DADOS
 function addToCart(photoId) {
+  console.log(`🔵 DEBUG: addToCart called for photo: ${photoId}`);
   if (!cartIds.includes(photoId)) {
     // ✅ NOVA VALIDAÇÃO: Verificar se temos dados completos
     const photo = getPhotoById(photoId);
+    console.log(`🔵 DEBUG: getPhotoById result:`, photo);
     
     if (!photo) {
       console.warn(`⚠️ Photo ${photoId} not found in registry, adding with basic data`);
@@ -915,6 +917,7 @@ async function ensurePhotoDataComplete(photoId) {
 
 // Abrir lightbox do carrinho com validação de dados
 async function openCartLightbox(photoId) {
+  console.log(`🔵 DEBUG: openCartLightbox called for photo: ${photoId}`);
   console.log(`[CART] Opening cart lightbox for photo: ${photoId}`);
 
   // ✅ NOVO: Garantir que temos dados completos antes de abrir

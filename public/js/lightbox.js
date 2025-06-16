@@ -1062,6 +1062,8 @@ function showLoadMoreNotification(remaining) {
 
 // Função para obter o nome da categoria a partir do folderId - COM FALLBACKS INTELIGENTES
 function getCategoryNameFromFolderId(folderId) {
+  console.log(`🔵 DEBUG: getCategoryNameFromFolderId called with: ${folderId}`); // ← ADICIONAR
+  console.log(`🔵 DEBUG: window.categories available:`, window.categories ? 'YES' : 'NO'); // ← ADICIONAR
   // Verificar se temos as categorias carregadas globalmente
   if (window.categories && Array.isArray(window.categories)) {
     const category = window.categories.find(cat => cat.id === folderId);
