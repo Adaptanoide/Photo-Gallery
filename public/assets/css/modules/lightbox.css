@@ -28,7 +28,7 @@
 .lightbox-img-container {
   position: relative;
   width: 95%; /* 85% → 95% = menos espaço roxo nas laterais */
-  height: 85vh; /* 75vh → 85vh = mais altura */
+  height: 82vh; /* 75vh → 85vh = mais altura */
   background: white;
   overflow: hidden;
   border-radius: 6px;
@@ -185,7 +185,7 @@
   letter-spacing: 0.5px;
 }
 
-/* Cart Icon corrigido */
+/* Cart Icon corrigido 
 .cart-icon {
   display: flex;
   align-items: center;
@@ -216,7 +216,7 @@
   justify-content: center;
   font-weight: 600;
   font-size: 12px;
-}
+} */
 
 /* Botões de navegação */
 .lightbox-nav {
@@ -611,17 +611,59 @@
   margin: 0 10px;
 }
 
-/* Hover effect para cart-icon */
+/* Hover effect para cart-icon
 .cart-icon:hover {
   transform: scale(1.05);
   transition: transform 0.2s ease;
 }
 
 .cart-icon:hover .count {
-  background-color: #e6c97a; /* Dourado mais claro */
+  background-color: #e6c97a;
   transform: scale(1.1);
 }
 
 .cart-icon:active {
   transform: scale(0.98);
+} */
+
+/* NOVO CONTADOR DE CARRINHO - SEM CLIQUE */
+.cart-counter-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.cart-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cart-number {
+  background-color: var(--color-gold);
+  color: var(--color-dark);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.cart-items-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .cart-counter-display {
+    font-size: 12px;
+  }
+  
+  .cart-items-text {
+    display: none; /* Esconder "items" no mobile */
+  }
 }

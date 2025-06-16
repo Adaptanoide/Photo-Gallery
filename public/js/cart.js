@@ -1186,6 +1186,7 @@ function stopDetailsPulse() {
   }
 }
 
+/*
 // Função para abrir carrinho vindp do lightbox
 function showCartFromLightbox() {
   // Flag para lembrar que veio do lightbox
@@ -1193,4 +1194,4 @@ function showCartFromLightbox() {
 
   // Chamar função existente
   showCart();
-}
+}*/
