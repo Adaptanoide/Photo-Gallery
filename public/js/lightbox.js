@@ -442,38 +442,62 @@ function initializeNativeZoom(img) {
     }
   }
 
-  // Função para fazer zoom no ponto do mouse (VERSÃO CORRIGIDA)
+  // Função para fazer zoom considerando object-fit: contain
   function zoomAtPoint(targetScale, mouseX, mouseY) {
-    // Obter dimensões atuais
-    const imgRect = img.getBoundingClientRect();
     const containerRect = img.parentElement.getBoundingClientRect();
     
-    // Se não foi fornecido ponto do mouse, usar centro do WRAPPER
+    // Se não foi fornecido ponto, usar centro
     if (mouseX === undefined || mouseY === undefined) {
       mouseX = containerRect.width / 2;
       mouseY = containerRect.height / 2;
     }
     
-    // CORREÇÃO: Converter coordenadas do wrapper para relativas à imagem
-    const imgOffsetX = imgRect.left - containerRect.left;
-    const imgOffsetY = imgRect.top - containerRect.top;
+    // CORREÇÃO: Calcular a área real da imagem com object-fit: contain
+    const imgNaturalRatio = img.naturalWidth / img.naturalHeight;
+    const containerRatio = containerRect.width / containerRect.height;
     
-    // Coordenadas relativas à imagem
-    const imageMouseX = mouseX - imgOffsetX;
-    const imageMouseY = mouseY - imgOffsetY;
+    let imgDisplayWidth, imgDisplayHeight, imgOffsetX, imgOffsetY;
     
-    // Calcular ponto na imagem antes do zoom (normalizado)
-    const imageX = (imageMouseX - pointX) / scale;
-    const imageY = (imageMouseY - pointY) / scale;
+    if (imgNaturalRatio > containerRatio) {
+      // Imagem limitada pela largura (espaço vazio em cima/baixo)
+      imgDisplayWidth = containerRect.width;
+      imgDisplayHeight = containerRect.width / imgNaturalRatio;
+      imgOffsetX = 0;
+      imgOffsetY = (containerRect.height - imgDisplayHeight) / 2;
+    } else {
+      // Imagem limitada pela altura (espaço vazio nas laterais)
+      imgDisplayWidth = containerRect.height * imgNaturalRatio;
+      imgDisplayHeight = containerRect.height;
+      imgOffsetX = (containerRect.width - imgDisplayWidth) / 2;
+      imgOffsetY = 0;
+    }
     
-    // Aplicar novo scale
-    scale = targetScale;
+    // Converter coordenadas do container para a área real da imagem
+    const imgMouseX = mouseX - imgOffsetX;
+    const imgMouseY = mouseY - imgOffsetY;
     
-    // Recalcular posição para manter o ponto do mouse fixo
-    pointX = imageMouseX - imageX * scale;
-    pointY = imageMouseY - imageY * scale;
+    // Verificar se o mouse está dentro da área da imagem
+    if (imgMouseX < 0 || imgMouseX > imgDisplayWidth || imgMouseY < 0 || imgMouseY > imgDisplayHeight) {
+      // Mouse fora da imagem, usar centro da imagem
+      const centerX = imgDisplayWidth / 2;
+      const centerY = imgDisplayHeight / 2;
+      
+      const imageX = (centerX - pointX) / scale;
+      const imageY = (centerY - pointY) / scale;
+      
+      scale = targetScale;
+      pointX = centerX - imageX * scale;
+      pointY = centerY - imageY * scale;
+    } else {
+      // Mouse dentro da imagem, fazer zoom no ponto
+      const imageX = (imgMouseX - pointX) / scale;
+      const imageY = (imgMouseY - pointY) / scale;
+      
+      scale = targetScale;
+      pointX = imgMouseX - imageX * scale;
+      pointY = imgMouseY - imageY * scale;
+    }
     
-    // Aplicar transformação
     setTransform();
   }
 
@@ -530,8 +554,8 @@ function initializeNativeZoom(img) {
     const mouseY = e.clientY - containerRect.top;
     
     // Determinar direção do zoom
-    const delta = -e.deltaY * 0.001;
-    const newScale = Math.min(Math.max(1, scale + delta * 3), 3);
+    const delta = -e.deltaY * 0.0002;  // 5x mais lento
+    const newScale = Math.min(Math.max(1, scale + delta * 1.5), 2.5);  // Mais suave
     
     // Se voltando ao zoom normal, resetar
     if (Math.abs(newScale - 1) < 0.05) {
