@@ -163,14 +163,17 @@
   <!-- Lightbox for photo viewing -->
   <div id="lightbox" class="lightbox">
     <div class="lightbox-content">
-      <div class="lightbox-close" onclick="closeLightbox()">&times;</div>
-      <div class="return-to-cart" onclick="returnToCart()">← Return to Selection</div>
-
       <div class="lightbox-img-container">
         <!-- The iframe will be inserted here by JavaScript -->
         <div class="lightbox-nav">
           <button class="nav-left" onclick="navigatePhotos(-1)">&lt;</button>
           <button class="nav-right" onclick="navigatePhotos(1)">&gt;</button>
+        </div>
+        
+        <!-- Botões de Zoom centralizados -->
+        <div class="zoom-controls">
+          <button class="zoom-btn zoom-out" onclick="zoomOut()" title="Zoom Out">−</button>
+          <button class="zoom-btn zoom-in" onclick="zoomIn()" title="Zoom In">+</button>
         </div>
       </div>
 
@@ -194,7 +197,7 @@
 
         <!-- Botão Principal -->
         <button id="lightbox-add-btn" class="btn btn-gold" onclick="addRemoveLightbox()">
-          Add to Selection
+          Add
         </button>
 
         <!-- Botão Próximo com SVG -->
@@ -218,10 +221,7 @@
       <div class="luxury-loader">
         <!-- Mensagem que troca -->
         <div class="loader-message-container">
-          <div class="message-item active">Curating premium hides for you...</div>
-          <div class="message-item">Selecting exquisite leathers...</div>
-          <div class="message-item">Preparing your exclusive collection...</div>
-          <div class="message-item">Revealing nature's finest textures...</div>
+          <div class="message-item active">Loading...</div>
         </div>
 
         <!-- Título -->
