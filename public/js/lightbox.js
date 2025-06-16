@@ -242,6 +242,11 @@ function openLightbox(index, fromCart = false) {
   // Update the cart count in the lightbox
   updateLightboxCartCount();
 
+  // Ajustar z-index se veio do carrinho
+  if (fromCart) {
+    document.getElementById('lightbox').style.zIndex = '500';
+  }
+
   // Show the lightbox
   document.getElementById('lightbox').style.display = 'block';
   document.body.classList.add('lightbox-open');
