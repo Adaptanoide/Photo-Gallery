@@ -237,7 +237,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     max-width: 100% !important;
     box-sizing: border-box !important;
     margin: 0 !important;
-    padding: 0 0 150px 0 !important;
+    padding: 0 0 100px 0 !important;
     grid-auto-flow: row !important;
   `;
 
@@ -247,7 +247,7 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     max-width: 100% !important;
     box-sizing: border-box !important;
     display: block !important;
-    padding-bottom: 150px !important;
+    padding-bottom: 1px !important;
   `;
 
   contentDiv.appendChild(sectionContainer);
