@@ -534,9 +534,10 @@ function initializeNativeZoom(img) {
       // Obter coordenadas da imagem
       const rect = img.getBoundingClientRect();
 
-      // Calcular a posição do mouse em relação à imagem
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      // CORREÇÃO: Calcular a posição do mouse em relação ao CONTAINER (não à imagem)
+      const containerRect = img.parentElement.getBoundingClientRect();
+      const mouseX = e.clientX - containerRect.left;
+      const mouseY = e.clientY - containerRect.top;
 
       // Calcular ponto de referência antes do zoom
       const x = (mouseX - pointX) / scale;
@@ -553,9 +554,9 @@ function initializeNativeZoom(img) {
       if (Math.abs(scale - 1) < 0.05) {
         resetZoom();
       } else {
-        // Ajustar posição para manter foco no ponto
-        pointX = e.clientX - rect.left - x * scale;
-        pointY = e.clientY - rect.top - y * scale;
+        // CORREÇÃO: Ajustar posição para manter foco no ponto correto
+        pointX = mouseX - x * scale;
+        pointY = mouseY - y * scale;
         setTransform();
       }
     }
