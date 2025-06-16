@@ -1036,7 +1036,22 @@ document.addEventListener('DOMContentLoaded', function () {
 function showOrderBreakdown() {
   const breakdown = calculateOrderBreakdown();
   renderBreakdownModal(breakdown);
-  document.getElementById('order-breakdown-modal').style.display = 'block';
+  
+  const breakdownModal = document.getElementById('order-breakdown-modal');
+  
+  // Verificar se carrinho está aberto e ajustar z-index
+  const cartModal = document.getElementById('cart-modal');
+  const isCartOpen = cartModal && cartModal.style.display === 'block';
+  
+  if (isCartOpen) {
+    breakdownModal.style.zIndex = '500';
+    console.log('📋 Details modal z-index 500 (carrinho aberto)');
+  } else {
+    breakdownModal.style.zIndex = '200';
+    console.log('📋 Details modal z-index padrão');
+  }
+  
+  breakdownModal.style.display = 'block';
 }
 
 // Função para calcular breakdown por categoria
