@@ -146,8 +146,10 @@ function openLightbox(index, fromCart = false) {
   document.body.classList.add('modal-photo-fullscreen');
 
   // Show or hide the return to cart button
-  document.querySelector('.return-to-cart').style.display = fromCart ? 'block' : 'none';
-
+  const returnToCartBtn = document.querySelector('.return-to-cart');
+  if (returnToCartBtn) {
+    returnToCartBtn.style.display = fromCart ? 'block' : 'none';
+  }
   // Clear any previous content
   const lightboxImgContainer = document.querySelector('.lightbox-img-container');
 
