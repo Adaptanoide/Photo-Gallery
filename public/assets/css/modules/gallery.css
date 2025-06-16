@@ -271,7 +271,7 @@
   border: 1px solid #F9F7ED !important;
   border-radius: 8px !important;
   background: #F9F7ED !important;
-  color: #644632cc !important;
+  color: #644632eb !important;
   font-weight: 600 !important;
   font-size: 16px !important;
   cursor: pointer !important;
@@ -289,7 +289,7 @@
 .category-nav-button:hover,
 .category-nav-button--primary:hover,
 .category-nav-button--secondary:hover {
-  background: #644632cc !important;
+  background: #644632eb !important;
   color: #F9F7ED !important;
   transform: none !important;
   box-shadow: 0 2px 4px rgba(93, 60, 38, 0.1) !important;
