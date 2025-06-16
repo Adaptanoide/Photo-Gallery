@@ -41,8 +41,8 @@
   transition: all 0.3s ease;
 }
 #new-logout:hover {
-  background: #F0EDE3;
-  color: #5D3C26;
+  background: #5D3C26;
+  color: #F9F7ED;
   transform: none;
 }
 #new-help {
