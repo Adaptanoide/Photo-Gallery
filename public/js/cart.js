@@ -1151,3 +1151,12 @@ function stopDetailsPulse() {
     detailsBtn.classList.remove('details-pulse');
   }
 }
+
+// Função para abrir carrinho vindp do lightbox
+function showCartFromLightbox() {
+  // Flag para lembrar que veio do lightbox
+  window.cameFromLightbox = true;
+  
+  // Chamar função existente
+  showCart();
+}

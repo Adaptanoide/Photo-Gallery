@@ -17,6 +17,18 @@ function closeModal(modalId) {
     cartModalOpen = false;
     document.body.classList.remove('cart-open');
     document.body.classList.remove('modal-cart-open');
+    
+    // Se veio do lightbox, voltar para ele
+    if (window.cameFromLightbox) {
+      window.cameFromLightbox = false; // Reset flag
+      
+      // Reabrir lightbox na mesma foto se ainda existir
+      if (typeof currentPhotoIndex !== 'undefined' && currentPhotoIndex >= 0 && photos && photos[currentPhotoIndex]) {
+        setTimeout(() => {
+          openLightbox(currentPhotoIndex, false);
+        }, 100); // Pequeno delay para suavizar transição
+      }
+    }
   }
   
   if (modalId === 'admin-panel-modal') {
