@@ -1843,37 +1843,3 @@ function updateGalleryAfterSold() {
   // Mostrar notificação suave
   showToast('Gallery updated - sold items removed', 'info');
 }
-
-// Funções para botões de zoom
-function zoomIn() {
-  if (typeof scale !== 'undefined' && scale < 3) {
-    const newScale = Math.min(scale + 0.5, 3);
-    zoomAtPoint(newScale); // Zoom no centro
-    updateZoomIndicator();
-    updateZoomButtons();
-  }
-}
-
-function zoomOut() {
-  if (typeof scale !== 'undefined' && scale > 1) {
-    if (scale <= 1.1) {
-      resetZoom();
-    } else {
-      const newScale = Math.max(scale - 0.5, 1);
-      zoomAtPoint(newScale); // Zoom no centro
-    }
-    updateZoomIndicator();
-    updateZoomButtons();
-  }
-}
-
-// Atualizar estado dos botões de zoom
-function updateZoomButtons() {
-  const zoomInBtn = document.querySelector('.zoom-in');
-  const zoomOutBtn = document.querySelector('.zoom-out');
-  
-  if (zoomInBtn && zoomOutBtn && typeof scale !== 'undefined') {
-    zoomInBtn.disabled = scale >= 3;
-    zoomOutBtn.disabled = scale <= 1;
-  }
-}
