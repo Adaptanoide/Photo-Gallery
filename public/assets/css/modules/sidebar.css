@@ -35,7 +35,7 @@
 .category-sidebar h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Montserrat', sans-serif;
   color: var(--color-dark);
   position: relative;
 }
@@ -133,7 +133,7 @@
   overflow: hidden;
   min-width: 0;
   margin-left: 280px;
-  padding-left: 30px;
+  padding-left: 10px;
   padding-right: 1px;
   height: 100vh;
 }

@@ -107,9 +107,9 @@ function removeFromCart(photoId) {
   if (photoIndex !== -1) {
     // Get the photo name for notification
     const photo = getPhotoById(photoId);
-    if (photo) {
-      showRemovedNotification(photo.name);
-    }
+    //if (photo) {
+    //  showRemovedNotification(photo.name);
+    //}
 
     // Remove from array
     cartIds.splice(photoIndex, 1);
@@ -377,28 +377,24 @@ function removeItemFromCartVisually(photoId) {
 }
 
 // Show notification for item removed
-function showRemovedNotification(photoName) {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = 'item-removed-notification';
-  notification.textContent = `"${photoName}" removed from selection`;
-  document.body.appendChild(notification);
-
-  // Fade in
-  setTimeout(() => {
-    notification.style.opacity = "1";
-  }, 10);
-
-  // Fade out and remove after delay
-  setTimeout(() => {
-    notification.style.opacity = "0";
-    setTimeout(() => {
-      if (notification.parentNode) {
-        document.body.removeChild(notification);
-      }
-    }, 500);
-  }, 2000);
-}
+// function showRemovedNotification(photoName) {
+//   // Create notification element
+//   const notification = document.createElement('div');
+//   notification.className = 'item-removed-notification';
+//   notification.textContent = `"${photoName}" removed from selection`;
+//   document.body.appendChild(notification);
+//
+//   // Fade in
+//   setTimeout(() => {
+//     notification.style.opacity = "1";
+//   }, 10);
+//
+//   // Fade out and remove after delay
+//   setTimeout(() => {
+//     notification.style.opacity = "0";
+//     setTimeout(() => notification.remove(), 500);
+//   }, 3000);
+// }
 
 // MODIFIED: Submit order function - replace Firebase doc.get() 
 function submitOrder() {
