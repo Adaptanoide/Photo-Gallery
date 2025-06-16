@@ -1446,7 +1446,7 @@ function handleScrollMorePhotos() {
     return;
   }
 
-  console.log('🔄 Verificando scroll para infinite loading...');
+  //console.log('🔄 Verificando scroll para infinite loading...');
 
   // ✅ DETECTAR SCROLL DO CONTAINER CORRETO (#content)
   const contentElement = document.getElementById('content');
@@ -1464,8 +1464,8 @@ function handleScrollMorePhotos() {
   const distanceFromBottom = scrollHeight - (scrollTop + containerHeight);
   const triggerDistance = 300; // Carregar quando está a 300px do final
 
-  console.log(`📏 Container scroll - Top: ${scrollTop}, Height: ${containerHeight}, ScrollHeight: ${scrollHeight}`);
-  console.log(`📏 Distância do final: ${distanceFromBottom}px`);
+  //console.log(`📏 Container scroll - Top: ${scrollTop}, Height: ${containerHeight}, ScrollHeight: ${scrollHeight}`);
+  //console.log(`📏 Distância do final: ${distanceFromBottom}px`);
 
   // Carregar automaticamente quando próximo do final
   if (distanceFromBottom <= triggerDistance) {
