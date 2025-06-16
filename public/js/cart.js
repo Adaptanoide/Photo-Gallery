@@ -342,18 +342,13 @@ function removeItemFromCartVisually(photoId) {
   const cartItem = document.getElementById(`cart-item-${photoId}`);
   if (cartItem) {
     cartItem.style.animation = 'fadeOut 0.3s ease-out forwards';
-
+    
     // Remove the element after animation completes
     setTimeout(() => {
       if (cartItem.parentNode) {
         cartItem.parentNode.removeChild(cartItem);
       }
-
-      // If cart is now empty, show message
-      if (cartIds.length <= 1) { // We're checking <= a because we haven't updated cartIds yet
-        const cartItemsContainer = document.getElementById('cart-items');
-        cartItemsContainer.innerHTML = '<div class="empty-cart-message">Your selection is empty</div>';
-      }
+      // REMOVIDO: a verificação problemática de <= 1
     }, 300);
   }
 }
