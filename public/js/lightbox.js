@@ -1060,7 +1060,7 @@ function showLoadMoreNotification(remaining) {
   }, 3000);
 }
 
-// Função para obter o nome da categoria a partir do folderId
+// Função para obter o nome da categoria a partir do folderId - COM FALLBACKS INTELIGENTES
 function getCategoryNameFromFolderId(folderId) {
   // Verificar se temos as categorias carregadas globalmente
   if (window.categories && Array.isArray(window.categories)) {
@@ -1070,7 +1070,7 @@ function getCategoryNameFromFolderId(folderId) {
     }
   }
 
-  // Fallback: verificar se estamos numa categoria específica
+  // Fallback 1: verificar se estamos numa categoria específica
   if (window.activeCategory) {
     // Buscar nos elementos da sidebar
     const activeCategoryElement = document.querySelector('.category-item.active');
@@ -1081,8 +1081,28 @@ function getCategoryNameFromFolderId(folderId) {
     }
   }
 
+  // Fallback 2: verificar se folderId corresponde à categoria ativa atual
+  if (folderId === currentCategoryId && currentCategoryId) {
+    const categoryElement = document.querySelector(`[data-category-id="${currentCategoryId}"]`);
+    if (categoryElement) {
+      const fullText = categoryElement.textContent.trim();
+      return fullText.replace(/\s*\(\d+\)\s*$/, '');
+    }
+  }
+
+  // Fallback 3: tentar extrair nome da URL/breadcrumb se disponível
+  const breadcrumbElement = document.querySelector('.breadcrumb-current, .category-title');
+  if (breadcrumbElement) {
+    return breadcrumbElement.textContent.trim();
+  }
+
+  // Fallback 4: usar folderId parcial como nome legível
+  if (folderId && folderId.length > 8) {
+    return `Category ${folderId.substring(0, 8)}...`;
+  }
+
   // Se não conseguir encontrar, retornar um nome padrão
-  return 'Current Category';
+  return 'Unknown Category';
 }
 
 // Mostrar opção para ir para próxima categoria

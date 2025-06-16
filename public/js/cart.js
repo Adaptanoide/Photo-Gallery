@@ -48,9 +48,31 @@ function calculateVolumeDiscount(quantity, volumeDiscounts) {
   return applicableDiscount;
 }
 
-// Add a photo to the cart
+// Add a photo to the cart - COM VALIDAÇÃO DE DADOS
 function addToCart(photoId) {
   if (!cartIds.includes(photoId)) {
+    // ✅ NOVA VALIDAÇÃO: Verificar se temos dados completos
+    const photo = getPhotoById(photoId);
+    
+    if (!photo) {
+      console.warn(`⚠️ Photo ${photoId} not found in registry, adding with basic data`);
+      // Adicionar dados básicos temporários que serão completados depois
+      if (typeof photoRegistry !== 'undefined') {
+        photoRegistry[photoId] = {
+          id: photoId,
+          name: `Photo ${photoId}`,
+          price: 0, // Será atualizado quando dados completos chegarem
+          folderId: currentCategoryId || null,
+          thumbnail: `/api/photos/thumbnail/${photoId}`,
+          needsRefresh: true // Flag para indicar que precisa re-fetch
+        };
+      }
+    } else if (!photo.price || !photo.folderId) {
+      console.warn(`⚠️ Photo ${photoId} has incomplete data, marking for refresh`);
+      // Marcar para re-fetch posterior
+      photo.needsRefresh = true;
+    }
+    
     cartIds.push(photoId);
     updateCartCounter();
     updatePhotoButton(photoId, true);
@@ -75,7 +97,6 @@ function addToCart(photoId) {
   if (cartIds.length === 1) {
     startCartMonitoring();
   }
-
 }
 
 // Remove a photo from the cart
@@ -827,9 +848,77 @@ function ensureCartPhotosAvailable() {
   });
 }
 
-// ✅ FUNÇÃO PARA ABRIR LIGHTBOX EXCLUSIVO DO CARRINHO
-function openCartLightbox(photoId) {
+// ✅ NOVA FUNÇÃO: Re-fetch dados incompletos antes de abrir lightbox
+async function ensurePhotoDataComplete(photoId) {
+  const photo = getPhotoById(photoId);
+  
+  // Se não tem foto ou está marcada para refresh, buscar dados completos
+  if (!photo || photo.needsRefresh || !photo.price || !photo.folderId) {
+    console.log(`🔄 Re-fetching complete data for photo: ${photoId}`);
+    
+    try {
+      // Tentar encontrar a foto em diferentes categorias se necessário
+      let foundPhoto = null;
+      
+      // Primeiro: tentar na categoria atual se disponível
+      if (currentCategoryId) {
+        const response = await fetch(`/api/photos?category_id=${currentCategoryId}&customer_code=${currentCustomerCode}&limit=100`);
+        if (response.ok) {
+          const categoryPhotos = await response.json();
+          foundPhoto = categoryPhotos.find(p => p.id === photoId);
+        }
+      }
+      
+      // Se não encontrou, procurar em todas as categorias carregadas
+      if (!foundPhoto && window.categories) {
+        for (const category of window.categories) {
+          if (category.isAll) continue;
+          
+          try {
+            const response = await fetch(`/api/photos?category_id=${category.id}&customer_code=${currentCustomerCode}&limit=50`);
+            if (response.ok) {
+              const categoryPhotos = await response.json();
+              foundPhoto = categoryPhotos.find(p => p.id === photoId);
+              if (foundPhoto) break;
+            }
+          } catch (error) {
+            console.warn(`Error searching in category ${category.id}:`, error);
+          }
+        }
+      }
+      
+      // Atualizar registry com dados completos
+      if (foundPhoto) {
+        console.log(`✅ Found complete data for photo: ${photoId}`);
+        photoRegistry[photoId] = {
+          ...foundPhoto,
+          needsRefresh: false
+        };
+        
+        // Atualizar array global se necessário
+        const globalIndex = photos.findIndex(p => p.id === photoId);
+        if (globalIndex >= 0) {
+          photos[globalIndex] = foundPhoto;
+        } else {
+          photos.push(foundPhoto);
+        }
+        
+        return foundPhoto;
+      }
+    } catch (error) {
+      console.error(`Error re-fetching data for photo ${photoId}:`, error);
+    }
+  }
+  
+  return photo;
+}
+
+// Abrir lightbox do carrinho com validação de dados
+async function openCartLightbox(photoId) {
   console.log(`[CART] Opening cart lightbox for photo: ${photoId}`);
+
+  // ✅ NOVO: Garantir que temos dados completos antes de abrir
+  await ensurePhotoDataComplete(photoId);
 
   // Criar array apenas com fotos do carrinho
   const cartPhotosData = cartIds.map(id => {
@@ -840,24 +929,35 @@ function openCartLightbox(photoId) {
     if (!photo) {
       photo = {
         id: id,
-        thumbnail: `/api/photos/local/thumbnail/${id}`,
         name: `Photo ${id}`,
-        price: 0
+        price: 0,
+        folderId: null
       };
     }
 
     return photo;
-  });
+  }).filter(photo => photo); // Remover nulls
 
-  // Encontrar índice da foto clicada
-  const photoIndex = cartIds.indexOf(photoId);
+  console.log(`[CART] Cart photos data:`, cartPhotosData.length, "photos");
 
-  // Abrir lightbox específico do carrinho
-  if (typeof openCartOnlyLightbox === 'function') {
-    openCartOnlyLightbox(cartPhotosData, photoIndex);
-  } else {
-    console.error('[CART] Cart lightbox function not found in lightbox.js');
-  }
+  // Substituir array global temporariamente
+  const originalPhotos = photos;
+  const originalPhotoIndex = currentPhotoIndex;
+  photos = cartPhotosData;
+
+  // Encontrar índice da foto atual no carrinho
+  const cartPhotoIndex = cartPhotosData.findIndex(p => p.id === photoId);
+  currentPhotoIndex = cartPhotoIndex >= 0 ? cartPhotoIndex : 0;
+
+  // Abrir lightbox
+  openLightboxById(photoId, true);
+
+  // Restaurar dados originais quando lightbox fechar
+  window.addEventListener('lightboxClosed', function restorePhotosArray() {
+    photos = originalPhotos;
+    currentPhotoIndex = originalPhotoIndex;
+    window.removeEventListener('lightboxClosed', restorePhotosArray);
+  }, { once: true });
 }
 
 // 🔍 VERIFICAÇÃO INTELIGENTE DO CARRINHO
