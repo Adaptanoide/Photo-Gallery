@@ -329,6 +329,109 @@ class LocalStorageService {
     return crypto.createHash('md5').update(relativePath || 'root').digest('hex').substring(0, 16);
   }
 
+  // 🔍 FUNÇÃO AUXILIAR: Encontrar pasta fisicamente no disco
+  async findRealFolderPath(folder) {
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    try {
+      console.log(`🔍 Finding real path for folder: ${folder.name}`);
+      console.log(`📁 Index says path is: ${folder.relativePath}`);
+
+      // PASSO 1: Verificar se path do índice está correto
+      const indexPath = path.join(this.photosPath, folder.relativePath);
+      
+      try {
+        await fs.access(indexPath);
+        console.log(`✅ Index path is correct: ${indexPath}`);
+        return {
+          success: true,
+          realPath: indexPath,
+          relativePath: folder.relativePath,
+          needsUpdate: false
+        };
+      } catch {
+        console.log(`❌ Index path doesn't exist: ${indexPath}`);
+      }
+
+      // PASSO 2: Buscar pasta fisicamente no disco
+      console.log(`🔍 Searching physically for folder: ${folder.name}`);
+      
+      const searchResult = await this.searchFolderPhysically(folder.name, this.photosPath);
+      
+      if (searchResult.found) {
+        console.log(`✅ Found folder physically at: ${searchResult.fullPath}`);
+        
+        // Calcular novo relativePath
+        const newRelativePath = path.relative(this.photosPath, searchResult.fullPath);
+        
+        return {
+          success: true,
+          realPath: searchResult.fullPath,
+          relativePath: newRelativePath,
+          needsUpdate: true, // Precisa atualizar índice
+          oldRelativePath: folder.relativePath
+        };
+      }
+
+      return {
+        success: false,
+        error: `Folder "${folder.name}" not found physically on disk`
+      };
+
+    } catch (error) {
+      console.error(`❌ Error finding real folder path:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 🔍 BUSCA RECURSIVA FÍSICA NO DISCO
+  async searchFolderPhysically(targetFolderName, searchPath, depth = 0) {
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    // Limitar profundidade para evitar loops infinitos
+    if (depth > 10) {
+      return { found: false };
+    }
+
+    try {
+      const items = await fs.readdir(searchPath, { withFileTypes: true });
+      
+      // Buscar na pasta atual
+      for (const item of items) {
+        if (item.isDirectory() && item.name === targetFolderName) {
+          const fullPath = path.join(searchPath, item.name);
+          console.log(`🎯 Found target folder: ${fullPath}`);
+          return {
+            found: true,
+            fullPath: fullPath
+          };
+        }
+      }
+
+      // Buscar recursivamente em subpastas
+      for (const item of items) {
+        if (item.isDirectory()) {
+          const subPath = path.join(searchPath, item.name);
+          const result = await this.searchFolderPhysically(targetFolderName, subPath, depth + 1);
+          if (result.found) {
+            return result;
+          }
+        }
+      }
+
+      return { found: false };
+
+    } catch (error) {
+      console.error(`❌ Error searching in ${searchPath}:`, error);
+      return { found: false };
+    }
+  }
+
   // FUNÇÕES AUXILIARES
   async getIndex() {
     try {
@@ -1215,9 +1318,9 @@ class LocalStorageService {
 
   async renameFolder(folderId, newName) {
     try {
-      console.log(`✏️ Renaming folder: ${folderId} to ${newName}`);
+      console.log(`✏️ ROBUST RENAME: ${folderId} to ${newName}`);
 
-      // Validar novo nome
+      // ===== VALIDAÇÕES =====
       if (!newName || typeof newName !== 'string') {
         return {
           success: false,
@@ -1226,43 +1329,136 @@ class LocalStorageService {
       }
 
       const cleanName = newName.trim().replace(/[<>:"/\\|?*]/g, '');
+      
+      if (!cleanName) {
+        return {
+          success: false,
+          message: 'Invalid folder name after cleaning'
+        };
+      }
 
+      // ===== BUSCAR PASTA NO ÍNDICE =====
       const index = await this.getIndex();
       const folder = this.findCategoryById(index, folderId);
 
       if (!folder) {
         return {
           success: false,
-          message: 'Folder not found'
+          message: 'Folder not found in index'
         };
       }
 
-      const oldPath = path.join(this.photosPath, folder.relativePath);
-      const parentPath = path.dirname(folder.relativePath);
+      console.log(`📁 Folder found in index: ${folder.name} (${folder.relativePath})`);
+
+      // ===== BACKUP DO ÍNDICE =====
+      const indexBackup = JSON.parse(JSON.stringify(index));
+      console.log(`💾 Index backup created`);
+
+      // ===== ENCONTRAR PATH REAL NO DISCO =====
+      const pathResult = await this.findRealFolderPath(folder);
+      
+      if (!pathResult.success) {
+        return {
+          success: false,
+          message: `Cannot find folder on disk: ${pathResult.error}`
+        };
+      }
+
+      const oldPath = pathResult.realPath;
+      const currentRelativePath = pathResult.relativePath;
+      
+      console.log(`🎯 Real folder path: ${oldPath}`);
+
+      // ===== ATUALIZAR ÍNDICE SE NECESSÁRIO =====
+      if (pathResult.needsUpdate) {
+        console.log(`📝 Updating index with correct path: ${currentRelativePath}`);
+        folder.relativePath = currentRelativePath;
+        await this.saveIndex(index);
+        console.log(`✅ Index synchronized with disk`);
+      }
+
+      // ===== CALCULAR NOVO PATH =====
+      const parentPath = path.dirname(currentRelativePath);
       const newRelativePath = parentPath === '.' ? cleanName : path.join(parentPath, cleanName);
       const newPath = path.join(this.photosPath, newRelativePath);
 
-      // Renomear pasta física
-      await fs.rename(oldPath, newPath);
+      console.log(`📂 Rename operation:`);
+      console.log(`   FROM: ${oldPath}`);
+      console.log(`   TO:   ${newPath}`);
 
-      // Atualizar índice
+      // ===== VERIFICAR SE DESTINO JÁ EXISTE =====
+      try {
+        await fs.access(newPath);
+        return {
+          success: false,
+          message: `A folder with name "${cleanName}" already exists in this location`
+        };
+      } catch {
+        // Destino não existe - pode prosseguir
+      }
+
+      // ===== RENOMEAR PASTA FÍSICA =====
+      try {
+        await fs.rename(oldPath, newPath);
+        console.log(`✅ Physical folder renamed successfully`);
+      } catch (renameError) {
+        console.error(`❌ Physical rename failed:`, renameError);
+        
+        // Restaurar backup do índice se houve alteração
+        if (pathResult.needsUpdate) {
+          await this.saveIndex(indexBackup);
+          console.log(`↩️ Index backup restored`);
+        }
+        
+        return {
+          success: false,
+          message: `Failed to rename folder physically: ${renameError.message}`
+        };
+      }
+
+      // ===== ATUALIZAR ÍNDICE COM NOVO NOME E PATH =====
       folder.name = cleanName;
       folder.relativePath = newRelativePath;
 
+      // Atualizar também relativePath de todas as subpastas (se houver)
+      const updateChildrenPaths = (parentFolder, oldParentPath, newParentPath) => {
+        if (parentFolder.children && parentFolder.children.length > 0) {
+          parentFolder.children.forEach(child => {
+            // Atualizar path da pasta filha
+            const oldChildPath = child.relativePath;
+            const newChildPath = oldChildPath.replace(oldParentPath, newParentPath);
+            child.relativePath = newChildPath;
+            
+            console.log(`📝 Updated child path: ${oldChildPath} → ${newChildPath}`);
+            
+            // Recursão para subpastas
+            updateChildrenPaths(child, oldParentPath, newParentPath);
+          });
+        }
+      };
+
+      updateChildrenPaths(folder, currentRelativePath, newRelativePath);
+
+      // ===== SALVAR ÍNDICE FINAL =====
       index.lastUpdate = new Date().toISOString();
       await this.saveIndex(index);
+      
+      // Limpar cache para forçar recarregamento
       this.clearCache();
 
-      console.log(`✅ Folder renamed: ${cleanName}`);
+      console.log(`✅ ROBUST RENAME COMPLETED: "${cleanName}"`);
+      console.log(`📊 Index updated and cache cleared`);
 
       return {
         success: true,
         name: cleanName,
+        oldPath: currentRelativePath,
+        newPath: newRelativePath,
         message: `Folder renamed to "${cleanName}" successfully`
       };
 
     } catch (error) {
-      console.error('❌ Error renaming folder:', error);
+      console.error('❌ ROBUST RENAME ERROR:', error);
       return {
         success: false,
         message: `Error renaming folder: ${error.message}`
