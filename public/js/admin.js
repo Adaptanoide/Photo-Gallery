@@ -1326,7 +1326,7 @@ function openReturnPhotoFullscreen(photoId) {
             <button onclick="returnPhotoFromLightbox('${photoId}')" 
                     style="
                       padding: 8px 16px; 
-                      background: #d4a574; 
+                      background: #634633; 
                       color: white; 
                       border: none; 
                       border-radius: 4px; 
