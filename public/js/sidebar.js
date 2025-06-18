@@ -70,6 +70,12 @@ function loadCategoriesMenu() {
       const specificCategories = categories.filter(cat => !cat.isAll);
       console.log(`Categorias específicas encontradas: ${specificCategories.length}`);
 
+      // 🆕 INICIALIZAR FILTROS
+      if (window.categoryFilters && specificCategories.length > 0) {
+        console.log('✅ Inicializando sistema de filtros');
+        window.categoryFilters.initialize(specificCategories);
+      }
+
       // Marcar a primeira categoria como ativa se existir
       if (specificCategories.length > 0) {
         activeCategory = specificCategories[0].id;

@@ -217,3 +217,91 @@ body.modal-submit-order .category-sidebar,
 body.success-open .category-sidebar {
   display: none !important;
 }
+
+/* ===== FILTROS DE CATEGORIAS ===== */
+
+.category-filters {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.category-filters h4 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.filter-group {
+  margin-bottom: 15px;
+}
+
+.filter-group label {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.filter-option input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.filter-option:hover {
+  color: #333;
+}
+
+.filter-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-clear-filters {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-clear-filters:hover {
+  background: #5a6268;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .category-filters {
+    margin: 10px 0;
+    padding: 12px;
+  }
+  
+  .filter-options {
+    max-height: 120px;
+    overflow-y: auto;
+  }
+}
