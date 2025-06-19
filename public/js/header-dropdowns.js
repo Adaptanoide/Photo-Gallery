@@ -46,11 +46,16 @@ class HeaderNavigation {
   // Filtrar categorias por categoria principal
   filterCategoriesByMain(mainCategoryKey) {
     switch(mainCategoryKey) {
-      case 'brazil-best-sellers':
-        return this.allCategories.filter(cat => 
-          cat.name.includes('Best Value') || 
-          cat.name.includes('Super Promo')
-        );
+      case 'brazil-top-selected':
+        return this.allCategories.filter(cat => {
+          const name = cat.name;
+          return (name.includes('XL') || name.includes('ML') || name.includes('Small') || name.includes('Medium')) &&
+                !name.includes('Best Value') && 
+                !name.includes('Super Promo') &&
+                !name.includes('Dark Tones Mix') &&     // ✅ EXCLUIR
+                !name.includes('Exotic Tones') &&       // ✅ EXCLUIR
+                !name.includes('Light Tones Mix');      // ✅ EXCLUIR
+        });
         
       case 'brazil-top-selected':
         // APENAS as 3 pastas de tamanho: buscar por padrões específicos
