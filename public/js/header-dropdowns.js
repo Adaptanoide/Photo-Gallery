@@ -234,7 +234,7 @@ class HeaderNavigation {
             `).join('')}
           </div>
         </div>
-      `;
+        `;
         } else {
           // Renderizar categoria direta
           const isActive = index === 0 ? 'active' : '';
@@ -243,8 +243,18 @@ class HeaderNavigation {
           <span class="direct-icon">📄</span>
           ${item.name}
         </div>
-      `;
+        `;
         }
+      });
+    } else {
+      // Renderizar categorias normais (Brazil Best Sellers, Calfskins)
+      categories.forEach((category, index) => {
+        const isActive = index === 0 ? 'active' : '';
+        html += `
+        <div class="category-item ${isActive}" data-category-id="${category.id}">
+          ${category.name}
+        </div>
+      `;
       });
     }
 
