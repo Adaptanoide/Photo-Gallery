@@ -70,69 +70,74 @@
 
 <body>
   <!-- BOTÕES NOVOS - TOPO DA PÁGINA -->
-  <!-- Category Dropdowns -->
-  <div class="category-dropdowns">
-    <div class="dropdown" id="dropdown-best-sellers">
-      <button class="dropdown-btn">
-        🏆 Brazil Best Sellers
-        <span>▼</span>
-      </button>
-      <div class="dropdown-content" id="content-best-sellers">
-        <!-- Itens serão carregados dinamicamente -->
-      </div>
-    </div>
-
-    <div class="dropdown" id="dropdown-top-selected">
-      <button class="dropdown-btn">
-        ⭐ Brazil Top Selected
-        <span>▼</span>
-      </button>
-      <div class="dropdown-content" id="content-top-selected">
-        <div class="dropdown-item dropdown-submenu" data-size="XL">
-          Extra Large (29) <span class="submenu-arrow">▶</span>
-          <div class="dropdown-content" id="submenu-xl">
-            <!-- Categorias XL serão carregadas aqui -->
-          </div>
-        </div>
-        <div class="dropdown-item dropdown-submenu" data-size="ML">
-          Medium-Large (19) <span class="submenu-arrow">▶</span>
-          <div class="dropdown-content" id="submenu-ml">
-            <!-- Categorias ML serão carregadas aqui -->
-          </div>
-        </div>
-        <div class="dropdown-item dropdown-submenu" data-size="Small">
-          Small (16) <span class="submenu-arrow">▶</span>
-          <div class="dropdown-content" id="submenu-small">
-            <!-- Categorias Small serão carregadas aqui -->
-          </div>
-        </div>
-        <div class="dropdown-item dropdown-submenu" data-size="Medium">
-          Medium (2) <span class="submenu-arrow">▶</span>
-          <div class="dropdown-content" id="submenu-medium">
-            <!-- Categorias Medium serão carregadas aqui -->
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dropdown" id="dropdown-specialty">
-      <button class="dropdown-btn">
-        🎨 Specialty Products
-        <span>▼</span>
-      </button>
-      <div class="dropdown-content" id="content-specialty">
-        <!-- Itens serão carregados dinamicamente -->
-      </div>
-    </div>
-  </div>
   <div class="top-buttons">
-    <button id="new-logout" onclick="returnToLogin()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-      Logout
-    </button> <button id="new-help" onclick="showTutorial()">?</button>
+    <!-- Dropdowns à esquerda -->
+    <div class="category-dropdowns">
+      <div class="dropdown" id="dropdown-best-sellers">
+        <button class="dropdown-btn">
+          🏆 Brazil Best Sellers
+          <span>▼</span>
+        </button>
+        <div class="dropdown-content" id="content-best-sellers">
+          <!-- Itens serão carregados dinamicamente -->
+        </div>
+      </div>
+
+      <div class="dropdown" id="dropdown-top-selected">
+        <button class="dropdown-btn">
+          ⭐ Brazil Top Selected
+          <span>▼</span>
+        </button>
+        <div class="dropdown-content" id="content-top-selected">
+          <div class="dropdown-item dropdown-submenu" data-size="XL">
+            Extra Large (29) <span class="submenu-arrow">▶</span>
+            <div class="dropdown-content" id="submenu-xl">
+              <!-- Categorias XL serão carregadas aqui -->
+            </div>
+          </div>
+          <div class="dropdown-item dropdown-submenu" data-size="ML">
+            Medium-Large (19) <span class="submenu-arrow">▶</span>
+            <div class="dropdown-content" id="submenu-ml">
+              <!-- Categorias ML serão carregadas aqui -->
+            </div>
+          </div>
+          <div class="dropdown-item dropdown-submenu" data-size="Small">
+            Small (16) <span class="submenu-arrow">▶</span>
+            <div class="dropdown-content" id="submenu-small">
+              <!-- Categorias Small serão carregadas aqui -->
+            </div>
+          </div>
+          <div class="dropdown-item dropdown-submenu" data-size="Medium">
+            Medium (2) <span class="submenu-arrow">▶</span>
+            <div class="dropdown-content" id="submenu-medium">
+              <!-- Categorias Medium serão carregadas aqui -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dropdown" id="dropdown-specialty">
+        <button class="dropdown-btn">
+          🎨 Specialty Products
+          <span>▼</span>
+        </button>
+        <div class="dropdown-content" id="content-specialty">
+          <!-- Itens serão carregados dinamicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Botões à direita -->
+    <div class="top-buttons-right">
+      <button id="new-logout" onclick="returnToLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Logout
+      </button>
+      <button id="new-help" onclick="showTutorial()">?</button>
+    </div>
   </div>
 
   <div class="container">
