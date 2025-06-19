@@ -81,8 +81,11 @@ class HeaderNavigation {
         });
 
       case 'sheepskins':
-        // Por enquanto vazio - vamos configurar depois
-        return [];
+        // Filtro simples: Sheepskin
+        return this.allCategories.filter(cat => {
+          const name = cat.name;
+          return name.includes('Sheepskin');
+        });
 
       default:
         return [];
