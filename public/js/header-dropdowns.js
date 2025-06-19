@@ -70,6 +70,9 @@ class HeaderNavigation {
         });
 
       case 'colombian-cowhides':
+        // Estrutura mista: grupos de tamanho + categorias diretas
+        return this.createColombianStructure();
+
       case 'rodeo-rugs':
       case 'sheepskins':
         // Por enquanto vazio - vamos configurar depois
@@ -121,6 +124,66 @@ class HeaderNavigation {
     return Object.values(groups);
   }
 
+  // Criar estrutura mista para Colombian Cowhides (grupos + categorias diretas)
+  createColombianStructure() {
+    // Filtrar todas as categorias Colombia
+    const colombiaCategories = this.allCategories.filter(cat => {
+      const name = cat.name;
+      return name.includes('Colombia');
+    });
+
+    console.log(`🇨🇴 Colombia total: ${colombiaCategories.length} categorias`);
+
+    // Separar categorias diretas das que vão para grupos
+    const directCategories = colombiaCategories.filter(cat => {
+      const name = cat.name;
+      return name.includes('Value') && (name.includes('L-XL') || name.includes('S-M'));
+    });
+
+    // Categorias para grupos de tamanho (L, M, XL individuais)
+    const groupCategories = colombiaCategories.filter(cat => {
+      const name = cat.name;
+      // Pegar as que terminam com " L", " M", " XL" (não L-XL ou S-M)
+      return (name.endsWith(' L') || name.endsWith(' M') || name.endsWith(' XL')) &&
+        !name.includes('Value');
+    });
+
+    // Criar grupos de tamanho
+    const groups = [
+      {
+        name: 'Colombia Large',
+        key: 'colombia-large',
+        isGroup: true,
+        categories: groupCategories.filter(cat => cat.name.endsWith(' L'))
+      },
+      {
+        name: 'Colombia Medium',
+        key: 'colombia-medium',
+        isGroup: true,
+        categories: groupCategories.filter(cat => cat.name.endsWith(' M'))
+      },
+      {
+        name: 'Colombia X-Large',
+        key: 'colombia-xl',
+        isGroup: true,
+        categories: groupCategories.filter(cat => cat.name.endsWith(' XL'))
+      }
+    ];
+
+    // Filtrar grupos que têm categorias
+    const validGroups = groups.filter(group => group.categories.length > 0);
+
+    console.log('📂 Grupos Colombia:');
+    validGroups.forEach(group => {
+      console.log(`  ${group.name}: ${group.categories.length} categorias`);
+    });
+
+    console.log('📄 Categorias diretas Colombia:', directCategories.length);
+
+    // Retornar grupos + categorias diretas
+    return [...validGroups, ...directCategories];
+  }
+
   // Marcar botão como ativo
   setActiveButton(mainCategoryKey) {
     // Remover active de todos
@@ -152,17 +215,19 @@ class HeaderNavigation {
     const hasGroups = categories.some(cat => cat.isGroup);
 
     if (hasGroups) {
-      // Renderizar grupos expansíveis
-      categories.forEach((group, index) => {
-        html += `
-        <div class="category-group" data-group-key="${group.key}">
-          <div class="category-group-header" onclick="headerNavigation.toggleGroup('${group.key}')">
+      // Renderizar interface mista: grupos + categorias diretas
+      categories.forEach((item, index) => {
+        if (item.isGroup) {
+          // Renderizar grupo expansível
+          html += `
+        <div class="category-group" data-group-key="${item.key}">
+          <div class="category-group-header" onclick="headerNavigation.toggleGroup('${item.key}')">
             <span class="group-toggle">▶</span>
-            <span class="group-name">${group.name}</span>
-            <span class="group-count">(${group.categories.length})</span>
+            <span class="group-name">${item.name}</span>
+            <span class="group-count">(${item.categories.length})</span>
           </div>
-          <div class="category-group-content" id="group-${group.key}" style="display: none;">
-            ${group.categories.map(cat => `
+          <div class="category-group-content" id="group-${item.key}" style="display: none;">
+            ${item.categories.map(cat => `
               <div class="category-item" data-category-id="${cat.id}">
                 ${cat.name}
               </div>
@@ -170,16 +235,16 @@ class HeaderNavigation {
           </div>
         </div>
       `;
-      });
-    } else {
-      // Renderizar categorias normais (como Brazil Best Sellers)
-      categories.forEach((category, index) => {
-        const isActive = index === 0 ? 'active' : '';
-        html += `
-        <div class="category-item ${isActive}" data-category-id="${category.id}">
-          ${category.name}
+        } else {
+          // Renderizar categoria direta
+          const isActive = index === 0 ? 'active' : '';
+          html += `
+        <div class="category-item direct-category ${isActive}" data-category-id="${item.id}">
+          <span class="direct-icon">📄</span>
+          ${item.name}
         </div>
       `;
+        }
       });
     }
 

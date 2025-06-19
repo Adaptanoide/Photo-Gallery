@@ -362,3 +362,37 @@ body.success-open .category-sidebar {
 .category-group-content .category-item:hover {
   background: rgba(212, 175, 55, 0.1);
 }
+
+/* ===== CATEGORIAS DIRETAS (MISTAS COM GRUPOS) ===== */
+
+.direct-category {
+  background: rgba(52, 152, 219, 0.1);
+  border-left: 3px solid #3498db;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.direct-category:hover {
+  background: rgba(52, 152, 219, 0.2);
+  border-left-color: #2980b9;
+}
+
+.direct-category.active {
+  background: rgba(52, 152, 219, 0.3);
+  border-left-color: #2980b9;
+  color: #2c3e50;
+}
+
+.direct-icon {
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+/* Separação visual entre grupos e categorias diretas */
+.category-group + .direct-category {
+  margin-top: 12px;
+}
+
+.direct-category + .category-group {
+  margin-top: 12px;
+}
