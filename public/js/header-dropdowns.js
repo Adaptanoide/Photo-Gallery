@@ -10,31 +10,31 @@ class HeaderNavigation {
   // Inicializar sistema
   initialize(categories) {
     if (this.isInitialized) return;
-    
+
     console.log('🎯 Inicializando Header Navigation com 6 categorias principais');
-    
+
     this.allCategories = categories.filter(cat => !cat.isAll);
     this.removeOldFilters();
     this.isInitialized = true;
-    
+
     console.log(`📊 Total de categorias disponíveis: ${this.allCategories.length}`);
   }
 
   // Carregar categorias de uma categoria principal
   loadCategory(mainCategoryKey) {
     console.log(`🎯 Carregando categoria principal: ${mainCategoryKey}`);
-    
+
     // Marcar botão como ativo
     this.setActiveButton(mainCategoryKey);
-    
+
     // Filtrar categorias desta categoria principal
     const filteredCategories = this.filterCategoriesByMain(mainCategoryKey);
-    
+
     console.log(`📂 ${mainCategoryKey}: ${filteredCategories.length} categorias encontradas`);
-    
+
     // Atualizar sidebar
     this.updateSidebar(filteredCategories);
-    
+
     // Carregar primeira categoria automaticamente
     if (filteredCategories.length > 0) {
       setTimeout(() => {
@@ -43,54 +43,51 @@ class HeaderNavigation {
     }
   }
 
-  // Filtrar categorias por categoria principal
+  // Filtrar categorias por categoria principal (baseado nos dados reais)
   filterCategoriesByMain(mainCategoryKey) {
-    switch(mainCategoryKey) {
+    switch (mainCategoryKey) {
+      case 'brazil-best-sellers':
+        // 6 categorias: Best Value + Super Promo
+        return this.allCategories.filter(cat =>
+          cat.name.includes('Best Value') ||
+          cat.name.includes('Super Promo')
+        );
+
       case 'brazil-top-selected':
+        // 66 categorias: XL/ML/Small (EXCETO Best Value)
         return this.allCategories.filter(cat => {
           const name = cat.name;
           return (name.includes('XL') || name.includes('ML') || name.includes('Small') || name.includes('Medium')) &&
-                !name.includes('Best Value') && 
-                !name.includes('Super Promo') &&
-                !name.includes('Dark Tones Mix') &&     // ✅ EXCLUIR
-                !name.includes('Exotic Tones') &&       // ✅ EXCLUIR
-                !name.includes('Light Tones Mix');      // ✅ EXCLUIR
+            !name.includes('Best Value') &&
+            !name.includes('Super Promo');
         });
-        
-      case 'brazil-top-selected':
-        // APENAS as 3 pastas de tamanho: buscar por padrões específicos
-        return this.allCategories.filter(cat => {
-          const name = cat.name;
-          // Categorias que terminam com XL, ML, Small (não ML-XL)
-          return (name.includes('XL') || name.includes('ML') || name.includes('Small') || name.includes('Medium')) &&
-                 !name.includes('Best Value') && 
-                 !name.includes('Super Promo');
-        });
-        
-      case 'calfskins':
-        return this.allCategories.filter(cat => 
-          cat.name.toLowerCase().includes('calfskin') ||
-          cat.name.toLowerCase().includes('calf')
-        );
-        
-      case 'colombian-cowhides':
-        return this.allCategories.filter(cat => 
-          cat.name.toLowerCase().includes('colombian') ||
-          cat.name.toLowerCase().includes('colombia')
-        );
-        
+
       case 'rodeo-rugs':
-        return this.allCategories.filter(cat => 
-          cat.name.toLowerCase().includes('rodeo') ||
-          cat.name.toLowerCase().includes('rug')
+        // 9 categorias: Round + Star
+        return this.allCategories.filter(cat =>
+          cat.name.includes('Round') ||
+          cat.name.includes('Star')
         );
-        
+
+      case 'specialty':
+        // 16 categorias: Metallica + Others
+        return this.allCategories.filter(cat =>
+          cat.name.includes('Metallica') ||
+          (!cat.name.includes('Best') &&
+            !cat.name.includes('Super') &&
+            !cat.name.includes('XL') &&
+            !cat.name.includes('ML') &&
+            !cat.name.includes('Small') &&
+            !cat.name.includes('Round') &&
+            !cat.name.includes('Star'))
+        );
+
+      case 'calfskins':
+      case 'colombian-cowhides':
       case 'sheepskins':
-        return this.allCategories.filter(cat => 
-          cat.name.toLowerCase().includes('sheepskin') ||
-          cat.name.toLowerCase().includes('sheep')
-        );
-        
+        // Por enquanto vazio (cliente não tem acesso)
+        return [];
+
       default:
         return [];
     }
@@ -102,7 +99,7 @@ class HeaderNavigation {
     document.querySelectorAll('.category-btn').forEach(btn => {
       btn.classList.remove('active');
     });
-    
+
     // Adicionar active no clicado
     const activeBtn = document.querySelector(`[data-category="${mainCategoryKey}"]`);
     if (activeBtn) {
@@ -137,14 +134,14 @@ class HeaderNavigation {
     if (window.setupCategoryClickHandlers) {
       window.setupCategoryClickHandlers();
     }
-    
+
     console.log(`✅ Sidebar atualizado com ${categories.length} categorias`);
   }
 
   // Carregar primeira categoria automaticamente
   loadFirstCategory(category) {
     console.log(`🚀 Auto-carregando primeira categoria: ${category.name}`);
-    
+
     // Trigger click na primeira categoria
     const firstCategoryElement = document.querySelector(`[data-category-id="${category.id}"]`);
     if (firstCategoryElement) {
@@ -164,7 +161,7 @@ class HeaderNavigation {
   // Debug: mostrar distribuição de categorias
   debugCategoryDistribution() {
     const categories = ['brazil-best-sellers', 'brazil-top-selected', 'calfskins', 'colombian-cowhides', 'rodeo-rugs', 'sheepskins'];
-    
+
     console.log('📊 Distribuição das categorias:');
     categories.forEach(cat => {
       const filtered = this.filterCategoriesByMain(cat);
