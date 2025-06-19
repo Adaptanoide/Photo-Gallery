@@ -74,6 +74,12 @@ class HeaderNavigation {
         return this.createColombianStructure();
 
       case 'rodeo-rugs':
+        // Filtro simples: Round Rug OU Rodeo Rug
+        return this.allCategories.filter(cat => {
+          const name = cat.name;
+          return name.includes('Round Rug') || name.includes('Rodeo Rug');
+        });
+
       case 'sheepskins':
         // Por enquanto vazio - vamos configurar depois
         return [];
