@@ -305,3 +305,60 @@ body.success-open .category-sidebar {
     overflow-y: auto;
   }
 }
+
+/* ===== GRUPOS EXPANSÍVEIS NO SIDEBAR ===== */
+
+.category-group {
+  margin-bottom: 8px;
+}
+
+.category-group-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.category-group-header:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.group-toggle {
+  margin-right: 8px;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+  color: #D4AF37;
+}
+
+.group-name {
+  flex: 1;
+  color: #333;
+}
+
+.group-count {
+  font-size: 12px;
+  color: #666;
+  font-weight: normal;
+}
+
+.category-group-content {
+  margin-top: 5px;
+  padding-left: 20px;
+  border-left: 2px solid rgba(212, 175, 55, 0.2);
+}
+
+.category-group-content .category-item {
+  margin-bottom: 4px;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.category-group-content .category-item:hover {
+  background: rgba(212, 175, 55, 0.1);
+}

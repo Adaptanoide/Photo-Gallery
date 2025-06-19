@@ -59,8 +59,8 @@ class HeaderNavigation {
         });
 
       case 'brazil-top-selected':
-        // Por enquanto vazio - vamos configurar depois
-        return [];
+        // Retornar estrutura hierárquica dos 3 grupos de tamanho
+        return this.createHierarchicalGroups();
 
       case 'calfskins':
       case 'colombian-cowhides':
@@ -72,6 +72,47 @@ class HeaderNavigation {
       default:
         return [];
     }
+  }
+
+  // Criar grupos hierárquicos para Brazil Top Selected
+  createHierarchicalGroups() {
+    // Filtrar todas as categorias que começam com "Brazil" e têm tamanhos XL, ML, Small
+    const brazilCategories = this.allCategories.filter(cat => {
+      const name = cat.name;
+      return name.includes('Brazil') &&
+        (name.includes(' XL') || name.includes(' ML') || name.includes(' Small')) &&
+        !name.includes('Best') &&
+        !name.includes('Super');
+    });
+
+    // Agrupar por tamanho
+    const groups = {
+      'XL': {
+        name: 'Brazil Extra Large',
+        key: 'brazil-xl',
+        isGroup: true,
+        categories: brazilCategories.filter(cat => cat.name.includes(' XL'))
+      },
+      'ML': {
+        name: 'Brazil Medium Large',
+        key: 'brazil-ml',
+        isGroup: true,
+        categories: brazilCategories.filter(cat => cat.name.includes(' ML') && !cat.name.includes(' ML-XL'))
+      },
+      'Small': {
+        name: 'Brazil Small',
+        key: 'brazil-small',
+        isGroup: true,
+        categories: brazilCategories.filter(cat => cat.name.includes(' Small'))
+      }
+    };
+
+    console.log('📂 Grupos criados:');
+    Object.values(groups).forEach(group => {
+      console.log(`  ${group.name}: ${group.categories.length} categorias`);
+    });
+
+    return Object.values(groups);
   }
 
   // Marcar botão como ativo
@@ -89,7 +130,7 @@ class HeaderNavigation {
     }
   }
 
-  // Atualizar sidebar com categorias filtradas
+  // Atualizar sidebar com categorias filtradas (suporte a grupos)
   updateSidebar(categories) {
     const menuContainer = document.getElementById('categories-menu');
     if (!menuContainer) return;
@@ -100,14 +141,41 @@ class HeaderNavigation {
     }
 
     let html = '';
-    categories.forEach((category, index) => {
-      const isActive = index === 0 ? 'active' : '';
-      html += `
+
+    // Verificar se são grupos hierárquicos ou categorias normais
+    const hasGroups = categories.some(cat => cat.isGroup);
+
+    if (hasGroups) {
+      // Renderizar grupos expansíveis
+      categories.forEach((group, index) => {
+        html += `
+        <div class="category-group" data-group-key="${group.key}">
+          <div class="category-group-header" onclick="headerNavigation.toggleGroup('${group.key}')">
+            <span class="group-toggle">▶</span>
+            <span class="group-name">${group.name}</span>
+            <span class="group-count">(${group.categories.length})</span>
+          </div>
+          <div class="category-group-content" id="group-${group.key}" style="display: none;">
+            ${group.categories.map(cat => `
+              <div class="category-item" data-category-id="${cat.id}">
+                ${cat.name}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      });
+    } else {
+      // Renderizar categorias normais (como Brazil Best Sellers)
+      categories.forEach((category, index) => {
+        const isActive = index === 0 ? 'active' : '';
+        html += `
         <div class="category-item ${isActive}" data-category-id="${category.id}">
           ${category.name}
         </div>
       `;
-    });
+      });
+    }
 
     menuContainer.innerHTML = html;
 
@@ -116,7 +184,36 @@ class HeaderNavigation {
       window.setupCategoryClickHandlers();
     }
 
-    console.log(`✅ Sidebar atualizado com ${categories.length} categorias`);
+    console.log(`✅ Sidebar atualizado com ${categories.length} ${hasGroups ? 'grupos' : 'categorias'}`);
+  }
+
+  // Toggle para expandir/colapsar grupos
+  toggleGroup(groupKey) {
+    const groupContent = document.getElementById(`group-${groupKey}`);
+    const groupHeader = document.querySelector(`[data-group-key="${groupKey}"] .group-toggle`);
+
+    if (!groupContent || !groupHeader) return;
+
+    if (groupContent.style.display === 'none') {
+      // Expandir
+      groupContent.style.display = 'block';
+      groupHeader.textContent = '▼';
+
+      // Auto-carregar primeira categoria do grupo
+      const firstCategory = groupContent.querySelector('.category-item');
+      if (firstCategory) {
+        setTimeout(() => {
+          firstCategory.click();
+        }, 100);
+      }
+
+      console.log(`📂 Grupo ${groupKey} expandido`);
+    } else {
+      // Colapsar
+      groupContent.style.display = 'none';
+      groupHeader.textContent = '▶';
+      console.log(`📂 Grupo ${groupKey} colapsado`);
+    }
   }
 
   // Carregar primeira categoria automaticamente
