@@ -43,6 +43,29 @@ class HeaderNavigation {
     }
   }
 
+  // Carregar todas as categorias (estado inicial)
+  loadAllCategories() {
+    console.log('🌟 Carregando todas as categorias');
+
+    // Marcar botão All Categories como ativo
+    this.setActiveButton('all-categories');
+
+    // Filtrar categorias específicas (sem All Items)
+    const allSpecificCategories = this.allCategories.filter(cat => !cat.isAll);
+
+    console.log(`📊 Total de categorias específicas: ${allSpecificCategories.length}`);
+
+    // Atualizar sidebar com todas as categorias (interface simples)
+    this.updateSidebar(allSpecificCategories);
+
+    // Carregar primeira categoria automaticamente
+    if (allSpecificCategories.length > 0) {
+      setTimeout(() => {
+        this.loadFirstCategory(allSpecificCategories[0]);
+      }, 100);
+    }
+  }
+
   // Filtrar categorias por categoria principal (baseado nos nomes reorganizados)
   filterCategoriesByMain(mainCategoryKey) {
     switch (mainCategoryKey) {

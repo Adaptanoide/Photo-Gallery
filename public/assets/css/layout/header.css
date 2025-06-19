@@ -140,3 +140,21 @@
     padding: 6px 8px;
   }
 }
+
+/* ===== BOTÃO ALL CATEGORIES ===== */
+
+.all-categories-btn {
+  background: rgba(52, 152, 219, 0.9) !important;
+  border-right: 2px solid rgba(255, 255, 255, 0.3);
+  margin-right: 12px;
+  font-weight: 600;
+}
+
+.all-categories-btn:hover {
+  background: rgba(52, 152, 219, 1) !important;
+}
+
+.all-categories-btn.active {
+  background: #3498db !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+}
