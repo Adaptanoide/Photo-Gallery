@@ -1,210 +1,153 @@
-// ===== HEADER DROPDOWNS SYSTEM =====
+// ===== NAVEGAÇÃO DAS 6 CATEGORIAS PRINCIPAIS =====
 
-class HeaderDropdowns {
+class HeaderNavigation {
   constructor() {
-    this.categoryGroups = {};
+    this.allCategories = [];
     this.isInitialized = false;
+    this.activeCategory = null;
   }
 
-  // Inicializar sistema de dropdowns
+  // Inicializar sistema
   initialize(categories) {
     if (this.isInitialized) return;
     
-    console.log('🎯 Inicializando Header Dropdowns');
+    console.log('🎯 Inicializando Header Navigation com 6 categorias principais');
     
-    // Agrupar categorias
-    this.groupCategories(categories);
-    
-    // Popular dropdowns
-    this.populateDropdowns();
-    
-    // Configurar eventos
-    this.setupEvents();
-    
-    // Remover filtros antigos do sidebar
+    this.allCategories = categories.filter(cat => !cat.isAll);
     this.removeOldFilters();
-    
     this.isInitialized = true;
-  }
-
-  // Agrupar categorias conforme análise
-  groupCategories(categories) {
-    this.categoryGroups = {
-      'bestSellers': [],
-      'topSelected': { 'XL': [], 'ML': [], 'Small': [], 'Medium': [] },
-      'specialty': []
-    };
-
-    categories.filter(cat => !cat.isAll).forEach(cat => {
-      const name = cat.name;
-      
-      if (name.includes('Best Value') || name.includes('Super Promo')) {
-        this.categoryGroups.bestSellers.push(cat);
-      } else if (name.includes('XL') || name.includes('ML') || name.includes('Small') || name.includes('Medium')) {
-        // Brazil Top Selected por tamanho
-        if (name.includes('XL')) this.categoryGroups.topSelected.XL.push(cat);
-        else if (name.includes('ML')) this.categoryGroups.topSelected.ML.push(cat);
-        else if (name.includes('Medium')) this.categoryGroups.topSelected.Medium.push(cat);
-        else if (name.includes('Small')) this.categoryGroups.topSelected.Small.push(cat);
-      } else {
-        this.categoryGroups.specialty.push(cat);
-      }
-    });
-
-    console.log('📊 Categorias agrupadas:', {
-      bestSellers: this.categoryGroups.bestSellers.length,
-      topSelected: Object.values(this.categoryGroups.topSelected).reduce((sum, arr) => sum + arr.length, 0),
-      specialty: this.categoryGroups.specialty.length
-    });
-  }
-
-  // Popular conteúdo dos dropdowns
-  populateDropdowns() {
-    // Best Sellers
-    this.populateSimpleDropdown('content-best-sellers', this.categoryGroups.bestSellers);
     
-    // Top Selected (submenus)
-    this.populateTopSelectedSubmenus();
-    
-    // Specialty
-    this.populateSimpleDropdown('content-specialty', this.categoryGroups.specialty);
+    console.log(`📊 Total de categorias disponíveis: ${this.allCategories.length}`);
   }
 
-  // Popular dropdown simples
-  populateSimpleDropdown(containerId, categories) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+  // Carregar categorias de uma categoria principal
+  loadCategory(mainCategoryKey) {
+    console.log(`🎯 Carregando categoria principal: ${mainCategoryKey}`);
+    
+    // Marcar botão como ativo
+    this.setActiveButton(mainCategoryKey);
+    
+    // Filtrar categorias desta categoria principal
+    const filteredCategories = this.filterCategoriesByMain(mainCategoryKey);
+    
+    console.log(`📂 ${mainCategoryKey}: ${filteredCategories.length} categorias encontradas`);
+    
+    // Atualizar sidebar
+    this.updateSidebar(filteredCategories);
+    
+    // Carregar primeira categoria automaticamente
+    if (filteredCategories.length > 0) {
+      setTimeout(() => {
+        this.loadFirstCategory(filteredCategories[0]);
+      }, 100);
+    }
+  }
+
+  // Filtrar categorias por categoria principal
+  filterCategoriesByMain(mainCategoryKey) {
+    switch(mainCategoryKey) {
+      case 'brazil-best-sellers':
+        return this.allCategories.filter(cat => 
+          cat.name.includes('Best Value') || 
+          cat.name.includes('Super Promo')
+        );
+        
+      case 'brazil-top-selected':
+        // APENAS as 3 pastas de tamanho: buscar por padrões específicos
+        return this.allCategories.filter(cat => {
+          const name = cat.name;
+          // Categorias que terminam com XL, ML, Small (não ML-XL)
+          return (name.includes('XL') || name.includes('ML') || name.includes('Small') || name.includes('Medium')) &&
+                 !name.includes('Best Value') && 
+                 !name.includes('Super Promo');
+        });
+        
+      case 'calfskins':
+        return this.allCategories.filter(cat => 
+          cat.name.toLowerCase().includes('calfskin') ||
+          cat.name.toLowerCase().includes('calf')
+        );
+        
+      case 'colombian-cowhides':
+        return this.allCategories.filter(cat => 
+          cat.name.toLowerCase().includes('colombian') ||
+          cat.name.toLowerCase().includes('colombia')
+        );
+        
+      case 'rodeo-rugs':
+        return this.allCategories.filter(cat => 
+          cat.name.toLowerCase().includes('rodeo') ||
+          cat.name.toLowerCase().includes('rug')
+        );
+        
+      case 'sheepskins':
+        return this.allCategories.filter(cat => 
+          cat.name.toLowerCase().includes('sheepskin') ||
+          cat.name.toLowerCase().includes('sheep')
+        );
+        
+      default:
+        return [];
+    }
+  }
+
+  // Marcar botão como ativo
+  setActiveButton(mainCategoryKey) {
+    // Remover active de todos
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    
+    // Adicionar active no clicado
+    const activeBtn = document.querySelector(`[data-category="${mainCategoryKey}"]`);
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+      this.activeCategory = mainCategoryKey;
+    }
+  }
+
+  // Atualizar sidebar com categorias filtradas
+  updateSidebar(categories) {
+    const menuContainer = document.getElementById('categories-menu');
+    if (!menuContainer) return;
+
+    if (categories.length === 0) {
+      menuContainer.innerHTML = '<div class="category-loading">No categories available</div>';
+      return;
+    }
 
     let html = '';
-    categories.forEach(cat => {
+    categories.forEach((category, index) => {
+      const isActive = index === 0 ? 'active' : '';
       html += `
-        <div class="dropdown-item" data-category-id="${cat.id}" onclick="headerDropdowns.selectCategory('${cat.id}')">
-          ${cat.name}
+        <div class="category-item ${isActive}" data-category-id="${category.id}">
+          ${category.name}
         </div>
       `;
     });
 
-    container.innerHTML = html;
-  }
-
-  // Popular submenus do Top Selected
-  populateTopSelectedSubmenus() {
-    Object.entries(this.categoryGroups.topSelected).forEach(([size, categories]) => {
-      const submenuId = `submenu-${size.toLowerCase()}`;
-      const container = document.getElementById(submenuId);
-      
-      if (container && categories.length > 0) {
-        let html = '';
-        categories.forEach(cat => {
-          html += `
-            <div class="dropdown-item" data-category-id="${cat.id}" onclick="headerDropdowns.selectCategory('${cat.id}')">
-              ${cat.name.replace(/\s*(XL|ML|Small|Medium)\s*/g, '')}
-            </div>
-          `;
-        });
-        container.innerHTML = html;
-      }
-    });
-  }
-
-  // Configurar eventos
-  setupEvents() {
-    // Clique nos botões principais
-    document.querySelectorAll('.dropdown-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dropdown = btn.closest('.dropdown');
-        this.toggleDropdown(dropdown);
-      });
-    });
-
-    // Hover nos submenus
-    document.querySelectorAll('.dropdown-submenu').forEach(submenu => {
-      submenu.addEventListener('mouseenter', () => {
-        submenu.classList.add('active');
-      });
-      
-      submenu.addEventListener('mouseleave', () => {
-        submenu.classList.remove('active');
-      });
-    });
-
-    // Fechar ao clicar fora
-    document.addEventListener('click', () => {
-      this.closeAllDropdowns();
-    });
-  }
-
-  // Alternar dropdown
-  toggleDropdown(dropdown) {
-    const isActive = dropdown.classList.contains('active');
-    
-    // Fechar todos
-    this.closeAllDropdowns();
-    
-    // Abrir o clicado se não estava ativo
-    if (!isActive) {
-      dropdown.classList.add('active');
-    }
-  }
-
-  // Fechar todos os dropdowns
-  closeAllDropdowns() {
-    document.querySelectorAll('.dropdown').forEach(dropdown => {
-      dropdown.classList.remove('active');
-    });
-  }
-
-  // Selecionar categoria
-  selectCategory(categoryId) {
-    console.log(`🎯 Categoria selecionada: ${categoryId}`);
-    
-    // Fechar dropdowns
-    this.closeAllDropdowns();
-    
-    // Encontrar categoria
-    const category = this.findCategoryById(categoryId);
-    if (!category) return;
-
-    // Atualizar sidebar para mostrar apenas esta categoria
-    this.updateSidebarWithCategory(category);
-    
-    // Carregar fotos desta categoria automaticamente
-    if (window.loadCategoryPhotos) {
-      window.loadCategoryPhotos(categoryId);
-    }
-  }
-
-  // Encontrar categoria por ID
-  findCategoryById(categoryId) {
-    const allCategories = [
-      ...this.categoryGroups.bestSellers,
-      ...Object.values(this.categoryGroups.topSelected).flat(),
-      ...this.categoryGroups.specialty
-    ];
-    
-    return allCategories.find(cat => cat.id === categoryId);
-  }
-
-  // Atualizar sidebar com categoria selecionada
-  updateSidebarWithCategory(category) {
-    const menuContainer = document.getElementById('categories-menu');
-    if (!menuContainer) return;
-
-    // Mostrar apenas a categoria selecionada no sidebar
-    menuContainer.innerHTML = `
-      <div class="category-item active" data-category-id="${category.id}">
-        ${category.name}
-      </div>
-    `;
+    menuContainer.innerHTML = html;
 
     // Reconfigurar event listeners
     if (window.setupCategoryClickHandlers) {
       window.setupCategoryClickHandlers();
     }
+    
+    console.log(`✅ Sidebar atualizado com ${categories.length} categorias`);
   }
 
-  // Remover filtros antigos do sidebar
+  // Carregar primeira categoria automaticamente
+  loadFirstCategory(category) {
+    console.log(`🚀 Auto-carregando primeira categoria: ${category.name}`);
+    
+    // Trigger click na primeira categoria
+    const firstCategoryElement = document.querySelector(`[data-category-id="${category.id}"]`);
+    if (firstCategoryElement) {
+      firstCategoryElement.click();
+    }
+  }
+
+  // Remover filtros antigos
   removeOldFilters() {
     const filtersElement = document.querySelector('.category-filters');
     if (filtersElement) {
@@ -213,14 +156,19 @@ class HeaderDropdowns {
     }
   }
 
-  // Carregar todas as categorias (para mostrar tudo)
-  loadAllCategories() {
-    if (window.loadCategoriesMenu) {
-      window.loadCategoriesMenu();
-    }
+  // Debug: mostrar distribuição de categorias
+  debugCategoryDistribution() {
+    const categories = ['brazil-best-sellers', 'brazil-top-selected', 'calfskins', 'colombian-cowhides', 'rodeo-rugs', 'sheepskins'];
+    
+    console.log('📊 Distribuição das categorias:');
+    categories.forEach(cat => {
+      const filtered = this.filterCategoriesByMain(cat);
+      console.log(`${cat}: ${filtered.length} categorias`);
+      filtered.slice(0, 3).forEach(item => console.log(`  - ${item.name}`));
+    });
   }
 }
 
 // Instância global
-const headerDropdowns = new HeaderDropdowns();
-window.headerDropdowns = headerDropdowns;
+const headerNavigation = new HeaderNavigation();
+window.headerNavigation = headerNavigation;

@@ -71,60 +71,29 @@
 <body>
   <!-- BOTÕES NOVOS - TOPO DA PÁGINA -->
   <div class="top-buttons">
-    <!-- Dropdowns à esquerda -->
-    <div class="category-dropdowns">
-      <div class="dropdown" id="dropdown-best-sellers">
-        <button class="dropdown-btn">
-          🏆 Brazil Best Sellers
-          <span>▼</span>
-        </button>
-        <div class="dropdown-content" id="content-best-sellers">
-          <!-- Itens serão carregados dinamicamente -->
-        </div>
-      </div>
-
-      <div class="dropdown" id="dropdown-top-selected">
-        <button class="dropdown-btn">
-          ⭐ Brazil Top Selected
-          <span>▼</span>
-        </button>
-        <div class="dropdown-content" id="content-top-selected">
-          <div class="dropdown-item dropdown-submenu" data-size="XL">
-            Extra Large (29) <span class="submenu-arrow">▶</span>
-            <div class="dropdown-content" id="submenu-xl">
-              <!-- Categorias XL serão carregadas aqui -->
-            </div>
-          </div>
-          <div class="dropdown-item dropdown-submenu" data-size="ML">
-            Medium-Large (19) <span class="submenu-arrow">▶</span>
-            <div class="dropdown-content" id="submenu-ml">
-              <!-- Categorias ML serão carregadas aqui -->
-            </div>
-          </div>
-          <div class="dropdown-item dropdown-submenu" data-size="Small">
-            Small (16) <span class="submenu-arrow">▶</span>
-            <div class="dropdown-content" id="submenu-small">
-              <!-- Categorias Small serão carregadas aqui -->
-            </div>
-          </div>
-          <div class="dropdown-item dropdown-submenu" data-size="Medium">
-            Medium (2) <span class="submenu-arrow">▶</span>
-            <div class="dropdown-content" id="submenu-medium">
-              <!-- Categorias Medium serão carregadas aqui -->
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="dropdown" id="dropdown-specialty">
-        <button class="dropdown-btn">
-          🎨 Specialty Products
-          <span>▼</span>
-        </button>
-        <div class="dropdown-content" id="content-specialty">
-          <!-- Itens serão carregados dinamicamente -->
-        </div>
-      </div>
+    <!-- 6 Categorias Principais à esquerda -->
+    <div class="main-categories">
+      <button class="category-btn" data-category="brazil-best-sellers"
+        onclick="headerNavigation.loadCategory('brazil-best-sellers')">
+        Brazil Best Sellers
+      </button>
+      <button class="category-btn" data-category="brazil-top-selected"
+        onclick="headerNavigation.loadCategory('brazil-top-selected')">
+        Brazil Top Selected
+      </button>
+      <button class="category-btn" data-category="calfskins" onclick="headerNavigation.loadCategory('calfskins')">
+        Calfskins
+      </button>
+      <button class="category-btn" data-category="colombian-cowhides"
+        onclick="headerNavigation.loadCategory('colombian-cowhides')">
+        Colombian Cowhides
+      </button>
+      <button class="category-btn" data-category="rodeo-rugs" onclick="headerNavigation.loadCategory('rodeo-rugs')">
+        Rodeo Rugs
+      </button>
+      <button class="category-btn" data-category="sheepskins" onclick="headerNavigation.loadCategory('sheepskins')">
+        Sheepskins
+      </button>
     </div>
 
     <!-- Botões à direita -->

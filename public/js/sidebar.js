@@ -70,10 +70,10 @@ function loadCategoriesMenu() {
       const specificCategories = categories.filter(cat => !cat.isAll);
       console.log(`Categorias específicas encontradas: ${specificCategories.length}`);
 
-      // 🆕 INICIALIZAR HEADER DROPDOWNS (em vez de filtros)
-      if (window.headerDropdowns && specificCategories.length > 0) {
-        console.log('✅ Inicializando header dropdowns');
-        window.headerDropdowns.initialize(specificCategories);
+      // 🆕 INICIALIZAR NAVEGAÇÃO DAS 6 CATEGORIAS PRINCIPAIS
+      if (window.headerNavigation && specificCategories.length > 0) {
+        console.log('✅ Inicializando navegação das 6 categorias principais');
+        window.headerNavigation.initialize(specificCategories);
       }
 
       // Marcar a primeira categoria como ativa se existir
