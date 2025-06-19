@@ -63,6 +63,12 @@ class HeaderNavigation {
         return this.createHierarchicalGroups();
 
       case 'calfskins':
+        // Filtro simples: Calfskin + Metallica
+        return this.allCategories.filter(cat => {
+          const name = cat.name;
+          return name.includes('Calfskin') && name.includes('Metallica');
+        });
+
       case 'colombian-cowhides':
       case 'rodeo-rugs':
       case 'sheepskins':
