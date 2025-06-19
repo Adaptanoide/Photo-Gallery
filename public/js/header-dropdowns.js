@@ -47,11 +47,15 @@ class HeaderNavigation {
   filterCategoriesByMain(mainCategoryKey) {
     switch (mainCategoryKey) {
       case 'brazil-best-sellers':
-        // Filtro simples: Brazil + (Best ou Super)
+        // Filtro específico: Brazil + (Best/Super OU os 3 tipos específicos)
         return this.allCategories.filter(cat => {
           const name = cat.name;
           return name.includes('Brazil') &&
-            (name.includes('Best') || name.includes('Super'));
+            (name.includes('Best') ||
+              name.includes('Super') ||
+              name.includes('Dark Tones Mix') ||      // ✅ ADICIONAR específico
+              name.includes('Exotic Tones') ||        // ✅ ADICIONAR específico  
+              name.includes('Light Tones Mix'));      // ✅ ADICIONAR específico
         });
 
       case 'brazil-top-selected':
