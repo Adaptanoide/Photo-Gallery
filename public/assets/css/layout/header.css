@@ -144,17 +144,18 @@
 /* ===== BOTÃO ALL CATEGORIES ===== */
 
 .all-categories-btn {
-  background: rgba(52, 152, 219, 0.9) !important;
+  background: rgba(212, 175, 55, 1);
   border-right: 2px solid rgba(255, 255, 255, 0.3);
   margin-right: 12px;
   font-weight: 600;
 }
 
 .all-categories-btn:hover {
-  background: rgba(52, 152, 219, 1) !important;
+  background: rgba(212, 175, 55, 1);
+  transform: translateY(-1px);
 }
 
 .all-categories-btn.active {
-  background: #3498db !important;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+  background: #D4AF37;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
 }
