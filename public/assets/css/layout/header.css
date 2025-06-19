@@ -37,13 +37,14 @@
 .top-buttons {
   position: fixed;
   top: 20px;
-  left: 20px;
+  left: 280px;  /* Começar depois do sidebar (280px) */
   right: 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;  /* Alinhar à esquerda */
   align-items: center;
-  z-index: 1000;
+  z-index: 999;  /* Menor que sidebar */
   height: 60px;
+  gap: 20px;  /* Espaço entre grupos de botões */
 }
 
 .main-categories {
@@ -57,6 +58,7 @@
   display: flex;
   gap: 15px;
   align-items: center;
+  margin-left: auto;  /* Empurrar para a direita */
 }
 
 /* ===== BOTÕES DAS CATEGORIAS PRINCIPAIS ===== */
