@@ -124,7 +124,7 @@ class HeaderNavigation {
     return Object.values(groups);
   }
 
-  // Criar estrutura mista para Colombian Cowhides (grupos + categorias diretas)
+  // Criar estrutura de grupos para Colombian Cowhides (todos grupos agora)
   createColombianStructure() {
     // Filtrar todas as categorias Colombia
     const colombiaCategories = this.allCategories.filter(cat => {
@@ -134,54 +134,43 @@ class HeaderNavigation {
 
     console.log(`🇨🇴 Colombia total: ${colombiaCategories.length} categorias`);
 
-    // Separar categorias diretas das que vão para grupos
-    const directCategories = colombiaCategories.filter(cat => {
-      const name = cat.name;
-      return name.includes('Value') && (name.includes('L-XL') || name.includes('S-M'));
-    });
-
-    // Categorias para grupos de tamanho (L, M, XL individuais)
-    const groupCategories = colombiaCategories.filter(cat => {
-      const name = cat.name;
-      // Pegar as que terminam com " L", " M", " XL" (não L-XL ou S-M)
-      return (name.endsWith(' L') || name.endsWith(' M') || name.endsWith(' XL')) &&
-        !name.includes('Value');
-    });
-
-    // Criar grupos de tamanho
+    // Criar todos os grupos (agora uniforme)
     const groups = [
       {
         name: 'Colombia Large',
         key: 'colombia-large',
         isGroup: true,
-        categories: groupCategories.filter(cat => cat.name.endsWith(' L'))
+        categories: colombiaCategories.filter(cat => cat.name.endsWith(' L'))
       },
       {
         name: 'Colombia Medium',
         key: 'colombia-medium',
         isGroup: true,
-        categories: groupCategories.filter(cat => cat.name.endsWith(' M'))
+        categories: colombiaCategories.filter(cat => cat.name.endsWith(' M'))
       },
       {
         name: 'Colombia X-Large',
         key: 'colombia-xl',
         isGroup: true,
-        categories: groupCategories.filter(cat => cat.name.endsWith(' XL'))
+        categories: colombiaCategories.filter(cat => cat.name.endsWith(' XL'))
+      },
+      {
+        name: 'Colombia Value',
+        key: 'colombia-value',
+        isGroup: true,
+        categories: colombiaCategories.filter(cat => cat.name.includes('Value'))
       }
     ];
 
     // Filtrar grupos que têm categorias
     const validGroups = groups.filter(group => group.categories.length > 0);
 
-    console.log('📂 Grupos Colombia:');
+    console.log('📂 Grupos Colombia (todos uniformes):');
     validGroups.forEach(group => {
       console.log(`  ${group.name}: ${group.categories.length} categorias`);
     });
 
-    console.log('📄 Categorias diretas Colombia:', directCategories.length);
-
-    // Retornar grupos + categorias diretas
-    return [...validGroups, ...directCategories];
+    return validGroups;
   }
 
   // Marcar botão como ativo
