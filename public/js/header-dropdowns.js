@@ -43,49 +43,26 @@ class HeaderNavigation {
     }
   }
 
-  // Filtrar categorias por categoria principal (baseado nos dados reais)
+  // Filtrar categorias por categoria principal (baseado nos nomes reorganizados)
   filterCategoriesByMain(mainCategoryKey) {
     switch (mainCategoryKey) {
       case 'brazil-best-sellers':
-        // 6 categorias: Best Value + Super Promo
-        return this.allCategories.filter(cat =>
-          cat.name.includes('Best Value') ||
-          cat.name.includes('Super Promo')
-        );
-
-      case 'brazil-top-selected':
-        // 66 categorias: XL/ML/Small (EXCETO Best Value)
+        // Filtro simples: Brazil + (Best ou Super)
         return this.allCategories.filter(cat => {
           const name = cat.name;
-          return (name.includes('XL') || name.includes('ML') || name.includes('Small') || name.includes('Medium')) &&
-            !name.includes('Best Value') &&
-            !name.includes('Super Promo');
+          return name.includes('Brazil') &&
+            (name.includes('Best') || name.includes('Super'));
         });
 
-      case 'rodeo-rugs':
-        // 9 categorias: Round + Star
-        return this.allCategories.filter(cat =>
-          cat.name.includes('Round') ||
-          cat.name.includes('Star')
-        );
-
-      case 'specialty':
-        // 16 categorias: Metallica + Others
-        return this.allCategories.filter(cat =>
-          cat.name.includes('Metallica') ||
-          (!cat.name.includes('Best') &&
-            !cat.name.includes('Super') &&
-            !cat.name.includes('XL') &&
-            !cat.name.includes('ML') &&
-            !cat.name.includes('Small') &&
-            !cat.name.includes('Round') &&
-            !cat.name.includes('Star'))
-        );
+      case 'brazil-top-selected':
+        // Por enquanto vazio - vamos configurar depois
+        return [];
 
       case 'calfskins':
       case 'colombian-cowhides':
+      case 'rodeo-rugs':
       case 'sheepskins':
-        // Por enquanto vazio (cliente não tem acesso)
+        // Por enquanto vazio - vamos configurar depois
         return [];
 
       default:
