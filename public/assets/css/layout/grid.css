@@ -61,9 +61,9 @@ div[id^="category-section-"] {
 
 .category-title-container h2 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 2rem;
+  font-size: 1.7rem;
   color: #312825;
-  margin: 0;
+  margin: 50px 0px 10px 0px;
   padding: 0;
   position: relative;
   display: inline-block;
