@@ -20,6 +20,7 @@
 
 /* Modules */
 @import 'modules/cart.css';
+@import 'modules/dashboard.css';
 @import 'modules/gallery.css';
 @import 'modules/lightbox.css';
 @import 'modules/notification.css';

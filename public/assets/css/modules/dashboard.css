@@ -1,0 +1,220 @@
+/* ===== DASHBOARD DAS 6 CATEGORIAS PRINCIPAIS ===== */
+
+.dashboard-container {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.dashboard-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  color: #312825;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+.dashboard-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ===== GRID DOS CARDS ===== */
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+/* ===== CARDS DAS CATEGORIAS ===== */
+
+.category-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid transparent;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.category-card:active {
+  transform: translateY(-2px);
+}
+
+/* ===== IMAGEM DO CARD ===== */
+
+.card-image {
+  position: relative;
+  height: 200px;
+  background: linear-gradient(135deg, #f8f6f0 0%, #ede8db 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.category-card:hover .card-image img {
+  transform: scale(1.05);
+}
+
+/* ===== BADGES DOS CARDS ===== */
+
+.card-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  z-index: 2;
+}
+
+.card-badge.bestseller {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.card-badge.premium {
+  background: linear-gradient(135deg, #f39c12, #d68910);
+}
+
+.card-badge.exotic {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+.card-badge.international {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.card-badge.specialty {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.card-badge.luxury {
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+}
+
+/* ===== CONTEÚDO DO CARD ===== */
+
+.card-content {
+  padding: 25px;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: #312825;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.card-description {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.card-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.stat {
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.price-range {
+  color: #D4AF37;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 20px 15px;
+  }
+  
+  .dashboard-title {
+    font-size: 2rem;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .category-card {
+    border-radius: 12px;
+  }
+  
+  .card-image {
+    height: 150px;
+  }
+  
+  .card-content {
+    padding: 20px;
+  }
+  
+  .card-title {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-title {
+    font-size: 1.6rem;
+  }
+  
+  .card-stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ===== ANIMAÇÕES ===== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

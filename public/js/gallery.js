@@ -171,8 +171,8 @@ function initializeGallery() {
   const contentDiv = document.getElementById('content');
   contentDiv.className = 'gallery';
   
-  // Mostrar tutorial em vez da mensagem simples
-  showWelcome();
+  // Mostrar dashboard das 6 categorias principais
+  showDashboard();
   
   console.log("Gallery initialized with tutorial - awaiting category selection");
   
@@ -995,90 +995,128 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
   }
 }
 
-function showWelcome() {
+function showDashboard() {
   const contentDiv = document.getElementById('content');
   
   contentDiv.innerHTML = `
-    <div class="tutorial-container" style="
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-    ">
-      <div class="tutorial-header">
-        <h1 class="tutorial-title">Welcome to Our Gallery</h1>
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Choose Your Category</h1>
+        <p class="dashboard-subtitle">Select from our premium leather collections</p>
       </div>
       
-      <div class="welcome-instruction" style="text-align: center; margin: 50px 0; position: relative;">
-        <p class="instruction-text" style="
-          font-size: 18px; 
-          color: #555; 
-          margin-bottom: 15px;
-          font-weight: 400;
-          animation: fadeInUp 0.8s ease-out;
-        ">
-          Choose a category from the sidebar to start exploring
-        </p>
-        
-        <p style="
-          font-size: 18px; 
-          color: #555; 
-          margin-bottom: 0;
-          animation: fadeInUp 1s ease-out;
-        ">
-          or click the button below to get started
-        </p>
-        
-        <!-- Seta maior apontando para a sidebar -->
-        <div class="arrow-pointer" style="
-          position: absolute;
-          left: -80px;
-          top: 20%;
-          font-size: 48px;
-          color: #d4a574;
-          animation: bounceLeft 2s infinite;
-          font-weight: bold;
-        ">
-          ←
+      <div class="categories-grid">
+        <div class="category-card" onclick="dashboardNavigation.loadCategory('brazil-best-sellers')" data-category="brazil-best-sellers">
+          <div class="card-image">
+            <div class="card-badge bestseller">🔥 Most Popular</div>
+            <img src="/placeholder-category.jpg" alt="Brazil Best Sellers" onerror="this.style.display='none'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Brazil Best Sellers</h3>
+            <p class="card-description">Premium quality at exceptional value</p>
+            <div class="card-stats">
+              <span class="stat">9 categories</span>
+              <span class="price-range">$85 - $120</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-card" onclick="dashboardNavigation.loadCategory('brazil-top-selected')" data-category="brazil-top-selected">
+          <div class="card-image">
+            <div class="card-badge premium">⭐ Premium</div>
+            <img src="/placeholder-category.jpg" alt="Brazil Top Selected" onerror="this.style.display='none'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Brazil Top Selected</h3>
+            <p class="card-description">Our finest Brazilian selections</p>
+            <div class="card-stats">
+              <span class="stat">3 sizes available</span>
+              <span class="price-range">$90 - $150</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-card" onclick="dashboardNavigation.loadCategory('calfskins')" data-category="calfskins">
+          <div class="card-image">
+            <div class="card-badge exotic">✨ Exotic</div>
+            <img src="/placeholder-category.jpg" alt="Calfskins" onerror="this.style.display='none'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Calfskins</h3>
+            <p class="card-description">Luxury metallica finishes</p>
+            <div class="card-stats">
+              <span class="stat">2 categories</span>
+              <span class="price-range">$200 - $300</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-card" onclick="dashboardNavigation.loadCategory('colombian-cowhides')" data-category="colombian-cowhides">
+          <div class="card-image">
+            <div class="card-badge international">🌎 International</div>
+            <img src="/placeholder-category.jpg" alt="Colombian Cowhides" onerror="this.style.display='none'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Colombian Cowhides</h3>
+            <p class="card-description">Authentic Colombian craftsmanship</p>
+            <div class="card-stats">
+              <span class="stat">4 size groups</span>
+              <span class="price-range">$75 - $140</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-card" onclick="dashboardNavigation.loadCategory('rodeo-rugs')" data-category="rodeo-rugs">
+          <div class="card-image">
+            <div class="card-badge specialty">🤠 Specialty</div>
+            <img src="/placeholder-category.jpg" alt="Rodeo Rugs" onerror="this.style.display='none'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Rodeo Rugs</h3>
+            <p class="card-description">Western style rugs and decorative pieces</p>
+            <div class="card-stats">
+              <span class="stat">7 categories</span>
+              <span class="price-range">$60 - $200</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-card" onclick="dashboardNavigation.loadCategory('sheepskins')" data-category="sheepskins">
+          <div class="card-image">
+            <div class="card-badge luxury">💎 Luxury</div>
+            <img src="/placeholder-category.jpg" alt="Sheepskins" onerror="this.style.display='none'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Sheepskins</h3>
+            <p class="card-description">Exotic Himalayan and Tibetan collections</p>
+            <div class="card-stats">
+              <span class="stat">2 categories</span>
+              <span class="price-range">$150 - $400</span>
+            </div>
+          </div>
         </div>
       </div>
-      
-      <div class="tutorial-cta" style="
-        text-align: center; 
-        margin-top: 40px;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-      ">
-        <button class="cta-button" onclick="focusOnFirstCategory()">Get Started</button>
-      </div>
     </div>
-    
-    <style>
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      @keyframes bounceLeft {
-        0%, 20%, 50%, 80%, 100% {
-          transform: translateX(0);
-        }
-        40% {
-          transform: translateX(-15px);
-        }
-        60% {
-          transform: translateX(-8px);
-        }
-      }
-    </style>
   `;
 }
+
+// ===== NAVEGAÇÃO DO DASHBOARD =====
+class DashboardNavigation {
+  loadCategory(categoryKey) {
+    console.log(`🎯 Dashboard: Carregando categoria ${categoryKey}`);
+    
+    // Usar a navegação existente do header
+    if (window.headerNavigation) {
+      window.headerNavigation.loadCategory(categoryKey);
+    } else {
+      console.error('HeaderNavigation não disponível');
+    }
+  }
+}
+
+// Instância global
+const dashboardNavigation = new DashboardNavigation();
+window.dashboardNavigation = dashboardNavigation;
 
 // FUNÇÃO ATUALIZADA: Tornar o botão de ajuda globalmente acessível
 window.showTutorial = showTutorial;
