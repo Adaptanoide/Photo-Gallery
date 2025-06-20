@@ -1114,6 +1114,28 @@ class DashboardNavigation {
   }
 }
 
+// ===== FUNÇÃO HOME =====
+function goToHome() {
+  console.log('🏠 Voltando para home (dashboard)');
+  
+  // Limpar seleção de botões ativos
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Marcar botão home como ativo
+  document.querySelector('.home-btn').classList.add('active');
+  
+  // Mostrar dashboard
+  showDashboard();
+  
+  // Limpar sidebar
+  document.getElementById('categories-menu').innerHTML = '<div class="category-loading">Select a category from the dashboard to start browsing</div>';
+}
+
+// Tornar função global
+window.goToHome = goToHome;
+
 // Instância global
 const dashboardNavigation = new DashboardNavigation();
 window.dashboardNavigation = dashboardNavigation;

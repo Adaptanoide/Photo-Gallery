@@ -161,3 +161,44 @@
   background: #D4AF37;
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
 }
+
+/* ===== BOTÃO HOME ESPECIAL ===== */
+
+.home-btn {
+  background: linear-gradient(135deg, #2c3e50, #34495e) !important;
+  color: white !important;
+  border: 2px solid #34495e !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+}
+
+.home-btn:hover {
+  background: linear-gradient(135deg, #34495e, #2c3e50) !important;
+  border-color: #2c3e50 !important;
+  transform: translateY(-2px) !important;
+}
+
+.home-btn.active {
+  background: linear-gradient(135deg, #D4AF37, #B8941F) !important;
+  border-color: #D4AF37 !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4) !important;
+}
+
+.home-icon {
+  font-size: 16px;
+  filter: none;
+}
+
+/* Ajustar espaçamento do header com menos botões */
+.main-categories {
+  gap: 0 !important; /* Só um botão agora */
+}
+
+.top-buttons {
+  left: 2px;
+  gap: 15px; /* Espaço entre home e logout */
+}

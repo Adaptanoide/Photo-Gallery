@@ -70,10 +70,13 @@ function loadCategoriesMenu() {
       const specificCategories = categories.filter(cat => !cat.isAll);
       console.log(`Categorias específicas encontradas: ${specificCategories.length}`);
 
-      // 🆕 INICIALIZAR NAVEGAÇÃO DAS 6 CATEGORIAS PRINCIPAIS
+      // 🆕 INICIALIZAR NAVEGAÇÃO DAS 6 CATEGORIAS PRINCIPAIS (SEM AUTO-LOAD)
       if (window.headerNavigation && specificCategories.length > 0) {
         console.log('✅ Inicializando navegação das 6 categorias principais');
         window.headerNavigation.initialize(specificCategories);
+
+        // Deixar sidebar vazio inicialmente
+        document.getElementById('categories-menu').innerHTML = '<div class="category-loading">Select a category from the dashboard to start browsing</div>';
       }
 
       // Marcar a primeira categoria como ativa se existir
@@ -1344,21 +1347,21 @@ function hideDiscreteLoadingIndicator() {
 function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfiniteScroll = false) {
   // Determinar se é botão ou infinite scroll
   const button = isInfiniteScroll ? null : (typeof event !== 'undefined' && event ? event.target : null);
-  
+
   // Buscar container correto
   let sectionContainer = document.getElementById('category-section-main');
   if (!sectionContainer) {
     const contentDiv = document.getElementById('content');
     sectionContainer = contentDiv.querySelector('.category-section') || contentDiv;
   }
-  
+
   console.log(`🔄 Loading photos - Infinite scroll: ${isInfiniteScroll}`);
-  
+
   // Feedback visual no botão (apenas se não for infinite scroll)
   if (button && !isInfiniteScroll) {
     enhanceMorePhotosButton(button, true);
   }
-  
+
   // Fazer requisição
   return fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
     .then(response => response.json())
@@ -1368,12 +1371,12 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfin
           button.parentElement.remove();
         }
         console.log('📭 Não há mais fotos para carregar');
-        
+
         return Promise.resolve();
       }
-      
+
       console.log(`📸 Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
-      
+
       // Atualizar cache
       const categoryCache = categoryPhotoCache[categoryId];
       if (categoryCache) {
@@ -1381,27 +1384,27 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfin
         categoryCache.totalLoaded += newPhotos.length;
         categoryCache.hasMore = newPhotos.length >= batchSize;
       }
-      
+
       // Registrar novas fotos
       newPhotos.forEach(photo => {
         photoRegistry[photo.id] = photo;
         photos.push(photo);
       });
-      
+
       // Verificar container
       if (!sectionContainer) {
         console.error('❌ Container para fotos não encontrado');
         return Promise.reject('Container não encontrado');
       }
-      
+
       // Carregar fotos
       loadPhotosSequentially(newPhotos, sectionContainer, 100);
-      
+
       // Restaurar botão se não for infinite scroll
       if (button && !isInfiniteScroll) {
         enhanceMorePhotosButton(button, false);
       }
-      
+
       return Promise.resolve();
     })
     .catch(error => {
