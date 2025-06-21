@@ -57,9 +57,9 @@
 /* ===== BOTÃO HOME STANDALONE ===== */
 
 #standalone-home-btn {
-  background: linear-gradient(135deg, #2c3e50, #34495e);
-  color: white;
-  border: 2px solid #34495e;
+  background: rgba(212, 175, 55, 0.1); /* ✅ Dourado como breadcrumb */
+  color: #D4AF37; /* ✅ Dourado como breadcrumb */
+  border: 1px solid rgba(212, 175, 55, 0.2); /* ✅ Dourado como breadcrumb */
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -67,22 +67,21 @@
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px; /* ✅ Mesmo tamanho do breadcrumb */
   transition: all 0.3s ease;
   white-space: nowrap;
 }
 
 #standalone-home-btn:hover {
-  background: linear-gradient(135deg, #34495e, #2c3e50);
-  border-color: #2c3e50;
-  transform: translateY(-2px);
+  background: rgba(212, 175, 55, 0.2); /* ✅ Dourado como breadcrumb */
+  color: #B8941F;
+  transform: translateY(-1px);
 }
 
 #standalone-home-btn.active {
-  background: linear-gradient(135deg, #D4AF37, #B8941F);
-  border-color: #D4AF37;
-  color: white;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.15); /* ✅ Dourado como breadcrumb */
+  color: #312825;
+  font-weight: 600;
 }
 
 .home-icon {
