@@ -242,19 +242,36 @@ class SizeTabManager {
             folderId: photo.folderId
         }));
 
-        // ✅ DEFINIR AMBAS AS VARIÁVEIS (CORREÇÃO CRÍTICA)
+        // ✅ FORÇA DEFINIÇÃO GLOBAL COM MÚLTIPLAS ABORDAGENS
         window.photos = lightboxPhotos;
-        photos = lightboxPhotos;  // ← LINHA CRÍTICA ADICIONADA
+
+        // ✅ FORÇAR NO ESCOPO GLOBAL DE VÁRIAS FORMAS
+        if (typeof globalThis !== 'undefined') {
+            globalThis.photos = lightboxPhotos;
+        }
+
+        // ✅ DEFINIR DIRETAMENTE NO ESCOPO GLOBAL
+        try {
+            // Usar eval para garantir escopo global (técnica de último recurso)
+            eval('photos = lightboxPhotos');
+        } catch (e) {
+            console.warn('Eval fallback failed:', e);
+        }
+
+        // ✅ FORÇAR VIA OBJECT.ASSIGN
+        Object.assign(window, { photos: lightboxPhotos });
+
+        // ✅ DEBUG EXTENSIVO
+        console.log(`🔍 Lightbox configurado para ${lightboxPhotos.length} fotos`);
+        console.log(`🔍 window.photos definido:`, window.photos?.length || 0);
+        console.log(`🔍 globalThis.photos definido:`, globalThis?.photos?.length || 0);
+        console.log(`🔍 Verificação direta photos[0]:`, typeof photos !== 'undefined' ? photos[0] : 'UNDEFINED');
+        console.log(`🔍 Primeira foto para lightbox:`, lightboxPhotos[0]);
 
         // ✅ CONFIGURAR ZOOM PARA IMAGENS (se existir)
         if (typeof window.setupImageZoom === 'function') {
             window.setupImageZoom();
         }
-
-        console.log(`🔍 Lightbox configurado para ${lightboxPhotos.length} fotos`);
-        console.log(`🔍 window.photos definido:`, window.photos?.length || 0);
-        console.log(`🔍 photos (global) definido:`, photos?.length || 0);  // ← NOVO DEBUG
-        console.log(`🔍 Primeira foto para lightbox:`, lightboxPhotos[0]);
     }
 
     // Mostrar mensagem de erro
@@ -277,27 +294,49 @@ class SizeTabManager {
 const sizeTabManager = new SizeTabManager();
 window.sizeTabManager = sizeTabManager;
 
-// ✅ FUNÇÃO MELHORADA: Abrir lightbox da seção atual
-window.openLightboxFromSection = function (photoIndex = 0) {
-    console.log(`🔍 Abrindo lightbox da seção atual no índice ${photoIndex}`);
-
-    // ✅ DEBUG: Verificar estado das fotos
-    console.log('🔍 window.photos disponível:', window.photos?.length || 0);
-    console.log('🔍 Função openLightbox existe:', typeof window.openLightbox);
-    console.log('🔍 Foto no índice solicitado:', window.photos?.[photoIndex]);
-
-    // Usar as fotos já carregadas globalmente
-    if (window.photos && window.photos.length > 0 && window.photos[photoIndex]) {
-        if (typeof window.openLightbox === 'function') {
-            console.log(`✅ Abrindo lightbox com ${window.photos.length} fotos no índice ${photoIndex}`);
-            window.openLightbox(photoIndex);
-        } else {
-            console.error('❌ Função openLightbox não encontrada');
-        }
+// ✅ FUNÇÃO COM VERIFICAÇÃO EXTENSIVA
+window.openLightboxFromSection = function(photoIndex = 0) {
+    console.log(`🔍 === LIGHTBOX DEBUG EXTENSIVO ===`);
+    console.log(`🔍 Índice solicitado: ${photoIndex}`);
+    
+    // ✅ VERIFICAR TODAS AS VARIAÇÕES DE PHOTOS
+    console.log(`🔍 window.photos:`, window.photos?.length || 0);
+    console.log(`🔍 globalThis.photos:`, globalThis?.photos?.length || 0);
+    console.log(`🔍 photos (direto):`, typeof photos !== 'undefined' ? photos?.length : 'UNDEFINED');
+    
+    // ✅ TENTAR USAR A MELHOR VERSÃO DISPONÍVEL
+    let photosArray = null;
+    
+    if (window.photos && Array.isArray(window.photos) && window.photos.length > 0) {
+        photosArray = window.photos;
+        console.log(`✅ Usando window.photos (${photosArray.length} fotos)`);
+    } else if (typeof globalThis !== 'undefined' && globalThis.photos && Array.isArray(globalThis.photos)) {
+        photosArray = globalThis.photos;
+        console.log(`✅ Usando globalThis.photos (${photosArray.length} fotos)`);
     } else {
-        console.error('❌ Foto não disponível no índice:', photoIndex);
-        console.error('❌ window.photos:', window.photos);
-        console.error('❌ Foto específica:', window.photos?.[photoIndex]);
+        console.error(`❌ Nenhuma versão válida de photos encontrada`);
+        return;
+    }
+    
+    // ✅ VERIFICAR SE A FOTO ESPECÍFICA EXISTE
+    if (!photosArray[photoIndex]) {
+        console.error(`❌ Foto no índice ${photoIndex} não existe no array`);
+        console.error(`❌ Array length: ${photosArray.length}`);
+        console.error(`❌ Índices disponíveis: 0 a ${photosArray.length - 1}`);
+        return;
+    }
+    
+    console.log(`🔍 Foto encontrada:`, photosArray[photoIndex]);
+    
+    // ✅ FORÇAR REDEFINIÇÃO ANTES DE CHAMAR LIGHTBOX
+    window.photos = photosArray;
+    photos = photosArray;  // Tentar sobrescrever novamente
+    
+    if (typeof window.openLightbox === 'function') {
+        console.log(`✅ Chamando openLightbox(${photoIndex})`);
+        window.openLightbox(photoIndex);
+    } else {
+        console.error('❌ Função openLightbox não encontrada');
     }
 };
 
