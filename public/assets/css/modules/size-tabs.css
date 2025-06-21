@@ -1,0 +1,55 @@
+/* ===== SIZE TABS POSITIONING ===== */
+
+/* Container das abas - logo abaixo do breadcrumb */
+.size-tabs-container {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important; /* Menor que lightbox (9999) */
+  background: white !important;
+  border-bottom: 1px solid #eee !important;
+  padding: 15px 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Container interno das abas */
+.size-tabs {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 20px !important;
+}
+
+/* Cada aba individual */
+.size-tab {
+  background: #f8f9fa !important;
+  border: 2px solid #dee2e6 !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  font-weight: 500 !important;
+  color: #495057 !important;
+}
+
+/* Aba ativa */
+.size-tab.active {
+  background: #D4AF37 !important;
+  border-color: #D4AF37 !important;
+  color: white !important;
+}
+
+/* Hover das abas */
+.size-tab:hover:not(.active) {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+}
+
+/* Garantir que conteúdo fique abaixo das abas */
+.content-area {
+  margin-top: 0 !important;
+  padding-top: 20px !important;
+}

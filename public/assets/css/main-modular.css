@@ -28,6 +28,7 @@
 @import 'modules/sidebar.css';
 @import 'modules/tutorial.css';
 @import 'modules/size-sections.css';
+@import 'modules/size-tabs.css';
 
 /* Pages */
 @import 'pages/admin.css';
