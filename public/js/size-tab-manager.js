@@ -43,7 +43,7 @@ class SizeTabManager {
     }
 
     // Carregar fotos para o tamanho específico
-    loadPhotosForSize(size) {
+    async loadPhotosForSize(size) {
         if (!this.currentGroup) {
             console.error('❌ Nenhum grupo definido');
             return;
@@ -61,9 +61,60 @@ class SizeTabManager {
             return;
         }
 
-        // TODO: Implementar carregamento de fotos por seções
-        // Por enquanto, vamos mostrar um placeholder
-        this.showSizeSection(size, categoriesForSize);
+        // ✅ MOSTRAR LOADER
+        if (typeof showLoader === 'function') {
+            showLoader();
+        }
+
+        try {
+            // ✅ CARREGAR FOTOS DE TODAS AS CATEGORIAS DO TAMANHO
+            const allPhotos = [];
+
+            for (const category of categoriesForSize) {
+                console.log(`📂 Carregando categoria: ${category.name} (ID: ${category.id})`);
+
+                // ✅ OBTER CUSTOMER CODE DE FORMA SEGURA
+                const customerCode = window.currentCustomerCode || '4484';
+
+                const response = await fetch(`/api/photos?category_id=${category.id}&customer_code=${customerCode}&limit=100`);
+                const photos = await response.json();
+
+                if (Array.isArray(photos) && photos.length > 0) {
+                    // Adicionar informação da categoria às fotos
+                    photos.forEach(photo => {
+                        photo.categoryInfo = {
+                            id: category.id,
+                            name: category.name,
+                            size: size
+                        };
+                    });
+
+                    allPhotos.push(...photos);
+                    console.log(`✅ ${photos.length} fotos carregadas de ${category.name}`);
+                }
+            }
+
+            console.log(`🎯 Total de fotos carregadas para ${size}: ${allPhotos.length}`);
+
+            // ✅ ATUALIZAR REGISTRY DE FOTOS
+            if (window.photoRegistry) {
+                allPhotos.forEach(photo => {
+                    window.photoRegistry[photo.id] = photo;
+                });
+            }
+
+            // ✅ RENDERIZAR FOTOS POR SEÇÃO DE TAMANHO
+            this.renderSizeSection(size, allPhotos, categoriesForSize);
+
+        } catch (error) {
+            console.error(`❌ Erro ao carregar fotos para ${size}:`, error);
+            this.showErrorMessage(size, error.message);
+        } finally {
+            // ✅ ESCONDER LOADER
+            if (typeof hideLoader === 'function') {
+                hideLoader();
+            }
+        }
     }
 
     // ✅ NOVO MÉTODO: Renderizar seção do tamanho com fotos reais
