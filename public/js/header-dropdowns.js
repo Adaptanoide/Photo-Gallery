@@ -82,8 +82,8 @@ class HeaderNavigation {
         });
 
       case 'brazil-top-selected':
-        // Retornar estrutura hierárquica dos 3 grupos de tamanho
-        return this.createHierarchicalGroups();
+        // TESTE: Usar nova lógica de agrupamento
+        return this.createCategoryGroups();
 
       case 'calfskins':
         // Filtro simples: Calfskin + Metallica
@@ -349,6 +349,27 @@ class HeaderNavigation {
       filtered.slice(0, 3).forEach(item => console.log(`  - ${item.name}`));
     });
   }
+
+  // NOVA FUNÇÃO: Criar grupos de categorias (em vez de grupos de tamanho)
+  createCategoryGroups() {
+    console.log('🔄 Criando grupos de categorias para Brazil Top Selected...');
+
+    if (!window.categoryGrouper) {
+      console.error('CategoryGrouper não disponível');
+      return this.createHierarchicalGroups(); // Fallback
+    }
+
+    // Usar nova lógica de agrupamento
+    const groups = window.categoryGrouper.groupBrazilTopSelectedCategories(this.allCategories);
+
+    if (groups.length === 0) {
+      console.log('⚠️ Nenhum grupo encontrado, usando método antigo');
+      return this.createHierarchicalGroups(); // Fallback
+    }
+
+    return groups;
+  }
+
 }
 
 // Instância global
