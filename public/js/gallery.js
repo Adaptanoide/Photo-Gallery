@@ -1129,29 +1129,28 @@ class DashboardNavigation {
   }
 }
 
-// ===== FUNÇÃO HOME =====
 function goToHome() {
   console.log('🏠 Voltando para home (dashboard)');
-
-  // Usar breadcrumb navigation se disponível
-  if (window.breadcrumbNavigation) {
-    window.breadcrumbNavigation.goToHome();
-    return; // Sair aqui, breadcrumb cuida do resto
-  }
-
+  
   // Limpar seleção de botões ativos
   document.querySelectorAll('.category-btn').forEach(btn => {
     btn.classList.remove('active');
   });
-
+  
   // Marcar botão home como ativo
-  document.querySelector('.home-btn').classList.add('active');
-
+  const homeBtn = document.querySelector('.home-btn');
+  if (homeBtn) {
+    homeBtn.classList.add('active');
+  }
+  
   // Mostrar dashboard
   showDashboard();
-
+  
   // Limpar sidebar
-  document.getElementById('categories-menu').innerHTML = '<div class="category-loading">Select a category from the dashboard to start browsing</div>';
+  const categoriesMenu = document.getElementById('categories-menu');
+  if (categoriesMenu) {
+    categoriesMenu.innerHTML = '<div class="category-loading">Select a category from the dashboard to start browsing</div>';
+  }
 }
 
 // Tornar função global

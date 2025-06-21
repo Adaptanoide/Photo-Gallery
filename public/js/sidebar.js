@@ -113,59 +113,60 @@ function loadCategoriesMenu() {
 function handleCategoryClick(categoryElement) {
   const categoryId = categoryElement.getAttribute('data-category-id');
   const categoryName = categoryElement.textContent.trim();
-  
+
   console.log(`🎯 Categoria clicada: ${categoryName} (ID: ${categoryId})`);
-  
+
   // Verificar se categoria tem tamanhos baseado no nome
-  const hasSize = categoryName.includes(' XL') || 
-                  categoryName.includes(' ML') || 
-                  categoryName.includes(' L') || 
-                  categoryName.includes(' M') || 
-                  categoryName.includes(' Small') ||
-                  (!categoryName.includes('Best Value') && 
-                   !categoryName.includes('Super Promo') && 
-                   !categoryName.includes('Metallica') &&
-                   !categoryName.includes('Round Rug') &&
-                   !categoryName.includes('Rodeo Rug') &&
-                   !categoryName.includes('Sheepskin'));
-  
+  const hasSize = categoryName.includes(' XL') ||
+    categoryName.includes(' ML') ||
+    categoryName.includes(' L') ||
+    categoryName.includes(' M') ||
+    categoryName.includes(' Small') ||
+    (!categoryName.includes('Best Value') &&
+      !categoryName.includes('Super Promo') &&
+      !categoryName.includes('Metallica') &&
+      !categoryName.includes('Round Rug') &&
+      !categoryName.includes('Rodeo Rug') &&
+      !categoryName.includes('Sheepskin'));
+
   // Usar breadcrumb navigation se disponível
   if (window.breadcrumbNavigation) {
     window.breadcrumbNavigation.navigateToSubcategory(categoryId, categoryName, hasSize);
   }
-  
+
   // Continuar com navegação normal se não for categoria com tamanhos
   if (!hasSize) {
     return true; // Permitir comportamento padrão
   }
-  
+
   return false; // Prevenir comportamento padrão para categorias com tamanhos
 }
 
 function setupCategoryClickHandlers() {
   const categoryItems = document.querySelectorAll('.category-item');
-  
+
   categoryItems.forEach(item => {
     // Remover listeners antigos
-    item.removeEventListener('click', handleCategoryClickOld);
-    
-    item.addEventListener('click', function(e) {
+    // Limpar listeners antigos
+    item.replaceWith(item.cloneNode(true));
+    item = categoryItems[Array.from(categoryItems).indexOf(item)];
+    item.addEventListener('click', function (e) {
       // Remover active de outros itens
       categoryItems.forEach(cat => cat.classList.remove('active'));
       // Adicionar active no item clicado
       this.classList.add('active');
-      
+
       // Usar nova navegação breadcrumb
       const shouldContinue = handleCategoryClick(this);
-      
+
       if (shouldContinue) {
         // Comportamento original para categorias sem tamanhos
         const categoryId = this.getAttribute('data-category-id');
         const categoryName = this.textContent.trim();
-        
+
         updateCategoryTitle(categoryId);
         showLoader();
-        
+
         // Carregar fotos da categoria
         loadPhotosForCategory(categoryId, categoryName).finally(() => {
           hideLoader();

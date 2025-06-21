@@ -20,9 +20,26 @@ class BreadcrumbNavigation {
         this.hideBreadcrumb();
         this.hideSizeTabs();
 
-        // Chamar função de home existente
-        if (window.goToHome) {
-            window.goToHome();
+        // Limpar seleção de botões ativos
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Marcar botão home como ativo
+        const homeBtn = document.querySelector('.home-btn');
+        if (homeBtn) {
+            homeBtn.classList.add('active');
+        }
+
+        // Mostrar dashboard diretamente
+        if (window.showDashboard) {
+            window.showDashboard();
+        }
+
+        // Limpar sidebar
+        const categoriesMenu = document.getElementById('categories-menu');
+        if (categoriesMenu) {
+            categoriesMenu.innerHTML = '<div class="category-loading">Select a category from the dashboard to start browsing</div>';
         }
     }
 
