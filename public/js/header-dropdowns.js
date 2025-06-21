@@ -356,7 +356,7 @@ class HeaderNavigation {
     return groups;
   }
 
-  // ✅ NOVO: Configurar event listeners para grupos
+  // ✅ ATUALIZADO: Configurar event listeners para grupos
   setupGroupClickHandlers() {
     const groupItems = document.querySelectorAll('.group-item');
 
@@ -372,8 +372,28 @@ class HeaderNavigation {
 
         console.log(`🎯 Grupo clicado: ${groupName} (${groupId})`);
 
-        // TODO: Aqui vamos implementar as abas de tamanho
-        alert(`Grupo selecionado: ${groupName}\n\nPróximo passo: implementar abas de tamanho!`);
+        // ✅ Obter dados do grupo
+        const groupData = window.categoryGrouper.groupBrazilTopSelectedCategories(
+          window.headerNavigation.allCategories
+        ).find(group => group.id === groupId);
+
+        if (!groupData) {
+          console.error('❌ Dados do grupo não encontrados');
+          return;
+        }
+
+        // ✅ Integrar com breadcrumb e size tabs
+        if (window.breadcrumbNavigation) {
+          window.breadcrumbNavigation.navigateToSubcategory(groupData, groupName);
+        }
+
+        if (window.sizeTabManager) {
+          window.sizeTabManager.setCurrentGroup(groupData);
+          // Auto-selecionar primeiro tamanho
+          setTimeout(() => {
+            window.sizeTabManager.selectSize(groupData.sizes[0]);
+          }, 100);
+        }
       });
     });
   }

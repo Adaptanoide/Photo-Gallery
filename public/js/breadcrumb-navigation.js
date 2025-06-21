@@ -391,6 +391,68 @@ class BreadcrumbNavigation {
             container.style.display = 'none';
         }
     }
+
+    // ✅ NOVO: Navegar para subcategoria (grupo)
+    navigateToSubcategory(groupData, groupName, mainCategoryName = 'Brazil Top Selected') {
+        console.log(`🧭 Navegando para subcategoria: ${groupName}`);
+
+        // Atualizar stack de navegação
+        this.navigationStack = [
+            { type: 'home', label: 'Home', data: null },
+            { type: 'main-category', label: mainCategoryName, data: 'brazil-top-selected' },
+            { type: 'subcategory', label: groupName, data: groupData }
+        ];
+
+        this.updateBreadcrumb();
+        this.showSizeTabs(groupData.sizes);
+
+        console.log(`✅ Breadcrumb atualizado: Home → ${mainCategoryName} → ${groupName}`);
+    }
+
+    // ✅ NOVO: Mostrar abas de tamanho
+    showSizeTabs(sizes) {
+        const container = document.getElementById('size-tabs-container');
+        const tabsContainer = document.getElementById('size-tabs');
+
+        if (!container || !tabsContainer) {
+            console.error('Size tabs container não encontrado');
+            return;
+        }
+
+        console.log(`🔥 Mostrando abas para tamanhos: ${sizes.join(', ')}`);
+
+        // Criar HTML das abas
+        let html = '';
+        sizes.forEach((size, index) => {
+            const isActive = index === 0 ? 'active' : '';
+            const sizeId = size.toLowerCase().replace(/\s+/g, '-');
+
+            html += `
+      <div class="size-tab ${isActive}" 
+           data-size="${size}" 
+           data-size-id="${sizeId}"
+           onclick="sizeTabManager.selectSize('${size}')">
+        ${size}
+      </div>
+    `;
+        });
+
+        tabsContainer.innerHTML = html;
+        container.style.display = 'block';
+        container.classList.add('slide-in');
+
+        console.log(`✅ ${sizes.length} abas de tamanho criadas e exibidas`);
+    }
+
+    // ✅ NOVO: Esconder abas de tamanho
+    hideSizeTabs() {
+        const container = document.getElementById('size-tabs-container');
+        if (container) {
+            container.style.display = 'none';
+            container.classList.remove('slide-in');
+        }
+    }
+
 }
 
 // Instância global
