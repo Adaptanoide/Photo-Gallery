@@ -27,80 +27,80 @@ class CategoryGrouper {
         return 'Unknown';
     }
 
-// Agrupar categorias por nome base
-groupBrazilTopSelectedCategories(categories) {
-    console.log('🔄 Agrupando categorias Brazil Top Selected...');
+    // Agrupar categorias por nome base
+    groupBrazilTopSelectedCategories(categories) {
+        console.log('🔄 Agrupando categorias Brazil Top Selected...');
 
-    const grouped = new Map();
+        const grouped = new Map();
 
-    // ✅ FILTRO SIMPLIFICADO E FUNCIONAL (baseado no createHierarchicalGroups que funciona)
-    const brazilCategories = categories.filter(cat => {
-        const name = cat.name;
+        // ✅ FILTRO SIMPLIFICADO E FUNCIONAL (baseado no createHierarchicalGroups que funciona)
+        const brazilCategories = categories.filter(cat => {
+            const name = cat.name;
 
-        // Deve incluir "Brazil" e ter tamanhos
-        const hasBrazil = name.includes('Brazil');
-        const hasSize = name.includes(' XL') || name.includes(' ML') || name.includes(' Small');
+            // Deve incluir "Brazil" e ter tamanhos
+            const hasBrazil = name.includes('Brazil');
+            const hasSize = name.includes(' XL') || name.includes(' ML') || name.includes(' Small');
 
-        // NÃO deve incluir apenas "Best" ou "Super" (filtro mais simples)
-        const isBestSellers = name.includes('Best') || name.includes('Super');
+            // NÃO deve incluir apenas "Best" ou "Super" (filtro mais simples)
+            const isBestSellers = name.includes('Best') || name.includes('Super');
 
-        // ✅ FILTRO MAIS PERMISSIVO: Brazil + tamanhos - Best/Super
-        const isTopSelected = hasBrazil && hasSize && !isBestSellers;
+            // ✅ FILTRO MAIS PERMISSIVO: Brazil + tamanhos - Best/Super
+            const isTopSelected = hasBrazil && hasSize && !isBestSellers;
 
-        console.log(`📝 Verificando: ${name} -> ${isTopSelected ? 'INCLUIR' : 'EXCLUIR'}`);
+            console.log(`📝 Verificando: ${name} -> ${isTopSelected ? 'INCLUIR' : 'EXCLUIR'}`);
 
-        return isTopSelected;
-    });
-
-    console.log(`📊 Categorias Brazil Top Selected filtradas: ${brazilCategories.length}`);
-
-    // ✅ DEBUG: Mostrar algumas categorias encontradas
-    if (brazilCategories.length > 0) {
-        console.log('📝 Primeiras categorias encontradas:');
-        brazilCategories.slice(0, 5).forEach(cat => {
-            console.log(`  - ${cat.name}`);
+            return isTopSelected;
         });
-    }
 
-    // Agrupar por nome base
-    brazilCategories.forEach(category => {
-        const baseName = this.extractBaseName(category.name);
-        const size = this.extractSize(category.name);
+        console.log(`📊 Categorias Brazil Top Selected filtradas: ${brazilCategories.length}`);
 
-        if (!grouped.has(baseName)) {
-            grouped.set(baseName, {
-                baseName: baseName,
-                displayName: baseName,
-                categories: [],
-                sizes: new Set(),
-                // ✅ ADICIONAR: Estrutura que o sidebar espera
-                id: `group-${baseName.toLowerCase().replace(/\s+/g, '-')}`,
-                name: baseName,
-                isGroup: true
+        // ✅ DEBUG: Mostrar algumas categorias encontradas
+        if (brazilCategories.length > 0) {
+            console.log('📝 Primeiras categorias encontradas:');
+            brazilCategories.slice(0, 5).forEach(cat => {
+                console.log(`  - ${cat.name}`);
             });
         }
 
-        const group = grouped.get(baseName);
-        group.categories.push(category);
-        group.sizes.add(size);
-    });
+        // Agrupar por nome base
+        brazilCategories.forEach(category => {
+            const baseName = this.extractBaseName(category.name);
+            const size = this.extractSize(category.name);
 
-    // Converter para array e ordenar
-    const groupedArray = Array.from(grouped.values()).map(group => ({
-        ...group,
-        sizes: Array.from(group.sizes).sort((a, b) => {
-            const order = ['Small', 'Medium Large', 'Extra Large'];
-            return order.indexOf(a) - order.indexOf(b);
-        })
-    }));
+            if (!grouped.has(baseName)) {
+                grouped.set(baseName, {
+                    baseName: baseName,
+                    displayName: baseName,
+                    categories: [],
+                    sizes: new Set(),
+                    // ✅ ADICIONAR: Estrutura que o sidebar espera
+                    id: `group-${baseName.toLowerCase().replace(/\s+/g, '-')}`,
+                    name: baseName,
+                    isGroup: true
+                });
+            }
 
-    console.log('📂 Grupos Brazil Top Selected criados:');
-    groupedArray.forEach(group => {
-        console.log(`  ${group.displayName}: ${group.sizes.length} tamanhos, ${group.categories.length} categorias`);
-    });
+            const group = grouped.get(baseName);
+            group.categories.push(category);
+            group.sizes.add(size);
+        });
 
-    return groupedArray;
-}
+        // Converter para array e ordenar
+        const groupedArray = Array.from(grouped.values()).map(group => ({
+            ...group,
+            sizes: Array.from(group.sizes).sort((a, b) => {
+                const order = ['Small', 'Medium Large', 'Extra Large'];
+                return order.indexOf(a) - order.indexOf(b);
+            })
+        }));
+
+        console.log('📂 Grupos Brazil Top Selected criados:');
+        groupedArray.forEach(group => {
+            console.log(`  ${group.displayName}: ${group.sizes.length} tamanhos, ${group.categories.length} categorias`);
+        });
+
+        return groupedArray;
+    }
 
     // Obter categorias de um grupo específico por tamanho
     getCategoriesForGroupAndSize(group, size) {
