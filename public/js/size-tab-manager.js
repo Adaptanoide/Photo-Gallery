@@ -177,8 +177,7 @@ class SizeTabManager {
                 html += `
         <div class="photo-item" id="photo-${photo.id}" data-photo-index="${index}">
           <div class="photo-container">
-            <img src="${photo.thumbnail || photo.webpUrl || photo.originalUrl || photo.url}" 
-                 alt="${photo.fileName}" 
+<img src="${photo.thumbnail || photo.highres || `/api/photos/local/thumbnail/${photo.id}`}"                 alt="${photo.fileName}" 
                  loading="lazy"
                  onclick="openLightboxFromSection(${index})">
             <div class="photo-overlay">
@@ -230,16 +229,30 @@ class SizeTabManager {
 
     // Configurar lightbox para fotos da seção
     setupSectionLightbox(photos) {
-        // ✅ CORRIGIR: Sempre definir window.photos (sem condição)
-        window.photos = photos;
+        // ✅ FORMATAR FOTOS PARA LIGHTBOX COMPATIBILITY
+        const lightboxPhotos = photos.map(photo => ({
+            ...photo,
+            // ✅ Garantir propriedades que o lightbox espera
+            url: photo.thumbnail || photo.highres || `/api/photos/local/thumbnail/${photo.id}`,
+            thumbnailUrl: photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`,
+            fileName: photo.name || `${photo.id}.webp`,
+            // ✅ Manter propriedades originais
+            id: photo.id,
+            price: photo.price || photo.defaultPrice,
+            folderId: photo.folderId
+        }));
+
+        // ✅ SEMPRE definir window.photos com formato correto
+        window.photos = lightboxPhotos;
 
         // ✅ CONFIGURAR ZOOM PARA IMAGENS (se existir)
         if (typeof window.setupImageZoom === 'function') {
             window.setupImageZoom();
         }
 
-        console.log(`🔍 Lightbox configurado para ${photos.length} fotos`);
+        console.log(`🔍 Lightbox configurado para ${lightboxPhotos.length} fotos`);
         console.log(`🔍 window.photos definido:`, window.photos?.length || 0);
+        console.log(`🔍 Primeira foto para lightbox:`, lightboxPhotos[0]);
     }
 
     // Mostrar mensagem de erro
@@ -269,9 +282,10 @@ window.openLightboxFromSection = function(photoIndex = 0) {
     // ✅ DEBUG: Verificar estado das fotos
     console.log('🔍 window.photos disponível:', window.photos?.length || 0);
     console.log('🔍 Função openLightbox existe:', typeof window.openLightbox);
+    console.log('🔍 Foto no índice solicitado:', window.photos?.[photoIndex]);
     
     // Usar as fotos já carregadas globalmente
-    if (window.photos && window.photos.length > 0) {
+    if (window.photos && window.photos.length > 0 && window.photos[photoIndex]) {
         if (typeof window.openLightbox === 'function') {
             console.log(`✅ Abrindo lightbox com ${window.photos.length} fotos no índice ${photoIndex}`);
             window.openLightbox(photoIndex);
@@ -279,8 +293,9 @@ window.openLightboxFromSection = function(photoIndex = 0) {
             console.error('❌ Função openLightbox não encontrada');
         }
     } else {
-        console.error('❌ Nenhuma foto disponível para o lightbox');
+        console.error('❌ Foto não disponível no índice:', photoIndex);
         console.error('❌ window.photos:', window.photos);
+        console.error('❌ Foto específica:', window.photos?.[photoIndex]);
     }
 };
 
