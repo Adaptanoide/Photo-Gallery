@@ -242,8 +242,9 @@ class SizeTabManager {
             folderId: photo.folderId
         }));
 
-        // ✅ SEMPRE definir window.photos com formato correto
+        // ✅ DEFINIR AMBAS AS VARIÁVEIS (CORREÇÃO CRÍTICA)
         window.photos = lightboxPhotos;
+        photos = lightboxPhotos;  // ← LINHA CRÍTICA ADICIONADA
 
         // ✅ CONFIGURAR ZOOM PARA IMAGENS (se existir)
         if (typeof window.setupImageZoom === 'function') {
@@ -252,6 +253,7 @@ class SizeTabManager {
 
         console.log(`🔍 Lightbox configurado para ${lightboxPhotos.length} fotos`);
         console.log(`🔍 window.photos definido:`, window.photos?.length || 0);
+        console.log(`🔍 photos (global) definido:`, photos?.length || 0);  // ← NOVO DEBUG
         console.log(`🔍 Primeira foto para lightbox:`, lightboxPhotos[0]);
     }
 
@@ -276,14 +278,14 @@ const sizeTabManager = new SizeTabManager();
 window.sizeTabManager = sizeTabManager;
 
 // ✅ FUNÇÃO MELHORADA: Abrir lightbox da seção atual
-window.openLightboxFromSection = function(photoIndex = 0) {
+window.openLightboxFromSection = function (photoIndex = 0) {
     console.log(`🔍 Abrindo lightbox da seção atual no índice ${photoIndex}`);
-    
+
     // ✅ DEBUG: Verificar estado das fotos
     console.log('🔍 window.photos disponível:', window.photos?.length || 0);
     console.log('🔍 Função openLightbox existe:', typeof window.openLightbox);
     console.log('🔍 Foto no índice solicitado:', window.photos?.[photoIndex]);
-    
+
     // Usar as fotos já carregadas globalmente
     if (window.photos && window.photos.length > 0 && window.photos[photoIndex]) {
         if (typeof window.openLightbox === 'function') {
