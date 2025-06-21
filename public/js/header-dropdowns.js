@@ -220,55 +220,34 @@ class HeaderNavigation {
     }
   }
 
-  // Atualizar sidebar com categorias filtradas (suporte a grupos)
-  updateSidebar(categories) {
+  // Atualizar sidebar com categorias ou grupos
+  updateSidebar(categories, hasGroups = false) {
     const menuContainer = document.getElementById('categories-menu');
     if (!menuContainer) return;
 
-    if (categories.length === 0) {
-      menuContainer.innerHTML = '<div class="category-loading">No categories available</div>';
-      return;
-    }
-
     let html = '';
 
-    // Verificar se são grupos hierárquicos ou categorias normais
-    const hasGroups = categories.some(cat => cat.isGroup);
+    if (hasGroups || (categories.length > 0 && categories[0].isGroup)) {
+      // ✅ RENDERIZAR GRUPOS (novo comportamento)
+      console.log('🎯 Renderizando grupos no sidebar...');
 
-    if (hasGroups) {
-      // Renderizar interface mista: grupos + categorias diretas
-      categories.forEach((item, index) => {
-        if (item.isGroup) {
-          // Renderizar grupo expansível
-          html += `
-        <div class="category-group" data-group-key="${item.key}">
-          <div class="category-group-header" onclick="headerNavigation.toggleGroup('${item.key}')">
-            <span class="group-toggle">▶</span>
-            <span class="group-name">${item.name}</span>
-            <span class="group-count">(${item.categories.length})</span>
-          </div>
-          <div class="category-group-content" id="group-${item.key}" style="display: none;">
-            ${item.categories.map(cat => `
-              <div class="category-item" data-category-id="${cat.id}">
-                ${cat.name}
-              </div>
-            `).join('')}
-          </div>
+      categories.forEach((group, index) => {
+        const isActive = index === 0 ? 'active' : '';
+
+        html += `
+        <div class="category-item group-item ${isActive}" 
+             data-group-id="${group.id}" 
+             data-group-name="${group.displayName}">
+          📁 ${group.displayName}
+          <span class="size-count">(${group.sizes.length} sizes)</span>
         </div>
-        `;
-        } else {
-          // Renderizar categoria direta
-          const isActive = index === 0 ? 'active' : '';
-          html += `
-        <div class="category-item direct-category ${isActive}" data-category-id="${item.id}">
-          <span class="direct-icon">📄</span>
-          ${item.name}
-        </div>
-        `;
-        }
+      `;
       });
+
     } else {
-      // Renderizar categorias normais (Brazil Best Sellers, Calfskins)
+      // ✅ RENDERIZAR CATEGORIAS NORMAIS (comportamento original)
+      console.log('🎯 Renderizando categorias normais no sidebar...');
+
       categories.forEach((category, index) => {
         const isActive = index === 0 ? 'active' : '';
         html += `
@@ -281,9 +260,13 @@ class HeaderNavigation {
 
     menuContainer.innerHTML = html;
 
-    // Reconfigurar event listeners
-    if (window.setupCategoryClickHandlers) {
-      window.setupCategoryClickHandlers();
+    // ✅ RECONFIGURAR EVENT LISTENERS
+    if (hasGroups || (categories.length > 0 && categories[0].isGroup)) {
+      this.setupGroupClickHandlers();
+    } else {
+      if (window.setupCategoryClickHandlers) {
+        window.setupCategoryClickHandlers();
+      }
     }
 
     console.log(`✅ Sidebar atualizado com ${categories.length} ${hasGroups ? 'grupos' : 'categorias'}`);
@@ -367,7 +350,32 @@ class HeaderNavigation {
       return this.createHierarchicalGroups(); // Fallback
     }
 
+    // ✅ ATUALIZAR SIDEBAR COM GRUPOS
+    this.updateSidebar(groups, true);
+
     return groups;
+  }
+
+  // ✅ NOVO: Configurar event listeners para grupos
+  setupGroupClickHandlers() {
+    const groupItems = document.querySelectorAll('.group-item');
+
+    groupItems.forEach(item => {
+      item.addEventListener('click', function () {
+        // Remover active de outros itens
+        groupItems.forEach(group => group.classList.remove('active'));
+        // Adicionar active no item clicado
+        this.classList.add('active');
+
+        const groupId = this.getAttribute('data-group-id');
+        const groupName = this.getAttribute('data-group-name');
+
+        console.log(`🎯 Grupo clicado: ${groupName} (${groupId})`);
+
+        // TODO: Aqui vamos implementar as abas de tamanho
+        alert(`Grupo selecionado: ${groupName}\n\nPróximo passo: implementar abas de tamanho!`);
+      });
+    });
   }
 
 }
