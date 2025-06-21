@@ -129,7 +129,7 @@ class SizeTabManager {
         }
     }
 
-    // ✅ RENDERIZAR SEÇÃO DO TAMANHO COM FOTOS REAIS
+    // Renderizar seção do tamanho com fotos reais
     renderSizeSection(size, photos, categories) {
         const contentDiv = document.getElementById('content');
 
@@ -138,15 +138,18 @@ class SizeTabManager {
             return;
         }
 
-        // ✅ CRIAR HTML DA SEÇÃO
+        // ✅ REMOVER: Não criar mais a div "Small - Palomino Exotic"
+        // ✅ CRIAR: Título fixo com nome real da categoria
+
         let html = `
-    <div class="size-section" data-size="${size}">
-      <div class="size-section-header">
-        <h2>${size} - ${this.currentGroup.displayName}</h2>
-        <p>${photos.length} photos from ${categories.length} categories</p>
-      </div>
-      <div class="size-section-content">
-  `;
+        <!-- ✅ TÍTULO FIXO DA CATEGORIA -->
+        <div class="category-title-fixed">
+            <h2>${categories[0].name}</h2>
+        </div>
+        
+        <div class="size-section" data-size="${size}">
+            <div class="size-section-content">
+    `;
 
         // ✅ AGRUPAR FOTOS POR CATEGORIA PARA ORGANIZAÇÃO
         const photosByCategory = {};
@@ -161,13 +164,9 @@ class SizeTabManager {
             photosByCategory[categoryId].photos.push(photo);
         });
 
-        // ✅ RENDERIZAR CADA SUBCATEGORIA
+        // ✅ RENDERIZAR CADA SUBCATEGORIA (SEM TÍTULO REDUNDANTE)
         Object.values(photosByCategory).forEach(group => {
-            html += `
-      <div class="subcategory-section">
-        <h3 class="subcategory-title">${group.category.name}</h3>
-        <div class="photos-grid">
-    `;
+            html += `<div class="photos-grid">`;
 
             // ✅ RENDERIZAR FOTOS DA SUBCATEGORIA
             group.photos.forEach((photo, index) => {
@@ -175,36 +174,34 @@ class SizeTabManager {
                 const priceText = photo.price ? `$${photo.price.toFixed(2)}` : 'Price on request';
 
                 html += `
-        <div class="photo-item" id="photo-${photo.id}" data-photo-index="${index}">
-          <div class="photo-container">
-<img src="${photo.thumbnail || photo.highres || `/api/photos/local/thumbnail/${photo.id}`}"                 alt="${photo.fileName}" 
-                 loading="lazy"
-                 onclick="openLightboxFromSection(${index})">
-            <div class="photo-overlay">
-              <div class="photo-info">
-                <div class="photo-price">${priceText}</div>
-                <button class="btn ${alreadyAdded ? 'btn-secondary' : 'btn-gold'} photo-select-btn" 
-                        onclick="togglePhotoSelection('${photo.id}')"
-                        ${alreadyAdded ? 'disabled' : ''}>
-                  ${alreadyAdded ? 'Added ✓' : 'Select'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+                <div class="photo-item" id="photo-${photo.id}" data-photo-index="${index}">
+                    <div class="photo-container">
+                        <img src="${photo.thumbnail || photo.highres || `/api/photos/local/thumbnail/${photo.id}`}" 
+                             alt="${photo.fileName}" 
+                             loading="lazy"
+                             onclick="openLightboxFromSection(${index})">
+                        <div class="photo-overlay">
+                            <div class="photo-info">
+                                <div class="photo-price">${priceText}</div>
+                                <button class="btn ${alreadyAdded ? 'btn-secondary' : 'btn-gold'} photo-select-btn" 
+                                        onclick="togglePhotoSelection('${photo.id}')"
+                                        ${alreadyAdded ? 'disabled' : ''}>
+                                    ${alreadyAdded ? 'Added ✓' : 'Select'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             });
 
-            html += `
-        </div>
-      </div>
-    `;
+            html += `</div>`;
         });
 
         html += `
-      </div>
-    </div>
-  `;
+            </div>
+        </div>
+    `;
 
         // ✅ ATUALIZAR CONTEÚDO
         contentDiv.innerHTML = html;
@@ -295,18 +292,18 @@ const sizeTabManager = new SizeTabManager();
 window.sizeTabManager = sizeTabManager;
 
 // ✅ FUNÇÃO COM VERIFICAÇÃO EXTENSIVA
-window.openLightboxFromSection = function(photoIndex = 0) {
+window.openLightboxFromSection = function (photoIndex = 0) {
     console.log(`🔍 === LIGHTBOX DEBUG EXTENSIVO ===`);
     console.log(`🔍 Índice solicitado: ${photoIndex}`);
-    
+
     // ✅ VERIFICAR TODAS AS VARIAÇÕES DE PHOTOS
     console.log(`🔍 window.photos:`, window.photos?.length || 0);
     console.log(`🔍 globalThis.photos:`, globalThis?.photos?.length || 0);
     console.log(`🔍 photos (direto):`, typeof photos !== 'undefined' ? photos?.length : 'UNDEFINED');
-    
+
     // ✅ TENTAR USAR A MELHOR VERSÃO DISPONÍVEL
     let photosArray = null;
-    
+
     if (window.photos && Array.isArray(window.photos) && window.photos.length > 0) {
         photosArray = window.photos;
         console.log(`✅ Usando window.photos (${photosArray.length} fotos)`);
@@ -317,7 +314,7 @@ window.openLightboxFromSection = function(photoIndex = 0) {
         console.error(`❌ Nenhuma versão válida de photos encontrada`);
         return;
     }
-    
+
     // ✅ VERIFICAR SE A FOTO ESPECÍFICA EXISTE
     if (!photosArray[photoIndex]) {
         console.error(`❌ Foto no índice ${photoIndex} não existe no array`);
@@ -325,13 +322,13 @@ window.openLightboxFromSection = function(photoIndex = 0) {
         console.error(`❌ Índices disponíveis: 0 a ${photosArray.length - 1}`);
         return;
     }
-    
+
     console.log(`🔍 Foto encontrada:`, photosArray[photoIndex]);
-    
+
     // ✅ FORÇAR REDEFINIÇÃO ANTES DE CHAMAR LIGHTBOX
     window.photos = photosArray;
     photos = photosArray;  // Tentar sobrescrever novamente
-    
+
     if (typeof window.openLightbox === 'function') {
         console.log(`✅ Chamando openLightbox(${photoIndex})`);
         window.openLightbox(photoIndex);

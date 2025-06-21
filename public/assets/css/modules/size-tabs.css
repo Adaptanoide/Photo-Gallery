@@ -1,10 +1,10 @@
 /* ===== SIZE TABS POSITIONING ===== */
 
-/* Container das abas - logo abaixo do breadcrumb */
+/* Container das abas - alinhado à esquerda */
 .size-tabs-container {
   position: sticky !important;
   top: 0 !important;
-  z-index: 100 !important; /* Menor que lightbox (9999) */
+  z-index: 100 !important;
   background: white !important;
   border-bottom: 1px solid #eee !important;
   padding: 15px 0 !important;
@@ -13,14 +13,14 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
-/* Container interno das abas */
+/* Container interno das abas - ALINHADO À ESQUERDA */
 .size-tabs {
   display: flex !important;
-  justify-content: center !important;
+  justify-content: flex-start !important; /* ✅ MUDANÇA: flex-start em vez de center */
   gap: 10px !important;
   max-width: 1200px !important;
-  margin: 0 auto !important;
-  padding: 0 20px !important;
+  margin: 0 !important; /* ✅ MUDANÇA: remover auto */
+  padding: 0 300px 0 20px !important; /* ✅ MUDANÇA: espaço para sidebar à esquerda */
 }
 
 /* Cada aba individual */
@@ -48,8 +48,27 @@
   border-color: #adb5bd !important;
 }
 
-/* Garantir que conteúdo fique abaixo das abas */
-.content-area {
-  margin-top: 0 !important;
-  padding-top: 20px !important;
+/* ===== TÍTULO FIXO DA CATEGORIA ===== */
+.category-title-fixed {
+    position: sticky !important;
+    top: 80px !important; /* Abaixo das size tabs */
+    z-index: 90 !important;
+    background: white !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    border-bottom: 3px solid #D4AF37 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.category-title-fixed h2 {
+    margin: 0 !important;
+    color: #2c3e50 !important;
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    font-family: 'Playfair Display', serif !important;
+}
+
+/* Ajustar conteúdo para não ficar grudado no título */
+.size-section-content {
+    padding-top: 20px !important;
 }
