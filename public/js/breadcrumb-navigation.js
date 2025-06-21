@@ -297,10 +297,27 @@ class BreadcrumbNavigation {
     loadPhotosDirectly(categoryId, categoryName) {
         console.log(`📷 Carregando fotos diretamente: ${categoryName}`);
 
-        // Usar sistema existente de carregamento de fotos
-        const categoryElement = document.querySelector(`[data-category-id="${categoryId}"]`);
-        if (categoryElement) {
-            categoryElement.click();
+        // Usar função direta de carregamento de fotos
+        if (window.loadPhotosForCategory) {
+            showLoader();
+            window.loadPhotosForCategory(categoryId, categoryName).finally(() => {
+                hideLoader();
+            });
+        } else {
+            // Fallback: simular click
+            const categoryElement = document.querySelector(`[data-category-id="${categoryId}"]`);
+            if (categoryElement) {
+                // Remover interceptação temporariamente
+                const originalHandler = window.handleCategoryClick;
+                window.handleCategoryClick = null;
+
+                categoryElement.click();
+
+                // Restaurar interceptação
+                setTimeout(() => {
+                    window.handleCategoryClick = originalHandler;
+                }, 100);
+            }
         }
     }
 
