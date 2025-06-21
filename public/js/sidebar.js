@@ -121,29 +121,20 @@ function handleCategoryClick(categoryElement) {
   return true; // Permitir comportamento padrão sempre
 }
 
+// Adicionar event listeners para itens de categoria (ORIGINAL)
 function setupCategoryClickHandlers() {
   const categoryItems = document.querySelectorAll('.category-item');
-  
+
   categoryItems.forEach(item => {
-    item.addEventListener('click', function(e) {
-      // Remover active de outros itens
-      categoryItems.forEach(cat => cat.classList.remove('active'));
-      // Adicionar active no item clicado
-      this.classList.add('active');
-      
-      // COMPORTAMENTO ORIGINAL - SEM BREADCRUMB POR ENQUANTO
+    item.addEventListener('click', function () {
       const categoryId = this.getAttribute('data-category-id');
-      const categoryName = this.textContent.trim();
-      
-      console.log(`🎯 Carregando categoria: ${categoryName}`);
-      
-      updateCategoryTitle(categoryId);
-      showLoader();
-      
-      // Carregar fotos da categoria
-      loadPhotosForCategory(categoryId, categoryName).finally(() => {
-        hideLoader();
-      });
+
+      console.log(`Clicou na categoria: ${categoryId}`);
+
+      // Carregar categoria se for diferente da ativa
+      if (categoryId) {
+        loadCategoryPhotos(categoryId);
+      }
     });
   });
 }

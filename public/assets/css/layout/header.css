@@ -1,5 +1,4 @@
-/* Header - Sunshine Cowhides */
-/* Header removido para eliminar gap */
+/* Header - Sunshine Cowhides - VERSÃO LIMPA */
 
 /* Manter apenas estilos para quando houver header dinâmico */
 .dynamic-header {
@@ -26,30 +25,24 @@
   transform: translateX(-50%);
 }
 
-@media (max-width: 768px) {
-  .dynamic-header h1 {
-    font-size: 1.8rem;
-  }
-}
-
-/* ===== HEADER COM 6 CATEGORIAS PRINCIPAIS ===== */
+/* ===== HEADER PRINCIPAL ===== */
 
 .top-buttons {
   position: fixed;
   top: 20px;
-  left: 2px;    /* ← SOLUÇÃO: próximo ao sidebar */
+  left: 2px;
   right: 20px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
   z-index: 999;
   height: 60px;
-  gap: 20px;
+  gap: 15px;
 }
 
 .main-categories {
   display: flex;
-  gap: 8px;
+  gap: 15px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -58,55 +51,70 @@
   display: flex;
   gap: 15px;
   align-items: center;
-  margin-left: auto;  /* Empurrar para a direita */
+  margin-left: auto;
 }
 
-/* ===== BOTÕES DAS CATEGORIAS PRINCIPAIS ===== */
+/* ===== BOTÃO HOME STANDALONE ===== */
 
-.category-btn {
-  background: rgba(212, 175, 55, 0.9);
+#standalone-home-btn {
+  background: linear-gradient(135deg, #2c3e50, #34495e);
   color: white;
-  padding: 8px 16px;
-  border: none;
+  border: 2px solid #34495e;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
   transition: all 0.3s ease;
   white-space: nowrap;
 }
 
-.category-btn:hover {
-  background: rgba(212, 175, 55, 1);
-  transform: translateY(-1px);
+#standalone-home-btn:hover {
+  background: linear-gradient(135deg, #34495e, #2c3e50);
+  border-color: #2c3e50;
+  transform: translateY(-2px);
 }
 
-.category-btn.active {
-  background: #D4AF37;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+#standalone-home-btn.active {
+  background: linear-gradient(135deg, #D4AF37, #B8941F);
+  border-color: #D4AF37;
+  color: white;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
 }
 
-/* ===== RESPONSIVO ===== */
+.home-icon {
+  font-size: 16px;
+}
+
+/* ===== RESPONSIVIDADE ===== */
 
 @media (max-width: 1200px) {
-  .category-btn {
-    padding: 6px 12px;
+  #standalone-home-btn {
+    padding: 8px 16px;
     font-size: 11px;
   }
   
   .main-categories {
-    gap: 6px;
+    gap: 12px;
   }
 }
 
 @media (max-width: 1024px) {
-  .category-btn {
-    padding: 6px 10px;
+  #standalone-home-btn {
+    padding: 6px 12px;
     font-size: 10px;
   }
   
   .main-categories {
-    gap: 4px;
+    gap: 8px;
+  }
+  
+  #breadcrumb-container {
+    padding: 6px 10px;
+    font-size: 12px;
   }
 }
 
@@ -120,85 +128,27 @@
   
   .main-categories {
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
   
-  .category-btn {
+  #standalone-home-btn {
     padding: 8px 12px;
     font-size: 11px;
+  }
+  
+  #breadcrumb-container {
+    margin-left: 0;
   }
 }
 
 @media (max-width: 480px) {
-  .main-categories {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    width: 100%;
-  }
-  
-  .category-btn {
+  #standalone-home-btn {
     font-size: 10px;
     padding: 6px 8px;
   }
-}
-
-/* ===== BOTÃO ALL CATEGORIES ===== */
-
-.all-categories-btn {
-  background: rgba(212, 175, 55, 1);
-  border-right: 2px solid rgba(255, 255, 255, 0.3);
-  margin-right: 12px;
-  font-weight: 600;
-}
-
-.all-categories-btn:hover {
-  background: rgba(212, 175, 55, 1);
-  transform: translateY(-1px);
-}
-
-.all-categories-btn.active {
-  background: #D4AF37;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
-}
-
-/* ===== BOTÃO HOME ESPECIAL ===== */
-
-.home-btn {
-  background: linear-gradient(135deg, #2c3e50, #34495e) !important;
-  color: white !important;
-  border: 2px solid #34495e !important;
-  font-weight: 600 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  padding: 10px 20px !important;
-}
-
-.home-btn:hover {
-  background: linear-gradient(135deg, #34495e, #2c3e50) !important;
-  border-color: #2c3e50 !important;
-  transform: translateY(-2px) !important;
-}
-
-.home-btn.active {
-  background: linear-gradient(135deg, #D4AF37, #B8941F) !important;
-  border-color: #D4AF37 !important;
-  color: white !important;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4) !important;
-}
-
-.home-icon {
-  font-size: 16px;
-  filter: none;
-}
-
-/* Ajustar espaçamento do header com menos botões */
-.main-categories {
-  gap: 0 !important; /* Só um botão agora */
-}
-
-.top-buttons {
-  left: 2px;
-  gap: 15px; /* Espaço entre home e logout */
+  
+  .breadcrumb-link {
+    font-size: 12px;
+    padding: 2px 4px;
+  }
 }

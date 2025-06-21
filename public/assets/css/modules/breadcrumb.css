@@ -1,14 +1,14 @@
 /* ===== BREADCRUMB NAVIGATION ===== */
 
 .breadcrumb-container {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  position: static;
   display: inline-flex;
   align-items: center;
-  margin-left: 20px;
+  margin-left: 15px;
+  padding: 8px 15px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  position: static;
 }
 
 .breadcrumb-nav {
