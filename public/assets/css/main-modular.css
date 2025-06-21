@@ -27,6 +27,7 @@
 @import 'modules/notification.css';
 @import 'modules/sidebar.css';
 @import 'modules/tutorial.css';
+@import 'modules/size-sections.css';
 
 /* Pages */
 @import 'pages/admin.css';
