@@ -1098,12 +1098,6 @@ function showDashboard() {
       </div>
     </div>
   `;
-
-  // ✅ ADICIONAR: Sempre mostrar breadcrumb no dashboard
-  if (window.breadcrumbNavigation) {
-    window.breadcrumbNavigation.goToHome();
-  }
-
 }
 
 // ===== NAVEGAÇÃO DO DASHBOARD =====

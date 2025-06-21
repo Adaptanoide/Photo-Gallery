@@ -10,30 +10,19 @@ class BreadcrumbNavigation {
     // Inicializar sistema
     initialize() {
         console.log('🧭 Inicializando Breadcrumb Navigation');
-        this.goToHome(); // ✅ SEMPRE inicializar com Home no breadcrumb
+        this.hideBreadcrumb();
+        this.hideSizeTabs();
+        // NÃO chamar goToHome() aqui!
     }
 
     // Ir para Home (Dashboard)
     goToHome() {
         this.navigationStack = [{ type: 'home', label: 'Home', data: null }];
-        this.updateBreadcrumb(); // ✅ MOSTRAR breadcrumb sempre
+        this.updateBreadcrumb();
         this.hideSizeTabs();
 
-        // Limpar seleção de botões ativos
-        document.querySelectorAll('.category-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-
-        // Mostrar dashboard diretamente
-        if (window.showDashboard) {
-            window.showDashboard();
-        }
-
-        // Limpar sidebar
-        const categoriesMenu = document.getElementById('categories-menu');
-        if (categoriesMenu) {
-            categoriesMenu.innerHTML = '<div class="category-loading">Select a category from the dashboard to start browsing</div>';
-        }
+        // NÃO CHAMAR showDashboard() - quebra o loop!
+        console.log('🏠 Breadcrumb Home ativado');
     }
 
     // Navegar para categoria principal (ex: Brazil Top Selected)
@@ -286,7 +275,10 @@ class BreadcrumbNavigation {
 
         switch (item.type) {
             case 'home':
-                this.goToHome();
+                // Usar função original de home SEM loop
+                if (window.goToHome) {
+                    window.goToHome();
+                }
                 break;
             case 'main-category':
                 this.navigateToMainCategory(item.data, item.label);
