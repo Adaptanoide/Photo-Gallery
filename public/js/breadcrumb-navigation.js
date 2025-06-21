@@ -226,6 +226,7 @@ class BreadcrumbNavigation {
     updateBreadcrumb() {
         const container = document.getElementById('breadcrumb-container');
         const itemsContainer = document.getElementById('breadcrumb-items');
+        const standaloneHome = document.getElementById('standalone-home-btn');
 
         if (!container || !itemsContainer) return;
 
@@ -234,25 +235,35 @@ class BreadcrumbNavigation {
             const isLast = index === this.navigationStack.length - 1;
             const linkClass = isLast ? 'breadcrumb-link current' : 'breadcrumb-link';
 
+            // Ícone especial para Home
+            const icon = item.type === 'home' ? '<span class="home-icon">🏠</span>' : '';
+
             html += `
-        <div class="breadcrumb-item">
-          <span class="${linkClass}" onclick="breadcrumbNavigation.navigateToStackItem(${index})">${item.label}</span>
-        </div>
-      `;
+      <div class="breadcrumb-item">
+        <span class="${linkClass}" onclick="breadcrumbNavigation.navigateToStackItem(${index})">
+          ${icon} ${item.label}
+        </span>
+      </div>
+    `;
 
             if (!isLast) {
                 html += `
-          <div class="breadcrumb-separator">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9.29 6.71a.996.996 0 000 1.41L13.17 12l-3.88 3.88a.996.996 0 101.41 1.41l4.59-4.59a.996.996 0 000-1.41L10.7 6.71a.996.996 0 00-1.41 0z"/>
-            </svg>
-          </div>
-        `;
+        <div class="breadcrumb-separator">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9.29 6.71a.996.996 0 000 1.41L13.17 12l-3.88 3.88a.996.996 0 101.41 1.41l4.59-4.59a.996.996 0 000-1.41L10.7 6.71a.996.996 0 00-1.41 0z"/>
+          </svg>
+        </div>
+      `;
             }
         });
 
         itemsContainer.innerHTML = html;
         this.showBreadcrumb();
+
+        // Esconder botão Home standalone quando breadcrumb está ativo
+        if (standaloneHome) {
+            standaloneHome.style.display = 'none';
+        }
     }
 
     // Atualizar breadcrumb com tamanho
@@ -358,6 +369,7 @@ class BreadcrumbNavigation {
     hideBreadcrumb() {
         const container = document.getElementById('breadcrumb-container');
         const contentArea = document.querySelector('.content-area');
+        const standaloneHome = document.getElementById('standalone-home-btn');
 
         if (container) {
             container.style.display = 'none';
@@ -365,6 +377,11 @@ class BreadcrumbNavigation {
 
         if (contentArea) {
             contentArea.classList.remove('with-navigation');
+        }
+
+        // Mostrar botão Home standalone quando breadcrumb está escondido
+        if (standaloneHome) {
+            standaloneHome.style.display = 'block';
         }
     }
 

@@ -123,34 +123,27 @@ function handleCategoryClick(categoryElement) {
 
 function setupCategoryClickHandlers() {
   const categoryItems = document.querySelectorAll('.category-item');
-
+  
   categoryItems.forEach(item => {
-    // Remover listeners antigos
-    // Limpar listeners antigos
-    item.replaceWith(item.cloneNode(true));
-    item = categoryItems[Array.from(categoryItems).indexOf(item)];
-    item.addEventListener('click', function (e) {
+    item.addEventListener('click', function(e) {
       // Remover active de outros itens
       categoryItems.forEach(cat => cat.classList.remove('active'));
       // Adicionar active no item clicado
       this.classList.add('active');
-
-      // Usar nova navegação breadcrumb
-      const shouldContinue = handleCategoryClick(this);
-
-      if (shouldContinue) {
-        // Comportamento original para categorias sem tamanhos
-        const categoryId = this.getAttribute('data-category-id');
-        const categoryName = this.textContent.trim();
-
-        updateCategoryTitle(categoryId);
-        showLoader();
-
-        // Carregar fotos da categoria
-        loadPhotosForCategory(categoryId, categoryName).finally(() => {
-          hideLoader();
-        });
-      }
+      
+      // COMPORTAMENTO ORIGINAL - SEM BREADCRUMB POR ENQUANTO
+      const categoryId = this.getAttribute('data-category-id');
+      const categoryName = this.textContent.trim();
+      
+      console.log(`🎯 Carregando categoria: ${categoryName}`);
+      
+      updateCategoryTitle(categoryId);
+      showLoader();
+      
+      // Carregar fotos da categoria
+      loadPhotosForCategory(categoryId, categoryName).finally(() => {
+        hideLoader();
+      });
     });
   });
 }
