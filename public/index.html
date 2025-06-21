@@ -108,6 +108,22 @@
 
       <!-- Conteúdo principal -->
       <div class="content-area">
+        <!-- Breadcrumb Navigation -->
+        <div id="breadcrumb-container" class="breadcrumb-container" style="display: none;">
+          <nav class="breadcrumb-nav">
+            <div class="breadcrumb-items" id="breadcrumb-items">
+              <!-- Breadcrumb items serão inseridos aqui -->
+            </div>
+          </nav>
+        </div>
+
+        <!-- Size Tabs (apenas para categorias com tamanhos) -->
+        <div id="size-tabs-container" class="size-tabs-container" style="display: none;">
+          <div class="size-tabs" id="size-tabs">
+            <!-- Abas de tamanho serão inseridas aqui -->
+          </div>
+        </div>
+
         <!-- Área de conteúdo (galeria) -->
         <div id="content" class="gallery">
           <div class="empty-message">Loading...</div>
@@ -789,6 +805,7 @@
 
   <!-- App Scripts -->
   <script src="/js/database-service.js"></script>
+  <script src="js/breadcrumb-navigation.js"></script>
   <script src="/js/utils.js"></script>
   <script src="/js/api-client.js"></script>
   <script src="/js/gallery.js"></script>

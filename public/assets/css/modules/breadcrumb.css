@@ -1,0 +1,137 @@
+/* ===== BREADCRUMB NAVIGATION ===== */
+
+.breadcrumb-container {
+  background: linear-gradient(135deg, #f8f6f0 0%, #ede8db 100%);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 15px 25px;
+  margin-bottom: 0;
+  position: sticky;
+  top: 60px; /* Abaixo do header */
+  z-index: 900;
+  backdrop-filter: blur(10px);
+}
+
+.breadcrumb-nav {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.breadcrumb-items {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-link {
+  color: #D4AF37;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.breadcrumb-link:hover {
+  background: rgba(212, 175, 55, 0.1);
+  color: #B8941F;
+}
+
+.breadcrumb-link.current {
+  color: #312825;
+  font-weight: 600;
+  background: rgba(212, 175, 55, 0.15);
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #999;
+  font-size: 12px;
+  margin: 0 4px;
+}
+
+/* ===== SIZE TABS ===== */
+
+.size-tabs-container {
+  background: white;
+  border-bottom: 1px solid #eee;
+  padding: 0 25px;
+  position: sticky;
+  top: 120px; /* Abaixo do breadcrumb */
+  z-index: 850;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.size-tabs {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 0;
+}
+
+.size-tab {
+  padding: 15px 25px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.size-tab:hover {
+  color: #D4AF37;
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.size-tab.active {
+  color: #D4AF37;
+  border-bottom-color: #D4AF37;
+  font-weight: 600;
+}
+
+.size-tab-count {
+  font-size: 12px;
+  color: #999;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* ===== ESPAÇAMENTO DO CONTEÚDO ===== */
+
+.content-area.with-navigation #content {
+  padding-top: 20px;
+}
+
+/* ===== ANIMAÇÕES ===== */
+
+.breadcrumb-container.slide-in {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+.size-tabs-container.slide-in {
+  animation: slideInFromTop 0.4s ease-out 0.1s both;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -19,6 +19,7 @@
 @import 'components/tables.css';
 
 /* Modules */
+@import 'modules/breadcrumb.css';
 @import 'modules/cart.css';
 @import 'modules/dashboard.css';
 @import 'modules/gallery.css';
