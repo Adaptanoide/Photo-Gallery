@@ -1098,6 +1098,12 @@ function showDashboard() {
       </div>
     </div>
   `;
+
+  // ✅ ADICIONAR: Sempre mostrar breadcrumb no dashboard
+  if (window.breadcrumbNavigation) {
+    window.breadcrumbNavigation.goToHome();
+  }
+
 }
 
 // ===== NAVEGAÇÃO DO DASHBOARD =====
@@ -1131,21 +1137,21 @@ class DashboardNavigation {
 
 function goToHome() {
   console.log('🏠 Voltando para home (dashboard)');
-  
+
   // Limpar seleção de botões ativos
   document.querySelectorAll('.category-btn').forEach(btn => {
     btn.classList.remove('active');
   });
-  
+
   // Marcar botão home como ativo
   const homeBtn = document.querySelector('.home-btn');
   if (homeBtn) {
     homeBtn.classList.add('active');
   }
-  
+
   // Mostrar dashboard
   showDashboard();
-  
+
   // Limpar sidebar
   const categoriesMenu = document.getElementById('categories-menu');
   if (categoriesMenu) {

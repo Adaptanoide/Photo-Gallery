@@ -10,26 +10,19 @@ class BreadcrumbNavigation {
     // Inicializar sistema
     initialize() {
         console.log('🧭 Inicializando Breadcrumb Navigation');
-        this.hideBreadcrumb();
-        this.hideSizeTabs();
+        this.goToHome(); // ✅ SEMPRE inicializar com Home no breadcrumb
     }
 
     // Ir para Home (Dashboard)
     goToHome() {
         this.navigationStack = [{ type: 'home', label: 'Home', data: null }];
-        this.hideBreadcrumb();
+        this.updateBreadcrumb(); // ✅ MOSTRAR breadcrumb sempre
         this.hideSizeTabs();
 
         // Limpar seleção de botões ativos
         document.querySelectorAll('.category-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-
-        // Marcar botão home como ativo
-        const homeBtn = document.querySelector('.home-btn');
-        if (homeBtn) {
-            homeBtn.classList.add('active');
-        }
 
         // Mostrar dashboard diretamente
         if (window.showDashboard) {
@@ -351,10 +344,11 @@ class BreadcrumbNavigation {
         }
     }
 
-    // Mostrar/esconder breadcrumb
+    // Mostrar breadcrumb (sempre esconder standalone)
     showBreadcrumb() {
         const container = document.getElementById('breadcrumb-container');
         const contentArea = document.querySelector('.content-area');
+        const standaloneHome = document.getElementById('standalone-home-btn');
 
         if (container) {
             container.style.display = 'block';
@@ -363,6 +357,11 @@ class BreadcrumbNavigation {
 
         if (contentArea) {
             contentArea.classList.add('with-navigation');
+        }
+
+        // ✅ SEMPRE esconder botão standalone
+        if (standaloneHome) {
+            standaloneHome.style.display = 'none';
         }
     }
 
