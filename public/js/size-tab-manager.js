@@ -91,6 +91,12 @@ class SizeTabManager {
 
                     allPhotos.push(...photos);
                     console.log(`✅ ${photos.length} fotos carregadas de ${category.name}`);
+
+                    // ✅ DEBUG: Ver propriedades da primeira foto
+                    if (photos.length > 0) {
+                        console.log('📝 Primeira foto:', photos[0]);
+                        console.log('📝 Propriedades disponíveis:', Object.keys(photos[0]));
+                    }
                 }
             }
 
@@ -117,7 +123,7 @@ class SizeTabManager {
         }
     }
 
-    // ✅ NOVO MÉTODO: Renderizar seção do tamanho com fotos reais
+    // ✅ RENDERIZAR SEÇÃO DO TAMANHO COM FOTOS REAIS
     renderSizeSection(size, photos, categories) {
         const contentDiv = document.getElementById('content');
 
@@ -165,10 +171,10 @@ class SizeTabManager {
                 html += `
         <div class="photo-item" id="photo-${photo.id}" data-photo-index="${index}">
           <div class="photo-container">
-            <img src="${photo.thumbnailUrl || photo.url}" 
+            <img src="${photo.thumbnail || photo.webpUrl || photo.originalUrl || photo.url}" 
                  alt="${photo.fileName}" 
                  loading="lazy"
-                 onclick="openLightboxWithPhotos([${group.photos.map(p => `'${p.id}'`).join(',')}], ${index})">
+                 onclick="openLightboxFromSection(${index})">
             <div class="photo-overlay">
               <div class="photo-info">
                 <div class="photo-price">${priceText}</div>
@@ -245,18 +251,46 @@ class SizeTabManager {
     </div>
   `;
     }
-
 }
 
 // Instância global
 const sizeTabManager = new SizeTabManager();
 window.sizeTabManager = sizeTabManager;
-// ✅ FUNÇÃO GLOBAL: Abrir lightbox com fotos específicas
-window.openLightboxWithPhotos = function (photoIds, startIndex = 0) {
-    console.log(`🔍 Abrindo lightbox com ${photoIds.length} fotos, iniciando no índice ${startIndex}`);
 
-    // Obter fotos completas do registry
-    const photosToShow = photoIds.map(id => window.photoRegistry[id]).filter(Boolean);
+// ✅ FUNÇÃO SIMPLIFICADA: Abrir lightbox da seção atual
+window.openLightboxFromSection = function(photoIndex = 0) {
+    console.log(`🔍 Abrindo lightbox da seção atual no índice ${photoIndex}`);
+    
+    // Usar as fotos já carregadas globalmente
+    if (window.photos && window.photos.length > 0) {
+        if (typeof window.openLightbox === 'function') {
+            window.openLightbox(photoIndex);
+        } else {
+            console.error('❌ Função openLightbox não encontrada');
+        }
+    } else {
+        console.error('❌ Nenhuma foto disponível para o lightbox');
+    }
+};
+
+// ✅ FUNÇÃO GLOBAL: Abrir lightbox com fotos específicas (CORRIGIDA)
+window.openLightboxWithPhotos = function (photoIds, startIndex = 0) {
+    console.log(`🔍 Abrindo lightbox com fotos específicas`);
+
+    // ✅ DEBUG: Verificar o que está sendo passado
+    console.log('📝 Photo IDs recebidos:', photoIds);
+    console.log('📝 Photo Registry disponível:', Object.keys(window.photoRegistry || {}));
+
+    // ✅ MÉTODO MAIS SEGURO: Usar as fotos já carregadas na seção atual
+    const currentPhotos = window.photos || [];
+    
+    if (currentPhotos.length === 0) {
+        console.error('❌ Nenhuma foto disponível no contexto atual');
+        return;
+    }
+
+    // Usar as fotos atuais em vez de buscar no registry
+    const photosToShow = currentPhotos;
 
     if (photosToShow.length === 0) {
         console.error('❌ Nenhuma foto encontrada para o lightbox');
