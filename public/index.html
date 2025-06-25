@@ -73,10 +73,11 @@
   <div class="top-buttons">
     <button id="new-logout" onclick="returnToLogin()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" />
       </svg>
       Logout
-    </button>    <button id="new-help" onclick="showTutorial()">?</button>
+    </button> <button id="new-help" onclick="showTutorial()">?</button>
   </div>
 
   <div class="container">
@@ -84,7 +85,48 @@
     <div class="catalog-layout">
       <!-- Menu lateral de categorias -->
       <div class="category-sidebar">
-        <h3>Categories</h3>
+        <div class="sidebar-header">
+          <h3>Categories</h3>
+          <button id="filter-toggle" class="filter-toggle-btn" onclick="toggleFilters()" style="display: none;">
+            🔍 Filters
+          </button>
+        </div>
+
+        <!-- NOVA SEÇÃO DE FILTROS (escondida por enquanto) -->
+        <div id="category-filters" class="category-filters" style="display: none;">
+          <div class="filter-row">
+            <select id="country-filter" disabled>
+              <option value="">All Countries</option>
+              <option value="brazil">Brazil</option>
+              <option value="colombia">Colombia</option>
+            </select>
+
+            <select id="product-type-filter" disabled>
+              <option value="">All Products</option>
+              <option value="cowhides">Cowhides</option>
+              <option value="rugs">Rugs</option>
+              <option value="sheepskins">Sheepskins</option>
+              <option value="calfskins">Calfskins</option>
+            </select>
+          </div>
+
+          <div class="filter-row">
+            <select id="size-filter" disabled>
+              <option value="">All Sizes</option>
+              <option value="small">Small</option>
+              <option value="medium">Medium/ML</option>
+              <option value="large">Large</option>
+              <option value="xl">Extra Large</option>
+            </select>
+
+            <button class="clear-filters-btn" disabled>Clear</button>
+          </div>
+
+          <div class="active-filters" id="active-filters">
+            <!-- Badges de filtros ativos aparecerão aqui -->
+          </div>
+        </div>
+
         <div class="category-search">
           <input type="text" id="category-search-input" placeholder="Search categories...">
         </div>
@@ -185,7 +227,7 @@
         <!-- Botão Anterior com SVG -->
         <button class="lightbox-nav-btn" onclick="navigatePhotos(-1)" title="Previous photo">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
           </svg>
         </button>
 
@@ -197,7 +239,7 @@
         <!-- Botão Próximo com SVG -->
         <button class="lightbox-nav-btn" onclick="navigatePhotos(1)" title="Next photo">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" />
           </svg>
         </button>
 
@@ -471,7 +513,8 @@
               <div class="discrete-stats">
                 <span id="discrete-photo-count">Loading...</span>
                 <button class="btn btn-secondary btn-sm" onclick="photoManager.refreshStructure()">Refresh</button>
-                <button class="btn btn-primary btn-sm" onclick="photoManager.openCreateFolderModal()" style="background-color: #754646; color: white;">📁 New</button>
+                <button class="btn btn-primary btn-sm" onclick="photoManager.openCreateFolderModal()"
+                  style="background-color: #754646; color: white;">📁 New</button>
                 <button class="btn btn-gold btn-sm" onclick="photoManager.openUploadModal()">🔺 Upload</button>
               </div>
             </div>

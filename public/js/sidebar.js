@@ -1529,3 +1529,11 @@ function cleanupScrollMorePhotos() {
     morePhotosBtn.classList.remove('show');
   }
 }
+
+// === FUNÇÃO TEMPORÁRIA PARA EVITAR ERROS ===
+function toggleFilters() {
+  console.log('Filtros serão implementados no próximo passo');
+}
+
+// Disponibilizar globalmente
+window.toggleFilters = toggleFilters;
