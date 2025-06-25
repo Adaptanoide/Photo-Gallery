@@ -135,3 +135,22 @@
     gap: 10px;
   }
 }
+
+/* Ajuste para 3 linhas de filtros */
+.filter-row select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 12px;
+  background: white;
+  min-width: 0; /* Permite que selects sejam menores em mobile */
+}
+
+/* Mobile: filtros em coluna */
+@media (max-width: 768px) {
+  .filter-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
