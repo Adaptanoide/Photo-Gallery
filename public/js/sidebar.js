@@ -1530,9 +1530,29 @@ function cleanupScrollMorePhotos() {
   }
 }
 
-// === FUNÇÃO TEMPORÁRIA PARA EVITAR ERROS ===
+// === SISTEMA DE FILTROS ===
 function toggleFilters() {
-  console.log('Filtros serão implementados no próximo passo');
+  const filtersDiv = document.getElementById('category-filters');
+  const toggleBtn = document.getElementById('filter-toggle');
+  
+  if (!filtersDiv || !toggleBtn) {
+    console.error('Elementos de filtro não encontrados');
+    return;
+  }
+  
+  if (filtersDiv.style.display === 'none' || filtersDiv.style.display === '') {
+    // Mostrar filtros
+    filtersDiv.style.display = 'block';
+    toggleBtn.textContent = '🔍 Hide Filters';
+    toggleBtn.classList.add('active');
+    console.log('Filtros mostrados');
+  } else {
+    // Esconder filtros
+    filtersDiv.style.display = 'none';
+    toggleBtn.textContent = '🔍 Filters';
+    toggleBtn.classList.remove('active');
+    console.log('Filtros escondidos');
+  }
 }
 
 // Disponibilizar globalmente
