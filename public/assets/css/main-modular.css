@@ -17,6 +17,7 @@
 @import 'components/cards.css';
 @import 'components/modals.css';
 @import 'components/tables.css';
+@import 'components/category-filters.css';
 
 /* Modules */
 @import 'modules/cart.css';
