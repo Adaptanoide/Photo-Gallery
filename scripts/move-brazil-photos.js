@@ -1,32 +1,86 @@
-// Script para mover fotos para nova estrutura hierárquica
+// Script para mover fotos para estrutura hierárquica detalhada
 const fs = require('fs').promises;
 const path = require('path');
 
 const BASE_PATH = '/opt/render/project/storage/cache/fotos/imagens-webp/Brazil Top Selected Categories';
 
-// Mesmo mapeamento de cores
-const COLOR_GROUPS = {
-  'Black-White': ['Brazil Black & White', 'Brazil Black & White Reddish'],
-  'Brindle': ['Brazil Brindle Grey', 'Brazil Brindle Light Grey-Beige', 'Brazil Brindle Light Grey - Beige', 'Brazil Brindle Medium Tone', 'Brazil Brindle White Backbone', 'Brazil Brindle White Belly'],
-  'Salt-Pepper': ['Brazil Salt & Pepper - Tricolor - Brown and White', 'Brazil Salt & Pepper Black and White', 'Brazil Salt & Pepper Chocolate and White'],
-  'Brown-White': ['Brazil Brown & White'],
-  'Grey': ['Brazil Grey', 'Brazil Grey Beige'],
-  'Palomino': ['Brazil Palomino Exotic', 'Brazil Palomino Solid', 'Brazil Palomino'],
-  'Hereford': ['Brazil Hereford'],
-  'Champagne': ['Brazil Champagne'],
-  'Buttercream': ['Brazil Buttercream'],
-  'Natural-White': ['Brazil Natural White'],
-  'Taupe': ['Brazil Taupe'],
-  'Tricolor': ['Brazil Tricolor']
+// Mapeamento EXATO de cada pasta original para nova estrutura
+const FOLDER_MAPPING = {
+  // Black & White
+  'Brazil Black & White Small': 'Black-White/Small',
+  'Brazil Black & White ML': 'Black-White/Medium-Large',
+  'Brazil Black & White XL': 'Black-White/Extra-Large',
+  'Brazil Black & White Reddish Small': 'Black-White-Reddish/Small',
+  'Brazil Black & White Reddish ML': 'Black-White-Reddish/Medium-Large',
+  
+  // Brindle
+  'Brazil Brindle Grey ML': 'Brindle-Grey/Medium-Large',
+  'Brazil Brindle Grey XL': 'Brindle-Grey/Extra-Large',
+  'Brazil Brindle Light Grey-Beige Small': 'Brindle-Light-Grey-Beige/Small',
+  'Brazil Brindle Light Grey - Beige Small': 'Brindle-Light-Grey-Beige/Small',
+  'Brazil Brindle Light Grey-Beige ML': 'Brindle-Light-Grey-Beige/Medium-Large',
+  'Brazil Brindle Light Grey-Beige XL': 'Brindle-Light-Grey-Beige/Extra-Large',
+  'Brazil Brindle White Backbone Small': 'Brindle-White-Backbone/Small',
+  'Brazil Brindle White Backbone ML': 'Brindle-White-Backbone/Medium-Large',
+  'Brazil Brindle White Backbone XL': 'Brindle-White-Backbone/Extra-Large',
+  'Brazil Brindle White Belly Small': 'Brindle-White-Belly/Small',
+  'Brazil Brindle White Belly ML': 'Brindle-White-Belly/Medium-Large',
+  'Brazil Brindle White Belly XL': 'Brindle-White-Belly/Extra-Large',
+  'Brazil Brindle Medium Tone Small': 'Brindle-Medium-Tone/Small',
+  
+  // Salt & Pepper
+  'Brazil Salt & Pepper - Tricolor - Brown and White Small': 'Salt-Pepper-Tricolor-Brown-White/Small',
+  'Brazil Salt & Pepper - Tricolor - Brown and White ML': 'Salt-Pepper-Tricolor-Brown-White/Medium-Large',
+  'Brazil Salt & Pepper - Tricolor - Brown and White XL': 'Salt-Pepper-Tricolor-Brown-White/Extra-Large',
+  'Brazil Salt & Pepper - Tricolor - Brown and White Medium ML': 'Salt-Pepper-Tricolor-Brown-White-Medium/Medium-Large',
+  'Brazil Salt & Pepper Black and White Small': 'Salt-Pepper-Black-White/Small',
+  'Brazil Salt & Pepper Black and White ML': 'Salt-Pepper-Black-White/Medium-Large',
+  'Brazil Salt & Pepper Black and White XL': 'Salt-Pepper-Black-White/Extra-Large',
+  'Brazil Salt & Pepper Chocolate and White ML': 'Salt-Pepper-Chocolate-White/Medium-Large',
+  'Brazil Salt & Pepper Chocolate and White XL': 'Salt-Pepper-Chocolate-White/Extra-Large',
+  
+  // Outros
+  'Brazil Brown & White Small': 'Brown-White/Small',
+  'Brazil Brown & White ML': 'Brown-White/Medium-Large',
+  'Brazil Brown & White XL': 'Brown-White/Extra-Large',
+  'Brazil Buttercream ML': 'Buttercream/Medium-Large',
+  'Brazil Buttercream XL': 'Buttercream/Extra-Large',
+  'Brazil Champagne Small': 'Champagne/Small',
+  'Brazil Champagne ML': 'Champagne/Medium-Large',
+  'Brazil Champagne XL': 'Champagne/Extra-Large',
+  'Brazil Grey Beige Small': 'Grey-Beige/Small',
+  'Brazil Grey Beige ML': 'Grey-Beige/Medium-Large',
+  'Brazil Grey Beige XL': 'Grey-Beige/Extra-Large',
+  'Brazil Grey Small': 'Grey/Small',
+  'Brazil Grey ML': 'Grey/Medium-Large',
+  'Brazil Grey XL': 'Grey/Extra-Large',
+  'Brazil Hereford Small': 'Hereford/Small',
+  'Brazil Hereford ML': 'Hereford/Medium-Large',
+  'Brazil Hereford XL': 'Hereford/Extra-Large',
+  'Brazil Natural White Small': 'Natural-White/Small',
+  'Brazil Natural White ML': 'Natural-White/Medium-Large',
+  'Brazil Natural White XL': 'Natural-White/Extra-Large',
+  'Brazil Palomino Exotic Small': 'Palomino-Exotic/Small',
+  'Brazil Palomino Exotic ML': 'Palomino-Exotic/Medium-Large',
+  'Brazil Palomino Exotic XL': 'Palomino-Exotic/Extra-Large',
+  'Brazil Palomino Solid XL': 'Palomino-Solid/Extra-Large',
+  'Brazil Palomino ML': 'Palomino/Medium-Large',
+  'Brazil Taupe Small': 'Taupe/Small',
+  'Brazil Taupe ML': 'Taupe/Medium-Large',
+  'Brazil Taupe XL': 'Taupe/Extra-Large',
+  'Brazil Tricolor Small': 'Tricolor/Small',
+  'Brazil Tricolor ML': 'Tricolor/Medium-Large',
+  'Brazil Tricolor XL': 'Tricolor/Extra-Large'
 };
 
 async function movePhotos() {
-  console.log('🚚 Movendo fotos para nova estrutura...');
+  console.log('🚚 Movendo fotos para estrutura hierárquica detalhada...');
   
   const sizeFolders = ['Brazil Small', 'Brazil Medium Large', 'Brazil Extra Large'];
+  let totalMoved = 0;
   
   for (const sizeFolder of sizeFolders) {
-    console.log(`\n📂 ${sizeFolder}:`);
+    console.log(`\n📂 Processando: ${sizeFolder}`);
     const sizePath = path.join(BASE_PATH, sizeFolder);
     
     try {
@@ -37,12 +91,15 @@ async function movePhotos() {
         const stat = await fs.stat(categoryPath);
         
         if (stat.isDirectory()) {
-          const { colorGroup, size } = categorizeFolder(category);
+          const newPath = FOLDER_MAPPING[category];
           
-          if (colorGroup && size) {
-            const destPath = path.join(BASE_PATH, colorGroup, size);
-            await moveAllPhotos(categoryPath, destPath);
-            console.log(`  ✅ ${category} → ${colorGroup}/${size}`);
+          if (newPath) {
+            const destPath = path.join(BASE_PATH, newPath);
+            const moved = await moveAllPhotos(categoryPath, destPath);
+            totalMoved += moved;
+            console.log(`  ✅ ${category} → ${newPath} (${moved} fotos)`);
+          } else {
+            console.log(`  ⚠️ Não mapeado: ${category}`);
           }
         }
       }
@@ -51,27 +108,7 @@ async function movePhotos() {
     }
   }
   
-  console.log('\n🎉 Movimentação concluída!');
-}
-
-function categorizeFolder(folderName) {
-  let size = null;
-  if (folderName.includes(' Small')) size = 'Small';
-  else if (folderName.includes(' ML')) size = 'Medium-Large';  
-  else if (folderName.includes(' XL')) size = 'Extra-Large';
-  
-  let colorGroup = null;
-  for (const [group, patterns] of Object.entries(COLOR_GROUPS)) {
-    for (const pattern of patterns) {
-      if (folderName.includes(pattern)) {
-        colorGroup = group;
-        break;
-      }
-    }
-    if (colorGroup) break;
-  }
-  
-  return { colorGroup, size };
+  console.log(`\n🎉 Movimentação concluída! Total: ${totalMoved} fotos movidas`);
 }
 
 async function moveAllPhotos(sourcePath, destPath) {
@@ -85,8 +122,11 @@ async function moveAllPhotos(sourcePath, destPath) {
         path.join(destPath, photo)
       );
     }
+    
+    return photos.length;
   } catch (error) {
     console.log(`    ❌ ${error.message}`);
+    return 0;
   }
 }
 
