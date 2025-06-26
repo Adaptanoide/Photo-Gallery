@@ -1,59 +1,63 @@
-// Script para criar estrutura hierárquica do Brazil Top Selected
+// Script para criar estrutura hierárquica correta - OPÇÃO A (subcategorias separadas)
 const fs = require('fs').promises;
 const path = require('path');
 
 const BASE_PATH = '/opt/render/project/storage/cache/fotos/imagens-webp/Brazil Top Selected Categories';
 
-// Mapeamento de cores (agrupando variações)
-const COLOR_GROUPS = {
-  'Black-White': [
-    'Brazil Black & White',
-    'Brazil Black & White Reddish'
-  ],
-  'Brindle': [
-    'Brazil Brindle Grey',
-    'Brazil Brindle Light Grey-Beige',
-    'Brazil Brindle Light Grey - Beige',
-    'Brazil Brindle Medium Tone',
-    'Brazil Brindle White Backbone',
-    'Brazil Brindle White Belly'
-  ],
-  'Salt-Pepper': [
-    'Brazil Salt & Pepper - Tricolor - Brown and White',
-    'Brazil Salt & Pepper Black and White',
-    'Brazil Salt & Pepper Chocolate and White'
-  ],
-  'Brown-White': ['Brazil Brown & White'],
-  'Grey': ['Brazil Grey', 'Brazil Grey Beige'],
-  'Palomino': ['Brazil Palomino Exotic', 'Brazil Palomino Solid', 'Brazil Palomino'],
-  'Hereford': ['Brazil Hereford'],
-  'Champagne': ['Brazil Champagne'],
-  'Buttercream': ['Brazil Buttercream'],
-  'Natural-White': ['Brazil Natural White'],
-  'Taupe': ['Brazil Taupe'],
-  'Tricolor': ['Brazil Tricolor']
-};
-
-async function createHierarchy() {
-  console.log('🏗️ Criando nova estrutura hierárquica Brazil Top Selected...');
+// Mapeamento EXATO de cada subcategoria específica
+const SUBCATEGORIES = [
+  // Black & White
+  { name: 'Black-White', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Black-White-Reddish', sizes: ['Small', 'Medium-Large'] },
   
-  // Criar estrutura para cada cor
-  for (const colorGroup of Object.keys(COLOR_GROUPS)) {
-    console.log(`📁 Criando grupo: ${colorGroup}`);
+  // Brindle
+  { name: 'Brindle-Grey', sizes: ['Medium-Large', 'Extra-Large'] },
+  { name: 'Brindle-Light-Grey-Beige', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Brindle-White-Backbone', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Brindle-White-Belly', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Brindle-Medium-Tone', sizes: ['Small'] },
+  
+  // Salt & Pepper
+  { name: 'Salt-Pepper-Tricolor-Brown-White', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Salt-Pepper-Tricolor-Brown-White-Medium', sizes: ['Medium-Large'] },
+  { name: 'Salt-Pepper-Black-White', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Salt-Pepper-Chocolate-White', sizes: ['Medium-Large', 'Extra-Large'] },
+  
+  // Outros
+  { name: 'Brown-White', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Buttercream', sizes: ['Medium-Large', 'Extra-Large'] },
+  { name: 'Champagne', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Grey-Beige', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Grey', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Hereford', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Natural-White', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Palomino-Exotic', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Palomino-Solid', sizes: ['Extra-Large'] },
+  { name: 'Palomino', sizes: ['Medium-Large'] },
+  { name: 'Taupe', sizes: ['Small', 'Medium-Large', 'Extra-Large'] },
+  { name: 'Tricolor', sizes: ['Small', 'Medium-Large', 'Extra-Large'] }
+];
+
+async function createCorrectHierarchy() {
+  console.log('🏗️ Criando estrutura hierárquica CORRETA - cada subcategoria separada...');
+  
+  for (const subcategory of SUBCATEGORIES) {
+    console.log(`📁 Criando: ${subcategory.name}`);
     
-    // Criar pasta da cor
-    const colorPath = path.join(BASE_PATH, colorGroup);
-    await fs.mkdir(colorPath, { recursive: true });
+    // Criar pasta da subcategoria
+    const subcategoryPath = path.join(BASE_PATH, subcategory.name);
+    await fs.mkdir(subcategoryPath, { recursive: true });
     
-    // Criar subpastas de tamanho
-    await fs.mkdir(path.join(colorPath, 'Small'), { recursive: true });
-    await fs.mkdir(path.join(colorPath, 'Medium-Large'), { recursive: true });
-    await fs.mkdir(path.join(colorPath, 'Extra-Large'), { recursive: true });
+    // Criar apenas os tamanhos que essa subcategoria tem
+    for (const size of subcategory.sizes) {
+      await fs.mkdir(path.join(subcategoryPath, size), { recursive: true });
+    }
     
-    console.log(`  ✅ ${colorGroup}: Small, Medium-Large, Extra-Large`);
+    console.log(`  ✅ ${subcategory.name}: ${subcategory.sizes.join(', ')}`);
   }
   
-  console.log('\n🎉 Estrutura criada! Próximo: mover as fotos');
+  console.log('\n🎉 Estrutura correta criada! Cada subcategoria tem sua própria pasta.');
+  console.log('📋 Próximo: executar move-brazil-photos.js');
 }
 
-createHierarchy().catch(console.error);
+createCorrectHierarchy().catch(console.error);
