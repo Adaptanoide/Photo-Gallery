@@ -7,13 +7,13 @@ let isLoadingFolders = false; // Flag to control loading
 // Initialization function
 function initPriceManager() {
   console.log("Initializing price manager...");
-  
+
   // Show loading message with progress indicator
-  document.getElementById('category-price-container').innerHTML = 
+  document.getElementById('category-price-container').innerHTML =
     '<div class="loading-folders">Loading data...<div id="loading-progress">Preparing...</div></div>';
-  
+
   isLoadingFolders = true;
-  
+
   // First load prices (usually fast)
   loadCategoryPrices()
     .then(() => {
@@ -21,7 +21,7 @@ function initPriceManager() {
       const cachedFolders = sessionStorage.getItem('leaf_folders');
       const cacheTimestamp = sessionStorage.getItem('leaf_folders_timestamp');
       const cacheAge = cacheTimestamp ? (Date.now() - parseInt(cacheTimestamp)) : null;
-      
+
       // Use cache if available and fresh (less than 10 minutes)
       if (cachedFolders && cacheAge && cacheAge < 30 * 1000) {
         console.log('Using cached folders from session storage');
@@ -29,21 +29,21 @@ function initPriceManager() {
         renderCategoryPriceTable();
         updateHeaderStats(); // Atualizar estatísticas no header
         isLoadingFolders = false;
-        
+
         // Add resize event
         setTimeout(adjustTableHeight, 100);
         window.addEventListener('resize', adjustTableHeight);
-        
+
         // Still fetch updates in background
         backgroundRefreshFolders();
         return;
       }
-      
+
       // If no cache, do normal loading with progress UI
       loadLeafFoldersWithProgress();
     })
     .catch(error => {
-      document.getElementById('category-price-container').innerHTML = 
+      document.getElementById('category-price-container').innerHTML =
         `<div class="error-message">Error loading data: ${error.message}</div>`;
       isLoadingFolders = false;
     });
@@ -52,14 +52,14 @@ function initPriceManager() {
 // Load folders with progress
 function loadLeafFoldersWithProgress() {
   const progressElement = document.getElementById('loading-progress');
-  
+
   // Update progress message
   if (progressElement) {
     progressElement.textContent = 'Searching categories...';
   }
-  
+
   console.log('Making request to: /api/admin/folders/leaf?include_empty=true');
-  
+
   // Make the request
   fetch('/api/admin/folders/leaf?include_empty=true')
     .then(response => {
@@ -71,23 +71,23 @@ function loadLeafFoldersWithProgress() {
     })
     .then(result => {
       console.log('Complete API Response:', result);
-      
+
       if (result.success) {
         leafFolders = result.folders || [];
         console.log(`Loaded ${leafFolders.length} leaf folders`);
         console.log('First 3 folders:', leafFolders.slice(0, 3));
-        
+
         // Store in session cache
         sessionStorage.setItem('leaf_folders', JSON.stringify(leafFolders));
         sessionStorage.setItem('leaf_folders_timestamp', Date.now().toString());
-        
+
         // Update UI
         renderCategoryPriceTable();
         updateHeaderStats(); // Atualizar estatísticas no header
-        
+
         // Adjust table height
         setTimeout(adjustTableHeight, 100);
-        
+
         // Add resize event
         window.addEventListener('resize', adjustTableHeight);
       } else {
@@ -96,7 +96,7 @@ function loadLeafFoldersWithProgress() {
     })
     .catch(error => {
       console.error('Error loading leaf folders:', error);
-      document.getElementById('category-price-container').innerHTML = 
+      document.getElementById('category-price-container').innerHTML =
         `<div class="error-message">Error loading categories: ${error.message}</div>`;
     })
     .finally(() => {
@@ -111,11 +111,11 @@ function backgroundRefreshFolders() {
     .then(result => {
       if (result.success) {
         const newFolders = result.folders || [];
-        
+
         // Check for significant changes
         const oldLength = leafFolders.length;
         const newLength = newFolders.length;
-        
+
         // If we have significant differences, update UI
         if (Math.abs(oldLength - newLength) > 0 || newLength === 0) {
           console.log(`📊 Updating UI: ${oldLength} → ${newLength} folders`);
@@ -145,12 +145,12 @@ function loadCategoryPrices() {
     .then(result => {
       if (result.success) {
         priceManagerCategoryPrices = {};
-        
+
         // Transform array to object for easy access
         (result.prices || []).forEach(price => {
           priceManagerCategoryPrices[price.folderId] = price;
         });
-        
+
         console.log(`Loaded ${Object.keys(priceManagerCategoryPrices).length} category prices`);
         return priceManagerCategoryPrices;
       } else {
@@ -170,7 +170,7 @@ function updateHeaderStats() {
 // MAIN FUNCTION - COM CLASSES CORRETAS PARA ALINHAMENTO PERFEITO
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
-  
+
   if (!leafFolders || leafFolders.length === 0) {
     if (isLoadingFolders) {
       container.innerHTML = '<div class="loading-folders">Loading categories...<div id="loading-progress">Please wait...</div></div>';
@@ -179,7 +179,7 @@ function renderCategoryPriceTable() {
     }
     return;
   }
-  
+
   let html = `
     <div class="table-filter-simple">
       <input type="text" id="category-filter" class="form-control" placeholder="Filter categories..." onkeyup="filterCategories()">
@@ -198,17 +198,20 @@ function renderCategoryPriceTable() {
         </thead>
         <tbody id="price-table-body">
   `;
-  
+
   // Render ALL folders at once - COM CLASSES PARA ALINHAMENTO
   leafFolders.forEach(folder => {
     const price = priceManagerCategoryPrices[folder.id] ? priceManagerCategoryPrices[folder.id].price : '';
     const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
     const hasPrice = price !== '';
-    
+
     html += `
       <tr data-folder-id="${folder.id}" data-folder-name="${folder.name.toLowerCase()}">
         <td class="checkbox-column"><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
-        <td class="category-column">${folder.name}</td>
+        <td class="category-column">
+          <div class="category-context">${folder.path || ''}</div>
+          <div class="category-name">${folder.name}</div>
+        </td>
         <td class="photos-column">${folder.fileCount || '0'}</td>
         <td class="price-column">
           <span class="price-display">${formattedPrice}</span>
@@ -223,13 +226,13 @@ function renderCategoryPriceTable() {
       </tr>
     `;
   });
-  
+
   html += `
         </tbody>
       </table>
     </div>
   `;
-  
+
   // SET HTML ONLY ONCE
   container.innerHTML = html;
 }
@@ -238,11 +241,11 @@ function renderCategoryPriceTable() {
 function adjustTableHeight() {
   const container = document.querySelector('.price-table-container');
   if (!container) return;
-  
+
   const windowHeight = window.innerHeight;
   const containerPosition = container.getBoundingClientRect().top;
   const footerHeight = 100; // Estimated footer space
-  
+
   const availableHeight = windowHeight - containerPosition - footerHeight;
   container.style.height = `${Math.max(400, availableHeight)}px`;
 }
@@ -252,7 +255,7 @@ function filterCategories() {
   const filterValue = document.getElementById('category-filter').value.toLowerCase();
   const rows = document.querySelectorAll('#price-table-body tr');
   let displayedCount = 0;
-  
+
   rows.forEach(row => {
     const folderName = row.getAttribute('data-folder-name');
     if (folderName.includes(filterValue)) {
@@ -262,7 +265,7 @@ function filterCategories() {
       row.style.display = 'none';
     }
   });
-  
+
   // Atualizar contador no header
   const headerStatsElement = document.getElementById('price-header-stats');
   if (headerStatsElement) {
@@ -281,12 +284,12 @@ function togglePriceEdit(folderId) {
   const priceInput = row.querySelector('.price-input');
   const editBtn = row.querySelector('.edit-price-btn');
   const saveBtn = row.querySelector('.save-price-btn');
-  
+
   priceDisplay.style.display = 'none';
   priceInput.style.display = 'block';
   editBtn.style.display = 'none';
   saveBtn.style.display = 'inline-block';
-  
+
   priceInput.focus();
 }
 
@@ -294,76 +297,76 @@ function togglePriceEdit(folderId) {
 function savePrice(folderId) {
   // ADICIONE ESTE LOG:
   console.log(`[PRICE] Tentando salvar preço para folder: ${folderId}`);
-  
+
   const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
   if (!row) {
     console.error(`[PRICE] Row não encontrada para folder: ${folderId}`);
     showToast('Category not found in table', 'error');
     return;
   }
-  
+
   const priceInput = row.querySelector('.price-input');
   const price = parseFloat(priceInput.value);
-  
+
   // Verificar se a pasta existe
   const folder = leafFolders.find(f => f.id === folderId);
   if (!folder) {
     showToast('Category not found', 'error');
     return;
   }
-  
+
   // ADICIONE MAIS ESTE LOG:
   console.log(`[PRICE] Folder encontrado: ${folder.name}, preço a salvar: $${price}`);
-  
+
   if (isNaN(price) || price < 0) {
     showToast('Please enter a valid price', 'error');
     return;
   }
-  
+
   showLoader();
-  
+
   fetch(`/api/admin/categories/${folderId}/price`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ price })
   })
-  .then(response => response.json())
-  .then(result => {
-    hideLoader();
-    
-    if (result.success) {
-      showToast('Price updated successfully', 'success');
-      
-      // Update price in local object
-      if (priceManagerCategoryPrices[folderId]) {
-        priceManagerCategoryPrices[folderId].price = price;
+    .then(response => response.json())
+    .then(result => {
+      hideLoader();
+
+      if (result.success) {
+        showToast('Price updated successfully', 'success');
+
+        // Update price in local object
+        if (priceManagerCategoryPrices[folderId]) {
+          priceManagerCategoryPrices[folderId].price = price;
+        } else {
+          priceManagerCategoryPrices[folderId] = {
+            folderId: folderId,
+            price: price
+          };
+        }
+
+        // Update UI
+        const priceDisplay = row.querySelector('.price-display');
+        priceDisplay.textContent = '$' + price.toFixed(2);
+        priceDisplay.style.display = 'block';
+        priceInput.style.display = 'none';
+
+        // Update button text, now it's "Edit Price" because we have a price
+        const editBtn = row.querySelector('.edit-price-btn');
+        editBtn.textContent = 'Edit Price';
+        editBtn.style.display = 'inline-block';
+
+        row.querySelector('.save-price-btn').style.display = 'none';
       } else {
-        priceManagerCategoryPrices[folderId] = {
-          folderId: folderId,
-          price: price
-        };
+        showToast('Error updating price: ' + result.message, 'error');
       }
-      
-      // Update UI
-      const priceDisplay = row.querySelector('.price-display');
-      priceDisplay.textContent = '$' + price.toFixed(2);
-      priceDisplay.style.display = 'block';
-      priceInput.style.display = 'none';
-      
-      // Update button text, now it's "Edit Price" because we have a price
-      const editBtn = row.querySelector('.edit-price-btn');
-      editBtn.textContent = 'Edit Price';
-      editBtn.style.display = 'inline-block';
-      
-      row.querySelector('.save-price-btn').style.display = 'none';
-    } else {
-      showToast('Error updating price: ' + result.message, 'error');
-    }
-  })
-  .catch(error => {
-    hideLoader();
-    showToast('Error updating price: ' + error.message, 'error');
-  });
+    })
+    .catch(error => {
+      hideLoader();
+      showToast('Error updating price: ' + error.message, 'error');
+    });
 }
 
 // Apply bulk update
@@ -371,78 +374,78 @@ function applyBulkUpdate() {
   const updateType = document.getElementById('bulk-update-type').value;
   const valueInput = document.getElementById('bulk-value');
   const value = parseFloat(valueInput.value);
-  
+
   if (isNaN(value)) {
     showToast('Please enter a valid value', 'error');
     return;
   }
-  
+
   // Get all selected categories
   const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
   if (selectedCheckboxes.length === 0) {
     showToast('Please select at least one category', 'error');
     return;
   }
-  
+
   const selectedFolderIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-  
+
   // Prepare data for bulk update
   const updateData = {
     type: updateType,
     value: value,
     folderIds: selectedFolderIds
   };
-  
+
   showLoader();
-  
+
   fetch('/api/admin/categories/batch-update', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updateData)
   })
-  .then(response => response.json())
-  .then(result => {
-    hideLoader();
-    
-    if (result.success) {
-      showToast(`Prices updated for ${selectedFolderIds.length} categories`, 'success');
-      
-      // Reload prices
-      loadCategoryPrices().then(() => {
-        renderCategoryPriceTable();
-      });
-    } else {
-      showToast('Error updating prices: ' + result.message, 'error');
-    }
-  })
-  .catch(error => {
-    hideLoader();
-    showToast('Error updating prices: ' + error.message, 'error');
-  });
+    .then(response => response.json())
+    .then(result => {
+      hideLoader();
+
+      if (result.success) {
+        showToast(`Prices updated for ${selectedFolderIds.length} categories`, 'success');
+
+        // Reload prices
+        loadCategoryPrices().then(() => {
+          renderCategoryPriceTable();
+        });
+      } else {
+        showToast('Error updating prices: ' + result.message, 'error');
+      }
+    })
+    .catch(error => {
+      hideLoader();
+      showToast('Error updating prices: ' + error.message, 'error');
+    });
 }
 
 // Toggle selection of all categories
 function toggleSelectAll() {
   const selectAllCheckbox = document.getElementById('select-all');
   const checkboxes = document.querySelectorAll('.category-checkbox');
-  
+
   checkboxes.forEach(checkbox => {
     checkbox.checked = selectAllCheckbox.checked;
   });
 }
 
 // Extend existing switchTab function to initialize price manager when needed
-(function() {
+(function () {
   // Store original function
   const currentSwitchTabFunc = window.switchTab;
-  
+
   // Define new function that extends the original
-  window.switchTab = function(tabId) {
+  window.switchTab = function (tabId) {
     // Call original function
     if (typeof currentSwitchTabFunc === 'function') {
       currentSwitchTabFunc(tabId);
     }
-    
+
     // Add extra behavior only for price tab
     if (tabId === 'price-management') {
       console.log("Initializing price manager...");
@@ -456,22 +459,22 @@ async function refreshPriceCounters() {
   try {
     console.log('🔄 Refreshing price management...');
     showToast('Refreshing categories...', 'info');
-    
+
     // 1. Limpar cache local
     sessionStorage.removeItem('leaf_folders');
     sessionStorage.removeItem('leaf_folders_timestamp');
-    
+
     // 2. Resetar variáveis
     leafFolders = [];
     priceManagerCategoryPrices = {};
-    
+
     // 3. Recarregar tudo do zero
     isLoadingFolders = true;
     await loadCategoryPrices();
     await loadLeafFoldersWithProgress();
-    
+
     showToast('✅ Categories refreshed!', 'success');
-    
+
   } catch (error) {
     console.error('❌ Erro no refresh:', error);
     showToast(`Error refreshing: ${error.message}`, 'error');
@@ -484,23 +487,23 @@ async function refreshPriceCounters() {
 function openBulkActionsModal() {
   // Verificar se há categorias selecionadas
   const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
-  
+
   if (selectedCheckboxes.length === 0) {
     showToast('Please select at least one category first', 'warning');
     return;
   }
-  
+
   // Atualizar contador e preview
   updateBulkModalInfo(selectedCheckboxes);
-  
+
   // Resetar form
   document.getElementById('bulk-update-type-modal').value = 'fixed';
   document.getElementById('bulk-value-modal').value = '';
   document.getElementById('apply-bulk-modal-btn').disabled = true;
-  
+
   // Atualizar texto de ajuda
   updateBulkHelpText('fixed');
-  
+
   // Mostrar modal
   document.getElementById('bulk-actions-modal').style.display = 'block';
 }
@@ -514,19 +517,19 @@ function closeBulkModal() {
 function updateBulkModalInfo(selectedCheckboxes) {
   const count = selectedCheckboxes.length;
   document.getElementById('bulk-selected-count').textContent = count;
-  
+
   // Criar preview das categorias selecionadas
   const categoryNames = Array.from(selectedCheckboxes).map(checkbox => {
     const row = checkbox.closest('tr');
     const categoryName = row.querySelector('.category-column').textContent;
     return categoryName;
   }).slice(0, 3); // Mostrar apenas as 3 primeiras
-  
+
   let previewText = categoryNames.join(', ');
   if (count > 3) {
     previewText += ` and ${count - 3} more...`;
   }
-  
+
   document.getElementById('bulk-selected-preview').textContent = previewText;
 }
 
@@ -534,23 +537,23 @@ function updateBulkModalInfo(selectedCheckboxes) {
 function applyBulkFromModal() {
   const updateType = document.getElementById('bulk-update-type-modal').value;
   const value = parseFloat(document.getElementById('bulk-value-modal').value);
-  
+
   if (isNaN(value)) {
     showToast('Please enter a valid value', 'error');
     return;
   }
-  
+
   // Usar a função existente applyBulkUpdate mas com os valores do modal
   const oldTypeElement = document.getElementById('bulk-update-type');
   const oldValueElement = document.getElementById('bulk-value');
-  
+
   // Simular os valores antigos temporariamente
   const tempType = { value: updateType };
   const tempValue = { value: value };
-  
+
   // Chamar função existente com os novos valores
   applyBulkUpdateWithValues(updateType, value);
-  
+
   // Fechar modal
   closeBulkModal();
 }
@@ -558,53 +561,53 @@ function applyBulkFromModal() {
 // Função auxiliar para aplicar bulk com valores específicos
 function applyBulkUpdateWithValues(updateType, value) {
   const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
-  
+
   if (selectedCheckboxes.length === 0) {
     showToast('No categories selected', 'error');
     return;
   }
-  
+
   const selectedFolderIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-  
+
   const updateData = {
     type: updateType,
     value: value,
     folderIds: selectedFolderIds
   };
-  
+
   showLoader();
-  
+
   fetch('/api/admin/categories/batch-update', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updateData)
   })
-  .then(response => response.json())
-  .then(result => {
-    hideLoader();
-    
-    if (result.success) {
-      showToast(`Prices updated for ${selectedFolderIds.length} categories`, 'success');
-      
-      // Reload prices
-      loadCategoryPrices().then(() => {
-        renderCategoryPriceTable();
-        
-        // Limpar seleções
-        const selectAllCheckbox = document.getElementById('select-all');
-        if (selectAllCheckbox) {
-          selectAllCheckbox.checked = false;
-        }
-        selectedCheckboxes.forEach(cb => cb.checked = false);
-      });
-    } else {
-      showToast('Error updating prices: ' + result.message, 'error');
-    }
-  })
-  .catch(error => {
-    hideLoader();
-    showToast('Error updating prices: ' + error.message, 'error');
-  });
+    .then(response => response.json())
+    .then(result => {
+      hideLoader();
+
+      if (result.success) {
+        showToast(`Prices updated for ${selectedFolderIds.length} categories`, 'success');
+
+        // Reload prices
+        loadCategoryPrices().then(() => {
+          renderCategoryPriceTable();
+
+          // Limpar seleções
+          const selectAllCheckbox = document.getElementById('select-all');
+          if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+          }
+          selectedCheckboxes.forEach(cb => cb.checked = false);
+        });
+      } else {
+        showToast('Error updating prices: ' + result.message, 'error');
+      }
+    })
+    .catch(error => {
+      hideLoader();
+      showToast('Error updating prices: ' + error.message, 'error');
+    });
 }
 
 // Atualizar texto de ajuda baseado no tipo
@@ -618,19 +621,19 @@ function updateBulkHelpText(type) {
 }
 
 // Event listeners para o modal
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // Listener para mudança de tipo de update
   const typeSelect = document.getElementById('bulk-update-type-modal');
   if (typeSelect) {
-    typeSelect.addEventListener('change', function() {
+    typeSelect.addEventListener('change', function () {
       updateBulkHelpText(this.value);
     });
   }
-  
+
   // Listener para habilitar/desabilitar botão Apply
   const valueInput = document.getElementById('bulk-value-modal');
   if (valueInput) {
-    valueInput.addEventListener('input', function() {
+    valueInput.addEventListener('input', function () {
       const applyBtn = document.getElementById('apply-bulk-modal-btn');
       applyBtn.disabled = !this.value || isNaN(parseFloat(this.value));
     });

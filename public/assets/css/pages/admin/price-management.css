@@ -684,3 +684,42 @@
   color: #666;
   font-size: 14px;
 }
+
+/* Breadcrumb context styling for hierarchical categories */
+.category-context {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.3;
+}
+
+.category-column {
+  max-width: 300px;
+  word-wrap: break-word;
+  vertical-align: top;
+  padding: 8px 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .category-context {
+    font-size: 10px;
+    margin-bottom: 1px;
+  }
+  
+  .category-name {
+    font-size: 13px;
+  }
+  
+  .category-column {
+    max-width: 200px;
+  }
+}
