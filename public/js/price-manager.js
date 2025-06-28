@@ -61,7 +61,7 @@ function loadLeafFoldersWithProgress() {
   console.log('Making request to: /api/admin/folders/leaf?include_empty=true');
 
   // Make the request
-  fetch('/api/admin/folders/leaf?include_empty=true')
+  fetch('/api/admin/folders/leaf-pricing?include_empty=true')
     .then(response => {
       console.log('Response status:', response.status);
       if (!response.ok) {
@@ -106,7 +106,7 @@ function loadLeafFoldersWithProgress() {
 
 // Update folders in background without interrupting user
 function backgroundRefreshFolders() {
-  fetch('/api/admin/folders/leaf?include_empty=true')
+  fetch('/api/admin/folders/leaf-pricing?include_empty=true')
     .then(response => response.json())
     .then(result => {
       if (result.success) {
