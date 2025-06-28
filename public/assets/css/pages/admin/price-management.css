@@ -112,7 +112,8 @@
 .price-table thead tr {
   display: flex;
   width: 100%;
-  justify-content: space-evenly;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .price-table th {
@@ -169,7 +170,8 @@
 .price-table tbody tr {
   display: flex;
   width: 100%;
-  justify-content: space-evenly;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.15s ease;
 }
@@ -209,7 +211,7 @@
 
 /* LARGURAS IDÊNTICAS PARA TH E TD - ALINHAMENTO PERFEITO */
 .checkbox-column {
-  flex: 0 0 60px;
+  flex: 0 0 40px;
   justify-content: center;
 }
 
