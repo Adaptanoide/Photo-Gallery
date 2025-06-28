@@ -167,6 +167,34 @@ function updateHeaderStats() {
   }
 }
 
+// Criar nome único e intuitivo para cada categoria
+function createDisplayName(folder) {
+  if (!folder.path) return folder.name;
+  
+  // Quebrar o path em partes e limpar
+  const parts = folder.path.split(' → ').map(part => part.trim());
+  
+  // Remover palavras desnecessárias e encurtar
+  const cleanParts = parts.map(part => {
+    return part
+      .replace(/Categories?/gi, '')
+      .replace(/Best Sellers?/gi, 'Best Sellers')
+      .replace(/Top Selected/gi, 'Top')
+      .replace(/Medium-Large-XL/gi, 'ML-XL')
+      .replace(/Medium-Large/gi, 'ML')
+      .replace(/Extra-Large/gi, 'XL')
+      .replace(/Extra-Small/gi, 'XS')
+      .replace(/X-Large/gi, 'XL')
+      .replace(/Small/gi, 'S')
+      .replace(/Large/gi, 'L')
+      .replace(/Medium/gi, 'M')
+      .trim();
+  }).filter(part => part.length > 0);
+  
+  // Juntar com espaços
+  return cleanParts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
 // MAIN FUNCTION - COM CLASSES CORRETAS PARA ALINHAMENTO PERFEITO
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
@@ -205,12 +233,12 @@ function renderCategoryPriceTable() {
     const formattedPrice = price ? '$' + parseFloat(price).toFixed(2) : '-';
     const hasPrice = price !== '';
 
+    const displayName = createDisplayName(folder);
     html += `
-      <tr data-folder-id="${folder.id}" data-folder-name="${folder.name.toLowerCase()}">
+      <tr data-folder-id="${folder.id}" data-folder-name="${displayName.toLowerCase()}">
         <td class="checkbox-column"><input type="checkbox" class="category-checkbox" value="${folder.id}"></td>
         <td class="category-column">
-          <div class="category-context">${folder.path || ''}</div>
-          <div class="category-name">${folder.name}</div>
+          <div class="category-full-name">${displayName}</div>
         </td>
         <td class="photos-column">${folder.fileCount || '0'}</td>
         <td class="price-column">

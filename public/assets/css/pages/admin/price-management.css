@@ -723,3 +723,25 @@
     max-width: 200px;
   }
 }
+
+/* Nome único da categoria - layout melhorado */
+.category-full-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Responsivo para o nome completo */
+@media (max-width: 1200px) {
+  .category-full-name {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .category-full-name {
+    font-size: 13px;
+  }
+}
