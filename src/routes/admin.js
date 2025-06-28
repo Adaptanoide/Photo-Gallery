@@ -90,4 +90,25 @@ router.get('/debug/8290', async (req, res) => {
 
 router.post('/force-rebuild-index', adminController.forceRebuildIndex);
 
+// TESTE TEMPORÁRIO - getLeafFoldersForPricing
+router.get('/test-leaf-pricing', async (req, res) => {
+  try {
+    const localStorageService = require('../services/localStorageService');
+    const result = await localStorageService.getLeafFoldersForPricing(true);
+    
+    res.json({
+      success: result.success,
+      total: result.folders.length,
+      sample: result.folders.slice(0, 5),
+      comparison: {
+        old_api: 160,
+        new_function: result.folders.length,
+        reduction: 160 - result.folders.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
