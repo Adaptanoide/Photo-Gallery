@@ -74,6 +74,37 @@ exports.deleteCustomerCode = async (req, res) => {
   }
 };
 
+// NOVA FUNÇÃO: Obter apenas pastas finais para Price Management
+exports.getLeafFoldersForPricing = async function(req, res) {
+  try {
+    console.log('Getting leaf folders for pricing');
+    
+    const includeEmptyFolders = req.query.include_empty === 'true';
+    const result = await localStorageService.getLeafFoldersForPricing(includeEmptyFolders);
+    
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message
+      });
+    }
+    
+    console.log(`Found ${result.folders.length} leaf folders for pricing`);
+    
+    res.status(200).json({
+      success: true,
+      folders: result.folders
+    });
+    
+  } catch (error) {
+    console.error('Error getting leaf folders for pricing:', error);
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
+};
+
 // SUBSTITUA a função exports.getLeafFolders por esta versão:
 exports.getLeafFolders = async function(req, res) {
   try {
