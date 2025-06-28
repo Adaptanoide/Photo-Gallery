@@ -686,12 +686,6 @@ function saveQBItem(folderId) {
   const qbInput = row.querySelector('.qbitem-input');
   const qbValue = qbInput.value.trim().toUpperCase();
 
-  // Validação básica
-  if (qbValue && !/^[0-9]{2,4}[A-Z]{0,3}$/.test(qbValue)) {
-    showToast('QB Item format should be like: 5302A, 5234B, etc.', 'error');
-    return;
-  }
-
   showLoader();
 
   fetch(`/api/admin/categories/${folderId}/qbitem`, {

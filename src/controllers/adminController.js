@@ -195,14 +195,6 @@ exports.setQBItem = async function (req, res) {
       });
     }
 
-    // Validar formato QB Item (opcional - você pode ajustar)
-    if (qbItem && !/^[0-9]{2,4}[A-Z]{0,3}$/i.test(qbItem)) {
-      return res.status(400).json({
-        success: false,
-        message: 'QB Item format should be like: 5302A, 5234B, etc.'
-      });
-    }
-
     // Usar localStorageService para obter informações da pasta
     const index = await localStorageService.getIndex();
     const folder = localStorageService.findCategoryById(index, folderId);
