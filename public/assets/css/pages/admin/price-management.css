@@ -827,3 +827,17 @@
     font-size: 13px;
   }
 }
+
+/* Container para campo + botão integrados */
+.field-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.field-container .action-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  min-width: 35px;
+}
