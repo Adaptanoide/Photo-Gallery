@@ -186,6 +186,70 @@ class LocalStorageService {
     return folders;
   }
 
+  // NOVA FUNÇÃO: Obter apenas pastas finais para Price Management
+  async getLeafFoldersForPricing(includeEmpty = true) {
+    try {
+      console.log('[LocalStorage] Getting leaf folders for pricing');
+
+      const index = await this.getIndex();
+      const leafFolders = [];
+
+      // Função recursiva para encontrar apenas pastas finais
+      const findLeafFolders = (folder, parentPath = []) => {
+        const currentPath = [...parentPath, folder.name];
+
+        // Pular pastas administrativas
+        const adminFolders = ['Waiting Payment', 'Sold', 'Developing'];
+        if (adminFolders.includes(folder.name)) {
+          return;
+        }
+
+        // CRITÉRIO: Pasta final = sem filhos OU filhos todos vazios
+        const hasChildren = folder.children && folder.children.length > 0;
+        const hasPhotosDirectly = folder.photoCount > 0;
+
+        if (!hasChildren) {
+          // Sem filhos = pasta final
+          if (includeEmpty || hasPhotosDirectly) {
+            leafFolders.push({
+              id: folder.id,
+              name: folder.name,
+              path: currentPath.join(' → '),
+              fileCount: folder.photoCount || 0,
+              relativePath: folder.relativePath
+            });
+          }
+        } else {
+          // Com filhos = processar recursivamente
+          folder.children.forEach(child => {
+            findLeafFolders(child, currentPath);
+          });
+        }
+      };
+
+      // Processar todas as pastas raiz
+      if (index.folders) {
+        index.folders.forEach(folder => findLeafFolders(folder));
+      }
+
+      console.log(`[LocalStorage] Found ${leafFolders.length} leaf folders for pricing`);
+
+      return {
+        success: true,
+        folders: leafFolders,
+        message: `Found ${leafFolders.length} leaf folders`
+      };
+
+    } catch (error) {
+      console.error('Error getting leaf folders for pricing:', error);
+      return {
+        success: false,
+        folders: [],
+        message: error.message
+      };
+    }
+  }
+
   // FUNÇÃO GETPHOTOS SIMPLIFICADA
   async getPhotos(categoryId) {
     try {
@@ -340,7 +404,7 @@ class LocalStorageService {
 
       // PASSO 1: Verificar se path do índice está correto
       const indexPath = path.join(this.photosPath, folder.relativePath);
-      
+
       try {
         await fs.access(indexPath);
         console.log(`✅ Index path is correct: ${indexPath}`);
@@ -356,15 +420,15 @@ class LocalStorageService {
 
       // PASSO 2: Buscar pasta fisicamente no disco
       console.log(`🔍 Searching physically for folder: ${folder.name}`);
-      
+
       const searchResult = await this.searchFolderPhysically(folder.name, this.photosPath);
-      
+
       if (searchResult.found) {
         console.log(`✅ Found folder physically at: ${searchResult.fullPath}`);
-        
+
         // Calcular novo relativePath
         const newRelativePath = path.relative(this.photosPath, searchResult.fullPath);
-        
+
         return {
           success: true,
           realPath: searchResult.fullPath,
@@ -400,7 +464,7 @@ class LocalStorageService {
 
     try {
       const items = await fs.readdir(searchPath, { withFileTypes: true });
-      
+
       // Buscar na pasta atual
       for (const item of items) {
         if (item.isDirectory() && item.name === targetFolderName) {
@@ -1329,7 +1393,7 @@ class LocalStorageService {
       }
 
       const cleanName = newName.trim().replace(/[<>:"/\\|?*]/g, '');
-      
+
       if (!cleanName) {
         return {
           success: false,
@@ -1356,7 +1420,7 @@ class LocalStorageService {
 
       // ===== ENCONTRAR PATH REAL NO DISCO =====
       const pathResult = await this.findRealFolderPath(folder);
-      
+
       if (!pathResult.success) {
         return {
           success: false,
@@ -1366,7 +1430,7 @@ class LocalStorageService {
 
       const oldPath = pathResult.realPath;
       const currentRelativePath = pathResult.relativePath;
-      
+
       console.log(`🎯 Real folder path: ${oldPath}`);
 
       // ===== ATUALIZAR ÍNDICE SE NECESSÁRIO =====
@@ -1403,13 +1467,13 @@ class LocalStorageService {
         console.log(`✅ Physical folder renamed successfully`);
       } catch (renameError) {
         console.error(`❌ Physical rename failed:`, renameError);
-        
+
         // Restaurar backup do índice se houve alteração
         if (pathResult.needsUpdate) {
           await this.saveIndex(indexBackup);
           console.log(`↩️ Index backup restored`);
         }
-        
+
         return {
           success: false,
           message: `Failed to rename folder physically: ${renameError.message}`
@@ -1428,9 +1492,9 @@ class LocalStorageService {
             const oldChildPath = child.relativePath;
             const newChildPath = oldChildPath.replace(oldParentPath, newParentPath);
             child.relativePath = newChildPath;
-            
+
             console.log(`📝 Updated child path: ${oldChildPath} → ${newChildPath}`);
-            
+
             // Recursão para subpastas
             updateChildrenPaths(child, oldParentPath, newParentPath);
           });
@@ -1442,7 +1506,7 @@ class LocalStorageService {
       // ===== SALVAR ÍNDICE FINAL =====
       index.lastUpdate = new Date().toISOString();
       await this.saveIndex(index);
-      
+
       // Limpar cache para forçar recarregamento
       this.clearCache();
 
@@ -1467,7 +1531,7 @@ class LocalStorageService {
   }
 
   // ===== NOVA FUNÇÃO: DELEÇÃO FORÇADA E RECURSIVA =====
-  
+
   async deleteFolderForced(folder, deletePhysically = true) {
     const fs = require('fs').promises;
     const path = require('path');
@@ -1485,7 +1549,7 @@ class LocalStorageService {
         const deleteRecursive = async (dirPath, dirName = '') => {
           try {
             console.log(`🔍 Processing directory: ${dirPath}`);
-            
+
             // Verificar se diretório existe
             try {
               await fs.access(dirPath);
