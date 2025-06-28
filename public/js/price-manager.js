@@ -195,6 +195,12 @@ function createDisplayName(folder) {
   return cleanParts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
+// Obter QB Item para uma categoria
+function getQBItem(folderId) {
+  const categoryData = priceManagerCategoryPrices[folderId];
+  return categoryData && categoryData.qbItem ? categoryData.qbItem : '-';
+}
+
 // MAIN FUNCTION - COM CLASSES CORRETAS PARA ALINHAMENTO PERFEITO
 function renderCategoryPriceTable() {
   const container = document.getElementById('category-price-container');
@@ -220,6 +226,7 @@ function renderCategoryPriceTable() {
             <th class="checkbox-column"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
             <th class="category-column">Category</th>
             <th class="photos-column">Photos</th>
+            <th class="qbitem-column">QB Item</th>
             <th class="price-column">Price</th>
             <th class="actions-column">Actions</th>
           </tr>
@@ -241,15 +248,23 @@ function renderCategoryPriceTable() {
           <div class="category-full-name">${displayName}</div>
         </td>
         <td class="photos-column">${folder.fileCount || '0'}</td>
+        <td class="qbitem-column">
+          <span class="qbitem-display">${getQBItem(folder.id)}</span>
+          <input type="text" class="qbitem-input form-control" value="${getQBItem(folder.id)}" style="display: none;" maxlength="10">
+        </td>
         <td class="price-column">
           <span class="price-display">${formattedPrice}</span>
           <input type="number" class="price-input form-control" value="${price}" style="display: none;" step="0.01">
         </td>
         <td class="actions-column">
+          <button class="action-btn edit-qb-btn" onclick="toggleQBEdit('${folder.id}')">
+            ${getQBItem(folder.id) !== '-' ? 'Edit QB' : 'Set QB'}
+          </button>
           <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
             ${hasPrice ? 'Edit Price' : 'Set Price'}
           </button>
-          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Save</button>
+          <button class="action-btn save-qb-btn" onclick="saveQBItem('${folder.id}')" style="display: none;">Save QB</button>
+          <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Save Price</button>
         </td>
       </tr>
     `;
@@ -646,6 +661,77 @@ function updateBulkHelpText(type) {
   } else {
     helpText.textContent = 'Enter percentage change (e.g., 10 for +10%, -15 for -15%)';
   }
+}
+
+// Toggle QB Item editing
+function toggleQBEdit(folderId) {
+  const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
+  const qbDisplay = row.querySelector('.qbitem-display');
+  const qbInput = row.querySelector('.qbitem-input');
+  const editBtn = row.querySelector('.edit-qb-btn');
+  const saveBtn = row.querySelector('.save-qb-btn');
+
+  qbDisplay.style.display = 'none';
+  qbInput.style.display = 'block';
+  editBtn.style.display = 'none';
+  saveBtn.style.display = 'inline-block';
+
+  qbInput.focus();
+  qbInput.select();
+}
+
+// Save QB Item
+function saveQBItem(folderId) {
+  const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
+  const qbInput = row.querySelector('.qbitem-input');
+  const qbValue = qbInput.value.trim().toUpperCase();
+
+  // Validação básica
+  if (qbValue && !/^[0-9]{2,4}[A-Z]{0,3}$/.test(qbValue)) {
+    showToast('QB Item format should be like: 5302A, 5234B, etc.', 'error');
+    return;
+  }
+
+  showLoader();
+
+  fetch(`/api/admin/categories/${folderId}/qbitem`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qbItem: qbValue || null })
+  })
+  .then(response => response.json())
+  .then(result => {
+    hideLoader();
+
+    if (result.success) {
+      showToast('QB Item updated successfully', 'success');
+
+      // Update local data
+      if (!priceManagerCategoryPrices[folderId]) {
+        priceManagerCategoryPrices[folderId] = { folderId: folderId };
+      }
+      priceManagerCategoryPrices[folderId].qbItem = result.qbItem;
+
+      // Update UI
+      const qbDisplay = row.querySelector('.qbitem-display');
+      qbDisplay.textContent = result.qbItem || '-';
+      qbDisplay.style.display = 'block';
+      qbInput.style.display = 'none';
+
+      // Update button text
+      const editBtn = row.querySelector('.edit-qb-btn');
+      editBtn.textContent = result.qbItem ? 'Edit QB' : 'Set QB';
+      editBtn.style.display = 'inline-block';
+
+      row.querySelector('.save-qb-btn').style.display = 'none';
+    } else {
+      showToast('Error updating QB Item: ' + result.message, 'error');
+    }
+  })
+  .catch(error => {
+    hideLoader();
+    showToast('Error updating QB Item: ' + error.message, 'error');
+  });
 }
 
 // Event listeners para o modal

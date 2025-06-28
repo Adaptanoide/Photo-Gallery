@@ -233,6 +233,63 @@
   padding-right: 10px !important;
 }
 
+/* Nova coluna QB Item */
+.qbitem-column {
+  flex: 0 0 120px;
+  justify-content: center;
+}
+
+.price-table th.qbitem-column,
+.price-table td.qbitem-column {
+  flex: 0 0 120px;
+  justify-content: center;
+}
+
+/* Estilos QB Item */
+.qbitem-display {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+}
+
+.qbitem-input {
+  width: 80px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+}
+
+.qbitem-input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+/* Botão QB Item */
+.edit-qb-btn {
+  background: #17a2b8;
+  color: white;
+  margin-right: 4px;
+}
+
+.edit-qb-btn:hover {
+  background: #138496;
+}
+
+.save-qb-btn {
+  background: #17a2b8;
+  color: white;
+  margin-right: 4px;
+}
+
+.save-qb-btn:hover {
+  background: #138496;
+}
+
 /* GARANTIR que TH e TD tenham EXATAMENTE as mesmas dimensões */
 .price-table th.checkbox-column,
 .price-table td.checkbox-column {
@@ -410,10 +467,16 @@
     min-width: 300px;
   }
 
+  .qbitem-column,
+  .price-table th.qbitem-column,
+  .price-table td.qbitem-column {
+    flex: 0 0 100px;
+  }
+
   .actions-column,
   .price-table th.actions-column,
   .price-table td.actions-column {
-    flex: 0 0 160px;
+    flex: 0 0 220px;
   }
 }
 
