@@ -196,6 +196,7 @@
   padding: 10px;
   vertical-align: middle;
   border-right: 1px solid #f5f5f5;
+  font-size: 15px;
   display: flex;
   align-items: center;
 }
@@ -228,7 +229,7 @@
 }
 
 .actions-column {
-  flex: 0 0 180px;
+  flex: 0 0 160px;
   justify-content: flex-end;
   padding-right: 10px !important;
 }
@@ -281,13 +282,13 @@
 }
 
 .save-qb-btn {
-  background: #17a2b8;
+  background: #28a745;
   color: white;
   margin-right: 4px;
 }
 
 .save-qb-btn:hover {
-  background: #138496;
+  background: #218838;
 }
 
 /* GARANTIR que TH e TD tenham EXATAMENTE as mesmas dimensões */
@@ -318,7 +319,7 @@
 
 .price-table th.actions-column,
 .price-table td.actions-column {
-  flex: 0 0 180px;
+  flex: 0 0 160px;
   justify-content: center;
   padding-right: 10px !important;
 }
