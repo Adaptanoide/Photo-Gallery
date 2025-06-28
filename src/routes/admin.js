@@ -20,6 +20,7 @@ router.get('/folders/leaf', adminController.getLeafFolders);
 router.get('/folders/leaf-pricing', adminController.getLeafFoldersForPricing);
 router.get('/categories/prices', adminController.getCategoryPrices);
 router.post('/categories/:folderId/price', adminController.setCategoryPrice);
+router.post('/categories/:folderId/qbitem', adminController.setQBItem);
 router.post('/categories/batch-update', adminController.bulkUpdatePrices);
 
 // Obter configurações de acesso a categorias para um cliente
@@ -57,7 +58,7 @@ router.put('/shipments/:shipmentId/status', shipmentController.updateShipmentSta
 router.delete('/shipments/:shipmentId', shipmentController.deleteShipment);
 
 // Upload de fotos para shipment
-router.post('/shipments/:shipmentId/upload', 
+router.post('/shipments/:shipmentId/upload',
   (req, res, next) => {
     const upload = shipmentController.getUploadMiddleware();
     upload.array('photos', 1000)(req, res, next);
@@ -78,8 +79,8 @@ router.post('/shipments/distribute', shipmentController.distributePhotos);
 router.get('/debug/8290', async (req, res) => {
   const CategoryAccess = require('../models/categoryAccess');
   const records = await CategoryAccess.find({ customerCode: "8290" });
-  res.json({ 
-    total: records.length, 
+  res.json({
+    total: records.length,
     records: records.map(r => ({
       id: r._id,
       customerCode: r.customerCode,

@@ -170,10 +170,10 @@ function updateHeaderStats() {
 // Criar nome único e intuitivo para cada categoria
 function createDisplayName(folder) {
   if (!folder.path) return folder.name;
-  
+
   // Quebrar o path em partes e limpar
   const parts = folder.path.split(' → ').map(part => part.trim());
-  
+
   // Remover palavras desnecessárias e encurtar
   const cleanParts = parts.map(part => {
     return part
@@ -190,7 +190,7 @@ function createDisplayName(folder) {
       .replace(/Medium/gi, 'M')
       .trim();
   }).filter(part => part.length > 0);
-  
+
   // Juntar com espaços
   return cleanParts.join(' ').replace(/\s+/g, ' ').trim();
 }

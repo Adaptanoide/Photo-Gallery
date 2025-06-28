@@ -9,6 +9,12 @@ const CategoryPriceSchema = new mongoose.Schema({
   },
   name: String,
   price: Number,
+  qbItem: {
+    type: String,
+    default: null,
+    trim: true,
+    uppercase: true
+  },
   updatedAt: {
     type: Date,
     default: Date.now
