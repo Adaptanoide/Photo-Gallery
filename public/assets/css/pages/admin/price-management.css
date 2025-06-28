@@ -112,6 +112,7 @@
 .price-table thead tr {
   display: flex;
   width: 100%;
+  justify-content: space-evenly;
 }
 
 .price-table th {
