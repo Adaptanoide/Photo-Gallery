@@ -260,10 +260,10 @@ function renderCategoryPriceTable() {
           <button class="action-btn edit-qb-btn" onclick="toggleQBEdit('${folder.id}')">
             ${getQBItem(folder.id) !== '-' ? 'Edit QB' : 'Set QB'}
           </button>
+          <button class="action-btn save-qb-btn" onclick="saveQBItem('${folder.id}')" style="display: none;">Save QB</button>
           <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
             ${hasPrice ? 'Edit Price' : 'Set Price'}
           </button>
-          <button class="action-btn save-qb-btn" onclick="saveQBItem('${folder.id}')" style="display: none;">Save QB</button>
           <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Save Price</button>
         </td>
       </tr>
