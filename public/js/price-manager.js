@@ -223,8 +223,11 @@ function renderCategoryPriceTable() {
       <table class="price-table">
         <thead>
           <tr>
-            <th class="checkbox-column"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
-            <th class="category-column">Category</th>
+            <th class="checkbox-column">
+              <input type="checkbox" id="select-all" onclick="toggleSelectAll()">
+              <span style="font-size: 11px; margin-left: 4px;">Select All</span>
+            </th>
+            <th class="category-column">Description</th>
             <th class="photos-column">Photos</th>
             <th class="qbitem-column">QB Item</th>
             <th class="price-column">Price</th>
@@ -252,7 +255,7 @@ function renderCategoryPriceTable() {
             <span class="qbitem-display">${getQBItem(folder.id)}</span>
             <input type="text" class="qbitem-input form-control" value="${getQBItem(folder.id)}" style="display: none;" maxlength="10">
             <button class="action-btn edit-qb-btn" onclick="toggleQBEdit('${folder.id}')">
-              ${getQBItem(folder.id) !== '-' ? 'Edit' : 'Set'}
+              ${getQBItem(folder.id) !== '-' ? 'Edit QB' : 'Set QB'}
             </button>
             <button class="action-btn save-qb-btn" onclick="saveQBItem('${folder.id}')" style="display: none;">Save</button>
           </div>
@@ -262,7 +265,7 @@ function renderCategoryPriceTable() {
             <span class="price-display">${formattedPrice}</span>
             <input type="number" class="price-input form-control" value="${price}" style="display: none;" step="0.01">
             <button class="action-btn edit-price-btn" onclick="togglePriceEdit('${folder.id}')">
-              ${hasPrice ? 'Edit' : 'Set'}
+              ${hasPrice ? 'Edit Price' : 'Set Price'}
             </button>
             <button class="action-btn save-price-btn" onclick="savePrice('${folder.id}')" style="display: none;">Save</button>
           </div>
@@ -694,39 +697,39 @@ function saveQBItem(folderId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ qbItem: qbValue || null })
   })
-  .then(response => response.json())
-  .then(result => {
-    hideLoader();
+    .then(response => response.json())
+    .then(result => {
+      hideLoader();
 
-    if (result.success) {
-      showToast('QB Item updated successfully', 'success');
+      if (result.success) {
+        showToast('QB Item updated successfully', 'success');
 
-      // Update local data
-      if (!priceManagerCategoryPrices[folderId]) {
-        priceManagerCategoryPrices[folderId] = { folderId: folderId };
+        // Update local data
+        if (!priceManagerCategoryPrices[folderId]) {
+          priceManagerCategoryPrices[folderId] = { folderId: folderId };
+        }
+        priceManagerCategoryPrices[folderId].qbItem = result.qbItem;
+
+        // Update UI
+        const qbDisplay = row.querySelector('.qbitem-display');
+        qbDisplay.textContent = result.qbItem || '-';
+        qbDisplay.style.display = 'block';
+        qbInput.style.display = 'none';
+
+        // Update button text
+        const editBtn = row.querySelector('.edit-qb-btn');
+        editBtn.textContent = result.qbItem ? 'Edit QB' : 'Set QB';
+        editBtn.style.display = 'inline-block';
+
+        row.querySelector('.save-qb-btn').style.display = 'none';
+      } else {
+        showToast('Error updating QB Item: ' + result.message, 'error');
       }
-      priceManagerCategoryPrices[folderId].qbItem = result.qbItem;
-
-      // Update UI
-      const qbDisplay = row.querySelector('.qbitem-display');
-      qbDisplay.textContent = result.qbItem || '-';
-      qbDisplay.style.display = 'block';
-      qbInput.style.display = 'none';
-
-      // Update button text
-      const editBtn = row.querySelector('.edit-qb-btn');
-      editBtn.textContent = result.qbItem ? 'Edit QB' : 'Set QB';
-      editBtn.style.display = 'inline-block';
-
-      row.querySelector('.save-qb-btn').style.display = 'none';
-    } else {
-      showToast('Error updating QB Item: ' + result.message, 'error');
-    }
-  })
-  .catch(error => {
-    hideLoader();
-    showToast('Error updating QB Item: ' + error.message, 'error');
-  });
+    })
+    .catch(error => {
+      hideLoader();
+      showToast('Error updating QB Item: ' + error.message, 'error');
+    });
 }
 
 // Event listeners para o modal

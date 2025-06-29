@@ -437,15 +437,6 @@
   }
 }
 
-/* Melhorias visuais */
-.price-table tbody tr:nth-child(even) {
-  background: #fafbfc;
-}
-
-.price-table tbody tr:nth-child(even):hover {
-  background: #f8f9fa;
-}
-
 /* Animações suaves */
 .price-table tbody tr {
   animation: fadeInTableRow 0.2s ease-out;
@@ -840,7 +831,7 @@
 }
 
 .field-container .action-btn {
-  font-size: 11px;
-  padding: 4px 8px;
-  min-width: 35px;
+  font-size: 13px;
+  padding: 6px 12px;
+  min-width: 60px;
 }
