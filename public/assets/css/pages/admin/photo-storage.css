@@ -1119,10 +1119,16 @@
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);  /* Sombra mais forte */
+  z-index: 9999;                           /* Z-index muito alto */
   min-width: 120px;
   overflow: hidden;
+}
+
+/* Menu que abre para cima */
+.action-menu.menu-up {
+  top: auto;
+  bottom: 100%;
 }
 
 .menu-item {
@@ -1176,6 +1182,6 @@
 }
 
 .header-actions {
-  width: 40px;
+  width: 65px;
   text-align: center;
 }

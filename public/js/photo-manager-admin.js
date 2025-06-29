@@ -3179,23 +3179,41 @@ const photoManager = {
     }
   },
 
-  // Toggle menu dropdown
+  // Toggle menu dropdown com posicionamento inteligente
   toggleMenu(folderId, event) {
-    event.stopPropagation(); // Evita que clique na pasta
+    event.stopPropagation();
 
     // Fechar todos os outros menus
     document.querySelectorAll('.action-menu').forEach(menu => {
       if (menu.id !== `menu-${folderId}`) {
         menu.style.display = 'none';
+        menu.classList.remove('menu-up');
       }
     });
 
-    // Toggle do menu atual
     const menu = document.getElementById(`menu-${folderId}`);
+
     if (menu.style.display === 'none' || menu.style.display === '') {
+      // Mostrar menu temporariamente para calcular posição
       menu.style.display = 'block';
+      menu.style.visibility = 'hidden';
+
+      // Calcular se menu sai da tela
+      const rect = menu.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      // Se menu sai da parte inferior, abrir para cima
+      if (rect.bottom > windowHeight - 20) {
+        menu.classList.add('menu-up');
+      } else {
+        menu.classList.remove('menu-up');
+      }
+
+      // Tornar visível
+      menu.style.visibility = 'visible';
     } else {
       menu.style.display = 'none';
+      menu.classList.remove('menu-up');
     }
   },
 
