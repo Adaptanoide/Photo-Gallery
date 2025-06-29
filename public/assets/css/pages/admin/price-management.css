@@ -205,58 +205,62 @@
   border-right: none;
 }
 
-/* LARGURAS GENEROSAS E BEM DISTRIBUÍDAS */
-.checkbox-column,
-.price-table th.checkbox-column,
-.price-table td.checkbox-column {
-  width: 120px;
-  min-width: 120px;
-  flex: none;
-  text-align: left;
-  padding-left: 15px;
+/* ===== NOVO LAYOUT CSS GRID - LIMPO E FUNCIONAL ===== */
+
+/* Remove flexbox problemático */
+.price-table thead tr,
+.price-table tbody tr {
+  display: grid !important;
+  grid-template-columns: 100px 1fr 80px 180px 180px;
+  gap: 15px;
+  align-items: center;
+  width: 100% !important;
+  padding: 0 20px;
 }
 
-.category-column,
-.price-table th.category-column,
-.price-table td.category-column {
-  width: 500px;
-  min-width: 500px;
-  flex: none;
-  text-align: left;
-  padding-right: 20px;
+/* Headers */
+.price-table th {
+  padding: 12px 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+/* Células */
+.price-table td {
+  padding: 12px 0;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+}
+
+/* Alinhamentos específicos */
+.checkbox-column { justify-self: start; }
+.category-column { 
+  justify-self: start; 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.photos-column { justify-self: center; }
+.qbitem-column { justify-self: center; }
+.price-column { justify-self: center; }
 
-.photos-column,
+/* Remove todas as regras antigas conflitantes */
+.price-table th.checkbox-column,
+.price-table td.checkbox-column,
+.price-table th.category-column,
+.price-table td.category-column,
 .price-table th.photos-column,
-.price-table td.photos-column {
-  width: 120px;
-  min-width: 120px;
-  flex: none;
-  text-align: center;
-  padding: 0 15px;
-}
-
-.qbitem-column,
+.price-table td.photos-column,
 .price-table th.qbitem-column,
-.price-table td.qbitem-column {
-  width: 220px;
-  min-width: 220px;
-  flex: none;
-  text-align: center;
-  padding: 0 15px;
-}
-
-.price-column,
+.price-table td.qbitem-column,
 .price-table th.price-column,
 .price-table td.price-column {
-  width: 200px;
-  min-width: 200px;
-  flex: none;
-  text-align: center;
-  padding: 0 15px;
+  flex: none !important;
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
 }
 
 .qbitem-display {
