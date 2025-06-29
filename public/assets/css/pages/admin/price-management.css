@@ -815,56 +815,53 @@
   min-width: 60px;
 }
 
-/* ===== LIMPEZA VISUAL COMPLETA - REMOVER BORDAS E BACKGROUNDS ===== */
+/* ===== SEPARAÇÃO VISUAL SUTIL E ELEGANTE ===== */
 
-/* Remove todas as bordas da tabela */
+/* Remove bordas grosseiras, mantém estrutura */
 .price-table,
 .price-table th,
-.price-table td,
-.price-table tr,
-.price-table thead,
-.price-table tbody {
+.price-table td {
   border: none !important;
-  border-bottom: none !important;
   border-right: none !important;
   border-left: none !important;
   border-top: none !important;
 }
 
-/* Remove backgrounds alternados e hover */
-.price-table tbody tr,
-.price-table tbody tr:nth-child(even),
-.price-table tbody tr:nth-child(odd),
-.price-table tbody tr:hover {
+/* Linhas horizontais sutis entre as linhas */
+.price-table tbody tr {
   background: transparent !important;
-  background-color: transparent !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  transition: background-color 0.2s ease;
 }
 
-/* Remove sombras e efeitos */
-.price-table,
-.price-table-container {
-  box-shadow: none !important;
-  border: none !important;
-  background: white !important;
+/* Hover sutil para interatividade */
+.price-table tbody tr:hover {
+  background-color: #fafbfc !important;
 }
 
-/* Remove bordas dos campos e botões */
-.field-container,
-.qbitem-display,
-.price-display,
-.action-btn {
-  border: none !important;
-  box-shadow: none !important;
+/* Alternância sutil de background */
+.price-table tbody tr:nth-child(even) {
+  background-color: #fbfbfb !important;
 }
 
-/* Apenas uma linha sutil entre header e conteúdo */
+.price-table tbody tr:nth-child(even):hover {
+  background-color: #f5f6f7 !important;
+}
+
+/* Header com separação clara */
 .price-table thead {
-  border-bottom: 1px solid #e0e0e0 !important;
+  border-bottom: 2px solid #e0e0e0 !important;
   background: #f8f9fa !important;
 }
 
-/* Espaçamento limpo */
+/* Separação vertical sutil entre colunas principais */
+.price-table td:not(:last-child),
+.price-table th:not(:last-child) {
+  border-right: 1px solid #f5f5f5;
+}
+
+/* Espaçamento adequado */
 .price-table td,
 .price-table th {
-  padding: 15px 0 !important;
+  padding: 15px 8px !important;
 }
