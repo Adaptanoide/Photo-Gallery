@@ -1052,16 +1052,17 @@
 
 .qb-edit-btn {
   display: none;
-  font-size: 12px;          /* Era 10px → agora 12px */
-  padding: 4px 10px;        /* Era 2px 6px → agora 4px 10px */
+  font-size: 14px;          /* 12px → 14px */
+  padding: 6px 14px;        /* 4px 10px → 6px 14px */
   background: #28a745;
   color: white;
   border: none;
-  border-radius: 4px;       /* Era 3px → agora 4px */
+  border-radius: 5px;       /* 4px → 5px */
   cursor: pointer;
   transition: all 0.2s ease;
-  font-weight: 500;         /* NOVO: texto mais bold */
-  min-width: 40px;          /* NOVO: largura mínima */
+  font-weight: 600;         /* 500 → 600 (mais bold) */
+  min-width: 50px;          /* 40px → 50px */
+  height: 28px;             /* NOVO: altura fixa */
 }
 
 /* Mostrar botão só no hover */
