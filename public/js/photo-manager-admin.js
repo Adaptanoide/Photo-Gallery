@@ -187,7 +187,7 @@ const photoManager = {
     }));
   },
 
-renderFolderTree(folders, container = null, level = 0) {
+  renderFolderTree(folders, container = null, level = 0) {
     if (!container) {
       container = document.getElementById('folder-tree');
       container.innerHTML = '';
@@ -212,7 +212,7 @@ renderFolderTree(folders, container = null, level = 0) {
       // Obter QB Item para esta pasta (verificação defensiva)
       const qbItem = (this.qbItemData && this.qbItemData[folder.id]) || 'Not set';
       const tooltipInfo = `QB Item: ${qbItem} | Photos: ${folder.fileCount || 0}`;
-      
+
       // Adicionar tooltip DEPOIS de definir tooltipInfo
       folderDiv.title = tooltipInfo;
 
@@ -221,8 +221,9 @@ renderFolderTree(folders, container = null, level = 0) {
       <span class="folder-name">${folder.name}</span>
       <span class="folder-count">${photoCount}</span>
       ${folder.isLeaf ? `
-        <div class="folder-actions">
+      <div class="folder-actions">
         <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
+        <button class="folder-action-btn qb-btn" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Edit QB Item">📋 QB</button>
         ${!isAdminFolder ? `
           <button class="folder-action-btn rename-btn" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Rename Folder">✏️ Rename</button>
           <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
@@ -3091,6 +3092,66 @@ renderFolderTree(folders, container = null, level = 0) {
 
     collectLeaves(folders);
     return leafFolders;
+  },
+
+  // Editar QB Item de uma categoria
+  editQBItem(folderId, folderName) {
+    console.log(`📋 Edit QB Item for: ${folderName} (${folderId})`);
+    
+    // Obter QB Item atual
+    const currentQB = (this.qbItemData && this.qbItemData[folderId]) || '';
+    
+    // Prompt simples para editar
+    const newQB = prompt(`Edit QB Item for "${folderName}"\n\nCurrent: ${currentQB || 'Not set'}`, currentQB);
+    
+    // Se cancelou ou não mudou, não fazer nada
+    if (newQB === null || newQB === currentQB) {
+      return;
+    }
+    
+    // Salvar novo QB Item
+    this.saveQBItem(folderId, folderName, newQB.trim().toUpperCase());
+  },
+
+  // Salvar QB Item via API
+  async saveQBItem(folderId, folderName, qbItem) {
+    try {
+      console.log(`💾 Saving QB Item: ${qbItem} for ${folderName}`);
+      
+      const response = await fetch(`/api/admin/categories/${folderId}/qbitem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qbItem: qbItem || null })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Atualizar cache local
+        if (!this.qbItemData) this.qbItemData = {};
+        this.qbItemData[folderId] = result.qbItem;
+        
+        // Atualizar tooltip
+        this.updateFolderTooltip(folderId);
+        
+        showToast(`✅ QB Item updated: ${result.qbItem || 'Removed'}`, 'success');
+      } else {
+        showToast(`❌ Error: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('❌ Error saving QB Item:', error);
+      showToast(`❌ Error saving QB Item: ${error.message}`, 'error');
+    }
+  },
+
+  // Atualizar tooltip de uma pasta específica
+  updateFolderTooltip(folderId) {
+    const folderElement = document.querySelector(`[onclick*="${folderId}"]`)?.closest('.folder-item');
+    if (folderElement) {
+      const qbItem = (this.qbItemData && this.qbItemData[folderId]) || 'Not set';
+      const photos = folderElement.querySelector('.folder-count')?.textContent || '0 photos';
+      folderElement.title = `QB Item: ${qbItem} | ${photos}`;
+    }
   },
 
 };
