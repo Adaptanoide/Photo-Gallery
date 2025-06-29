@@ -223,13 +223,13 @@
   padding: 12px 0;
   font-weight: 600;
   color: #333;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* Células */
 .price-table td {
   padding: 12px 0;
-  font-size: 15px;
+  font-size: 16px;
   display: flex;
   align-items: center;
 }
@@ -320,7 +320,7 @@
 .price-display {
   font-weight: 600;
   color: #333;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .price-input {
@@ -813,4 +813,58 @@
   font-size: 13px;
   padding: 6px 12px;
   min-width: 60px;
+}
+
+/* ===== LIMPEZA VISUAL COMPLETA - REMOVER BORDAS E BACKGROUNDS ===== */
+
+/* Remove todas as bordas da tabela */
+.price-table,
+.price-table th,
+.price-table td,
+.price-table tr,
+.price-table thead,
+.price-table tbody {
+  border: none !important;
+  border-bottom: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+}
+
+/* Remove backgrounds alternados e hover */
+.price-table tbody tr,
+.price-table tbody tr:nth-child(even),
+.price-table tbody tr:nth-child(odd),
+.price-table tbody tr:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Remove sombras e efeitos */
+.price-table,
+.price-table-container {
+  box-shadow: none !important;
+  border: none !important;
+  background: white !important;
+}
+
+/* Remove bordas dos campos e botões */
+.field-container,
+.qbitem-display,
+.price-display,
+.action-btn {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Apenas uma linha sutil entre header e conteúdo */
+.price-table thead {
+  border-bottom: 1px solid #e0e0e0 !important;
+  background: #f8f9fa !important;
+}
+
+/* Espaçamento limpo */
+.price-table td,
+.price-table th {
+  padding: 15px 0 !important;
 }

@@ -10,7 +10,7 @@ table {
 th, td {
   padding: 10px;
   text-align: left;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  /*border-bottom: 1px solid rgba(0, 0, 0, 0.1);*/
 }
 
 th {
@@ -28,12 +28,12 @@ th {
 .price-table th {
   position: sticky;
   top: 0;
-  background-color: var(--color-cream);
+  background-color: #fafafa;
   z-index: 10;
   padding: 12px 8px;
   font-weight: 600;
   text-align: left;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  /*border-bottom: 2px solid rgba(0, 0, 0, 0.1);*/
 }
 
 .price-table tr {

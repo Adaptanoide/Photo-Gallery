@@ -225,7 +225,7 @@ function renderCategoryPriceTable() {
           <tr>
             <th class="checkbox-column">
               <input type="checkbox" id="select-all" onclick="toggleSelectAll()">
-              <span style="font-size: 11px; margin-left: 4px;">Select All</span>
+              <span style="font-size: 14px; margin-left: 4px;">Select All</span>
             </th>
             <th class="category-column">Description</th>
             <th class="photos-column">Photos</th>
