@@ -1052,17 +1052,18 @@
 
 .qb-edit-btn {
   display: none;
-  font-size: 14px;          /* 12px → 14px */
-  padding: 6px 14px;        /* 4px 10px → 6px 14px */
+  font-size: 13px;          /* 14px → 13px (texto maior precisa fonte menor) */
+  padding: 6px 16px;        /* 14px → 16px (mais largura) */
   background: #28a745;
   color: white;
   border: none;
-  border-radius: 5px;       /* 4px → 5px */
+  border-radius: 5px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-weight: 600;         /* 500 → 600 (mais bold) */
-  min-width: 50px;          /* 40px → 50px */
-  height: 28px;             /* NOVO: altura fixa */
+  font-weight: 600;
+  min-width: 70px;          /* 50px → 70px (para "Edit QB") */
+  height: 28px;
+  white-space: nowrap;      /* NOVO: evita quebra de linha */
 }
 
 /* Mostrar botão só no hover */
