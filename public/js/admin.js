@@ -533,7 +533,8 @@ async function loadCustomerCategoryData(code) {
 
   try {
     // Carregar todas as categorias (leaf folders)
-    const leafFoldersResponse = await apiClient.getLeafFolders(true);
+    const leafFoldersResponse = await fetch('/api/admin/folders/leaf-pricing?include_empty=true')
+      .then(response => response.json());
 
     if (!leafFoldersResponse.success) {
       document.getElementById('category-access-list').innerHTML =
@@ -594,6 +595,31 @@ async function loadCustomerCategoryData(code) {
   hideLoader();
 }
 
+// Criar nome único e intuitivo para cada categoria (mesmo do Price Management)
+function createDisplayName(folder) {
+  if (!folder.path) return folder.name;
+
+  const parts = folder.path.split(' → ').map(part => part.trim());
+
+  const cleanParts = parts.map(part => {
+    return part
+      .replace(/Categories?/gi, '')
+      .replace(/Best Sellers?/gi, 'Best Sellers')
+      .replace(/Top Selected/gi, 'Top')
+      .replace(/Medium-Large-XL/gi, 'ML-XL')
+      .replace(/Medium-Large/gi, 'ML')
+      .replace(/Extra-Large/gi, 'XL')
+      .replace(/Extra-Small/gi, 'XS')
+      .replace(/X-Large/gi, 'XL')
+      .replace(/Small/gi, 'S')
+      .replace(/Large/gi, 'L')
+      .replace(/Medium/gi, 'M')
+      .trim();
+  }).filter(part => part.length > 0);
+
+  return cleanParts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
 function renderCategoryAccessTable() {
   const tableBody = document.getElementById('category-access-list');
 
@@ -613,8 +639,7 @@ function renderCategoryAccessTable() {
   // Para cada categoria, criar uma linha na tabela
   allCategories.forEach(category => {
     const categoryId = category.id;
-    const categoryName = category.name;
-    const fileCount = category.fileCount || 0;
+    const categoryName = createDisplayName(category); const fileCount = category.fileCount || 0;
 
     // Obter preço padrão
     const defaultPrice = categoryPrices[categoryId] ? categoryPrices[categoryId].price || 0 : 0;
