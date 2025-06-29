@@ -198,51 +198,51 @@ function loadOrderFolders(status, retryCount = 0) {
       html += '<tr><th style="text-align: left; padding: 8px;">Order Name</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: left; padding: 8px;">Action</th></tr>';
 
       folders.forEach(folder => {
-      // 🛡️ EXTRAIR DATA DO NOME DA PASTA
-      let formattedDate = 'N/A';
+        // 🛡️ EXTRAIR DATA DO NOME DA PASTA
+        let formattedDate = 'N/A';
 
-      // Tentar extrair data do nome da pasta primeiro
-      if (folder.name) {
-        try {
-          const orderInfo = parseOrderFolderName(folder.name);
-          if (orderInfo.orderDate) {
-            formattedDate = orderInfo.orderDate;
-          } else {
-            // Fallback: tentar regex manual para padrão "Mês Dia Ano"
-            const dateMatch = folder.name.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})$/);
-            if (dateMatch) {
-              const [, month, day, year] = dateMatch;
-              const dateObj = new Date(`${month} ${day}, ${year}`);
-              if (!isNaN(dateObj.getTime())) {
-                formattedDate = dateObj.toLocaleDateString();
+        // Tentar extrair data do nome da pasta primeiro
+        if (folder.name) {
+          try {
+            const orderInfo = parseOrderFolderName(folder.name);
+            if (orderInfo.orderDate) {
+              formattedDate = orderInfo.orderDate;
+            } else {
+              // Fallback: tentar regex manual para padrão "Mês Dia Ano"
+              const dateMatch = folder.name.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})$/);
+              if (dateMatch) {
+                const [, month, day, year] = dateMatch;
+                const dateObj = new Date(`${month} ${day}, ${year}`);
+                if (!isNaN(dateObj.getTime())) {
+                  formattedDate = dateObj.toLocaleDateString();
+                }
               }
             }
+          } catch (parseError) {
+            console.log('Error parsing folder name for date:', parseError);
           }
-        } catch (parseError) {
-          console.log('Error parsing folder name for date:', parseError);
         }
-      }
 
-      // Se ainda não conseguiu, tentar propriedades do objeto
-      if (formattedDate === 'N/A') {
-        if (folder.dateCreated) {
-          const date = new Date(folder.dateCreated);
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toLocaleDateString();
-          }
-        } else if (folder.createdAt) {
-          const date = new Date(folder.createdAt);
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toLocaleDateString();
-          }
-        } else if (folder.lastModified) {
-          const date = new Date(folder.lastModified);
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toLocaleDateString();
+        // Se ainda não conseguiu, tentar propriedades do objeto
+        if (formattedDate === 'N/A') {
+          if (folder.dateCreated) {
+            const date = new Date(folder.dateCreated);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          } else if (folder.createdAt) {
+            const date = new Date(folder.createdAt);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          } else if (folder.lastModified) {
+            const date = new Date(folder.lastModified);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
           }
         }
-      }
-      
+
         // Different action buttons based on current status
         let actionButtons = '';
         if (status === 'waiting') {
@@ -262,7 +262,7 @@ function loadOrderFolders(status, retryCount = 0) {
               onclick="openReturnToStockModal('${folder.id}', '${folder.name}')">📦 Return to Stock</button>
           `;
         }
-      
+
         html += `<tr>
           <td style="padding: 8px;">${folder.name}</td>
           <td style="padding: 8px;">${formattedDate}</td>
@@ -334,50 +334,50 @@ function loadFoldersAlternative(status) {
       html += '<tr><th style="text-align: left; padding: 8px;">Order Name</th><th style="text-align: left; padding: 8px;">Created</th><th style="text-align: left; padding: 8px;">Action</th></tr>';
 
       folders.forEach(folder => {
-      // 🛡️ EXTRAIR DATA DO NOME DA PASTA
-      let formattedDate = 'N/A';
+        // 🛡️ EXTRAIR DATA DO NOME DA PASTA
+        let formattedDate = 'N/A';
 
-      // Tentar extrair data do nome da pasta primeiro
-      if (folder.name) {
-        try {
-          const orderInfo = parseOrderFolderName(folder.name);
-          if (orderInfo.orderDate) {
-            formattedDate = orderInfo.orderDate;
-          } else {
-            // Fallback: tentar regex manual para padrão "Mês Dia Ano"
-            const dateMatch = folder.name.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})$/);
-            if (dateMatch) {
-              const [, month, day, year] = dateMatch;
-              const dateObj = new Date(`${month} ${day}, ${year}`);
-              if (!isNaN(dateObj.getTime())) {
-                formattedDate = dateObj.toLocaleDateString();
+        // Tentar extrair data do nome da pasta primeiro
+        if (folder.name) {
+          try {
+            const orderInfo = parseOrderFolderName(folder.name);
+            if (orderInfo.orderDate) {
+              formattedDate = orderInfo.orderDate;
+            } else {
+              // Fallback: tentar regex manual para padrão "Mês Dia Ano"
+              const dateMatch = folder.name.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})$/);
+              if (dateMatch) {
+                const [, month, day, year] = dateMatch;
+                const dateObj = new Date(`${month} ${day}, ${year}`);
+                if (!isNaN(dateObj.getTime())) {
+                  formattedDate = dateObj.toLocaleDateString();
+                }
               }
             }
+          } catch (parseError) {
+            console.log('Error parsing folder name for date:', parseError);
           }
-        } catch (parseError) {
-          console.log('Error parsing folder name for date:', parseError);
         }
-      }
 
-      // Se ainda não conseguiu, tentar propriedades do objeto
-      if (formattedDate === 'N/A') {
-        if (folder.dateCreated) {
-          const date = new Date(folder.dateCreated);
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toLocaleDateString();
-          }
-        } else if (folder.createdAt) {
-          const date = new Date(folder.createdAt);
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toLocaleDateString();
-          }
-        } else if (folder.lastModified) {
-          const date = new Date(folder.lastModified);
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toLocaleDateString();
+        // Se ainda não conseguiu, tentar propriedades do objeto
+        if (formattedDate === 'N/A') {
+          if (folder.dateCreated) {
+            const date = new Date(folder.dateCreated);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          } else if (folder.createdAt) {
+            const date = new Date(folder.createdAt);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
+          } else if (folder.lastModified) {
+            const date = new Date(folder.lastModified);
+            if (!isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString();
+            }
           }
         }
-      }
 
         let actionButton = '';
         if (status === 'waiting') {
@@ -556,7 +556,7 @@ async function loadCustomerCategoryData(code) {
 
     // Carregar configurações de acesso do cliente
     const accessResponse = await apiClient.getCustomerCategoryAccess(code);
-    
+
     if (accessResponse.success && accessResponse.data && accessResponse.data.categoryAccess) {
       // 🆕 CORREÇÃO: Marcar todas as configurações existentes como "já salvas"
       categoryAccessData = {
@@ -566,14 +566,14 @@ async function loadCustomerCategoryData(code) {
         })),
         volumeDiscounts: accessResponse.data.volumeDiscounts || []
       };
-      
+
       console.log(`📥 Carregadas ${categoryAccessData.categoryAccess.length} configurações existentes do MongoDB`);
-      
+
       // Log das configurações carregadas
       categoryAccessData.categoryAccess.forEach((item, index) => {
         console.log(`[${index}] ${item.categoryId}: enabled=${item.enabled}, _isSaved=true`);
       });
-      
+
       loadVolumeDiscounts(categoryAccessData);
     } else {
       // Cliente novo - sem configurações
@@ -696,7 +696,7 @@ function filterAccessCategories() {
 
 function updateCategoryAccess(categoryId, enabled) {
   console.log(`🔄 Atualizando acesso para categoria ${categoryId}: ${enabled ? 'habilitada' : 'desabilitada'}`);
-  
+
   // Procurar configuração existente
   const accessIndex = categoryAccessData.categoryAccess.findIndex(item => item.categoryId === categoryId);
 
@@ -719,7 +719,7 @@ function updateCategoryAccess(categoryId, enabled) {
     categoryAccessData.categoryAccess.push(newConfig);
     console.log(`✅ Nova configuração criada: ${categoryId} -> enabled=${enabled}, _wasModified=true`);
   }
-  
+
   // Log do estado atual completo
   console.log(`📊 Estado atual do categoryAccessData:`, categoryAccessData.categoryAccess.length, "categorias");
 }
@@ -832,7 +832,7 @@ async function saveCustomerCategoryAccess() {
   try {
     console.log("=== DADOS ANTES DO FILTRO ===");
     console.log("Total de categorias em categoryAccessData:", categoryAccessData.categoryAccess.length);
-    
+
     categoryAccessData.categoryAccess.forEach((item, index) => {
       console.log(`[${index}] ${item.categoryId}: enabled=${item.enabled}, _wasModified=${item._wasModified}, _isSaved=${item._isSaved}`);
     });
@@ -842,15 +842,15 @@ async function saveCustomerCategoryAccess() {
     if (habilitados.length === 0 && categoryAccessData.categoryAccess.length > 0) {
       showToast("Aviso: Todas as categorias foram desabilitadas. O cliente não verá nenhum conteúdo.", "warning");
     }
-    
+
     categoryAccessData.volumeDiscounts = volumeDiscounts;
-    
+
     // Limpar cache antes de salvar
     await fetch('/api/client/clear-cache', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
-    
+
     // 🆕 FILTRO CORRIGIDO - Incluir configurações já salvas + novas modificações
     const relevantCategories = categoryAccessData.categoryAccess.filter(item => {
       // 1. Tem preço personalizado
@@ -858,25 +858,25 @@ async function saveCustomerCategoryAccess() {
         console.log(`✅ Incluindo ${item.categoryId} - preço customizado: $${item.customPrice}`);
         return true;
       }
-      
+
       // 2. Tem configuração de desconto
       if (item.minQuantityForDiscount > 0 || item.discountPercentage > 0) {
         console.log(`✅ Incluindo ${item.categoryId} - tem desconto`);
         return true;
       }
-      
+
       // 3. Foi habilitada/desabilitada AGORA (_wasModified=true)
       if (item._wasModified === true) {
         console.log(`✅ Incluindo ${item.categoryId} - foi modificada agora (enabled=${item.enabled})`);
         return true;
       }
-      
+
       // 🆕 4. JÁ ESTAVA SALVA ANTERIORMENTE (_isSaved=true)
       if (item._isSaved === true) {
         console.log(`✅ Incluindo ${item.categoryId} - já estava salva (enabled=${item.enabled})`);
         return true;
       }
-      
+
       console.log(`❌ Ignorando ${item.categoryId} - não tem configuração relevante`);
       return false;
     });
@@ -917,24 +917,24 @@ async function viewOrderDetails(folderId, folderName) {
     document.getElementById('order-details-modal').style.display = 'block';
     document.getElementById('order-loading').style.display = 'block';
     document.getElementById('order-details-content').style.display = 'none';
-    
+
     // Extrair informações do nome da pasta (nome do cliente, qtd de itens, data)
     const orderInfo = parseOrderFolderName(folderName);
-    
+
     // Preencher informações básicas
     document.getElementById('order-name').textContent = folderName;
     document.getElementById('order-client').textContent = orderInfo.customerName || 'N/A';
     document.getElementById('order-date').textContent = orderInfo.orderDate || 'N/A';
-       
+
     // Buscar informações detalhadas do pedido
     const orderDetails = await apiClient.getOrderDetails(folderId);
-    
+
     if (!orderDetails.success) {
       showToast('Failed to load order details: ' + (orderDetails.message || 'Unknown error'), 'error');
       closeModal('order-details-modal');
       return;
     }
-    
+
     // Mostrar comentários se existirem
     if (orderDetails.comments) {
       document.getElementById('order-comments-section').style.display = 'block';
@@ -942,23 +942,23 @@ async function viewOrderDetails(folderId, folderName) {
     } else {
       document.getElementById('order-comments-section').style.display = 'none';
     }
-    
+
     // Renderizar detalhes por categoria
     const categoryBreakdownElement = document.getElementById('category-breakdown');
     categoryBreakdownElement.innerHTML = '';
-    
+
     let totalItems = 0;
     let totalAmount = 0;
-    
+
     if (orderDetails.categories && orderDetails.categories.length > 0) {
       orderDetails.categories.forEach(category => {
         const categoryTotal = category.items.reduce((sum, item) => sum + (item.price || 0), 0);
         totalItems += category.items.length;
         totalAmount += categoryTotal;
-        
+
         const categoryElement = document.createElement('div');
         categoryElement.className = 'category-item';
-        
+
         categoryElement.innerHTML = `
           <div class="category-summary">
             <div class="category-name">
@@ -969,7 +969,7 @@ async function viewOrderDetails(folderId, folderName) {
             </div>
           </div>
         `;
-        
+
         categoryBreakdownElement.appendChild(categoryElement);
       });
     } else {
@@ -978,19 +978,19 @@ async function viewOrderDetails(folderId, folderName) {
       noDataElement.className = 'empty-message';
       noDataElement.textContent = 'No detailed category information available for this order.';
       categoryBreakdownElement.appendChild(noDataElement);
-      
+
       // Tentar obter o total de itens a partir do nome da pasta
       totalItems = orderInfo.itemCount || 0;
     }
-    
+
     // Atualizar totais
     document.getElementById('total-items').textContent = totalItems;
     document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
-    
+
     // Esconder loader e mostrar conteúdo
     document.getElementById('order-loading').style.display = 'none';
     document.getElementById('order-details-content').style.display = 'block';
-    
+
   } catch (error) {
     console.error('Error viewing order details:', error);
     showToast('Error viewing order details: ' + error.message, 'error');
@@ -1007,16 +1007,16 @@ function parseOrderFolderName(folderName) {
       itemCount: 0,
       orderDate: ''
     };
-    
+
     // Extrair nome do cliente (tudo antes do número de itens)
     const matches = folderName.match(/(.+?)\s+(\d+)un\s+(.+)/i);
-    
+
     if (matches && matches.length >= 4) {
       result.customerName = matches[1].trim();
       result.itemCount = parseInt(matches[2]) || 0;
       result.orderDate = matches[3].trim();
     }
-    
+
     return result;
   } catch (error) {
     console.error('Error parsing folder name:', error);
@@ -1030,33 +1030,33 @@ function parseOrderFolderName(folderName) {
 
 function openReturnToStockModal(folderId, folderName) {
   console.log(`🔧 Opening return modal for: ${folderName} (${folderId})`);
-  
+
   // Fechar outros modais
   const allModals = document.querySelectorAll('.modal');
   allModals.forEach(modal => {
     modal.style.display = 'none';
     modal.classList.remove('show');
   });
-  
+
   // Armazenar informações
   window.currentReturnOrderId = folderId;
   window.currentReturnOrderName = folderName;
-  
+
   // Atualizar título
   document.getElementById('return-order-name').textContent = folderName;
-  
+
   // Mostrar modal
   const modal = document.getElementById('return-to-stock-modal');
   if (modal) {
     modal.style.display = 'block';
     modal.classList.add('show');
-    
+
     // Resetar estado
     document.getElementById('return-modal-loading').style.display = 'block';
     document.getElementById('return-modal-content').style.display = 'none';
     document.getElementById('return-selected-count').textContent = '0';
     document.getElementById('process-return-btn').disabled = true;
-    
+
     // Carregar fotos
     loadOrderPhotosForReturn(folderId);
   }
@@ -1066,32 +1066,32 @@ function openReturnToStockModal(folderId, folderName) {
 async function loadOrderPhotosForReturn(folderId) {
   try {
     console.log(`📋 Loading photos for order: ${folderId}`);
-    
+
     // Fazer requisição para buscar detalhes do pedido
     const response = await fetch(`/api/orders/details?folderId=${folderId}`);
     const result = await response.json();
-    
+
     if (result.success) {
       // Esconder loading
       document.getElementById('return-modal-loading').style.display = 'none';
-      
+
       // Renderizar categorias e fotos
       renderReturnPhotosInterface(result.categories || []);
-      
+
       // Mostrar conteúdo
       document.getElementById('return-modal-content').style.display = 'block';
-      
+
       console.log('✅ Photos loaded successfully!');
     } else {
       throw new Error(result.message || 'Failed to load order photos');
     }
-    
+
   } catch (error) {
     console.error('❌ Error loading order photos:', error);
-    
+
     // Esconder loading
     document.getElementById('return-modal-loading').style.display = 'none';
-    
+
     // Mostrar erro
     document.getElementById('return-categories-container').innerHTML = `
       <div style="padding: 20px; text-align: center; color: red;">
@@ -1101,7 +1101,7 @@ async function loadOrderPhotosForReturn(folderId) {
         </button>
       </div>
     `;
-    
+
     // Mostrar conteúdo mesmo com erro
     document.getElementById('return-modal-content').style.display = 'block';
   }
@@ -1110,7 +1110,7 @@ async function loadOrderPhotosForReturn(folderId) {
 // NOVA FUNÇÃO: Interface hierárquica com pesquisa global
 function renderReturnPhotosInterface(categories) {
   const container = document.getElementById('return-categories-container');
-  
+
   if (!categories || categories.length === 0) {
     container.innerHTML = `
       <div style="padding: 20px; text-align: center; color: #666;">
@@ -1156,7 +1156,7 @@ function renderReturnPhotosInterface(categories) {
   // Renderizar cada categoria como colapsável
   categories.forEach(category => {
     const photoCount = category.items ? category.items.length : 0;
-    
+
     html += `
       <div class="return-category-item" data-category-id="${category.id}" style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
         
@@ -1237,7 +1237,7 @@ function renderReturnPhotosInterface(categories) {
 function toggleReturnCategory(categoryId) {
   const photosList = document.getElementById(`photos-${categoryId}`);
   const toggleIcon = document.getElementById(`toggle-${categoryId}`);
-  
+
   if (photosList.style.display === 'none') {
     photosList.style.display = 'block';
     // Chevron para baixo (expandido)
@@ -1254,15 +1254,15 @@ function searchReturnPhotos(searchTerm) {
   const allPhotoItems = document.querySelectorAll('.photo-list-item');
   const resultCount = document.getElementById('search-results-count');
   let visibleCount = 0;
-  
+
   allPhotoItems.forEach(item => {
     const photoId = item.dataset.photoId;
     const isMatch = photoId.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     item.style.display = isMatch ? 'flex' : 'none';
     if (isMatch) visibleCount++;
   });
-  
+
   // Expandir categorias que têm resultados se há busca
   if (searchTerm.trim()) {
     document.querySelectorAll('.return-category-item').forEach(category => {
@@ -1275,7 +1275,7 @@ function searchReturnPhotos(searchTerm) {
         toggleIcon.textContent = '🔽';
       }
     });
-    
+
     resultCount.textContent = `${visibleCount} results found`;
   } else {
     resultCount.textContent = '';
@@ -1285,16 +1285,16 @@ function searchReturnPhotos(searchTerm) {
 // Função CORRIGIDA para abrir foto em fullscreen
 function openReturnPhotoFullscreen(photoId) {
   console.log(`Opening fullscreen for: ${photoId}`);
-  
+
   // Verificar se já existe um lightbox e remover
   const existingLightbox = document.getElementById('return-lightbox-modal');
   if (existingLightbox) {
     existingLightbox.remove();
   }
-  
+
   // URL da foto (mesmo padrão do sistema)
   const photoUrl = `/api/photos/local/thumbnail/${photoId}`;
-  
+
   // Criar lightbox com z-index muito alto
   const lightboxHtml = `
     <div id="return-lightbox-modal" class="modal" style="display: block !important; z-index: 999999 !important; background: rgba(0, 0, 0, 0.9);">
@@ -1384,15 +1384,15 @@ function openReturnPhotoFullscreen(photoId) {
       </div>
     </div>
   `;
-  
+
   // Adicionar ao body
   document.body.insertAdjacentHTML('beforeend', lightboxHtml);
-  
+
   // Fechar ao clicar fora da imagem
   setTimeout(() => {
     const lightboxModal = document.getElementById('return-lightbox-modal');
     if (lightboxModal) {
-      lightboxModal.addEventListener('click', function(e) {
+      lightboxModal.addEventListener('click', function (e) {
         if (e.target === lightboxModal) {
           closeReturnLightbox();
         }
@@ -1421,24 +1421,24 @@ function returnPhotoFromLightbox(photoId) {
     checkbox.checked = true;
     updateReturnSelection();
   }
-  
+
   // Fechar lightbox
   closeReturnLightbox();
-  
+
   // Mostrar feedback
   console.log(`Photo ${photoId} marked for return`);
 }
 
 // Função para alternar seleção de categoria
 function toggleCategorySelection(categoryId, checked) {
-  const categorySection = document.querySelector(`[data-category-id="${categoryId}"]`) || 
-                         document.querySelector('.category-section');
+  const categorySection = document.querySelector(`[data-category-id="${categoryId}"]`) ||
+    document.querySelector('.category-section');
   const checkboxes = categorySection.querySelectorAll('.photo-checkbox');
-  
+
   checkboxes.forEach(checkbox => {
     checkbox.checked = checked;
   });
-  
+
   updateReturnSelection();
 }
 
@@ -1446,7 +1446,7 @@ function toggleCategorySelection(categoryId, checked) {
 function updateReturnSelection() {
   const selectedBoxes = document.querySelectorAll('.photo-checkbox:checked');
   const count = selectedBoxes.length;
-  
+
   document.getElementById('return-selected-count').textContent = count;
   document.getElementById('process-return-btn').disabled = count === 0;
 }
@@ -1459,10 +1459,10 @@ async function processReturnToStock() {
     event.stopPropagation();
     event.stopImmediatePropagation();
   }
-  
+
   const selectedPhotos = document.querySelectorAll('.photo-checkbox:checked');
   console.log(`🔄 Processing return of ${selectedPhotos.length} photos`);
-  
+
   if (selectedPhotos.length === 0) {
     showToast('Please select at least one photo to return', 'warning');
     return;
@@ -1472,11 +1472,11 @@ async function processReturnToStock() {
   const selectedPhotoIds = Array.from(selectedPhotos).map(checkbox => checkbox.value);
   console.log(`📋 Selected photo IDs:`, selectedPhotoIds);
   console.log(`📁 Order ID:`, window.currentReturnOrderId);
-  
+
   try {
     showLoader();
     console.log(`🚀 Making fetch request to /api/orders/return-to-stock`);
-    
+
     // Fazer requisição para o backend
     const response = await fetch('/api/orders/return-to-stock', {
       method: 'POST',
@@ -1488,27 +1488,27 @@ async function processReturnToStock() {
         selectedPhotoIds: selectedPhotoIds
       })
     });
-    
+
     console.log(`📡 Response status:`, response.status);
     console.log(`📡 Response ok:`, response.ok);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const result = await response.json();
     console.log(`✅ Backend response:`, result);
-    
+
     hideLoader();
-    
+
     if (result.success) {
       showToast(
-        `Successfully returned ${result.movedPhotos} photos to stock!`, 
+        `Successfully returned ${result.movedPhotos} photos to stock!`,
         'success'
       );
-      
+
       closeReturnAndShowAdmin();
-      
+
       // ✅ SOLUÇÃO 2 CORRETA: Verificar se ordem foi deletada
       if (result.orderDeleted) {
         console.log('🗑️ Order was deleted, removing from interface');
@@ -1519,11 +1519,11 @@ async function processReturnToStock() {
         const status = document.getElementById('order-status').value;
         loadOrderFolders(status);
       }
-      
+
     } else {
       showToast(`Error: ${result.message}`, 'error');
     }
-    
+
   } catch (error) {
     hideLoader();
     console.error('❌ Error processing return to stock:', error);
@@ -1534,7 +1534,7 @@ async function processReturnToStock() {
 // FUNÇÃO ESPECÍFICA para Return to Stock Modal
 function closeReturnToStockModal() {
   console.log('🔒 Closing return to stock modal');
-  
+
   const modal = document.getElementById('return-to-stock-modal');
   if (modal) {
     // Limpar TODOS os estilos inline forçados
@@ -1546,10 +1546,10 @@ function closeReturnToStockModal() {
     modal.style.height = '';
     modal.style.zIndex = '';
     modal.style.backgroundColor = '';
-    
+
     console.log('✅ Modal closed and styles cleared');
   }
-  
+
   // Limpar dados temporários
   window.currentReturnOrderId = null;
   window.currentReturnOrderName = null;
@@ -1558,24 +1558,24 @@ function closeReturnToStockModal() {
 // FUNÇÃO CORRIGIDA: Fechar Return to Stock e voltar ao Admin
 function closeReturnAndShowAdmin() {
   console.log('🔒 Closing return modal and showing admin panel');
-  
+
   // Fechar Return to Stock modal
   const returnModal = document.getElementById('return-to-stock-modal');
   if (returnModal) {
     returnModal.classList.remove('show');
     returnModal.style.display = 'none';
   }
-  
+
   // Reabrir Admin Panel
   const adminModal = document.getElementById('admin-panel-modal');
   if (adminModal) {
     adminModal.style.display = 'block';
   }
-  
+
   // Limpar dados temporários
   window.currentReturnOrderId = null;
   window.currentReturnOrderName = null;
-  
+
   console.log('✅ Returned to admin panel');
 }
 
@@ -1591,10 +1591,10 @@ function initShipmentTab() {
 async function loadShipments() {
   try {
     console.log('📋 Loading shipments...');
-    
+
     const response = await fetch('/api/admin/shipments');
     const result = await response.json();
-    
+
     if (result.success) {
       displayShipments(result.shipments);
     } else {
@@ -1609,23 +1609,23 @@ async function loadShipments() {
 function displayShipments(shipments) {
   const container = document.getElementById('shipment-control');
   if (!container) return;
-  
+
   const adminSection = container.querySelector('.admin-section');
   if (!adminSection) return;
-  
+
   // Organizar shipments por status
   const shipmentsByStatus = {
     'incoming-air': [],
     'incoming-sea': [],
     'warehouse': [],
   };
-  
+
   shipments.forEach(shipment => {
     if (shipmentsByStatus[shipment.status]) {
       shipmentsByStatus[shipment.status].push(shipment);
     }
   });
-  
+
   adminSection.innerHTML = `
     <div class="shipment-header">
       <h3>Shipment Control</h3>
@@ -1661,7 +1661,7 @@ function renderKanbanCards(shipments) {
   if (!shipments || shipments.length === 0) {
     return '<div class="kanban-empty">No shipments</div>';
   }
-  
+
   return shipments.map(shipment => `
     <div class="kanban-card" onclick="viewShipmentDetails('${shipment._id}')" data-shipment-id="${shipment._id}">
       <div class="upload-indicator">📤</div>
@@ -1680,7 +1680,7 @@ function renderKanbanCards(shipments) {
 // Ações específicas para Kanban
 function getKanbanActions(shipment) {
   let actions = [];
-  
+
   switch (shipment.status) {
     case 'incoming-air':
       actions.push(`<button class="btn btn-primary btn-sm" onclick="uploadPhotosToShipment('${shipment._id}')">📤 Upload</button>`);
@@ -1698,19 +1698,19 @@ function getKanbanActions(shipment) {
       actions.push(`<button class="btn btn-info btn-sm" onclick="moveShipmentTo('${shipment._id}', 'incoming-sea')">🚢 Back to Sea</button>`);
       break;
   }
-  
+
   actions.push(`<button class="btn btn-delete btn-sm" onclick="deleteShipment('${shipment._id}')">Delete</button>`);
-  
+
   return actions.join('');
 }
 
 // Obter ações disponíveis para cada shipment
 function getShipmentActions(shipment) {
   let actions = [];
-  
+
   // Botão de detalhes sempre disponível
   actions.push(`<button class="btn btn-secondary btn-sm" onclick="viewShipmentDetails('${shipment._id}')">Details</button>`);
-  
+
   // Ações baseadas no status
   switch (shipment.status) {
     case 'incoming-air':
@@ -1723,10 +1723,10 @@ function getShipmentActions(shipment) {
       actions.push(`<button class="btn btn-success btn-sm" onclick="alert('Ready for distribution!')">Distribute</button>`);
       break;
   }
-  
+
   // Botão delete sempre disponível
   actions.push(`<button class="btn btn-delete btn-sm" onclick="deleteShipment('${shipment._id}')">Delete</button>`);
-  
+
   return actions.join('');
 }
 
@@ -1735,7 +1735,7 @@ async function moveShipmentTo(shipmentId, newStatus) {
   showConfirm(`Move shipment to ${newStatus}?`, async () => {
     try {
       console.log(`Moving shipment ${shipmentId} to ${newStatus}`);
-      
+
       const response = await fetch(`/api/admin/shipments/${shipmentId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1744,9 +1744,9 @@ async function moveShipmentTo(shipmentId, newStatus) {
           newStatus: newStatus
         })
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         console.log('Shipment moved successfully!');
         showToast(`Shipment moved to ${newStatus}!`, "success");
@@ -1766,13 +1766,13 @@ async function moveShipmentTo(shipmentId, newStatus) {
 async function viewShipmentDetails(shipmentId) {
   try {
     console.log(`Getting details for shipment: ${shipmentId}`);
-    
+
     const response = await fetch(`/api/admin/shipments/${shipmentId}`);
     const result = await response.json();
-    
+
     if (result.success) {
       const shipment = result.shipment;
-      
+
       // Criar modal customizado
       const modal = document.createElement('div');
       modal.className = 'shipment-details-modal';
@@ -1781,7 +1781,7 @@ async function viewShipmentDetails(shipmentId) {
         background: rgba(0,0,0,0.6); z-index: 2000; display: flex;
         align-items: center; justify-content: center;
       `;
-      
+
       modal.innerHTML = `
         <div style="background: var(--color-cream); padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
           <h2 style="color: var(--color-dark); font-family: 'Playfair Display', serif; margin-bottom: 20px; text-align: center;">Shipment Details</h2>
@@ -1810,22 +1810,22 @@ async function viewShipmentDetails(shipmentId) {
           </div>
         </div>
       `;
-      
+
       // Event listener para o botão close
       const closeBtn = modal.querySelector('.close-details-btn');
       closeBtn.addEventListener('click', () => {
         modal.remove();
       });
-      
+
       // Fechar ao clicar fora
-      modal.addEventListener('click', function(e) {
+      modal.addEventListener('click', function (e) {
         if (e.target === modal) {
           modal.remove();
         }
       });
-      
+
       document.body.appendChild(modal);
-      
+
     } else {
       console.error('Error getting details:', result.message);
       showToast('Error: ' + result.message, 'error');
@@ -1849,7 +1849,7 @@ function showCreateShipmentModal() {
     background: rgba(0,0,0,0.6); z-index: 1000; display: flex;
     align-items: center; justify-content: center;
   `;
-  
+
   modal.innerHTML = `
     <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
       <h3 style="margin-top: 0; color: #333;">Create New Shipment</h3>
@@ -1895,21 +1895,21 @@ function showCreateShipmentModal() {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
-  
+
   // Focar no input de nome
   setTimeout(() => {
     document.getElementById('shipment-name-input').focus();
   }, 100);
-  
+
   // Fechar ao clicar fora
-  modal.addEventListener('click', function(e) {
+  modal.addEventListener('click', function (e) {
     if (e.target === modal) {
       closeCreateShipmentModal();
     }
   });
-  
+
   // Guardar referência do modal
   window.currentShipmentModal = modal;
 }
@@ -1928,21 +1928,21 @@ async function submitNewShipment() {
   const transitType = document.querySelector('input[name="transit-type"]:checked');
   const departureDate = document.getElementById('departure-date');
   const arrivalDate = document.getElementById('arrival-date');
-  
+
   const name = nameInput.value.trim();
   const status = transitType.value;
   const departure = departureDate.value;
   const arrival = arrivalDate.value;
-  
+
   if (!name) {
     showToast('Please enter a shipment name', 'warning');
     nameInput.focus();
     return;
   }
-  
+
   try {
     console.log('Creating shipment:', { name, status, departure, arrival });
-    
+
     const response = await fetch('/api/admin/shipments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1954,14 +1954,14 @@ async function submitNewShipment() {
         notes: `Created via admin panel - ${status}`
       })
     });
-    
+
     const result = await response.json();
-    
+
     if (result.success) {
       console.log('Shipment created successfully!');
       closeCreateShipmentModal();
       loadShipments(); // Recarregar lista
-      
+
       const transitTypeName = status === 'incoming-air' ? 'Air Transit' : 'Sea Transit';
       showToast(`✅ Shipment "${name}" created in ${transitTypeName}!`, "success");
     } else {
@@ -1979,13 +1979,13 @@ async function deleteShipment(shipmentId) {
   showConfirm('Are you sure you want to delete this shipment? This action cannot be undone.', async () => {
     try {
       console.log(`Deleting shipment: ${shipmentId}`);
-      
+
       const response = await fetch(`/api/admin/shipments/${shipmentId}`, {
         method: 'DELETE'
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         console.log('Shipment deleted successfully!');
         showToast('Shipment deleted successfully!', 'success');
@@ -2009,21 +2009,21 @@ async function uploadPhotosToShipment(shipmentId) {
   input.multiple = true;
   input.accept = 'image/*';
   input.webkitdirectory = true; // Permite seleção de pastas
-  
-  input.onchange = async function(event) {
+
+  input.onchange = async function (event) {
     const files = Array.from(event.target.files);
-    
+
     if (files.length === 0) return;
-    
+
     console.log(`🚀 Uploading ${files.length} files to shipment ${shipmentId}`);
-    
+
     // 🆕 MARCAR SHIPMENT COMO FAZENDO UPLOAD (mostrar setinha)
     markShipmentAsUploading(shipmentId);
-    
+
     // Verificar se há estrutura de pastas
     const hasStructure = files.some(file => file.webkitRelativePath && file.webkitRelativePath.includes('/'));
     console.log(`🔍 Estrutura de pastas detectada: ${hasStructure ? 'SIM' : 'NÃO'}`);
-    
+
     try {
       // Criar FormData com paths preservados - DEBUG
       const formData = new FormData();
@@ -2032,7 +2032,7 @@ async function uploadPhotosToShipment(shipmentId) {
       files.forEach((file, index) => {
         // Adicionar arquivo  
         formData.append('photos', file);
-        
+
         // Coletar paths em array
         if (file.webkitRelativePath) {
           pathsArray.push(file.webkitRelativePath);
@@ -2045,18 +2045,18 @@ async function uploadPhotosToShipment(shipmentId) {
       formData.append('filePathsJson', JSON.stringify(pathsArray));
 
       console.log('📦 Sending paths:', pathsArray.slice(0, 5));
-      
+
       console.log('📤 Enviando FormData com paths preservados...');
-      
+
       showToast(`Uploading ${files.length} photos...`, 'info');
-      
+
       const response = await fetch(`/api/admin/shipments/${shipmentId}/upload`, {
         method: 'POST',
         body: formData
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         showToast(`✅ Successfully uploaded ${result.processedPhotos} photos in ${result.categories.length} categories!`, 'success');
         loadShipments(); // Recarregar lista
@@ -2071,7 +2071,7 @@ async function uploadPhotosToShipment(shipmentId) {
       unmarkShipmentAsUploading(shipmentId);
     }
   };
-  
+
   input.click();
 }
 
@@ -2080,7 +2080,7 @@ async function getDestinationFolders() {
   try {
     const response = await fetch('/api/admin/shipments/destination/folders');
     const result = await response.json();
-    
+
     if (result.success) {
       return result.folders;
     } else {
@@ -2097,20 +2097,20 @@ async function getDestinationFolders() {
 async function distributeShipment(shipmentId) {
   try {
     console.log(`🚚 Starting distribution for shipment: ${shipmentId}`);
-    
+
     // Buscar conteúdo do shipment e pastas disponíveis
     const [shipmentData, foldersData] = await Promise.all([
       fetch(`/api/admin/shipments/${shipmentId}/content`).then(r => r.json()),
       fetch('/api/admin/shipments/destination/folders').then(r => r.json())
     ]);
-    
+
     if (!shipmentData.success || !foldersData.success) {
       alert('Error loading shipment data');
       return;
     }
-    
+
     showDistributionModal(shipmentData.shipment, foldersData.folders);
-    
+
   } catch (error) {
     console.error('Error starting distribution:', error);
     alert('Error loading distribution interface');
@@ -2125,9 +2125,9 @@ function showDistributionModal(shipment, availableFolders) {
     background: rgba(0,0,0,0.7); z-index: 1000; display: flex;
     align-items: center; justify-content: center; overflow-y: auto;
   `;
-  
+
   const categories = shipment.categories || [];
-  
+
   modal.innerHTML = `
     <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto;">
       <h3 style="margin-top: 0; color: #333;">Distribute: ${shipment.name}</h3>
@@ -2161,42 +2161,42 @@ function showDistributionModal(shipment, availableFolders) {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
-  
+
   // Fechar ao clicar fora
-  modal.addEventListener('click', function(e) {
+  modal.addEventListener('click', function (e) {
     if (e.target === modal) {
       closeDistributionModal();
     }
   });
-  
+
   window.currentDistributionModal = modal;
 }
 
 // Gerar opções de pastas para o select
 function generateFolderOptions(folders, categoryName) {
   let options = '';
-  
+
   // Função recursiva para processar pastas hierárquicas
   const processFolder = (folder, depth = 0) => {
     const indent = '&nbsp;'.repeat(depth * 4);
     const folderPath = folder.fullPath || folder.name;
-    
+
     // Smart suggestion: destacar pastas similares ao nome da categoria
     const isSuggested = categoryName && folder.name.toLowerCase().includes(categoryName.toLowerCase());
     const style = isSuggested ? 'background: #ffffcc; font-weight: bold;' : '';
-    
+
     options += `<option value="${folderPath}" style="${style}">${indent}${folder.name}</option>`;
-    
+
     // Processar subpastas se existirem
     if (folder.children && folder.children.length > 0) {
       folder.children.forEach(child => processFolder(child, depth + 1));
     }
   };
-  
+
   folders.forEach(folder => processFolder(folder));
-  
+
   return options;
 }
 
@@ -2204,9 +2204,9 @@ function generateFolderOptions(folders, categoryName) {
 async function executeDistribution(shipmentId, categoryCount) {
   const distributions = {};
   let selectedCount = 0;
-  
+
   console.log(`🚚 Executing distribution for ${categoryCount} categories`);
-  
+
   // Coletar seleções usando data attributes
   for (let i = 0; i < categoryCount; i++) {
     const select = document.getElementById(`destination-${i}`);
@@ -2219,23 +2219,23 @@ async function executeDistribution(shipmentId, categoryCount) {
       }
     }
   }
-  
+
   console.log('Final distributions:', distributions);
-  
+
   if (selectedCount === 0) {
     alert('Please select at least one destination folder');
     return;
   }
-  
+
   if (selectedCount < categoryCount) {
     if (!confirm(`Only ${selectedCount} of ${categoryCount} categories have destinations selected. Continue?`)) {
       return;
     }
   }
-  
+
   try {
     console.log('🚀 Sending distribution request...');
-    
+
     const response = await fetch('/api/admin/shipments/distribute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2244,10 +2244,10 @@ async function executeDistribution(shipmentId, categoryCount) {
         distributions: distributions
       })
     });
-    
+
     const result = await response.json();
     console.log('Distribution result:', result);
-    
+
     if (result.success) {
       showToast(`✅ Distribution completed! ${result.totalMoved} photos moved to their destinations.`, "success");
       closeDistributionModal();
@@ -2255,7 +2255,7 @@ async function executeDistribution(shipmentId, categoryCount) {
     } else {
       showToast('❌ Distribution error: ' + result.message, 'error');
     }
-    
+
   } catch (error) {
     console.error('Distribution error:', error);
     alert('❌ Distribution failed: ' + error.message);
@@ -2306,8 +2306,8 @@ function addVolumeDiscount() {
     const newMax = maxQty || 999999;
 
     return (minQty >= existingMin && minQty <= existingMax) ||
-           (newMax >= existingMin && newMax <= existingMax) ||
-           (minQty <= existingMin && newMax >= existingMax);
+      (newMax >= existingMin && newMax <= existingMax) ||
+      (minQty <= existingMin && newMax >= existingMax);
   });
 
   if (hasOverlap) {
@@ -2323,18 +2323,18 @@ function addVolumeDiscount() {
   };
 
   volumeDiscounts.push(newDiscount);
-  
+
   // Ordenar por minQuantity
   volumeDiscounts.sort((a, b) => a.minQuantity - b.minQuantity);
-  
+
   // Atualizar exibição
   renderVolumeDiscounts();
-  
+
   // Limpar campos
   document.getElementById('volume-min-qty').value = '';
   document.getElementById('volume-max-qty').value = '';
   document.getElementById('volume-discount-percent').value = '';
-  
+
   showToast('Volume discount range added successfully', 'success');
 }
 
@@ -2350,7 +2350,7 @@ function removeVolumeDiscount(index) {
 // Renderizar tabela de volume discounts
 function renderVolumeDiscounts() {
   const tbody = document.getElementById('volume-discounts-tbody');
-  
+
   if (volumeDiscounts.length === 0) {
     tbody.innerHTML = `
       <tr id="no-volume-discounts">
@@ -2365,7 +2365,7 @@ function renderVolumeDiscounts() {
   let html = '';
   volumeDiscounts.forEach((discount, index) => {
     const maxQtyDisplay = discount.maxQuantity ? discount.maxQuantity : '∞';
-    
+
     html += `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd;">${discount.minQuantity}</td>
@@ -2380,7 +2380,7 @@ function renderVolumeDiscounts() {
       </tr>
     `;
   });
-  
+
   tbody.innerHTML = html;
 }
 
@@ -2396,7 +2396,7 @@ function clearAllVolumeDiscounts() {
     showToast('No volume discounts to clear', 'info');
     return;
   }
-  
+
   if (confirm('Are you sure you want to remove all volume discount ranges?')) {
     volumeDiscounts = [];
     renderVolumeDiscounts();
@@ -2427,24 +2427,24 @@ function resetModalTabs() {
     tab.classList.remove('active');
   });
 
-  // Ativar a primeira tab (Volume Discounts) por padrão
-  const volumeTab = document.getElementById('volume-tab');
-  const volumeButton = document.querySelector('#category-access-modal .tab-button:first-child');
-  
-  if (volumeTab) {
-    volumeTab.style.display = 'block';
-    volumeTab.classList.add('active');
+  // Ativar a primeira tab (Control Access) por padrão
+  const categoriesTab = document.getElementById('categories-tab');
+  const categoriesButton = document.querySelector('#category-access-modal .tab-button:first-child');
+
+  if (categoriesTab) {
+    categoriesTab.style.display = 'block';
+    categoriesTab.classList.add('active');
   }
-  
-  if (volumeButton) {
-    volumeButton.classList.add('active');
+
+  if (categoriesButton) {
+    categoriesButton.classList.add('active');
   }
 }
 
 // Função específica para o modal de categorias
 function switchModalTab(tabId, buttonElement) {
   console.log('Switching to modal tab:', tabId);
-  
+
   // Esconder todas as tabs do modal
   const allTabs = document.querySelectorAll('#category-access-modal .tab-content');
   allTabs.forEach(tab => {
@@ -2483,10 +2483,10 @@ function switchModalTab(tabId, buttonElement) {
 // Remover ordem específica da interface
 function removeOrderFromInterface(orderId) {
   console.log(`🗑️ Removing order ${orderId} from interface`);
-  
+
   // Buscar linha da tabela correspondente ao pedido
   const allRows = document.querySelectorAll('#order-folders-list tr');
-  
+
   allRows.forEach(row => {
     const buttons = row.querySelectorAll('button');
     buttons.forEach(button => {
@@ -2496,7 +2496,7 @@ function removeOrderFromInterface(orderId) {
       }
     });
   });
-  
+
   // Se não restaram linhas, mostrar mensagem de "nenhum pedido"
   const remainingRows = document.querySelectorAll('#order-folders-list tr');
   if (remainingRows.length <= 1) { // <= 1 porque pode ter header
@@ -2510,30 +2510,30 @@ async function globalRefreshCounters() {
   try {
     console.log('🔄 Global refresh counters...');
     showToast('Recalculating photo counts...', 'info');
-    
+
     const rebuildResponse = await fetch('/api/admin/force-rebuild-index', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
-    
+
     const rebuildResult = await rebuildResponse.json();
-    
+
     if (rebuildResult.success) {
       console.log(`✅ Contadores atualizados: ${rebuildResult.totalPhotos} fotos`);
       showToast(`Counters updated! ${rebuildResult.totalPhotos} photos`, 'success');
-      
+
       // Recarregar aba ativa
       const activeTab = document.querySelector('.tab-button.active');
       if (activeTab) {
         const tabText = activeTab.textContent.toLowerCase();
-        
+
         if (tabText.includes('price')) {
           // Recarregar Price Management
           if (typeof initPriceManager === 'function') {
             initPriceManager();
           }
         }
-        
+
         if (tabText.includes('photo')) {
           // Recarregar Photo Storage  
           if (typeof photoManager !== 'undefined' && photoManager.refreshStructure) {
@@ -2541,11 +2541,11 @@ async function globalRefreshCounters() {
           }
         }
       }
-      
+
     } else {
       throw new Error(rebuildResult.message);
     }
-    
+
   } catch (error) {
     console.error('❌ Erro no refresh:', error);
     showToast(`Error refreshing: ${error.message}`, 'error');
@@ -2556,33 +2556,33 @@ async function globalRefreshCounters() {
 function selectAllReturnPhotos() {
   const allCheckboxes = document.querySelectorAll('#return-categories-container .photo-checkbox');
   const categoryCheckboxes = document.querySelectorAll('#return-categories-container .select-all-category');
-  
+
   // Marcar todos os checkboxes
   allCheckboxes.forEach(checkbox => {
     checkbox.checked = true;
   });
-  
+
   // Marcar todos os "Select All" das categorias
   categoryCheckboxes.forEach(checkbox => {
     checkbox.checked = true;
   });
-  
+
   // Expandir todas as categorias para mostrar seleção
   const allCategories = document.querySelectorAll('.return-category-item');
   allCategories.forEach(category => {
     const categoryId = category.dataset.categoryId;
     const photosList = document.getElementById(`photos-${categoryId}`);
     const toggleIcon = document.getElementById(`toggle-${categoryId}`);
-    
+
     if (photosList && toggleIcon) {
       photosList.style.display = 'block';
       toggleIcon.style.transform = 'rotate(45deg)';
     }
   });
-  
+
   // Atualizar contador
   updateReturnSelection();
-  
+
   showToast('All photos selected for return', 'success');
 }
 
@@ -2590,20 +2590,20 @@ function selectAllReturnPhotos() {
 function clearAllReturnPhotos() {
   const allCheckboxes = document.querySelectorAll('#return-categories-container .photo-checkbox');
   const categoryCheckboxes = document.querySelectorAll('#return-categories-container .select-all-category');
-  
+
   // Desmarcar todos os checkboxes
   allCheckboxes.forEach(checkbox => {
     checkbox.checked = false;
   });
-  
+
   // Desmarcar todos os "Select All" das categorias
   categoryCheckboxes.forEach(checkbox => {
     checkbox.checked = false;
   });
-  
+
   // Atualizar contador
   updateReturnSelection();
-  
+
   showToast('All selections cleared', 'info');
 }
 
@@ -2614,10 +2614,10 @@ function clearAllReturnPhotos() {
 // Marcar shipment como fazendo upload (mostrar setinha pulsante)
 function markShipmentAsUploading(shipmentId) {
   console.log(`🔄 Marking shipment as uploading: ${shipmentId}`);
-  
+
   // Encontrar o card do shipment específico
   const shipmentCard = document.querySelector(`[data-shipment-id="${shipmentId}"]`);
-  
+
   if (shipmentCard) {
     // Adicionar classe que faz a setinha aparecer e pulsar
     shipmentCard.classList.add('uploading');
@@ -2630,10 +2630,10 @@ function markShipmentAsUploading(shipmentId) {
 // Desmarcar shipment como fazendo upload (esconder setinha)
 function unmarkShipmentAsUploading(shipmentId) {
   console.log(`✅ Removing upload state from shipment: ${shipmentId}`);
-  
+
   // Encontrar o card do shipment específico
   const shipmentCard = document.querySelector(`[data-shipment-id="${shipmentId}"]`);
-  
+
   if (shipmentCard) {
     // Remover classe que faz a setinha aparecer
     shipmentCard.classList.remove('uploading');
