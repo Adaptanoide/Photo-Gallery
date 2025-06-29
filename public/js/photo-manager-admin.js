@@ -219,11 +219,16 @@ const photoManager = {
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
       <span class="folder-name">${folder.name}</span>
+      <span class="folder-qb-info">
+        <span class="qb-display">QB: ${qbItem}</span>
+        <button class="folder-action-btn qb-btn" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Edit QB Item">
+          ${qbItem !== 'Not set' ? 'Edit QB' : 'Set QB'}
+        </button>
+      </span>
       <span class="folder-count">${photoCount}</span>
       ${folder.isLeaf ? `
       <div class="folder-actions">
         <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
-        <button class="folder-action-btn qb-btn" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Edit QB Item">📋 QB</button>
         ${!isAdminFolder ? `
           <button class="folder-action-btn rename-btn" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Rename Folder">✏️ Rename</button>
           <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
