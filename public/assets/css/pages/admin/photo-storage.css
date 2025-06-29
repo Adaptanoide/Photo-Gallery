@@ -81,10 +81,32 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  justify-content: space-between;  /* ← ADICIONAR ESTA LINHA */
   border-radius: 8px;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+}
+
+.folder-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 15px;
+  color: #333;
+}
+
+.folder-count {
+  width: 100px;
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.folder-qb-info {
+  width: 100px;
+  text-align: center;
 }
 
 .folder-item:hover {
@@ -123,12 +145,10 @@
 
 .folder-actions {
   margin-left: auto;
-  display: none;
+  display: flex;  /* Sempre visível agora */
   gap: 6px;
-}
-
-.folder-item:hover .folder-actions {
-  display: flex;
+  width: 40px;    /* Largura fixa para alinhamento */
+  justify-content: center;
 }
 
 .folder-action-btn {
@@ -1123,4 +1143,38 @@
 
 .folder-actions {
   position: relative;
+}
+
+/* Headers da tabela */
+.folder-headers {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+  font-weight: 600;
+  font-size: 13px;
+  color: #495057;
+  margin-bottom: 5px;
+  border-radius: 6px 6px 0 0;
+}
+
+.header-folder {
+  flex: 1;
+  text-align: left;
+}
+
+.header-photos {
+  width: 100px;
+  text-align: center;
+}
+
+.header-qb {
+  width: 100px;
+  text-align: center;
+}
+
+.header-actions {
+  width: 40px;
+  text-align: center;
 }

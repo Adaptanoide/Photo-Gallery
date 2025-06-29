@@ -203,6 +203,17 @@ const photoManager = {
         container.innerHTML = '<div class="empty-message">No folders found</div>';
         return;
       }
+
+      // Adicionar headers no topo
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'folder-headers';
+      headerDiv.innerHTML = `
+        <span class="header-folder">Folder</span>
+        <span class="header-photos">Photos</span>
+        <span class="header-qb">QB Item</span>
+        <span class="header-actions">Actions</span>
+      `;
+      container.appendChild(headerDiv);
     }
 
     folders.forEach(folder => {
