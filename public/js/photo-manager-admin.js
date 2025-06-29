@@ -220,9 +220,9 @@ const photoManager = {
       <span class="folder-icon">${icon}</span>
       <span class="folder-name">${folder.name}</span>
       <span class="folder-qb-info">
-        <span class="qb-display">QB: ${qbItem}</span>
-        <button class="folder-action-btn qb-btn" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Edit QB Item">
-          ${qbItem !== 'Not set' ? 'Edit QB' : 'Set QB'}
+        <span class="qb-code">${qbItem !== 'Not set' ? qbItem : '-'}</span>
+        <button class="qb-edit-btn" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Edit QB Item">
+          ${qbItem !== 'Not set' ? 'Edit' : 'Set'}
         </button>
       </span>
       <span class="folder-count">${photoCount}</span>

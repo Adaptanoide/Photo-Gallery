@@ -1029,38 +1029,44 @@
   font-style: italic;
 }
 
-/* QB Item sempre visível */
+/* QB Item limpo - só código visível */
 .folder-qb-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-right: 10px;
 }
 
-.qb-display {
+.qb-code {
   font-size: 12px;
   color: #666;
-  font-weight: 500;
-  background: #f0f8ff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
-  min-width: 80px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  min-width: 60px;
   text-align: center;
+  border: 1px solid #e9ecef;
 }
 
-.folder-qb-info .qb-btn {
-  font-size: 11px;
-  padding: 4px 8px;
-  background: #17a2b8;
+.qb-edit-btn {
+  display: none; /* Escondido por padrão */
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #28a745;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.folder-qb-info .qb-btn:hover {
-  background: #138496;
-  transform: translateY(-1px);
+/* Mostrar botão só no hover */
+.folder-item:hover .qb-edit-btn {
+  display: inline-block;
+}
+
+.qb-edit-btn:hover {
+  background: #218838;
 }
