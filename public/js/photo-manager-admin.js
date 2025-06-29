@@ -25,7 +25,7 @@ const photoManager = {
 
       // NOVO: Ativar proteção contra saída
       this.setupUploadProtection();
-      
+
       // NOVO: Inicializar pesquisa
       this.setupAdminSearch();
     }
@@ -117,7 +117,25 @@ const photoManager = {
         console.log(`📋 Loaded ${data.folders.length} folders`);
 
         this.allFolders = data.folders;
+        // NOVO: Buscar QB Items do Price Management
+        console.log('📊 Loading QB Items for Photo Storage...');
+        try {
+          const qbResponse = await fetch('/api/admin/categories/prices');
+          const qbData = await qbResponse.json();
 
+          this.qbItemData = {};
+          if (qbData.success && qbData.prices) {
+            qbData.prices.forEach(item => {
+              if (item.qbItem) {
+                this.qbItemData[item.folderId] = item.qbItem;
+              }
+            });
+            console.log(`✅ Loaded ${Object.keys(this.qbItemData).length} QB Items for Photo Storage`);
+          }
+        } catch (error) {
+          console.warn('⚠️ Error loading QB Items:', error);
+          this.qbItemData = {};
+        }
         const organizedStructure = this.organizeIntoHierarchy(data.folders);
         this.currentStructure = organizedStructure;
         this.renderFolderTree(organizedStructure);
@@ -184,12 +202,17 @@ const photoManager = {
       const folderDiv = document.createElement('div');
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
+      folderDiv.title = tooltipInfo;
 
       const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       const adminFolders = ['Waiting Payment', 'Sold'];
       const isAdminFolder = adminFolders.includes(folder.name);
+
+      // Obter QB Item para esta pasta
+      const qbItem = this.qbItemData[folder.id] || 'Not set';
+      const tooltipInfo = `QB Item: ${qbItem} | Photos: ${folder.fileCount || 0}`;
 
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
@@ -1083,16 +1106,16 @@ const photoManager = {
 
       if (response.ok && result.success) {
         console.log(`✅ Category renamed successfully: ${result.message}`);
-        
+
         // Mostrar sucesso
         showToast(`Category renamed to "${newName}" successfully!`, 'success');
-        
+
         // Atualizar interface
         await this.updateInterfaceAfterRename(folderId, newName);
-        
+
       } else {
         console.error('❌ Rename failed:', result);
-        
+
         // Verificar se é erro de nome duplicado
         if (result.message && result.message.includes('already exists')) {
           showToast(`A category named "${newName}" already exists. Please choose a different name.`, 'error');
@@ -2585,7 +2608,7 @@ const photoManager = {
   async toggleParentSelector() {
     const selector = document.getElementById('parent-selector');
     const isVisible = selector.style.display !== 'none';
-    
+
     if (isVisible) {
       selector.style.display = 'none';
     } else {
@@ -2661,7 +2684,7 @@ const photoManager = {
     const modal = document.getElementById('create-folder-modal');
     if (modal) modal.style.display = 'flex';
     console.log('✅ Create folder modal opened');
-    
+
     // Auto-carregar lista de pastas
     setTimeout(async () => {
       await this.loadParentFolders();
@@ -2888,10 +2911,10 @@ const photoManager = {
   // NOVA FUNÇÃO: Configurar pesquisa do admin
   setupAdminSearch() {
     console.log('🔍 Setting up admin search...');
-    
+
     const searchInput = document.getElementById('admin-photo-search');
     const resultsDiv = document.getElementById('admin-search-results');
-    
+
     if (!searchInput || !resultsDiv) {
       console.warn('Search elements not found');
       return;
@@ -2921,14 +2944,14 @@ const photoManager = {
   // NOVA FUNÇÃO: Executar pesquisa
   async performAdminSearch(searchTerm) {
     const resultsDiv = document.getElementById('admin-search-results');
-    
+
     if (!searchTerm || searchTerm.length < 2) {
       resultsDiv.style.display = 'none';
       return;
     }
 
     console.log(`🔍 Searching for: "${searchTerm}"`);
-    
+
     try {
       // Buscar em todas as categorias
       const results = await this.searchPhotosAndCategories(searchTerm);
@@ -2952,19 +2975,19 @@ const photoManager = {
 
     // 2. Buscar fotos por ID/nome em categorias que têm fotos
     const leafFolders = this.getLeafFolders(this.currentStructure || []);
-    
+
     for (const folder of leafFolders.slice(0, 10)) { // Limite inicial
       try {
         const response = await fetch(`/api/photos?category_id=${folder.id}&limit=100`);
         if (response.ok) {
           const photos = await response.json();
-          
+
           photos.forEach(photo => {
             const photoId = photo.id || '';
             const photoName = photo.name || photoId;
-            
-            if (photoId.toLowerCase().includes(searchLower) || 
-                photoName.toLowerCase().includes(searchLower)) {
+
+            if (photoId.toLowerCase().includes(searchLower) ||
+              photoName.toLowerCase().includes(searchLower)) {
               results.push({
                 type: 'photo',
                 photoId: photoId,
@@ -2994,7 +3017,7 @@ const photoManager = {
           photoCount: folder.fileCount || 0
         });
       }
-      
+
       if (folder.children && folder.children.length > 0) {
         this.searchCategoriesRecursive(folder.children, searchTerm, results);
       }
@@ -3004,7 +3027,7 @@ const photoManager = {
   // NOVA FUNÇÃO: Exibir resultados
   displaySearchResults(results, searchTerm) {
     const resultsDiv = document.getElementById('admin-search-results');
-    
+
     if (results.length === 0) {
       resultsDiv.innerHTML = `<div class="search-no-results">No results found for "${searchTerm}"</div>`;
       resultsDiv.style.display = 'block';
@@ -3012,7 +3035,7 @@ const photoManager = {
     }
 
     let html = '';
-    
+
     results.forEach(result => {
       if (result.type === 'category') {
         html += `
@@ -3038,13 +3061,13 @@ const photoManager = {
   // NOVA FUNÇÃO: Abrir resultado da pesquisa
   async openSearchResult(categoryId, categoryName) {
     console.log(`🎯 Opening search result: ${categoryName} (${categoryId})`);
-    
+
     // Fechar resultados da pesquisa
     document.getElementById('admin-search-results').style.display = 'none';
-    
+
     // Limpar campo de pesquisa
     document.getElementById('admin-photo-search').value = '';
-    
+
     // Abrir categoria
     await this.openFolderModal(categoryId, categoryName);
   },
@@ -3052,7 +3075,7 @@ const photoManager = {
   // NOVA FUNÇÃO: Obter pastas com fotos
   getLeafFolders(folders) {
     const leafFolders = [];
-    
+
     const collectLeaves = (folderList) => {
       folderList.forEach(folder => {
         if (folder.isLeaf && folder.fileCount > 0) {
@@ -3063,7 +3086,7 @@ const photoManager = {
         }
       });
     };
-    
+
     collectLeaves(folders);
     return leafFolders;
   },
