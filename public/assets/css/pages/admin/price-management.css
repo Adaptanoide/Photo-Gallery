@@ -205,46 +205,58 @@
   border-right: none;
 }
 
-/* Larguras REALISTAS e proporcionais */
+/* LARGURAS GENEROSAS E BEM DISTRIBUÍDAS */
 .checkbox-column,
 .price-table th.checkbox-column,
 .price-table td.checkbox-column {
-  flex: 0 0 120px;
-  justify-content: flex-start;
+  width: 120px;
+  min-width: 120px;
+  flex: none;
+  text-align: left;
   padding-left: 15px;
 }
 
 .category-column,
 .price-table th.category-column,
 .price-table td.category-column {
-  flex: 1;
-  justify-content: flex-start;
-  padding-right: 15px;
+  width: 500px;
+  min-width: 500px;
+  flex: none;
+  text-align: left;
+  padding-right: 20px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 300px;
 }
 
 .photos-column,
 .price-table th.photos-column,
 .price-table td.photos-column {
-  flex: 0 0 80px;
-  justify-content: center;
+  width: 120px;
+  min-width: 120px;
+  flex: none;
+  text-align: center;
+  padding: 0 15px;
 }
 
 .qbitem-column,
 .price-table th.qbitem-column,
 .price-table td.qbitem-column {
-  flex: 0 0 180px;
-  justify-content: center;
+  width: 220px;
+  min-width: 220px;
+  flex: none;
+  text-align: center;
+  padding: 0 15px;
 }
 
 .price-column,
 .price-table th.price-column,
 .price-table td.price-column {
-  flex: 0 0 150px;
-  justify-content: center;
+  width: 200px;
+  min-width: 200px;
+  flex: none;
+  text-align: center;
+  padding: 0 15px;
 }
 
 .qbitem-display {
