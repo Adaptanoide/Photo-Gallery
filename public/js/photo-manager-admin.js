@@ -3183,7 +3183,7 @@ const photoManager = {
   toggleMenu(folderId, event) {
     event.stopPropagation();
 
-    // Fechar todos os outros menus
+    // Fechar todos os outros menus e mostrar todos os 3 pontos
     document.querySelectorAll('.action-menu').forEach(menu => {
       if (menu.id !== `menu-${folderId}`) {
         menu.style.display = 'none';
@@ -3191,9 +3191,21 @@ const photoManager = {
       }
     });
 
+    // Mostrar todos os 3 pontos novamente
+    document.querySelectorAll('.menu-trigger').forEach(trigger => {
+      trigger.style.visibility = 'visible';
+    });
+
     const menu = document.getElementById(`menu-${folderId}`);
 
     if (menu.style.display === 'none' || menu.style.display === '') {
+      // Esconder TODOS os outros 3 pontos
+      document.querySelectorAll('.menu-trigger').forEach(trigger => {
+        if (trigger.onclick.toString().indexOf(folderId) === -1) {
+          trigger.style.visibility = 'hidden';
+        }
+      });
+
       // Mostrar menu temporariamente para calcular posição
       menu.style.display = 'block';
       menu.style.visibility = 'hidden';
@@ -3214,6 +3226,11 @@ const photoManager = {
     } else {
       menu.style.display = 'none';
       menu.classList.remove('menu-up');
+
+      // Mostrar todos os 3 pontos novamente
+      document.querySelectorAll('.menu-trigger').forEach(trigger => {
+        trigger.style.visibility = 'visible';
+      });
     }
   },
 
@@ -3221,6 +3238,12 @@ const photoManager = {
   closeAllMenus() {
     document.querySelectorAll('.action-menu').forEach(menu => {
       menu.style.display = 'none';
+      menu.classList.remove('menu-up');
+    });
+
+    // Mostrar todos os 3 pontos novamente
+    document.querySelectorAll('.menu-trigger').forEach(trigger => {
+      trigger.style.visibility = 'visible';
     });
   },
 
