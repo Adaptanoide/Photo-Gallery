@@ -339,7 +339,7 @@
 
 /* Botões de ação - ALINHADOS À DIREITA COM ESPAÇAMENTO */
 .action-btn {
-  background: var(--color-gold);
+  background: #e9e8e4;
   color: var(--color-dark);
   border: none;
   padding: 6px 14px;
@@ -362,7 +362,7 @@
 }
 
 .edit-price-btn {
-  background: var(--color-gold);
+  background: #e9e8e4;
 }
 
 .edit-price-btn:hover {
@@ -781,7 +781,7 @@
 
 /* Nome único da categoria - layout melhorado */
 .category-full-name {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: #333;
   line-height: 1.4;
