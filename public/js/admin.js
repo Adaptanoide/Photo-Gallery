@@ -506,6 +506,8 @@ let currentCustomerName = '';
 let categoryAccessData = { categoryAccess: [] };
 let allCategories = [];
 let categoryPrices = {};
+let qbItemData = {};
+
 
 
 // Função para abrir o modal de edição de acesso
@@ -549,7 +551,7 @@ async function loadCustomerCategoryData(code) {
     const qbItemResponse = await fetch('/api/admin/categories/prices')
       .then(response => response.json());
 
-    const qbItemData = {};
+    qbItemData = {};
     if (qbItemResponse.success && qbItemResponse.prices) {
       qbItemResponse.prices.forEach(item => {
         if (item.qbItem) {
