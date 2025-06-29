@@ -112,7 +112,6 @@
 .price-table thead tr {
   display: flex;
   width: 100%;
-  justify-content: space-between;
   align-items: center;
 }
 
@@ -170,10 +169,7 @@
 .price-table tbody tr {
   display: flex;
   width: 100%;
-  justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.15s ease;
 }
 
 .price-table tbody tr:hover {
@@ -209,53 +205,53 @@
   border-right: none;
 }
 
-/* LARGURAS IDÊNTICAS PARA TH E TD - ALINHAMENTO PERFEITO */
-.checkbox-column {
-  flex: 0 0 40px;
-  justify-content: center;
+/* Larguras fixas e alinhamento perfeito */
+.checkbox-column,
+.price-table th.checkbox-column,
+.price-table td.checkbox-column {
+  flex: 0 0 140px;
+  justify-content: flex-start;
+  padding-left: 15px;
 }
 
-.category-column {
-  flex: 1;
-  min-width: 350px;
-  max-width: none;
+.category-column,
+.price-table th.category-column,
+.price-table td.category-column {
+  flex: 0 0 450px;
+  justify-content: flex-start;
   padding-right: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.photos-column {
-  flex: 0 0 120px;
+.photos-column,
+.price-table th.photos-column,
+.price-table td.photos-column {
+  flex: 0 0 100px;
   justify-content: center;
 }
 
-.price-column {
-  flex: 0 0 150px;
-  justify-content: flex-end;
-}
-
-.actions-column {
-  flex: 0 0 160px;
-  justify-content: flex-end;
-  padding-right: 10px !important;
-}
-
-/* Nova coluna QB Item */
-.qbitem-column {
-  flex: 0 0 120px;
-  justify-content: center;
-}
-
+.qbitem-column,
 .price-table th.qbitem-column,
 .price-table td.qbitem-column {
-  flex: 0 0 120px;
+  flex: 0 0 200px;
   justify-content: center;
 }
 
-/* Estilos QB Item */
+.price-column,
+.price-table th.price-column,
+.price-table td.price-column {
+  flex: 1;
+  justify-content: center;
+  min-width: 150px;
+}
+
 .qbitem-display {
   font-weight: 600;
   color: #333;
-  font-size: 14px;
-  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .qbitem-input {
@@ -293,39 +289,6 @@
 
 .save-qb-btn:hover {
   background: #218838 !important;
-}
-
-/* GARANTIR que TH e TD tenham EXATAMENTE as mesmas dimensões */
-.price-table th.checkbox-column,
-.price-table td.checkbox-column {
-  flex: 0 0 60px;
-  justify-content: center;
-}
-
-.price-table th.category-column,
-.price-table td.category-column {
-  flex: 1;
-  min-width: 350px;
-  padding-right: 15px;
-}
-
-.price-table th.photos-column,
-.price-table td.photos-column {
-  flex: 0 0 120px;
-  justify-content: center;
-}
-
-.price-table th.price-column,
-.price-table td.price-column {
-  flex: 0 0 150px;
-  justify-content: center;
-}
-
-.price-table th.actions-column,
-.price-table td.actions-column {
-  flex: 0 0 160px;
-  justify-content: center;
-  padding-right: 10px !important;
 }
 
 /* Checkboxes */
