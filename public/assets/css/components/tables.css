@@ -22,7 +22,7 @@ th {
 .price-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  /*table-layout: fixed;*/
 }
 
 .price-table th {
@@ -53,7 +53,7 @@ th {
   vertical-align: middle;
 }
 
-/* Definição de larguras de coluna */
+/* Definição de larguras de coluna 
 .price-table th:first-child,
 .price-table td:first-child {
   width: 40px;
@@ -82,7 +82,7 @@ th {
 .price-table td:last-child {
   width: 200px;
   text-align: center;
-}
+}*/
 
 /* Tabela de acesso a categorias */
 .category-access-table {
