@@ -170,6 +170,7 @@ exports.getCategoryPrices = async function (req, res) {
         price: price.price,
         name: price.name,
         path: price.path || '',
+        qbItem: price.qbItem || null,
         updatedAt: price.updatedAt
       }))
     });
