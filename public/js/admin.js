@@ -690,17 +690,16 @@ function renderCategoryAccessTable() {
           <div class="default-price">$${defaultPrice.toFixed(2)}</div>
         </td>
         <td>
-          <input type="number" class="price-input" value="${access.customPrice !== null ? access.customPrice : ''}" 
+          <input type="number" class="price-input" value="${access.customPrice != null ? access.customPrice : ''}"
             placeholder="Custom price" step="0.01" min="0"
             onchange="updateCustomPrice('${categoryId}', this.value)">
         </td>
         <td>
-          <input type="number" class="quantity-input" value="${access.minQuantityForDiscount !== null ? access.minQuantityForDiscount : ''}" 
-            placeholder="Min qty" step="1" min="1"
+          <input type="number" class="quantity-input" value="${access.minQuantityForDiscount != null ? access.minQuantityForDiscount : ''}"
             onchange="updateMinQuantity('${categoryId}', this.value)">
         </td>
         <td>
-          <input type="number" class="discount-input" value="${access.discountPercentage !== null ? access.discountPercentage : ''}" 
+          <input type="number" class="discount-input" value="${access.discountPercentage != null ? access.discountPercentage : ''}"
             placeholder="Discount %" step="0.1" min="0" max="100"
             onchange="updateDiscountPercentage('${categoryId}', this.value)">
         </td>
