@@ -210,8 +210,8 @@ const photoManager = {
       const adminFolders = ['Waiting Payment', 'Sold'];
       const isAdminFolder = adminFolders.includes(folder.name);
 
-      // Obter QB Item para esta pasta
-      const qbItem = this.qbItemData[folder.id] || 'Not set';
+      // Obter QB Item para esta pasta (verificação defensiva)
+      const qbItem = (this.qbItemData && this.qbItemData[folder.id]) || 'Not set';
       const tooltipInfo = `QB Item: ${qbItem} | Photos: ${folder.fileCount || 0}`;
 
       folderDiv.innerHTML = `
