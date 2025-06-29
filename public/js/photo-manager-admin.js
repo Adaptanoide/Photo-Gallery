@@ -28,6 +28,13 @@ const photoManager = {
 
       // NOVO: Inicializar pesquisa
       this.setupAdminSearch();
+
+      // NOVO: Event listener para fechar menus ao clicar fora
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.folder-actions')) {
+          this.closeAllMenus();
+        }
+      });
     }
   },
 
@@ -225,18 +232,25 @@ const photoManager = {
         </button>
       </span>
       ${folder.isLeaf ? `
-      <div class="folder-actions">
-        <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
-        ${!isAdminFolder ? `
-          <button class="folder-action-btn rename-btn" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Rename Folder">✏️ Rename</button>
-          <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-        ` : ''}
+        <div class="folder-actions">
+          <button class="menu-trigger" onclick="photoManager.toggleMenu('${folder.id}', event)" title="More actions">⋮</button>
+          <div class="action-menu" id="menu-${folder.id}" style="display: none;">
+            <div class="menu-item" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">${qbItem !== 'Not set' ? '✏️ Edit QB' : '📝 Set QB'}</div>
+            <div class="menu-item" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" >🔺 Upload</div>
+            ${!isAdminFolder ? `
+              <div class="menu-item" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">✏️ Rename</div>
+              <div class="menu-item" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">🗑️ Delete</div>
+            ` : ''}
+          </div>
         </div>
       ` : `
         <div class="folder-actions">
-          ${!isAdminFolder ? `
-            <button class="folder-action-btn delete-btn" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Delete Folder">🗑️</button>
-          ` : ''}
+          <button class="menu-trigger" onclick="photoManager.toggleMenu('${folder.id}', event)" title="More actions">⋮</button>
+          <div class="action-menu" id="menu-${folder.id}" style="display: none;">
+            ${!isAdminFolder ? `
+              <div class="menu-item" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">🗑️ Delete</div>
+            ` : ''}
+          </div>
         </div>
       `}
     `;
@@ -3100,18 +3114,18 @@ const photoManager = {
   // Editar QB Item de uma categoria
   editQBItem(folderId, folderName) {
     console.log(`📋 Edit QB Item for: ${folderName} (${folderId})`);
-    
+
     // Obter QB Item atual
     const currentQB = (this.qbItemData && this.qbItemData[folderId]) || '';
-    
+
     // Prompt simples para editar
     const newQB = prompt(`Edit QB Item for "${folderName}"\n\nCurrent: ${currentQB || 'Not set'}`, currentQB);
-    
+
     // Se cancelou ou não mudou, não fazer nada
     if (newQB === null || newQB === currentQB) {
       return;
     }
-    
+
     // Salvar novo QB Item
     this.saveQBItem(folderId, folderName, newQB.trim().toUpperCase());
   },
@@ -3120,23 +3134,23 @@ const photoManager = {
   async saveQBItem(folderId, folderName, qbItem) {
     try {
       console.log(`💾 Saving QB Item: ${qbItem} for ${folderName}`);
-      
+
       const response = await fetch(`/api/admin/categories/${folderId}/qbitem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ qbItem: qbItem || null })
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         // Atualizar cache local
         if (!this.qbItemData) this.qbItemData = {};
         this.qbItemData[folderId] = result.qbItem;
-        
+
         // Atualizar tooltip
         this.updateFolderTooltip(folderId);
-        
+
         showToast(`✅ QB Item updated: ${result.qbItem || 'Removed'}`, 'success');
       } else {
         showToast(`❌ Error: ${result.message}`, 'error');
@@ -3155,6 +3169,33 @@ const photoManager = {
       const photos = folderElement.querySelector('.folder-count')?.textContent || '0 photos';
       folderElement.title = `QB Item: ${qbItem} | ${photos}`;
     }
+  },
+
+  // Toggle menu dropdown
+  toggleMenu(folderId, event) {
+    event.stopPropagation(); // Evita que clique na pasta
+
+    // Fechar todos os outros menus
+    document.querySelectorAll('.action-menu').forEach(menu => {
+      if (menu.id !== `menu-${folderId}`) {
+        menu.style.display = 'none';
+      }
+    });
+
+    // Toggle do menu atual
+    const menu = document.getElementById(`menu-${folderId}`);
+    if (menu.style.display === 'none' || menu.style.display === '') {
+      menu.style.display = 'block';
+    } else {
+      menu.style.display = 'none';
+    }
+  },
+
+  // Fechar menus ao clicar fora
+  closeAllMenus() {
+    document.querySelectorAll('.action-menu').forEach(menu => {
+      menu.style.display = 'none';
+    });
   },
 
 };
