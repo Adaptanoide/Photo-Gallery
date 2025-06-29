@@ -187,7 +187,7 @@ const photoManager = {
     }));
   },
 
-  renderFolderTree(folders, container = null, level = 0) {
+renderFolderTree(folders, container = null, level = 0) {
     if (!container) {
       container = document.getElementById('folder-tree');
       container.innerHTML = '';
@@ -202,7 +202,6 @@ const photoManager = {
       const folderDiv = document.createElement('div');
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
-      folderDiv.title = tooltipInfo;
 
       const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
@@ -213,6 +212,9 @@ const photoManager = {
       // Obter QB Item para esta pasta (verificação defensiva)
       const qbItem = (this.qbItemData && this.qbItemData[folder.id]) || 'Not set';
       const tooltipInfo = `QB Item: ${qbItem} | Photos: ${folder.fileCount || 0}`;
+      
+      // Adicionar tooltip DEPOIS de definir tooltipInfo
+      folderDiv.title = tooltipInfo;
 
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
