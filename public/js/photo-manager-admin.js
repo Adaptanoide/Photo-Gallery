@@ -3183,7 +3183,7 @@ const photoManager = {
   toggleMenu(folderId, event) {
     event.stopPropagation();
 
-    // Fechar todos os outros menus e mostrar todos os 3 pontos
+    // Fechar todos os outros menus
     document.querySelectorAll('.action-menu').forEach(menu => {
       if (menu.id !== `menu-${folderId}`) {
         menu.style.display = 'none';
@@ -3191,31 +3191,27 @@ const photoManager = {
       }
     });
 
-    // Mostrar todos os 3 pontos novamente
-    document.querySelectorAll('.menu-trigger').forEach(trigger => {
-      trigger.style.visibility = 'visible';
-    });
-
     const menu = document.getElementById(`menu-${folderId}`);
+    const trigger = event.target;
 
     if (menu.style.display === 'none' || menu.style.display === '') {
-      // Esconder TODOS os outros 3 pontos
-      document.querySelectorAll('.menu-trigger').forEach(trigger => {
-        if (trigger.onclick.toString().indexOf(folderId) === -1) {
-          trigger.style.visibility = 'hidden';
-        }
-      });
+      // Calcular posição do trigger
+      const triggerRect = trigger.getBoundingClientRect();
 
-      // Mostrar menu temporariamente para calcular posição
+      // Posicionar menu inicialmente
+      menu.style.left = (triggerRect.right - 120) + 'px'; // 120px = largura do menu
+      menu.style.top = (triggerRect.bottom + 5) + 'px';
+
+      // Mostrar menu temporariamente para calcular se sai da tela
       menu.style.display = 'block';
       menu.style.visibility = 'hidden';
 
-      // Calcular se menu sai da tela
-      const rect = menu.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
       // Se menu sai da parte inferior, abrir para cima
-      if (rect.bottom > windowHeight - 20) {
+      if (menuRect.bottom > windowHeight - 20) {
+        menu.style.top = (triggerRect.top - menuRect.height - 5) + 'px';
         menu.classList.add('menu-up');
       } else {
         menu.classList.remove('menu-up');
@@ -3226,11 +3222,6 @@ const photoManager = {
     } else {
       menu.style.display = 'none';
       menu.classList.remove('menu-up');
-
-      // Mostrar todos os 3 pontos novamente
-      document.querySelectorAll('.menu-trigger').forEach(trigger => {
-        trigger.style.visibility = 'visible';
-      });
     }
   },
 
@@ -3239,11 +3230,6 @@ const photoManager = {
     document.querySelectorAll('.action-menu').forEach(menu => {
       menu.style.display = 'none';
       menu.classList.remove('menu-up');
-    });
-
-    // Mostrar todos os 3 pontos novamente
-    document.querySelectorAll('.menu-trigger').forEach(trigger => {
-      trigger.style.visibility = 'visible';
     });
   },
 
