@@ -545,6 +545,19 @@ async function loadCustomerCategoryData(code) {
 
     allCategories = leafFoldersResponse.folders || [];
 
+    // Carregar dados QB Item do Price Management
+    const qbItemResponse = await fetch('/api/admin/categories/prices')
+      .then(response => response.json());
+
+    const qbItemData = {};
+    if (qbItemResponse.success && qbItemResponse.prices) {
+      qbItemResponse.prices.forEach(item => {
+        if (item.qbItem) {
+          qbItemData[item.folderId] = item.qbItem;
+        }
+      });
+    }
+
     // Carregar preços padrão das categorias
     const pricesResponse = await apiClient.getCategoryPrices();
     if (pricesResponse.success) {
@@ -624,8 +637,7 @@ function renderCategoryAccessTable() {
   const tableBody = document.getElementById('category-access-list');
 
   if (allCategories.length === 0) {
-    tableBody.innerHTML = '<tr><td colspan="7" class="loading-text">No categories found</td></tr>';
-    return;
+    tableBody.innerHTML = '<tr><td colspan="8" class="loading-text">No categories found</td></tr>'; return;
   }
 
   let html = '';
@@ -640,7 +652,8 @@ function renderCategoryAccessTable() {
   allCategories.forEach(category => {
     const categoryId = category.id;
     const categoryName = createDisplayName(category); const fileCount = category.fileCount || 0;
-
+    // Obter QB Item
+    const qbItem = qbItemData[categoryId] || '-';
     // Obter preço padrão
     const defaultPrice = categoryPrices[categoryId] ? categoryPrices[categoryId].price || 0 : 0;
 
@@ -664,6 +677,9 @@ function renderCategoryAccessTable() {
         </td>
         <td>
           <div class="category-name">${categoryName}</div>
+        </td>
+        <td style="text-align: center; font-weight: 600;">
+          ${qbItem}
         </td>
         <td class="file-count">
           ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'}
