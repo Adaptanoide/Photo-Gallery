@@ -205,7 +205,7 @@
   border-right: none;
 }
 
-/* Larguras fixas e alinhamento perfeito */
+/* Larguras equilibradas para distribuição perfeita */
 .checkbox-column,
 .price-table th.checkbox-column,
 .price-table td.checkbox-column {
@@ -217,7 +217,7 @@
 .category-column,
 .price-table th.category-column,
 .price-table td.category-column {
-  flex: 0 0 450px;
+  flex: 0 0 600px;
   justify-content: flex-start;
   padding-right: 15px;
   white-space: nowrap;
@@ -228,23 +228,22 @@
 .photos-column,
 .price-table th.photos-column,
 .price-table td.photos-column {
-  flex: 0 0 100px;
+  flex: 0 0 120px;
   justify-content: center;
 }
 
 .qbitem-column,
 .price-table th.qbitem-column,
 .price-table td.qbitem-column {
-  flex: 0 0 200px;
+  flex: 0 0 220px;
   justify-content: center;
 }
 
 .price-column,
 .price-table th.price-column,
 .price-table td.price-column {
-  flex: 1;
+  flex: 0 0 200px;
   justify-content: center;
-  min-width: 150px;
 }
 
 .qbitem-display {
