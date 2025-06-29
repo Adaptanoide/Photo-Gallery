@@ -214,18 +214,16 @@ const photoManager = {
       const tooltipInfo = `QB Item: ${qbItem} | Photos: ${folder.fileCount || 0}`;
 
       // Adicionar tooltip DEPOIS de definir tooltipInfo
-      folderDiv.title = tooltipInfo;
-
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
       <span class="folder-name">${folder.name}</span>
+      <span class="folder-count">${photoCount}</span>
       <span class="folder-qb-info">
         <span class="qb-code">${qbItem !== 'Not set' ? qbItem : '-'}</span>
         <button class="qb-edit-btn" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Edit QB Item">
           ${qbItem !== 'Not set' ? 'Edit QB' : 'Set QB'}
         </button>
       </span>
-      <span class="folder-count">${photoCount}</span>
       ${folder.isLeaf ? `
       <div class="folder-actions">
         <button class="folder-action-btn upload-btn" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" title="Upload Photos">🔺 Upload</button>
