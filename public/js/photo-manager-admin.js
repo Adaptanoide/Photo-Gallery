@@ -234,10 +234,15 @@ const photoManager = {
       const qbItem = (this.qbItemData && this.qbItemData[folder.id]) || 'Not set';
       const tooltipInfo = `QB Item: ${qbItem} | Photos: ${folder.fileCount || 0}`;
 
+      // NOVA LÓGICA: Calcular nome para exibição
+      const isLeafFolder = !folder.children || folder.children.length === 0;
+      const hasFullPath = folder.folder && folder.folder.path;
+      const displayName = (isLeafFolder && hasFullPath) ? folder.folder.path : folder.name;
+
       // Adicionar tooltip DEPOIS de definir tooltipInfo
       folderDiv.innerHTML = `
         <span class="folder-icon">${icon}</span>
-        <span class="folder-name">${folder.name}</span>
+        <span class="folder-name">${displayName}</span>
         <span class="folder-count">${photoCount}</span>
         <span class="folder-qb-info">
           <span class="qb-code">${qbItem !== 'Not set' ? qbItem : '-'}</span>
