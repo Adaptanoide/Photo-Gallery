@@ -315,14 +315,14 @@ function filterPriceCategories() {
       console.log(`   Fotos: "${photos}"`);
     }
 
-    // Buscar em: nome, QB item, número de fotos
+    // VERSÃO COM !IMPORTANT:
     if (folderName.includes(filterValue) ||
       qbItem.includes(filterValue) ||
       photos.includes(filterValue)) {
-      row.style.display = '';
+      row.style.setProperty('display', 'table-row', 'important');
       displayedCount++;
     } else {
-      row.style.display = 'none';
+      row.style.setProperty('display', 'none', 'important');
     }
   });
 
