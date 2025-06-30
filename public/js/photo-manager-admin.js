@@ -242,14 +242,6 @@ const photoManager = {
       ${folder.isLeaf ? `
         <div class="folder-actions">
           <button class="menu-trigger" onclick="photoManager.toggleMenu('${folder.id}', event)" title="More actions">⋮</button>
-          <div class="action-menu" id="menu-${folder.id}" style="display: none;">
-            <div class="menu-item" onclick="photoManager.editQBItem('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">${qbItem !== 'Not set' ? '✏️ Edit QB' : '📝 Set QB'}</div>
-            <div class="menu-item" onclick="photoManager.openUploadModalForFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')" >🔺 Upload</div>
-            ${!isAdminFolder ? `
-              <div class="menu-item" onclick="photoManager.confirmRenameFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">✏️ Rename</div>
-              <div class="menu-item" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">🗑️ Delete</div>
-            ` : ''}
-          </div>
         </div>
       ` : `
         <div class="folder-actions">
@@ -3184,45 +3176,49 @@ const photoManager = {
     event.stopPropagation();
 
     // Fechar todos os outros menus
-    document.querySelectorAll('.action-menu').forEach(menu => {
-      if (menu.id !== `menu-${folderId}`) {
-        menu.style.display = 'none';
-        menu.classList.remove('menu-up');
-      }
+    document.querySelectorAll('.floating-menu').forEach(menu => {
+      menu.remove();
     });
 
-    const menu = document.getElementById(`menu-${folderId}`);
+    const trigger = event.target;
+    const triggerRect = trigger.getBoundingClientRect();
 
-    if (menu.style.display === 'none' || menu.style.display === '') {
-      // Mostrar menu temporariamente para calcular posição
-      menu.style.display = 'block';
-      menu.style.visibility = 'hidden';
+    // Criar menu flutuante
+    const menu = document.createElement('div');
+    menu.className = 'floating-menu';
+    menu.innerHTML = `
+      <div class="menu-item" onclick="photoManager.editQBItem('${folderId}', 'folder'); photoManager.closeFloatingMenu();">✏️ Edit QB</div>
+      <div class="menu-item" onclick="photoManager.openUploadModalForFolder('${folderId}', 'folder'); photoManager.closeFloatingMenu();">🔺 Upload</div>
+      <div class="menu-item" onclick="photoManager.confirmRenameFolder('${folderId}', 'folder'); photoManager.closeFloatingMenu();">✏️ Rename</div>
+      <div class="menu-item" onclick="photoManager.confirmDeleteFolder('${folderId}', 'folder'); photoManager.closeFloatingMenu();">🗑️ Delete</div>
+    `;
 
-      // Calcular se menu sai da tela
-      const rect = menu.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
+    // Posicionar no body
+    document.body.appendChild(menu);
 
-      // Se menu sai da parte inferior, abrir para cima
-      if (rect.bottom > windowHeight - 20) {
-        menu.classList.add('menu-up');
-      } else {
-        menu.classList.remove('menu-up');
-      }
+    // Calcular posição
+    const menuHeight = 160; // altura aproximada do menu
+    let top = triggerRect.bottom + 5;
 
-      // Tornar visível
-      menu.style.visibility = 'visible';
-    } else {
-      menu.style.display = 'none';
-      menu.classList.remove('menu-up');
+    // Se sai da tela, abrir para cima
+    if (top + menuHeight > window.innerHeight) {
+      top = triggerRect.top - menuHeight - 5;
     }
+
+    menu.style.left = (triggerRect.right - 120) + 'px';
+    menu.style.top = top + 'px';
+  },
+
+  // Fechar menu flutuante
+  closeFloatingMenu() {
+    document.querySelectorAll('.floating-menu').forEach(menu => {
+      menu.remove();
+    });
   },
 
   // Fechar menus ao clicar fora
   closeAllMenus() {
-    document.querySelectorAll('.action-menu').forEach(menu => {
-      menu.style.display = 'none';
-      menu.classList.remove('menu-up');
-    });
+    this.closeFloatingMenu();
   },
 
 };

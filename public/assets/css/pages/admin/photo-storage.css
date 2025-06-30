@@ -1202,3 +1202,14 @@
 .folder-count {
   z-index: 1;             /* Z-index baixo para todos os elementos */
 }
+
+.floating-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  z-index: 999999999;
+  min-width: 120px;
+  overflow: hidden;
+}
