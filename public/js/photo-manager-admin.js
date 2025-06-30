@@ -3018,12 +3018,18 @@ const photoManager = {
 
             if (photoId.toLowerCase().includes(searchLower) ||
               photoName.toLowerCase().includes(searchLower)) {
+
+              // Obter informações completas da categoria
+              const categoryInfo = this.getFullCategoryName(folder, { includeQB: true });
+
               results.push({
                 type: 'photo',
                 photoId: photoId,
                 photoName: photoName,
                 categoryId: folder.id,
-                categoryName: folder.name
+                categoryName: categoryInfo.name,
+                qbItem: categoryInfo.qbItem || null,
+                hasFullPath: categoryInfo.hasPath
               });
             }
           });
@@ -3126,7 +3132,7 @@ const photoManager = {
         html += `
           <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="photo">
             <div class="search-result-photo">📸 ${result.photoName}</div>
-            <div class="search-result-category">in ${result.categoryName}</div>
+            <div class="search-result-category">in ${result.categoryName}${result.qbItem ? ` | QB: ${result.qbItem}` : ''}</div>
           </div>
         `;
       }
