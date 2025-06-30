@@ -3192,26 +3192,18 @@ const photoManager = {
     });
 
     const menu = document.getElementById(`menu-${folderId}`);
-    const trigger = event.target;
 
     if (menu.style.display === 'none' || menu.style.display === '') {
-      // Calcular posição do trigger
-      const triggerRect = trigger.getBoundingClientRect();
-
-      // Posicionar menu inicialmente
-      menu.style.left = (triggerRect.right - 120) + 'px'; // 120px = largura do menu
-      menu.style.top = (triggerRect.bottom + 5) + 'px';
-
-      // Mostrar menu temporariamente para calcular se sai da tela
+      // Mostrar menu temporariamente para calcular posição
       menu.style.display = 'block';
       menu.style.visibility = 'hidden';
 
-      const menuRect = menu.getBoundingClientRect();
+      // Calcular se menu sai da tela
+      const rect = menu.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
       // Se menu sai da parte inferior, abrir para cima
-      if (menuRect.bottom > windowHeight - 20) {
-        menu.style.top = (triggerRect.top - menuRect.height - 5) + 'px';
+      if (rect.bottom > windowHeight - 20) {
         menu.classList.add('menu-up');
       } else {
         menu.classList.remove('menu-up');
