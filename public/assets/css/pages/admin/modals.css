@@ -77,9 +77,11 @@
 }
 
 .fullscreen-image-container img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  height: auto !important; /* ✅ Sobrescrever reset.css */
+  width: auto !important;
+  object-fit: contain !important;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
