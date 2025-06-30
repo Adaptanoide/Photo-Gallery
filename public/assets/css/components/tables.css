@@ -106,6 +106,19 @@ th {
   padding: 12px 8px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   vertical-align: middle;
+  text-align: left; /* ✅ Adicionar alinhamento */
+}
+
+/* Alinhamento específico para colunas numéricas */
+.category-access-table th:nth-child(3), /* QB Item */
+.category-access-table td:nth-child(3),
+.category-access-table th:nth-child(4), /* Photos */
+.category-access-table td:nth-child(4),
+.category-access-table th:nth-child(5), /* Default Price */
+.category-access-table td:nth-child(5),
+.category-access-table th:nth-child(6), /* Custom Price */
+.category-access-table td:nth-child(6) {
+  text-align: center;
 }
 
 .category-access-table tr:hover {
