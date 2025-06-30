@@ -238,10 +238,13 @@ const photoManager = {
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
         <span class="folder-name">${(() => {
+          console.log(`🔍 RENDER - Folder: ${folder.name}, fileCount: ${folder.fileCount}, hasChildren: ${folder.children && folder.children.length > 0}`);
+          console.log('🔍 FOLDER DATA:', folder);
+          
           const hasChildren = folder.children && folder.children.length > 0;
           const isRealLeaf = !hasChildren;
           const hasPhotos = folder.fileCount && folder.fileCount > 0;
-
+          
           // Só mostrar nome completo se for leaf real E tiver fotos
           if (isRealLeaf && hasPhotos && folder.folder && folder.folder.path) {
             return folder.folder.path;
