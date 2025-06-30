@@ -286,27 +286,6 @@
   box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
-/* Botão QB Item */
-.edit-qb-btn {
-  background: #17a2b8;
-  color: white;
-  margin-right: 4px;
-}
-
-.edit-qb-btn:hover {
-  background: #138496;
-}
-
-.save-qb-btn {
-  background: #28a745 !important;
-  color: white !important;
-  margin-right: 4px;
-}
-
-.save-qb-btn:hover {
-  background: #218838 !important;
-}
-
 /* Checkboxes */
 .category-checkbox,
 #select-all {

@@ -251,14 +251,7 @@ function renderCategoryPriceTable() {
         </td>
         <td class="photos-column">${folder.fileCount || '0'}</td>
         <td class="qbitem-column">
-          <div class="field-container">
-            <span class="qbitem-display">${getQBItem(folder.id)}</span>
-            <input type="text" class="qbitem-input form-control" value="${getQBItem(folder.id)}" style="display: none;" maxlength="10">
-            <button class="action-btn edit-qb-btn" onclick="toggleQBEdit('${folder.id}')">
-              ${getQBItem(folder.id) !== '-' ? 'Edit QB' : 'Set QB'}
-            </button>
-            <button class="action-btn save-qb-btn" onclick="saveQBItem('${folder.id}')" style="display: none;">Save</button>
-          </div>
+          <span class="qbitem-display">${getQBItem(folder.id)}</span>
         </td>
         <td class="price-column">
           <div class="field-container">
@@ -665,71 +658,6 @@ function updateBulkHelpText(type) {
   } else {
     helpText.textContent = 'Enter percentage change (e.g., 10 for +10%, -15 for -15%)';
   }
-}
-
-// Toggle QB Item editing
-function toggleQBEdit(folderId) {
-  const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
-  const qbDisplay = row.querySelector('.qbitem-display');
-  const qbInput = row.querySelector('.qbitem-input');
-  const editBtn = row.querySelector('.edit-qb-btn');
-  const saveBtn = row.querySelector('.save-qb-btn');
-
-  qbDisplay.style.display = 'none';
-  qbInput.style.display = 'block';
-  editBtn.style.display = 'none';
-  saveBtn.style.display = 'inline-block';
-
-  qbInput.focus();
-  qbInput.select();
-}
-
-// Save QB Item
-function saveQBItem(folderId) {
-  const row = document.querySelector(`tr[data-folder-id="${folderId}"]`);
-  const qbInput = row.querySelector('.qbitem-input');
-  const qbValue = qbInput.value.trim().toUpperCase();
-
-  showLoader();
-
-  fetch(`/api/admin/categories/${folderId}/qbitem`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ qbItem: qbValue || null })
-  })
-    .then(response => response.json())
-    .then(result => {
-      hideLoader();
-
-      if (result.success) {
-        showToast('QB Item updated successfully', 'success');
-
-        // Update local data
-        if (!priceManagerCategoryPrices[folderId]) {
-          priceManagerCategoryPrices[folderId] = { folderId: folderId };
-        }
-        priceManagerCategoryPrices[folderId].qbItem = result.qbItem;
-
-        // Update UI
-        const qbDisplay = row.querySelector('.qbitem-display');
-        qbDisplay.textContent = result.qbItem || '-';
-        qbDisplay.style.display = 'block';
-        qbInput.style.display = 'none';
-
-        // Update button text
-        const editBtn = row.querySelector('.edit-qb-btn');
-        editBtn.textContent = result.qbItem ? 'Edit QB' : 'Set QB';
-        editBtn.style.display = 'inline-block';
-
-        row.querySelector('.save-qb-btn').style.display = 'none';
-      } else {
-        showToast('Error updating QB Item: ' + result.message, 'error');
-      }
-    })
-    .catch(error => {
-      hideLoader();
-      showToast('Error updating QB Item: ' + error.message, 'error');
-    });
 }
 
 // Event listeners para o modal
