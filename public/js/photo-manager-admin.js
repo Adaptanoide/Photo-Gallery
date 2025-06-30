@@ -3029,15 +3029,36 @@ const photoManager = {
     return results.slice(0, 20); // Máximo 20 resultados
   },
 
-  // NOVA FUNÇÃO: Buscar categorias recursivamente
+  // NOVA FUNÇÃO: Buscar categorias recursivamente (incluindo QB Items)
   searchCategoriesRecursive(folders, searchTerm, results) {
     folders.forEach(folder => {
+      let matchFound = false;
+      let matchReason = '';
+
+      // 1. Buscar por nome da categoria
       if (folder.name.toLowerCase().includes(searchTerm)) {
+        matchFound = true;
+        matchReason = 'name';
+      }
+
+      // 2. NOVO: Buscar por QB Item
+      if (!matchFound && this.qbItemData && this.qbItemData[folder.id]) {
+        const qbItem = this.qbItemData[folder.id].toLowerCase();
+        if (qbItem.includes(searchTerm)) {
+          matchFound = true;
+          matchReason = 'qb';
+        }
+      }
+
+      // Adicionar resultado se encontrou match
+      if (matchFound) {
         results.push({
           type: 'category',
           categoryId: folder.id,
           categoryName: folder.name,
-          photoCount: folder.fileCount || 0
+          photoCount: folder.fileCount || 0,
+          qbItem: this.qbItemData && this.qbItemData[folder.id] ? this.qbItemData[folder.id] : null,
+          matchReason: matchReason
         });
       }
 
@@ -3061,10 +3082,14 @@ const photoManager = {
 
     results.forEach(result => {
       if (result.type === 'category') {
+        const matchInfo = result.matchReason === 'qb' && result.qbItem ?
+          `QB: ${result.qbItem} | ${result.photoCount} photos` :
+          `${result.photoCount} photos`;
+
         html += `
           <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="category">
             <div class="search-result-photo">📁 ${result.categoryName}</div>
-            <div class="search-result-category">${result.photoCount} photos</div>
+            <div class="search-result-category">${matchInfo}</div>
           </div>
         `;
       } else if (result.type === 'photo') {
