@@ -242,9 +242,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.photos-column { justify-self: start; }
-.qbitem-column { justify-self: start; }
-.price-column { justify-self: start; }
+.photos-column { justify-self: center; }
+.qbitem-column { justify-self: center; }
+.price-column { justify-self: center; }
 
 /* Larguras fixas para evitar movimento dos botões */
 .photos-column {
