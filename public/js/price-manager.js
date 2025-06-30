@@ -290,16 +290,30 @@ function adjustTableHeight() {
   container.style.height = `${Math.max(400, availableHeight)}px`;
 }
 
-// Function to filter categories - ATUALIZADA
+// Function to filter categories - DEBUG VERSION
 function filterCategories() {
+  console.log('🔍 filterCategories chamada!');
+
   const filterValue = document.getElementById('category-filter').value.toLowerCase();
+  console.log('🔤 Valor da busca:', `"${filterValue}"`);
+
   const rows = document.querySelectorAll('#price-table-body tr');
+  console.log('📊 Linhas encontradas:', rows.length);
+
   let displayedCount = 0;
 
-  rows.forEach(row => {
+  rows.forEach((row, index) => {
     const folderName = row.getAttribute('data-folder-name') || '';
     const qbItem = row.querySelector('.qbitem-display')?.textContent.toLowerCase() || '';
     const photos = row.querySelector('.photos-column')?.textContent || '';
+
+    // Log apenas primeiras 2 linhas para debug
+    if (index < 2) {
+      console.log(`📋 Linha ${index}:`);
+      console.log(`   Nome: "${folderName}"`);
+      console.log(`   QB: "${qbItem}"`);
+      console.log(`   Fotos: "${photos}"`);
+    }
 
     // Buscar em: nome, QB item, número de fotos
     if (folderName.includes(filterValue) ||
@@ -311,6 +325,8 @@ function filterCategories() {
       row.style.display = 'none';
     }
   });
+
+  console.log('✅ Resultado: exibindo', displayedCount, 'de', rows.length);
 
   // Atualizar contador no header
   const headerStatsElement = document.getElementById('price-header-stats');
