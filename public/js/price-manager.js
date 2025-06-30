@@ -297,8 +297,14 @@ function filterCategories() {
   let displayedCount = 0;
 
   rows.forEach(row => {
-    const folderName = row.getAttribute('data-folder-name');
-    if (folderName.includes(filterValue)) {
+    const folderName = row.getAttribute('data-folder-name') || '';
+    const qbItem = row.querySelector('.qbitem-display')?.textContent.toLowerCase() || '';
+    const photos = row.querySelector('.photos-column')?.textContent || '';
+
+    // Buscar em: nome, QB item, número de fotos
+    if (folderName.includes(filterValue) ||
+      qbItem.includes(filterValue) ||
+      photos.includes(filterValue)) {
       row.style.display = '';
       displayedCount++;
     } else {
