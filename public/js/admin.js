@@ -663,9 +663,7 @@ function renderCategoryAccessTable() {
     const access = accessMap[categoryId] || {
       categoryId: categoryId,
       enabled: false, // Default é FALSE para categorias não configuradas
-      customPrice: null,
-      minQuantityForDiscount: null,
-      discountPercentage: null
+      customPrice: null
     };
 
     html += `
@@ -693,15 +691,6 @@ function renderCategoryAccessTable() {
           <input type="number" class="price-input" value="${access.customPrice != null ? access.customPrice : ''}"
             placeholder="Custom price" step="0.01" min="0"
             onchange="updateCustomPrice('${categoryId}', this.value)">
-        </td>
-        <td>
-          <input type="number" class="quantity-input" value="${access.minQuantityForDiscount != null ? access.minQuantityForDiscount : ''}"
-            onchange="updateMinQuantity('${categoryId}', this.value)">
-        </td>
-        <td>
-          <input type="number" class="discount-input" value="${access.discountPercentage != null ? access.discountPercentage : ''}"
-            placeholder="Discount %" step="0.1" min="0" max="100"
-            onchange="updateDiscountPercentage('${categoryId}', this.value)">
         </td>
       </tr>
     `;
@@ -754,8 +743,6 @@ function updateCategoryAccess(categoryId, enabled) {
       categoryId: categoryId,
       enabled: enabled,
       customPrice: null,
-      minQuantityForDiscount: null,
-      discountPercentage: null,
       _wasModified: true
     };
     categoryAccessData.categoryAccess.push(newConfig);
@@ -778,56 +765,10 @@ function updateCustomPrice(categoryId, price) {
     categoryAccessData.categoryAccess[accessIndex].customPrice = numPrice;
   } else {
     // Criar nova configuração
-    categoryAccessData.categoryAccess.push({
+categoryAccessData.categoryAccess.push({
       categoryId: categoryId,
       enabled: true,
-      customPrice: numPrice,
-      minQuantityForDiscount: null,
-      discountPercentage: null
-    });
-  }
-}
-
-// Atualizar quantidade mínima para desconto
-function updateMinQuantity(categoryId, quantity) {
-  const numQuantity = quantity === '' ? null : parseInt(quantity);
-
-  // Procurar configuração existente
-  const accessIndex = categoryAccessData.categoryAccess.findIndex(item => item.categoryId === categoryId);
-
-  if (accessIndex >= 0) {
-    // Atualizar configuração existente
-    categoryAccessData.categoryAccess[accessIndex].minQuantityForDiscount = numQuantity;
-  } else {
-    // Criar nova configuração
-    categoryAccessData.categoryAccess.push({
-      categoryId: categoryId,
-      enabled: true,
-      customPrice: null,
-      minQuantityForDiscount: numQuantity,
-      discountPercentage: null
-    });
-  }
-}
-
-// Atualizar porcentagem de desconto
-function updateDiscountPercentage(categoryId, percentage) {
-  const numPercentage = percentage === '' ? null : parseFloat(percentage);
-
-  // Procurar configuração existente
-  const accessIndex = categoryAccessData.categoryAccess.findIndex(item => item.categoryId === categoryId);
-
-  if (accessIndex >= 0) {
-    // Atualizar configuração existente
-    categoryAccessData.categoryAccess[accessIndex].discountPercentage = numPercentage;
-  } else {
-    // Criar nova configuração
-    categoryAccessData.categoryAccess.push({
-      categoryId: categoryId,
-      enabled: true,
-      customPrice: null,
-      minQuantityForDiscount: null,
-      discountPercentage: numPercentage
+      customPrice: numPrice
     });
   }
 }
@@ -901,19 +842,13 @@ async function saveCustomerCategoryAccess() {
         return true;
       }
 
-      // 2. Tem configuração de desconto
-      if (item.minQuantityForDiscount > 0 || item.discountPercentage > 0) {
-        console.log(`✅ Incluindo ${item.categoryId} - tem desconto`);
-        return true;
-      }
-
-      // 3. Foi habilitada/desabilitada AGORA (_wasModified=true)
+      // Foi habilitada/desabilitada AGORA (_wasModified=true)
       if (item._wasModified === true) {
         console.log(`✅ Incluindo ${item.categoryId} - foi modificada agora (enabled=${item.enabled})`);
         return true;
       }
 
-      // 🆕 4. JÁ ESTAVA SALVA ANTERIORMENTE (_isSaved=true)
+      // 🆕 JÁ ESTAVA SALVA ANTERIORMENTE (_isSaved=true)
       if (item._isSaved === true) {
         console.log(`✅ Incluindo ${item.categoryId} - já estava salva (enabled=${item.enabled})`);
         return true;
