@@ -3122,8 +3122,18 @@ const photoManager = {
     this.currentQBFolderId = folderId;
     this.currentQBFolderName = folderName;
 
+    // Obter dados completos da pasta para mostrar caminho completo
+    const folderData = this.findFolderById(folderId);
+    const fullDisplayName = folderData && folderData.path ? folderData.path : folderName;
+
     // Obter QB Item atual (usar sua lógica existente)
     const currentQB = (this.qbItemData && this.qbItemData[folderId]) || '';
+
+    // Atualizar título do modal com categoria completa
+    const modalTitle = document.querySelector('#qb-edit-modal h2');
+    const modalDescription = document.querySelector('#qb-edit-modal p');
+    modalTitle.textContent = 'Edit QB Item';
+    modalDescription.innerHTML = `Setting QB code for:<br><strong style="color: #333;">${fullDisplayName}</strong>`;
 
     // Preencher modal
     document.getElementById('qb-input-field').value = currentQB;
@@ -3268,6 +3278,24 @@ const photoManager = {
 
     // Fechar modal
     this.closeQBModal();
+  },
+
+  // Encontrar pasta por ID na estrutura atual
+  findFolderById(folderId) {
+    const searchInStructure = (folders) => {
+      for (const folder of folders) {
+        if (folder.id === folderId) {
+          return folder;
+        }
+        if (folder.children && folder.children.length > 0) {
+          const found = searchInStructure(folder.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return searchInStructure(this.currentStructure || []);
   },
 
 };
