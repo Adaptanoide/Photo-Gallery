@@ -1043,6 +1043,35 @@
   margin-top: 2px;
 }
 
+/* QB Item destacado nos resultados de busca */
+.qb-highlight {
+  background: linear-gradient(135deg, #d4af37, #b8941f);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  display: inline-block;
+  margin-right: 2px;
+}
+
+.qb-empty {
+  background: #e9ecef;
+  color: #6c757d;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-right: 2px;
+  font-style: italic;
+}
+
 .search-no-results {
   padding: 20px;
   text-align: center;

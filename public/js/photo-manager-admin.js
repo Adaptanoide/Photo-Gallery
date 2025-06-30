@@ -3118,9 +3118,11 @@ const photoManager = {
 
     results.forEach(result => {
       if (result.type === 'category') {
-        const matchInfo = result.matchReason === 'qb' && result.qbItem ?
-          `QB: ${result.qbItem} | ${result.photoCount} photos` :
-          `${result.photoCount} photos`;
+        // SEMPRE mostrar QB quando disponível, independente do tipo de match
+        const qbInfo = result.qbItem ?
+          `<span class="qb-highlight">QB: ${result.qbItem}</span> | ` :
+          `<span class="qb-empty">QB: -</span> | `;
+        const matchInfo = `${qbInfo}${result.photoCount} photos`;
 
         html += `
           <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="category">
@@ -3132,7 +3134,7 @@ const photoManager = {
         html += `
           <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="photo">
             <div class="search-result-photo">📸 ${result.photoName}</div>
-            <div class="search-result-category">in ${result.categoryName}${result.qbItem ? ` | QB: ${result.qbItem}` : ''}</div>
+            <div class="search-result-category">in ${result.categoryName} | ${result.qbItem ? `<span class="qb-highlight">QB: ${result.qbItem}</span>` : `<span class="qb-empty">QB: -</span>`}</div>
           </div>
         `;
       }
