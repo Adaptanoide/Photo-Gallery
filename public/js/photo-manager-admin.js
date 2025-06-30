@@ -3352,6 +3352,138 @@ const photoManager = {
     return searchInStructure(this.currentStructure || []);
   },
 
+  // === UTILITÁRIOS ROBUSTOS PARA BUSCA ===
+
+  // Utilitário: Sanitizar e processar termos de busca
+  sanitizeSearchTerms(searchTerm) {
+    if (!searchTerm || typeof searchTerm !== 'string') {
+      return { original: '', terms: [], isValid: false };
+    }
+
+    const cleanTerm = searchTerm.trim();
+    if (cleanTerm.length < 2) {
+      return { original: cleanTerm, terms: [], isValid: false };
+    }
+
+    // Quebrar por espaços, &, -, _ e filtrar termos vazios
+    const terms = cleanTerm
+      .split(/[\s&\-_]+/)
+      .map(term => term.trim().toLowerCase())
+      .filter(term => term.length > 0);
+
+    return {
+      original: cleanTerm,
+      terms: terms,
+      isValid: terms.length > 0,
+      isSingleTerm: terms.length === 1
+    };
+  },
+
+  // Utilitário: Obter nome completo da categoria com fallbacks robustos
+  getFullCategoryName(folder, options = {}) {
+    const { includeQB = false, logErrors = true } = options;
+
+    try {
+      if (!folder) {
+        if (logErrors) console.warn('🔍 getFullCategoryName: folder is null/undefined');
+        return { name: 'Unknown', source: 'fallback', hasPath: false };
+      }
+
+      // 1. Tentar caminho completo (prioridade)
+      if (folder.folder && folder.folder.path && typeof folder.folder.path === 'string') {
+        const result = {
+          name: folder.folder.path,
+          source: 'fullPath',
+          hasPath: true
+        };
+
+        if (includeQB && this.qbItemData && this.qbItemData[folder.id]) {
+          result.qbItem = this.qbItemData[folder.id];
+          result.nameWithQB = `${result.name} | QB: ${result.qbItem}`;
+        }
+
+        return result;
+      }
+
+      // 2. Fallback para nome simples
+      const simpleName = folder.name || 'Unknown';
+      const result = {
+        name: simpleName,
+        source: 'simpleName',
+        hasPath: false
+      };
+
+      if (includeQB && this.qbItemData && this.qbItemData[folder.id]) {
+        result.qbItem = this.qbItemData[folder.id];
+        result.nameWithQB = `${result.name} | QB: ${result.qbItem}`;
+      }
+
+      return result;
+
+    } catch (error) {
+      if (logErrors) console.error('🔍 getFullCategoryName error:', error);
+      return { name: 'Error', source: 'error', hasPath: false };
+    }
+  },
+
+  // Utilitário: Busca flexível em texto com múltiplos termos
+  isMatchingText(text, searchInfo, options = {}) {
+    const { mode = 'flexible', caseSensitive = false } = options;
+
+    if (!text || !searchInfo.isValid) return false;
+
+    const searchText = caseSensitive ? text : text.toLowerCase();
+    const { terms, original } = searchInfo;
+
+    switch (mode) {
+      case 'exact':
+        return searchText.includes(caseSensitive ? original : original.toLowerCase());
+
+      case 'flexible':
+        // Todos os termos devem estar presentes (ordem não importa)
+        return terms.every(term => searchText.includes(term));
+
+      case 'any':
+        // Pelo menos um termo deve estar presente
+        return terms.some(term => searchText.includes(term));
+
+      default:
+        return searchText.includes(caseSensitive ? original : original.toLowerCase());
+    }
+  },
+
+  // Utilitário: Buscar pasta com validações robustas
+  findFolderSafely(folderId, options = {}) {
+    const { includeContext = true, logErrors = true } = options;
+
+    try {
+      if (!folderId) {
+        if (logErrors) console.warn('🔍 findFolderSafely: folderId is empty');
+        return { folder: null, found: false, error: 'Invalid ID' };
+      }
+
+      const folder = this.findFolderById(folderId);
+
+      if (!folder) {
+        if (logErrors) console.warn(`🔍 findFolderSafely: folder not found for ID: ${folderId}`);
+        return { folder: null, found: false, error: 'Not found' };
+      }
+
+      const result = { folder, found: true };
+
+      if (includeContext) {
+        result.categoryInfo = this.getFullCategoryName(folder, { includeQB: true });
+        result.isLeaf = !folder.children || folder.children.length === 0;
+        result.hasPhotos = folder.fileCount && folder.fileCount > 0;
+      }
+
+      return result;
+
+    } catch (error) {
+      if (logErrors) console.error('🔍 findFolderSafely error:', error);
+      return { folder: null, found: false, error: error.message };
+    }
+  },
 };
 
 
