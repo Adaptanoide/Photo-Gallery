@@ -224,7 +224,7 @@ const photoManager = {
       folderDiv.className = `folder-item ${folder.isLeaf ? 'folder-leaf' : 'folder-branch'}`;
       folderDiv.style.paddingLeft = `${level * 20}px`;
 
-      const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
+      const icon = (!folder.children || folder.children.length === 0) ? '📷' : '📁';
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       const adminFolders = ['Waiting Payment', 'Sold'];
@@ -805,7 +805,7 @@ const photoManager = {
       folderDiv.className = 'move-folder-item';
       folderDiv.style.paddingLeft = `${level * 20}px`;
 
-      const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
+      const icon = (!folder.children || folder.children.length === 0) ? '📷' : '📁';
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       folderDiv.innerHTML = `
@@ -1662,7 +1662,7 @@ const photoManager = {
       folderDiv.className = 'upload-folder-item';
       folderDiv.style.paddingLeft = `${level * 20}px`;
 
-      const icon = folder.isLeaf ? '📂' : (folder.children.length > 0 ? '📁' : '📂');
+      const icon = (!folder.children || folder.children.length === 0) ? '📷' : '📁';
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       folderDiv.innerHTML = `
@@ -2596,7 +2596,7 @@ const photoManager = {
       folderDiv.className = 'parent-folder-item';
       folderDiv.style.paddingLeft = `${(level + 1) * 20}px`;
 
-      const icon = folder.isLeaf ? '📂' : '📁';
+      const icon = (!folder.children || folder.children.length === 0) ? '📷' : '📁';
       const photoCount = folder.isLeaf ? ` (${folder.fileCount || 0} photos)` : '';
 
       folderDiv.innerHTML = `
@@ -3099,7 +3099,7 @@ const photoManager = {
 
         html += `
           <div class="search-result-item" onclick="photoManager.openSearchResult('${result.categoryId}', '${result.categoryName.replace(/'/g, '\\\'')}')" data-type="category">
-            <div class="search-result-photo">📁 ${result.categoryName}</div>
+            <div class="search-result-photo">📷 ${result.categoryName}</div>
             <div class="search-result-category">${matchInfo}</div>
           </div>
         `;
