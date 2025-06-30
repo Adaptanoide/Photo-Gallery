@@ -237,8 +237,10 @@ const photoManager = {
       // Adicionar tooltip DEPOIS de definir tooltipInfo
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
-      <span class="folder-name">${folder.isLeaf && folder.folder && folder.folder.path ? folder.folder.path : folder.name}</span>      <span class="folder-count">${photoCount}</span>
-      <span class="folder-qb-info">
+  w   <span class="folder-name">${(() => {
+          console.log(`🔍 DEBUG - Folder: ${folder.name}, isLeaf: ${folder.isLeaf}, hasChildren: ${folder.children && folder.children.length > 0}, fileCount: ${folder.fileCount}`);
+          return folder.isLeaf && folder.folder && folder.folder.path ? folder.folder.path : folder.name;
+        })()}</span>      <span class="folder-qb-info">
         <span class="qb-code">${qbItem !== 'Not set' ? qbItem : '-'}</span>
       </span>
       ${folder.isLeaf ? `
