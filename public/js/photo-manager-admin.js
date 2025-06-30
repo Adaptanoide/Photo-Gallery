@@ -3188,13 +3188,22 @@ const photoManager = {
     }
   },
 
-  // Atualizar tooltip de uma pasta específica
+  // Atualizar tooltip E interface visual de uma pasta específica
   updateFolderTooltip(folderId) {
     const folderElement = document.querySelector(`[onclick*="${folderId}"]`)?.closest('.folder-item');
     if (folderElement) {
       const qbItem = (this.qbItemData && this.qbItemData[folderId]) || 'Not set';
       const photos = folderElement.querySelector('.folder-count')?.textContent || '0 photos';
+
+      // Atualizar tooltip
       folderElement.title = `QB Item: ${qbItem} | ${photos}`;
+
+      // NOVO: Atualizar interface visual do QB code
+      const qbCodeElement = folderElement.querySelector('.qb-code');
+      if (qbCodeElement) {
+        qbCodeElement.textContent = qbItem !== 'Not set' ? qbItem : '-';
+        console.log(`🔄 Updated QB visual: ${qbItem} for folder ${folderId}`);
+      }
     }
   },
 
