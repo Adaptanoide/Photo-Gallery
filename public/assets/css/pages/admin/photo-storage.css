@@ -1113,16 +1113,17 @@
 }
 
 .action-menu {
-  position: absolute;     /* Volta para absolute */
-  right: 0;              /* ADICIONAR */
-  top: 100%;             /* ADICIONAR */
+  position: absolute;
+  right: 0;
+  top: 100%;
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  z-index: 999999;       /* Ainda maior */
+  z-index: 9999999;        /* 7 dígitos - muito maior */
   min-width: 120px;
   overflow: hidden;
+  isolation: isolate;      /* Isola o stacking context */
 }
 
 .folder-item {
@@ -1193,4 +1194,11 @@
 .header-actions {
   width: 65px;
   text-align: center;
+}
+
+.folder-item:hover,
+.menu-trigger,
+.qb-code,
+.folder-count {
+  z-index: 1;             /* Z-index baixo para todos os elementos */
 }
