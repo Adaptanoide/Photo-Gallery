@@ -264,8 +264,12 @@ const photoManager = {
           if (!e.target.classList.contains('folder-action-btn')) {
             // Adicionar efeito visual de seleção
             this.selectFolder(folder, folderDiv);
+            // Calcular nome completo para o modal
+            const isLeafFolder = !folder.children || folder.children.length === 0;
+            const hasFullPath = folder.folder && folder.folder.path;
+            const modalTitle = (isLeafFolder && hasFullPath) ? folder.folder.path : folder.name;
             // Abrir modal de fotos
-            this.openFolderModal(folder.id, folder.name);
+            this.openFolderModal(folder.id, modalTitle);
           }
         };
       }
