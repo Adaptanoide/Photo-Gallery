@@ -1045,12 +1045,12 @@
 
 /* QB Item destacado nos resultados de busca */
 .qb-highlight {
-  background: linear-gradient(135deg, #d4af37, #b8941f);
+  background: #6f5c45;
   color: white;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 4px;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);

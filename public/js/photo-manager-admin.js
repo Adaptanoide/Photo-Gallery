@@ -631,7 +631,6 @@ const photoManager = {
         <div class="fullscreen-header">
           <h4 id="fullscreen-photo-name">Photo Name</h4>
           <div class="fullscreen-controls">
-            <button class="btn btn-secondary" onclick="photoManager.closeFullscreen()">← Back</button>
             <button class="btn btn-gold" onclick="photoManager.moveSinglePhoto()">📦 Move Photo</button>
             <button class="btn btn-danger" onclick="photoManager.confirmDeleteCurrentPhoto()">🗑️ Delete Photo</button>
             <button class="fullscreen-close" onclick="photoManager.closeFullscreen()">&times;</button>
