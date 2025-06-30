@@ -237,7 +237,7 @@ const photoManager = {
       // Adicionar tooltip DEPOIS de definir tooltipInfo
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
-      <span class="folder-name">${!folder.children || folder.children.length === 0 ? (folder.folder && folder.folder.path ? folder.folder.path : folder.name) : folder.name}</span>
+<span class="folder-name">${folder.name}</span>
       ${folder.isLeaf ? `
         <div class="folder-actions">
           <button class="menu-trigger" onclick="photoManager.toggleMenu('${folder.id}', event)" title="More actions">⋮</button>
