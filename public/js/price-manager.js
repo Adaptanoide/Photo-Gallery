@@ -315,11 +315,11 @@ function filterPriceCategories() {
       console.log(`   Fotos: "${photos}"`);
     }
 
-    // VERSÃO COM !IMPORTANT:
+    // VERSÃO COM GRID CORRETO:
     if (folderName.includes(filterValue) ||
       qbItem.includes(filterValue) ||
       photos.includes(filterValue)) {
-      row.style.setProperty('display', 'table-row', 'important');
+      row.style.setProperty('display', 'grid', 'important');
       displayedCount++;
     } else {
       row.style.setProperty('display', 'none', 'important');
