@@ -17,7 +17,8 @@
 
 .fullscreen-content {
   width: 95%;
-  height: 95%;
+  height: 90vh; /* ✅ Limite fixo em viewport */
+  max-height: 800px; /* ✅ Limite máximo absoluto */
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.05);
