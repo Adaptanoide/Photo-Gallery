@@ -216,7 +216,7 @@ function renderCategoryPriceTable() {
 
   let html = `
     <div class="table-filter-simple">
-      <input type="text" id="category-filter" class="form-control" placeholder="Filter categories..." onkeyup="filterCategories()">
+      <input type="text" id="category-filter" class="form-control" placeholder="Filter categories..." onkeyup="filterPriceCategories()">
     </div>
     
     <div class="price-table-container">
@@ -291,7 +291,7 @@ function adjustTableHeight() {
 }
 
 // Function to filter categories - DEBUG VERSION
-function filterCategories() {
+function filterPriceCategories() {
   console.log('🔍 filterCategories chamada!');
 
   const filterValue = document.getElementById('category-filter').value.toLowerCase();
