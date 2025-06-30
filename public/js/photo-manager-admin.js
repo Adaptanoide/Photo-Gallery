@@ -473,7 +473,9 @@ const photoManager = {
         <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
       </div>
       <div class="bulk-actions">
-        <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>
+        <button class="btn btn-secondary btn-sm" onclick="photoManager.toggleViewMode()" id="view-mode-btn">🖼️ Switch to List</button>
+        <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
+        <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>     
       </div>
     </div>
     <div class="photo-thumbnails-container">
