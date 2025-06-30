@@ -3122,9 +3122,17 @@ const photoManager = {
     this.currentQBFolderId = folderId;
     this.currentQBFolderName = folderName;
 
+    // DEBUG: Verificar dados
+    console.log('🔍 DEBUG - folderId:', folderId);
+    console.log('🔍 DEBUG - folderName:', folderName);
+    console.log('🔍 DEBUG - currentStructure:', this.currentStructure);
+
     // Obter dados completos da pasta para mostrar caminho completo
     const folderData = this.findFolderById(folderId);
+    console.log('🔍 DEBUG - folderData:', folderData);
+
     const fullDisplayName = folderData && folderData.path ? folderData.path : folderName;
+    console.log('🔍 DEBUG - fullDisplayName:', fullDisplayName);
 
     // Obter QB Item atual (usar sua lógica existente)
     const currentQB = (this.qbItemData && this.qbItemData[folderId]) || '';
