@@ -3131,8 +3131,9 @@ const photoManager = {
     const folderData = this.findFolderById(folderId);
     console.log('🔍 DEBUG - folderData:', folderData);
 
-    const fullDisplayName = folderData && folderData.path ? folderData.path : folderName;
-    console.log('🔍 DEBUG - fullDisplayName:', fullDisplayName);
+    const fullDisplayName = (folderData && folderData.folder && folderData.folder.path) ?
+      folderData.folder.path :
+      (folderData && folderData.name) ? folderData.name : folderName; console.log('🔍 DEBUG - fullDisplayName:', fullDisplayName);
 
     // Obter QB Item atual (usar sua lógica existente)
     const currentQB = (this.qbItemData && this.qbItemData[folderId]) || '';
