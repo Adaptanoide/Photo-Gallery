@@ -837,6 +837,28 @@
     </div>
   </div>
 
+  <!-- Modal para editar QB Item -->
+  <div id="qb-edit-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; width: 90%;">
+      <h2>Edit QB Item</h2>
+      <p style="margin-bottom: 20px; color: #666;">Set or update the QB item code for this category.</p>
+
+      <div class="form-group">
+        <label for="qb-input-field">QB Item Code:</label>
+        <input type="text" id="qb-input-field" class="form-control" placeholder="Enter QB code (e.g., 5475BR)"
+          maxlength="20">
+        <div style="margin-top: 8px; font-size: 13px; color: #666;">
+          Current: <span id="qb-current-value">Not set</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px;">
+        <button class="btn btn-secondary" onclick="photoManager.closeQBModal()">Cancel</button>
+        <button class="btn btn-gold" onclick="photoManager.saveQBFromModal()">Save QB Item</button>
+      </div>
+    </div>
+  </div>
+
   <!-- App Scripts -->
   <script src="/js/database-service.js"></script>
   <script src="/js/utils.js"></script>

@@ -1,7 +1,4 @@
-// photo-manager-admin.js - VERSÃO LIMPA SEM ALERTS
-// Removidos: alerts chatos, indicador do topo, texto "processing", proteção de saída
-// Mantido: setinha 📤, funcionalidade de upload, monitoramento
-
+// photo-manager-admin.js
 const photoManager = {
   currentStructure: null,
   selectedFolder: null,
@@ -3119,21 +3116,26 @@ const photoManager = {
 
   // Editar QB Item de uma categoria
   editQBItem(folderId, folderName) {
-    console.log(`📋 Edit QB Item for: ${folderName} (${folderId})`);
+    console.log(`🏷️ Opening QB modal for: ${folderName} (${folderId})`);
 
-    // Obter QB Item atual
+    // Armazenar informações para uso posterior
+    this.currentQBFolderId = folderId;
+    this.currentQBFolderName = folderName;
+
+    // Obter QB Item atual (usar sua lógica existente)
     const currentQB = (this.qbItemData && this.qbItemData[folderId]) || '';
 
-    // Prompt simples para editar
-    const newQB = prompt(`Edit QB Item for "${folderName}"\n\nCurrent: ${currentQB || 'Not set'}`, currentQB);
+    // Preencher modal
+    document.getElementById('qb-input-field').value = currentQB;
+    document.getElementById('qb-current-value').textContent = currentQB || 'Not set';
 
-    // Se cancelou ou não mudou, não fazer nada
-    if (newQB === null || newQB === currentQB) {
-      return;
-    }
+    // Mostrar modal
+    document.getElementById('qb-edit-modal').style.display = 'block';
 
-    // Salvar novo QB Item
-    this.saveQBItem(folderId, folderName, newQB.trim().toUpperCase());
+    // Focar no input
+    setTimeout(() => {
+      document.getElementById('qb-input-field').focus();
+    }, 100);
   },
 
   // Salvar QB Item via API
@@ -3232,6 +3234,40 @@ const photoManager = {
   // Fechar menus ao clicar fora
   closeAllMenus() {
     this.closeFloatingMenu();
+  },
+
+  // Fechar modal QB
+  closeQBModal() {
+    document.getElementById('qb-edit-modal').style.display = 'none';
+    this.currentQBFolderId = null;
+    this.currentQBFolderName = null;
+  },
+
+  // Salvar QB do modal (usa sua função saveQBItem existente)
+  saveQBFromModal() {
+    const newQBValue = document.getElementById('qb-input-field').value.trim().toUpperCase();
+
+    if (!this.currentQBFolderId) {
+      showToast('Error: No folder selected', 'error');
+      return;
+    }
+
+    // Obter QB atual
+    const currentQB = (this.qbItemData && this.qbItemData[this.currentQBFolderId]) || '';
+
+    // Se não mudou, só fechar
+    if (newQBValue === currentQB) {
+      this.closeQBModal();
+      return;
+    }
+
+    console.log(`💾 Saving QB: ${newQBValue} for folder: ${this.currentQBFolderId}`);
+
+    // Usar sua função saveQBItem existente
+    this.saveQBItem(this.currentQBFolderId, this.currentQBFolderName, newQBValue);
+
+    // Fechar modal
+    this.closeQBModal();
   },
 
 };

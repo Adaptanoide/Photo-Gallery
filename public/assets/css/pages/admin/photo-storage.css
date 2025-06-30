@@ -1158,7 +1158,7 @@
 
 .folder-actions {
   position: relative;
-  z-index: 1;            /* ADICIONAR */
+  z-index: 1;
 }
 
 .folder-headers {
@@ -1168,11 +1168,15 @@
   background: #f8f9fa;
   border-bottom: 2px solid #e9ecef;
   font-weight: 600;
-  font-size: 16px;          /* 13px → 15px (maior) */
+  font-size: 16px;
   color: #495057;
   margin-bottom: 5px;
   border-radius: 6px 6px 0 0;
-  gap: 18px;                /* Mesmo gap que folder-item */
+  gap: 18px;
+  position: sticky;     
+  top: 0;             
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
 }
 
 .header-folder {
