@@ -242,9 +242,38 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.photos-column { justify-self: center; }
-.qbitem-column { justify-self: center; }
-.price-column { justify-self: center; }
+.photos-column { justify-self: start; }
+.qbitem-column { justify-self: start; }
+.price-column { justify-self: start; }
+
+/* Larguras fixas para evitar movimento dos botões */
+.photos-column {
+  width: 80px;
+  min-width: 80px;
+}
+
+.qbitem-column {
+  width: 120px;
+  min-width: 120px;
+}
+
+.price-column {
+  width: 180px;
+  min-width: 180px;
+}
+
+/* Container do preço com layout flexível */
+.price-column .field-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.price-column .price-display {
+  width: 70px;
+  text-align: left;
+  font-weight: 600;
+}
 
 /* Remove todas as regras antigas conflitantes */
 .price-table th.checkbox-column,
