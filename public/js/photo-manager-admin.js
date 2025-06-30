@@ -351,8 +351,6 @@ const photoManager = {
           <div class="photo-modal-header">
             <h3 id="modal-folder-title">Folder Name</h3>
             <div class="photo-modal-controls">
-              <button class="btn btn-secondary btn-sm" onclick="photoManager.toggleViewMode()" id="view-mode-btn">🖼️ Switch to Thumbnails</button>
-              <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
               <button class="photo-modal-close" onclick="photoManager.closeFolderModal()">&times;</button>
             </div>
           </div>
@@ -436,6 +434,8 @@ const photoManager = {
         <span class="photo-count"><strong>${photos.length}</strong> photos in this folder</span>
       </div>
       <div class="bulk-actions">
+        <button class="btn btn-secondary btn-sm" onclick="photoManager.toggleViewMode()" id="view-mode-btn">🖼️ Switch to Thumbnails</button>
+        <button class="btn btn-gold btn-sm" onclick="photoManager.moveSelectedPhotos()" id="move-selected-btn" disabled>📦 Move Selected (0)</button>
         <button class="btn btn-danger btn-sm" onclick="photoManager.confirmDeleteSelectedPhotos()" id="delete-selected-btn" disabled>🗑️ Delete Selected (0)</button>
       </div>
     </div>
