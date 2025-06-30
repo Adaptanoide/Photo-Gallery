@@ -29,6 +29,8 @@
 
 /* Pages */
 @import 'pages/admin.css';
+@import 'pages/admin/modals.css';
+@import 'pages/admin/photo-storage.css';
 @import 'pages/login.css';
 @import 'pages/orders.css';
 
