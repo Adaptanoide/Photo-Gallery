@@ -69,11 +69,13 @@
 }
 
 .fullscreen-image-container {
-  flex: 1;
+  height: 70vh; /* ✅ ALTURA FIXA como cliente */
+  width: 95%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  margin: 0 auto; /* ✅ Centralizar */
 }
 
 .fullscreen-image-container img {
