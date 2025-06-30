@@ -237,8 +237,7 @@ const photoManager = {
       // Adicionar tooltip DEPOIS de definir tooltipInfo
       folderDiv.innerHTML = `
       <span class="folder-icon">${icon}</span>
-      <span class="folder-name">${folder.name}</span>
-      <span class="folder-count">${photoCount}</span>
+      <span class="folder-name">${folder.isLeaf && folder.folder && folder.folder.path ? folder.folder.path : folder.name}</span>      <span class="folder-count">${photoCount}</span>
       <span class="folder-qb-info">
         <span class="qb-code">${qbItem !== 'Not set' ? qbItem : '-'}</span>
       </span>
@@ -3029,39 +3028,43 @@ const photoManager = {
     return results.slice(0, 20); // Máximo 20 resultados
   },
 
-  // NOVA FUNÇÃO: Buscar categorias recursivamente (incluindo QB Items)
+  // NOVA FUNÇÃO: Buscar apenas em categorias finais com fotos (incluindo QB Items)
   searchCategoriesRecursive(folders, searchTerm, results) {
     folders.forEach(folder => {
-      let matchFound = false;
-      let matchReason = '';
+      // SÓ BUSCAR EM LEAF FOLDERS COM FOTOS
+      if (folder.isLeaf && folder.fileCount && folder.fileCount > 0) {
+        let matchFound = false;
+        let matchReason = '';
 
-      // 1. Buscar por nome da categoria
-      if (folder.name.toLowerCase().includes(searchTerm)) {
-        matchFound = true;
-        matchReason = 'name';
-      }
-
-      // 2. NOVO: Buscar por QB Item
-      if (!matchFound && this.qbItemData && this.qbItemData[folder.id]) {
-        const qbItem = this.qbItemData[folder.id].toLowerCase();
-        if (qbItem.includes(searchTerm)) {
+        // 1. Buscar por nome da categoria
+        if (folder.name.toLowerCase().includes(searchTerm)) {
           matchFound = true;
-          matchReason = 'qb';
+          matchReason = 'name';
+        }
+
+        // 2. NOVO: Buscar por QB Item
+        if (!matchFound && this.qbItemData && this.qbItemData[folder.id]) {
+          const qbItem = this.qbItemData[folder.id].toLowerCase();
+          if (qbItem.includes(searchTerm)) {
+            matchFound = true;
+            matchReason = 'qb';
+          }
+        }
+
+        // Adicionar resultado se encontrou match
+        if (matchFound) {
+          results.push({
+            type: 'category',
+            categoryId: folder.id,
+            categoryName: folder.folder && folder.folder.path ? folder.folder.path : folder.name,
+            photoCount: folder.fileCount || 0,
+            qbItem: this.qbItemData && this.qbItemData[folder.id] ? this.qbItemData[folder.id] : null,
+            matchReason: matchReason
+          });
         }
       }
 
-      // Adicionar resultado se encontrou match
-      if (matchFound) {
-        results.push({
-          type: 'category',
-          categoryId: folder.id,
-          categoryName: folder.name,
-          photoCount: folder.fileCount || 0,
-          qbItem: this.qbItemData && this.qbItemData[folder.id] ? this.qbItemData[folder.id] : null,
-          matchReason: matchReason
-        });
-      }
-
+      // Continue buscando nos filhos
       if (folder.children && folder.children.length > 0) {
         this.searchCategoriesRecursive(folder.children, searchTerm, results);
       }
