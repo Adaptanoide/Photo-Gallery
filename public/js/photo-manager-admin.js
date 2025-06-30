@@ -3036,40 +3036,59 @@ const photoManager = {
     return results.slice(0, 20); // Máximo 20 resultados
   },
 
-  // NOVA FUNÇÃO: Buscar apenas em categorias finais com fotos (incluindo QB Items)
+  // FUNÇÃO ROBUSTA: Buscar categorias com flexibilidade total
   searchCategoriesRecursive(folders, searchTerm, results) {
+    const searchInfo = this.sanitizeSearchTerms(searchTerm);
+
+    if (!searchInfo.isValid) {
+      console.warn('🔍 Invalid search term:', searchTerm);
+      return;
+    }
+
+    console.log(`🔍 Searching with terms:`, searchInfo.terms);
+
     folders.forEach(folder => {
-      // SÓ BUSCAR EM LEAF FOLDERS COM FOTOS
-      if (folder.isLeaf && folder.fileCount && folder.fileCount > 0) {
-        let matchFound = false;
-        let matchReason = '';
+      try {
+        // SÓ BUSCAR EM LEAF FOLDERS COM FOTOS (mantém lógica original)
+        if (folder.isLeaf && folder.fileCount && folder.fileCount > 0) {
+          let matchFound = false;
+          let matchReason = '';
 
-        // 1. Buscar por nome da categoria
-        if (folder.name.toLowerCase().includes(searchTerm)) {
-          matchFound = true;
-          matchReason = 'name';
-        }
+          // 1. Buscar por nome/caminho da categoria (MELHORADO)
+          const categoryInfo = this.getFullCategoryName(folder);
+          const nameMatch = this.isMatchingText(categoryInfo.name, searchInfo, { mode: 'flexible' });
 
-        // 2. NOVO: Buscar por QB Item
-        if (!matchFound && this.qbItemData && this.qbItemData[folder.id]) {
-          const qbItem = this.qbItemData[folder.id].toLowerCase();
-          if (qbItem.includes(searchTerm)) {
+          if (nameMatch) {
             matchFound = true;
-            matchReason = 'qb';
+            matchReason = categoryInfo.hasPath ? 'fullPath' : 'name';
+          }
+
+          // 2. Buscar por QB Item (mantém lógica original com melhorias)
+          if (!matchFound && this.qbItemData && this.qbItemData[folder.id]) {
+            const qbItem = this.qbItemData[folder.id].toLowerCase();
+            const qbMatch = this.isMatchingText(qbItem, searchInfo, { mode: 'any' });
+
+            if (qbMatch) {
+              matchFound = true;
+              matchReason = 'qb';
+            }
+          }
+
+          // Adicionar resultado se encontrou match
+          if (matchFound) {
+            results.push({
+              type: 'category',
+              categoryId: folder.id,
+              categoryName: categoryInfo.name,
+              photoCount: folder.fileCount || 0,
+              qbItem: this.qbItemData && this.qbItemData[folder.id] ? this.qbItemData[folder.id] : null,
+              matchReason: matchReason,
+              hasFullPath: categoryInfo.hasPath
+            });
           }
         }
-
-        // Adicionar resultado se encontrou match
-        if (matchFound) {
-          results.push({
-            type: 'category',
-            categoryId: folder.id,
-            categoryName: folder.folder && folder.folder.path ? folder.folder.path : folder.name,
-            photoCount: folder.fileCount || 0,
-            qbItem: this.qbItemData && this.qbItemData[folder.id] ? this.qbItemData[folder.id] : null,
-            matchReason: matchReason
-          });
-        }
+      } catch (error) {
+        console.warn(`🔍 Error searching folder ${folder.name}:`, error);
       }
 
       // Continue buscando nos filhos
