@@ -236,23 +236,23 @@ const photoManager = {
 
       // Adicionar tooltip DEPOIS de definir tooltipInfo
       folderDiv.innerHTML = `
-      <span class="folder-icon">${icon}</span>
-<span class="folder-name">${folder.name}</span>
-      ${folder.isLeaf ? `
+        <span class="folder-icon">${icon}</span>
+        <span class="folder-name">${folder.name}</span>
+        <span class="folder-count">${photoCount}</span>
+        <span class="folder-qb-info">
+          <span class="qb-code">${qbItem !== 'Not set' ? qbItem : '-'}</span>
+        </span>
         <div class="folder-actions">
           <button class="menu-trigger" onclick="photoManager.toggleMenu('${folder.id}', event)" title="More actions">⋮</button>
+          ${!folder.isLeaf ? `
+            <div class="action-menu" id="menu-${folder.id}" style="display: none;">
+              ${!isAdminFolder ? `
+                <div class="menu-item" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">🗑️ Delete</div>
+              ` : ''}
+            </div>
+          ` : ''}
         </div>
-      ` : `
-        <div class="folder-actions">
-          <button class="menu-trigger" onclick="photoManager.toggleMenu('${folder.id}', event)" title="More actions">⋮</button>
-          <div class="action-menu" id="menu-${folder.id}" style="display: none;">
-            ${!isAdminFolder ? `
-              <div class="menu-item" onclick="photoManager.confirmDeleteFolder('${folder.id}', '${folder.name.replace(/'/g, '\\\'')}')">🗑️ Delete</div>
-            ` : ''}
-          </div>
-        </div>
-      `}
-    `;
+      `;
 
       if (folder.isLeaf) {
         folderDiv.onclick = (e) => {
