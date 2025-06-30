@@ -35,6 +35,12 @@ const photoManager = {
           this.closeAllMenus();
         }
       });
+
+      // NOVO: Event listener para fechar menu no scroll
+      document.addEventListener('scroll', () => {
+        this.closeFloatingMenu();
+      }, true);
+
     }
   },
 
@@ -3175,10 +3181,16 @@ const photoManager = {
   toggleMenu(folderId, event) {
     event.stopPropagation();
 
-    // Fechar todos os outros menus
-    document.querySelectorAll('.floating-menu').forEach(menu => {
-      menu.remove();
-    });
+    const existingMenu = document.querySelector('.floating-menu');
+
+    // Se já existe um menu aberto para o mesmo folder, fechar
+    if (existingMenu && existingMenu.dataset.folderId === folderId) {
+      this.closeFloatingMenu();
+      return;
+    }
+
+    // Fechar qualquer menu existente
+    this.closeFloatingMenu();
 
     const trigger = event.target;
     const triggerRect = trigger.getBoundingClientRect();
@@ -3186,6 +3198,7 @@ const photoManager = {
     // Criar menu flutuante
     const menu = document.createElement('div');
     menu.className = 'floating-menu';
+    menu.dataset.folderId = folderId; // Marcar qual folder pertence
     menu.innerHTML = `
       <div class="menu-item" onclick="photoManager.editQBItem('${folderId}', 'folder'); photoManager.closeFloatingMenu();">✏️ Edit QB</div>
       <div class="menu-item" onclick="photoManager.openUploadModalForFolder('${folderId}', 'folder'); photoManager.closeFloatingMenu();">🔺 Upload</div>
@@ -3197,7 +3210,7 @@ const photoManager = {
     document.body.appendChild(menu);
 
     // Calcular posição
-    const menuHeight = 160; // altura aproximada do menu
+    const menuHeight = 160;
     let top = triggerRect.bottom + 5;
 
     // Se sai da tela, abrir para cima
