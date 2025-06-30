@@ -130,14 +130,14 @@ th {
 }
 
 .category-access-table .default-price {
-  color: var(--color-taupe);
-  font-size: 0.9em;
+  color: var(--color-dark);
+  font-size: 15px;
 }
 
 .category-access-table .file-count {
   text-align: center;
-  color: var(--color-taupe);
-  font-size: 0.9em;
+  color: var(--color-dark);
+  font-size: 15px;
 }
 
 #category-access-modal .category-access-table th:nth-child(1),
