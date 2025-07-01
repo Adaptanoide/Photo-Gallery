@@ -52,7 +52,7 @@
   display: flex;
   padding: 5px 14px;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   border-radius: 8px;
   border: 1px solid #F9F7ED;
   background: #F9F7ED;
@@ -81,6 +81,48 @@
 
 .left-buttons {
   margin-left: 300px; /* Espaço para não ficar em cima do sidebar */
+}
+
+/* Container do breadcrumb */
+#breadcrumb-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.breadcrumb-welcome {
+  font-style: italic;
+  color: #6c757d;
+}
+
+.breadcrumb-separator {
+  color: #6c757d;
+  margin: 0 4px;
+}
+
+.breadcrumb-link {
+  color: #0066cc;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+  background-color: rgba(0, 102, 204, 0.1);
+  color: #004499;
+}
+
+.breadcrumb-current {
+  color: #495057;
+  font-weight: 600;
+  padding: 4px 8px;
+  background-color: rgba(212, 175, 55, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 #new-help {
