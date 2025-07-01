@@ -78,9 +78,19 @@ function loadCategoriesMenu() {
       specificCategories.forEach((category, index) => {
         const isActive = index === 0 ? 'active' : ''; // Primeira categoria ativa
 
+        // Usar fullPath se disponível, senão usar name
+        const displayName = category.fullPath ?
+          category.fullPath.split(' → ').pop() :
+          category.name;
+
+        const fullHierarchy = category.fullPath || category.name;
+
         menuContainer.innerHTML += `
-          <div class="category-item ${isActive}" data-category-id="${category.id}">
-          ${category.name}
+          <div class="category-item ${isActive}" 
+               data-category-id="${category.id}"
+               data-full-path="${fullHierarchy}"
+               title="${fullHierarchy}">
+          ${displayName}
           </div>
         `;
 
@@ -129,6 +139,9 @@ function loadCategoryPhotos(categoryId) {
 
   // Definir categoria ativa
   activeCategory = categoryId;
+
+  // ✅ ATUALIZAR BREADCRUMB
+  updateBreadcrumb(categoryId);
 
   // Marcar item no menu como ativo
   highlightActiveCategory(categoryId);
@@ -1338,21 +1351,21 @@ function hideDiscreteLoadingIndicator() {
 function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfiniteScroll = false) {
   // Determinar se é botão ou infinite scroll
   const button = isInfiniteScroll ? null : (typeof event !== 'undefined' && event ? event.target : null);
-  
+
   // Buscar container correto
   let sectionContainer = document.getElementById('category-section-main');
   if (!sectionContainer) {
     const contentDiv = document.getElementById('content');
     sectionContainer = contentDiv.querySelector('.category-section') || contentDiv;
   }
-  
+
   console.log(`🔄 Loading photos - Infinite scroll: ${isInfiniteScroll}`);
-  
+
   // Feedback visual no botão (apenas se não for infinite scroll)
   if (button && !isInfiniteScroll) {
     enhanceMorePhotosButton(button, true);
   }
-  
+
   // Fazer requisição
   return fetch(`/api/photos?category_id=${categoryId}&customer_code=${currentCustomerCode}&offset=${currentOffset}&limit=${batchSize}`)
     .then(response => response.json())
@@ -1362,12 +1375,12 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfin
           button.parentElement.remove();
         }
         console.log('📭 Não há mais fotos para carregar');
-        
+
         return Promise.resolve();
       }
-      
+
       console.log(`📸 Loaded ${newPhotos.length} more photos for category: ${categoryId}`);
-      
+
       // Atualizar cache
       const categoryCache = categoryPhotoCache[categoryId];
       if (categoryCache) {
@@ -1375,27 +1388,27 @@ function loadMorePhotosWithEffects(categoryId, currentOffset, batchSize, isInfin
         categoryCache.totalLoaded += newPhotos.length;
         categoryCache.hasMore = newPhotos.length >= batchSize;
       }
-      
+
       // Registrar novas fotos
       newPhotos.forEach(photo => {
         photoRegistry[photo.id] = photo;
         photos.push(photo);
       });
-      
+
       // Verificar container
       if (!sectionContainer) {
         console.error('❌ Container para fotos não encontrado');
         return Promise.reject('Container não encontrado');
       }
-      
+
       // Carregar fotos
       loadPhotosSequentially(newPhotos, sectionContainer, 100);
-      
+
       // Restaurar botão se não for infinite scroll
       if (button && !isInfiniteScroll) {
         enhanceMorePhotosButton(button, false);
       }
-      
+
       return Promise.resolve();
     })
     .catch(error => {
@@ -1534,12 +1547,12 @@ function cleanupScrollMorePhotos() {
 function toggleFilters() {
   const filtersDiv = document.getElementById('category-filters');
   const toggleBtn = document.getElementById('filter-toggle');
-  
+
   if (!filtersDiv || !toggleBtn) {
     console.error('Elementos de filtro não encontrados');
     return;
   }
-  
+
   if (filtersDiv.style.display === 'none' || filtersDiv.style.display === '') {
     // Mostrar filtros
     filtersDiv.style.display = 'block';
@@ -1553,6 +1566,40 @@ function toggleFilters() {
     toggleBtn.classList.remove('active');
     console.log('Filtros escondidos');
   }
+}
+
+// Função para atualizar breadcrumb
+function updateBreadcrumb(categoryId) {
+  const breadcrumbContainer = document.getElementById('breadcrumb-container');
+  if (!breadcrumbContainer) return;
+
+  // Encontrar categoria atual
+  const categoryElement = document.querySelector(`[data-category-id="${categoryId}"]`);
+  if (!categoryElement) return;
+
+  const fullPath = categoryElement.getAttribute('data-full-path');
+  if (!fullPath) return;
+
+  // Parse do fullPath para criar breadcrumb
+  const pathParts = fullPath.split(' → ');
+  let breadcrumbHTML = '';
+
+  // Criar links para cada nível
+  for (let i = 0; i < pathParts.length; i++) {
+    if (i > 0) {
+      breadcrumbHTML += '<span class="breadcrumb-separator">></span>';
+    }
+
+    if (i === pathParts.length - 1) {
+      // Último item - destacado
+      breadcrumbHTML += `<span class="breadcrumb-current">${pathParts[i]}</span>`;
+    } else {
+      // Itens intermediários - com link
+      breadcrumbHTML += `<a href="#" class="breadcrumb-link">${pathParts[i]}</a>`;
+    }
+  }
+
+  breadcrumbContainer.innerHTML = breadcrumbHTML;
 }
 
 // Disponibilizar globalmente
