@@ -172,7 +172,22 @@ function initializeGallery() {
   contentDiv.className = 'gallery';
 
   // Mostrar página Home com categorias principais
-  showHomePage();
+  console.log("🔍 DEBUG: Tentando chamar showHomePage...");
+  if (typeof showHomePage === 'function') {
+    console.log("✅ showHomePage encontrada, executando...");
+    showHomePage();
+  } else {
+    console.log("❌ showHomePage não está disponível ainda!");
+    // Tentar novamente após um pequeno delay
+    setTimeout(() => {
+      if (typeof showHomePage === 'function') {
+        console.log("✅ showHomePage agora disponível, executando...");
+        showHomePage();
+      } else {
+        console.log("❌ showHomePage ainda não disponível!");
+      }
+    }, 500);
+  }
 
   console.log("Gallery initialized with tutorial - awaiting category selection");
 
@@ -180,7 +195,6 @@ function initializeGallery() {
   if (typeof loadCategoriesMenu === 'function') {
     loadCategoriesMenu();
   }  // Mostrar tutorial em vez da mensagem simples
-  showWelcome();
 
   hideLoader();
 }
