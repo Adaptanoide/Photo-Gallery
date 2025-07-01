@@ -1742,5 +1742,68 @@ function debugBrazilBestSellers() {
   });
 }
 
+// Função para selecionar categoria principal e atualizar sidebar
+function selectMainCategory(mainCategoryName) {
+  console.log(`🎯 Selecionando categoria principal: ${mainCategoryName}`);
+
+  // Obter subcategorias desta categoria principal
+  const subcategories = analyzeSubcategoriesByMain(mainCategoryName);
+
+  if (subcategories.length === 0) {
+    console.log('❌ Nenhuma subcategoria encontrada');
+    return;
+  }
+
+  // Atualizar breadcrumb
+  const breadcrumbContainer = document.getElementById('breadcrumb-container');
+  if (breadcrumbContainer) {
+    breadcrumbContainer.innerHTML = `<span class="breadcrumb-current">${mainCategoryName}</span>`;
+  }
+
+  // Limpar e atualizar sidebar com subcategorias
+  const menuContainer = document.getElementById('categories-menu');
+  menuContainer.innerHTML = '';
+
+  subcategories.forEach((subcategory, index) => {
+    const isActive = index === 0 ? 'active' : '';
+
+    menuContainer.innerHTML += `
+      <div class="category-item ${isActive}" 
+           data-subcategory="${subcategory}"
+           data-main-category="${mainCategoryName}">
+        ${subcategory}
+      </div>
+    `;
+  });
+
+  // Configurar event listeners das subcategorias
+  setupSubcategoryClickHandlers();
+
+  console.log(`✅ Sidebar atualizado com ${subcategories.length} subcategorias`);
+}
+
+// Event listeners para subcategorias 
+function setupSubcategoryClickHandlers() {
+  const subcategoryItems = document.querySelectorAll('[data-subcategory]');
+
+  subcategoryItems.forEach(item => {
+    item.addEventListener('click', function () {
+      const subcategory = this.getAttribute('data-subcategory');
+      const mainCategory = this.getAttribute('data-main-category');
+
+      console.log(`🎨 Clicou na subcategoria: ${subcategory} (${mainCategory})`);
+
+      // Remover active de todas as subcategorias
+      subcategoryItems.forEach(sub => sub.classList.remove('active'));
+
+      // Adicionar active na subcategoria clicada
+      this.classList.add('active');
+
+      // TODO: Carregar fotos desta subcategoria
+      console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
+    });
+  });
+}
+
 // Disponibilizar globalmente
 window.toggleFilters = toggleFilters;
