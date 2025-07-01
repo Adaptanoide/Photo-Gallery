@@ -2229,9 +2229,13 @@ function extractAvailableSizes(mainCategory, subcategory) {
 // ✅ PASSO 2.1: Criar interface com abas de tamanho
 function createSizeTabsInterface(mainCategory, subcategory, availableSizes) {
   console.log(`🎨 Criando interface de abas para: ${subcategory}`);
-  
+
   const contentDiv = document.getElementById('content');
+  console.log('🔍 Content div encontrado:', !!contentDiv);
+
   contentDiv.innerHTML = '';
+  console.log('🧹 Content limpo');
+
 
   // Criar título da categoria
   const titleContainer = document.createElement('div');
@@ -2267,26 +2271,29 @@ function createSizeTabsInterface(mainCategory, subcategory, availableSizes) {
   contentDiv.appendChild(photosContainer);
 
   console.log(`✅ Interface criada com ${availableSizes.length} abas`);
+  // ✅ ADICIONAR ESTE LOG NO FINAL:
+  console.log('🔍 HTML final do content:', contentDiv.innerHTML.substring(0, 300));
+  console.log('🔍 Tabs criadas no DOM:', document.querySelectorAll('.size-tab').length);
 }
 
 // ✅ PASSO 2.2: Carregar fotos de um tamanho específico
 function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
   console.log(`📐 Carregando fotos para tamanho: ${size}`);
-  
+
   const finalCategories = [];
-  
+
   window.categories.forEach(cat => {
     if (cat.isAll) return;
-    
+
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
-    
+
     // Verificar estrutura: mainCategory → subcategory → size
     if (pathParts.length >= 3 &&
-        pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
-        pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim() &&
-        pathParts[2].replace(/\s+/g, ' ').trim() === size.replace(/\s+/g, ' ').trim()) {
-      
+      pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
+      pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim() &&
+      pathParts[2].replace(/\s+/g, ' ').trim() === size.replace(/\s+/g, ' ').trim()) {
+
       finalCategories.push({
         id: cat.id,
         name: cat.name,
@@ -2295,30 +2302,30 @@ function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
       });
     }
   });
-  
+
   console.log(`📐 Encontradas ${finalCategories.length} categorias para tamanho ${size}`);
-  
+
   if (finalCategories.length === 0) {
     const photosContainer = document.getElementById('photos-by-size-container');
     photosContainer.innerHTML = '<div class="empty-message">No photos found for this size.</div>';
     hideLoader();
     return;
   }
-  
+
   loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory} → ${size}`);
 }
 
 // ✅ PASSO 2.3: Função para trocar de aba
 function switchSizeTab(mainCategory, subcategory, size) {
   console.log(`🔄 Trocando para aba: ${size}`);
-  
+
   // Atualizar abas ativas
   document.querySelectorAll('.size-tab').forEach(tab => {
     tab.classList.remove('active');
   });
-  
+
   document.querySelector(`[data-size="${size}"]`).classList.add('active');
-  
+
   // Carregar fotos do novo tamanho
   showLoader();
   loadPhotosForSpecificSize(mainCategory, subcategory, size);
