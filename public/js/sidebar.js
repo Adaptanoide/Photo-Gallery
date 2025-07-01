@@ -2226,5 +2226,103 @@ function extractAvailableSizes(mainCategory, subcategory) {
   return sortedSizes;
 }
 
+// ✅ PASSO 2.1: Criar interface com abas de tamanho
+function createSizeTabsInterface(mainCategory, subcategory, availableSizes) {
+  console.log(`🎨 Criando interface de abas para: ${subcategory}`);
+  
+  const contentDiv = document.getElementById('content');
+  contentDiv.innerHTML = '';
+
+  // Criar título da categoria
+  const titleContainer = document.createElement('div');
+  titleContainer.className = 'category-title-container';
+  titleContainer.innerHTML = `
+    <h2>${subcategory}</h2>
+    <div class="category-divider"></div>
+  `;
+  contentDiv.appendChild(titleContainer);
+
+  // ✅ CRIAR ABAS STICKY
+  const tabsContainer = document.createElement('div');
+  tabsContainer.className = 'size-tabs-sticky';
+  tabsContainer.innerHTML = `
+    <div class="size-tabs-wrapper">
+      ${availableSizes.map((size, index) => `
+        <div class="size-tab ${index === 0 ? 'active' : ''}" 
+             data-size="${size}"
+             data-main-category="${mainCategory}"
+             data-subcategory="${subcategory}"
+             onclick="switchSizeTab('${mainCategory}', '${subcategory}', '${size}')">
+          ${size}
+        </div>
+      `).join('')}
+    </div>
+  `;
+  contentDiv.appendChild(tabsContainer);
+
+  // Container para as fotos
+  const photosContainer = document.createElement('div');
+  photosContainer.id = 'photos-by-size-container';
+  photosContainer.className = 'photos-container';
+  contentDiv.appendChild(photosContainer);
+
+  console.log(`✅ Interface criada com ${availableSizes.length} abas`);
+}
+
+// ✅ PASSO 2.2: Carregar fotos de um tamanho específico
+function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
+  console.log(`📐 Carregando fotos para tamanho: ${size}`);
+  
+  const finalCategories = [];
+  
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+    
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+    
+    // Verificar estrutura: mainCategory → subcategory → size
+    if (pathParts.length >= 3 &&
+        pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
+        pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim() &&
+        pathParts[2].replace(/\s+/g, ' ').trim() === size.replace(/\s+/g, ' ').trim()) {
+      
+      finalCategories.push({
+        id: cat.id,
+        name: cat.name,
+        fullPath: cat.fullPath,
+        sizeName: size
+      });
+    }
+  });
+  
+  console.log(`📐 Encontradas ${finalCategories.length} categorias para tamanho ${size}`);
+  
+  if (finalCategories.length === 0) {
+    const photosContainer = document.getElementById('photos-by-size-container');
+    photosContainer.innerHTML = '<div class="empty-message">No photos found for this size.</div>';
+    hideLoader();
+    return;
+  }
+  
+  loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory} → ${size}`);
+}
+
+// ✅ PASSO 2.3: Função para trocar de aba
+function switchSizeTab(mainCategory, subcategory, size) {
+  console.log(`🔄 Trocando para aba: ${size}`);
+  
+  // Atualizar abas ativas
+  document.querySelectorAll('.size-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  
+  document.querySelector(`[data-size="${size}"]`).classList.add('active');
+  
+  // Carregar fotos do novo tamanho
+  showLoader();
+  loadPhotosForSpecificSize(mainCategory, subcategory, size);
+}
+
 // Disponibilizar globalmente
 window.toggleFilters = toggleFilters;
