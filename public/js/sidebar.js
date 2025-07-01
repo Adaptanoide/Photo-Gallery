@@ -6,7 +6,8 @@ let isLoadingCategory = false;
 let categoryPhotoCache = {};
 
 // ✅ ADICIONAR ESTAS DUAS LINHAS AQUI:
-let qbItemData = {}; // Global para armazenar códigos QB
+// Usar variável global existente ou criar se não existir
+window.qbItemData = window.qbItemData || {};
 
 // ✅ ADICIONAR ESTA FUNÇÃO COMPLETA AQUI:
 async function loadQBItems() {
@@ -14,11 +15,11 @@ async function loadQBItems() {
     const response = await fetch('/api/admin/categories/prices');
     const data = await response.json();
 
-    qbItemData = {};
+    window.qbItemData = {};
     if (data.success && data.prices) {
       data.prices.forEach(item => {
         if (item.qbItem) {
-          qbItemData[item.folderId] = item.qbItem;
+          window.qbItemData[item.folderId] = item.qbItem;
         }
       });
     }
@@ -1837,7 +1838,7 @@ async function selectMainCategory(mainCategoryName) {
   console.log(`🎯 Selecionando categoria principal: ${mainCategoryName}`);
 
   // ✅ NOVO: Carregar códigos QB se ainda não foram carregados
-  if (Object.keys(qbItemData).length === 0) {
+  if (Object.keys(window.qbItemData || {}).length === 0) {
     console.log('📊 Carregando códigos QB...');
     await loadQBItems();
   }
@@ -1938,7 +1939,7 @@ function getSpecificCategoriesForGeneric(mainCategoryName) {
   window.categories.forEach(cat => {
     if (cat.isAll) return;
 
-    const categoryQB = qbItemData[cat.id];
+    const categoryQB = window.qbItemData[cat.id];
     if (categoryQB && targetQBCodes.includes(categoryQB)) {
       const fullPath = cat.fullPath || cat.name;
       const pathParts = fullPath.split(' → ');
