@@ -1614,12 +1614,15 @@ function updateBreadcrumb(categoryId) {
   breadcrumbContainer.innerHTML = breadcrumbHTML;
 }
 
-// Função para extrair categorias principais (nível 1)
+// Função para extrair categorias principais (nível 1) COM ESTATÍSTICAS
 function getMainCategories() {
   if (!window.categories) return [];
 
   const mainCategories = [];
   const seen = new Set();
+
+  // Primeiro passo: Agrupar por categoria principal
+  const categoryGroups = {};
 
   window.categories.forEach(cat => {
     if (cat.isAll) return;
@@ -1627,17 +1630,54 @@ function getMainCategories() {
     const fullPath = cat.fullPath || cat.name;
     const mainCategory = fullPath.split(' → ')[0].replace(/\s+/g, ' ').trim();
 
-    if (!seen.has(mainCategory)) {
-      seen.add(mainCategory);
-      mainCategories.push({
-        name: mainCategory,
-        id: `main-${mainCategory.replace(/\s+/g, '-').toLowerCase()}`,
-        subcategories: []
-      });
+    if (!categoryGroups[mainCategory]) {
+      categoryGroups[mainCategory] = [];
     }
+    categoryGroups[mainCategory].push(cat);
   });
 
-  console.log('Categorias principais encontradas:', mainCategories);
+  // Segundo passo: Calcular estatísticas para cada grupo
+  Object.keys(categoryGroups).forEach(mainCategoryName => {
+    if (seen.has(mainCategoryName)) return;
+    seen.add(mainCategoryName);
+
+    const subCategories = categoryGroups[mainCategoryName];
+
+    // Calcular total de fotos
+    const totalPhotos = subCategories.reduce((sum, cat) => sum + (cat.fileCount || 0), 0);
+
+    // Calcular range de preços (se disponível)
+    const prices = subCategories
+      .map(cat => cat.price)
+      .filter(price => price !== undefined && price !== null)
+      .map(price => parseFloat(price));
+
+    const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
+
+    // Determinar ícone baseado no nome da categoria
+    const getIcon = (name) => {
+      const lowerName = name.toLowerCase();
+      if (lowerName.includes('brazil')) return '🇧🇷';
+      if (lowerName.includes('colombia')) return '🇨🇴';
+      if (lowerName.includes('calfskin')) return '🐄';
+      if (lowerName.includes('sheepskin')) return '🐑';
+      if (lowerName.includes('rug')) return '🏡';
+      return '📁';
+    };
+
+    mainCategories.push({
+      name: mainCategoryName,
+      id: `main-${mainCategoryName.replace(/\s+/g, '-').toLowerCase()}`,
+      totalPhotos: totalPhotos,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+      icon: getIcon(mainCategoryName),
+      subcategories: subCategories.length
+    });
+  });
+
+  console.log('Main categories with stats:', mainCategories);
   return mainCategories;
 }
 
@@ -1660,20 +1700,36 @@ function showHomePage() {
   // Criar grid de categorias principais
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = `
-    <div class="home-page">
-      <h1>Welcome to Our Gallery</h1>
-      <p>Choose a category to start exploring our collection</p>
-      <div class="main-categories-grid">
-        ${mainCategories.map(cat => `
-          <div class="main-category-card" onclick="selectMainCategory('${cat.name}')">
-            <div class="category-icon">📁</div>
-            <h3>${cat.name}</h3>
-            <p>Click to explore</p>
+  <div class="home-page">
+    <h1>Welcome to Our Gallery</h1>
+    <p>Choose a category to start exploring our collection</p>
+    <div class="main-categories-grid">
+      ${mainCategories.map(cat => `
+        <div class="main-category-card" onclick="selectMainCategory('${cat.name}')">
+          <div class="category-icon">${cat.icon}</div>
+          <h3>${cat.name}</h3>
+          
+          <div class="category-stats">
+            <div class="stat-item">
+              <span class="stat-number">${cat.totalPhotos || 0}</span>
+              <span class="stat-label">Photos</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">${cat.subcategories || 0}</span>
+              <span class="stat-label">Styles</span>
+            </div>
           </div>
-        `).join('')}
-      </div>
+          
+          ${cat.minPrice && cat.maxPrice ? `
+            <div class="price-range">$${Math.round(cat.minPrice)} - $${Math.round(cat.maxPrice)}</div>
+          ` : '<div class="price-range">Premium Selection</div>'}
+          
+          <div class="category-cta">Click to explore →</div>
+        </div>
+      `).join('')}
     </div>
-  `;
+  </div>
+`;
 
   // Remover destaque de categorias do sidebar
   document.querySelectorAll('.category-item').forEach(item => {
