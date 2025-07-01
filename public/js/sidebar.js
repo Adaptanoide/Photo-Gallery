@@ -1625,7 +1625,7 @@ function getMainCategories() {
     if (cat.isAll) return;
 
     const fullPath = cat.fullPath || cat.name;
-    const mainCategory = fullPath.split(' → ')[0];
+    const mainCategory = fullPath.split(' → ')[0].replace(/\s+/g, ' ').trim();
 
     if (!seen.has(mainCategory)) {
       seen.add(mainCategory);
@@ -1692,8 +1692,8 @@ function analyzeSubcategoriesByMain(mainCategoryName) {
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
 
-    // Se pertence à categoria principal
-    if (pathParts[0] === mainCategoryName) {
+    // Se pertence à categoria principal (normalizar espaços)
+    if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
       if (pathParts.length >= 2) {
         subcategories.add(pathParts[1]); // Nível 2 = subcategoria
       }
