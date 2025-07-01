@@ -309,8 +309,8 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
 
   contentDiv.appendChild(sectionContainer);
 
-  // Renderizar as fotos usando a função existente
-  renderCategoryPhotos(sectionContainer, categoryPhotos);
+  // ✅ CORREÇÃO: Usar versão que preserva abas
+  renderCategoryPhotosWithTabs(sectionContainer, categoryPhotos);
 
   // ✅ BOTÕES: Usar nova classe CSS (será criada no CSS)
   addCategoryNavigationButtons(contentDiv, categoryId);
@@ -2313,6 +2313,61 @@ function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
   }
 
   loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory} → ${size}`);
+}
+
+// ✅ NOVA FUNÇÃO: Renderizar fotos preservando abas existentes
+function renderCategoryPhotosWithTabs(container, photos) {
+  if (!photos || photos.length === 0) {
+    container.innerHTML = '<div class="empty-message">No photos in this category.</div>';
+    return;
+  }
+
+  // Aplicar estilos de grid (sem limpar content)
+  container.style.cssText = `
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 30px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 0 100px 0 !important;
+  `;
+
+  let html = '';
+
+  photos.forEach((photo, index) => {
+    const alreadyAdded = cartIds.includes(photo.id);
+    const delay = index * 0.02;
+
+    let priceText = '';
+    if (photo.price !== undefined) {
+      const formattedPrice = `$${parseFloat(photo.price).toFixed(2)}`;
+      priceText = formattedPrice;
+    }
+
+    html += `
+      <div class="photo-item" id="photo-${photo.id}" onclick="openLightboxById('${photo.id}', false)" 
+          style="animation: fadeIn 0.5s ease-out ${delay}s both;">
+        <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" alt="${photo.name}" loading="lazy"
+            style="width: 100%; height: auto;"
+            onerror="this.parentNode.remove();">
+        <div class="photo-info">
+          <div class="photo-actions-container">
+            <button class="btn ${alreadyAdded ? 'btn-danger' : 'btn-gold'}" 
+              id="button-${photo.id}"
+              onclick="event.stopPropagation(); ${alreadyAdded ? 'removeFromCart' : 'addToCart'}('${photo.id}')">
+              ${alreadyAdded ? 'Remove' : 'Select'}
+            </button>
+            ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  // Aplicar HTML (preserva abas)
+  container.innerHTML = html;
 }
 
 // ✅ PASSO 2.3: Função para trocar de aba
