@@ -113,6 +113,8 @@ function loadCategoriesMenu() {
       mainCats.forEach(cat => console.log(`- ${cat.name}`));
       // ✅ TESTE SUBCATEGORIAS
       testSubcategoryExtraction();
+      // ✅ DEBUG BRAZIL BEST SELLERS
+      debugBrazilBestSellers();
     })
     .catch(error => {
       console.error('Error loading categories:', error);
@@ -1720,6 +1722,24 @@ function testSubcategoryExtraction() {
 
   // Testar com Brazil Top Selected Categories
   analyzeSubcategoriesByMain('Brazil Top Selected Categories');
+}
+
+// ✅ DEBUG: Investigar estrutura do Brazil Best Sellers
+function debugBrazilBestSellers() {
+  console.log('🔍 DEBUG: Brazil Best Sellers');
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    if (fullPath.includes('Brazil  Best Sellers')) {
+      console.log(`FullPath: ${fullPath}`);
+      console.log(`Levels: ${fullPath.split(' → ').length}`);
+      const pathParts = fullPath.split(' → ');
+      console.log(`Parts: [${pathParts.join(' | ')}]`);
+      console.log('---');
+    }
+  });
 }
 
 // Disponibilizar globalmente
