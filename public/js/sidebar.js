@@ -111,6 +111,8 @@ function loadCategoriesMenu() {
       const mainCats = getMainCategories();
       console.log(`${mainCats.length} categorias principais identificadas:`);
       mainCats.forEach(cat => console.log(`- ${cat.name}`));
+      // ✅ TESTE SUBCATEGORIAS
+      testSubcategoryExtraction();
     })
     .catch(error => {
       console.error('Error loading categories:', error);
@@ -1640,16 +1642,16 @@ function getMainCategories() {
 // Função para mostrar página Home com categorias principais
 function showHomePage() {
   console.log('🏠 Mostrando página Home com categorias principais');
-  
+
   // Atualizar breadcrumb para Home
   const breadcrumbContainer = document.getElementById('breadcrumb-container');
   if (breadcrumbContainer) {
     breadcrumbContainer.innerHTML = '<span class="breadcrumb-welcome">Choose a category to start exploring</span>';
   }
-  
+
   // Obter categorias principais
   const mainCategories = getMainCategories();
-  
+
   // Criar grid de categorias principais
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = `
@@ -1667,13 +1669,57 @@ function showHomePage() {
       </div>
     </div>
   `;
-  
+
   // Remover destaque de categorias do sidebar
   document.querySelectorAll('.category-item').forEach(item => {
     item.classList.remove('active');
   });
-  
+
   activeCategory = null;
+}
+
+// ✅ FUNÇÃO TEMPORÁRIA - Analisar subcategorias por categoria principal
+function analyzeSubcategoriesByMain(mainCategoryName) {
+  console.log(`=== ANÁLISE SUBCATEGORIAS: ${mainCategoryName} ===`);
+
+  const subcategories = new Set();
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+
+    // Se pertence à categoria principal
+    if (pathParts[0] === mainCategoryName) {
+      if (pathParts.length >= 2) {
+        subcategories.add(pathParts[1]); // Nível 2 = subcategoria
+      }
+    }
+  });
+
+  console.log(`Subcategorias encontradas (${subcategories.size}):`);
+  Array.from(subcategories).forEach(sub => console.log(`- ${sub}`));
+
+  return Array.from(subcategories);
+}
+
+// ✅ TESTE: Analisar subcategorias de Colombia Cowhides
+function testSubcategoryExtraction() {
+  console.log('🧪 TESTANDO EXTRAÇÃO DE SUBCATEGORIAS...');
+
+  // Testar com Colombia Cowhides
+  analyzeSubcategoriesByMain('Colombia Cowhides');
+
+  console.log('---');
+
+  // Testar com Brazil Best Sellers  
+  analyzeSubcategoriesByMain('Brazil Best Sellers');
+
+  console.log('---');
+
+  // Testar com Brazil Top Selected Categories
+  analyzeSubcategoriesByMain('Brazil Top Selected Categories');
 }
 
 // Disponibilizar globalmente
