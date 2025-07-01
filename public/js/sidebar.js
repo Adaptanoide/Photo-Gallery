@@ -262,9 +262,9 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     return;
   }
 
-  // RESTAURAR: Criar título da categoria
+  // ✅ NOVO: Criar título com tamanho para categorias Assorted
   if (activeCategory) {
-    const categoryItem = document.querySelector(`.category-item[data-category-id="${activeCategory}"]`);
+    const categoryItem = document.querySelector('.category-item.active');
     if (categoryItem) {
       const categoryText = categoryItem.textContent.trim();
       const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
@@ -273,9 +273,9 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
       const titleContainer = document.createElement('div');
       titleContainer.className = 'category-title-container';
       titleContainer.innerHTML = `
-        <h2>${cleanCategoryName}</h2>
-        <div class="category-divider"></div>
-      `;
+      <h2>${cleanCategoryName}</h2>
+      <div class="category-divider"></div>
+    `;
       contentDiv.appendChild(titleContainer);
     }
   }
@@ -1912,7 +1912,7 @@ async function selectMainCategory(mainCategoryName) {
   }
 }
 
-// NOVA FUNÇÃO: Obter categorias específicas baseado em códigos QB
+// NOVA FUNÇÃO: Obter categorias específicas baseado em códigos QB (COM TAMANHOS)
 function getSpecificCategoriesForGeneric(mainCategoryName) {
   console.log(`🎯 Usando códigos QB para filtrar: ${mainCategoryName}`);
 
@@ -1944,17 +1944,31 @@ function getSpecificCategoriesForGeneric(mainCategoryName) {
       const fullPath = cat.fullPath || cat.name;
       const pathParts = fullPath.split(' → ');
 
-      // Extrair nome da categoria (normalmente nível 3)
+      // Extrair nome da categoria (nível 3) e tamanho (nível 4)
       const categoryName = pathParts.length >= 3 ? pathParts[2] : cat.name;
+      const sizeName = pathParts.length >= 4 ? pathParts[3] : '';
+
+      // ✅ NOVO: Combinar nome + tamanho para categorias Assorted
+      let displayName = categoryName;
+      if (sizeName && (categoryName.includes('Assorted'))) {
+        // ✅ CORREÇÃO: Remover "Natural" do Assorted-Natural-Tones
+        let baseName = categoryName;
+        if (categoryName === 'Assorted-Natural-Tones') {
+          baseName = 'Assorted-Tones';
+        }
+        displayName = `${baseName} ${sizeName}`;
+      }
 
       foundCategories.push({
-        name: categoryName,
+        name: displayName,
+        originalName: categoryName,
+        sizeName: sizeName,
         qbCode: categoryQB,
         id: cat.id,
         fullPath: fullPath
       });
 
-      console.log(`✅ Encontrada categoria: ${categoryName} (QB: ${categoryQB})`);
+      console.log(`✅ Encontrada categoria: ${displayName} (QB: ${categoryQB})`);
     }
   });
 
