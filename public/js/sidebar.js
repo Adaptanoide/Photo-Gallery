@@ -105,7 +105,12 @@ function loadCategoriesMenu() {
 
       // NÃO carregamos mais automaticamente em background
       // O usuário deve selecionar uma categoria manualmente
-      console.log(`${categories.length} categorias carregadas no sidebar`);
+      console.log(`${categories.length} categorias carregadas no sidebar`); console.log(`${categories.length} categorias carregadas no sidebar`);
+
+      // ✅ TESTAR extração de categorias principais
+      const mainCats = getMainCategories();
+      console.log(`${mainCats.length} categorias principais identificadas:`);
+      mainCats.forEach(cat => console.log(`- ${cat.name}`));
     })
     .catch(error => {
       console.error('Error loading categories:', error);
@@ -1603,6 +1608,33 @@ function updateBreadcrumb(categoryId) {
   }
 
   breadcrumbContainer.innerHTML = breadcrumbHTML;
+}
+
+// Função para extrair categorias principais (nível 1)
+function getMainCategories() {
+  if (!window.categories) return [];
+
+  const mainCategories = [];
+  const seen = new Set();
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    const mainCategory = fullPath.split(' → ')[0];
+
+    if (!seen.has(mainCategory)) {
+      seen.add(mainCategory);
+      mainCategories.push({
+        name: mainCategory,
+        id: `main-${mainCategory.replace(/\s+/g, '-').toLowerCase()}`,
+        subcategories: []
+      });
+    }
+  });
+
+  console.log('Categorias principais encontradas:', mainCategories);
+  return mainCategories;
 }
 
 // Disponibilizar globalmente
