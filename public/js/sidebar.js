@@ -1858,9 +1858,131 @@ function setupSubcategoryClickHandlers() {
       // Adicionar active na subcategoria clicada
       this.classList.add('active');
 
-      // TODO: Carregar fotos desta subcategoria
-      console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
+      // NOVA LINHA: Carregar fotos desta subcategoria
+      loadPhotosForSubcategory(mainCategory, subcategory);
     });
+  });
+}
+
+// NOVA FUNÇÃO: Carregar fotos de uma subcategoria
+function loadPhotosForSubcategory(mainCategory, subcategory) {
+  console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
+
+  showLoader();
+
+  // Encontrar todas as categorias finais desta subcategoria
+  const finalCategories = [];
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+
+    // Normalizar espaços
+    const normalizedMain = mainCategory.replace(/\s+/g, ' ').trim();
+    const normalizedSub = subcategory.replace(/\s+/g, ' ').trim();
+
+    // Verificar se pertence à subcategoria
+    if (pathParts.length >= 2 &&
+      pathParts[0].replace(/\s+/g, ' ').trim() === normalizedMain &&
+      pathParts[1].replace(/\s+/g, ' ').trim() === normalizedSub) {
+
+      finalCategories.push({
+        id: cat.id,
+        name: cat.name,
+        fullPath: cat.fullPath,
+        sizeName: pathParts[pathParts.length - 1] // Último nível = tamanho
+      });
+    }
+  });
+
+  console.log(`✅ Encontradas ${finalCategories.length} categorias finais para ${subcategory}`);
+
+  if (finalCategories.length === 0) {
+    hideLoader();
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = '<div class="empty-message">No photos found for this subcategory.</div>';
+    return;
+  }
+
+  // Carregar fotos de todas as categorias finais
+  loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory}`);
+}
+
+// FUNÇÃO AUXILIAR: Carregar fotos de múltiplas categorias
+function loadPhotosFromMultipleCategories(categories, title) {
+  console.log(`🔄 Carregando fotos de ${categories.length} categorias finais`);
+
+  const contentDiv = document.getElementById('content');
+  contentDiv.innerHTML = '';
+
+  // Criar título
+  const titleContainer = document.createElement('div');
+  titleContainer.className = 'category-title-container';
+  titleContainer.innerHTML = `
+    <h2>${title}</h2>
+    <div class="category-divider"></div>
+  `;
+  contentDiv.appendChild(titleContainer);
+
+  // Crear container principal para todas as fotos
+  const mainContainer = document.createElement('div');
+  mainContainer.id = 'category-section-main';
+  mainContainer.className = 'category-section';
+  mainContainer.style.cssText = `
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 30px !important;
+    width: 100% !important;
+    padding: 0 0 100px 0 !important;
+  `;
+  contentDiv.appendChild(mainContainer);
+
+  // Carregar fotos de cada categoria final
+  let loadedCount = 0;
+  const allPhotos = [];
+
+  categories.forEach(category => {
+    fetch(`/api/photos?category_id=${category.id}&customer_code=${currentCustomerCode}&limit=50`)
+      .then(response => response.json())
+      .then(categoryPhotos => {
+        if (Array.isArray(categoryPhotos) && categoryPhotos.length > 0) {
+          console.log(`📸 Carregadas ${categoryPhotos.length} fotos de ${category.sizeName}`);
+
+          // Adicionar ao array global
+          categoryPhotos.forEach(photo => {
+            photoRegistry[photo.id] = photo;
+            allPhotos.push(photo);
+          });
+        }
+
+        loadedCount++;
+
+        // Quando todas as categorias foram processadas
+        if (loadedCount === categories.length) {
+          console.log(`✅ Total: ${allPhotos.length} fotos carregadas`);
+
+          // Atualizar array global
+          photos = [...allPhotos];
+
+          // Renderizar todas as fotos
+          renderCategoryPhotos(mainContainer, allPhotos);
+
+          // Atualizar botões do carrinho
+          setTimeout(updateButtonsForCartItems, 100);
+
+          hideLoader();
+        }
+      })
+      .catch(error => {
+        console.error(`Error loading photos for ${category.sizeName}:`, error);
+        loadedCount++;
+
+        if (loadedCount === categories.length) {
+          hideLoader();
+        }
+      });
   });
 }
 
