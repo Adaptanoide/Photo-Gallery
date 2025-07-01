@@ -1876,20 +1876,20 @@ function selectMainCategory(mainCategoryName) {
 
 function getSpecificCategoriesForGeneric(mainCategoryName) {
   const specificCategories = new Set();
-  
+
   // 🔍 DEBUG: Ver todas as categorias desta categoria principal
   console.log(`🔍 DEBUG: Analisando estrutura de ${mainCategoryName}`);
-  
+
   window.categories.forEach(cat => {
     if (cat.isAll) return;
-    
+
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
-    
+
     if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
       // 🔍 DEBUG: Log de cada categoria encontrada
       console.log(`  📁 ${fullPath} → Níveis: ${pathParts.length} → Partes: [${pathParts.join(' | ')}]`);
-      
+
       // Para categorias genéricas, pegar o nível 3 ou 2 dependendo da estrutura
       if (pathParts.length >= 3) {
         specificCategories.add(pathParts[2]); // Nível 3 = cores/tipos específicos
@@ -1898,7 +1898,7 @@ function getSpecificCategoriesForGeneric(mainCategoryName) {
       }
     }
   });
-  
+
   console.log(`🔍 DEBUG: Categorias específicas encontradas: [${Array.from(specificCategories).join(', ')}]`);
   return Array.from(specificCategories).sort();
 }
@@ -1926,13 +1926,13 @@ function setupSubcategoryClickHandlers() {
   });
 }
 
-// NOVA FUNÇÃO: Carregar fotos de uma subcategoria
+// NOVA FUNÇÃO CORRIGIDA: Carregar fotos de uma subcategoria (qualquer nível)
 function loadPhotosForSubcategory(mainCategory, subcategory) {
   console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
 
   showLoader();
 
-  // Encontrar todas as categorias finais desta subcategoria
+  // Encontrar todas as categorias finais que CONTÊM essa subcategoria
   const finalCategories = [];
 
   window.categories.forEach(cat => {
@@ -1945,10 +1945,9 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
     const normalizedMain = mainCategory.replace(/\s+/g, ' ').trim();
     const normalizedSub = subcategory.replace(/\s+/g, ' ').trim();
 
-    // Verificar se pertence à subcategoria
-    if (pathParts.length >= 2 &&
-      pathParts[0].replace(/\s+/g, ' ').trim() === normalizedMain &&
-      pathParts[1].replace(/\s+/g, ' ').trim() === normalizedSub) {
+    // ✅ NOVA LÓGICA: Verificar se pertence à categoria principal E contém a subcategoria
+    if (pathParts[0].replace(/\s+/g, ' ').trim() === normalizedMain &&
+      pathParts.some(part => part.replace(/\s+/g, ' ').trim() === normalizedSub)) {
 
       finalCategories.push({
         id: cat.id,
@@ -1960,6 +1959,7 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
   });
 
   console.log(`✅ Encontradas ${finalCategories.length} categorias finais para ${subcategory}`);
+  console.log(`📋 Categorias encontradas:`, finalCategories.map(c => c.fullPath));
 
   if (finalCategories.length === 0) {
     hideLoader();
