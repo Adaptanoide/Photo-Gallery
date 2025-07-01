@@ -2141,5 +2141,60 @@ function loadPhotosFromMultipleCategories(categories, title) {
   });
 }
 
+// ✅ PASSO 1: Detectar se categoria precisa de abas de tamanho
+function needsSizeTabs(mainCategoryName) {
+  const categoriesWithTabs = [
+    'Colombia Cowhides',
+    'Brazil Top Selected Categories'
+  ];
+  
+  const needsTabs = categoriesWithTabs.includes(mainCategoryName);
+  console.log(`🔍 Categoria "${mainCategoryName}" precisa de abas: ${needsTabs}`);
+  return needsTabs;
+}
+
+// ✅ PASSO 1: Extrair tamanhos disponíveis para uma subcategoria
+function extractAvailableSizes(mainCategory, subcategory) {
+  console.log(`📏 Extraindo tamanhos para: ${mainCategory} → ${subcategory}`);
+  
+  const sizes = new Set();
+  
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+    
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+    
+    // Verificar se pertence à categoria principal e subcategoria
+    if (pathParts.length >= 3 &&
+        pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
+        pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim()) {
+      
+      // Último nível = tamanho
+      const size = pathParts[2].replace(/\s+/g, ' ').trim();
+      sizes.add(size);
+      
+      console.log(`  📐 Tamanho encontrado: ${size}`);
+    }
+  });
+  
+  // Ordenar tamanhos do menor para maior
+  const sortedSizes = Array.from(sizes).sort((a, b) => {
+    const sizeOrder = {
+      'Small': 1,
+      'Medium': 2,
+      'Medium-Large': 3,
+      'Large': 4,
+      'Extra-Large': 5,
+      'X-Large': 6
+    };
+    
+    return (sizeOrder[a] || 999) - (sizeOrder[b] || 999);
+  });
+  
+  console.log(`📏 Tamanhos ordenados: [${sortedSizes.join(', ')}]`);
+  return sortedSizes;
+}
+
 // Disponibilizar globalmente
 window.toggleFilters = toggleFilters;
