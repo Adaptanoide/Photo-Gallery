@@ -176,6 +176,7 @@ function initializeGallery() {
   if (typeof showHomePage === 'function') {
     console.log("✅ showHomePage encontrada, executando...");
     showHomePage();
+    console.log('🔍 DEBUG: Conteúdo após showHomePage:', document.getElementById('content').innerHTML.substring(0, 100) + '...');
   } else {
     console.log("❌ showHomePage não está disponível ainda!");
     // Tentar novamente após um pequeno delay
@@ -183,6 +184,7 @@ function initializeGallery() {
       if (typeof showHomePage === 'function') {
         console.log("✅ showHomePage agora disponível, executando...");
         showHomePage();
+        console.log('🔍 DEBUG: Conteúdo após showHomePage (delayed):', document.getElementById('content').innerHTML.substring(0, 100) + '...');
       } else {
         console.log("❌ showHomePage ainda não disponível!");
       }

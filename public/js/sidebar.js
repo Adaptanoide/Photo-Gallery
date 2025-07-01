@@ -1644,6 +1644,9 @@ function getMainCategories() {
 // Função para mostrar página Home com categorias principais
 function showHomePage() {
   console.log('🏠 Mostrando página Home com categorias principais');
+  console.log('🔍 DEBUG showHomePage: window.categories disponível?', !!window.categories);
+  console.log('🔍 DEBUG showHomePage: Quantidade de categorias:', window.categories ? window.categories.length : 0);
+  console.log('🔍 DEBUG showHomePage: DOM content div existe?', !!document.getElementById('content'));
 
   // Atualizar breadcrumb para Home
   const breadcrumbContainer = document.getElementById('breadcrumb-container');
