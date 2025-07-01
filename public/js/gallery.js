@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // NOVA FUNÇÃO: Carregamento inicial com tutorial
 function initializeGallery() {
-  showLoader();
+  showLoader(); // Loading bonito ativo
 
   // Se o cliente não estiver logado, não tente carregar nada
   if (!currentCustomerCode) {
@@ -176,26 +176,27 @@ function initializeGallery() {
   // PRIMEIRO: Carregar o menu de categorias
   if (typeof loadCategoriesMenu === 'function') {
     loadCategoriesMenu();
-    
-    // DEPOIS: Aguardar um pouco e chamar showHomePage
-    setTimeout(() => {
-      console.log("🔍 DEBUG: Tentando chamar showHomePage após carregar categorias...");
-      if (typeof showHomePage === 'function' && window.categories && window.categories.length > 0) {
-        console.log("✅ showHomePage + categorias disponíveis, executando...");
-        showHomePage();
-      } else {
-        console.log("❌ Ainda sem categorias, tentando novamente...");
-        setTimeout(() => {
-          if (typeof showHomePage === 'function' && window.categories && window.categories.length > 0) {
-            console.log("✅ showHomePage + categorias agora disponíveis!");
-            showHomePage();
-          }
-        }, 1000);
-      }
-    }, 1000);
   }
 
-  hideLoader();
+  // CRIAR UM LISTENER para quando as categorias carregarem
+  const checkCategories = setInterval(() => {
+    if (window.categories && window.categories.length > 0) {
+      console.log("✅ Categorias carregadas, chamando showHomePage");
+      clearInterval(checkCategories);
+
+      if (typeof showHomePage === 'function') {
+        showHomePage();
+      }
+
+      hideLoader(); // Esconder loading apenas quando tudo estiver pronto
+    }
+  }, 100); // Verificar a cada 100ms
+
+  // Timeout de segurança (10 segundos)
+  setTimeout(() => {
+    clearInterval(checkCategories);
+    hideLoader();
+  }, 10000);
 }
 
 // FUNÇÃO CORRIGIDA: Renderizar fotos de uma categoria com tratamento de erro
