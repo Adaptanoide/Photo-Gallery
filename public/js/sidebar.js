@@ -95,6 +95,9 @@ function loadCategoriesMenu() {
         `;
 
         console.log(`Categoria adicionada: ${category.name} (ID: ${category.id})`);
+        console.log(`FullPath: ${fullHierarchy}`);
+        console.log(`Levels: ${fullHierarchy.split(' → ').length}`);
+        console.log('---');
       });
 
       // Adicionar event listeners aos itens do menu
