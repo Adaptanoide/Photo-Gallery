@@ -1801,7 +1801,7 @@ function debugBrazilBestSellers() {
   });
 }
 
-// Função para selecionar categoria principal e atualizar sidebar
+// Função para selecionar categoria principal e atualizar sidebar - VERSÃO INTELIGENTE
 function selectMainCategory(mainCategoryName) {
   console.log(`🎯 Selecionando categoria principal: ${mainCategoryName}`);
 
@@ -1813,32 +1813,88 @@ function selectMainCategory(mainCategoryName) {
     return;
   }
 
+  // ✅ NOVA LÓGICA: Detectar se subcategorias são genéricas
+  const isGenericSubcategories = subcategories.some(sub =>
+    sub.includes('Best-Value') ||
+    sub.includes('Super-Promo') ||
+    sub.includes('Tones-Mix') ||
+    sub.includes('Tricolor-Dark-Tones-Creamish-White')
+  );
+
+  console.log(`🔍 Subcategorias genéricas detectadas: ${isGenericSubcategories}`);
+
   // Atualizar breadcrumb
   const breadcrumbContainer = document.getElementById('breadcrumb-container');
   if (breadcrumbContainer) {
     breadcrumbContainer.innerHTML = `<span class="breadcrumb-current">${mainCategoryName}</span>`;
   }
 
-  // Limpar e atualizar sidebar com subcategorias
+  // Atualizar sidebar
   const menuContainer = document.getElementById('categories-menu');
   menuContainer.innerHTML = '';
 
-  subcategories.forEach((subcategory, index) => {
-    const isActive = index === 0 ? 'active' : '';
+  if (isGenericSubcategories) {
+    // ✅ MOSTRAR PRÓXIMO NÍVEL (cores/tipos específicos)
+    const specificCategories = getSpecificCategoriesForGeneric(mainCategoryName);
+    specificCategories.forEach((category, index) => {
+      const isActive = index === 0 ? 'active' : '';
+      menuContainer.innerHTML += `
+        <div class="category-item ${isActive}" 
+             data-subcategory="${category}"
+             data-main-category="${mainCategoryName}">
+          ${category}
+        </div>
+      `;
+    });
+    console.log(`✅ Sidebar atualizado com ${specificCategories.length} categorias específicas`);
+  } else {
+    // ✅ MOSTRAR SUBCATEGORIAS NORMAIS
+    subcategories.forEach((subcategory, index) => {
+      const isActive = index === 0 ? 'active' : '';
+      menuContainer.innerHTML += `
+        <div class="category-item ${isActive}" 
+             data-subcategory="${subcategory}"
+             data-main-category="${mainCategoryName}">
+          ${subcategory}
+        </div>
+      `;
+    });
+    console.log(`✅ Sidebar atualizado com ${subcategories.length} subcategorias`);
+  }
 
-    menuContainer.innerHTML += `
-      <div class="category-item ${isActive}" 
-           data-subcategory="${subcategory}"
-           data-main-category="${mainCategoryName}">
-        ${subcategory}
-      </div>
-    `;
-  });
-
-  // Configurar event listeners das subcategorias
+  // Configurar event listeners
   setupSubcategoryClickHandlers();
 
-  console.log(`✅ Sidebar atualizado com ${subcategories.length} subcategorias`);
+  // ✅ CARREGAR AUTOMATICAMENTE A PRIMEIRA CATEGORIA
+  const firstCategory = menuContainer.querySelector('.category-item.active');
+  if (firstCategory) {
+    const subcategory = firstCategory.getAttribute('data-subcategory');
+    console.log(`🚀 Carregando automaticamente: ${subcategory}`);
+    loadPhotosForSubcategory(mainCategoryName, subcategory);
+  }
+}
+
+// NOVA FUNÇÃO: Obter categorias específicas para genéricas
+function getSpecificCategoriesForGeneric(mainCategoryName) {
+  const specificCategories = new Set();
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+
+    if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
+      // Para categorias genéricas, pegar o nível 3 ou 2 dependendo da estrutura
+      if (pathParts.length >= 3) {
+        specificCategories.add(pathParts[2]); // Nível 3 = cores/tipos específicos
+      } else if (pathParts.length >= 2) {
+        specificCategories.add(pathParts[1]); // Fallback para nível 2
+      }
+    }
+  });
+
+  return Array.from(specificCategories).sort();
 }
 
 // Event listeners para subcategorias 
@@ -1938,6 +1994,9 @@ function loadPhotosFromMultipleCategories(categories, title) {
     padding: 0 0 100px 0 !important;
   `;
   contentDiv.appendChild(mainContainer);
+
+  // NOVA LINHA: Adicionar botões de navegação
+  addCategoryNavigationButtons(contentDiv, 'main-category');
 
   // Carregar fotos de cada categoria final
   let loadedCount = 0;
