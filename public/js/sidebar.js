@@ -1637,5 +1637,44 @@ function getMainCategories() {
   return mainCategories;
 }
 
+// Função para mostrar página Home com categorias principais
+function showHomePage() {
+  console.log('🏠 Mostrando página Home com categorias principais');
+  
+  // Atualizar breadcrumb para Home
+  const breadcrumbContainer = document.getElementById('breadcrumb-container');
+  if (breadcrumbContainer) {
+    breadcrumbContainer.innerHTML = '<span class="breadcrumb-welcome">Choose a category to start exploring</span>';
+  }
+  
+  // Obter categorias principais
+  const mainCategories = getMainCategories();
+  
+  // Criar grid de categorias principais
+  const contentDiv = document.getElementById('content');
+  contentDiv.innerHTML = `
+    <div class="home-page">
+      <h1>Welcome to Our Gallery</h1>
+      <p>Choose a category to start exploring our collection</p>
+      <div class="main-categories-grid">
+        ${mainCategories.map(cat => `
+          <div class="main-category-card" onclick="selectMainCategory('${cat.name}')">
+            <div class="category-icon">📁</div>
+            <h3>${cat.name}</h3>
+            <p>Click to explore</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  // Remover destaque de categorias do sidebar
+  document.querySelectorAll('.category-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  activeCategory = null;
+}
+
 // Disponibilizar globalmente
 window.toggleFilters = toggleFilters;
