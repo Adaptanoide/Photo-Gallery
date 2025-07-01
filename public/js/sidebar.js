@@ -1874,17 +1874,22 @@ function selectMainCategory(mainCategoryName) {
   }
 }
 
-// NOVA FUNÇÃO: Obter categorias específicas para genéricas
 function getSpecificCategoriesForGeneric(mainCategoryName) {
   const specificCategories = new Set();
-
+  
+  // 🔍 DEBUG: Ver todas as categorias desta categoria principal
+  console.log(`🔍 DEBUG: Analisando estrutura de ${mainCategoryName}`);
+  
   window.categories.forEach(cat => {
     if (cat.isAll) return;
-
+    
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
-
+    
     if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
+      // 🔍 DEBUG: Log de cada categoria encontrada
+      console.log(`  📁 ${fullPath} → Níveis: ${pathParts.length} → Partes: [${pathParts.join(' | ')}]`);
+      
       // Para categorias genéricas, pegar o nível 3 ou 2 dependendo da estrutura
       if (pathParts.length >= 3) {
         specificCategories.add(pathParts[2]); // Nível 3 = cores/tipos específicos
@@ -1893,7 +1898,8 @@ function getSpecificCategoriesForGeneric(mainCategoryName) {
       }
     }
   });
-
+  
+  console.log(`🔍 DEBUG: Categorias específicas encontradas: [${Array.from(specificCategories).join(', ')}]`);
   return Array.from(specificCategories).sort();
 }
 
