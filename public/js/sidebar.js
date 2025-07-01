@@ -2002,9 +2002,21 @@ function setupSubcategoryClickHandlers() {
   });
 }
 
-// NOVA FUNÇÃO CORRIGIDA: Carregar fotos de uma subcategoria (qualquer nível)
+// NOVA FUNÇÃO CORRIGIDA: Carregar fotos de uma subcategoria (com mapeamento de nomes)
 function loadPhotosForSubcategory(mainCategory, subcategory) {
   console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
+
+  // ✅ NOVO: Mapear nomes modificados de volta aos originais
+  let searchSubcategory = subcategory;
+
+  // Mapear nomes exibidos de volta aos nomes reais na estrutura
+  if (subcategory === 'Assorted-Tones Small') {
+    searchSubcategory = 'Assorted-Natural-Tones';
+  } else if (subcategory === 'Assorted-Tones Extra-Small') {
+    searchSubcategory = 'Assorted-Tones';
+  }
+
+  console.log(`🔍 Procurando por nome real: ${searchSubcategory}`);
 
   showLoader();
 
@@ -2019,11 +2031,12 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
 
     // Normalizar espaços
     const normalizedMain = mainCategory.replace(/\s+/g, ' ').trim();
-    const normalizedSub = subcategory.replace(/\s+/g, ' ').trim();
+    const normalizedSub = searchSubcategory.replace(/\s+/g, ' ').trim();
 
-    // ✅ NOVA LÓGICA: Verificar se pertence à categoria principal E contém a subcategoria
+    // ✅ NOVA LÓGICA MAIS ESPECÍFICA: Verificar se pertence à categoria principal E tem a subcategoria EXATA no nível 3
     if (pathParts[0].replace(/\s+/g, ' ').trim() === normalizedMain &&
-      pathParts.some(part => part.replace(/\s+/g, ' ').trim() === normalizedSub)) {
+      pathParts.length >= 3 &&
+      pathParts[2].replace(/\s+/g, ' ').trim() === normalizedSub) {
 
       finalCategories.push({
         id: cat.id,
@@ -2034,7 +2047,7 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
     }
   });
 
-  console.log(`✅ Encontradas ${finalCategories.length} categorias finais para ${subcategory}`);
+  console.log(`✅ Encontradas ${finalCategories.length} categorias finais para ${searchSubcategory}`);
   console.log(`📋 Categorias encontradas:`, finalCategories.map(c => c.fullPath));
 
   if (finalCategories.length === 0) {
