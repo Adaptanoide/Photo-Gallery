@@ -2152,7 +2152,7 @@ function loadPhotosFromMultipleCategories(categories, title) {
           photos = [...allPhotos];
 
           // Renderizar todas as fotos
-          renderCategoryPhotos(mainContainer, allPhotos);
+          renderCategoryPhotosWithTabs(mainContainer, allPhotos);
 
           // Atualizar botões do carrinho
           setTimeout(updateButtonsForCartItems, 100);
