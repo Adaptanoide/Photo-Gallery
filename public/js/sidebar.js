@@ -2002,16 +2002,54 @@ function setupSubcategoryClickHandlers() {
   });
 }
 
-// FUNÇÃO CORRIGIDA: Carregar fotos de uma subcategoria (LÓGICA ORIGINAL)
+// ✅ PASSO 2: Carregar fotos com detecção de abas
 function loadPhotosForSubcategory(mainCategory, subcategory) {
   console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
 
   showLoader();
 
-  // ✅ MAPEAMENTO APENAS PARA BUSCA (não afeta outras categorias)
+  // ✅ DETECTAR se esta categoria precisa de abas de tamanho
+  if (needsSizeTabs(mainCategory)) {
+    console.log(`🔖 Categoria precisa de abas - implementando sistema de tamanhos`);
+    loadPhotosWithSizeTabs(mainCategory, subcategory);
+    return;
+  }
+
+  // ✅ LÓGICA ORIGINAL para categorias sem abas (Brazil Best Sellers)
+  console.log(`📋 Categoria não precisa de abas - carregamento normal`);
+  loadPhotosWithoutTabs(mainCategory, subcategory);
+}
+
+// ✅ PASSO 2: Carregar fotos COM abas de tamanho
+function loadPhotosWithSizeTabs(mainCategory, subcategory) {
+  console.log(`🔖 Implementando abas para: ${mainCategory} → ${subcategory}`);
+
+  // Extrair tamanhos disponíveis
+  const availableSizes = extractAvailableSizes(mainCategory, subcategory);
+
+  if (availableSizes.length === 0) {
+    hideLoader();
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = '<div class="empty-message">No sizes found for this category.</div>';
+    return;
+  }
+
+  console.log(`📏 Tamanhos encontrados: [${availableSizes.join(', ')}]`);
+
+  // Criar interface com abas
+  createSizeTabsInterface(mainCategory, subcategory, availableSizes);
+
+  // Carregar primeiro tamanho (menor)
+  const firstSize = availableSizes[0];
+  console.log(`🎯 Carregando primeiro tamanho: ${firstSize}`);
+  loadPhotosForSpecificSize(mainCategory, subcategory, firstSize);
+}
+
+// ✅ PASSO 2: Carregar fotos SEM abas (lógica original)
+function loadPhotosWithoutTabs(mainCategory, subcategory) {
+  // Mapeamento apenas para Brazil Best Sellers
   let searchSubcategory = subcategory;
 
-  // Mapear APENAS nomes modificados do Brazil Best Sellers
   if (mainCategory === 'Brazil Best Sellers') {
     if (subcategory === 'Assorted-Tones Small') {
       searchSubcategory = 'Assorted-Natural-Tones';
@@ -2020,9 +2058,7 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
     }
   }
 
-  console.log(`🔍 Procurando por: ${searchSubcategory}`);
-
-  // Encontrar todas as categorias finais que CONTÊM essa subcategoria
+  // Buscar todas as categorias (lógica original)
   const finalCategories = [];
 
   window.categories.forEach(cat => {
@@ -2031,11 +2067,9 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
 
-    // Normalizar espaços
     const normalizedMain = mainCategory.replace(/\s+/g, ' ').trim();
     const normalizedSub = searchSubcategory.replace(/\s+/g, ' ').trim();
 
-    // ✅ LÓGICA ORIGINAL: Verificar se pertence à categoria principal E contém a subcategoria
     if (pathParts[0].replace(/\s+/g, ' ').trim() === normalizedMain &&
       pathParts.some(part => part.replace(/\s+/g, ' ').trim() === normalizedSub)) {
 
@@ -2043,13 +2077,10 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
         id: cat.id,
         name: cat.name,
         fullPath: cat.fullPath,
-        sizeName: pathParts[pathParts.length - 1] // Último nível = tamanho
+        sizeName: pathParts[pathParts.length - 1]
       });
     }
   });
-
-  console.log(`✅ Encontradas ${finalCategories.length} categorias finais para ${searchSubcategory}`);
-  console.log(`📋 Categorias encontradas:`, finalCategories.map(c => c.fullPath));
 
   if (finalCategories.length === 0) {
     hideLoader();
@@ -2058,7 +2089,6 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
     return;
   }
 
-  // Carregar fotos de todas as categorias finais
   loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory}`);
 }
 
@@ -2147,7 +2177,7 @@ function needsSizeTabs(mainCategoryName) {
     'Colombia Cowhides',
     'Brazil Top Selected Categories'
   ];
-  
+
   const needsTabs = categoriesWithTabs.includes(mainCategoryName);
   console.log(`🔍 Categoria "${mainCategoryName}" precisa de abas: ${needsTabs}`);
   return needsTabs;
@@ -2156,28 +2186,28 @@ function needsSizeTabs(mainCategoryName) {
 // ✅ PASSO 1: Extrair tamanhos disponíveis para uma subcategoria
 function extractAvailableSizes(mainCategory, subcategory) {
   console.log(`📏 Extraindo tamanhos para: ${mainCategory} → ${subcategory}`);
-  
+
   const sizes = new Set();
-  
+
   window.categories.forEach(cat => {
     if (cat.isAll) return;
-    
+
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
-    
+
     // Verificar se pertence à categoria principal e subcategoria
     if (pathParts.length >= 3 &&
-        pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
-        pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim()) {
-      
+      pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
+      pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim()) {
+
       // Último nível = tamanho
       const size = pathParts[2].replace(/\s+/g, ' ').trim();
       sizes.add(size);
-      
+
       console.log(`  📐 Tamanho encontrado: ${size}`);
     }
   });
-  
+
   // Ordenar tamanhos do menor para maior
   const sortedSizes = Array.from(sizes).sort((a, b) => {
     const sizeOrder = {
@@ -2188,10 +2218,10 @@ function extractAvailableSizes(mainCategory, subcategory) {
       'Extra-Large': 5,
       'X-Large': 6
     };
-    
+
     return (sizeOrder[a] || 999) - (sizeOrder[b] || 999);
   });
-  
+
   console.log(`📏 Tamanhos ordenados: [${sortedSizes.join(', ')}]`);
   return sortedSizes;
 }
