@@ -167,36 +167,33 @@ function initializeGallery() {
     return;
   }
 
-  // Limpar a galeria e mostrar tutorial inicial
+  // Limpar a galeria
   const contentDiv = document.getElementById('content');
   contentDiv.className = 'gallery';
 
-  // Mostrar página Home com categorias principais
-  console.log("🔍 DEBUG: Tentando chamar showHomePage...");
-  if (typeof showHomePage === 'function') {
-    console.log("✅ showHomePage encontrada, executando...");
-    showHomePage();
-    console.log('🔍 DEBUG: Conteúdo após showHomePage:', document.getElementById('content').innerHTML.substring(0, 100) + '...');
-  } else {
-    console.log("❌ showHomePage não está disponível ainda!");
-    // Tentar novamente após um pequeno delay
-    setTimeout(() => {
-      if (typeof showHomePage === 'function') {
-        console.log("✅ showHomePage agora disponível, executando...");
-        showHomePage();
-        console.log('🔍 DEBUG: Conteúdo após showHomePage (delayed):', document.getElementById('content').innerHTML.substring(0, 100) + '...');
-      } else {
-        console.log("❌ showHomePage ainda não disponível!");
-      }
-    }, 500);
-  }
+  console.log("Gallery initialized - loading categories first");
 
-  console.log("Gallery initialized with tutorial - awaiting category selection");
-
-  // Carregar o menu de categorias
+  // PRIMEIRO: Carregar o menu de categorias
   if (typeof loadCategoriesMenu === 'function') {
     loadCategoriesMenu();
-  }  // Mostrar tutorial em vez da mensagem simples
+    
+    // DEPOIS: Aguardar um pouco e chamar showHomePage
+    setTimeout(() => {
+      console.log("🔍 DEBUG: Tentando chamar showHomePage após carregar categorias...");
+      if (typeof showHomePage === 'function' && window.categories && window.categories.length > 0) {
+        console.log("✅ showHomePage + categorias disponíveis, executando...");
+        showHomePage();
+      } else {
+        console.log("❌ Ainda sem categorias, tentando novamente...");
+        setTimeout(() => {
+          if (typeof showHomePage === 'function' && window.categories && window.categories.length > 0) {
+            console.log("✅ showHomePage + categorias agora disponíveis!");
+            showHomePage();
+          }
+        }, 1000);
+      }
+    }, 1000);
+  }
 
   hideLoader();
 }
