@@ -2276,7 +2276,6 @@ function createSizeTabsInterface(mainCategory, subcategory, availableSizes) {
   console.log('🔍 Tabs criadas no DOM:', document.querySelectorAll('.size-tab').length);
 }
 
-// ✅ PASSO 2.2: Carregar fotos de um tamanho específico
 function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
   console.log(`📐 Carregando fotos para tamanho: ${size}`);
 
@@ -2288,7 +2287,6 @@ function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
 
-    // Verificar estrutura: mainCategory → subcategory → size
     if (pathParts.length >= 3 &&
       pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
       pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim() &&
@@ -2312,7 +2310,36 @@ function loadPhotosForSpecificSize(mainCategory, subcategory, size) {
     return;
   }
 
-  loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory} → ${size}`);
+  // ✅ NOVA LÓGICA: Carregar fotos SEM apagar as abas
+  loadPhotosToExistingContainer(finalCategories, size);
+}
+
+// ✅ NOVA FUNÇÃO: Carregar fotos sem apagar nada
+function loadPhotosToExistingContainer(categories, size) {
+  const photosContainer = document.getElementById('photos-by-size-container');
+
+  // Buscar fotos de todas as categorias
+  const promises = categories.map(category => {
+    return fetch(`/api/photos?category_id=${category.id}&customer_code=${currentCustomerCode}`)
+      .then(response => response.json())
+      .then(photos => ({ category, photos }));
+  });
+
+  Promise.all(promises).then(results => {
+    const allPhotos = [];
+    results.forEach(({ category, photos }) => {
+      if (Array.isArray(photos)) {
+        allPhotos.push(...photos);
+        console.log(`📸 Carregadas ${photos.length} fotos de ${size}`);
+      }
+    });
+
+    // Renderizar fotos no container existente (preserva abas)
+    renderCategoryPhotosWithTabs(photosContainer, allPhotos);
+    hideLoader();
+
+    console.log(`✅ Total: ${allPhotos.length} fotos carregadas`);
+  });
 }
 
 // ✅ NOVA FUNÇÃO: Renderizar fotos preservando abas existentes
