@@ -2002,23 +2002,25 @@ function setupSubcategoryClickHandlers() {
   });
 }
 
-// NOVA FUNÇÃO CORRIGIDA: Carregar fotos de uma subcategoria (com mapeamento de nomes)
+// FUNÇÃO CORRIGIDA: Carregar fotos de uma subcategoria (LÓGICA ORIGINAL)
 function loadPhotosForSubcategory(mainCategory, subcategory) {
   console.log(`📸 Carregando fotos de: ${mainCategory} → ${subcategory}`);
 
-  // ✅ NOVO: Mapear nomes modificados de volta aos originais
+  showLoader();
+
+  // ✅ MAPEAMENTO APENAS PARA BUSCA (não afeta outras categorias)
   let searchSubcategory = subcategory;
 
-  // Mapear nomes exibidos de volta aos nomes reais na estrutura
-  if (subcategory === 'Assorted-Tones Small') {
-    searchSubcategory = 'Assorted-Natural-Tones';
-  } else if (subcategory === 'Assorted-Tones Extra-Small') {
-    searchSubcategory = 'Assorted-Tones';
+  // Mapear APENAS nomes modificados do Brazil Best Sellers
+  if (mainCategory === 'Brazil Best Sellers') {
+    if (subcategory === 'Assorted-Tones Small') {
+      searchSubcategory = 'Assorted-Natural-Tones';
+    } else if (subcategory === 'Assorted-Tones Extra-Small') {
+      searchSubcategory = 'Assorted-Tones';
+    }
   }
 
-  console.log(`🔍 Procurando por nome real: ${searchSubcategory}`);
-
-  showLoader();
+  console.log(`🔍 Procurando por: ${searchSubcategory}`);
 
   // Encontrar todas as categorias finais que CONTÊM essa subcategoria
   const finalCategories = [];
@@ -2033,10 +2035,9 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
     const normalizedMain = mainCategory.replace(/\s+/g, ' ').trim();
     const normalizedSub = searchSubcategory.replace(/\s+/g, ' ').trim();
 
-    // ✅ NOVA LÓGICA MAIS ESPECÍFICA: Verificar se pertence à categoria principal E tem a subcategoria EXATA no nível 3
+    // ✅ LÓGICA ORIGINAL: Verificar se pertence à categoria principal E contém a subcategoria
     if (pathParts[0].replace(/\s+/g, ' ').trim() === normalizedMain &&
-      pathParts.length >= 3 &&
-      pathParts[2].replace(/\s+/g, ' ').trim() === normalizedSub) {
+      pathParts.some(part => part.replace(/\s+/g, ' ').trim() === normalizedSub)) {
 
       finalCategories.push({
         id: cat.id,
