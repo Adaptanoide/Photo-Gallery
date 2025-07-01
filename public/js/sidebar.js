@@ -5,6 +5,37 @@ let isLoadingMorePhotos = false;
 let isLoadingCategory = false;
 let categoryPhotoCache = {};
 
+// ✅ ADICIONAR ESTAS DUAS LINHAS AQUI:
+let qbItemData = {}; // Global para armazenar códigos QB
+
+// ✅ ADICIONAR ESTA FUNÇÃO COMPLETA AQUI:
+async function loadQBItems() {
+  try {
+    const response = await fetch('/api/admin/categories/prices');
+    const data = await response.json();
+
+    qbItemData = {};
+    if (data.success && data.prices) {
+      data.prices.forEach(item => {
+        if (item.qbItem) {
+          qbItemData[item.folderId] = item.qbItem;
+        }
+      });
+    }
+
+    console.log(`✅ Loaded ${Object.keys(qbItemData).length} QB Items for sidebar`);
+    return qbItemData;
+  } catch (error) {
+    console.error('❌ Error loading QB Items:', error);
+    return {};
+  }
+}
+
+// ✅ Função existente getCategoryCache continua aqui...
+function getCategoryCache(categoryId) {
+  return categoryPhotoCache[categoryId] || null;
+}
+
 // ✅ FUNÇÃO QUE FALTAVA (SIMPLES)
 function getCategoryCache(categoryId) {
   return categoryPhotoCache[categoryId] || null;
@@ -1801,9 +1832,15 @@ function debugBrazilBestSellers() {
   });
 }
 
-// Função para selecionar categoria principal e atualizar sidebar - VERSÃO INTELIGENTE
-function selectMainCategory(mainCategoryName) {
+// Função para selecionar categoria principal e atualizar sidebar - VERSÃO QB-BASED
+async function selectMainCategory(mainCategoryName) {
   console.log(`🎯 Selecionando categoria principal: ${mainCategoryName}`);
+
+  // ✅ NOVO: Carregar códigos QB se ainda não foram carregados
+  if (Object.keys(qbItemData).length === 0) {
+    console.log('📊 Carregando códigos QB...');
+    await loadQBItems();
+  }
 
   // Obter subcategorias desta categoria principal
   const subcategories = analyzeSubcategoriesByMain(mainCategoryName);
@@ -1834,7 +1871,7 @@ function selectMainCategory(mainCategoryName) {
   menuContainer.innerHTML = '';
 
   if (isGenericSubcategories) {
-    // ✅ MOSTRAR PRÓXIMO NÍVEL (cores/tipos específicos)
+    // ✅ MOSTRAR PRÓXIMO NÍVEL (cores/tipos específicos) - BASEADO EM QB
     const specificCategories = getSpecificCategoriesForGeneric(mainCategoryName);
     specificCategories.forEach((category, index) => {
       const isActive = index === 0 ? 'active' : '';
@@ -1874,33 +1911,57 @@ function selectMainCategory(mainCategoryName) {
   }
 }
 
+// NOVA FUNÇÃO: Obter categorias específicas baseado em códigos QB
 function getSpecificCategoriesForGeneric(mainCategoryName) {
-  const specificCategories = new Set();
+  console.log(`🎯 Usando códigos QB para filtrar: ${mainCategoryName}`);
 
-  // 🔍 DEBUG: Ver todas as categorias desta categoria principal
-  console.log(`🔍 DEBUG: Analisando estrutura de ${mainCategoryName}`);
+  // Definir códigos QB específicos para cada categoria principal
+  const qbCodeMappings = {
+    'Brazil Best Sellers': [
+      '5475BR', '5475SB', '5475SP', '5475SC',
+      '5365', '5300', '5375DRK', '5375EXO', '5375LGT'
+    ],
+    'Colombia Best Value': [
+      // Adicionar códigos QB do Colombia se necessário
+    ]
+  };
 
+  const targetQBCodes = qbCodeMappings[mainCategoryName];
+  if (!targetQBCodes) {
+    console.log(`⚠️ Nenhum mapeamento QB definido para: ${mainCategoryName}`);
+    return [];
+  }
+
+  const foundCategories = [];
+
+  // Buscar categorias que têm os códigos QB específicos
   window.categories.forEach(cat => {
     if (cat.isAll) return;
 
-    const fullPath = cat.fullPath || cat.name;
-    const pathParts = fullPath.split(' → ');
+    const categoryQB = qbItemData[cat.id];
+    if (categoryQB && targetQBCodes.includes(categoryQB)) {
+      const fullPath = cat.fullPath || cat.name;
+      const pathParts = fullPath.split(' → ');
 
-    if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
-      // 🔍 DEBUG: Log de cada categoria encontrada
-      console.log(`  📁 ${fullPath} → Níveis: ${pathParts.length} → Partes: [${pathParts.join(' | ')}]`);
+      // Extrair nome da categoria (normalmente nível 3)
+      const categoryName = pathParts.length >= 3 ? pathParts[2] : cat.name;
 
-      // Para categorias genéricas, pegar o nível 3 ou 2 dependendo da estrutura
-      if (pathParts.length >= 3) {
-        specificCategories.add(pathParts[2]); // Nível 3 = cores/tipos específicos
-      } else if (pathParts.length >= 2) {
-        specificCategories.add(pathParts[1]); // Fallback para nível 2
-      }
+      foundCategories.push({
+        name: categoryName,
+        qbCode: categoryQB,
+        id: cat.id,
+        fullPath: fullPath
+      });
+
+      console.log(`✅ Encontrada categoria: ${categoryName} (QB: ${categoryQB})`);
     }
   });
 
-  console.log(`🔍 DEBUG: Categorias específicas encontradas: [${Array.from(specificCategories).join(', ')}]`);
-  return Array.from(specificCategories).sort();
+  // Ordenar por código QB para ordem consistente
+  foundCategories.sort((a, b) => a.qbCode.localeCompare(b.qbCode));
+
+  console.log(`🎯 Total encontradas: ${foundCategories.length} categorias com códigos QB`);
+  return foundCategories.map(cat => cat.name);
 }
 
 // Event listeners para subcategorias 
