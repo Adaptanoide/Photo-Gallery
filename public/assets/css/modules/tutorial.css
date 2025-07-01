@@ -45,6 +45,31 @@
   color: #F9F7ED;
   transform: none;
 }
+
+/* Botão Home - mesmo estilo do logout */
+#breadcrumb-home {
+  position: static;
+  display: flex;
+  padding: 5px 14px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid #e8f5e8;
+  background: #e8f5e8;
+  color: #2d5a2d;
+  font-family: 'Nunito', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#breadcrumb-home:hover {
+  background: #d4f4d4;
+  border-color: #c3e6c3;
+  transform: translateY(-1px);
+}
+
 #new-help {
   position: static;
   display: flex;
