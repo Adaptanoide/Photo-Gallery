@@ -2401,9 +2401,16 @@ function renderCategoryPhotosWithTabs(container, photos) {
   container.innerHTML = html;
 }
 
-// ✅ PASSO 2.3: Função para trocar de aba
 function switchSizeTab(mainCategory, subcategory, size) {
   console.log(`🔄 Trocando para aba: ${size}`);
+
+  // ✅ ATUALIZAR TÍTULO COM NOVO TAMANHO
+  const newTitle = createCompleteTitle(mainCategory, subcategory, size);
+  const titleElement = document.getElementById('dynamic-category-title');
+  if (titleElement) {
+    titleElement.textContent = newTitle;
+    console.log(`📝 Título atualizado: ${newTitle}`);
+  }
 
   // Atualizar abas ativas
   document.querySelectorAll('.size-tab').forEach(tab => {
