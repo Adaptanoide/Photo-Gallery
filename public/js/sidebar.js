@@ -2088,7 +2088,7 @@ function loadPhotosWithoutTabs(mainCategory, subcategory) {
     return;
   }
 
-  loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} → ${subcategory}`);
+  loadPhotosFromMultipleCategories(finalCategories, `${mainCategory} - ${subcategory}`);
 }
 
 // FUNÇÃO AUXILIAR: Carregar fotos de múltiplas categorias
@@ -2460,7 +2460,7 @@ function createCompleteTitle(mainCategory, subcategory, size = null) {
   }
 
   // Fallback para outras categorias
-  return `${mainCategory} → ${subcategory}`;
+  return `${mainCategory} - ${subcategory}`;
 }
 
 // ✅ FUNÇÃO: Atualizar breadcrumb dinamicamente
@@ -2470,12 +2470,8 @@ function updateDynamicBreadcrumb(mainCategory, subcategory = null, size = null) 
 
   let breadcrumbHTML = '';
 
-  // Home sempre clickável
-  breadcrumbHTML += `<a href="#" class="breadcrumb-link" onclick="showHomePage()">Home</a>`;
-
-  // Categoria principal
+  // Categoria principal (SEM adicionar Home - já temos o botão)
   if (mainCategory) {
-    breadcrumbHTML += `<span class="breadcrumb-separator">></span>`;
     breadcrumbHTML += `<a href="#" class="breadcrumb-link" onclick="selectMainCategory('${mainCategory}')">${mainCategory}</a>`;
   }
 
@@ -2523,7 +2519,7 @@ function extractFullPathForBestSellers(mainCategory, subcategory) {
 
   // Fallback
   console.log(`⚠️ Caminho não encontrado, usando fallback`);
-  return `${mainCategory} → ${subcategory}`;
+  return `${mainCategory} - ${subcategory}`;
 }
 
 // Disponibilizar globalmente
