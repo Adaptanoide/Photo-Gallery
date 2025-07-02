@@ -2240,8 +2240,12 @@ function createSizeTabsInterface(mainCategory, subcategory, availableSizes) {
   // Criar título da categoria
   const titleContainer = document.createElement('div');
   titleContainer.className = 'category-title-container';
+  // ✅ TÍTULO COMPLETO: incluir categoria principal + subcategoria + primeiro tamanho
+  const firstSize = availableSizes[0];
+  const completeTitle = createCompleteTitle(mainCategory, subcategory, firstSize);
+
   titleContainer.innerHTML = `
-    <h2>${subcategory}</h2>
+    <h2 id="dynamic-category-title">${completeTitle}</h2>
     <div class="category-divider"></div>
   `;
   contentDiv.appendChild(titleContainer);
@@ -2411,6 +2415,53 @@ function switchSizeTab(mainCategory, subcategory, size) {
   // Carregar fotos do novo tamanho
   showLoader();
   loadPhotosForSpecificSize(mainCategory, subcategory, size);
+}
+
+// ✅ FUNÇÃO UTILITÁRIA: Criar título completo baseado no tipo de categoria
+function createCompleteTitle(mainCategory, subcategory, size = null) {
+  console.log(`📝 Criando título para: ${mainCategory} → ${subcategory} → ${size || 'sem tamanho'}`);
+
+  // Para categorias com abas (título dinâmico)
+  if (needsSizeTabs(mainCategory)) {
+    if (size) {
+      return `${mainCategory} → ${subcategory} → ${size}`;
+    } else {
+      return `${mainCategory} → ${subcategory}`;
+    }
+  }
+
+  // Para Brazil Best Sellers (extrair caminho completo da estrutura)
+  if (mainCategory === 'Brazil Best Sellers') {
+    return extractFullPathForBestSellers(mainCategory, subcategory);
+  }
+
+  // Fallback para outras categorias
+  return `${mainCategory} → ${subcategory}`;
+}
+
+// ✅ FUNÇÃO AUXILIAR: Extrair caminho completo para Brazil Best Sellers
+function extractFullPathForBestSellers(mainCategory, subcategory) {
+  console.log(`🔍 Buscando caminho completo para: ${mainCategory} → ${subcategory}`);
+
+  // Buscar a primeira categoria que corresponde
+  const matchingCategory = window.categories.find(cat => {
+    if (cat.isAll) return false;
+
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+
+    return pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
+      pathParts.some(part => part.replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim());
+  });
+
+  if (matchingCategory && matchingCategory.fullPath) {
+    console.log(`✅ Caminho encontrado: ${matchingCategory.fullPath}`);
+    return matchingCategory.fullPath;
+  }
+
+  // Fallback
+  console.log(`⚠️ Caminho não encontrado, usando fallback`);
+  return `${mainCategory} → ${subcategory}`;
 }
 
 // Disponibilizar globalmente
