@@ -2174,6 +2174,7 @@ function loadPhotosFromMultipleCategories(categories, title) {
 function needsSizeTabs(mainCategoryName) {
   const categoriesWithTabs = [
     'Colombia Cowhides',
+    'Colombia Best Value',
     'Brazil Top Selected Categories'
   ];
 
