@@ -1153,24 +1153,143 @@ function loadMorePhotosForCategory(categoryId, currentOffset, batchSize) {
     });
 }
 
-// Funções de navegação entre categorias
+// ✅ FUNÇÃO: Navegação hierárquica inteligente - PRÓXIMA
 function getNextCategoryFromId(currentCategoryId) {
-  if (!window.categories) return null;
-  const specificCategories = window.categories.filter(cat => !cat.isAll);
-  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
-  if (currentIndex >= 0 && currentIndex < specificCategories.length - 1) {
-    return specificCategories[currentIndex + 1];
+  console.log(`🎯 getNextCategoryFromId: ${currentCategoryId}`);
+
+  // Obter contexto e opções atuais
+  const context = getCurrentNavigationContext();
+  const options = getNavigationOptions(context);
+
+  if (!context || !options) {
+    console.log('❌ Sem contexto ou opções disponíveis');
+    return null;
   }
+
+  // NÍVEL 1: Navegação entre tamanhos/produtos (terceiro nível)
+  if (context.level === 'size' && options.sizes.length > 0) {
+    const currentIndex = options.sizes.indexOf(context.size);
+    if (currentIndex >= 0 && currentIndex < options.sizes.length - 1) {
+      const nextSize = options.sizes[currentIndex + 1];
+      console.log(`➡️ Próximo tamanho: ${nextSize}`);
+
+      // Encontrar categoria correspondente no window.categories
+      const targetCategory = window.categories.find(cat =>
+        cat.fullPath &&
+        cat.fullPath.includes(context.mainCategory) &&
+        cat.fullPath.includes(context.subcategory) &&
+        cat.fullPath.includes(nextSize)
+      );
+
+      return targetCategory || null;
+    }
+  }
+
+  // NÍVEL 2: Navegação entre subcategorias
+  if (options.subcategories.length > 0) {
+    const currentIndex = options.subcategories.indexOf(context.subcategory);
+    if (currentIndex >= 0 && currentIndex < options.subcategories.length - 1) {
+      const nextSubcategory = options.subcategories[currentIndex + 1];
+      console.log(`➡️ Próxima subcategoria: ${nextSubcategory}`);
+
+      // Encontrar primeira categoria da próxima subcategoria
+      const targetCategory = window.categories.find(cat =>
+        cat.fullPath &&
+        cat.fullPath.includes(context.mainCategory) &&
+        cat.fullPath.includes(nextSubcategory)
+      );
+
+      return targetCategory || null;
+    }
+  }
+
+  // NÍVEL 3: Navegação entre categorias principais
+  const currentMainIndex = options.mainCategories.indexOf(context.mainCategory);
+  if (currentMainIndex >= 0 && currentMainIndex < options.mainCategories.length - 1) {
+    const nextMainCategory = options.mainCategories[currentMainIndex + 1];
+    console.log(`➡️ Próxima categoria principal: ${nextMainCategory}`);
+
+    // Encontrar primeira categoria da próxima categoria principal
+    const targetCategory = window.categories.find(cat =>
+      cat.fullPath &&
+      cat.fullPath.includes(nextMainCategory) &&
+      !cat.isAll
+    );
+
+    return targetCategory || null;
+  }
+
+  console.log(`🔚 Fim da navegação - última categoria`);
   return null;
 }
 
+// ✅ FUNÇÃO: Navegação hierárquica inteligente - ANTERIOR
 function getPreviousCategoryFromId(currentCategoryId) {
-  if (!window.categories) return null;
-  const specificCategories = window.categories.filter(cat => !cat.isAll);
-  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
-  if (currentIndex > 0) {
-    return specificCategories[currentIndex - 1];
+  console.log(`🎯 getPreviousCategoryFromId: ${currentCategoryId}`);
+
+  // Obter contexto e opções atuais
+  const context = getCurrentNavigationContext();
+  const options = getNavigationOptions(context);
+
+  if (!context || !options) {
+    console.log('❌ Sem contexto ou opções disponíveis');
+    return null;
   }
+
+  // NÍVEL 1: Navegação entre tamanhos/produtos (terceiro nível)
+  if (context.level === 'size' && options.sizes.length > 0) {
+    const currentIndex = options.sizes.indexOf(context.size);
+    if (currentIndex > 0) {
+      const previousSize = options.sizes[currentIndex - 1];
+      console.log(`⬅️ Tamanho anterior: ${previousSize}`);
+
+      // Encontrar categoria correspondente no window.categories
+      const targetCategory = window.categories.find(cat =>
+        cat.fullPath &&
+        cat.fullPath.includes(context.mainCategory) &&
+        cat.fullPath.includes(context.subcategory) &&
+        cat.fullPath.includes(previousSize)
+      );
+
+      return targetCategory || null;
+    }
+  }
+
+  // NÍVEL 2: Navegação entre subcategorias
+  if (options.subcategories.length > 0) {
+    const currentIndex = options.subcategories.indexOf(context.subcategory);
+    if (currentIndex > 0) {
+      const previousSubcategory = options.subcategories[currentIndex - 1];
+      console.log(`⬅️ Subcategoria anterior: ${previousSubcategory}`);
+
+      // Encontrar última categoria da subcategoria anterior
+      const targetCategory = window.categories.find(cat =>
+        cat.fullPath &&
+        cat.fullPath.includes(context.mainCategory) &&
+        cat.fullPath.includes(previousSubcategory)
+      );
+
+      return targetCategory || null;
+    }
+  }
+
+  // NÍVEL 3: Navegação entre categorias principais
+  const currentMainIndex = options.mainCategories.indexOf(context.mainCategory);
+  if (currentMainIndex > 0) {
+    const previousMainCategory = options.mainCategories[currentMainIndex - 1];
+    console.log(`⬅️ Categoria principal anterior: ${previousMainCategory}`);
+
+    // Encontrar última categoria da categoria principal anterior
+    const targetCategory = window.categories.find(cat =>
+      cat.fullPath &&
+      cat.fullPath.includes(previousMainCategory) &&
+      !cat.isAll
+    );
+
+    return targetCategory || null;
+  }
+
+  console.log(`🔚 Início da navegação - primeira categoria`);
   return null;
 }
 
