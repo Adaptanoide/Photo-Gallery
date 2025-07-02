@@ -955,32 +955,6 @@ function focusOnFirstCategory() {
   }
 }
 
-// IMPORTAR funções do lightbox para galeria principal
-function getNextCategoryFromId(currentCategoryId) {
-  // Reutilizar lógica do lightbox.js
-  if (!window.categories) return null;
-
-  const specificCategories = window.categories.filter(cat => !cat.isAll);
-  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
-
-  if (currentIndex >= 0 && currentIndex < specificCategories.length - 1) {
-    return specificCategories[currentIndex + 1];
-  }
-  return null;
-}
-
-function getPreviousCategoryFromId(currentCategoryId) {
-  if (!window.categories) return null;
-
-  const specificCategories = window.categories.filter(cat => !cat.isAll);
-  const currentIndex = specificCategories.findIndex(cat => cat.id === currentCategoryId);
-
-  if (currentIndex > 0) {
-    return specificCategories[currentIndex - 1];
-  }
-  return null;
-}
-
 // Navegar para próxima categoria (interface principal)
 function navigateToNextCategoryMain(currentCategoryId) {
   const nextCategory = getNextCategoryFromId(currentCategoryId);
