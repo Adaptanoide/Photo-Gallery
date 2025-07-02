@@ -2107,6 +2107,15 @@ function loadPhotosFromMultipleCategories(categories, title) {
   `;
   contentDiv.appendChild(titleContainer);
 
+  // ✅ ATUALIZAR BREADCRUMB DINÂMICO (para Brazil Best Sellers)
+  if (title && title.includes(' → ')) {
+    const titleParts = title.split(' → ');
+    const mainCategory = titleParts[0];
+    const subcategory = titleParts[1];
+    const size = titleParts[2] || null;
+    updateDynamicBreadcrumb(mainCategory, subcategory, size);
+  }
+
   // Crear container principal para todas as fotos
   const mainContainer = document.createElement('div');
   mainContainer.id = 'category-section-main';
@@ -2248,6 +2257,10 @@ function createSizeTabsInterface(mainCategory, subcategory, availableSizes) {
     <h2 id="dynamic-category-title">${completeTitle}</h2>
     <div class="category-divider"></div>
   `;
+
+  // ✅ ATUALIZAR BREADCRUMB DINÂMICO
+  updateDynamicBreadcrumb(mainCategory, subcategory, firstSize);
+
   contentDiv.appendChild(titleContainer);
 
   // ✅ CRIAR ABAS STICKY
@@ -2410,6 +2423,10 @@ function switchSizeTab(mainCategory, subcategory, size) {
   if (titleElement) {
     titleElement.textContent = newTitle;
     console.log(`📝 Título atualizado: ${newTitle}`);
+
+    // ✅ ATUALIZAR BREADCRUMB DINÂMICO
+    updateDynamicBreadcrumb(mainCategory, subcategory, size);
+
   }
 
   // Atualizar abas ativas
@@ -2431,9 +2448,9 @@ function createCompleteTitle(mainCategory, subcategory, size = null) {
   // Para categorias com abas (título dinâmico)
   if (needsSizeTabs(mainCategory)) {
     if (size) {
-      return `${mainCategory} → ${subcategory} → ${size}`;
+      return `${mainCategory} - ${subcategory} - ${size}`;
     } else {
-      return `${mainCategory} → ${subcategory}`;
+      return `${mainCategory} - ${subcategory}`;
     }
   }
 
@@ -2444,6 +2461,44 @@ function createCompleteTitle(mainCategory, subcategory, size = null) {
 
   // Fallback para outras categorias
   return `${mainCategory} → ${subcategory}`;
+}
+
+// ✅ FUNÇÃO: Atualizar breadcrumb dinamicamente
+function updateDynamicBreadcrumb(mainCategory, subcategory = null, size = null) {
+  const breadcrumbContainer = document.getElementById('breadcrumb-container');
+  if (!breadcrumbContainer) return;
+
+  let breadcrumbHTML = '';
+
+  // Home sempre clickável
+  breadcrumbHTML += `<a href="#" class="breadcrumb-link" onclick="showHomePage()">Home</a>`;
+
+  // Categoria principal
+  if (mainCategory) {
+    breadcrumbHTML += `<span class="breadcrumb-separator">></span>`;
+    breadcrumbHTML += `<a href="#" class="breadcrumb-link" onclick="selectMainCategory('${mainCategory}')">${mainCategory}</a>`;
+  }
+
+  // Subcategoria
+  if (subcategory) {
+    breadcrumbHTML += `<span class="breadcrumb-separator">></span>`;
+    if (size) {
+      // Se tem tamanho, subcategoria é clickável
+      breadcrumbHTML += `<a href="#" class="breadcrumb-link" onclick="loadPhotosForSubcategory('${mainCategory}', '${subcategory}')">${subcategory}</a>`;
+    } else {
+      // Se não tem tamanho, subcategoria é atual
+      breadcrumbHTML += `<span class="breadcrumb-current">${subcategory}</span>`;
+    }
+  }
+
+  // Tamanho (sempre atual se existir)
+  if (size) {
+    breadcrumbHTML += `<span class="breadcrumb-separator">></span>`;
+    breadcrumbHTML += `<span class="breadcrumb-current">${size}</span>`;
+  }
+
+  breadcrumbContainer.innerHTML = breadcrumbHTML;
+  console.log(`🧭 Breadcrumb atualizado: ${mainCategory} > ${subcategory} > ${size}`);
 }
 
 // ✅ FUNÇÃO AUXILIAR: Extrair caminho completo para Brazil Best Sellers
