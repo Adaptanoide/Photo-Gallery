@@ -1294,29 +1294,103 @@ function getPreviousCategoryFromId(currentCategoryId) {
 }
 
 function navigateToNextCategoryMain(currentCategoryId) {
-  const nextCategory = getNextCategoryFromId(currentCategoryId);
-  if (nextCategory) {
-    const categoryElement = document.querySelector(`[data-category-id="${nextCategory.id}"]`);
-    if (categoryElement) {
-      categoryElement.click();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  } else {
-    showToast('This is the last category!', 'info');
+  console.log(`🎯 navigateToNextCategoryMain: ${currentCategoryId}`);
+
+  const context = getCurrentNavigationContext();
+  const options = getNavigationOptions(context);
+
+  if (!context || !options) {
+    showToast('Erro ao obter contexto de navegação', 'error');
+    return;
   }
+
+  // NÍVEL 1: Navegação entre tamanhos (usar switchSizeTab)
+  if (context.level === 'size' && options.sizes.length > 0) {
+    const currentIndex = options.sizes.indexOf(context.size);
+    if (currentIndex >= 0 && currentIndex < options.sizes.length - 1) {
+      const nextSize = options.sizes[currentIndex + 1];
+      console.log(`🔄 Navegando para próximo tamanho: ${nextSize}`);
+      switchSizeTab(context.mainCategory, context.subcategory, nextSize);
+      return;
+    }
+  }
+
+  // NÍVEL 2: Navegação entre subcategorias
+  if (options.subcategories.length > 0) {
+    const currentIndex = options.subcategories.indexOf(context.subcategory);
+    if (currentIndex >= 0 && currentIndex < options.subcategories.length - 1) {
+      const nextSubcategory = options.subcategories[currentIndex + 1];
+      console.log(`🔄 Navegando para próxima subcategoria: ${nextSubcategory}`);
+      loadCategoryPhotos(context.mainCategory, nextSubcategory);
+      return;
+    }
+  }
+
+  // NÍVEL 3: Navegação entre categorias principais
+  const currentMainIndex = options.mainCategories.indexOf(context.mainCategory);
+  if (currentMainIndex >= 0 && currentMainIndex < options.mainCategories.length - 1) {
+    const nextMainCategory = options.mainCategories[currentMainIndex + 1];
+    console.log(`🔄 Navegando para próxima categoria principal: ${nextMainCategory}`);
+
+    // Encontrar primeira subcategoria da nova categoria principal
+    const firstSubcategory = getSubcategoriesForMain(nextMainCategory)[0];
+    if (firstSubcategory) {
+      loadCategoryPhotos(nextMainCategory, firstSubcategory);
+    }
+    return;
+  }
+
+  showToast('Esta é a última categoria!', 'info');
 }
 
 function navigateToPreviousCategoryMain(currentCategoryId) {
-  const prevCategory = getPreviousCategoryFromId(currentCategoryId);
-  if (prevCategory) {
-    const categoryElement = document.querySelector(`[data-category-id="${prevCategory.id}"]`);
-    if (categoryElement) {
-      categoryElement.click();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  } else {
-    showToast('This is the first category!', 'info');
+  console.log(`🎯 navigateToPreviousCategoryMain: ${currentCategoryId}`);
+
+  const context = getCurrentNavigationContext();
+  const options = getNavigationOptions(context);
+
+  if (!context || !options) {
+    showToast('Erro ao obter contexto de navegação', 'error');
+    return;
   }
+
+  // NÍVEL 1: Navegação entre tamanhos (usar switchSizeTab)
+  if (context.level === 'size' && options.sizes.length > 0) {
+    const currentIndex = options.sizes.indexOf(context.size);
+    if (currentIndex > 0) {
+      const previousSize = options.sizes[currentIndex - 1];
+      console.log(`🔄 Navegando para tamanho anterior: ${previousSize}`);
+      switchSizeTab(context.mainCategory, context.subcategory, previousSize);
+      return;
+    }
+  }
+
+  // NÍVEL 2: Navegação entre subcategorias  
+  if (options.subcategories.length > 0) {
+    const currentIndex = options.subcategories.indexOf(context.subcategory);
+    if (currentIndex > 0) {
+      const previousSubcategory = options.subcategories[currentIndex - 1];
+      console.log(`🔄 Navegando para subcategoria anterior: ${previousSubcategory}`);
+      loadCategoryPhotos(context.mainCategory, previousSubcategory);
+      return;
+    }
+  }
+
+  // NÍVEL 3: Navegação entre categorias principais
+  const currentMainIndex = options.mainCategories.indexOf(context.mainCategory);
+  if (currentMainIndex > 0) {
+    const previousMainCategory = options.mainCategories[currentMainIndex - 1];
+    console.log(`🔄 Navegando para categoria principal anterior: ${previousMainCategory}`);
+
+    // Encontrar primeira subcategoria da categoria anterior
+    const firstSubcategory = getSubcategoriesForMain(previousMainCategory)[0];
+    if (firstSubcategory) {
+      loadCategoryPhotos(previousMainCategory, firstSubcategory);
+    }
+    return;
+  }
+
+  showToast('Esta é a primeira categoria!', 'info');
 }
 
 // Função para adicionar/atualizar botões de navegação
