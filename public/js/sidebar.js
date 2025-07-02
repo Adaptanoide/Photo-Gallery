@@ -2522,7 +2522,7 @@ function extractFullPathForBestSellers(mainCategory, subcategory) {
   return `${mainCategory} - ${subcategory}`;
 }
 
-// ✅ FUNÇÃO: Detectar contexto de navegação hierárquica atual
+// ✅ FUNÇÃO CORRIGIDA: Detectar contexto de navegação hierárquica atual
 function getCurrentNavigationContext() {
   // Detectar categoria principal atual
   const breadcrumb = document.getElementById('breadcrumb-container');
@@ -2540,8 +2540,8 @@ function getCurrentNavigationContext() {
     };
   }
 
-  // Parsear breadcrumb: "Brazil Top Selected Categories > Black-White > Small"
-  const parts = breadcrumbText.split(' > ').map(part => part.trim());
+  // ✅ CORREÇÃO: Parsear por '>' sem espaços
+  const parts = breadcrumbText.split('>').map(part => part.trim());
 
   if (parts.length >= 1) {
     const context = {
