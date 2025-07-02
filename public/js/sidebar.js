@@ -1851,12 +1851,11 @@ async function selectMainCategory(mainCategoryName) {
     return;
   }
 
-  // ✅ NOVA LÓGICA: Detectar se subcategorias são genéricas
-  const isGenericSubcategories = subcategories.some(sub =>
+  // ✅ NOVA LÓGICA: Detectar se subcategorias são genéricas (APENAS BRAZIL BEST SELLERS)
+  const isGenericSubcategories = mainCategoryName === 'Brazil Best Sellers' && subcategories.some(sub =>
     sub.includes('Best-Value') ||
     sub.includes('Super-Promo') ||
-    sub.includes('Tones-Mix') ||
-    sub.includes('Tricolor-Dark-Tones-Creamish-White')
+    sub.includes('Tones-Mix')
   );
 
   console.log(`🔍 Subcategorias genéricas detectadas: ${isGenericSubcategories}`);
