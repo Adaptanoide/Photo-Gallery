@@ -2027,9 +2027,8 @@ function loadPhotosWithSizeTabs(mainCategory, subcategory) {
   const availableSizes = extractAvailableSizes(mainCategory, subcategory);
 
   if (availableSizes.length === 0) {
+    console.error(`❌ Nenhum tamanho encontrado para: ${subcategory}`);
     hideLoader();
-    const contentDiv = document.getElementById('content');
-    contentDiv.innerHTML = '<div class="empty-message">No sizes found for this category.</div>';
     return;
   }
 
@@ -2037,6 +2036,10 @@ function loadPhotosWithSizeTabs(mainCategory, subcategory) {
 
   // Criar interface com abas
   createSizeTabsInterface(mainCategory, subcategory, availableSizes);
+
+  // ✅ ADICIONAR ESTA LINHA AQUI (após createSizeTabsInterface):
+  const contentDiv = document.getElementById('content');
+  addCategoryNavigationButtons(contentDiv, `${mainCategory}-${subcategory}`);
 
   // Carregar primeiro tamanho (menor)
   const firstSize = availableSizes[0];
