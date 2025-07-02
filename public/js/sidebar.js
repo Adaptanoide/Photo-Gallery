@@ -2522,5 +2522,92 @@ function extractFullPathForBestSellers(mainCategory, subcategory) {
   return `${mainCategory} - ${subcategory}`;
 }
 
+// ✅ FUNÇÃO: Detectar contexto de navegação hierárquica atual
+function getCurrentNavigationContext() {
+  // Detectar categoria principal atual
+  const breadcrumb = document.getElementById('breadcrumb-container');
+  if (!breadcrumb) return null;
+
+  const breadcrumbText = breadcrumb.textContent;
+
+  // Se está na home
+  if (breadcrumbText.includes('Choose a category')) {
+    return {
+      level: 'home',
+      mainCategory: null,
+      subcategory: null,
+      size: null
+    };
+  }
+
+  // Parsear breadcrumb: "Brazil Top Selected Categories > Black-White > Small"
+  const parts = breadcrumbText.split(' > ').map(part => part.trim());
+
+  if (parts.length >= 1) {
+    const context = {
+      level: parts.length === 1 ? 'mainCategory' : (parts.length === 2 ? 'subcategory' : 'size'),
+      mainCategory: parts[0] || null,
+      subcategory: parts[1] || null,
+      size: parts[2] || null
+    };
+
+    console.log(`🧭 Contexto atual:`, context);
+    return context;
+  }
+
+  return null;
+}
+
+// ✅ FUNÇÃO: Obter opções de navegação disponíveis
+function getNavigationOptions(context) {
+  if (!context) return null;
+
+  const options = {
+    mainCategories: [],
+    subcategories: [],
+    sizes: []
+  };
+
+  // Obter categorias principais disponíveis
+  const mainCategories = ['Brazil Best Sellers', 'Colombia Cowhides', 'Colombia Best Value', 'Brazil Top Selected Categories', 'Calfskin', 'Sheepskin', 'Rodeo Rugs'];
+  options.mainCategories = mainCategories;
+
+  // Se temos categoria principal, obter subcategorias
+  if (context.mainCategory) {
+    const subcategories = getSubcategoriesForMain(context.mainCategory);
+    options.subcategories = subcategories;
+  }
+
+  // Se temos subcategoria e é categoria com abas, obter tamanhos
+  if (context.mainCategory && context.subcategory && needsSizeTabs(context.mainCategory)) {
+    const sizes = extractAvailableSizes(context.mainCategory, context.subcategory);
+    options.sizes = sizes;
+  }
+
+  console.log(`🎯 Opções de navegação:`, options);
+  return options;
+}
+
+// ✅ FUNÇÃO AUXILIAR: Obter subcategorias para categoria principal
+function getSubcategoriesForMain(mainCategoryName) {
+  const subcategories = [];
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ');
+
+    if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
+      const subcategory = pathParts[1]?.replace(/\s+/g, ' ').trim();
+      if (subcategory && !subcategories.includes(subcategory)) {
+        subcategories.push(subcategory);
+      }
+    }
+  });
+
+  return subcategories;
+}
+
 // Disponibilizar globalmente
 window.toggleFilters = toggleFilters;
