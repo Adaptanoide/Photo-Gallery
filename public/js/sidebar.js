@@ -495,6 +495,26 @@ function highlightActiveCategory(categoryId) {
   }
 }
 
+// ✅ NOVA FUNÇÃO: Destacar subcategoria ativa  
+function highlightActiveSubcategory(subcategory) {
+  console.log(`🔍 Destacando subcategoria: ${subcategory}`);
+
+  // Remover destaque de todas as subcategorias
+  const categoryItems = document.querySelectorAll('.category-item[data-subcategory]');
+  categoryItems.forEach(item => {
+    item.classList.remove('active');
+  });
+
+  // Adicionar destaque à subcategoria atual
+  const selectedItem = document.querySelector(`.category-item[data-subcategory="${subcategory}"]`);
+  if (selectedItem) {
+    selectedItem.classList.add('active');
+    console.log(`✅ Subcategoria destacada: ${subcategory}`);
+  } else {
+    console.log(`❌ Subcategoria não encontrada no DOM: ${subcategory}`);
+  }
+}
+
 // Atualizar cabeçalho da categoria atual - FUNÇÃO MODIFICADA
 function updateCurrentCategoryHeader(categoryId) {
   // MUDANÇA: Não mostrar header separado, deixar apenas o título da galeria
@@ -2760,6 +2780,11 @@ function updateDynamicBreadcrumb(mainCategory, subcategory = null, size = null) 
 
   breadcrumbContainer.innerHTML = breadcrumbHTML;
   console.log(`🧭 Breadcrumb atualizado: ${mainCategory} > ${subcategory} > ${size}`);
+
+  // ✅ CORREÇÃO: Destacar subcategoria no sidebar
+  if (subcategory) {
+    highlightActiveSubcategory(subcategory);
+  }
 }
 
 // ✅ FUNÇÃO AUXILIAR: Extrair caminho completo para Brazil Best Sellers
@@ -2884,5 +2909,6 @@ window.needsSizeTabs = needsSizeTabs;
 window.getSubcategoriesForMain = getSubcategoriesForMain;
 window.extractAvailableSizes = extractAvailableSizes;
 window.updateDynamicBreadcrumb = updateDynamicBreadcrumb;
+window.highlightActiveSubcategory = highlightActiveSubcategory;
 
 console.log('🌐 Funções hierárquicas disponibilizadas globalmente para lightbox');
