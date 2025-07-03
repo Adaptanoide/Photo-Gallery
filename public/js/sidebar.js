@@ -2256,14 +2256,15 @@ function loadPhotosWithSizeTabs(mainCategory, subcategory) {
   console.log(`🔖 Implementando abas para: ${mainCategory} → ${subcategory}`);
 
   // ✅ CORREÇÃO: Atualizar highlight do sidebar
-  const subcategoryElement = document.querySelector(`.subcategory-item[data-subcategory="${subcategory}"]`);
+  const subcategoryElement = document.querySelector(`.category-item[data-subcategory="${subcategory}"]`);
   if (subcategoryElement) {
     // Remover highlight de todas as subcategorias
-    document.querySelectorAll('.subcategory-item').forEach(item => {
-      item.classList.remove('active');
-    });
+    document.querySelectorAll('.category-item').forEach(item => item.classList.remove('active'));
     // Adicionar highlight na subcategoria atual
     subcategoryElement.classList.add('active');
+    console.log(`✅ Sidebar atualizado para: ${subcategory}`);
+  } else {
+    console.log(`❌ Elemento sidebar não encontrado para: ${subcategory}`);
   }
 
   // Extrair tamanhos disponíveis
