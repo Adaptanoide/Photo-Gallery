@@ -2781,9 +2781,12 @@ function updateDynamicBreadcrumb(mainCategory, subcategory = null, size = null) 
   breadcrumbContainer.innerHTML = breadcrumbHTML;
   console.log(`🧭 Breadcrumb atualizado: ${mainCategory} > ${subcategory} > ${size}`);
 
-  // ✅ CORREÇÃO: Destacar subcategoria no sidebar
+  // ✅ CORREÇÃO: Destacar subcategoria APÓS sistema de sync (timing fix)
   if (subcategory) {
-    highlightActiveSubcategory(subcategory);
+    setTimeout(() => {
+      highlightActiveSubcategory(subcategory);
+      console.log(`⏰ Sidebar atualizado após sync delay`);
+    }, 100); // Executa DEPOIS que o sistema de sync termina
   }
 }
 
