@@ -1339,8 +1339,13 @@ function navigateToNextCategoryMain(currentCategoryId) {
     if (currentIndex >= 0 && currentIndex < options.sizes.length - 1) {
       const nextSize = options.sizes[currentIndex + 1];
       console.log(`🔄 Navegando para próximo tamanho: ${nextSize}`);
-      switchSizeTab(context.mainCategory, context.subcategory, nextSize);
-      return;
+      const success = switchSizeTab(context.mainCategory, context.subcategory, nextSize);
+      if (success) {
+        return; // ✅ Sucesso - parar aqui
+      } else {
+        console.log(`⚠️ Falha ao trocar aba, continuando para próximo nível...`);
+        // ✅ MUDANÇA: Não retorna - continua para próximo nível (subcategorias)
+      }
     }
   }
 
@@ -2673,7 +2678,6 @@ function switchSizeTab(mainCategory, subcategory, size) {
 
     // ✅ ATUALIZAR BREADCRUMB DINÂMICO
     updateDynamicBreadcrumb(mainCategory, subcategory, size);
-
   }
 
   // Atualizar abas ativas - com proteção contra DOM null
@@ -2687,12 +2691,13 @@ function switchSizeTab(mainCategory, subcategory, size) {
   } else {
     console.error(`❌ Aba não encontrada para tamanho: ${size}`);
     console.log(`🔍 Abas disponíveis:`, Array.from(document.querySelectorAll('.size-tab')).map(tab => tab.dataset.size));
-    return; // Sair da função se aba não existir
+    return false; // Retornar false para indicar falha
   }
 
   // Carregar fotos do novo tamanho
   showLoader();
   loadPhotosForSpecificSize(mainCategory, subcategory, size);
+  return true; // ✅ ADICIONADO: Retornar true para indicar sucesso
 }
 
 // ✅ FUNÇÃO UTILITÁRIA: Criar título completo baseado no tipo de categoria
