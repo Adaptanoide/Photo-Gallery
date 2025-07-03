@@ -1370,20 +1370,9 @@ function navigateToNextCategoryMain(currentCategoryId) {
     const nextMainCategory = options.mainCategories[currentMainIndex + 1];
     console.log(`🔄 Navegando para próxima categoria principal: ${nextMainCategory}`);
 
-    // ✅ ATUALIZAR SIDEBAR para nova categoria principal
-    const categoryElement = document.querySelector(`.main-category-item[data-category="${nextMainCategory}"]`);
-    if (categoryElement) {
-      categoryElement.click();
-    } else {
-      // Fallback: carregamento manual
-      const firstSubcategory = getSubcategoriesForMain(nextMainCategory)[0];
-      if (firstSubcategory) {
-        const targetCategoryId = findFirstCategoryId(nextMainCategory, firstSubcategory);
-        if (targetCategoryId) {
-          loadCategoryPhotos(targetCategoryId);
-        }
-      }
-    }
+    // ✅ CORREÇÃO: Usar função direta em vez de DOM incorreto
+    console.log(`🔄 Chamando selectMainCategory: ${nextMainCategory}`);
+    selectMainCategory(nextMainCategory);
     return;
   }
 
@@ -1438,22 +1427,9 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
     const previousMainCategory = options.mainCategories[currentMainIndex - 1];
     console.log(`🔄 Navegando para categoria principal anterior: ${previousMainCategory}`);
 
-    // ✅ ATUALIZAR SIDEBAR para categoria principal anterior
-    const categoryElement = document.querySelector(`.main-category-item[data-category="${previousMainCategory}"]`);
-    if (categoryElement) {
-      categoryElement.click();
-    } else {
-      // Fallback: carregamento manual
-      const firstSubcategory = getSubcategoriesForMain(previousMainCategory)[0];
-      if (firstSubcategory) {
-        const targetCategoryId = findFirstCategoryId(previousMainCategory, firstSubcategory);
-        if (targetCategoryId) {
-          loadCategoryPhotos(targetCategoryId);
-        } else {
-          showToast('Categoria não encontrada', 'error');
-        }
-      }
-    }
+    // ✅ CORREÇÃO: Usar função direta em vez de DOM incorreto  
+    console.log(`🔄 Chamando selectMainCategory: ${previousMainCategory}`);
+    selectMainCategory(previousMainCategory);
     return;
   }
 
@@ -2278,6 +2254,17 @@ function loadPhotosForSubcategory(mainCategory, subcategory) {
 // ✅ PASSO 2: Carregar fotos COM abas de tamanho
 function loadPhotosWithSizeTabs(mainCategory, subcategory) {
   console.log(`🔖 Implementando abas para: ${mainCategory} → ${subcategory}`);
+
+  // ✅ CORREÇÃO: Atualizar highlight do sidebar
+  const subcategoryElement = document.querySelector(`.subcategory-item[data-subcategory="${subcategory}"]`);
+  if (subcategoryElement) {
+    // Remover highlight de todas as subcategorias
+    document.querySelectorAll('.subcategory-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    // Adicionar highlight na subcategoria atual
+    subcategoryElement.classList.add('active');
+  }
 
   // Extrair tamanhos disponíveis
   const availableSizes = extractAvailableSizes(mainCategory, subcategory);
