@@ -2883,5 +2883,6 @@ window.getNavigationOptions = getNavigationOptions;
 window.needsSizeTabs = needsSizeTabs;
 window.getSubcategoriesForMain = getSubcategoriesForMain;
 window.extractAvailableSizes = extractAvailableSizes;
+window.updateDynamicBreadcrumb = updateDynamicBreadcrumb;
 
 console.log('🌐 Funções hierárquicas disponibilizadas globalmente para lightbox');

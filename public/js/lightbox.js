@@ -1206,8 +1206,15 @@ function getNextCategory() {
           cat.fullPath.includes(context.subcategory) && cat.fullPath.includes(nextSize)
         );
         if (nextCategory) {
-          console.log(`🔄 Próximo tamanho: ${nextSize} (${nextCategory.id})`);
-          return nextCategory;
+          if (nextCategory) {
+            // ✅ VERIFICAÇÃO: Evitar loop se já estamos na categoria
+            if (nextCategory.id === activeCategory) {
+              console.log(`⚠️ Já estamos na categoria ${nextCategory.id}, pulando para próximo nível`);
+            } else {
+              console.log(`🔄 Próximo tamanho: ${nextSize} (${nextCategory.id})`);
+              return nextCategory;
+            }
+          }
         }
       }
     }
@@ -1317,6 +1324,18 @@ function navigateToNextCategory() {
   }
 
   console.log(`Navigating to next category: ${nextCategory.name} (ID: ${nextCategory.id})`);
+
+  // ✅ CORREÇÃO: Atualizar contexto após navegação do lightbox
+  if (nextCategory.fullPath && typeof window.updateDynamicBreadcrumb === 'function') {
+    const pathParts = nextCategory.fullPath.split(' → ');
+    if (pathParts.length >= 3) {
+      const mainCategory = pathParts[0];
+      const subcategory = pathParts[1];
+      const size = pathParts[2];
+      console.log(`🔄 Atualizando contexto lightbox: ${mainCategory} → ${subcategory} → ${size}`);
+      window.updateDynamicBreadcrumb(mainCategory, subcategory, size);
+    }
+  }
 
   isTransitioningCategory = true;
   removeNavigationOverlay();
