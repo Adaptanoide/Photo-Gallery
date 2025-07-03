@@ -2608,6 +2608,10 @@ function loadPhotosToExistingContainer(categories, size) {
     hideLoader();
 
     console.log(`✅ Total: ${allPhotos.length} fotos carregadas`);
+
+    // ✅ CORREÇÃO: Atualizar array global para lightbox funcionar
+    window.photos = allPhotos;
+    console.log(`🔍 Array global atualizado com ${allPhotos.length} fotos para lightbox`);
   });
 }
 
