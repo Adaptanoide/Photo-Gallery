@@ -1293,6 +1293,35 @@ function getPreviousCategoryFromId(currentCategoryId) {
   return null;
 }
 
+// ✅ FUNÇÃO AUXILIAR: Encontrar categoryId baseado em mainCategory + subcategory
+function findFirstCategoryId(mainCategory, subcategory) {
+  console.log(`🔍 Procurando categoryId para: ${mainCategory} → ${subcategory}`);
+
+  if (!window.categories || !Array.isArray(window.categories)) {
+    console.log('❌ window.categories não disponível');
+    return null;
+  }
+
+  // Procurar primeira categoria que corresponde ao caminho
+  const targetCategory = window.categories.find(cat => {
+    if (!cat.fullPath) return false;
+
+    // Verificar se o fullPath contém mainCategory e subcategory
+    const hasMainCategory = cat.fullPath.includes(mainCategory);
+    const hasSubcategory = cat.fullPath.includes(subcategory);
+
+    return hasMainCategory && hasSubcategory && !cat.isAll;
+  });
+
+  if (targetCategory) {
+    console.log(`✅ Categoria encontrada: ${targetCategory.id} (${targetCategory.fullPath})`);
+    return targetCategory.id;
+  } else {
+    console.log(`❌ Nenhuma categoria encontrada para: ${mainCategory} → ${subcategory}`);
+    return null;
+  }
+}
+
 function navigateToNextCategoryMain(currentCategoryId) {
   console.log(`🎯 navigateToNextCategoryMain: ${currentCategoryId}`);
 
@@ -1321,7 +1350,13 @@ function navigateToNextCategoryMain(currentCategoryId) {
     if (currentIndex >= 0 && currentIndex < options.subcategories.length - 1) {
       const nextSubcategory = options.subcategories[currentIndex + 1];
       console.log(`🔄 Navegando para próxima subcategoria: ${nextSubcategory}`);
-      loadCategoryPhotos(context.mainCategory, nextSubcategory);
+      // ✅ POR:
+      const targetCategoryId = findFirstCategoryId(context.mainCategory, nextSubcategory);
+      if (targetCategoryId) {
+        loadCategoryPhotos(targetCategoryId);
+      } else {
+        showToast('Categoria não encontrada', 'error');
+      }
       return;
     }
   }
@@ -1335,7 +1370,13 @@ function navigateToNextCategoryMain(currentCategoryId) {
     // Encontrar primeira subcategoria da nova categoria principal
     const firstSubcategory = getSubcategoriesForMain(nextMainCategory)[0];
     if (firstSubcategory) {
-      loadCategoryPhotos(nextMainCategory, firstSubcategory);
+      // ✅ POR:
+      const targetCategoryId = findFirstCategoryId(nextMainCategory, firstSubcategory);
+      if (targetCategoryId) {
+        loadCategoryPhotos(targetCategoryId);
+      } else {
+        showToast('Categoria não encontrada', 'error');
+      }
     }
     return;
   }
