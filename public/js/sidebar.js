@@ -1350,12 +1350,15 @@ function navigateToNextCategoryMain(currentCategoryId) {
     if (currentIndex >= 0 && currentIndex < options.subcategories.length - 1) {
       const nextSubcategory = options.subcategories[currentIndex + 1];
       console.log(`🔄 Navegando para próxima subcategoria: ${nextSubcategory}`);
-      // ✅ POR:
-      const targetCategoryId = findFirstCategoryId(context.mainCategory, nextSubcategory);
-      if (targetCategoryId) {
-        loadCategoryPhotos(targetCategoryId);
+
+      // ✅ CORREÇÃO: Para categorias COM abas, usar sistema correto
+      if (needsSizeTabs(context.mainCategory)) {
+        loadPhotosWithSizeTabs(context.mainCategory, nextSubcategory);
       } else {
-        showToast('Categoria não encontrada', 'error');
+        const targetCategoryId = findFirstCategoryId(context.mainCategory, nextSubcategory);
+        if (targetCategoryId) {
+          loadCategoryPhotos(targetCategoryId);
+        }
       }
       return;
     }
@@ -1412,11 +1415,16 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
     if (currentIndex > 0) {
       const previousSubcategory = options.subcategories[currentIndex - 1];
       console.log(`🔄 Navegando para subcategoria anterior: ${previousSubcategory}`);
-      const targetCategoryId = findFirstCategoryId(context.mainCategory, previousSubcategory);
-      if (targetCategoryId) {
-        loadCategoryPhotos(targetCategoryId);
+      // ✅ CORREÇÃO: Para categorias COM abas, usar sistema correto
+      if (needsSizeTabs(context.mainCategory)) {
+        loadPhotosWithSizeTabs(context.mainCategory, previousSubcategory);
       } else {
-        showToast('Categoria não encontrada', 'error');
+        const targetCategoryId = findFirstCategoryId(context.mainCategory, previousSubcategory);
+        if (targetCategoryId) {
+          loadCategoryPhotos(targetCategoryId);
+        } else {
+          showToast('Categoria não encontrada', 'error');
+        }
       } return;
     }
   }
@@ -1455,21 +1463,21 @@ function addCategoryNavigationButtons(container, categoryId) {
   const navigationContainer = document.createElement('div');
   navigationContainer.className = 'category-navigation-section';
   navigationContainer.innerHTML = `
-    <div class="category-navigation-buttons">
-    <button class="category-nav-button category-nav-button--secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Previous Category
-    </button>
-    <button class="category-nav-button category-nav-button--primary" onclick="navigateToNextCategoryMain('${categoryId}')">
-      Next Category
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    </div>
-  `;
+  <div class="category-navigation-buttons">
+  <button class="category-nav-button category-nav-button--secondary" onclick="navigateToPreviousCategoryMain('${categoryId}')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Previous
+  </button>
+  <button class="category-nav-button category-nav-button--primary" onclick="navigateToNextCategoryMain('${categoryId}')">
+    Next
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  </div>
+`;
 
   container.appendChild(navigationContainer);
 }
