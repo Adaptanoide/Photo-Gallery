@@ -2876,3 +2876,12 @@ function getSubcategoriesForMain(mainCategoryName) {
 
 // Disponibilizar globalmente
 window.toggleFilters = toggleFilters;
+
+// ✅ TORNAR FUNÇÕES HIERÁRQUICAS GLOBALMENTE DISPONÍVEIS PARA LIGHTBOX
+window.getCurrentNavigationContext = getCurrentNavigationContext;
+window.getNavigationOptions = getNavigationOptions;
+window.needsSizeTabs = needsSizeTabs;
+window.getSubcategoriesForMain = getSubcategoriesForMain;
+window.extractAvailableSizes = extractAvailableSizes;
+
+console.log('🌐 Funções hierárquicas disponibilizadas globalmente para lightbox');

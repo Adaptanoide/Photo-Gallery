@@ -30,26 +30,26 @@ function openLightboxById(photoId, fromCart = false) {
 async function checkPhotoAvailabilityBeforeLightbox(photoId, fromCart) {
   try {
     console.log(`🔍 Verificando disponibilidade da foto: ${photoId}`);
-    
+
     const response = await fetch('/api/photos/check-availability', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ photoIds: [photoId] })
     });
-    
+
     const result = await response.json();
-    
+
     if (!result.success || !result.results[photoId] || !result.results[photoId].available) {
       // Foto não está mais disponível
       console.log(`❌ Foto ${photoId} não está mais disponível`);
       showSoldPhotoLightbox(photoId);
       return;
     }
-    
+
     // Foto disponível, continuar normalmente
     console.log(`✅ Foto ${photoId} está disponível`);
     openLightboxNormal(photoId, fromCart);
-    
+
   } catch (error) {
     console.error('Erro ao verificar disponibilidade:', error);
     // Em caso de erro, abrir normalmente (fallback)
@@ -80,27 +80,27 @@ function showSoldPhotoLightbox(photoId) {
   if (index !== -1) {
     currentPhotoIndex = index;
   }
-  
+
   // Mostrar lightbox básico normalmente PRIMEIRO
   document.getElementById('lightbox').style.display = 'block';
   document.body.classList.add('lightbox-open');
-  
+
   // Configurar informações básicas
   document.getElementById('lightbox-name').innerHTML = 'Item No Longer Available';
-  
+
   // Obter container de imagem
   const lightboxImgContainer = document.querySelector('.lightbox-img-container');
-  
+
   // PRESERVAR navegação existente
   const existingNav = lightboxImgContainer.querySelector('.lightbox-nav');
-  
+
   // Limpar apenas conteúdo de imagem (NÃO a navegação)
   Array.from(lightboxImgContainer.children).forEach(child => {
     if (!child.classList.contains('lightbox-nav')) {
       lightboxImgContainer.removeChild(child);
     }
   });
-  
+
   // Criar overlay mantendo navegação
   const overlay = document.createElement('div');
   overlay.className = 'lightbox-sold-overlay';
@@ -113,20 +113,20 @@ function showSoldPhotoLightbox(photoId) {
       </div>
     </div>
   `;
-  
+
   // Adicionar overlay ANTES da navegação (se existir)
   if (existingNav) {
     lightboxImgContainer.insertBefore(overlay, existingNav);
   } else {
     lightboxImgContainer.appendChild(overlay);
   }
-  
+
   // Ocultar botão de adicionar temporariamente
   const addBtn = document.getElementById('lightbox-add-btn');
   if (addBtn) {
     addBtn.style.display = 'none';
   }
-  
+
   // Atualizar contador do carrinho
   updateLightboxCartCount();
 }
@@ -231,7 +231,8 @@ function openLightbox(index, fromCart = false) {
 
   if (alreadyAdded) {
     addBtn.textContent = 'Remove';
-    addBtn.className = 'btn btn-gold btn-remove';  } else {
+    addBtn.className = 'btn btn-gold btn-remove';
+  } else {
     addBtn.textContent = 'Add';
     addBtn.className = 'btn btn-gold';
   }
@@ -452,19 +453,19 @@ function initializeNativeZoom(img) {
   // Função para fazer zoom considerando object-fit: contain
   function zoomAtPoint(targetScale, mouseX, mouseY) {
     const containerRect = img.parentElement.getBoundingClientRect();
-    
+
     // Se não foi fornecido ponto, usar centro
     if (mouseX === undefined || mouseY === undefined) {
       mouseX = containerRect.width / 2;
       mouseY = containerRect.height / 2;
     }
-    
+
     // CORREÇÃO: Calcular a área real da imagem com object-fit: contain
     const imgNaturalRatio = img.naturalWidth / img.naturalHeight;
     const containerRatio = containerRect.width / containerRect.height;
-    
+
     let imgDisplayWidth, imgDisplayHeight, imgOffsetX, imgOffsetY;
-    
+
     if (imgNaturalRatio > containerRatio) {
       // Imagem limitada pela largura (espaço vazio em cima/baixo)
       imgDisplayWidth = containerRect.width;
@@ -478,20 +479,20 @@ function initializeNativeZoom(img) {
       imgOffsetX = (containerRect.width - imgDisplayWidth) / 2;
       imgOffsetY = 0;
     }
-    
+
     // Converter coordenadas do container para a área real da imagem
     const imgMouseX = mouseX - imgOffsetX;
     const imgMouseY = mouseY - imgOffsetY;
-    
+
     // Verificar se o mouse está dentro da área da imagem
     if (imgMouseX < 0 || imgMouseX > imgDisplayWidth || imgMouseY < 0 || imgMouseY > imgDisplayHeight) {
       // Mouse fora da imagem, usar centro da imagem
       const centerX = imgDisplayWidth / 2;
       const centerY = imgDisplayHeight / 2;
-      
+
       const imageX = (centerX - pointX) / scale;
       const imageY = (centerY - pointY) / scale;
-      
+
       scale = targetScale;
       pointX = centerX - imageX * scale;
       pointY = centerY - imageY * scale;
@@ -499,12 +500,12 @@ function initializeNativeZoom(img) {
       // Mouse dentro da imagem, fazer zoom no ponto
       const imageX = (imgMouseX - pointX) / scale;
       const imageY = (imgMouseY - pointY) / scale;
-      
+
       scale = targetScale;
       pointX = imgMouseX - imageX * scale;
       pointY = imgMouseY - imageY * scale;
     }
-    
+
     setTransform();
   }
 
@@ -554,23 +555,23 @@ function initializeNativeZoom(img) {
   // Evento de roda do mouse para zoom
   img.addEventListener('wheel', function (e) {
     e.preventDefault();
-    
+
     // Calcular posição do mouse no container
     const containerRect = img.parentElement.getBoundingClientRect();
     const mouseX = e.clientX - containerRect.left;
     const mouseY = e.clientY - containerRect.top;
-    
+
     // Determinar direção do zoom
     const delta = -e.deltaY * 0.0002;  // 5x mais lento
     const newScale = Math.min(Math.max(1, scale + delta * 1.5), 3);  // 2.5 → 3
-    
+
     // Se voltando ao zoom normal, resetar
     if (Math.abs(newScale - 1) < 0.01) {  // 0.05 → 0.01 (mais restritivo)      resetZoom();
     } else {
       // Fazer zoom no ponto do mouse
       zoomAtPoint(newScale, mouseX, mouseY);
     }
-    
+
     // Atualizar indicador
     updateZoomIndicator();
   }, { passive: false });
@@ -594,7 +595,7 @@ function initializeNativeZoom(img) {
     const containerRect = img.parentElement.getBoundingClientRect();
     const clickX = e.clientX - containerRect.left;
     const clickY = e.clientY - containerRect.top;
-    
+
     if (scale > 1.05) {
       // Se já tiver zoom, voltar ao normal
       resetZoom();
@@ -602,7 +603,7 @@ function initializeNativeZoom(img) {
       // Fazer zoom 2x no ponto clicado
       zoomAtPoint(2, clickX, clickY);
     }
-    
+
     // Atualizar indicador
     updateZoomIndicator();
   });
@@ -645,12 +646,12 @@ function closeLightbox() {
 
   // ✅ NOVA LÓGICA: Verificar se categoria mudou durante navegação do lightbox
   const interfaceCategory = detectCurrentCategoryInInterface();
-  
+
   console.log(`🔄 [SYNC] Checking category sync: Interface=${interfaceCategory}, Lightbox=${activeCategory}`);
-  
+
   if (activeCategory && interfaceCategory !== activeCategory) {
     console.log(`🔄 [SYNC] Category changed during lightbox navigation: ${interfaceCategory} → ${activeCategory}`);
-    
+
     // Sincronizar interface com categoria do lightbox
     syncInterfaceWithLightboxCategory();
   } else {
@@ -688,32 +689,32 @@ function closeLightbox() {
 async function checkAndRemoveSoldPhotosFromInterface() {
   const visiblePhotos = document.querySelectorAll('.photo-item[id^="photo-"]');
   const photoIds = Array.from(visiblePhotos).map(el => el.id.replace('photo-', ''));
-  
+
   if (photoIds.length === 0) return;
-  
+
   try {
     const response = await fetch('/api/photos/check-availability', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ photoIds })
     });
-    
+
     const result = await response.json();
-    
+
     if (result.success) {
       photoIds.forEach(photoId => {
         const availability = result.results[photoId];
         if (!availability || !availability.available) {
           // Marcar como vendida primeiro
           markPhotoAsSoldInInterface(photoId);
-          
+
           // REMOVER a thumbnail após um pequeno delay para efeito visual
           setTimeout(() => {
             const photoElement = document.getElementById(`photo-${photoId}`);
             if (photoElement) {
               photoElement.style.transition = 'opacity 0.3s ease-out';
               photoElement.style.opacity = '0';
-              
+
               setTimeout(() => {
                 photoElement.remove();
               }, 300);
@@ -733,7 +734,7 @@ function detectCurrentCategoryInInterface() {
     // Método 1: Procurar por fotos visíveis na interface
     const contentDiv = document.getElementById('content');
     if (!contentDiv) return null;
-    
+
     const firstVisiblePhoto = contentDiv.querySelector('.photo-item[id^="photo-"]');
     if (firstVisiblePhoto) {
       const photoId = firstVisiblePhoto.id.replace('photo-', '');
@@ -743,7 +744,7 @@ function detectCurrentCategoryInInterface() {
         return photo.folderId;
       }
     }
-    
+
     // Método 2: Verificar categoria ativa no sidebar
     const activeMenuItem = document.querySelector('.category-item.active');
     if (activeMenuItem) {
@@ -753,7 +754,7 @@ function detectCurrentCategoryInInterface() {
         return categoryId;
       }
     }
-    
+
     // Método 3: Verificar cabeçalho da categoria atual
     const categoryHeader = document.querySelector('[data-current-category]');
     if (categoryHeader) {
@@ -763,10 +764,10 @@ function detectCurrentCategoryInInterface() {
         return categoryId;
       }
     }
-    
+
     console.log(`⚠️ [SYNC] Could not detect current interface category`);
     return null;
-    
+
   } catch (error) {
     console.error(`❌ [SYNC] Error detecting interface category:`, error);
     return null;
@@ -780,27 +781,27 @@ function syncInterfaceWithLightboxCategory() {
       console.log(`⚠️ [SYNC] No active category to sync to`);
       return;
     }
-    
+
     console.log(`🔄 [SYNC] Synchronizing interface to category: ${activeCategory}`);
-    
+
     // ✅ MÉTODO SEGURO: Usar função existente loadCategoryPhotos
     if (typeof loadCategoryPhotos === 'function') {
       console.log(`✅ [SYNC] Using existing loadCategoryPhotos function`);
-      
+
       // Carregar categoria com pequeno delay para não conflitar com fechamento do lightbox
       setTimeout(() => {
         loadCategoryPhotos(activeCategory);
         console.log(`✅ [SYNC] Interface synchronized to category: ${activeCategory}`);
       }, 200);
-      
+
     } else {
       // ✅ FALLBACK: Atualizar apenas o sidebar se função principal não existir
       console.log(`🔧 [SYNC] Using fallback: updating sidebar only`);
-      
+
       if (typeof highlightActiveCategory === 'function') {
         highlightActiveCategory(activeCategory);
       }
-      
+
       // Mostrar mensagem para usuário
       const contentDiv = document.getElementById('content');
       if (contentDiv) {
@@ -812,10 +813,10 @@ function syncInterfaceWithLightboxCategory() {
         `;
       }
     }
-    
+
   } catch (error) {
     console.error(`❌ [SYNC] Error synchronizing interface:`, error);
-    
+
     // Fallback silencioso: pelo menos atualizar sidebar
     try {
       if (typeof highlightActiveCategory === 'function') {
@@ -1187,13 +1188,54 @@ function getNextCategory() {
     console.log(`Current category index: ${currentCategoryIndex} (ID: ${activeCategory})`);
   }
 
-  // Obter próxima categoria
-  const nextIndex = currentCategoryIndex + 1;
-  console.log(`Next category index would be: ${nextIndex}`);
+  // ✅ NOVA LÓGICA HIERÁRQUICA: usar mesma navegação do sidebar
+  if (typeof window.getCurrentNavigationContext === 'function') {
+    const context = window.getCurrentNavigationContext();
+    const options = window.getNavigationOptions(context);
 
+    console.log('🎯 Lightbox usando navegação hierárquica:', context);
+
+    // NÍVEL 1: Próximo tamanho na mesma subcategoria
+    if (context.level === 'size' && options.sizes.length > 0) {
+      const currentIndex = options.sizes.indexOf(context.size);
+      if (currentIndex >= 0 && currentIndex < options.sizes.length - 1) {
+        const nextSize = options.sizes[currentIndex + 1];
+        // Encontrar categoria do próximo tamanho
+        const nextCategory = window.categories.find(cat =>
+          cat.fullPath && cat.fullPath.includes(context.mainCategory) &&
+          cat.fullPath.includes(context.subcategory) && cat.fullPath.includes(nextSize)
+        );
+        if (nextCategory) {
+          console.log(`🔄 Próximo tamanho: ${nextSize} (${nextCategory.id})`);
+          return nextCategory;
+        }
+      }
+    }
+
+    // NÍVEL 2: Próxima subcategoria na mesma categoria principal  
+    if (options.subcategories.length > 0) {
+      const currentIndex = options.subcategories.indexOf(context.subcategory);
+      if (currentIndex >= 0 && currentIndex < options.subcategories.length - 1) {
+        const nextSubcategory = options.subcategories[currentIndex + 1];
+        // Encontrar primeira categoria da próxima subcategoria
+        const nextCategory = window.categories.find(cat =>
+          cat.fullPath && cat.fullPath.includes(context.mainCategory) &&
+          cat.fullPath.includes(nextSubcategory)
+        );
+        if (nextCategory) {
+          console.log(`🔄 Próxima subcategoria: ${nextSubcategory} (${nextCategory.id})`);
+          return nextCategory;
+        }
+      }
+    }
+  }
+
+  // FALLBACK: Lógica linear original
+  const nextIndex = currentCategoryIndex + 1;
+  console.log(`Fallback - Next category index: ${nextIndex}`);
   if (nextIndex < specificCategories.length) {
     const nextCategory = specificCategories[nextIndex];
-    console.log(`Next category found: ${nextCategory.name} (ID: ${nextCategory.id})`);
+    console.log(`Fallback next category: ${nextCategory.name} (ID: ${nextCategory.id})`);
     return nextCategory;
   }
 
@@ -1215,7 +1257,49 @@ function getPreviousCategory() {
     currentCategoryIndex = specificCategories.findIndex(cat => cat.id === activeCategory);
   }
 
-  // Obter categoria anterior
+  // ✅ NOVA LÓGICA HIERÁRQUICA: usar mesma navegação do sidebar
+  if (typeof window.getCurrentNavigationContext === 'function') {
+    const context = window.getCurrentNavigationContext();
+    const options = window.getNavigationOptions(context);
+
+    console.log('🎯 Lightbox Previous usando navegação hierárquica:', context);
+
+    // NÍVEL 1: Tamanho anterior na mesma subcategoria
+    if (context.level === 'size' && options.sizes.length > 0) {
+      const currentIndex = options.sizes.indexOf(context.size);
+      if (currentIndex > 0) {
+        const previousSize = options.sizes[currentIndex - 1];
+        // Encontrar categoria do tamanho anterior
+        const previousCategory = window.categories.find(cat =>
+          cat.fullPath && cat.fullPath.includes(context.mainCategory) &&
+          cat.fullPath.includes(context.subcategory) && cat.fullPath.includes(previousSize)
+        );
+        if (previousCategory) {
+          console.log(`🔄 Tamanho anterior: ${previousSize} (${previousCategory.id})`);
+          return previousCategory;
+        }
+      }
+    }
+
+    // NÍVEL 2: Subcategoria anterior na mesma categoria principal  
+    if (options.subcategories.length > 0) {
+      const currentIndex = options.subcategories.indexOf(context.subcategory);
+      if (currentIndex > 0) {
+        const previousSubcategory = options.subcategories[currentIndex - 1];
+        // Encontrar primeira categoria da subcategoria anterior
+        const previousCategory = window.categories.find(cat =>
+          cat.fullPath && cat.fullPath.includes(context.mainCategory) &&
+          cat.fullPath.includes(previousSubcategory)
+        );
+        if (previousCategory) {
+          console.log(`🔄 Subcategoria anterior: ${previousSubcategory} (${previousCategory.id})`);
+          return previousCategory;
+        }
+      }
+    }
+  }
+
+  // FALLBACK: Lógica linear original
   const previousIndex = currentCategoryIndex - 1;
   if (previousIndex >= 0) {
     return specificCategories[previousIndex];
@@ -1487,7 +1571,7 @@ function showBeginningOfGalleryMessage() {
 // NOVA FUNÇÃO: Pré-carregar mais fotos automaticamente no lightbox (versão silenciosa + sync)
 function preloadMorePhotosInLightbox() {
   console.log(`🔄 [SYNC] Preloading more photos at lightbox index ${currentPhotoIndex}`);
-  
+
   // Evitar múltiplas requisições simultâneas
   if (window.isPreloadingLightbox) {
     console.log(`⏳ [SYNC] Already preloading, skipping`);
@@ -1516,7 +1600,7 @@ function preloadMorePhotosInLightbox() {
 
   const currentOffset = categoryCache.totalLoaded || photos.length;
   const batchSize = 15; // Carregar 15 fotos por vez
-  
+
   console.log(`📊 [SYNC] Loading ${batchSize} more photos from offset ${currentOffset}`);
 
   // Carregar mais fotos (sem avisos visuais no lightbox)
@@ -1590,7 +1674,7 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
 
   const firstPhotoId = firstVisiblePhoto.id.replace('photo-', '');
   const firstPhoto = photos.find(p => p.id === firstPhotoId);
-  
+
   if (!firstPhoto || firstPhoto.folderId !== categoryId) {
     console.log(`📱 [SYNC] Different category displayed (${firstPhoto?.folderId} vs ${categoryId}), skipping sync`);
     return;
@@ -1601,14 +1685,14 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
   // ✅ ABORDAGEM MAIS SEGURA: Verificar se loadPhotosSequentially existe
   if (typeof loadPhotosSequentially === 'function') {
     console.log(`🎨 [SYNC] Using visual effects for thumbnail sync`);
-    
+
     // ✅ MÉTODO SEGURO: Adicionar diretamente ao currentSection
     try {
       // Encontrar ponto de inserção ANTES de criar elementos
       const navigationSection = contentDiv.querySelector('.category-navigation-section');
       const moreButton = contentDiv.querySelector('.load-more-btn');
       const insertionPoint = moreButton || navigationSection || null;
-      
+
       // ✅ USAR ABORDAGEM MAIS DIRETA: Adicionar elementos um por um
       newPhotos.forEach((photo, index) => {
         setTimeout(() => {
@@ -1616,17 +1700,17 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
             // Verificar se ainda estamos na categoria correta
             const currentFirstPhoto = currentSection.querySelector('.photo-item[id^="photo-"]');
             if (!currentFirstPhoto) return;
-            
+
             const currentFirstPhotoId = currentFirstPhoto.id.replace('photo-', '');
             const currentFirst = photos.find(p => p.id === currentFirstPhotoId);
             if (!currentFirst || currentFirst.folderId !== categoryId) {
               console.log(`📱 [SYNC] Category changed during sync, stopping`);
               return;
             }
-            
+
             // Criar elemento da foto
             const photoElement = createThumbnailElement(photo);
-            
+
             // ✅ INSERÇÃO SEGURA
             if (insertionPoint && insertionPoint.parentNode === currentSection) {
               currentSection.insertBefore(photoElement, insertionPoint);
@@ -1634,17 +1718,17 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
               // Fallback: adicionar no final
               currentSection.appendChild(photoElement);
             }
-            
+
             // Animar entrada
             photoElement.style.opacity = '0';
             photoElement.style.transform = 'translateY(20px)';
             photoElement.style.transition = 'all 0.4s ease';
-            
+
             setTimeout(() => {
               photoElement.style.opacity = '1';
               photoElement.style.transform = 'translateY(0)';
             }, 50);
-            
+
             // Se for a última foto, atualizar botão e botões do carrinho
             if (index === newPhotos.length - 1) {
               setTimeout(() => {
@@ -1655,19 +1739,19 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
                 console.log(`✅ [SYNC] Successfully synced ${newPhotos.length} thumbnails`);
               }, 100);
             }
-            
+
           } catch (error) {
             console.error(`❌ [SYNC] Error adding thumbnail ${index}:`, error);
           }
         }, index * 80); // Delay escalonado para efeito visual
       });
-      
+
     } catch (error) {
       console.error(`❌ [SYNC] Error in visual sync:`, error);
       // Fallback para método direto
       addThumbnailsDirectlyFromLightbox(currentSection, newPhotos);
     }
-    
+
   } else {
     // Fallback: adicionar sem efeitos visuais
     console.log(`📱 [SYNC] Adding thumbnails without visual effects (fallback)`);
@@ -1679,12 +1763,12 @@ function syncThumbnailsFromLightbox(categoryId, newPhotos) {
 function createThumbnailElement(photo) {
   const alreadyAdded = cartIds && cartIds.includes(photo.id);
   const priceText = photo.price ? `$${photo.price}` : '';
-  
+
   const photoElement = document.createElement('div');
   photoElement.className = 'photo-item';
   photoElement.id = `photo-${photo.id}`;
   photoElement.onclick = () => openLightboxById(photo.id, false);
-  
+
   photoElement.innerHTML = `
     <img src="${photo.thumbnail || `/api/photos/local/thumbnail/${photo.id}`}" 
          alt="${photo.name}" 
@@ -1701,7 +1785,7 @@ function createThumbnailElement(photo) {
       </div>
     </div>
   `;
-  
+
   return photoElement;
 }
 
@@ -1709,21 +1793,21 @@ function createThumbnailElement(photo) {
 function updateMorePhotosButtonAfterLightboxSync(categoryId) {
   const contentDiv = document.getElementById('content');
   const moreButton = contentDiv.querySelector('.btn-load-more');
-  
+
   if (!moreButton) {
     console.log(`🔘 [SYNC] No "More Photos" button found`);
     return;
   }
-  
+
   const categoryCache = categoryPhotoCache[categoryId];
   if (!categoryCache) return;
-  
+
   // Calcular fotos restantes
   const totalPhotos = getTotalPhotosForLightboxSync(categoryId);
   const remainingPhotos = Math.max(0, totalPhotos - categoryCache.totalLoaded);
-  
+
   console.log(`🔘 [SYNC] Remaining photos: ${remainingPhotos} of ${totalPhotos}`);
-  
+
   if (remainingPhotos <= 0) {
     // Não há mais fotos, remover botão suavemente
     moreButton.style.transition = 'opacity 0.3s ease';
@@ -1766,43 +1850,43 @@ function getTotalPhotosForLightboxSync(categoryId) {
 // ✅ FUNÇÃO FALLBACK MELHORADA: Adicionar thumbnails diretamente (sem efeitos)
 function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
   console.log(`🔧 [SYNC] Using fallback method to add ${newPhotos.length} thumbnails`);
-  
+
   try {
     // ✅ VERIFICAÇÕES DE SEGURANÇA
     if (!container || !container.appendChild) {
       console.error(`❌ [SYNC] Invalid container provided`);
       return;
     }
-    
+
     if (!Array.isArray(newPhotos) || newPhotos.length === 0) {
       console.log(`📱 [SYNC] No photos to add`);
       return;
     }
-    
+
     // Encontrar pontos de inserção com verificação
     const navigationSection = container.querySelector('.category-navigation-section');
     const moreButton = container.querySelector('.load-more-btn');
-    
+
     newPhotos.forEach((photo, index) => {
       try {
         if (!photo || !photo.id) {
           console.warn(`⚠️ [SYNC] Invalid photo at index ${index}:`, photo);
           return;
         }
-        
+
         // Verificar se a foto já existe (evitar duplicatas)
         const existingPhoto = container.querySelector(`#photo-${photo.id}`);
         if (existingPhoto) {
           console.log(`📱 [SYNC] Photo ${photo.id} already exists, skipping`);
           return;
         }
-        
+
         const photoElement = createThumbnailElement(photo);
         photoElement.style.opacity = '0';
-        
+
         // ✅ INSERÇÃO SEGURA COM VERIFICAÇÕES
         let inserted = false;
-        
+
         // Tentar inserir antes do botão More
         if (moreButton && moreButton.parentNode === container) {
           try {
@@ -1812,7 +1896,7 @@ function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
             console.warn(`⚠️ [SYNC] Failed to insert before more button:`, error);
           }
         }
-        
+
         // Se não conseguiu, tentar antes da navegação
         if (!inserted && navigationSection && navigationSection.parentNode === container) {
           try {
@@ -1822,7 +1906,7 @@ function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
             console.warn(`⚠️ [SYNC] Failed to insert before navigation:`, error);
           }
         }
-        
+
         // Fallback final: adicionar no final
         if (!inserted) {
           try {
@@ -1833,18 +1917,18 @@ function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
             return;
           }
         }
-        
+
         // Animar entrada com delay
         setTimeout(() => {
           photoElement.style.transition = 'opacity 0.4s ease';
           photoElement.style.opacity = '1';
         }, index * 60);
-        
+
       } catch (error) {
         console.error(`❌ [SYNC] Error processing photo ${index}:`, error);
       }
     });
-    
+
     // Atualizar botões após todas as fotos
     setTimeout(() => {
       try {
@@ -1856,7 +1940,7 @@ function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
         console.error(`❌ [SYNC] Error updating buttons:`, error);
       }
     }, newPhotos.length * 60 + 200);
-    
+
   } catch (error) {
     console.error(`❌ [SYNC] Critical error in fallback method:`, error);
   }
@@ -1866,7 +1950,7 @@ function addThumbnailsDirectlyFromLightbox(container, newPhotos) {
 function updateGalleryAfterSold() {
   // Verificar e remover todas as fotos vendidas
   checkAndRemoveSoldPhotosFromInterface();
-  
+
   // Mostrar notificação suave
   showToast('Gallery updated - sold items removed', 'info');
 }
