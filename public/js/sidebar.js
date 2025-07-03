@@ -1412,8 +1412,12 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
     if (currentIndex > 0) {
       const previousSubcategory = options.subcategories[currentIndex - 1];
       console.log(`🔄 Navegando para subcategoria anterior: ${previousSubcategory}`);
-      loadCategoryPhotos(context.mainCategory, previousSubcategory);
-      return;
+      const targetCategoryId = findFirstCategoryId(context.mainCategory, previousSubcategory);
+      if (targetCategoryId) {
+        loadCategoryPhotos(targetCategoryId);
+      } else {
+        showToast('Categoria não encontrada', 'error');
+      } return;
     }
   }
 
@@ -1426,7 +1430,12 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
     // Encontrar primeira subcategoria da categoria anterior
     const firstSubcategory = getSubcategoriesForMain(previousMainCategory)[0];
     if (firstSubcategory) {
-      loadCategoryPhotos(previousMainCategory, firstSubcategory);
+      const targetCategoryId = findFirstCategoryId(previousMainCategory, firstSubcategory);
+      if (targetCategoryId) {
+        loadCategoryPhotos(targetCategoryId);
+      } else {
+        showToast('Categoria não encontrada', 'error');
+      }
     }
     return;
   }
