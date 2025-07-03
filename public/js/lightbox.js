@@ -1224,13 +1224,24 @@ function getNextCategory() {
       const currentIndex = options.subcategories.indexOf(context.subcategory);
       if (currentIndex >= 0 && currentIndex < options.subcategories.length - 1) {
         const nextSubcategory = options.subcategories[currentIndex + 1];
-        // Encontrar primeira categoria da próxima subcategoria
-        const nextCategory = window.categories.find(cat =>
+
+        // ✅ CORREÇÃO: Encontrar MENOR tamanho da próxima subcategoria
+        const subcategoryCategories = window.categories.filter(cat =>
           cat.fullPath && cat.fullPath.includes(context.mainCategory) &&
           cat.fullPath.includes(nextSubcategory)
         );
+
+        // Ordenar por tamanho e pegar o primeiro (Small)
+        const sizeOrder = ['Small', 'Medium-Large', 'Extra-Large'];
+        const nextCategory = subcategoryCategories.sort((a, b) => {
+          const sizeA = a.fullPath.split(' → ')[2];
+          const sizeB = b.fullPath.split(' → ')[2];
+          return sizeOrder.indexOf(sizeA) - sizeOrder.indexOf(sizeB);
+        })[0];
+
         if (nextCategory) {
-          console.log(`🔄 Próxima subcategoria: ${nextSubcategory} (${nextCategory.id})`);
+          const targetSize = nextCategory.fullPath.split(' → ')[2];
+          console.log(`🔄 Próxima subcategoria: ${nextSubcategory} → ${targetSize} (${nextCategory.id})`);
           return nextCategory;
         }
       }
@@ -1293,13 +1304,24 @@ function getPreviousCategory() {
       const currentIndex = options.subcategories.indexOf(context.subcategory);
       if (currentIndex > 0) {
         const previousSubcategory = options.subcategories[currentIndex - 1];
-        // Encontrar primeira categoria da subcategoria anterior
-        const previousCategory = window.categories.find(cat =>
+
+        // ✅ CORREÇÃO: Encontrar MENOR tamanho da subcategoria anterior
+        const subcategoryCategories = window.categories.filter(cat =>
           cat.fullPath && cat.fullPath.includes(context.mainCategory) &&
           cat.fullPath.includes(previousSubcategory)
         );
+
+        // Ordenar por tamanho e pegar o primeiro (Small)
+        const sizeOrder = ['Small', 'Medium-Large', 'Extra-Large'];
+        const previousCategory = subcategoryCategories.sort((a, b) => {
+          const sizeA = a.fullPath.split(' → ')[2];
+          const sizeB = b.fullPath.split(' → ')[2];
+          return sizeOrder.indexOf(sizeA) - sizeOrder.indexOf(sizeB);
+        })[0];
+
         if (previousCategory) {
-          console.log(`🔄 Subcategoria anterior: ${previousSubcategory} (${previousCategory.id})`);
+          const targetSize = previousCategory.fullPath.split(' → ')[2];
+          console.log(`🔄 Subcategoria anterior: ${previousSubcategory} → ${targetSize} (${previousCategory.id})`);
           return previousCategory;
         }
       }
