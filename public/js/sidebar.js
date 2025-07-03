@@ -755,6 +755,7 @@ function loadAllPhotosFromAPI() {
 
     // Atualizar o array global
     window.photos = allPhotos;
+    photos = allPhotos;  // ← SINCRONIZAR também aqui
 
     // Renderizar as fotos organizadas por categoria
     renderPhotosByCategory(photosByCategory);
@@ -2609,8 +2610,9 @@ function loadPhotosToExistingContainer(categories, size) {
 
     console.log(`✅ Total: ${allPhotos.length} fotos carregadas`);
 
-    // ✅ CORREÇÃO: Atualizar array global para lightbox funcionar
+    // ✅ CORREÇÃO: Atualizar AMBAS as variáveis para lightbox funcionar
     window.photos = allPhotos;
+    photos = allPhotos;  // ← SINCRONIZAR variável global do gallery.js
     console.log(`🔍 Array global atualizado com ${allPhotos.length} fotos para lightbox`);
   });
 }
