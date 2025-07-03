@@ -495,9 +495,22 @@ function highlightActiveCategory(categoryId) {
   }
 }
 
-// ✅ NOVA FUNÇÃO: Destacar subcategoria ativa  
-function highlightActiveSubcategory(subcategory) {
-  console.log(`🔍 Destacando subcategoria: ${subcategory}`);
+function highlightActiveSubcategory(subcategory, mainCategory = null) {
+  console.log(`🔍 Destacando subcategoria: ${subcategory} (categoria: ${mainCategory})`);
+
+  // ✅ VERIFICAR se sidebar tem subcategorias da categoria principal correta
+  const firstSubcategoryElement = document.querySelector('.category-item[data-subcategory]');
+  if (firstSubcategoryElement && mainCategory) {
+    const sidebarMainCategory = firstSubcategoryElement.dataset.mainCategory;
+    if (sidebarMainCategory !== mainCategory) {
+      console.log(`⚠️ Sidebar mostra ${sidebarMainCategory}, mas precisamos ${mainCategory}`);
+      console.log(`🔄 Recarregando sidebar para categoria principal: ${mainCategory}`);
+      selectMainCategory(mainCategory);
+      // Aguardar sidebar atualizar e tentar novamente
+      setTimeout(() => highlightActiveSubcategory(subcategory, mainCategory), 200);
+      return;
+    }
+  }
 
   // Remover destaque de todas as subcategorias
   const categoryItems = document.querySelectorAll('.category-item[data-subcategory]');
@@ -2784,9 +2797,9 @@ function updateDynamicBreadcrumb(mainCategory, subcategory = null, size = null) 
   // ✅ CORREÇÃO: Destacar subcategoria APÓS sistema de sync (timing fix)
   if (subcategory) {
     setTimeout(() => {
-      highlightActiveSubcategory(subcategory);
+      highlightActiveSubcategory(subcategory, mainCategory);
       console.log(`⏰ Sidebar atualizado após sync delay`);
-    }, 100); // Executa DEPOIS que o sistema de sync termina
+    }, 100);
   }
 }
 
