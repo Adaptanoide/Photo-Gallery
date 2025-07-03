@@ -2120,11 +2120,7 @@ async function selectMainCategory(mainCategoryName) {
 
   console.log(`🔍 Subcategorias genéricas detectadas: ${isGenericSubcategories}`);
 
-  // Atualizar breadcrumb
-  const breadcrumbContainer = document.getElementById('breadcrumb-container');
-  if (breadcrumbContainer) {
-    breadcrumbContainer.innerHTML = `<span class="breadcrumb-current">${mainCategoryName}</span>`;
-  }
+  // ✅ REMOVIDO: breadcrumb agora é controlado apenas por updateDynamicBreadcrumb()
 
   // Atualizar sidebar
   const menuContainer = document.getElementById('categories-menu');
@@ -2692,12 +2688,19 @@ function switchSizeTab(mainCategory, subcategory, size) {
 
   }
 
-  // Atualizar abas ativas
+  // Atualizar abas ativas - com proteção contra DOM null
   document.querySelectorAll('.size-tab').forEach(tab => {
     tab.classList.remove('active');
   });
 
-  document.querySelector(`[data-size="${size}"]`).classList.add('active');
+  const targetTab = document.querySelector(`[data-size="${size}"]`);
+  if (targetTab) {
+    targetTab.classList.add('active');
+  } else {
+    console.error(`❌ Aba não encontrada para tamanho: ${size}`);
+    console.log(`🔍 Abas disponíveis:`, Array.from(document.querySelectorAll('.size-tab')).map(tab => tab.dataset.size));
+    return; // Sair da função se aba não existir
+  }
 
   // Carregar fotos do novo tamanho
   showLoader();
