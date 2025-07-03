@@ -1370,15 +1370,18 @@ function navigateToNextCategoryMain(currentCategoryId) {
     const nextMainCategory = options.mainCategories[currentMainIndex + 1];
     console.log(`🔄 Navegando para próxima categoria principal: ${nextMainCategory}`);
 
-    // Encontrar primeira subcategoria da nova categoria principal
-    const firstSubcategory = getSubcategoriesForMain(nextMainCategory)[0];
-    if (firstSubcategory) {
-      // ✅ POR:
-      const targetCategoryId = findFirstCategoryId(nextMainCategory, firstSubcategory);
-      if (targetCategoryId) {
-        loadCategoryPhotos(targetCategoryId);
-      } else {
-        showToast('Categoria não encontrada', 'error');
+    // ✅ ATUALIZAR SIDEBAR para nova categoria principal
+    const categoryElement = document.querySelector(`.main-category-item[data-category="${nextMainCategory}"]`);
+    if (categoryElement) {
+      categoryElement.click();
+    } else {
+      // Fallback: carregamento manual
+      const firstSubcategory = getSubcategoriesForMain(nextMainCategory)[0];
+      if (firstSubcategory) {
+        const targetCategoryId = findFirstCategoryId(nextMainCategory, firstSubcategory);
+        if (targetCategoryId) {
+          loadCategoryPhotos(targetCategoryId);
+        }
       }
     }
     return;
@@ -1435,14 +1438,20 @@ function navigateToPreviousCategoryMain(currentCategoryId) {
     const previousMainCategory = options.mainCategories[currentMainIndex - 1];
     console.log(`🔄 Navegando para categoria principal anterior: ${previousMainCategory}`);
 
-    // Encontrar primeira subcategoria da categoria anterior
-    const firstSubcategory = getSubcategoriesForMain(previousMainCategory)[0];
-    if (firstSubcategory) {
-      const targetCategoryId = findFirstCategoryId(previousMainCategory, firstSubcategory);
-      if (targetCategoryId) {
-        loadCategoryPhotos(targetCategoryId);
-      } else {
-        showToast('Categoria não encontrada', 'error');
+    // ✅ ATUALIZAR SIDEBAR para categoria principal anterior
+    const categoryElement = document.querySelector(`.main-category-item[data-category="${previousMainCategory}"]`);
+    if (categoryElement) {
+      categoryElement.click();
+    } else {
+      // Fallback: carregamento manual
+      const firstSubcategory = getSubcategoriesForMain(previousMainCategory)[0];
+      if (firstSubcategory) {
+        const targetCategoryId = findFirstCategoryId(previousMainCategory, firstSubcategory);
+        if (targetCategoryId) {
+          loadCategoryPhotos(targetCategoryId);
+        } else {
+          showToast('Categoria não encontrada', 'error');
+        }
       }
     }
     return;
