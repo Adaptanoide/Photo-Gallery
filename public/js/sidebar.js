@@ -174,6 +174,27 @@ function setupCategoryClickHandlers() {
 
 // Carregar fotos de uma categoria específica - VERSÃO COM PAGINAÇÃO
 function loadCategoryPhotos(categoryId) {
+  // ✅ VERIFICAR se já temos interface hierárquica após lightbox
+  const currentBreadcrumb = document.querySelector('#breadcrumb-container')?.innerHTML;
+  const hasHierarchicalBreadcrumb = currentBreadcrumb && currentBreadcrumb.includes('breadcrumb-current');
+
+  if (hasHierarchicalBreadcrumb) {
+    console.log(`⚠️ Evitando reset - interface hierárquica já configurada para categoria: ${categoryId}`);
+
+    // Apenas renderizar fotos SEM resetar interface
+    if (categoryPhotoCache[categoryId]) {
+      const cachedData = categoryPhotoCache[categoryId];
+      const photosArray = cachedData.photos || cachedData;
+      photos = [...photosArray];
+      photosArray.forEach(photo => {
+        photoRegistry[photo.id] = photo;
+      });
+      renderPhotosForCategory(photosArray, categoryId);
+      preloadCategoryImages(categoryId);
+    }
+    return; // ✅ PARAR AQUI - manter interface intacta
+  }
+
   // ✅ LIMPAR scroll do More Photos ao trocar categoria
   cleanupScrollMorePhotos();
 
