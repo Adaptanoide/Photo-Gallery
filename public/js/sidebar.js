@@ -181,26 +181,15 @@ function loadCategoryPhotos(categoryId) {
   if (hasHierarchicalBreadcrumb) {
     console.log(`⚠️ Evitando reset - interface hierárquica já configurada para categoria: ${categoryId}`);
 
-    // ✅ VERIFICAR/CRIAR título completo baseado no breadcrumb
-    let titleElement = document.getElementById('dynamic-category-title');
-    if (!titleElement) {
-      // Criar título se não existir
-      const contentDiv = document.getElementById('content');
-      const titleContainer = contentDiv.querySelector('.category-title-container') || document.createElement('div');
-      titleContainer.className = 'category-title-container';
-      titleContainer.innerHTML = '<h2 id="dynamic-category-title"></h2><div class="category-divider"></div>';
-      if (!contentDiv.querySelector('.category-title-container')) {
-        contentDiv.insertBefore(titleContainer, contentDiv.firstChild);
+    // ✅ ATUALIZAR título existente na interface
+    const existingTitleElement = document.querySelector('.category-title-container h2');
+    if (existingTitleElement) {
+      const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+      if (breadcrumbText) {
+        const fullTitle = breadcrumbText.replace(/>/g, ' - ').trim();
+        existingTitleElement.textContent = fullTitle;
+        console.log(`✅ Título visual atualizado: ${fullTitle}`);
       }
-      titleElement = document.getElementById('dynamic-category-title');
-    }
-
-    // Atualizar título baseado no breadcrumb
-    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-    if (breadcrumbText && titleElement) {
-      const fullTitle = breadcrumbText.replace(/>/g, ' - ').trim();
-      titleElement.textContent = fullTitle;
-      console.log(`✅ Título atualizado: ${fullTitle}`);
     }
 
     // Apenas renderizar fotos SEM resetar interface
