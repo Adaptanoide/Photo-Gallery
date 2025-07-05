@@ -173,22 +173,30 @@ function setupCategoryClickHandlers() {
 }
 
 function loadCategoryPhotos(categoryId) {
-  // ✅ LIMPAR scroll do More Photos ao trocar categoria
-  cleanupScrollMorePhotos();
+  // ✅ VERIFICAR se breadcrumb tem hierarquia - manter interface
+  const breadcrumb = document.querySelector('#breadcrumb-container')?.innerHTML;
+  if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
+    console.log(`🔄 Mantendo interface hierárquica para: ${categoryId}`);
 
+    // Apenas carregar fotos, não resetar interface
+    if (categoryPhotoCache[categoryId]) {
+      const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
+      photos = [...photosArray];
+      photosArray.forEach(photo => photoRegistry[photo.id] = photo);
+      renderPhotosForCategory(photosArray, categoryId);
+    }
+    return;
+  }
+
+  // ✅ RESTO DA FUNÇÃO ORIGINAL SEM MUDANÇAS
+  cleanupScrollMorePhotos();
   showLoader();
   console.log(`Iniciando carregamento da categoria: ${categoryId}`);
-
-  // Definir categoria ativa
   activeCategory = categoryId;
-
-  // ✅ ATUALIZAR BREADCRUMB
   updateBreadcrumb(categoryId);
-
-  // Marcar item no menu como ativo
   highlightActiveCategory(categoryId);
+  updateCurrentCategoryHeader(categoryId);
 
-  // Limpar conteúdo atual e mostrar feedback melhorado
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = `
     <div class="loading-category" style="text-align: center; padding: 60px 40px; background: white; border-radius: 10px; margin-top: 30px; box-shadow: var(--shadow-soft);">
@@ -198,17 +206,12 @@ function loadCategoryPhotos(categoryId) {
     </div>
   `;
 
-  // Verificar se já temos os dados desta categoria em cache
   if (categoryPhotoCache[categoryId]) {
     console.log(`Using cached photos for category: ${categoryId}`);
     const cachedData = categoryPhotoCache[categoryId];
     const photosArray = cachedData.photos || cachedData;
-
     photos = [...photosArray];
-    photosArray.forEach(photo => {
-      photoRegistry[photo.id] = photo;
-    });
-
+    photosArray.forEach(photo => photoRegistry[photo.id] = photo);
     renderPhotosForCategory(photosArray, categoryId);
     hideLoader();
     preloadCategoryImages(categoryId);
@@ -216,7 +219,6 @@ function loadCategoryPhotos(categoryId) {
   }
 
   const INITIAL_LOAD_LIMIT = 20;
-
   fetch(`/api/photos?category_id=${categoryId || ''}&customer_code=${currentCustomerCode}&limit=${INITIAL_LOAD_LIMIT}&offset=0`)
     .then(response => response.json())
     .then(photos => {
@@ -225,7 +227,6 @@ function loadCategoryPhotos(categoryId) {
         totalLoaded: photos.length || 0,
         hasMore: (photos.length || 0) >= INITIAL_LOAD_LIMIT
       };
-
       console.log(`Loaded ${photos.length} photos for category: ${categoryId}`);
       updatePhotoRegistryAndRender(photos || []);
       renderPhotosForCategory(photos || [], categoryId);
