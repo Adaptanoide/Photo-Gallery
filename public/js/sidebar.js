@@ -178,7 +178,7 @@ function loadCategoryPhotos(categoryId) {
   if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
     console.log(`🔄 Mantendo interface hierárquica para: ${categoryId}`);
 
-    // ✅ EXTRAIR mainCategory, subcategory, size do breadcrumb
+    // ✅ EXTRAIR contexto do breadcrumb
     const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
     if (breadcrumbText) {
       const parts = breadcrumbText.split(' > ');
@@ -187,22 +187,31 @@ function loadCategoryPhotos(categoryId) {
         const subcategory = parts[1];
         const size = parts[2];
 
-        // ✅ ATUALIZAR TÍTULO COM TAMANHO
-        const titleElement = document.querySelector('.category-title-container h2');
-        if (titleElement) {
-          titleElement.textContent = `${mainCategory} - ${subcategory} - ${size}`;
-          console.log(`✅ Título atualizado: ${mainCategory} - ${subcategory} - ${size}`);
-        }
+        console.log(`🔍 Contexto: ${mainCategory} → ${subcategory} → ${size}`);
 
-        // ✅ RECRIAR ABAS SE NÃO EXISTEM
-        if (!document.querySelector('.size-tabs-wrapper')) {
-          loadPhotosForSubcategory(mainCategory, subcategory);
+        // ✅ VERIFICAR se abas existem
+        const existingTabs = document.querySelector('.size-tabs-wrapper');
+        if (!existingTabs) {
+          console.log(`❌ Abas não encontradas - recriando interface`);
+          setTimeout(() => {
+            loadPhotosForSubcategory(mainCategory, subcategory);
+          }, 100);
           return;
+        } else {
+          console.log(`✅ Abas encontradas - preservando interface`);
+
+          // ✅ APENAS atualizar aba ativa
+          document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
+          const targetTab = document.querySelector(`[data-size="${size}"]`);
+          if (targetTab) {
+            targetTab.classList.add('active');
+            console.log(`✅ Aba "${size}" marcada como ativa`);
+          }
         }
       }
     }
 
-    // Carregar fotos
+    // Carregar fotos sem resetar interface
     if (categoryPhotoCache[categoryId]) {
       const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
       photos = [...photosArray];
