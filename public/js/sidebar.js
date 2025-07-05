@@ -178,7 +178,31 @@ function loadCategoryPhotos(categoryId) {
   if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
     console.log(`🔄 Mantendo interface hierárquica para: ${categoryId}`);
 
-    // Apenas carregar fotos, não resetar interface
+    // ✅ EXTRAIR mainCategory, subcategory, size do breadcrumb
+    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+    if (breadcrumbText) {
+      const parts = breadcrumbText.split(' > ');
+      if (parts.length >= 3) {
+        const mainCategory = parts[0];
+        const subcategory = parts[1];
+        const size = parts[2];
+
+        // ✅ ATUALIZAR TÍTULO COM TAMANHO
+        const titleElement = document.querySelector('.category-title-container h2');
+        if (titleElement) {
+          titleElement.textContent = `${mainCategory} - ${subcategory} - ${size}`;
+          console.log(`✅ Título atualizado: ${mainCategory} - ${subcategory} - ${size}`);
+        }
+
+        // ✅ RECRIAR ABAS SE NÃO EXISTEM
+        if (!document.querySelector('.size-tabs-wrapper')) {
+          loadPhotosForSubcategory(mainCategory, subcategory);
+          return;
+        }
+      }
+    }
+
+    // Carregar fotos
     if (categoryPhotoCache[categoryId]) {
       const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
       photos = [...photosArray];
