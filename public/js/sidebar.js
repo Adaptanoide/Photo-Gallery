@@ -172,41 +172,11 @@ function setupCategoryClickHandlers() {
   });
 }
 
-// Carregar fotos de uma categoria específica - VERSÃO COM PAGINAÇÃO
 function loadCategoryPhotos(categoryId) {
-  // ✅ VERIFICAR se já temos interface hierárquica após lightbox
-  const currentBreadcrumb = document.querySelector('#breadcrumb-container')?.innerHTML;
-  const hasHierarchicalBreadcrumb = currentBreadcrumb && currentBreadcrumb.includes('breadcrumb-current');
-
-  if (hasHierarchicalBreadcrumb) {
-    console.log(`⚠️ Interface hierárquica detectada - reconfigurando após sync para categoria: ${categoryId}`);
-
-    // ✅ PERMITIR reset normal, mas reconfigurar depois
-    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-    if (breadcrumbText) {
-      const parts = breadcrumbText.split(' > ');
-      if (parts.length >= 3) {
-        const mainCategory = parts[0];
-        const subcategory = parts[1];
-        const size = parts[2];
-
-        console.log(`🔧 Reconfigurando: ${mainCategory} → ${subcategory} → ${size}`);
-
-        // Agendar reconfiguração após reset
-        setTimeout(() => {
-          loadPhotosForSubcategory(mainCategory, subcategory);
-        }, 100);
-
-        return; // ✅ PARAR aqui e deixar o setTimeout reconfigurar
-      }
-    }
-  }
-
   // ✅ LIMPAR scroll do More Photos ao trocar categoria
   cleanupScrollMorePhotos();
 
   showLoader();
-
   console.log(`Iniciando carregamento da categoria: ${categoryId}`);
 
   // Definir categoria ativa
@@ -217,9 +187,6 @@ function loadCategoryPhotos(categoryId) {
 
   // Marcar item no menu como ativo
   highlightActiveCategory(categoryId);
-
-  // Atualizar cabeçalho da categoria atual
-  updateCurrentCategoryHeader(categoryId);
 
   // Limpar conteúdo atual e mostrar feedback melhorado
   const contentDiv = document.getElementById('content');
@@ -234,14 +201,12 @@ function loadCategoryPhotos(categoryId) {
   // Verificar se já temos os dados desta categoria em cache
   if (categoryPhotoCache[categoryId]) {
     console.log(`Using cached photos for category: ${categoryId}`);
-    // CORREÇÃO: Extrair apenas o array de fotos do cache
     const cachedData = categoryPhotoCache[categoryId];
     const photosArray = cachedData.photos || cachedData;
 
-    // CORREÇÃO CRÍTICA: Atualizar array global e registro de fotos
-    photos = [...photosArray]; // Atualizar array global
+    photos = [...photosArray];
     photosArray.forEach(photo => {
-      photoRegistry[photo.id] = photo; // Atualizar registro
+      photoRegistry[photo.id] = photo;
     });
 
     renderPhotosForCategory(photosArray, categoryId);
@@ -250,13 +215,11 @@ function loadCategoryPhotos(categoryId) {
     return;
   }
 
-  // CORREÇÃO: Carregar fotos com limite inicial
-  const INITIAL_LOAD_LIMIT = 20; // Carregar apenas 20 fotos inicialmente
+  const INITIAL_LOAD_LIMIT = 20;
 
   fetch(`/api/photos?category_id=${categoryId || ''}&customer_code=${currentCustomerCode}&limit=${INITIAL_LOAD_LIMIT}&offset=0`)
     .then(response => response.json())
     .then(photos => {
-      // Armazenar APENAS as fotos carregadas no cache (não todas)
       categoryPhotoCache[categoryId] = {
         photos: photos || [],
         totalLoaded: photos.length || 0,
@@ -264,11 +227,7 @@ function loadCategoryPhotos(categoryId) {
       };
 
       console.log(`Loaded ${photos.length} photos for category: ${categoryId}`);
-
-      // Atualizar o registro global e renderizar
       updatePhotoRegistryAndRender(photos || []);
-
-      // Renderizar com informação se há mais fotos
       renderPhotosForCategory(photos || [], categoryId);
       preloadCategoryImages(categoryId);
       hideLoader();
@@ -2736,38 +2695,16 @@ function renderCategoryPhotosWithTabs(container, photos) {
 function switchSizeTab(mainCategory, subcategory, size) {
   console.log(`🔄 Trocando para aba: ${size}`);
 
-  // ✅ VERIFICAR se título atual CORRESPONDE ao contexto atual
-  const currentTitle = document.getElementById('dynamic-category-title')?.textContent;
-  const currentBreadcrumb = document.querySelector('#breadcrumb-container')?.textContent;
-
-  if (currentTitle && currentBreadcrumb && currentTitle.includes(' - ') && currentTitle.includes('Categories')) {
-    // Verificar se título corresponde ao breadcrumb atual
-    const breadcrumbFormatted = currentBreadcrumb.replace(/>/g, ' -').trim();
-    if (currentTitle === breadcrumbFormatted) {
-      console.log(`⚠️ Título já sincronizado em switchSizeTab: ${currentTitle}`);
-
-      // Apenas atualizar aba ativa sem mexer no título
-      document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
-      const targetTab = document.querySelector(`[data-size="${size}"]`);
-      if (targetTab) targetTab.classList.add('active');
-      return true;
-    } else {
-      console.log(`🔄 Título desatualizado em switchSizeTab. Atual: ${currentTitle}, Deveria: ${breadcrumbFormatted}`);
-    }
-  }
-
   // ✅ ATUALIZAR TÍTULO COM NOVO TAMANHO
   const newTitle = createCompleteTitle(mainCategory, subcategory, size);
   const titleElement = document.getElementById('dynamic-category-title');
   if (titleElement) {
     titleElement.textContent = newTitle;
     console.log(`📝 Título atualizado: ${newTitle}`);
-
-    // ✅ ATUALIZAR BREADCRUMB DINÂMICO
     updateDynamicBreadcrumb(mainCategory, subcategory, size);
   }
 
-  // Atualizar abas ativas - com proteção contra DOM null
+  // Atualizar abas ativas
   document.querySelectorAll('.size-tab').forEach(tab => {
     tab.classList.remove('active');
   });
@@ -2777,11 +2714,9 @@ function switchSizeTab(mainCategory, subcategory, size) {
     targetTab.classList.add('active');
   } else {
     console.error(`❌ Aba não encontrada para tamanho: ${size}`);
-    console.log(`🔍 Abas disponíveis:`, Array.from(document.querySelectorAll('.size-tab')).map(tab => tab.dataset.size));
     return false;
   }
 
-  // Carregar fotos do novo tamanho
   showLoader();
   loadPhotosForSpecificSize(mainCategory, subcategory, size);
   return true;
