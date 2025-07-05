@@ -179,31 +179,27 @@ function loadCategoryPhotos(categoryId) {
   const hasHierarchicalBreadcrumb = currentBreadcrumb && currentBreadcrumb.includes('breadcrumb-current');
 
   if (hasHierarchicalBreadcrumb) {
-    console.log(`⚠️ Evitando reset - interface hierárquica já configurada para categoria: ${categoryId}`);
+    console.log(`⚠️ Interface hierárquica detectada - reconfigurando após sync para categoria: ${categoryId}`);
 
-    // ✅ ATUALIZAR título existente na interface
-    const existingTitleElement = document.querySelector('.category-title-container h2');
-    if (existingTitleElement) {
-      const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-      if (breadcrumbText) {
-        const fullTitle = breadcrumbText.replace(/>/g, ' - ').trim();
-        existingTitleElement.textContent = fullTitle;
-        console.log(`✅ Título visual atualizado: ${fullTitle}`);
+    // ✅ PERMITIR reset normal, mas reconfigurar depois
+    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+    if (breadcrumbText) {
+      const parts = breadcrumbText.split(' > ');
+      if (parts.length >= 3) {
+        const mainCategory = parts[0];
+        const subcategory = parts[1];
+        const size = parts[2];
+
+        console.log(`🔧 Reconfigurando: ${mainCategory} → ${subcategory} → ${size}`);
+
+        // Agendar reconfiguração após reset
+        setTimeout(() => {
+          loadPhotosForSubcategory(mainCategory, subcategory);
+        }, 100);
+
+        return; // ✅ PARAR aqui e deixar o setTimeout reconfigurar
       }
     }
-
-    // Apenas renderizar fotos SEM resetar interface
-    if (categoryPhotoCache[categoryId]) {
-      const cachedData = categoryPhotoCache[categoryId];
-      const photosArray = cachedData.photos || cachedData;
-      photos = [...photosArray];
-      photosArray.forEach(photo => {
-        photoRegistry[photo.id] = photo;
-      });
-      renderPhotosForCategory(photosArray, categoryId);
-      preloadCategoryImages(categoryId);
-    }
-    return; // ✅ PARAR AQUI - manter interface intacta
   }
 
   // ✅ LIMPAR scroll do More Photos ao trocar categoria
