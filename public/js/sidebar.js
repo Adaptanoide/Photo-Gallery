@@ -549,15 +549,20 @@ function updateCurrentCategoryHeader(categoryId) {
     headerDiv.style.display = 'none'; // Esconder completamente
   }
 
-  // ADIÇÃO: Atualizar o título principal da galeria
+  // ✅ VERIFICAR se já temos interface hierárquica - NÃO sobrescrever
+  const breadcrumb = document.querySelector('#breadcrumb-container')?.innerHTML;
+  if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
+    console.log(`⚠️ Interface hierárquica detectada - NÃO atualizando título`);
+    return; // ✅ PARAR AQUI - manter título hierárquico
+  }
+
+  // ADIÇÃO: Atualizar o título principal da galeria (apenas para categorias normais)
   const mainCategoryTitle = document.querySelector('.category-title-container h2');
   if (mainCategoryTitle) {
-    // Se for All Items ou nenhuma categoria específica
     if (!categoryId || categoryId === document.querySelector('.category-item[data-category-id] .active')?.getAttribute('data-category-id')) {
       const categoryItem = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
       if (categoryItem) {
         const categoryText = categoryItem.textContent.trim();
-        // Remover contadores entre parênteses para um visual mais limpo
         const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
         mainCategoryTitle.textContent = cleanCategoryName;
       } else {
