@@ -2743,6 +2743,18 @@ function renderCategoryPhotosWithTabs(container, photos) {
 function switchSizeTab(mainCategory, subcategory, size) {
   console.log(`🔄 Trocando para aba: ${size}`);
 
+  // ✅ VERIFICAR se já temos título hierárquico correto - não sobrescrever
+  const currentTitle = document.getElementById('dynamic-category-title')?.textContent;
+  if (currentTitle && currentTitle.includes(' - ') && currentTitle.includes('Categories')) {
+    console.log(`⚠️ Mantendo título hierárquico em switchSizeTab: ${currentTitle}`);
+
+    // Apenas atualizar aba ativa sem mexer no título
+    document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
+    const targetTab = document.querySelector(`[data-size="${size}"]`);
+    if (targetTab) targetTab.classList.add('active');
+    return true;
+  }
+
   // ✅ ATUALIZAR TÍTULO COM NOVO TAMANHO
   const newTitle = createCompleteTitle(mainCategory, subcategory, size);
   const titleElement = document.getElementById('dynamic-category-title');
