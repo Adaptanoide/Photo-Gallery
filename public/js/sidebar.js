@@ -2743,16 +2743,24 @@ function renderCategoryPhotosWithTabs(container, photos) {
 function switchSizeTab(mainCategory, subcategory, size) {
   console.log(`🔄 Trocando para aba: ${size}`);
 
-  // ✅ VERIFICAR se já temos título hierárquico correto - não sobrescrever
+  // ✅ VERIFICAR se título atual CORRESPONDE ao contexto atual
   const currentTitle = document.getElementById('dynamic-category-title')?.textContent;
-  if (currentTitle && currentTitle.includes(' - ') && currentTitle.includes('Categories')) {
-    console.log(`⚠️ Mantendo título hierárquico em switchSizeTab: ${currentTitle}`);
+  const currentBreadcrumb = document.querySelector('#breadcrumb-container')?.textContent;
 
-    // Apenas atualizar aba ativa sem mexer no título
-    document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
-    const targetTab = document.querySelector(`[data-size="${size}"]`);
-    if (targetTab) targetTab.classList.add('active');
-    return true;
+  if (currentTitle && currentBreadcrumb && currentTitle.includes(' - ') && currentTitle.includes('Categories')) {
+    // Verificar se título corresponde ao breadcrumb atual
+    const breadcrumbFormatted = currentBreadcrumb.replace(/>/g, ' -').trim();
+    if (currentTitle === breadcrumbFormatted) {
+      console.log(`⚠️ Título já sincronizado em switchSizeTab: ${currentTitle}`);
+
+      // Apenas atualizar aba ativa sem mexer no título
+      document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
+      const targetTab = document.querySelector(`[data-size="${size}"]`);
+      if (targetTab) targetTab.classList.add('active');
+      return true;
+    } else {
+      console.log(`🔄 Título desatualizado em switchSizeTab. Atual: ${currentTitle}, Deveria: ${breadcrumbFormatted}`);
+    }
   }
 
   // ✅ ATUALIZAR TÍTULO COM NOVO TAMANHO
@@ -2777,13 +2785,13 @@ function switchSizeTab(mainCategory, subcategory, size) {
   } else {
     console.error(`❌ Aba não encontrada para tamanho: ${size}`);
     console.log(`🔍 Abas disponíveis:`, Array.from(document.querySelectorAll('.size-tab')).map(tab => tab.dataset.size));
-    return false; // Retornar false para indicar falha
+    return false;
   }
 
   // Carregar fotos do novo tamanho
   showLoader();
   loadPhotosForSpecificSize(mainCategory, subcategory, size);
-  return true; // ✅ ADICIONADO: Retornar true para indicar sucesso
+  return true;
 }
 
 // ✅ FUNÇÃO UTILITÁRIA: Criar título completo baseado no tipo de categoria
