@@ -189,16 +189,24 @@ function loadCategoryPhotos(categoryId) {
 
         console.log(`🔍 Contexto: ${mainCategory} → ${subcategory} → ${size}`);
 
-        // ✅ VERIFICAR se abas existem
+        // ✅ VERIFICAR se abas existem E se são da subcategoria correta
         const existingTabs = document.querySelector('.size-tabs-wrapper');
+        const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
+
         if (!existingTabs) {
           console.log(`❌ Abas não encontradas - recriando interface`);
           setTimeout(() => {
             loadPhotosForSubcategory(mainCategory, subcategory);
           }, 100);
           return;
+        } else if (currentTitle && !currentTitle.includes(subcategory)) {
+          console.log(`🔄 Subcategoria mudou - recriando interface para: ${subcategory}`);
+          setTimeout(() => {
+            loadPhotosForSubcategory(mainCategory, subcategory);
+          }, 100);
+          return;
         } else {
-          console.log(`✅ Abas encontradas - preservando interface`);
+          console.log(`✅ Abas corretas encontradas - preservando interface`);
 
           // ✅ APENAS atualizar aba ativa
           document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
