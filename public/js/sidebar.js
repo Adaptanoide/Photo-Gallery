@@ -247,8 +247,50 @@ function loadCategoryPhotos(categoryId) {
       }
     }
 
-    // ✅ FALLBACK: Se chegou aqui, apenas carregar fotos sem resetar
-    console.log(`🔄 Fallback hierárquico - carregando fotos sem reset`);
+    // ✅ FALLBACK: Se chegou aqui, verificar se subcategoria mudou
+    console.log(`🔄 Fallback hierárquico - verificando mudanças`);
+
+    // ✅ EXTRAIR subcategoria atual do breadcrumb
+    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+    if (breadcrumbText) {
+      const parts = breadcrumbText.split(' > ');
+      if (parts.length >= 3) {
+        const mainCategory = parts[0];
+        const subcategory = parts[1];
+        const size = parts[2];
+
+        // ✅ VERIFICAR se título/abas correspondem à subcategoria atual
+        const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
+        const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
+
+        if (!currentSubcategoryInTitle || currentSubcategoryInTitle !== subcategory) {
+          console.log(`🔄 FALLBACK: Subcategoria mudou para "${subcategory}" - recriando interface`);
+          setTimeout(() => {
+            loadPhotosForSubcategory(mainCategory, subcategory);
+          }, 100);
+          return;
+        } else {
+          console.log(`✅ FALLBACK: Subcategoria correta "${subcategory}" - apenas atualizando aba`);
+
+          // ✅ ATUALIZAR título e aba ativa
+          const newTitle = createCompleteTitle(mainCategory, subcategory, size);
+          const titleElement = document.querySelector('#dynamic-category-title');
+          if (titleElement) {
+            titleElement.textContent = newTitle;
+            console.log(`✅ Título corrigido no fallback: ${newTitle}`);
+          }
+
+          document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
+          const targetTab = document.querySelector(`[data-size="${size}"]`);
+          if (targetTab) {
+            targetTab.classList.add('active');
+            console.log(`✅ Aba "${size}" marcada como ativa no fallback`);
+          }
+        }
+      }
+    }
+
+    // ✅ CARREGAR fotos
     if (categoryPhotoCache[categoryId]) {
       const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
       photos = [...photosArray];
@@ -257,6 +299,7 @@ function loadCategoryPhotos(categoryId) {
       const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
       if (photosContainer) {
         renderCategoryPhotosWithTabs(photosContainer, photosArray);
+        console.log(`✅ Fotos atualizadas no fallback`);
       }
     }
     return;
