@@ -252,16 +252,27 @@ function loadCategoryPhotos(categoryId) {
 
     // ✅ EXTRAIR subcategoria atual do breadcrumb
     const fallbackBreadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+    console.log(`🔍 DEBUG fallbackBreadcrumbText: "${fallbackBreadcrumbText}"`);
+
     if (fallbackBreadcrumbText) {
-      const parts = breadcrumbText.split(' > ');
+      const parts = fallbackBreadcrumbText.split(' > ');
+      console.log(`🔍 DEBUG parts:`, parts);
+      console.log(`🔍 DEBUG parts.length:`, parts.length);
+
       if (parts.length >= 3) {
         const mainCategory = parts[0];
         const subcategory = parts[1];
         const size = parts[2];
 
+        console.log(`🔍 DEBUG extracted - main: "${mainCategory}", sub: "${subcategory}", size: "${size}"`);
+
         // ✅ VERIFICAR se título/abas correspondem à subcategoria atual
         const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
+        console.log(`🔍 DEBUG currentTitle: "${currentTitle}"`);
+
         const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
+        console.log(`🔍 DEBUG currentSubcategoryInTitle: "${currentSubcategoryInTitle}"`);
+        console.log(`🔍 DEBUG comparison: "${currentSubcategoryInTitle}" !== "${subcategory}" = ${currentSubcategoryInTitle !== subcategory}`);
 
         if (!currentSubcategoryInTitle || currentSubcategoryInTitle !== subcategory) {
           console.log(`🔄 FALLBACK: Subcategoria mudou para "${subcategory}" - recriando interface`);
@@ -287,7 +298,11 @@ function loadCategoryPhotos(categoryId) {
             console.log(`✅ Aba "${size}" marcada como ativa no fallback`);
           }
         }
+      } else {
+        console.log(`❌ DEBUG: parts.length < 3, não há contexto suficiente`);
       }
+    } else {
+      console.log(`❌ DEBUG: fallbackBreadcrumbText está vazio ou null`);
     }
 
     // ✅ CARREGAR fotos
@@ -443,64 +458,6 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
         const remainingPhotos = totalPhotos - categoryCache.totalLoaded;
         const nextBatchSize = Math.min(15, remainingPhotos);
 
-        /* 
-        COMENTADO - Criação do botão More Photos removida para infinite scroll
-        ✅ SEMPRE CRIAR O BOTÃO se há fotos carregadas
-        if (remainingPhotos > 0 || categoryCache.totalLoaded >= 15) {
-          console.log('✅ Criando botão More Photos...');
-          
-          const loadMoreBtn = document.createElement('div');
-          loadMoreBtn.className = 'load-more-btn modern';
-          
-          ✅ BOTÃO SEMPRE VISÍVEL (como funcionava antes)
-          loadMoreBtn.style.opacity = '1';
-          loadMoreBtn.style.visibility = 'visible';
-          loadMoreBtn.style.transform = 'translateY(0)';
-          
-          if (remainingPhotos > 0) {
-            loadMoreBtn.innerHTML = `
-              <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, ${nextBatchSize})">
-                More Photos
-              </button>
-            `;
-          } else {
-            // Fallback: criar botão mesmo sem saber quantas fotos restam
-            loadMoreBtn.innerHTML = `
-              <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, 15)">
-                More Photos
-              </button>
-            `;
-          }
-          
-          console.log('✅ Botão More Photos criado com classes:', loadMoreBtn.className);
-          
-          ✅ INSERIR: More Photos ANTES dos botões de navegação
-          const navigationSection = contentDiv.querySelector('.category-navigation-section');
-          if (navigationSection) {
-            contentDiv.insertBefore(loadMoreBtn, navigationSection);
-            console.log('✅ Botão inserido antes da navegação');
-          } else {
-            contentDiv.appendChild(loadMoreBtn);
-            console.log('✅ Botão adicionado no final');
-          }
-
-          ✅ VERIFICAR se foi inserido corretamente e inicializar scroll
-          setTimeout(() => {
-            const insertedBtn = document.querySelector('.load-more-btn.modern');
-            console.log('🔍 Botão no DOM após inserção:', insertedBtn);
-            
-            if (insertedBtn) {
-              console.log('✅ Botão encontrado, inicializando scroll...');
-              setTimeout(() => {
-                initScrollMorePhotos();
-              }, 500);
-            } else {
-              console.error('❌ Botão não foi inserido no DOM!');
-            }
-          }, 100);
-        }
-        */
-
         // ✅ NOVA LÓGICA: Inicializar infinite scroll sem botão
         setTimeout(() => {
           initScrollMorePhotos();
@@ -508,32 +465,6 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
       })
       .catch(error => {
         console.log('Could not determine total photos');
-
-        /* 
-        COMENTADO - Fallback do botão More Photos removido para infinite scroll
-        ✅ CRIAR BOTÃO MESMO COM ERRO (fallback)
-        if (categoryCache.totalLoaded >= 15) {
-          console.log('✅ Criando botão More Photos (fallback)...');
-          
-          const loadMoreBtn = document.createElement('div');
-          loadMoreBtn.className = 'load-more-btn modern';
-          loadMoreBtn.style.opacity = '1';
-          loadMoreBtn.style.visibility = 'visible';
-          loadMoreBtn.style.transform = 'translateY(0)';
-          
-          loadMoreBtn.innerHTML = `
-            <button class="btn-load-more" onclick="loadMorePhotosWithEffects('${categoryId}', ${categoryCache.totalLoaded}, 15)">
-              More Photos
-            </button>
-          `;
-          
-          contentDiv.appendChild(loadMoreBtn);
-          
-          setTimeout(() => {
-            initScrollMorePhotos();
-          }, 500);
-        }
-        */
 
         // ✅ MANTER: Inicializar infinite scroll mesmo com erro
         setTimeout(() => {
