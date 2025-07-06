@@ -222,9 +222,12 @@ function loadCategoryPhotos(categoryId) {
       if (photosContainer && document.querySelector('.size-tabs-wrapper')) {
         console.log(`🔄 Atualizando apenas fotos sem destruir abas`);
 
+        // ✅ CORREÇÃO: Verificar se selectedPhotos existe
+        const currentSelectedPhotos = window.selectedPhotos || [];
+
         const html = photosArray.map(photo => {
-          const isSelected = selectedPhotos.includes(photo.id);
-          const priceText = getPhotoPrice(photo.id, photo.price);
+          const isSelected = currentSelectedPhotos.includes(photo.id);
+          const priceText = typeof getPhotoPrice === 'function' ? getPhotoPrice(photo.id, photo.price) : '';
           return `
             <div class="photo-item" data-photo-id="${photo.id}" onclick="openLightbox(${photo.id})">
               <img src="${photo.url_thumbnail || photo.url}" alt="Photo ${photo.id}" loading="lazy">
@@ -271,7 +274,7 @@ function loadCategoryPhotos(categoryId) {
     const photosArray = cachedData.photos || cachedData;
     photos = [...photosArray];
     photosArray.forEach(photo => photoRegistry[photo.id] = photo);
-    renderPhotosForCategory(photosArray, categoryId); // ✅ Esta pode ficar normal - só executa para categorias sem abas
+    renderPhotosForCategory(photosArray, categoryId);
     hideLoader();
     preloadCategoryImages(categoryId);
     return;
@@ -288,7 +291,7 @@ function loadCategoryPhotos(categoryId) {
       };
       console.log(`Loaded ${photos.length} photos for category: ${categoryId}`);
       updatePhotoRegistryAndRender(photos || []);
-      renderPhotosForCategory(photos || [], categoryId); // ✅ Esta pode ficar normal - só executa para categorias sem abas
+      renderPhotosForCategory(photos || [], categoryId);
       preloadCategoryImages(categoryId);
       hideLoader();
     })
