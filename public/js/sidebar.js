@@ -227,12 +227,39 @@ function loadCategoryPhotos(categoryId) {
             console.log(`✅ Aba "${size}" marcada como ativa`);
           }
 
-          // ✅ CARREGAR FOTOS DO TAMANHO CORRETO
-          loadPhotosForSpecificSize(mainCategory, subcategory, size);
+          // ✅ CARREGAR FOTOS DO TAMANHO CORRETO SEM APAGAR INTERFACE
+          if (categoryPhotoCache[categoryId]) {
+            const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
+            photos = [...photosArray];
+            photosArray.forEach(photo => photoRegistry[photo.id] = photo);
+
+            // ✅ ATUALIZAR APENAS O CONTAINER DE FOTOS
+            const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
+            if (photosContainer) {
+              renderCategoryPhotosWithTabs(photosContainer, photosArray);
+              console.log(`✅ Fotos atualizadas sem destruir interface`);
+            }
+          }
+
+          console.log(`🚀 SAINDO DA FUNÇÃO - interface hierárquica preservada`);
           return;
         }
       }
     }
+
+    // ✅ FALLBACK: Se chegou aqui, apenas carregar fotos sem resetar
+    console.log(`🔄 Fallback hierárquico - carregando fotos sem reset`);
+    if (categoryPhotoCache[categoryId]) {
+      const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
+      photos = [...photosArray];
+      photosArray.forEach(photo => photoRegistry[photo.id] = photo);
+
+      const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
+      if (photosContainer) {
+        renderCategoryPhotosWithTabs(photosContainer, photosArray);
+      }
+    }
+    return;
   }
 
   // ✅ RESTO DA FUNÇÃO ORIGINAL SEM MUDANÇAS
