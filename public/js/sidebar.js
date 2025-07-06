@@ -193,69 +193,46 @@ function loadCategoryPhotos(categoryId) {
         const existingTabs = document.querySelector('.size-tabs-wrapper');
         const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
 
+        // ✅ DETECÇÃO MELHORADA: Comparar subcategoria no título
+        const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
+        const subcategoryChanged = currentSubcategoryInTitle && currentSubcategoryInTitle !== subcategory;
+
         if (!existingTabs) {
           console.log(`❌ Abas não encontradas - recriando interface`);
           setTimeout(() => {
             loadPhotosForSubcategory(mainCategory, subcategory);
           }, 100);
           return;
-        } else if (currentTitle && !currentTitle.includes(subcategory)) {
-          console.log(`🔄 Subcategoria mudou - recriando interface para: ${subcategory}`);
+        } else if (subcategoryChanged) {
+          console.log(`🔄 Subcategoria mudou de "${currentSubcategoryInTitle}" para "${subcategory}" - recriando interface`);
           setTimeout(() => {
             loadPhotosForSubcategory(mainCategory, subcategory);
           }, 100);
           return;
         } else {
-          console.log(`✅ Abas corretas encontradas - preservando interface`);
+          console.log(`✅ Abas corretas encontradas - apenas atualizando aba ativa`);
 
-          // ✅ APENAS atualizar aba ativa
+          // ✅ APENAS atualizar aba ativa E título
+          const newTitle = createCompleteTitle(mainCategory, subcategory, size);
+          const titleElement = document.querySelector('#dynamic-category-title');
+          if (titleElement) {
+            titleElement.textContent = newTitle;
+            console.log(`✅ Título corrigido: ${newTitle}`);
+          }
+
           document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
           const targetTab = document.querySelector(`[data-size="${size}"]`);
           if (targetTab) {
             targetTab.classList.add('active');
             console.log(`✅ Aba "${size}" marcada como ativa`);
           }
+
+          // ✅ CARREGAR FOTOS DO TAMANHO CORRETO
+          loadPhotosForSpecificSize(mainCategory, subcategory, size);
+          return;
         }
       }
     }
-
-    // ✅ CORREÇÃO 1: Carregar fotos sem resetar interface
-    if (categoryPhotoCache[categoryId]) {
-      const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
-      photos = [...photosArray];
-      photosArray.forEach(photo => photoRegistry[photo.id] = photo);
-
-      // ✅ NÃO destruir abas - apenas atualizar fotos
-      const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
-      if (photosContainer && document.querySelector('.size-tabs-wrapper')) {
-        console.log(`🔄 Atualizando apenas fotos sem destruir abas`);
-
-        // ✅ CORREÇÃO: Verificar se selectedPhotos existe
-        const currentSelectedPhotos = window.selectedPhotos || [];
-
-        const html = photosArray.map(photo => {
-          const isSelected = currentSelectedPhotos.includes(photo.id);
-          const priceText = typeof getPhotoPrice === 'function' ? getPhotoPrice(photo.id, photo.price) : '';
-          return `
-            <div class="photo-item" data-photo-id="${photo.id}" onclick="openLightbox(${photo.id})">
-              <img src="${photo.url_thumbnail || photo.url}" alt="Photo ${photo.id}" loading="lazy">
-              <div class="photo-overlay">
-                <button class="btn ${isSelected ? 'btn-danger' : 'btn-primary'}" onclick="event.stopPropagation(); ${isSelected ? 'removeFromCart' : 'addToCart'}(${photo.id});">
-                  ${isSelected ? 'Remove' : 'Select'}
-                </button>
-                ${priceText ? `<span class="price-inline">${priceText}</span>` : ''}
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        photosContainer.innerHTML = html;
-        console.log(`✅ Fotos atualizadas sem destruir abas`);
-      } else {
-        renderPhotosForCategory(photosArray, categoryId);
-      }
-    }
-    return;
   }
 
   // ✅ RESTO DA FUNÇÃO ORIGINAL SEM MUDANÇAS
