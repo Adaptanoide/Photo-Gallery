@@ -251,8 +251,8 @@ function loadCategoryPhotos(categoryId) {
     console.log(`🔄 Fallback hierárquico - verificando mudanças`);
 
     // ✅ EXTRAIR subcategoria atual do breadcrumb
-    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-    if (breadcrumbText) {
+    const fallbackBreadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+    if (fallbackBreadcrumbText) {
       const parts = breadcrumbText.split(' > ');
       if (parts.length >= 3) {
         const mainCategory = parts[0];
