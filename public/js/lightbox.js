@@ -1195,6 +1195,12 @@ function getNextCategory() {
 
     console.log('🎯 Lightbox usando navegação hierárquica:', context);
 
+    // ✅ EXCEÇÃO: Brazil Best Sellers usa ordem do sidebar
+    if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+      console.log('🚫 Brazil Best Sellers: Pulando lógica hierárquica, usando ordem do sidebar');
+      return getNextCategoryFromSidebar();
+    }
+
     // NÍVEL 1: Próximo tamanho na mesma subcategoria
     if (context.level === 'size' && options.sizes.length > 0) {
       const currentIndex = options.sizes.indexOf(context.size);
@@ -1275,12 +1281,17 @@ function getPreviousCategory() {
     currentCategoryIndex = specificCategories.findIndex(cat => cat.id === activeCategory);
   }
 
-  // ✅ NOVA LÓGICA HIERÁRQUICA: usar mesma navegação do sidebar
   if (typeof window.getCurrentNavigationContext === 'function') {
     const context = window.getCurrentNavigationContext();
     const options = window.getNavigationOptions(context);
 
     console.log('🎯 Lightbox Previous usando navegação hierárquica:', context);
+
+    // ✅ EXCEÇÃO: Brazil Best Sellers usa ordem do sidebar
+    if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+      console.log('🚫 Brazil Best Sellers: Pulando lógica hierárquica, usando ordem do sidebar');
+      return getPreviousCategoryFromSidebar();
+    }
 
     // NÍVEL 1: Tamanho anterior na mesma subcategoria
     if (context.level === 'size' && options.sizes.length > 0) {
@@ -2005,4 +2016,92 @@ function updateGalleryAfterSold() {
 
   // Mostrar notificação suave
   showToast('Gallery updated - sold items removed', 'info');
+}
+
+// ✅ FUNÇÃO: Obter próxima categoria na ordem do sidebar
+function getNextCategoryFromSidebar() {
+  console.log('📋 Usando ordem do sidebar para próxima categoria');
+
+  // Obter subcategorias do sidebar na ordem correta
+  const sidebarItems = document.querySelectorAll('.category-item[data-subcategory]');
+  const sidebarOrder = Array.from(sidebarItems).map(item => item.getAttribute('data-subcategory'));
+
+  console.log('📋 Ordem do sidebar:', sidebarOrder);
+
+  // Encontrar categoria atual no breadcrumb
+  const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
+  if (!breadcrumbCurrent) {
+    console.log('❌ Não foi possível encontrar categoria atual no breadcrumb');
+    return null;
+  }
+
+  const currentSubcategory = breadcrumbCurrent.textContent.trim();
+  console.log('📋 Categoria atual:', currentSubcategory);
+
+  // Encontrar índice atual e próximo
+  const currentIndex = sidebarOrder.indexOf(currentSubcategory);
+  if (currentIndex === -1) {
+    console.log('❌ Categoria atual não encontrada no sidebar');
+    return null;
+  }
+
+  const nextIndex = currentIndex + 1;
+  if (nextIndex >= sidebarOrder.length) {
+    console.log('📋 Última categoria do sidebar');
+    return null;
+  }
+
+  const nextSubcategory = sidebarOrder[nextIndex];
+  console.log('📋 Próxima categoria:', nextSubcategory);
+
+  // Encontrar categoria correspondente em window.categories
+  const nextCategory = window.categories.find(cat => {
+    return cat.fullPath && cat.fullPath.includes('Brazil Best Sellers') && cat.fullPath.includes(nextSubcategory);
+  });
+
+  return nextCategory || null;
+}
+
+// ✅ FUNÇÃO: Obter categoria anterior na ordem do sidebar
+function getPreviousCategoryFromSidebar() {
+  console.log('📋 Usando ordem do sidebar para categoria anterior');
+
+  // Obter subcategorias do sidebar na ordem correta
+  const sidebarItems = document.querySelectorAll('.category-item[data-subcategory]');
+  const sidebarOrder = Array.from(sidebarItems).map(item => item.getAttribute('data-subcategory'));
+
+  console.log('📋 Ordem do sidebar:', sidebarOrder);
+
+  // Encontrar categoria atual no breadcrumb
+  const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
+  if (!breadcrumbCurrent) {
+    console.log('❌ Não foi possível encontrar categoria atual no breadcrumb');
+    return null;
+  }
+
+  const currentSubcategory = breadcrumbCurrent.textContent.trim();
+  console.log('📋 Categoria atual:', currentSubcategory);
+
+  // Encontrar índice atual e anterior
+  const currentIndex = sidebarOrder.indexOf(currentSubcategory);
+  if (currentIndex === -1) {
+    console.log('❌ Categoria atual não encontrada no sidebar');
+    return null;
+  }
+
+  const previousIndex = currentIndex - 1;
+  if (previousIndex < 0) {
+    console.log('📋 Primeira categoria do sidebar');
+    return null;
+  }
+
+  const previousSubcategory = sidebarOrder[previousIndex];
+  console.log('📋 Categoria anterior:', previousSubcategory);
+
+  // Encontrar categoria correspondente em window.categories
+  const previousCategory = window.categories.find(cat => {
+    return cat.fullPath && cat.fullPath.includes('Brazil Best Sellers') && cat.fullPath.includes(previousSubcategory);
+  });
+
+  return previousCategory || null;
 }
