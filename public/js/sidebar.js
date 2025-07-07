@@ -2940,6 +2940,24 @@ function getNavigationOptions(context) {
 
 // ✅ FUNÇÃO AUXILIAR: Obter subcategorias para categoria principal
 function getSubcategoriesForMain(mainCategoryName) {
+  // ✅ CORREÇÃO ESPECIAL PARA BRAZIL BEST SELLERS
+  if (normalizeCategory(mainCategoryName) === 'Brazil Best Sellers') {
+    // Retornar as subcategorias específicas do sidebar em vez das genéricas
+    const sidebarItems = document.querySelectorAll('.category-item[data-subcategory]');
+    const specificSubcategories = [];
+
+    sidebarItems.forEach(item => {
+      const subcategory = item.getAttribute('data-subcategory');
+      if (subcategory) {
+        specificSubcategories.push(subcategory);
+      }
+    });
+
+    console.log(`🎯 Brazil Best Sellers: Retornando ${specificSubcategories.length} subcategorias específicas do sidebar`);
+    return specificSubcategories;
+  }
+
+  // ✅ LÓGICA ORIGINAL PARA OUTRAS CATEGORIAS
   const subcategories = [];
 
   window.categories.forEach(cat => {
