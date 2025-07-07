@@ -215,12 +215,14 @@ function loadCategoryPhotos(categoryId) {
             setTimeout(() => {
               loadPhotosForSubcategory(mainCategory, subcategory);
             }, 100);
+            console.log(`🚨 RETURN 218: Abas não encontradas - PULANDO updateCurrentCategoryHeader!`);
             return;
           } else if (subcategoryChanged) {
             console.log(`🔄 Subcategoria mudou de "${currentSubcategoryInTitle}" para "${subcategory}" - recriando interface`);
             setTimeout(() => {
               loadPhotosForSubcategory(mainCategory, subcategory);
             }, 100);
+            console.log(`🚨 RETURN 224: Subcategoria mudou - PULANDO updateCurrentCategoryHeader!`);
             return;
           } else {
             console.log(`✅ Abas corretas encontradas - apenas atualizando aba ativa`);
