@@ -338,6 +338,9 @@ function loadCategoryPhotos(categoryId) {
 
   // ✅ LÓGICA ESPECIAL PARA BRAZIL BEST SELLERS (após bypass hierárquico)
   const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+  console.log(`🔍 DEBUG breadcrumbText: "${breadcrumbText}"`);
+  console.log(`🔍 DEBUG normalizeCategory(breadcrumbText): "${normalizeCategory(breadcrumbText)}"`);
+  console.log(`🔍 DEBUG includes check: ${normalizeCategory(breadcrumbText).includes('Brazil Best Sellers')}`);
   if (breadcrumbText && normalizeCategory(breadcrumbText).includes('Brazil Best Sellers')) {
     console.log(`🎯 Processamento especial Brazil Best Sellers para: ${categoryId}`);
 
