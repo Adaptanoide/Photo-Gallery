@@ -443,7 +443,9 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
   if (activeCategory) {
     console.log(`🏗️ Tentando criar título...`);
     const categoryItem = document.querySelector('.category-item.active');
+    console.log(`🏗️ categoryItem encontrado: ${!!categoryItem}`);
     if (categoryItem) {
+      console.log(`🏗️ categoryItem.textContent: "${categoryItem.textContent}"`);
       const categoryText = categoryItem.textContent.trim();
       const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
 
