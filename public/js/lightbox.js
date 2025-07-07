@@ -1196,7 +1196,7 @@ function getNextCategory() {
     console.log('🎯 Lightbox usando navegação hierárquica:', context);
 
     // ✅ EXCEÇÃO: Brazil Best Sellers usa ordem do sidebar
-    if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+    if (context && context.mainCategory && context.mainCategory.includes('Brazil  Best Sellers')) {
       console.log('🚫 Brazil Best Sellers: Pulando lógica hierárquica, usando ordem do sidebar');
       return getNextCategoryFromSidebar();
     }
@@ -1288,7 +1288,7 @@ function getPreviousCategory() {
     console.log('🎯 Lightbox Previous usando navegação hierárquica:', context);
 
     // ✅ EXCEÇÃO: Brazil Best Sellers usa ordem do sidebar
-    if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+    if (context && context.mainCategory && context.mainCategory.includes('Brazil  Best Sellers')) {
       console.log('🚫 Brazil Best Sellers: Pulando lógica hierárquica, usando ordem do sidebar');
       return getPreviousCategoryFromSidebar();
     }
@@ -2055,13 +2055,13 @@ function getNextCategoryFromSidebar() {
   console.log('📋 Próxima categoria:', nextSubcategory);
   console.log('🔍 DEBUG: Procurando em window.categories...');
   window.categories.forEach(cat => {
-    if (cat.fullPath && cat.fullPath.includes('Brazil Best Sellers')) {
+    if (cat.fullPath && cat.fullPath.includes('Brazil  Best Sellers')) {
       console.log('🔍 DEBUG categoria:', cat.fullPath);
     }
   });
 
   const nextCategory = window.categories.find(cat => {
-    if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
+    if (!cat.fullPath || !cat.fullPath.includes('Brazil  Best Sellers')) return false;
 
     // Mapear nomes do sidebar para estrutura real
     if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Natural-Tones');
@@ -2119,7 +2119,7 @@ function getPreviousCategoryFromSidebar() {
 
   // Encontrar categoria correspondente em window.categories
   const previousCategory = window.categories.find(cat => {
-    if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
+    if (!cat.fullPath || !cat.fullPath.includes('Brazil  Best Sellers')) return false;
 
     // Mapear nomes do sidebar para estrutura real
     if (previousSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Natural-Tones');
