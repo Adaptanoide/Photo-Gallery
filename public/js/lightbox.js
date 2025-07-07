@@ -2054,9 +2054,14 @@ function getNextCategoryFromSidebar() {
   const nextSubcategory = sidebarOrder[nextIndex];
   console.log('📋 Próxima categoria:', nextSubcategory);
 
-  // Encontrar categoria correspondente em window.categories
   const nextCategory = window.categories.find(cat => {
-    return cat.fullPath && cat.fullPath.includes('Brazil Best Sellers') && cat.fullPath.includes(nextSubcategory);
+    if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
+
+    // Mapear nomes do sidebar para estrutura real
+    if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Assorted-Natural-Tones') && cat.fullPath.includes('Small');
+    if (nextSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Assorted-Tones') && cat.fullPath.includes('Extra-Small');
+
+    return cat.fullPath.includes(nextSubcategory);
   });
 
   return nextCategory || null;
@@ -2100,7 +2105,13 @@ function getPreviousCategoryFromSidebar() {
 
   // Encontrar categoria correspondente em window.categories
   const previousCategory = window.categories.find(cat => {
-    return cat.fullPath && cat.fullPath.includes('Brazil Best Sellers') && cat.fullPath.includes(previousSubcategory);
+    if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
+
+    // Mapear nomes do sidebar para estrutura real
+    if (previousSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Assorted-Natural-Tones') && cat.fullPath.includes('Small');
+    if (previousSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Assorted-Tones') && cat.fullPath.includes('Extra-Small');
+
+    return cat.fullPath.includes(previousSubcategory);
   });
 
   return previousCategory || null;
