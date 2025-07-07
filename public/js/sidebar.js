@@ -186,7 +186,7 @@ function loadCategoryPhotos(categoryId) {
 
     // ✅ NOVA EXCEÇÃO: BRAZIL BEST SELLERS não usa interface hierárquica
     const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-    if (breadcrumbText && breadcrumbText.includes('Brazil Best Sellers')) {
+    if (breadcrumbText && normalizeCategory(breadcrumbText).includes('Brazil Best Sellers')) {
       console.log(`🚫 Brazil Best Sellers detectado - pulando interface hierárquica`);
       // Continuar para lógica normal (não retornar aqui)
     } else {
