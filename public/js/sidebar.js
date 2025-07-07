@@ -255,7 +255,7 @@ function loadCategoryPhotos(categoryId) {
     console.log(`🔍 DEBUG fallbackBreadcrumbText: "${fallbackBreadcrumbText}"`);
 
     if (fallbackBreadcrumbText) {
-      const parts = fallbackBreadcrumbText.split(' > ');
+      const parts = fallbackBreadcrumbText.split('>').map(part => part.trim());
       console.log(`🔍 DEBUG parts:`, parts);
       console.log(`🔍 DEBUG parts.length:`, parts.length);
 
