@@ -435,21 +435,35 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
     return;
   }
 
+  console.log(`🏗️ renderPhotosForCategory: Iniciando para categoryId: ${categoryId}`);
+  console.log(`🏗️ activeCategory: ${activeCategory}`);
+  console.log(`🏗️ categoryPhotos.length: ${categoryPhotos ? categoryPhotos.length : 'null'}`);
+
   // ✅ NOVO: Criar título com tamanho para categorias Assorted
   if (activeCategory) {
+    console.log(`🏗️ Tentando criar título...`);
     const categoryItem = document.querySelector('.category-item.active');
     if (categoryItem) {
       const categoryText = categoryItem.textContent.trim();
       const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
 
       // Criar container para título e linha divisória
+      console.log(`🏗️ CRIANDO titleContainer com cleanCategoryName: "${cleanCategoryName}"`);
       const titleContainer = document.createElement('div');
       titleContainer.className = 'category-title-container';
+      console.log(`🏗️ titleContainer criado!`);
       titleContainer.innerHTML = `
       <h2>${cleanCategoryName}</h2>
       <div class="category-divider"></div>
-    `;
+      `;
       contentDiv.appendChild(titleContainer);
+      console.log(`🏗️ titleContainer adicionado ao DOM!`);
+
+      // Verificar se foi realmente adicionado
+      setTimeout(() => {
+        const verificacao = document.querySelector('.category-title-container');
+        console.log(`🏗️ VERIFICAÇÃO: titleContainer existe no DOM: ${!!verificacao}`);
+      }, 100);
     }
   }
 
