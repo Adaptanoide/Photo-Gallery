@@ -1383,7 +1383,61 @@ function findFirstCategoryId(mainCategory, subcategory) {
     return null;
   }
 
-  // Procurar primeira categoria que corresponde ao caminho
+  // ✅ CORREÇÃO ESPECIAL PARA BRAZIL BEST SELLERS
+  if (normalizeCategory(mainCategory) === 'Brazil Best Sellers') {
+    // Para Brazil Best Sellers, procurar diretamente pelos nomes do sidebar
+    const targetCategory = window.categories.find(cat => {
+      if (!cat.fullPath) return false;
+
+      const fullPath = cat.fullPath;
+
+      // Verificar se é Brazil Best Sellers
+      if (!fullPath.includes('Brazil') || !fullPath.includes('Best Sellers')) {
+        return false;
+      }
+
+      // Mapear nomes do sidebar para estrutura real
+      if (subcategory === 'Assorted-Tones Small') {
+        return fullPath.includes('Assorted-Natural-Tones') && fullPath.includes('Small');
+      }
+      if (subcategory === 'Assorted-Tones Extra-Small') {
+        return fullPath.includes('Assorted-Tones') && fullPath.includes('Extra-Small');
+      }
+      if (subcategory === 'Brindle-Medium-Dark-Tones') {
+        return fullPath.includes('Brindle-Medium-Dark-Tones');
+      }
+      if (subcategory === 'Salt-Pepper-Black-White') {
+        return fullPath.includes('Salt-Pepper-Black-White');
+      }
+      if (subcategory === 'Salt-Pepper-Brown-White-Tricolor') {
+        return fullPath.includes('Salt-Pepper-Brown-White-Tricolor');
+      }
+      if (subcategory === 'Salt-Pepper-Chocolate-White') {
+        return fullPath.includes('Salt-Pepper-Chocolate-White');
+      }
+      if (subcategory === 'Dark-Tones') {
+        return fullPath.includes('Dark-Tones');
+      }
+      if (subcategory === 'Exotic-Tones') {
+        return fullPath.includes('Exotic-Tones');
+      }
+      if (subcategory === 'Light-Tones') {
+        return fullPath.includes('Light-Tones');
+      }
+
+      return false;
+    });
+
+    if (targetCategory) {
+      console.log(`✅ Categoria encontrada: ${targetCategory.id} (${targetCategory.fullPath})`);
+      return targetCategory.id;
+    } else {
+      console.log(`❌ Nenhuma categoria encontrada para: ${mainCategory} → ${subcategory}`);
+      return null;
+    }
+  }
+
+  // ✅ LÓGICA ORIGINAL PARA OUTRAS CATEGORIAS
   const targetCategory = window.categories.find(cat => {
     if (!cat.fullPath) return false;
 
