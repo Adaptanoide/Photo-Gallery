@@ -627,6 +627,9 @@ function updateCurrentCategoryHeader(categoryId) {
     headerDiv.style.display = 'none'; // Esconder completamente
   }
 
+  // ✅ CORREÇÃO COMPLETA:
+  // ✅ VERIFICAR se já temos interface hierárquica - NÃO sobrescrever
+  const breadcrumb = document.querySelector('#breadcrumb-container')?.innerHTML;
   if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
     // ✅ EXCEÇÃO: Brazil Best Sellers precisa do título
     const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
