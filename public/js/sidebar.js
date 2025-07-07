@@ -5,6 +5,12 @@ let isLoadingMorePhotos = false;
 let isLoadingCategory = false;
 let categoryPhotoCache = {};
 
+// ✅ FUNÇÃO UTILITÁRIA: Normalizar espaços em nomes de categorias
+function normalizeCategory(categoryName) {
+  if (!categoryName) return '';
+  return categoryName.replace(/\s+/g, ' ').trim();
+}
+
 // ✅ ADICIONAR ESTAS DUAS LINHAS AQUI:
 // Usar variável global existente ou criar se não existir
 window.qbItemData = window.qbItemData || {};
@@ -2168,7 +2174,7 @@ async function selectMainCategory(mainCategoryName) {
   }
 
   // ✅ NOVA LÓGICA: Detectar se subcategorias são genéricas (APENAS BRAZIL BEST SELLERS)
-  const isGenericSubcategories = mainCategoryName === 'Brazil Best Sellers' && subcategories.some(sub =>
+  const isGenericSubcategories = normalizeCategory(mainCategoryName) === 'Brazil Best Sellers' && subcategories.some(sub =>
     sub.includes('Best-Value') ||
     sub.includes('Super-Promo') ||
     sub.includes('Tones-Mix')
@@ -2514,8 +2520,9 @@ function needsSizeTabs(mainCategoryName) {
     'Brazil Top Selected Categories'
   ];
 
-  const needsTabs = categoriesWithTabs.includes(mainCategoryName);
-  console.log(`🔍 Categoria "${mainCategoryName}" precisa de abas: ${needsTabs}`);
+  const normalizedName = normalizeCategory(mainCategoryName);
+  const needsTabs = categoriesWithTabs.includes(normalizedName);
+  console.log(`🔍 Categoria "${normalizedName}" precisa de abas: ${needsTabs}`);
   return needsTabs;
 }
 
