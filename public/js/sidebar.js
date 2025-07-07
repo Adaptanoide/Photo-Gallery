@@ -442,12 +442,12 @@ function renderPhotosForCategory(categoryPhotos, categoryId) {
   // ✅ NOVO: Criar título com tamanho para categorias Assorted
   if (activeCategory) {
     console.log(`🏗️ Tentando criar título...`);
-    const categoryItem = document.querySelector('.category-item.active');
-    console.log(`🏗️ categoryItem encontrado: ${!!categoryItem}`);
-    if (categoryItem) {
-      console.log(`🏗️ categoryItem.textContent: "${categoryItem.textContent}"`);
-      const categoryText = categoryItem.textContent.trim();
-      const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
+    // ✅ USAR BREADCRUMB EM VEZ DO SIDEBAR
+    const breadcrumbElement = document.querySelector('.breadcrumb-current');
+    console.log(`🏗️ breadcrumbElement encontrado: ${!!breadcrumbElement}`);
+    if (breadcrumbElement) {
+      const cleanCategoryName = breadcrumbElement.textContent.trim();
+      console.log(`🏗️ cleanCategoryName do breadcrumb: "${cleanCategoryName}"`);
 
       // Criar container para título e linha divisória
       console.log(`🏗️ CRIANDO titleContainer com cleanCategoryName: "${cleanCategoryName}"`);
