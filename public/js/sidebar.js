@@ -582,16 +582,19 @@ function highlightActiveCategory(categoryId) {
 function highlightActiveSubcategory(subcategory, mainCategory = null) {
   console.log(`🔍 Destacando subcategoria: ${subcategory} (categoria: ${mainCategory})`);
 
+  // ✅ CORREÇÃO: Normalizar nomes antes de comparar
+  const normalizedMainCategory = normalizeCategory(mainCategory);
+
   // ✅ VERIFICAR se sidebar tem subcategorias da categoria principal correta
   const firstSubcategoryElement = document.querySelector('.category-item[data-subcategory]');
-  if (firstSubcategoryElement && mainCategory) {
+  if (firstSubcategoryElement && normalizedMainCategory) {
     const sidebarMainCategory = normalizeCategory(firstSubcategoryElement.dataset.mainCategory);
     if (sidebarMainCategory !== normalizedMainCategory) {
-      console.log(`⚠️ Sidebar mostra ${sidebarMainCategory}, mas precisamos ${mainCategory}`);
-      console.log(`🔄 Recarregando sidebar para categoria principal: ${mainCategory}`);
-      selectMainCategory(mainCategory);
+      console.log(`⚠️ Sidebar mostra ${sidebarMainCategory}, mas precisamos ${normalizedMainCategory}`);
+      console.log(`🔄 Recarregando sidebar para categoria principal: ${normalizedMainCategory}`);
+      selectMainCategory(normalizedMainCategory);
       // Aguardar sidebar atualizar e tentar novamente
-      setTimeout(() => highlightActiveSubcategory(subcategory, mainCategory), 200);
+      setTimeout(() => highlightActiveSubcategory(subcategory, normalizedMainCategory), 200);
       return;
     }
   }
