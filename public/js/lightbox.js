@@ -2053,6 +2053,12 @@ function getNextCategoryFromSidebar() {
 
   const nextSubcategory = sidebarOrder[nextIndex];
   console.log('📋 Próxima categoria:', nextSubcategory);
+  console.log('🔍 DEBUG: Procurando em window.categories...');
+  window.categories.forEach(cat => {
+    if (cat.fullPath && cat.fullPath.includes('Brazil Best Sellers')) {
+      console.log('🔍 DEBUG categoria:', cat.fullPath);
+    }
+  });
 
   const nextCategory = window.categories.find(cat => {
     if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
@@ -2064,6 +2070,7 @@ function getNextCategoryFromSidebar() {
     return cat.fullPath.includes(nextSubcategory);
   });
 
+  console.log('🔍 DEBUG: Categoria encontrada:', nextCategory ? nextCategory.fullPath : 'NÃO ENCONTRADA');
   return nextCategory || null;
 }
 
