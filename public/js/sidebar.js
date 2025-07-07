@@ -398,7 +398,6 @@ function loadCategoryPhotos(categoryId) {
     photos = [...photosArray];
     photosArray.forEach(photo => photoRegistry[photo.id] = photo);
     renderPhotosForCategory(photosArray, categoryId);
-    updateCurrentCategoryHeader(categoryId); // ← ADICIONAR ESTA LINHA
     hideLoader();
     preloadCategoryImages(categoryId);
     return;
