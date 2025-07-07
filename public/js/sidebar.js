@@ -2441,8 +2441,8 @@ function loadPhotosFromMultipleCategories(categories, title) {
   contentDiv.appendChild(titleContainer);
 
   // ✅ ATUALIZAR BREADCRUMB DINÂMICO (para Brazil Best Sellers)
-  if (title && title.includes(' → ')) {
-    const titleParts = title.split(' → ');
+  if (title && (title.includes(' → ') || title.includes(' - '))) {
+    const titleParts = title.includes(' → ') ? title.split(' → ') : title.split(' - ');
     const mainCategory = titleParts[0];
     const subcategory = titleParts[1];
     const size = titleParts[2] || null;
