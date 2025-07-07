@@ -1369,17 +1369,28 @@ function navigateToNextCategory() {
   loadCategoryInLightbox(nextCategory);
 }
 
-// Navegar para categoria anterior
 function navigateToPreviousCategory() {
   const previousCategory = getPreviousCategory();
   if (!previousCategory) return;
 
+  console.log(`Navigating to previous category: ${previousCategory.name} (ID: ${previousCategory.id})`);
+
+  // ✅ CORREÇÃO: Atualizar contexto após navegação do lightbox (IGUAL AO NEXT)
+  if (previousCategory.fullPath && typeof window.updateDynamicBreadcrumb === 'function') {
+    const pathParts = previousCategory.fullPath.split(' → ');
+    if (pathParts.length >= 3) {
+      const mainCategory = pathParts[0];
+      const subcategory = pathParts[1];
+      const size = pathParts[2];
+      console.log(`🔄 Atualizando contexto lightbox PREVIOUS: ${mainCategory} → ${subcategory} → ${size}`);
+      window.updateDynamicBreadcrumb(mainCategory, subcategory, size);
+    }
+  }
+
   isTransitioningCategory = true;
   removeNavigationOverlay();
-
   // Mostrar loader temporário
   showCategoryTransitionLoader('Loading previous category...');
-
   // Carregar categoria anterior
   loadCategoryInLightbox(previousCategory);
 }
