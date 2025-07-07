@@ -585,8 +585,8 @@ function highlightActiveSubcategory(subcategory, mainCategory = null) {
   // ✅ VERIFICAR se sidebar tem subcategorias da categoria principal correta
   const firstSubcategoryElement = document.querySelector('.category-item[data-subcategory]');
   if (firstSubcategoryElement && mainCategory) {
-    const sidebarMainCategory = firstSubcategoryElement.dataset.mainCategory;
-    if (sidebarMainCategory !== mainCategory) {
+    const sidebarMainCategory = normalizeCategory(firstSubcategoryElement.dataset.mainCategory);
+    if (sidebarMainCategory !== normalizedMainCategory) {
       console.log(`⚠️ Sidebar mostra ${sidebarMainCategory}, mas precisamos ${mainCategory}`);
       console.log(`🔄 Recarregando sidebar para categoria principal: ${mainCategory}`);
       selectMainCategory(mainCategory);
