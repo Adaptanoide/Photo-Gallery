@@ -1464,7 +1464,7 @@ function findFirstCategoryId(mainCategory, subcategory) {
         return fullPath.includes('Salt-Pepper-Chocolate-White');
       }
       if (subcategory === 'Dark-Tones') {
-        return fullPath.includes('Dark-Tones');
+        return fullPath.includes('Dark-Tones') && !fullPath.includes('Brindle');
       }
       if (subcategory === 'Exotic-Tones') {
         return fullPath.includes('Exotic-Tones');
