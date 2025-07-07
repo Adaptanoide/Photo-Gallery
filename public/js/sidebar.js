@@ -627,11 +627,16 @@ function updateCurrentCategoryHeader(categoryId) {
     headerDiv.style.display = 'none'; // Esconder completamente
   }
 
-  // ✅ VERIFICAR se já temos interface hierárquica - NÃO sobrescrever
-  const breadcrumb = document.querySelector('#breadcrumb-container')?.innerHTML;
   if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
-    console.log(`⚠️ Interface hierárquica detectada - NÃO atualizando título`);
-    return; // ✅ PARAR AQUI - manter título hierárquico
+    // ✅ EXCEÇÃO: Brazil Best Sellers precisa do título
+    const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+    if (breadcrumbText && normalizeCategory(breadcrumbText).includes('Brazil Best Sellers')) {
+      console.log(`✅ Brazil Best Sellers: Permitindo atualização do título`);
+      // Continuar para atualizar o título
+    } else {
+      console.log(`⚠️ Interface hierárquica detectada - NÃO atualizando título`);
+      return; // ✅ PARAR AQUI - manter título hierárquico
+    }
   }
 
   // ADIÇÃO: Atualizar o título principal da galeria (apenas para categorias normais)
