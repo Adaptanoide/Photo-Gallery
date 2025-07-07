@@ -396,6 +396,7 @@ function loadCategoryPhotos(categoryId) {
     photos = [...photosArray];
     photosArray.forEach(photo => photoRegistry[photo.id] = photo);
     renderPhotosForCategory(photosArray, categoryId);
+    updateCurrentCategoryHeader(categoryId); // ← ADICIONAR ESTA LINHA
     hideLoader();
     preloadCategoryImages(categoryId);
     return;
@@ -654,8 +655,13 @@ function updateCurrentCategoryHeader(categoryId) {
       if (categoryItem) {
         const categoryText = categoryItem.textContent.trim();
         const cleanCategoryName = categoryText.replace(/\s*\(\d+\)\s*$/, '');
+        console.log(`🔍 DEBUG: categoryText: "${categoryText}"`);
+        console.log(`🔍 DEBUG: cleanCategoryName: "${cleanCategoryName}"`);
+        console.log(`🔍 DEBUG: Título ANTES da atualização: "${mainCategoryTitle.textContent}"`);
         mainCategoryTitle.textContent = cleanCategoryName;
+        console.log(`🔍 DEBUG: Título APÓS atualização: "${mainCategoryTitle.textContent}"`);
       } else {
+        console.log(`🔍 DEBUG: categoryItem NÃO encontrado para categoryId: ${categoryId}`);
         mainCategoryTitle.textContent = 'All Items';
       }
     }
