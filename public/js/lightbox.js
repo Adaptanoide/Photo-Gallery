@@ -2064,10 +2064,17 @@ function getNextCategoryFromSidebar() {
     if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
 
     // Mapear nomes do sidebar para estrutura real
-    if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Assorted-Natural-Tones') && cat.fullPath.includes('Small');
-    if (nextSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Assorted-Tones') && cat.fullPath.includes('Extra-Small');
+    if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Natural-Tones');
+    if (nextSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Tones');
+    if (nextSubcategory === 'Dark-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Dark-Tones');
+    if (nextSubcategory === 'Exotic-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Exotic-Tones');
+    if (nextSubcategory === 'Light-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Light-Tones');
+    if (nextSubcategory === 'Brindle-Medium-Dark-Tones') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Brindle-Medium-Dark-Tones');
+    if (nextSubcategory === 'Salt-Pepper-Black-White') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Black-White');
+    if (nextSubcategory === 'Salt-Pepper-Chocolate-White') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Chocolate-White');
+    if (nextSubcategory === 'Salt-Pepper-Brown-White-Tricolor') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Brown-White-Tricolor');
 
-    return cat.fullPath.includes(nextSubcategory);
+    return false;
   });
 
   console.log('🔍 DEBUG: Categoria encontrada:', nextCategory ? nextCategory.fullPath : 'NÃO ENCONTRADA');
@@ -2115,10 +2122,17 @@ function getPreviousCategoryFromSidebar() {
     if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
 
     // Mapear nomes do sidebar para estrutura real
-    if (previousSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Assorted-Natural-Tones') && cat.fullPath.includes('Small');
-    if (previousSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Assorted-Tones') && cat.fullPath.includes('Extra-Small');
+    if (previousSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Natural-Tones');
+    if (previousSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Tones');
+    if (previousSubcategory === 'Dark-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Dark-Tones');
+    if (previousSubcategory === 'Exotic-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Exotic-Tones');
+    if (previousSubcategory === 'Light-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Light-Tones');
+    if (previousSubcategory === 'Brindle-Medium-Dark-Tones') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Brindle-Medium-Dark-Tones');
+    if (previousSubcategory === 'Salt-Pepper-Black-White') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Black-White');
+    if (previousSubcategory === 'Salt-Pepper-Chocolate-White') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Chocolate-White');
+    if (previousSubcategory === 'Salt-Pepper-Brown-White-Tricolor') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Brown-White-Tricolor');
 
-    return cat.fullPath.includes(previousSubcategory);
+    return false;
   });
 
   return previousCategory || null;
