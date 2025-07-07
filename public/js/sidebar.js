@@ -184,146 +184,154 @@ function loadCategoryPhotos(categoryId) {
   if (breadcrumb && breadcrumb.includes('breadcrumb-current')) {
     console.log(`🔄 Mantendo interface hierárquica para: ${categoryId}`);
 
-    // ✅ EXTRAIR contexto do breadcrumb
+    // ✅ NOVA EXCEÇÃO: BRAZIL BEST SELLERS não usa interface hierárquica
     const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-    if (breadcrumbText) {
-      const parts = breadcrumbText.split(' > ');
-      if (parts.length >= 3) {
-        const mainCategory = parts[0];
-        const subcategory = parts[1];
-        const size = parts[2];
+    if (breadcrumbText && breadcrumbText.includes('Brazil Best Sellers')) {
+      console.log(`🚫 Brazil Best Sellers detectado - pulando interface hierárquica`);
+      // Continuar para lógica normal (não retornar aqui)
+    } else {
+      // ✅ LÓGICA HIERÁRQUICA ORIGINAL (apenas para outras categorias)
 
-        console.log(`🔍 Contexto: ${mainCategory} → ${subcategory} → ${size}`);
+      // ✅ EXTRAIR contexto do breadcrumb
+      if (breadcrumbText) {
+        const parts = breadcrumbText.split(' > ');
+        if (parts.length >= 3) {
+          const mainCategory = parts[0];
+          const subcategory = parts[1];
+          const size = parts[2];
 
-        // ✅ VERIFICAR se abas existem E se são da subcategoria correta
-        const existingTabs = document.querySelector('.size-tabs-wrapper');
-        const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
+          console.log(`🔍 Contexto: ${mainCategory} → ${subcategory} → ${size}`);
 
-        // ✅ DETECÇÃO MELHORADA: Comparar subcategoria no título
-        const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
-        const subcategoryChanged = currentSubcategoryInTitle && currentSubcategoryInTitle !== subcategory;
+          // ✅ VERIFICAR se abas existem E se são da subcategoria correta
+          const existingTabs = document.querySelector('.size-tabs-wrapper');
+          const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
 
-        if (!existingTabs) {
-          console.log(`❌ Abas não encontradas - recriando interface`);
-          setTimeout(() => {
-            loadPhotosForSubcategory(mainCategory, subcategory);
-          }, 100);
-          return;
-        } else if (subcategoryChanged) {
-          console.log(`🔄 Subcategoria mudou de "${currentSubcategoryInTitle}" para "${subcategory}" - recriando interface`);
-          setTimeout(() => {
-            loadPhotosForSubcategory(mainCategory, subcategory);
-          }, 100);
-          return;
-        } else {
-          console.log(`✅ Abas corretas encontradas - apenas atualizando aba ativa`);
+          // ✅ DETECÇÃO MELHORADA: Comparar subcategoria no título
+          const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
+          const subcategoryChanged = currentSubcategoryInTitle && currentSubcategoryInTitle !== subcategory;
 
-          // ✅ APENAS atualizar aba ativa E título
-          const newTitle = createCompleteTitle(mainCategory, subcategory, size);
-          const titleElement = document.querySelector('#dynamic-category-title');
-          if (titleElement) {
-            titleElement.textContent = newTitle;
-            console.log(`✅ Título corrigido: ${newTitle}`);
+          if (!existingTabs) {
+            console.log(`❌ Abas não encontradas - recriando interface`);
+            setTimeout(() => {
+              loadPhotosForSubcategory(mainCategory, subcategory);
+            }, 100);
+            return;
+          } else if (subcategoryChanged) {
+            console.log(`🔄 Subcategoria mudou de "${currentSubcategoryInTitle}" para "${subcategory}" - recriando interface`);
+            setTimeout(() => {
+              loadPhotosForSubcategory(mainCategory, subcategory);
+            }, 100);
+            return;
+          } else {
+            console.log(`✅ Abas corretas encontradas - apenas atualizando aba ativa`);
+
+            // ✅ APENAS atualizar aba ativa E título
+            const newTitle = createCompleteTitle(mainCategory, subcategory, size);
+            const titleElement = document.querySelector('#dynamic-category-title');
+            if (titleElement) {
+              titleElement.textContent = newTitle;
+              console.log(`✅ Título corrigido: ${newTitle}`);
+            }
+
+            document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
+            const targetTab = document.querySelector(`[data-size="${size}"]`);
+            if (targetTab) {
+              targetTab.classList.add('active');
+              console.log(`✅ Aba "${size}" marcada como ativa`);
+            }
+
+            // ✅ CARREGAR FOTOS DO TAMANHO CORRETO SEM APAGAR INTERFACE
+            if (categoryPhotoCache[categoryId]) {
+              const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
+              photos = [...photosArray];
+              photosArray.forEach(photo => photoRegistry[photo.id] = photo);
+
+              // ✅ ATUALIZAR APENAS O CONTAINER DE FOTOS
+              const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
+              if (photosContainer) {
+                renderCategoryPhotosWithTabs(photosContainer, photosArray);
+                console.log(`✅ Fotos atualizadas sem destruir interface`);
+              }
+            }
+
+            console.log(`🚀 SAINDO DA FUNÇÃO - interface hierárquica preservada`);
+            return;
           }
+        }
+      }
 
-          document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
-          const targetTab = document.querySelector(`[data-size="${size}"]`);
-          if (targetTab) {
-            targetTab.classList.add('active');
-            console.log(`✅ Aba "${size}" marcada como ativa`);
-          }
+      // ✅ FALLBACK: Se chegou aqui, verificar se subcategoria mudou
+      console.log(`🔄 Fallback hierárquico - verificando mudanças`);
 
-          // ✅ CARREGAR FOTOS DO TAMANHO CORRETO SEM APAGAR INTERFACE
-          if (categoryPhotoCache[categoryId]) {
-            const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
-            photos = [...photosArray];
-            photosArray.forEach(photo => photoRegistry[photo.id] = photo);
+      // ✅ EXTRAIR subcategoria atual do breadcrumb
+      const fallbackBreadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+      console.log(`🔍 DEBUG fallbackBreadcrumbText: "${fallbackBreadcrumbText}"`);
 
-            // ✅ ATUALIZAR APENAS O CONTAINER DE FOTOS
-            const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
-            if (photosContainer) {
-              renderCategoryPhotosWithTabs(photosContainer, photosArray);
-              console.log(`✅ Fotos atualizadas sem destruir interface`);
+      if (fallbackBreadcrumbText) {
+        const parts = fallbackBreadcrumbText.split('>').map(part => part.trim());
+        console.log(`🔍 DEBUG parts:`, parts);
+        console.log(`🔍 DEBUG parts.length:`, parts.length);
+
+        if (parts.length >= 3) {
+          const mainCategory = parts[0];
+          const subcategory = parts[1];
+          const size = parts[2];
+
+          console.log(`🔍 DEBUG extracted - main: "${mainCategory}", sub: "${subcategory}", size: "${size}"`);
+
+          // ✅ VERIFICAR se título/abas correspondem à subcategoria atual
+          const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
+          console.log(`🔍 DEBUG currentTitle: "${currentTitle}"`);
+
+          const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
+          console.log(`🔍 DEBUG currentSubcategoryInTitle: "${currentSubcategoryInTitle}"`);
+          console.log(`🔍 DEBUG comparison: "${currentSubcategoryInTitle}" !== "${subcategory}" = ${currentSubcategoryInTitle !== subcategory}`);
+
+          if (!currentSubcategoryInTitle || currentSubcategoryInTitle !== subcategory) {
+            console.log(`🔄 FALLBACK: Subcategoria mudou para "${subcategory}" - recriando interface`);
+            setTimeout(() => {
+              loadPhotosForSubcategory(mainCategory, subcategory);
+            }, 100);
+            return;
+          } else {
+            console.log(`✅ FALLBACK: Subcategoria correta "${subcategory}" - apenas atualizando aba`);
+
+            // ✅ ATUALIZAR título e aba ativa
+            const newTitle = createCompleteTitle(mainCategory, subcategory, size);
+            const titleElement = document.querySelector('#dynamic-category-title');
+            if (titleElement) {
+              titleElement.textContent = newTitle;
+              console.log(`✅ Título corrigido no fallback: ${newTitle}`);
+            }
+
+            document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
+            const targetTab = document.querySelector(`[data-size="${size}"]`);
+            if (targetTab) {
+              targetTab.classList.add('active');
+              console.log(`✅ Aba "${size}" marcada como ativa no fallback`);
             }
           }
-
-          console.log(`🚀 SAINDO DA FUNÇÃO - interface hierárquica preservada`);
-          return;
-        }
-      }
-    }
-
-    // ✅ FALLBACK: Se chegou aqui, verificar se subcategoria mudou
-    console.log(`🔄 Fallback hierárquico - verificando mudanças`);
-
-    // ✅ EXTRAIR subcategoria atual do breadcrumb
-    const fallbackBreadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
-    console.log(`🔍 DEBUG fallbackBreadcrumbText: "${fallbackBreadcrumbText}"`);
-
-    if (fallbackBreadcrumbText) {
-      const parts = fallbackBreadcrumbText.split('>').map(part => part.trim());
-      console.log(`🔍 DEBUG parts:`, parts);
-      console.log(`🔍 DEBUG parts.length:`, parts.length);
-
-      if (parts.length >= 3) {
-        const mainCategory = parts[0];
-        const subcategory = parts[1];
-        const size = parts[2];
-
-        console.log(`🔍 DEBUG extracted - main: "${mainCategory}", sub: "${subcategory}", size: "${size}"`);
-
-        // ✅ VERIFICAR se título/abas correspondem à subcategoria atual
-        const currentTitle = document.querySelector('#dynamic-category-title')?.textContent;
-        console.log(`🔍 DEBUG currentTitle: "${currentTitle}"`);
-
-        const currentSubcategoryInTitle = currentTitle ? currentTitle.split(' - ')[1] : null;
-        console.log(`🔍 DEBUG currentSubcategoryInTitle: "${currentSubcategoryInTitle}"`);
-        console.log(`🔍 DEBUG comparison: "${currentSubcategoryInTitle}" !== "${subcategory}" = ${currentSubcategoryInTitle !== subcategory}`);
-
-        if (!currentSubcategoryInTitle || currentSubcategoryInTitle !== subcategory) {
-          console.log(`🔄 FALLBACK: Subcategoria mudou para "${subcategory}" - recriando interface`);
-          setTimeout(() => {
-            loadPhotosForSubcategory(mainCategory, subcategory);
-          }, 100);
-          return;
         } else {
-          console.log(`✅ FALLBACK: Subcategoria correta "${subcategory}" - apenas atualizando aba`);
-
-          // ✅ ATUALIZAR título e aba ativa
-          const newTitle = createCompleteTitle(mainCategory, subcategory, size);
-          const titleElement = document.querySelector('#dynamic-category-title');
-          if (titleElement) {
-            titleElement.textContent = newTitle;
-            console.log(`✅ Título corrigido no fallback: ${newTitle}`);
-          }
-
-          document.querySelectorAll('.size-tab').forEach(tab => tab.classList.remove('active'));
-          const targetTab = document.querySelector(`[data-size="${size}"]`);
-          if (targetTab) {
-            targetTab.classList.add('active');
-            console.log(`✅ Aba "${size}" marcada como ativa no fallback`);
-          }
+          console.log(`❌ DEBUG: parts.length < 3, não há contexto suficiente`);
         }
       } else {
-        console.log(`❌ DEBUG: parts.length < 3, não há contexto suficiente`);
+        console.log(`❌ DEBUG: fallbackBreadcrumbText está vazio ou null`);
       }
-    } else {
-      console.log(`❌ DEBUG: fallbackBreadcrumbText está vazio ou null`);
-    }
 
-    // ✅ CARREGAR fotos
-    if (categoryPhotoCache[categoryId]) {
-      const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
-      photos = [...photosArray];
-      photosArray.forEach(photo => photoRegistry[photo.id] = photo);
+      // ✅ CARREGAR fotos
+      if (categoryPhotoCache[categoryId]) {
+        const photosArray = categoryPhotoCache[categoryId].photos || categoryPhotoCache[categoryId];
+        photos = [...photosArray];
+        photosArray.forEach(photo => photoRegistry[photo.id] = photo);
 
-      const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
-      if (photosContainer) {
-        renderCategoryPhotosWithTabs(photosContainer, photosArray);
-        console.log(`✅ Fotos atualizadas no fallback`);
+        const photosContainer = document.querySelector('#photos-by-size-container') || document.querySelector('.photos-container');
+        if (photosContainer) {
+          renderCategoryPhotosWithTabs(photosContainer, photosArray);
+          console.log(`✅ Fotos atualizadas no fallback`);
+        }
       }
+      return;
     }
-    return;
   }
 
   // ✅ RESTO DA FUNÇÃO ORIGINAL SEM MUDANÇAS
