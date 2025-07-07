@@ -335,6 +335,40 @@ function loadCategoryPhotos(categoryId) {
   }
 
   // ✅ RESTO DA FUNÇÃO ORIGINAL SEM MUDANÇAS
+
+  // ✅ LÓGICA ESPECIAL PARA BRAZIL BEST SELLERS (após bypass hierárquico)
+  const breadcrumbText = document.querySelector('#breadcrumb-container')?.textContent;
+  if (breadcrumbText && breadcrumbText.includes('Brazil Best Sellers')) {
+    console.log(`🎯 Processamento especial Brazil Best Sellers para: ${categoryId}`);
+
+    // Encontrar qual subcategoria corresponde a este categoryId
+    const category = window.categories.find(cat => cat.id === categoryId);
+    if (category && category.fullPath) {
+      const pathParts = category.fullPath.split(' → ');
+      if (pathParts.length >= 3) {
+        const mainCategory = pathParts[0].trim();
+        const type = pathParts[1].trim(); // Best-Value, Super-Promo, Tones-Mix
+        const subcategory = pathParts[2].trim(); // Nome real da subcategoria
+
+        // Mapear para nome do sidebar
+        let sidebarName = subcategory;
+        if (subcategory === 'Assorted-Natural-Tones' && pathParts[3] && pathParts[3].includes('Small')) {
+          sidebarName = 'Assorted-Tones Small';
+        } else if (subcategory === 'Assorted-Tones' && pathParts[3] && pathParts[3].includes('Extra-Small')) {
+          sidebarName = 'Assorted-Tones Extra-Small';
+        }
+
+        console.log(`🔄 Atualizando Brazil Best Sellers: ${mainCategory} > ${sidebarName}`);
+
+        // Atualizar breadcrumb
+        updateDynamicBreadcrumb(mainCategory, sidebarName, null);
+
+        // Destacar no sidebar
+        highlightActiveSubcategory(sidebarName, mainCategory);
+      }
+    }
+  }
+
   cleanupScrollMorePhotos();
   showLoader();
   console.log(`Iniciando carregamento da categoria: ${categoryId}`);
