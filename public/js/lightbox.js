@@ -1358,15 +1358,22 @@ function navigateToNextCategory() {
 
   console.log(`Navigating to next category: ${nextCategory.name} (ID: ${nextCategory.id})`);
 
-  // ✅ CORREÇÃO: Atualizar contexto após navegação do lightbox
   if (nextCategory.fullPath && typeof window.updateDynamicBreadcrumb === 'function') {
     const pathParts = nextCategory.fullPath.split(' → ');
     if (pathParts.length >= 3) {
       const mainCategory = pathParts[0];
-      const subcategory = pathParts[1];
-      const size = pathParts[2];
-      console.log(`🔄 Atualizando contexto lightbox: ${mainCategory} → ${subcategory} → ${size}`);
-      window.updateDynamicBreadcrumb(mainCategory, subcategory, size);
+
+      // Para Brazil Best Sellers, usar nome final da categoria
+      if (mainCategory.includes('Brazil  Best Sellers')) {
+        const finalCategoryName = pathParts[2]; // Ex: Salt-Pepper-Chocolate-White
+        console.log(`🔄 Atualizando contexto lightbox Brazil Best Sellers: ${finalCategoryName}`);
+        window.updateDynamicBreadcrumb('Brazil Best Sellers', finalCategoryName, null);
+      } else {
+        const subcategory = pathParts[1];
+        const size = pathParts[2];
+        console.log(`🔄 Atualizando contexto lightbox: ${mainCategory} → ${subcategory} → ${size}`);
+        window.updateDynamicBreadcrumb(mainCategory, subcategory, size);
+      }
     }
   }
 
@@ -1391,10 +1398,18 @@ function navigateToPreviousCategory() {
     const pathParts = previousCategory.fullPath.split(' → ');
     if (pathParts.length >= 3) {
       const mainCategory = pathParts[0];
-      const subcategory = pathParts[1];
-      const size = pathParts[2];
-      console.log(`🔄 Atualizando contexto lightbox PREVIOUS: ${mainCategory} → ${subcategory} → ${size}`);
-      window.updateDynamicBreadcrumb(mainCategory, subcategory, size);
+
+      // Para Brazil Best Sellers, usar nome final da categoria
+      if (mainCategory.includes('Brazil  Best Sellers')) {
+        const finalCategoryName = pathParts[2]; // Ex: Salt-Pepper-Chocolate-White
+        console.log(`🔄 Atualizando contexto lightbox PREVIOUS Brazil Best Sellers: ${finalCategoryName}`);
+        window.updateDynamicBreadcrumb('Brazil Best Sellers', finalCategoryName, null);
+      } else {
+        const subcategory = pathParts[1];
+        const size = pathParts[2];
+        console.log(`🔄 Atualizando contexto lightbox PREVIOUS: ${mainCategory} → ${subcategory} → ${size}`);
+        window.updateDynamicBreadcrumb(mainCategory, subcategory, size);
+      }
     }
   }
 
