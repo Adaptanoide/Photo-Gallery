@@ -1196,6 +1196,8 @@ function getNextCategory() {
     console.log('🎯 Lightbox usando navegação hierárquica:', context);
 
     // ✅ EXCEÇÃO: Brazil Best Sellers usa ordem do sidebar
+    console.log('🔍 DEBUG context:', context);
+    console.log('🔍 DEBUG context.mainCategory:', context ? context.mainCategory : 'UNDEFINED');
     if (context && context.mainCategory && context.mainCategory.includes('Brazil  Best Sellers')) {
       console.log('🚫 Brazil Best Sellers: Pulando lógica hierárquica, usando ordem do sidebar');
       return getNextCategoryFromSidebar();
