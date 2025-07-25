@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sunshine Cowhides Gallery - Categoria">
+  <title>Categoria - Sunshine Cowhides Gallery</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Core -->
+  <link rel="stylesheet" href="/css/core/variables.css">
+  <link rel="stylesheet" href="/css/core/reset.css">
+  <link rel="stylesheet" href="/css/core/base.css">
+  
+  <!-- CSS Components -->
+  <link rel="stylesheet" href="/css/components/buttons.css">
+  <link rel="stylesheet" href="/css/components/forms.css">
+  <link rel="stylesheet" href="/css/components/modal.css">
+  
+  <!-- CSS Page -->
+  <link rel="stylesheet" href="/css/pages/category.css">
+</head>
+<body class="min-h-screen bg-primary">
+  
+  <!-- Header -->
+  <header class="category-header">
+    <div class="container">
+      <div class="header-content flex items-center justify-between py-4">
+        
+        <!-- Navigation -->
+        <div class="header-nav flex items-center gap-4">
+          <button type="button" class="btn btn-ghost btn-sm" id="backBtn">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Voltar
+          </button>
+          
+          <div class="logo">
+            <h1 class="text-xl font-bold text-primary">Sunshine Cowhides</h1>
+          </div>
+        </div>
+        
+        <!-- User Info -->
+        <div class="user-info flex items-center gap-4">
+          <div class="user-welcome text-right">
+            <p class="text-sm text-muted">Cliente:</p>
+            <p class="font-medium text-primary" id="customerName">Carregando...</p>
+          </div>
+          
+          <button type="button" class="btn btn-secondary btn-sm" id="logoutBtn">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Sair
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Main Content -->
+  <main class="category-main">
+    <div class="container">
+      
+      <!-- Breadcrumbs -->
+      <div id="breadcrumbs" class="breadcrumbs-container mb-4"></div>
+      
+      <!-- Category Info -->
+      <section class="category-info mb-6">
+        <div class="category-header-info text-center">
+          <h2 class="text-3xl font-bold text-primary mb-2" id="categoryTitle">
+            Carregando categoria...
+          </h2>
+          <p class="text-secondary" id="categoryDescription">
+            Explorando nossa coleção
+          </p>
+        </div>
+      </section>
+      
+      <!-- Photos Section -->
+      <section class="photos-section">
+        
+        <!-- Loading State -->
+        <div class="photos-loading" id="photosLoading">
+          <div class="loading-container text-center py-12">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-muted">Carregando fotos...</p>
+          </div>
+        </div>
+        
+        <!-- Photos Grid -->
+        <div class="photos-grid hidden" id="photosGrid">
+          <!-- Photos will be inserted here -->
+        </div>
+        
+        <!-- Empty State -->
+        <div class="photos-empty hidden" id="photosEmpty">
+          <div class="text-center py-12">
+            <div class="text-4xl mb-4">📷</div>
+            <h3 class="text-xl font-semibold text-primary mb-2">
+              Nenhuma foto encontrada
+            </h3>
+            <p class="text-secondary">
+              Esta categoria não possui fotos disponíveis no momento.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Error State -->
+        <div class="photos-error hidden" id="photosError">
+          <div class="text-center py-12">
+            <div class="text-4xl mb-4">⚠️</div>
+            <h3 class="text-xl font-semibold text-error mb-2">
+              Erro ao carregar fotos
+            </h3>
+            <p class="text-secondary mb-4">
+              Ocorreu um erro ao carregar as fotos desta categoria.
+            </p>
+            <button type="button" class="btn btn-primary" id="reloadPhotosBtn">
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+        
+        <!-- Load More -->
+        <div class="load-more-container text-center mt-8 hidden" id="loadMoreContainer">
+          <button type="button" class="btn btn-primary" id="loadMoreBtn">
+            <span class="btn-text">Carregar Mais Fotos</span>
+            <div class="btn-loading hidden">
+              <div class="loading-spinner"></div>
+              Carregando...
+            </div>
+          </button>
+        </div>
+        
+      </section>
+      
+    </div>
+  </main>
+  
+  <!-- Photo Card Template -->
+  <template id="photoCardTemplate">
+    <div class="photo-card" data-photo-id="">
+      <div class="photo-image-container">
+        <img class="photo-image" src="" alt="" loading="lazy">
+        <div class="photo-overlay">
+          <div class="photo-actions">
+            <button type="button" class="btn btn-primary btn-sm photo-view-btn">
+              Ver Detalhes
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="photo-info">
+        <h4 class="photo-title"></h4>
+        <p class="photo-price"></p>
+      </div>
+    </div>
+  </template>
+  
+  <!-- JavaScript -->
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/core/router.js"></script>
+  <script src="/js/pages/category.js"></script>
+  
+</body>
+</html>

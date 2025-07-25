@@ -55,6 +55,14 @@ class Router {
       component: 'CategoryPage'
     });
     
+    this.routes.set('/pages/category.html', {
+      path: '/pages/category.html',
+      name: 'category',
+      title: 'Categoria - Sunshine Cowhides Gallery',
+      requiresAuth: true,
+      component: 'CategoryPage'
+    });
+    
     this.routes.set('/pages/cart.html', {
       path: '/pages/cart.html',
       name: 'cart',
