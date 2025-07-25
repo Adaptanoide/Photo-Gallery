@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sunshine Cowhides Gallery - Galeria premium de peles">
+  <title>Galeria - Sunshine Cowhides Gallery</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Core -->
+  <link rel="stylesheet" href="/css/core/variables.css">
+  <link rel="stylesheet" href="/css/core/reset.css">
+  <link rel="stylesheet" href="/css/core/base.css">
+  
+  <!-- CSS Components -->
+  <link rel="stylesheet" href="/css/components/buttons.css">
+  <link rel="stylesheet" href="/css/components/forms.css">
+  <link rel="stylesheet" href="/css/components/modal.css">
+  
+  <!-- CSS Page -->
+  <link rel="stylesheet" href="/css/pages/gallery.css">
+</head>
+<body class="min-h-screen bg-primary">
+  
+  <!-- Header -->
+  <header class="gallery-header">
+    <div class="container">
+      <div class="header-content flex items-center justify-between py-4">
+        
+        <!-- Logo -->
+        <div class="logo">
+          <h1 class="text-2xl font-bold text-primary">
+            Sunshine Cowhides
+          </h1>
+          <p class="text-sm text-secondary">Premium Gallery</p>
+        </div>
+        
+        <!-- User Info -->
+        <div class="user-info flex items-center gap-4">
+          <div class="user-welcome text-right">
+            <p class="text-sm text-muted">Bem-vindo,</p>
+            <p class="font-medium text-primary" id="customerName">Carregando...</p>
+          </div>
+          
+          <!-- Actions -->
+          <div class="header-actions flex items-center gap-2">
+            <button type="button" class="btn btn-ghost btn-sm" id="clearCacheBtn" title="Limpar cache">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+            </button>
+            
+            <button type="button" class="btn btn-secondary btn-sm" id="logoutBtn">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Main Content -->
+  <main class="gallery-main">
+    <div class="container">
+      
+      <!-- Breadcrumbs -->
+      <div id="breadcrumbs" class="breadcrumbs-container mb-4"></div>
+      
+      <!-- Categories Section -->
+      <section class="categories-section mb-8">
+        <div class="section-header mb-6">
+          <h2 class="text-3xl font-bold text-primary mb-2">
+            Nossas Categorias
+          </h2>
+          <p class="text-secondary">
+            Selecione uma categoria para explorar nossa coleção premium
+          </p>
+        </div>
+        
+        <!-- Categories Grid -->
+        <div class="categories-grid" id="categoriesGrid">
+          <!-- Loading state -->
+          <div class="categories-loading">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="text-center text-muted mt-4">Carregando categorias...</p>
+          </div>
+        </div>
+        
+        <!-- Empty state -->
+        <div class="categories-empty hidden" id="categoriesEmpty">
+          <div class="text-center py-8">
+            <div class="text-4xl mb-4">📂</div>
+            <h3 class="text-xl font-semibold text-primary mb-2">
+              Nenhuma categoria disponível
+            </h3>
+            <p class="text-secondary">
+              Entre em contato conosco para obter acesso às categorias.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Error state -->
+        <div class="categories-error hidden" id="categoriesError">
+          <div class="text-center py-8">
+            <div class="text-4xl mb-4">⚠️</div>
+            <h3 class="text-xl font-semibold text-error mb-2">
+              Erro ao carregar categorias
+            </h3>
+            <p class="text-secondary mb-4">
+              Ocorreu um erro ao carregar as categorias. Tente novamente.
+            </p>
+            <button type="button" class="btn btn-primary" id="reloadCategoriesBtn">
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+      </section>
+      
+    </div>
+  </main>
+  
+  <!-- Footer -->
+  <footer class="gallery-footer">
+    <div class="container">
+      <div class="footer-content text-center py-6">
+        <div class="company-info text-xs text-muted">
+          <p>&copy; 2024 Sunshine Cowhides Gallery</p>
+          <p>Premium quality cowhides from Brazil & Colombia</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+  
+  <!-- Category Card Template -->
+  <template id="categoryCardTemplate">
+    <div class="category-card" data-category-id="">
+      <div class="category-image-container">
+        <img class="category-image" src="" alt="" loading="lazy">
+        <div class="category-overlay">
+          <div class="category-info">
+            <h3 class="category-name"></h3>
+            <p class="category-count"></p>
+          </div>
+          <div class="category-action">
+            <span class="btn btn-primary btn-sm">Ver Fotos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <!-- JavaScript -->
+  <script src="/js/core/api.js"></script>
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/router.js"></script>
+  <script src="/js/pages/gallery.js"></script>
+  
+</body>
+</html>
