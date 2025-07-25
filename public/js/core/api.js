@@ -1,29 +1,22 @@
 /**
- * SUNSHINE COWHIDES - API CLIENT
+ * SUNSHINE COWHIDES - API CLIENT (VERSÃO LIMPA)
  * Sistema de comunicação com o backend existente
  */
 
 class ApiClient {
   constructor() {
     this.baseURL = window.location.origin;
-    this.timeout = 30000; // 30 segundos
+    this.timeout = 30000;
     
-    // Headers padrão
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
     
-    // Código do cliente (salvo no localStorage)
     this.customerCode = null;
-    
-    // Carregar código salvo
     this.loadCustomerCode();
   }
   
-  /**
-   * Faz uma requisição HTTP
-   */
   async request(endpoint, options = {}) {
     const config = {
       method: 'GET',
@@ -31,15 +24,12 @@ class ApiClient {
       ...options
     };
     
-    // Construir URL completa
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
     
     try {
-      // Controller para timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
       
-      // Fazer requisição
       const response = await fetch(url, {
         ...config,
         signal: controller.signal
@@ -47,7 +37,6 @@ class ApiClient {
       
       clearTimeout(timeoutId);
       
-      // Processar response
       let data;
       const contentType = response.headers.get('content-type');
       
@@ -64,10 +53,9 @@ class ApiClient {
         throw error;
       }
       
-      return data; // Retorna dados diretamente (sem wrapper)
+      return data;
       
     } catch (error) {
-      // Tratar diferentes tipos de erro
       if (error.name === 'AbortError') {
         error.message = 'Requisição cancelada por timeout';
       } else if (error instanceof TypeError) {
@@ -78,13 +66,9 @@ class ApiClient {
     }
   }
   
-  /**
-   * GET request
-   */
   async get(endpoint, params = {}) {
     let url = endpoint;
     
-    // Adicionar parâmetros de query
     if (Object.keys(params).length > 0) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -98,9 +82,6 @@ class ApiClient {
     return this.request(url, { method: 'GET' });
   }
   
-  /**
-   * POST request
-   */
   async post(endpoint, data = {}) {
     return this.request(endpoint, {
       method: 'POST',
@@ -108,19 +89,13 @@ class ApiClient {
     });
   }
   
-  /**
-   * Define código do cliente
-   */
   setCustomerCode(code) {
     this.customerCode = code;
-    Utils.saveToStorage('customer_code', code);
+    this.saveToStorage('customer_code', code);
   }
   
-  /**
-   * Carrega código do cliente do storage
-   */
   loadCustomerCode() {
-    const code = Utils.loadFromStorage('customer_code');
+    const code = this.loadFromStorage('customer_code');
     if (code) {
       this.customerCode = code;
       return true;
@@ -128,20 +103,44 @@ class ApiClient {
     return false;
   }
   
-  /**
-   * Limpa autenticação
-   */
   clearAuth() {
     this.customerCode = null;
-    Utils.removeFromStorage('customer_code');
-    Utils.removeFromStorage('customer_data');
+    this.removeFromStorage('customer_code');
+    this.removeFromStorage('customer_data');
+  }
+  
+  // Métodos auxiliares para localStorage
+  saveToStorage(key, data) {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      return false;
+    }
+  }
+  
+  loadFromStorage(key, defaultValue = null) {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      console.error('Erro ao carregar:', error);
+      return defaultValue;
+    }
+  }
+  
+  removeFromStorage(key) {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover:', error);
+      return false;
+    }
   }
 }
 
-/**
- * SUNSHINE COWHIDES API ENDPOINTS
- * Métodos específicos para as APIs existentes do sistema
- */
 class SunshineAPI extends ApiClient {
   constructor() {
     super();
@@ -149,23 +148,15 @@ class SunshineAPI extends ApiClient {
   
   // === AUTH METHODS ===
   
-  /**
-   * Verifica código de acesso
-   * Baseado em: mongoService.verifyCustomerCode(code)
-   */
   async verifyCode(code) {
     try {
-      // Usar a rota existente /api/client/initial-data
       const response = await this.get('/api/client/initial-data', { code });
       
-      // Verificar se response tem estrutura de sucesso
       if (response && (response.success !== false)) {
-        // Salvar código e dados do cliente
         this.setCustomerCode(code);
         
-        // Salvar dados do cliente se disponível
         if (response.customerName) {
-          Utils.saveToStorage('customer_data', {
+          this.saveToStorage('customer_data', {
             code: code,
             customerName: response.customerName,
             items: response.items || []
@@ -192,19 +183,12 @@ class SunshineAPI extends ApiClient {
     }
   }
   
-  /**
-   * Faz logout
-   */
   logout() {
     this.clearAuth();
   }
   
   // === CLIENT ENDPOINTS ===
   
-  /**
-   * Busca dados iniciais do cliente
-   * Rota: /api/client/initial-data?code=1234
-   */
   async getInitialData() {
     if (!this.customerCode) {
       throw new Error('Código do cliente não encontrado');
@@ -217,10 +201,6 @@ class SunshineAPI extends ApiClient {
   
   // === PHOTOS ENDPOINTS ===
   
-  /**
-   * Busca categorias
-   * Rota: /api/photos/categories?customer_code=1234
-   */
   async getCategories() {
     const params = {};
     
@@ -231,10 +211,6 @@ class SunshineAPI extends ApiClient {
     return await this.get('/api/photos/categories', params);
   }
   
-  /**
-   * Busca fotos por categoria
-   * Rota: /api/photos?customer_code=1234&category_id=xyz&limit=50&offset=0
-   */
   async getPhotos(options = {}) {
     const params = {
       limit: options.limit || 50,
@@ -256,19 +232,12 @@ class SunshineAPI extends ApiClient {
     return await this.get('/api/photos', params);
   }
   
-  /**
-   * Busca fotos para galeria (com paginação)
-   */
   async getGalleryPhotos(params = {}) {
     return await this.getPhotos(params);
   }
   
   // === CLIENT SELECTIONS ===
   
-  /**
-   * Salva seleções do cliente
-   * Rota: /api/client/selections
-   */
   async saveSelections(selections) {
     return await this.post('/api/client/selections', {
       customer_code: this.customerCode,
@@ -278,23 +247,17 @@ class SunshineAPI extends ApiClient {
   
   // === UTILITY METHODS ===
   
-  /**
-   * Constrói URL de imagem
-   */
   getImageUrl(imagePath, options = {}) {
     if (!imagePath) return '';
     
-    // Se já é uma URL completa, retorna como está
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
     
-    // Se já começa com /api, usar como está
     if (imagePath.startsWith('/api')) {
       return `${this.baseURL}${imagePath}`;
     }
     
-    // Construir URL para thumbnail ou imagem normal
     if (options.thumbnail) {
       return `${this.baseURL}/api/photos/local/thumbnail/${imagePath}`;
     }
@@ -302,23 +265,14 @@ class SunshineAPI extends ApiClient {
     return `${this.baseURL}/api/photos/local/${imagePath}`;
   }
   
-  /**
-   * Verifica se está logado
-   */
   isAuthenticated() {
     return !!this.customerCode;
   }
   
-  /**
-   * Busca dados do cliente do storage
-   */
   getCustomerData() {
-    return Utils.loadFromStorage('customer_data');
+    return this.loadFromStorage('customer_data');
   }
   
-  /**
-   * Limpa cache
-   */
   async clearCache() {
     try {
       await this.post('/api/client/clear-cache');
