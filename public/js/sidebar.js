@@ -2655,7 +2655,7 @@ function needsSizeTabs(mainCategoryName) {
     'Colombia Cowhides',
     'Colombia Best Value',
     'Brazil Top Selected Categories',
-    'Brazil Best Sellers'  // ← ADICIONADO!
+    'Rodeo Rugs & Round Rugs'  // ← ADICIONAR
   ];
 
   const normalizedName = normalizeCategory(mainCategoryName);
