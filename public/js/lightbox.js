@@ -1377,10 +1377,76 @@ function getNextCategoryFromSidebarOrder() {
   return null;
 }
 
-// ✅ FUNÇÃO AUXILIAR: Encontrar categoria por subcategoria
+// ✅ CORREÇÃO 5: Substituir função findCategoryBySubcategory() no lightbox.js
+
 function findCategoryBySubcategory(subcategory) {
+  console.log(`🔍 [DEBUG] Procurando categoria para subcategoria: "${subcategory}"`);
+
   const context = getCurrentNavigationContext();
-  if (!context || !context.mainCategory) return null;
+  if (!context || !context.mainCategory) {
+    console.log('❌ [DEBUG] Sem contexto da categoria principal');
+    return null;
+  }
+
+  console.log(`🔍 [DEBUG] Contexto atual:`, context);
+  console.log(`🔍 [DEBUG] Categoria principal: "${context.mainCategory}"`);
+
+  // ✅ BUSCA ESPECÍFICA PARA BRAZIL BEST SELLERS
+  if (normalizeCategory(context.mainCategory) === 'Brazil Best Sellers') {
+    console.log(`🎯 [DEBUG] Busca específica para Brazil Best Sellers`);
+
+    // Mapear nomes do sidebar para estrutura real do JSON
+    const subcategoryMapping = {
+      'Assorted-Tones Small': 'Assorted-Natural-Tones',
+      'Assorted-Tones Extra-Small': 'Assorted-Tones',
+      'Dark-Tones': 'Dark-Tones',
+      'Exotic-Tones': 'Exotic-Tones',
+      'Light-Tones': 'Light-Tones',
+      'Brindle-Medium-Dark-Tones': 'Brindle-Medium-Dark-Tones',
+      'Salt-Pepper-Black-White': 'Salt-Pepper-Black-White',
+      'Salt-Pepper-Chocolate-White': 'Salt-Pepper-Chocolate-White',
+      'Salt-Pepper-Brown-White-Tricolor': 'Salt-Pepper-Brown-White-Tricolor'
+    };
+
+    const realSubcategoryName = subcategoryMapping[subcategory] || subcategory;
+    console.log(`🔄 [DEBUG] Mapeamento: "${subcategory}" → "${realSubcategoryName}"`);
+
+    // Buscar categoria que contenha esta subcategoria real
+    const targetCategory = window.categories.find(cat => {
+      if (!cat.fullPath) return false;
+
+      const fullPath = cat.fullPath;
+      const hasMainCategory = fullPath.includes('Brazil  Best Sellers');
+      const hasSubcategory = fullPath.includes(realSubcategoryName);
+
+      console.log(`🔍 [DEBUG] Verificando: ${cat.id} - ${fullPath}`);
+      console.log(`   Main: ${hasMainCategory}, Sub: ${hasSubcategory}`);
+
+      return hasMainCategory && hasSubcategory && !cat.isAll;
+    });
+
+    if (targetCategory) {
+      console.log(`✅ [DEBUG] Categoria encontrada: ${targetCategory.id} - ${targetCategory.fullPath}`);
+      return targetCategory;
+    } else {
+      console.log(`❌ [DEBUG] Nenhuma categoria encontrada para "${subcategory}" / "${realSubcategoryName}"`);
+
+      // DEBUG: Listar todas as categorias de Brazil Best Sellers disponíveis
+      const brazilCategories = window.categories.filter(cat =>
+        cat.fullPath && cat.fullPath.includes('Brazil  Best Sellers') && !cat.isAll
+      );
+
+      console.log(`🔍 [DEBUG] Categorias Brazil Best Sellers disponíveis:`);
+      brazilCategories.forEach(cat => {
+        console.log(`   - ${cat.id}: ${cat.fullPath}`);
+      });
+
+      return null;
+    }
+  }
+
+  // ✅ LÓGICA ORIGINAL PARA OUTRAS CATEGORIAS
+  console.log(`🔍 [DEBUG] Usando lógica original para outras categorias`);
 
   // Para categorias com abas, pegar primeiro tamanho
   if (needsSizeTabs(context.mainCategory)) {
