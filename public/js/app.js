@@ -76,7 +76,7 @@ function initializeApp() {
                 if (session.userType === 'admin') {
                     //redirectToAdmin(); //Temporario
                 } else {
-                    redirectToClient();
+                    //redirectToClient(); //Temporario
                 }
             } else {
                 localStorage.removeItem('sunshineSession');
