@@ -8,6 +8,46 @@ const { authenticateToken } = require('./auth');
 
 const router = express.Router();
 
+// ROTA TEMPORÁRIA PARA CRIAR CÓDIGO (sem auth)
+router.post('/create-test-code', async (req, res) => {
+    try {
+        // Gerar código único de 4 dígitos
+        let code;
+        let codeExists = true;
+        let attempts = 0;
+        
+        while (codeExists && attempts < 100) {
+            code = Math.floor(1000 + Math.random() * 9000).toString();
+            codeExists = await AccessCode.findOne({ code });
+            attempts++;
+        }
+        
+        const accessCode = new AccessCode({
+            code,
+            clientName: "João Silva",
+            clientEmail: "joao@email.com",
+            allowedCategories: ["1. Colombian Cowhides", "2. Brazil Best Sellers"],
+            createdBy: "admin"
+        });
+        
+        await accessCode.save();
+        
+        res.json({
+            success: true,
+            message: 'Código criado com sucesso',
+            code: code,
+            client: "João Silva"
+        });
+        
+    } catch (error) {
+        console.error('Erro ao criar código:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao criar código'
+        });
+    }
+});
+
 // Todas as rotas admin precisam de autenticação
 router.use(authenticateToken);
 
@@ -101,46 +141,6 @@ router.post('/access-codes', async (req, res) => {
             success: true,
             message: 'Código criado com sucesso',
             accessCode
-        });
-        
-    } catch (error) {
-        console.error('Erro ao criar código:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao criar código'
-        });
-    }
-});
-
-// ROTA TEMPORÁRIA PARA CRIAR CÓDIGO (sem auth)
-router.post('/create-test-code', async (req, res) => {
-    try {
-        // Gerar código único de 4 dígitos
-        let code;
-        let codeExists = true;
-        let attempts = 0;
-        
-        while (codeExists && attempts < 100) {
-            code = Math.floor(1000 + Math.random() * 9000).toString();
-            codeExists = await AccessCode.findOne({ code });
-            attempts++;
-        }
-        
-        const accessCode = new AccessCode({
-            code,
-            clientName: "João Silva",
-            clientEmail: "joao@email.com",
-            allowedCategories: ["1. Colombian Cowhides", "2. Brazil Best Sellers"],
-            createdBy: "admin"
-        });
-        
-        await accessCode.save();
-        
-        res.json({
-            success: true,
-            message: 'Código criado com sucesso',
-            code: code,
-            client: "João Silva"
         });
         
     } catch (error) {
