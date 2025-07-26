@@ -17,6 +17,8 @@ class CategoryPage {
     // Estado
     this.categoryId = null;
     this.categoryName = null;
+    this.isMainCategory = false;
+    this.mainCategoryName = null;
     this.photos = [];
     this.currentPage = 1;
     this.hasMorePages = true;
@@ -53,10 +55,21 @@ class CategoryPage {
   }
   
   /**
-   * Obtém ID da categoria da URL
+   * Obtém categoria da URL
    */
   getCategoryFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Verificar se é categoria principal agrupada
+    const mainCategory = urlParams.get('main_category');
+    if (mainCategory) {
+      this.isMainCategory = true;
+      this.mainCategoryName = mainCategory;
+      return `main_${mainCategory}`;
+    }
+    
+    // Categoria normal
+    this.isMainCategory = false;
     return urlParams.get('category');
   }
   
@@ -213,25 +226,58 @@ class CategoryPage {
    */
   async loadSubcategories() {
     try {
-      // Buscar todas as categorias e filtrar filhas desta
+      // Buscar todas as categorias
       const allCategories = await window.API.getCategories();
       
       if (!Array.isArray(allCategories)) return [];
       
-      // Encontrar subcategorias desta categoria
-      const subcategories = allCategories.filter(cat => {
-        const path = cat.relativePath || '';
+      let subcategories = [];
+      
+      if (this.isMainCategory) {
+        // Para categoria principal, buscar todas que começam com esse nome
+        subcategories = allCategories.filter(cat => {
+          const path = cat.relativePath || '';
+          return path.startsWith(this.mainCategoryName);
+        });
+        
+        // Agrupar por segundo nível (subcategorias principais)
+        const grouped = {};
+        subcategories.forEach(cat => {
+          const parts = cat.relativePath.split('/').filter(Boolean);
+          if (parts.length >= 2) {
+            const secondLevel = parts[1];
+            if (!grouped[secondLevel]) {
+              grouped[secondLevel] = {
+                id: `${this.mainCategoryName}_${secondLevel}`.replace(/\s+/g, '_'),
+                name: secondLevel,
+                relativePath: `${this.mainCategoryName}/${secondLevel}`,
+                photoCount: 0,
+                subcategories: []
+              };
+            }
+            grouped[secondLevel].photoCount += cat.photoCount || 0;
+            grouped[secondLevel].subcategories.push(cat);
+          }
+        });
+        
+        subcategories = Object.values(grouped);
+        
+      } else {
+        // Categoria normal - buscar filhos diretos
         const currentPath = this.getCurrentCategoryPath(allCategories);
         
-        // Verificar se é filho direto (não neto)
-        if (currentPath && path.startsWith(currentPath)) {
-          const relativePart = path.replace(currentPath, '').replace(/^\//, '');
-          const levels = relativePart.split('/').filter(Boolean);
-          return levels.length === 1; // Apenas 1 nível abaixo = filho direto
+        if (currentPath) {
+          subcategories = allCategories.filter(cat => {
+            const path = cat.relativePath || '';
+            if (path.startsWith(currentPath)) {
+              const relativePart = path.replace(currentPath, '').replace(/^\//, '');
+              const levels = relativePart.split('/').filter(Boolean);
+              return levels.length === 1; // Apenas 1 nível abaixo = filho direto
+            }
+            return false;
+          });
         }
-        
-        return false;
-      });
+      }
       
       console.log(`🔍 Encontradas ${subcategories.length} subcategorias para ${this.categoryId}`);
       return subcategories;

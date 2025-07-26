@@ -183,26 +183,47 @@ class GalleryPage {
   }
   
   /**
-   * Filtra apenas categorias principais
+   * Filtra e agrupa categorias principais
    */
   filterMainCategories(categories) {
-    // Identifica as 7 categorias principais baseado nos nomes conhecidos
-    const mainCategoryNames = [
-      'Brazil Best Sellers',
-      'Brazil Top Selected Categories', 
-      'Colombia Cowhides',
-      'Colombia Best Value',
-      'Calfskins',
-      'Sheepskins',
-      'Rodeo Rugs & Round Rugs'
-    ];
+    console.log('🔍 Analisando categorias para agrupar...');
     
-    return categories.filter(category => {
-      const name = category.name || '';
-      return mainCategoryNames.some(mainName => 
-        name.includes(mainName) || mainName.includes(name)
-      );
-    }).slice(0, 7); // Garantir max 7 categorias principais
+    // Agrupar categorias pelos seus pais principais
+    const grouped = {};
+    
+    categories.forEach(category => {
+      const path = category.relativePath || '';
+      console.log('📂 Analisando:', category.name, '→', path);
+      
+      // Extrair categoria principal do path
+      const parts = path.split('/').filter(Boolean);
+      if (parts.length > 0) {
+        const mainCategory = parts[0]; // Primeira parte do path = categoria principal
+        
+        if (!grouped[mainCategory]) {
+          grouped[mainCategory] = {
+            id: `group_${mainCategory.replace(/\s+/g, '_')}`,
+            name: mainCategory,
+            relativePath: mainCategory,
+            fileCount: 0,
+            subcategories: [],
+            previewPhotos: []
+          };
+        }
+        
+        // Somar fotos e adicionar subcategoria
+        grouped[mainCategory].fileCount += category.photoCount || 0;
+        grouped[mainCategory].subcategories.push(category);
+      }
+    });
+    
+    // Converter objeto em array
+    const mainCategories = Object.values(grouped);
+    
+    console.log(`📊 Agrupadas ${mainCategories.length} categorias principais:`, 
+      mainCategories.map(c => `${c.name} (${c.fileCount} fotos)`));
+    
+    return mainCategories;
   }
   
   /**
@@ -526,16 +547,23 @@ class GalleryPage {
   }
   
   /**
-   * Abre categoria
+   * Abre categoria principal (mostra subcategorias)
    */
   openCategory(categoryId) {
     if (!categoryId) return;
     
     console.log('📂 Abrindo categoria:', categoryId);
     
-    // Navegar para página de categoria
-    const url = `/pages/category.html?category=${encodeURIComponent(categoryId)}`;
-    window.Router.navigate(url);
+    // Se é categoria agrupada, navegar para uma página especial de subcategorias
+    if (categoryId.startsWith('group_')) {
+      const categoryName = categoryId.replace('group_', '').replace(/_/g, ' ');
+      const url = `/pages/category.html?main_category=${encodeURIComponent(categoryName)}`;
+      window.Router.navigate(url);
+    } else {
+      // Categoria normal
+      const url = `/pages/category.html?category=${encodeURIComponent(categoryId)}`;
+      window.Router.navigate(url);
+    }
   }
   
   /**
