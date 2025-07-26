@@ -1,15 +1,32 @@
-// routes/client.js
+// src/routes/client.js
 const express = require('express');
+const Product = require('../models/Product');
+
 const router = express.Router();
-const photoController = require('../controllers/photoController');
 
-// Rota para dados iniciais do cliente
-router.get('/initial-data', photoController.getClientInitialData);
-
-// End point para limpeza de cache
-router.post('/clear-cache', photoController.clearCache);
-
-// Nova rota para salvar seleções do cliente
-router.post('/selections', photoController.saveCustomerSelections);
+// Listar produtos disponíveis por categoria (temporário)
+router.get('/products/:category', async (req, res) => {
+    try {
+        const { category } = req.params;
+        
+        const products = await Product.find({
+            category: { $regex: category, $options: 'i' },
+            status: 'available'
+        }).limit(20);
+        
+        res.json({
+            success: true,
+            products,
+            category
+        });
+        
+    } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar produtos'
+        });
+    }
+});
 
 module.exports = router;

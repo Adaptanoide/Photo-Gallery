@@ -1,892 +1,146 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
-  <base target="_top">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/main-modular.css">
-  <!-- Biblioteca Medium Zoom para zoom de alta qualidade -->
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script>
-
-  <!-- Estilos para o novo visualizador -->
-  <style>
-    /* Estilo para loader de alta resolução */
-    .highres-loader {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px 15px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      z-index: 10;
-    }
-
-    .highres-loader .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: var(--color-gold);
-      animation: spin 1s ease-in-out infinite;
-    }
-
-    /* Zoom personalizado */
-    .zoom-img {
-      transition: transform 0.3s ease;
-      cursor: zoom-in;
-    }
-
-    /* Container de imagem no lightbox */
-    .lightbox-img-wrapper {
-      transition: all 0.3s ease;
-    }
-
-    /* Estilos para loader de texto */
-    .loader-text {
-      font-size: 14px;
-      font-weight: 400;
-      color: white;
-    }
-
-    /* Melhorias na UI de zoom */
-    .medium-zoom-overlay {
-      z-index: 990;
-    }
-
-    .medium-zoom-image--opened {
-      z-index: 991;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunshine Cowhides - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-
 <body>
-  <!-- BOTÕES NOVOS - TOPO DA PÁGINA -->
-  <div class="top-buttons">
-    <div class="left-buttons">
-      <button id="breadcrumb-home" onclick="showHomePage()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M3 12L5 10M5 10L12 3L19 10M5 10V20A1 1 0 006 21H9M19 10L21 12M19 10V20A1 1 0 0018 21H15M9 21V16A1 1 0 0110 15H14A1 1 0 0115 16V21M9 21H15"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        Home
-      </button>
-      <div id="breadcrumb-container">
-        <span class="breadcrumb-welcome">Choose a category to start exploring</span>
-      </div>
-    </div>
-    <div class="right-buttons">
-      <button id="new-logout" onclick="returnToLogin()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        Logout
-      </button>
-      <button id="new-help" onclick="showTutorial()">?</button>
-    </div>
-  </div>
-
-  <div class="container">
-    <!-- Nova estrutura com menu lateral e conteúdo -->
-    <div class="catalog-layout">
-      <!-- Menu lateral de categorias -->
-      <div class="category-sidebar">
-        <div class="sidebar-header">
-          <h3>Categories</h3>
-          <button id="filter-toggle" class="filter-toggle-btn" onclick="toggleFilters()">
-            🔍 Filters
-          </button>
-        </div>
-
-        <!-- NOVA SEÇÃO DE FILTROS (escondida por enquanto) -->
-        <div id="category-filters" class="category-filters" style="display: none;">
-          <div class="filter-row">
-            <select id="country-filter" disabled>
-              <option value="">All Countries</option>
-              <option value="brazil">Brazil</option>
-              <option value="colombia">Colombia</option>
-            </select>
-
-            <select id="product-type-filter" disabled>
-              <option value="">All Products</option>
-              <option value="cowhides">Cowhides</option>
-              <option value="rugs">Rugs</option>
-              <option value="sheepskins">Sheepskins</option>
-              <option value="calfskins">Calfskins</option>
-            </select>
-          </div>
-
-          <div class="filter-row">
-            <select id="size-filter" disabled>
-              <option value="">All Sizes</option>
-              <option value="small">Small</option>
-              <option value="medium">Medium/ML</option>
-              <option value="large">Large</option>
-              <option value="xl">Extra Large</option>
-            </select>
-
-            <select id="price-filter" disabled>
-              <option value="">All Prices</option>
-              <option value="0-50">Under $50</option>
-              <option value="50-100">$50 - $100</option>
-              <option value="100-150">$100 - $150</option>
-              <option value="150-200">$150 - $200</option>
-              <option value="200+">$200+</option>
-            </select>
-          </div>
-
-          <div class="filter-row">
-            <select id="sort-filter" disabled>
-              <option value="">Sort by</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="name">Name A-Z</option>
-              <option value="photos">Most Photos</option>
-            </select>
-
-            <button class="clear-filters-btn" disabled>Clear</button>
-          </div>
-
-          <div class="active-filters" id="active-filters">
-            <!-- Badges de filtros ativos aparecerão aqui -->
-          </div>
-        </div>
-
-        <div class="category-search">
-          <input type="text" id="category-search-input" placeholder="Search categories...">
-        </div>
-        <div id="categories-menu" class="categories-menu">
-          <!-- Categorias serão carregadas aqui -->
-          <div class="category-loading">Loading categories...</div>
-        </div>
-      </div>
-
-      <!-- Conteúdo principal -->
-      <div class="content-area">
-        <!-- Área de conteúdo (galeria) -->
-        <div id="content" class="gallery">
-          <div class="empty-message">Loading...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cart Panel -->
-  <div id="cart-panel" class="cart-panel">
-    <h3>Selected Items: <span id="cart-count">0</span></h3>
-    <button class="btn btn-gold" onclick="showCart()">View Selection</button>
-  </div>
-
-  <!-- Cart Modal -->
-  <div id="cart-modal" class="modal cart-modal">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">Your Selection</h2>
-      </div>
-      <div id="cart-items-container">
-        <div id="cart-items">
-          <!-- Cart items will be added here -->
-        </div>
-      </div>
-
-      <!-- Criar novo container para o total FORA da área de scroll -->
-      <div id="cart-total-container"></div>
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
-        <button id="details-btn" class="btn btn-outline-secondary" onclick="showOrderBreakdown()"
-          style="font-size: 12px; padding: 6px 12px;">
-          📊 Details
-        </button>
-        <div style="display: flex; gap: 15px;">
-          <button class="btn btn-secondary" onclick="closeModal('cart-modal')">Cancel</button>
-          <button class="btn btn-gold" onclick="submitOrder()">Submit Order</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Success Modal -->
-  <div id="success-modal" class="modal">
-    <div class="modal-content" style="text-align: center;">
-      <h2 style="padding-bottom: 0; margin-bottom: 15px;">Thank You For Your Order</h2>
-      <div style="margin: 20px 0;">
-        <p style="color: #2e7d32; font-weight: 500; margin-bottom: 15px;">
-          ✅ Your selected photos have been reserved successfully!
-        </p>
-        <p style="margin-bottom: 15px;">
-          Your premium cowhides are now held exclusively for you and will be available upon payment confirmation.
-        </p>
-        <p style="color: #666;">
-          Our sales team will contact you shortly to arrange payment and delivery details.
-        </p>
-      </div>
-      <div class="success-actions">
-        <button class="btn btn-gold action-button" onclick="returnToLogin()">
-          Return to Login
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lightbox for photo viewing -->
-  <div id="lightbox" class="lightbox">
-    <div class="lightbox-content">
-      <div class="lightbox-img-container">
-        <!-- The iframe will be inserted here by JavaScript -->
-        <div class="lightbox-nav">
-          <button class="nav-left" onclick="navigatePhotos(-1)">&lt;</button>
-          <button class="nav-right" onclick="navigatePhotos(1)">&gt;</button>
-        </div>
-      </div>
-
-      <div class="lightbox-info">
-        <p id="lightbox-name">Product Name</p>
-      </div>
-
-      <div class="lightbox-controls">
-        <!-- Cart Icon with Count -->
-        <div class="cart-counter-display" title="Total selected items">
-          <span class="cart-label">Total:</span>
-          <span id="lightbox-cart-count" class="cart-number">0</span>
-        </div>
-
-        <!-- Botão Anterior com SVG -->
-        <button class="lightbox-nav-btn" onclick="navigatePhotos(-1)" title="Previous photo">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-          </svg>
-        </button>
-
-        <!-- Botão Principal -->
-        <button id="lightbox-add-btn" class="btn btn-gold" onclick="addRemoveLightbox()">
-          Add
-        </button>
-
-        <!-- Botão Próximo com SVG -->
-        <button class="lightbox-nav-btn" onclick="navigatePhotos(1)" title="Next photo">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" />
-          </svg>
-        </button>
-
-        <!-- Botão Secundário -->
-        <button class="btn btn-secondary btn-discrete" onclick="closeLightbox()">
-          Back to Gallery
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loader -->
-  <div id="loader" class="loader">
-    <div class="loader-content">
-      <div class="simple-loader">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Loading...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Customer Code Entry Modal -->
-  <div id="code-entry-modal" class="modal" style="display: block;"> <!-- Start visible -->
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-      <h2>Welcome</h2>
-      <p>Please enter your access code to view our collection.</p>
-
-      <div class="form-group">
-        <input type="text" id="access-code" class="form-control"
-          style="font-size: 24px; text-align: center; letter-spacing: 5px;" placeholder="0000" maxlength="4"
-          pattern="[0-9]*">
-      </div>
-
-      <button class="btn btn-gold" style="width: 100%;" onclick="accessGallery()">Enter Gallery</button>
-
-      <div style="margin-top: 20px; font-size: 14px;">
-        <a href="#" onclick="event.preventDefault(); showAdminLogin()">Admin Access</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Admin Login Modal -->
-  <div id="admin-login-modal" class="modal">
-    <div class="modal-content" style="max-width: 400px;">
-      <h2>Admin Access</h2>
-      <div class="form-group">
-        <label for="admin-email">Email</label>
-        <input type="email" id="admin-email" class="form-control" placeholder="Enter admin email">
-      </div>
-      <form id="admin-password-form" onsubmit="event.preventDefault(); adminLogin();">
-        <div class="form-group">
-          <label for="admin-password">Password</label>
-          <input type="password" id="admin-password" class="form-control" placeholder="Enter password">
-        </div>
-      </form>
-      <div style="display: flex; justify-content: flex-end; gap: 15px;">
-        <button class="btn btn-secondary" onclick="closeModal('admin-login-modal')">Cancel</button>
-        <button class="btn btn-gold" onclick="adminLogin()">Login</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Admin Panel Modal with Tabs -->
-  <div id="admin-panel-modal" class="modal">
-    <div class="modal-content">
-      <!-- Logout button at the top right -->
-      <button class="btn btn-secondary logout-top-right" onclick="adminLogout()">Logout</button>
-
-      <button class="mobile-close-btn" onclick="adminLogout()" style="display: none;">×</button>
-
-      <h2>Admin Panel</h2>
-
-      <!-- Tab Navigation -->
-      <div class="admin-tabs">
-        <button class="tab-button active" onclick="switchTab('customer-codes')">Customer Management</button>
-        <button class="tab-button" onclick="switchTab('order-management')">Order Management</button>
-        <button class="tab-button" onclick="switchTab('price-management')">Price Management</button>
-        <button class="tab-button" onclick="switchTab('photo-storage')">Photo Storage</button>
-        <button class="tab-button" onclick="switchTab('shipment-control')">Shipment Control</button>
-      </div>
-
-      <!-- Tab Content -->
-      <div class="tab-content">
-        <!-- Customer Codes Tab -->
-        <div id="customer-codes" class="tab-pane active">
-          <div class="admin-section">
-            <h3>Generate New Customer Code</h3>
-            <div class="form-group">
-              <label for="customer-name">Customer Name</label>
-              <input type="text" id="customer-name" class="form-control" placeholder="Enter customer name">
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-sun"></i>
+                <span>Sunshine Cowhides</span>
             </div>
-            <button class="btn btn-gold" onclick="generateCustomerCode()">Generate Code</button>
-            <div id="generated-code" style="margin-top: 15px; font-size: 24px; text-align: center; display: none;">
-              <p>New Code: <span id="new-code"></span></p>
-              <p style="font-size: 14px;">Share this code with your customer</p>
-            </div>
-          </div>
-
-          <div class="luxury-divider"></div>
-
-          <div class="admin-section">
-            <h3>Active Customer Codes</h3>
-            <div id="active-codes-container"
-              style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; padding: 10px;">
-              <div id="active-codes-list">Loading...</div>
-            </div>
-          </div>
+            <nav class="nav">
+                <button id="adminBtn" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
+                <button id="clientBtn" class="btn btn-secondary">
+                    <i class="fas fa-shopping-cart"></i> Cliente
+                </button>
+            </nav>
         </div>
+    </header>
 
-        <!-- Order Management Tab -->
-        <div id="order-management" class="tab-pane">
-          <div class="admin-section">
-            <h3>Order Management</h3>
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Welcome Section -->
+        <section id="welcome" class="welcome-section">
+            <div class="container">
+                <h1>Bem-vindo ao Sunshine Cowhides</h1>
+                <p>Sistema de gerenciamento para couros únicos de alta qualidade</p>
+                
+                <div class="access-cards">
+                    <!-- Admin Access -->
+                    <div class="access-card admin-card">
+                        <div class="card-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>Acesso Administrativo</h3>
+                        <p>Gerencie produtos, códigos de acesso e configurações</p>
+                        <button class="btn btn-primary" onclick="showAdminLogin()">
+                            Entrar como Admin
+                        </button>
+                    </div>
 
-            <div class="form-group">
-              <label for="order-status">Select Order Status to View</label>
-              <select id="order-status" class="form-control" onchange="loadOrderFolders(this.value)">
-                <option value="waiting">Waiting Payment</option>
-                <option value="paid">Paid/Sold</option>
-              </select>
-            </div>
-
-            <div id="order-folders-container"
-              style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; padding: 10px;">
-              <div id="order-folders-list">
-                <p>Select a status to view orders</p>
-              </div>
-            </div>
-
-            <!-- Keep this hidden - it's used by the JavaScript functions -->
-            <input type="hidden" id="order-folder" class="form-control">
-
-            <div style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary" onclick="refreshFolderList()">Refresh List</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Price Management Tab - COM ESTATÍSTICAS NO HEADER -->
-        <div id="price-management" class="tab-pane">
-          <!-- Header com título e estatísticas -->
-          <div class="admin-header">
-            <div class="admin-title-section">
-              <h2 class="admin-title">
-                <i class="fas fa-dollar-sign"></i>
-                Price Management
-              </h2>
-            </div>
-            <div class="admin-stats-section">
-              <button class="btn btn-gold btn-sm" onclick="openBulkActionsModal()"
-                style="margin-left: 10px; padding: 5px 10px; font-size: 14px;" title="Bulk price actions">
-                📊 Bulk Actions
-              </button>
-              <button class="btn btn-secondary btn-sm" onclick="refreshPriceCounters()"
-                style="margin-left: 8px; padding: 5px 10px; font-size: 14px;" title="Refresh photo counters">
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          <!-- Container principal do price management -->
-          <div id="category-price-container">
-            <!-- Conteúdo será carregado dinamicamente pelo JavaScript -->
-          </div>
-        </div>
-
-        <style>
-          .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            /* MUDANÇA: Reduzido de 15px para 10px */
-            padding: 0 2px;
-            flex-shrink: 0;
-            /* ADICIONADO: Não comprime */
-          }
-
-          .admin-title-section {
-            flex: 1;
-          }
-
-          .admin-title {
-            margin: 0;
-            color: #333;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 24px;
-            font-weight: 550;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          }
-
-          .admin-title i {
-            color: var(--color-gold);
-            font-size: 22px;
-          }
-
-          .admin-stats-section {
-            flex: 0 0 auto;
-          }
-
-          .header-stats {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-            font-size: 13px;
-            font-weight: 500;
-            color: #666;
-            white-space: nowrap;
-          }
-
-          /* Responsividade do header */
-          @media (max-width: 768px) {
-            .admin-header {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 8px;
-            }
-
-            .admin-title {
-              font-size: 20px;
-            }
-
-            .admin-stats-section {
-              align-self: flex-end;
-            }
-
-            .header-stats {
-              font-size: 12px;
-              padding: 4px 8px;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .admin-title {
-              font-size: 18px;
-            }
-
-            .admin-title i {
-              font-size: 16px;
-            }
-
-            .header-stats {
-              font-size: 11px;
-              padding: 3px 6px;
-            }
-          }
-        </style>
-
-        <!-- NOVA ABA: Photo Storage -->
-        <div id="photo-storage" class="tab-pane">
-          <div class="admin-section">
-            <!-- Cabeçalho minimalista com contador discreto -->
-            <div class="photo-storage-header">
-              <h3>Photo Storage Management</h3>
-
-              <!-- NOVA BARRA DE PESQUISA -->
-              <div class="admin-search-container">
-                <div class="search-input-wrapper">
-                  <input type="text" id="admin-photo-search" class="admin-search-input"
-                    placeholder="Search photos or categories..." autocomplete="off">
+                    <!-- Client Access -->
+                    <div class="access-card client-card">
+                        <div class="card-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3>Acesso do Cliente</h3>
+                        <p>Navegue pelo catálogo e faça sua seleção</p>
+                        <button class="btn btn-secondary" onclick="showClientLogin()">
+                            Entrar com Código
+                        </button>
+                    </div>
                 </div>
-                <div id="admin-search-results" class="admin-search-results" style="display: none;">
-                  <!-- Resultados aparecerão aqui -->
+            </div>
+        </section>
+
+        <!-- Admin Login Modal -->
+        <div id="adminModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('adminModal')">&times;</span>
+                <h2><i class="fas fa-shield-alt"></i> Login Administrativo</h2>
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label>Usuário:</label>
+                        <input type="text" id="adminUser" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha:</label>
+                        <input type="password" id="adminPass" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Client Login Modal -->
+        <div id="clientModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('clientModal')">&times;</span>
+                <h2><i class="fas fa-key"></i> Código de Acesso</h2>
+                <form id="clientLoginForm">
+                    <div class="form-group">
+                        <label>Digite seu código de 4 dígitos:</label>
+                        <input type="text" id="clientCode" maxlength="4" pattern="[0-9]{4}" required placeholder="0000">
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-full">
+                        <i class="fas fa-unlock"></i> Acessar Catálogo
+                    </button>
+                </form>
+                <p class="help-text">
+                    <i class="fas fa-info-circle"></i>
+                    Código fornecido pela equipe Sunshine Cowhides
+                </p>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Carregando...</p>
+        </div>
+
+        <!-- Status Section -->
+        <section class="status-section">
+            <div class="container">
+                <div class="status-card">
+                    <h3><i class="fas fa-server"></i> Status do Sistema</h3>
+                    <div id="systemStatus" class="status-info">
+                        <div class="status-item">
+                            <span class="status-label">API:</span>
+                            <span id="apiStatus" class="status-value">Verificando...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Google Drive:</span>
+                            <span id="driveStatus" class="status-value">Verificando...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">MongoDB:</span>
+                            <span id="dbStatus" class="status-value">Verificando...</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
-
-              <div class="discrete-stats">
-                <span id="discrete-photo-count">Loading...</span>
-                <button class="btn btn-secondary btn-sm" onclick="photoManager.refreshStructure()">Refresh</button>
-                <button class="btn btn-primary btn-sm" onclick="photoManager.openCreateFolderModal()"
-                  style="background-color: #754646; color: white;">📁 New</button>
-                <button class="btn btn-gold btn-sm" onclick="photoManager.openUploadModal()">🔺 Upload</button>
-              </div>
             </div>
+        </section>
+    </main>
 
-            <!-- FOCO PRINCIPAL: Lista de Pastas (90% do espaço) -->
-            <div class="folder-management-focused">
-              <div class="folder-tree-expanded">
-                <div id="folder-tree" class="folder-tree">
-                  <div class="loading">Loading folder structure...</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Panel de fotos (mantido como estava) -->
-            <div class="photo-management-panel" style="display: none;">
-              <h4>Photos in: <span id="current-folder-name"></span></h4>
-              <div id="folder-photos">
-                <!-- Photos will be loaded here -->
-              </div>
-            </div>
-          </div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Sunshine Cowhides. Todos os direitos reservados.</p>
         </div>
+    </footer>
 
-        <!-- NOVA ABA: Shipment Control -->
-        <div id="shipment-control" class="tab-pane">
-          <div class="admin-section">
-            <h3>Shipment Control</h3>
-            <p>Em desenvolvimento...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-  </div>
-
-  <!-- Hidden footer div (replaced by top-right logout button) -->
-  <div class="admin-footer" style="display: none;"></div>
-  </div>
-
-  <!-- Custom Notification Toast -->
-  <div id="custom-toast"
-    style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px; max-width: 500px; background-color: var(--color-dark); color: white; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); overflow: hidden;">
-    <div id="toast-header" style="padding: 12px 20px; display: flex; align-items: center;">
-      <div id="toast-icon" style="margin-right: 12px; font-size: 18px;">✓</div>
-      <div id="toast-title" style="font-weight: 600; font-family: 'Playfair Display', serif;">Success</div>
-      <button onclick="hideToast()"
-        style="margin-left: auto; background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 0 0 15px;">&times;</button>
-    </div>
-    <div id="toast-progress" style="height: 3px; width: 100%; background-color: var(--color-gold);"></div>
-    <div id="toast-body" style="padding: 15px 20px;">Message here</div>
-  </div>
-
-  <!-- Custom Confirmation Dialog -->
-  <div id="custom-confirm" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 450px; text-align: center;">
-      <h2 id="confirm-title">Confirmation</h2>
-      <p id="confirm-message" style="margin-bottom: 25px;">Are you sure you want to proceed?</p>
-
-      <div style="display: flex; justify-content: center; gap: 15px;">
-        <button id="confirm-cancel" class="btn btn-secondary" onclick="handleConfirmResponse(false)">Cancel</button>
-        <button id="confirm-ok" class="btn btn-gold" onclick="handleConfirmResponse(true)">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Customer Category Access Modal -->
-  <div id="category-access-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 1200px; width: 98%;">
-      <h2>Edit Access for <span id="customer-name-title"></span></h2>
-      <p>Configure which categories this customer can access and set custom prices.</p>
-
-      <!-- NOVA ESTRUTURA DE TABS -->
-      <div class="admin-tabs">
-        <button class="tab-button active" onclick="switchModalTab('categories-tab', this)">Control Access</button>
-        <button class="tab-button" onclick="switchModalTab('volume-tab', this)">Volume Discounts</button>
-      </div>
-
-      <!-- TAB 1: Volume Discounts -->
-      <div id="volume-tab" class="tab-content active">
-        <div class="volume-discounts-section"
-          style="margin: 20px 0; padding: 15px; border: 1px solid #f1f1f1; border-radius: 8px; background-color: #ffff;">
-          <h3 style="margin-top: 0; color: #36454F;">Volume Discounts (Total Order)</h3>
-          <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Set discounts based on total quantity of photos
-            in the order</p>
-
-          <div class="volume-discount-controls" style="margin-bottom: 15px;">
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-              <input type="number" id="volume-min-qty" placeholder="Min Qty" min="1" style="width: 100px;">
-              <input type="number" id="volume-max-qty" placeholder="Max Qty (optional)" min="1" style="width: 120px;">
-              <input type="number" id="volume-discount-percent" placeholder="Discount %" min="0" max="100" step="0.1"
-                style="width: 120px;">
-              <button class="btn btn-gold" onclick="addVolumeDiscount()" style="padding: 8px 15px;">Add Range</button>
-            </div>
-          </div>
-
-          <div class="volume-discounts-list">
-            <table class="volume-discounts-table" style="width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background-color: #f8f9fa;">
-                  <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Min Qty</th>
-                  <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Max Qty</th>
-                  <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Discount %</th>
-                  <th style="padding: 8px; text-align: center; border: 1px solid #ddd;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="volume-discounts-tbody">
-                <tr id="no-volume-discounts">
-                  <td colspan="4" style="padding: 15px; text-align: center; color: #666; font-style: italic;">No volume
-                    discounts configured</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: Categories -->
-      <div id="categories-tab" class="tab-content" style="display: none;">
-        <div class="global-actions">
-          <button class="btn btn-gold" onclick="authorizeAllCategories()">Authorize All</button>
-          <button class="btn btn-secondary" onclick="clearAllCategories()">Clear All</button>
-        </div>
-
-        <div class="table-filter">
-          <input type="text" id="category-access-filter" class="form-control" placeholder="Filter categories..."
-            onkeyup="filterAccessCategories()">
-          <div class="filter-stats">Showing <span id="access-displayed-count">0</span> of <span
-              id="access-total-count">0</span> categories</div>
-        </div>
-
-        <div class="category-access-container">
-          <table class="category-access-table">
-            <thead>
-              <tr>
-                <th style="width: 80px;">Access</th>
-                <th>Description</th>
-                <th style="width: 140px;">QB Item</th>
-                <th style="width: 100px;">Photos</th>
-                <th style="width: 120px;">Default Price</th>
-                <th style="width: 120px;">Custom Price</th>
-              </tr>
-            </thead>
-            <tbody id="category-access-list">
-              <!-- Categories will be added here dynamically -->
-              <tr>
-                <td colspan="5" class="loading-text">Loading categories...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="modal-buttons">
-        <button class="btn btn-secondary" onclick="closeModal('category-access-modal')">Cancel</button>
-        <button class="btn btn-gold" onclick="saveCustomerCategoryAccess()">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bulk Actions Modal -->
-  <div id="bulk-actions-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 500px; width: 90%;">
-      <h2>Bulk Price Actions</h2>
-      <p>Apply price changes to multiple categories at once.</p>
-
-      <div class="form-group">
-        <label for="bulk-update-type-modal">Update Type:</label>
-        <select id="bulk-update-type-modal" class="form-control">
-          <option value="fixed">Set Fixed Price</option>
-          <option value="percentage">Adjust by Percentage</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="bulk-value-modal">Value:</label>
-        <input type="number" id="bulk-value-modal" class="form-control" placeholder="Enter value" step="0.01"
-          style="font-size: 16px;">
-        <small class="form-text text-muted">
-          <span id="bulk-help-text">Enter the new fixed price for all selected categories</span>
-        </small>
-      </div>
-
-      <div class="bulk-selection-info" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-        <strong>Selected Categories: <span id="bulk-selected-count">0</span></strong>
-        <div id="bulk-selected-preview" style="font-size: 13px; color: #666; margin-top: 5px;">
-          Please select categories from the table first.
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px;">
-        <button class="btn btn-secondary" onclick="closeBulkModal()">Cancel</button>
-        <button class="btn btn-gold" onclick="applyBulkFromModal()" id="apply-bulk-modal-btn" disabled>
-          Apply Changes
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Return to Stock Modal - SEPARADO -->
-  <div id="return-to-stock-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 900px; width: 95%;">
-      <h2>Return Photos to Stock</h2>
-      <p>Select which photos you want to return to the main gallery from: <strong><span
-            id="return-order-name"></span></strong></p>
-
-      <div id="return-modal-loading" class="loading-message">Loading order photos...</div>
-
-      <div id="return-modal-content" style="display: none;">
-        <!-- Categories will be loaded here -->
-        <div id="return-categories-container">
-          <!-- Dynamic content -->
-        </div>
-
-        <div class="luxury-divider"></div>
-
-        <div class="return-summary">
-          <p><strong>Selected:</strong> <span id="return-selected-count">0</span> photos</p>
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeReturnAndShowAdmin()">Cancel</button>
-        <button class="btn btn-gold" onclick="processReturnToStock()" id="process-return-btn" disabled>
-          Return Selected Photos
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Order Details Modal - ESTRUTURA OTIMIZADA -->
-  <div id="order-details-modal" class="modal">
-    <div class="modal-content order-details-modal-content">
-
-      <!-- CABEÇALHO FIXO -->
-      <div class="order-details-header">
-        <h2>Order Details</h2>
-        <div id="order-loading" class="loading-message">Loading order details...</div>
-
-        <div id="order-details-content" style="display: none;">
-          <div class="order-info">
-            <p><strong>Order:</strong> <span id="order-name"></span></p>
-            <p><strong>Client:</strong> <span id="order-client"></span></p>
-            <p><strong>Date:</strong> <span id="order-date"></span></p>
-          </div>
-
-          <div class="luxury-divider"></div>
-          <h3 class="section-title">Items by Category</h3>
-        </div>
-      </div>
-
-      <!-- ÁREA DE SCROLL - APENAS AS CATEGORIAS -->
-      <div class="order-details-body">
-        <div id="category-breakdown" class="category-breakdown-scrollable">
-          <!-- Categorias serão inseridas aqui dinamicamente -->
-        </div>
-      </div>
-
-      <!-- FOOTER FIXO - SEMPRE VISÍVEL -->
-      <div class="order-details-footer">
-        <div class="luxury-divider"></div>
-
-        <div class="order-totals">
-          <div class="order-total-row">
-            <span><strong>Total Items:</strong></span>
-            <span id="total-items"></span>
-          </div>
-          <div class="order-total-row">
-            <span><strong>Total Amount:</strong></span>
-            <span id="total-amount"></span>
-          </div>
-        </div>
-
-        <div id="order-comments-section" style="display: none;">
-          <div class="luxury-divider"></div>
-          <h3>Client Comments</h3>
-          <div id="order-comments" class="order-comments"></div>
-        </div>
-
-        <div class="luxury-divider"></div>
-
-        <div class="modal-actions">
-          <button class="btn btn-secondary" onclick="closeModal('order-details-modal')">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Order Breakdown Modal -->
-  <div id="order-breakdown-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px; width: 90%;">
-      <h2>Order Breakdown</h2>
-      <div id="breakdown-content">
-        <!-- Breakdown será gerado aqui -->
-      </div>
-      <div style="margin-top: 20px; text-align: center;">
-        <button class="btn btn-secondary" onclick="closeModal('order-breakdown-modal')">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal para editar QB Item -->
-  <div id="qb-edit-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 450px; width: 90%;">
-      <h2>Edit QB Item</h2>
-      <p style="margin-bottom: 20px; color: #666;">Set or update the QB item code for this category.</p>
-
-      <div class="form-group">
-        <label for="qb-input-field">QB Item Code:</label>
-        <input type="text" id="qb-input-field" class="form-control" placeholder="Enter QB code (e.g., 5475BR)"
-          maxlength="20">
-        <div style="margin-top: 8px; font-size: 13px; color: #666;">
-          Current: <span id="qb-current-value">Not set</span>
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px;">
-        <button class="btn btn-secondary" onclick="photoManager.closeQBModal()">Cancel</button>
-        <button class="btn btn-gold" onclick="photoManager.saveQBFromModal()">Save QB Item</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- App Scripts -->
-  <script src="/js/database-service.js"></script>
-  <script src="/js/utils.js"></script>
-  <script src="/js/api-client.js"></script>
-  <script src="/js/gallery.js"></script>
-  <script src="/js/cart.js"></script>
-  <script src="/js/lightbox.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/admin.js"></script>
-  <script src="/js/photo-manager-admin.js"></script>
-  <script src="/js/price-manager.js"></script>
-  <script src="/js/sidebar.js"></script>
-  <script src="/js/category-filters.js"></script>
-  <!-- Sistema de Navegação Simples (TESTE) -->
-  <script src="/js/simple-navigation.js"></script>
+    <script src="js/app.js"></script>
 </body>
-
 </html>

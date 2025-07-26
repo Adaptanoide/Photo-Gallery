@@ -1,95 +1,115 @@
-// routes/admin.js
+// src/routes/admin.js
 const express = require('express');
+const mongoose = require('mongoose');
+const AccessCode = require('../models/AccessCode');
+const Product = require('../models/Product');
+const Sale = require('../models/Sale');
+const { authenticateToken } = require('./auth');
+
 const router = express.Router();
-const adminController = require('../controllers/adminController');
 
-// Admin login
-router.post('/login', adminController.login);
+// Todas as rotas admin precisam de autenticação
+router.use(authenticateToken);
 
-// Generate customer code
-router.post('/code', adminController.generateCustomerCode);
-
-// Get active codes
-router.get('/codes', adminController.getActiveCodes);
-
-// Delete client codes
-router.delete('/code/:code', adminController.deleteCustomerCode);
-
-// Rotas para gerenciamento de preços
-router.get('/folders/leaf', adminController.getLeafFolders);
-router.get('/folders/leaf-pricing', adminController.getLeafFoldersForPricing);
-router.get('/categories/prices', adminController.getCategoryPrices);
-router.post('/categories/:folderId/price', adminController.setCategoryPrice);
-router.post('/categories/:folderId/qbitem', adminController.setQBItem);
-router.post('/categories/batch-update', adminController.bulkUpdatePrices);
-
-// Obter configurações de acesso a categorias para um cliente
-router.get('/customers/:code/category-access', adminController.getCustomerCategoryAccess);
-
-// Salvar configurações de acesso a categorias para um cliente
-router.post('/customers/:code/category-access', adminController.saveCustomerCategoryAccess);
-
-// NOVA ROTA: Movimentação de fotos
-router.post('/photos/move', adminController.movePhotos);
-
-// ROTAS DE EXCLUSÃO
-router.post('/photos/delete', adminController.deletePhotos);
-router.post('/folders/delete', adminController.deleteFolder);
-
-// ROTA DE UPLOAD
-router.post('/photos/upload', adminController.uploadPhotos);
-
-// ==== SHIPMENT MANAGEMENT ROUTES ====
-const shipmentController = require('../controllers/shipmentController');
-
-// Listar shipments
-router.get('/shipments', shipmentController.listShipments);
-
-// Criar novo shipment
-router.post('/shipments', shipmentController.createShipment);
-
-// Obter detalhes de um shipment específico
-router.get('/shipments/:shipmentId', shipmentController.getShipmentDetails);
-
-// Atualizar status do shipment (Air → Sea → Warehouse)
-router.put('/shipments/:shipmentId/status', shipmentController.updateShipmentStatus);
-
-// Deletar shipment
-router.delete('/shipments/:shipmentId', shipmentController.deleteShipment);
-
-// Upload de fotos para shipment
-router.post('/shipments/:shipmentId/upload',
-  (req, res, next) => {
-    const upload = shipmentController.getUploadMiddleware();
-    upload.array('photos', 1000)(req, res, next);
-  },
-  shipmentController.uploadPhotos
-);
-
-// Obter pastas disponíveis para distribuição
-router.get('/shipments/destination/folders', shipmentController.getDestinationFolders);
-
-// Obter conteúdo detalhado do shipment para distribuição
-router.get('/shipments/:shipmentId/content', shipmentController.getShipmentContent);
-
-// Distribuir fotos do shipment para estoque final
-router.post('/shipments/distribute', shipmentController.distributePhotos);
-
-// DEBUG CategoryAccess (ADICIONAR AQUI)
-router.get('/debug/8290', async (req, res) => {
-  const CategoryAccess = require('../models/categoryAccess');
-  const records = await CategoryAccess.find({ customerCode: "8290" });
-  res.json({
-    total: records.length,
-    records: records.map(r => ({
-      id: r._id,
-      customerCode: r.customerCode,
-      accessCount: r.categoryAccess.length,
-      firstAccess: r.categoryAccess[0] || null
-    }))
-  });
+// Status do banco de dados
+router.get('/db-status', async (req, res) => {
+    try {
+        // Testar conexão fazendo uma operação simples
+        await mongoose.connection.db.admin().ping();
+        
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        
+        res.json({
+            status: 'OK',
+            message: 'MongoDB conectado',
+            database: mongoose.connection.name,
+            collections: collections.map(c => c.name)
+        });
+        
+    } catch (error) {
+        console.error('Erro ao verificar DB:', error);
+        res.status(500).json({
+            status: 'ERROR',
+            message: 'Erro de conexão com MongoDB'
+        });
+    }
 });
 
-router.post('/force-rebuild-index', adminController.forceRebuildIndex);
+// Listar códigos de acesso
+router.get('/access-codes', async (req, res) => {
+    try {
+        const codes = await AccessCode.find()
+            .sort({ createdAt: -1 })
+            .limit(50);
+            
+        res.json({
+            success: true,
+            codes
+        });
+        
+    } catch (error) {
+        console.error('Erro ao buscar códigos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar códigos'
+        });
+    }
+});
+
+// Criar código de acesso
+router.post('/access-codes', async (req, res) => {
+    try {
+        const { clientName, clientEmail, allowedCategories, expiresInDays = 30 } = req.body;
+        
+        if (!clientName || !allowedCategories || allowedCategories.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nome do cliente e categorias são obrigatórios'
+            });
+        }
+        
+        // Gerar código único de 4 dígitos
+        let code;
+        let codeExists = true;
+        let attempts = 0;
+        
+        while (codeExists && attempts < 100) {
+            code = Math.floor(1000 + Math.random() * 9000).toString();
+            codeExists = await AccessCode.findOne({ code });
+            attempts++;
+        }
+        
+        if (codeExists) {
+            return res.status(500).json({
+                success: false,
+                message: 'Não foi possível gerar código único'
+            });
+        }
+        
+        const accessCode = new AccessCode({
+            code,
+            clientName,
+            clientEmail,
+            allowedCategories,
+            expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
+            createdBy: req.user.username
+        });
+        
+        await accessCode.save();
+        
+        res.json({
+            success: true,
+            message: 'Código criado com sucesso',
+            accessCode
+        });
+        
+    } catch (error) {
+        console.error('Erro ao criar código:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao criar código'
+        });
+    }
+});
 
 module.exports = router;
