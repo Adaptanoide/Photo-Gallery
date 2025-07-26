@@ -1256,14 +1256,154 @@ function getNextCategory() {
     }
   }
 
+  // ✅ CORREÇÃO 2: Substituir APENAS a seção FALLBACK da função getNextCategory()
+
+  // ENCONTRE esta linha no final da função getNextCategory():
   // FALLBACK: Lógica linear original
-  const nextIndex = currentCategoryIndex + 1;
-  console.log(`Fallback - Next category index: ${nextIndex}`);
-  if (nextIndex < specificCategories.length) {
-    const nextCategory = specificCategories[nextIndex];
-    console.log(`Fallback next category: ${nextCategory.name} (ID: ${nextCategory.id})`);
-    return nextCategory;
+  // const nextIndex = currentCategoryIndex + 1;
+
+  // SUBSTITUA POR ESTA VERSÃO INTELIGENTE:
+
+  // ✅ FALLBACK INTELIGENTE: Seguir ordem do sidebar em vez de lista linear
+  console.log('🔄 Usando fallback inteligente baseado no sidebar');
+
+  return getNextCategoryFromSidebarOrder();
+}
+
+// ✅ NOVA FUNÇÃO: Navegação que segue ordem do sidebar
+function getNextCategoryFromSidebarOrder() {
+  // Obter ordem atual do sidebar
+  const sidebarItems = document.querySelectorAll('.category-item[data-subcategory], .category-item[data-category-id]');
+  const sidebarOrder = Array.from(sidebarItems);
+
+  if (sidebarOrder.length === 0) {
+    console.log('❌ Sidebar vazio, usando fallback básico');
+    return getBasicNextCategory();
   }
+
+  // Encontrar item atual no sidebar
+  let currentSidebarIndex = -1;
+
+  for (let i = 0; i < sidebarOrder.length; i++) {
+    const item = sidebarOrder[i];
+    const subcategory = item.getAttribute('data-subcategory');
+    const categoryId = item.getAttribute('data-category-id');
+
+    // Se tem subcategory, comparar por contexto
+    if (subcategory) {
+      const context = getCurrentNavigationContext();
+      if (context && context.subcategory === subcategory) {
+        currentSidebarIndex = i;
+        break;
+      }
+    }
+    // Se tem categoryId, comparar direto
+    else if (categoryId === activeCategory) {
+      currentSidebarIndex = i;
+      break;
+    }
+  }
+
+  console.log(`📍 Item atual no sidebar: índice ${currentSidebarIndex}`);
+
+  // Próximo item no sidebar
+  const nextSidebarIndex = currentSidebarIndex + 1;
+
+  if (nextSidebarIndex < sidebarOrder.length) {
+    const nextItem = sidebarOrder[nextSidebarIndex];
+    const nextSubcategory = nextItem.getAttribute('data-subcategory');
+    const nextCategoryId = nextItem.getAttribute('data-category-id');
+
+    console.log(`➡️ Próximo item no sidebar: ${nextSubcategory || nextCategoryId}`);
+
+    // Se é subcategoria, encontrar categoryId correspondente
+    if (nextSubcategory) {
+      const targetCategory = findCategoryBySubcategory(nextSubcategory);
+      if (targetCategory) {
+        console.log(`✅ Próxima categoria: ${targetCategory.id} (${nextSubcategory})`);
+        return targetCategory;
+      }
+    }
+    // Se é categoryId direto
+    else if (nextCategoryId) {
+      const targetCategory = window.categories.find(cat => cat.id === nextCategoryId);
+      if (targetCategory) {
+        console.log(`✅ Próxima categoria: ${targetCategory.id}`);
+        return targetCategory;
+      }
+    }
+  }
+
+  // Se chegou ao fim do sidebar, ir para próxima categoria principal
+  console.log('📁 Fim das subcategorias, tentando próxima categoria principal');
+  return getNextMainCategory();
+}
+
+// ✅ FUNÇÃO AUXILIAR: Encontrar categoria por subcategoria
+function findCategoryBySubcategory(subcategory) {
+  const context = getCurrentNavigationContext();
+  if (!context || !context.mainCategory) return null;
+
+  // Para categorias com abas, pegar primeiro tamanho
+  if (needsSizeTabs(context.mainCategory)) {
+    const availableSizes = extractAvailableSizes(context.mainCategory, subcategory);
+    if (availableSizes.length > 0) {
+      const firstSize = availableSizes[0];
+
+      return window.categories.find(cat =>
+        cat.fullPath &&
+        cat.fullPath.includes(context.mainCategory) &&
+        cat.fullPath.includes(subcategory) &&
+        cat.fullPath.includes(firstSize)
+      );
+    }
+  }
+
+  // Para categorias sem abas, pegar diretamente
+  return window.categories.find(cat =>
+    cat.fullPath &&
+    cat.fullPath.includes(context.mainCategory) &&
+    cat.fullPath.includes(subcategory)
+  );
+}
+
+// ✅ FUNÇÃO AUXILIAR: Próxima categoria principal
+function getNextMainCategory() {
+  const context = getCurrentNavigationContext();
+  if (!context || !context.mainCategory) return null;
+
+  const mainCategories = ['Brazil Best Sellers', 'Brazil Top Selected Categories', 'Colombia Cowhides', 'Colombia Best Value', 'Calfskins', 'Sheepskins', 'Rodeo Rugs & Round Rugs'];
+
+  const currentIndex = mainCategories.findIndex(cat =>
+    normalizeCategory(cat) === normalizeCategory(context.mainCategory)
+  );
+
+  const nextIndex = currentIndex + 1;
+  if (nextIndex < mainCategories.length) {
+    const nextMainCategory = mainCategories[nextIndex];
+    console.log(`🏗️ Próxima categoria principal: ${nextMainCategory}`);
+
+    // Encontrar primeira categoria da próxima categoria principal
+    return window.categories.find(cat =>
+      cat.fullPath && cat.fullPath.includes(nextMainCategory) && !cat.isAll
+    );
+  }
+
+  console.log('🔚 Fim de todas as categorias');
+  return null;
+}
+
+// ✅ FUNÇÃO AUXILIAR: Fallback básico
+function getBasicNextCategory() {
+  const specificCategories = window.categories.filter(cat => !cat.isAll);
+  const currentIndex = specificCategories.findIndex(cat => cat.id === activeCategory);
+  const nextIndex = currentIndex + 1;
+
+  if (nextIndex < specificCategories.length) {
+    return specificCategories[nextIndex];
+  }
+
+  return null;
 
   console.log('No next category available');
   return null; // Não há próxima categoria
