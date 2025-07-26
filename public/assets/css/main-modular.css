@@ -1,0 +1,41 @@
+/* Arquivo principal agregador - Sunshine Cowhides */
+/* Importação de todos os módulos CSS */
+
+/* Base */
+@import 'base/variables.css';
+@import 'base/reset.css';
+@import 'base/typography.css';
+
+/* Layout */
+@import 'layout/grid.css';
+@import 'layout/header.css';
+@import 'layout/container.css';
+
+/* Components */
+@import 'components/buttons.css';
+@import 'components/forms.css';
+@import 'components/cards.css';
+@import 'components/modals.css';
+@import 'components/tables.css';
+@import 'components/category-filters.css';
+@import 'components/home-categories.css';
+@import url('./components/size-tabs.css');
+
+/* Modules */
+@import 'modules/cart.css';
+@import 'modules/gallery.css';
+@import 'modules/lightbox.css';
+@import 'modules/notification.css';
+@import 'modules/sidebar.css';
+@import 'modules/tutorial.css';
+
+/* Pages */
+@import 'pages/admin.css';
+@import 'pages/admin/modals.css';
+@import 'pages/admin/photo-storage.css';
+@import 'pages/login.css';
+@import 'pages/orders.css';
+
+/* Utilities */
+@import 'utilities/animations.css';
+@import 'utilities/helpers.css';

@@ -1,0 +1,19 @@
+/* Variables - Sunshine Cowhides */
+/* Variáveis CSS globais para cores, dimensões e transições */
+
+:root {
+  /* Cores */
+  --color-dark: #262a2e;
+  --color-gold: #d3b861;
+  --color-gold-light: #d3b861;
+  --color-cream: #F8F5F0;
+  --color-taupe: #7e664a;
+  --color-charcoal: #36454F;
+  --color-danger: #b45a5a;
+  
+  /* Sombras */
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.08);
+  
+  /* Transições */
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}

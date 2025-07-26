@@ -1,0 +1,875 @@
+/* ===== PRICE MANAGEMENT MODULE - CABEÇALHOS E CÉLULAS ALINHADOS ===== */
+/* public/assets/css/pages/admin/price-management.css */
+
+/* Container principal - MAIS ESPAÇO PARA TABELA */
+.category-price-container {
+  margin-top: 0;
+  min-height: 100%;
+  height: calc(100vh - 120px);
+  /* MUDANÇA: Aumentado ainda mais */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ações em lote - ESCONDIDAS (agora no modal) */
+.bulk-actions {
+  display: none !important;
+}
+
+.bulk-actions h4 {
+  margin: 0 0 6px 0;
+  color: #333;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bulk-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bulk-form .form-control {
+  min-width: 130px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 30px;
+}
+
+.bulk-form .form-control:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+.bulk-form .btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  height: 30px;
+}
+
+/* Filtro simples - MAIS COMPACTO */
+.table-filter-simple {
+  margin-bottom: 10px;
+  /* MUDANÇA: Reduzido de 15px para 10px */
+  flex-shrink: 0;
+}
+
+.table-filter-simple .form-control {
+  width: 350px;
+  max-width: 350px;
+  padding: 10px 15px;
+  font-size: 14px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.table-filter-simple .form-control:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+/* Container da tabela - SCROLL ÚNICO AQUI */
+.price-table-container {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  flex: 1;
+  /* Ocupa todo o espaço restante */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 540px;
+  /* ADICIONADO: Altura mínima maior */
+}
+
+/* Tabela principal - SEM SCROLL PRÓPRIO */
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.price-table thead {
+  background: #f8f9fa;
+  flex-shrink: 0;
+  /* Header fixo */
+  border-bottom: 2px solid #dee2e6;
+}
+
+.price-table thead tr {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.price-table th {
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  font-size: 16x;
+  white-space: nowrap;
+  border-right: none;
+  /* REMOVIDO: Sem bordas verticais */
+}
+
+.price-table th:last-child {
+  border-right: none;
+  text-align: center;
+}
+
+/* TBODY com scroll único e suave + ACABAMENTO NO FINAL */
+.price-table tbody {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 400px;
+  /* ADICIONADO: Altura mínima aumentada */
+
+  /* Scroll customizado e suave */
+  scrollbar-width: thin;
+  scrollbar-color: #bbb #f5f5f5;
+
+  /* Padding no final para acabamento visual */
+  padding-bottom: 20px;
+}
+
+.price-table tbody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.price-table tbody::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.price-table tbody::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.price-table tbody::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+.price-table tbody tr {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.price-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* ACABAMENTO VISUAL NO FINAL DA LISTA */
+.price-table tbody tr:last-child {
+  border-bottom: 2px solid #dee2e6;
+  margin-bottom: 10px;
+}
+
+.price-table tbody tr:last-child::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, #dee2e6 80%, transparent 100%);
+  margin-top: 15px;
+}
+
+.price-table td {
+  padding: 10px;
+  vertical-align: middle;
+  border-right: 1px solid #f5f5f5;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.price-table td:last-child {
+  border-right: none;
+}
+
+/* ===== NOVO LAYOUT CSS GRID - LIMPO E FUNCIONAL ===== */
+
+/* Remove flexbox problemático */
+.price-table thead tr,
+.price-table tbody tr {
+  display: grid !important;
+  grid-template-columns: 100px 1fr 100px 220px 180px;
+  gap: 15px;
+  align-items: center;
+  width: 100% !important;
+  padding: 0 20px;
+}
+
+/* Headers */
+.price-table th {
+  padding: 12px 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+/* Células */
+.price-table td {
+  padding: 12px 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+/* Alinhamentos específicos */
+.checkbox-column { justify-self: start; }
+.category-column { 
+  justify-self: start; 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.photos-column { justify-self: center; }
+.qbitem-column { justify-self: center; }
+.price-column { justify-self: center; }
+
+/* Larguras fixas para evitar movimento dos botões */
+.photos-column {
+  width: 80px;
+  min-width: 80px;
+}
+
+.qbitem-column {
+  width: 120px;
+  min-width: 120px;
+}
+
+.price-column {
+  width: 180px;
+  min-width: 180px;
+}
+
+/* Container do preço com layout flexível */
+.price-column .field-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.price-column .price-display {
+  width: 70px;
+  text-align: left;
+  font-weight: 600;
+}
+
+/* Remove todas as regras antigas conflitantes */
+.price-table th.checkbox-column,
+.price-table td.checkbox-column,
+.price-table th.category-column,
+.price-table td.category-column,
+.price-table th.photos-column,
+.price-table td.photos-column,
+.price-table th.qbitem-column,
+.price-table td.qbitem-column,
+.price-table th.price-column,
+.price-table td.price-column {
+  flex: none !important;
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+}
+
+.qbitem-display {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.qbitem-input {
+  width: 80px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+}
+
+.qbitem-input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+/* Checkboxes */
+.category-checkbox,
+#select-all {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-gold);
+}
+
+/* Células de preço */
+.price-display {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.price-input {
+  width: 100px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 15px;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+/* Botões de ação - ALINHADOS À DIREITA COM ESPAÇAMENTO */
+.action-btn {
+  background: #e9e8e4;
+  color: var(--color-dark);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.action-btn:hover {
+  background: #c5a647;
+  transform: translateY(-1px);
+}
+
+.action-btn:first-child {
+  margin-left: 0;
+}
+
+.edit-price-btn {
+  background: #e9e8e4;
+}
+
+.edit-price-btn:hover {
+  background: #c5a647;
+}
+
+.save-price-btn {
+  background: #28a745;
+}
+
+.save-price-btn:hover {
+  background: #218838;
+}
+
+/* Estados especiais */
+.action-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.action-btn:disabled:hover {
+  background: #6c757d;
+  transform: none;
+}
+
+/* Seleção de categorias */
+.price-table tbody tr:has(.category-checkbox:checked) {
+  background: #fff3cd !important;
+  border-left: 3px solid var(--color-gold);
+}
+
+/* Loading progress */
+#loading-progress {
+  color: #856404;
+  font-size: 14px;
+  margin-top: 10px;
+  font-weight: 500;
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Animações suaves */
+.price-table tbody tr {
+  animation: fadeInTableRow 0.2s ease-out;
+}
+
+@keyframes fadeInTableRow {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* RESPONSIVIDADE OTIMIZADA */
+@media (max-width: 1400px) {
+
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
+    min-width: 300px;
+  }
+
+  .qbitem-column,
+  .price-table th.qbitem-column,
+  .price-table td.qbitem-column {
+    flex: 0 0 100px;
+  }
+
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
+    flex: 0 0 220px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .table-filter-simple .form-control {
+    width: 240px;
+    max-width: 240px;
+  }
+
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
+    min-width: 250px;
+  }
+
+  .photos-column,
+  .price-table th.photos-column,
+  .price-table td.photos-column {
+    flex: 0 0 100px;
+  }
+
+  .price-column,
+  .price-table th.price-column,
+  .price-table td.price-column {
+    flex: 0 0 130px;
+  }
+
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
+    flex: 0 0 140px;
+    padding-right: 8px !important;
+  }
+
+  .action-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    margin-left: 4px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .category-price-container {
+    height: calc(100vh - 140px);
+  }
+
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
+    min-width: 200px;
+  }
+
+  .bulk-form {
+    gap: 6px;
+  }
+
+  .bulk-form .form-control {
+    min-width: 110px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .bulk-form .btn {
+    height: 28px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .category-price-container {
+    height: calc(100vh - 120px);
+  }
+
+  .bulk-actions {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+  }
+
+  .bulk-actions h4 {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .bulk-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .bulk-form .form-control,
+  .bulk-form .btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .table-filter-simple .form-control {
+    width: 100%;
+    max-width: none;
+  }
+
+  .price-table th,
+  .price-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
+    min-width: 150px;
+  }
+
+  .photos-column,
+  .price-table th.photos-column,
+  .price-table td.photos-column {
+    flex: 0 0 80px;
+  }
+
+  .price-column,
+  .price-table th.price-column,
+  .price-table td.price-column {
+    flex: 0 0 100px;
+  }
+
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
+    flex: 0 0 120px;
+    padding-right: 6px !important;
+  }
+
+  .action-btn {
+    padding: 3px 6px;
+    font-size: 9px;
+    margin-left: 3px;
+  }
+
+  .price-input {
+    width: 70px;
+    padding: 3px 4px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-price-container {
+    height: calc(100vh - 100px);
+  }
+
+  .bulk-actions {
+    padding: 6px 8px;
+    margin-bottom: 4px;
+  }
+
+  .price-table th,
+  .price-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  .actions-column,
+  .price-table th.actions-column,
+  .price-table td.actions-column {
+    flex: 0 0 100px;
+    padding-right: 4px !important;
+  }
+
+  .action-btn {
+    padding: 2px 4px;
+    font-size: 8px;
+    margin-left: 2px;
+  }
+
+  .category-column,
+  .price-table th.category-column,
+  .price-table td.category-column {
+    min-width: 120px;
+  }
+
+  .photos-column,
+  .price-table th.photos-column,
+  .price-table td.photos-column {
+    flex: 0 0 60px;
+  }
+
+  .price-column,
+  .price-table th.price-column,
+  .price-table td.price-column {
+    flex: 0 0 80px;
+  }
+}
+
+/* ===== DISCRETE STATS - PRICE MANAGEMENT HEADER ===== */
+/* Estilo do contador e botão refresh (consistente com Photo Storage) */
+
+.discrete-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.discrete-stats span {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* Admin Stats Section específico para Price Management */
+.admin-stats-section .discrete-stats {
+  justify-content: flex-end;
+}
+
+/* Responsividade para o header com botão */
+@media (max-width: 768px) {
+  .discrete-stats {
+    gap: 8px;
+  }
+
+  .discrete-stats span {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .discrete-stats .btn {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .discrete-stats {
+    gap: 6px;
+  }
+
+  .discrete-stats span {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .discrete-stats .btn {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* Photo Modal - Bulk Actions - Sobrescrever CSS de price-management.css */
+.photo-list-header .bulk-actions,
+.photo-thumbnails-header .bulk-actions {
+  display: flex !important;
+  gap: 10px;
+  align-items: center;
+}
+
+.photo-list-header .selection-controls,
+.photo-thumbnails-header .selection-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.photo-list-header,
+.photo-thumbnails-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.photo-count {
+  color: #666;
+  font-size: 14px;
+}
+
+/* Breadcrumb context styling for hierarchical categories */
+.category-context {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.category-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.3;
+}
+
+.category-column {
+  max-width: 300px;
+  word-wrap: break-word;
+  vertical-align: top;
+  padding: 8px 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .category-context {
+    font-size: 10px;
+    margin-bottom: 1px;
+  }
+
+  .category-name {
+    font-size: 13px;
+  }
+
+  .category-column {
+    max-width: 200px;
+  }
+}
+
+/* Nome único da categoria - layout melhorado */
+.category-full-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Responsivo para o nome completo */
+@media (max-width: 1200px) {
+  .category-full-name {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .category-full-name {
+    font-size: 13px;
+  }
+}
+
+/* Container para campo + botão integrados */
+.field-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.field-container .action-btn {
+  font-size: 13px;
+  padding: 6px 12px;
+  min-width: 60px;
+}
+
+/* ===== SEPARAÇÃO VISUAL SUTIL E ELEGANTE ===== */
+
+/* Remove bordas grosseiras, mantém estrutura */
+.price-table,
+.price-table th,
+.price-table td {
+  border: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+}
+
+/* Linhas horizontais sutis entre as linhas */
+.price-table tbody tr {
+  background: transparent !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Hover sutil para interatividade */
+.price-table tbody tr:hover {
+  background-color: #fafbfc !important;
+}
+
+/* Alternância sutil de background */
+.price-table tbody tr:nth-child(even) {
+  background-color: #fbfbfb !important;
+}
+
+.price-table tbody tr:nth-child(even):hover {
+  background-color: #f5f6f7 !important;
+}
+
+/* Header com separação clara */
+.price-table thead {
+  border-bottom: 2px solid #e0e0e0 !important;
+  background: #f8f9fa !important;
+}
+
+/* Separação vertical sutil entre colunas principais */
+.price-table td:not(:last-child),
+.price-table th:not(:last-child) {
+  border-right: 1px solid #f5f5f5;
+}
+
+/* Espaçamento adequado */
+.price-table td,
+.price-table th {
+  padding: 15px 8px !important;
+}
