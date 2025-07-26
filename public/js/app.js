@@ -74,7 +74,7 @@ function initializeApp() {
                 
                 // Redirecionar para área apropriada
                 if (session.userType === 'admin') {
-                    redirectToAdmin();
+                    //redirectToAdmin(); //Temporario
                 } else {
                     redirectToClient();
                 }
