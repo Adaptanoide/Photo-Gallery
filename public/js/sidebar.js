@@ -1,4 +1,13 @@
 // Variáveis globais para o menu de categorias
+// =====================================================
+// IMPORTAR MÓDULO DE DETECÇÃO DE CATEGORIAS
+// =====================================================
+import {
+  needsSizeTabs as detectNeedsTabs,
+  extractAvailableSizes as detectAvailableSizes,
+  getCategoryStrategy,
+  getSubcategoriesForMain as detectSubcategoriesForMain
+} from './modules/category-detector.js';
 let activeCategory = null;
 let categoriesLoaded = {};
 let isLoadingMorePhotos = false;
@@ -2649,19 +2658,8 @@ function loadPhotosFromMultipleCategories(categories, title) {
   });
 }
 
-// ✅ PASSO 1: Incluir Brazil Best Sellers no sistema de abas
 function needsSizeTabs(mainCategoryName) {
-  const categoriesWithTabs = [
-    'Colombia Cowhides',
-    'Colombia Best Value',
-    'Brazil Top Selected Categories',
-    'Rodeo Rugs & Round Rugs'  // ← ADICIONAR
-  ];
-
-  const normalizedName = normalizeCategory(mainCategoryName);
-  const needsTabs = categoriesWithTabs.includes(normalizedName);
-  console.log(`🔖 Categoria "${normalizedName}" precisa de abas: ${needsTabs}`);
-  return needsTabs;
+  return detectNeedsTabs(mainCategoryName);
 }
 
 // ✅ NOVA FUNÇÃO: Analisar hierarquia de qualquer categoria
@@ -2710,62 +2708,7 @@ function analyzeCategoryHierarchy(mainCategoryName) {
 // ✅ PASSO 3: Adicionar NO INÍCIO da função extractAvailableSizes()
 
 function extractAvailableSizes(mainCategory, subcategory) {
-  console.log(`📏 Extraindo tamanhos para: ${mainCategory} → ${subcategory}`);
-
-  // ✅ NOVA LÓGICA: Para Brazil Best Sellers, usar estrutura real
-  if (normalizeCategory(mainCategory) === 'Brazil Best Sellers') {
-    console.log(`🎯 Brazil Best Sellers: Usando estrutura real do disco`);
-
-    if (subcategory === 'Best-Value') {
-      return ['Brindle-Medium-Dark-Tones', 'Salt-Pepper-Black-White', 'Salt-Pepper-Brown-White-Tricolor', 'Salt-Pepper-Chocolate-White'];
-    }
-
-    if (subcategory === 'Super-Promo') {
-      return ['Extra-Small', 'Small'];
-    }
-
-    if (subcategory === 'Tones-Mix') {
-      return ['Dark-Tones', 'Exotic-Tones', 'Light-Tones'];
-    }
-
-    console.log(`❌ Subcategoria não reconhecida: ${subcategory}`);
-    return [];
-  }
-
-  // ✅ LÓGICA ORIGINAL para outras categorias (manter todo o resto da função igual)
-  const sizes = new Set();
-
-  window.categories.forEach(cat => {
-    if (cat.isAll) return;
-
-    const fullPath = cat.fullPath || cat.name;
-    const pathParts = fullPath.split(' → ');
-
-    if (pathParts.length >= 3 &&
-      pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
-      pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim()) {
-
-      const size = pathParts[2].replace(/\s+/g, ' ').trim();
-      sizes.add(size);
-      console.log(`  📐 Tamanho encontrado: ${size}`);
-    }
-  });
-
-  const sortedSizes = Array.from(sizes).sort((a, b) => {
-    const sizeOrder = {
-      'Small': 1,
-      'Medium': 2,
-      'Medium-Large': 3,
-      'Large': 4,
-      'Extra-Large': 5,
-      'X-Large': 6
-    };
-
-    return (sizeOrder[a] || 999) - (sizeOrder[b] || 999);
-  });
-
-  console.log(`📏 Tamanhos ordenados: [${sortedSizes.join(', ')}]`);
-  return sortedSizes;
+  return detectAvailableSizes(mainCategory, subcategory);
 }
 
 // ✅ PASSO 2.1: Criar interface com abas de tamanho
@@ -3137,33 +3080,8 @@ function getNavigationOptions(context) {
   return options;
 }
 
-// ✅ PASSO 2: Encontrar a função getSubcategoriesForMain() e ADICIONAR esta seção
-
 function getSubcategoriesForMain(mainCategoryName) {
-  // ✅ NOVA LÓGICA: Para Brazil Best Sellers, usar estrutura real
-  if (normalizeCategory(mainCategoryName) === 'Brazil Best Sellers') {
-    console.log(`🎯 Brazil Best Sellers: Retornando subcategorias reais do disco`);
-    return ['Best-Value', 'Super-Promo', 'Tones-Mix'];
-  }
-
-  // ✅ LÓGICA ORIGINAL para outras categorias (manter o resto igual)
-  const subcategories = [];
-
-  window.categories.forEach(cat => {
-    if (cat.isAll) return;
-
-    const fullPath = cat.fullPath || cat.name;
-    const pathParts = fullPath.split(' → ');
-
-    if (pathParts[0].replace(/\s+/g, ' ').trim() === mainCategoryName.replace(/\s+/g, ' ').trim()) {
-      const subcategory = pathParts[1]?.replace(/\s+/g, ' ').trim();
-      if (subcategory && !subcategories.includes(subcategory)) {
-        subcategories.push(subcategory);
-      }
-    }
-  });
-
-  return subcategories;
+  return detectSubcategoriesForMain(mainCategoryName);
 }
 
 // Disponibilizar globalmente
