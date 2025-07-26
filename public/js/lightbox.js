@@ -1061,23 +1061,19 @@ function showLoadMoreNotification(remaining) {
   }, 3000);
 }
 
-// ✅ VERSÃO CORRETA: Função getCategoryNameFromFolderId
+// ✅ PASSO 4B: Versão simples da getCategoryNameFromFolderId
 function getCategoryNameFromFolderId(folderId) {
   console.log(`🔵 DEBUG: getCategoryNameFromFolderId called with: ${folderId}`);
-  console.log(`🔵 DEBUG: window.categories available:`, window.categories ? 'YES' : 'NO');
 
-  // ✅ VERIFICAÇÃO ESPECÍFICA: Apenas para Brazil Best Sellers
-  const context = getCurrentNavigationContext();
-  if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
-    const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
-    if (breadcrumbCurrent) {
-      const subcategoryName = breadcrumbCurrent.textContent.trim();
-      console.log(`🎯 Brazil Best Sellers: Usando nome do breadcrumb: ${subcategoryName}`);
-      return subcategoryName;
-    }
+  // ✅ SEMPRE usar breadcrumb se disponível (para todas as categorias)
+  const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
+  if (breadcrumbCurrent) {
+    const subcategoryName = breadcrumbCurrent.textContent.trim();
+    console.log(`🎯 Usando nome do breadcrumb: ${subcategoryName}`);
+    return subcategoryName;
   }
 
-  // ✅ LÓGICA ORIGINAL para outras categorias (mantenha todo o resto igual)
+  // ✅ FALLBACK: Usar window.categories
   if (window.categories && Array.isArray(window.categories)) {
     const category = window.categories.find(cat => cat.id === folderId);
     if (category) {
@@ -1085,36 +1081,7 @@ function getCategoryNameFromFolderId(folderId) {
     }
   }
 
-  // Fallback 1: verificar se estamos numa categoria específica
-  if (window.activeCategory) {
-    const activeCategoryElement = document.querySelector('.category-item.active');
-    if (activeCategoryElement) {
-      const fullText = activeCategoryElement.textContent.trim();
-      return fullText.replace(/\s*\(\d+\)\s*$/, '');
-    }
-  }
-
-  // Fallback 2: verificar se folderId corresponde à categoria ativa atual
-  if (folderId === currentCategoryId && currentCategoryId) {
-    const categoryElement = document.querySelector(`[data-category-id="${currentCategoryId}"]`);
-    if (categoryElement) {
-      const fullText = categoryElement.textContent.trim();
-      return fullText.replace(/\s*\(\d+\)\s*$/, '');
-    }
-  }
-
-  // Fallback 3: tentar extrair nome da URL/breadcrumb se disponível
-  const breadcrumbElement = document.querySelector('.breadcrumb-current, .category-title');
-  if (breadcrumbElement) {
-    return breadcrumbElement.textContent.trim();
-  }
-
-  // Fallback 4: usar folderId parcial como nome legível
-  if (folderId && folderId.length > 8) {
-    return `Category ${folderId.substring(0, 8)}...`;
-  }
-
-  // Se não conseguir encontrar, retornar um nome padrão
+  // ✅ FALLBACK FINAL
   return 'Unknown Category';
 }
 // Mostrar opção para ir para próxima categoria

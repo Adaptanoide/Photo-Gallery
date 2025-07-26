@@ -2649,64 +2649,21 @@ function loadPhotosFromMultipleCategories(categories, title) {
   });
 }
 
-// ✅ PASSO 1: Detectar se categoria precisa de abas de tamanho
-// ✅ CORREÇÃO 3: Detecção inteligente baseada em subcategorias efetivas
+// ✅ PASSO 1: Incluir Brazil Best Sellers no sistema de abas
 function needsSizeTabs(mainCategoryName) {
-  if (!window.categories || !Array.isArray(window.categories)) {
-    console.log('❌ window.categories não disponível');
-    return false;
-  }
+  const categoriesWithTabs = [
+    'Colombia Cowhides',
+    'Colombia Best Value',
+    'Brazil Top Selected Categories',
+    'Brazil Best Sellers'  // ← ADICIONADO!
+  ];
 
   const normalizedName = normalizeCategory(mainCategoryName);
-  console.log(`🔍 Analisando categoria: "${normalizedName}"`);
-
-  // ✅ DETECÇÃO INTELIGENTE: Verificar se usa subcategorias genéricas
-  if (usesGenericSubcategories(normalizedName)) {
-    console.log(`🎯 "${normalizedName}" usa subcategorias genéricas - SEM abas`);
-    return false;
-  }
-
-  // ✅ DETECÇÃO AUTOMÁTICA para outras categorias
-  const categoryHierarchy = analyzeCategoryHierarchy(normalizedName);
-
-  // Se tem 3+ níveis = precisa de abas
-  const needsTabs = categoryHierarchy.maxLevels >= 3;
-
-  console.log(`📊 Hierarquia detectada:`, categoryHierarchy);
+  const needsTabs = categoriesWithTabs.includes(normalizedName);
   console.log(`🔖 Categoria "${normalizedName}" precisa de abas: ${needsTabs}`);
-
   return needsTabs;
 }
 
-// ✅ NOVA FUNÇÃO: Detectar categorias que usam subcategorias genéricas
-function usesGenericSubcategories(mainCategoryName) {
-  const normalizedMain = normalizeCategory(mainCategoryName);
-
-  // Detectar se tem subcategorias genéricas típicas
-  const genericPatterns = [
-    'Best-Value', 'Super-Promo', 'Tones-Mix'  // Brazil Best Sellers
-  ];
-
-  let hasGenericSubcategories = false;
-
-  window.categories.forEach(cat => {
-    if (cat.isAll) return;
-
-    const fullPath = cat.fullPath || cat.name;
-    const pathParts = fullPath.split(' → ').map(part => normalizeCategory(part));
-
-    // Se pertence à categoria principal e tem subcategoria genérica
-    if (pathParts[0] === normalizedMain && pathParts.length >= 2) {
-      const subcategory = pathParts[1];
-      if (genericPatterns.some(pattern => subcategory.includes(pattern))) {
-        hasGenericSubcategories = true;
-      }
-    }
-  });
-
-  console.log(`🔍 "${normalizedMain}" tem subcategorias genéricas: ${hasGenericSubcategories}`);
-  return hasGenericSubcategories;
-}
 // ✅ NOVA FUNÇÃO: Analisar hierarquia de qualquer categoria
 function analyzeCategoryHierarchy(mainCategoryName) {
   const normalizedMain = normalizeCategory(mainCategoryName);
@@ -2750,10 +2707,32 @@ function analyzeCategoryHierarchy(mainCategoryName) {
   };
 }
 
-// ✅ PASSO 1: Extrair tamanhos disponíveis para uma subcategoria
+// ✅ PASSO 3: Adicionar NO INÍCIO da função extractAvailableSizes()
+
 function extractAvailableSizes(mainCategory, subcategory) {
   console.log(`📏 Extraindo tamanhos para: ${mainCategory} → ${subcategory}`);
 
+  // ✅ NOVA LÓGICA: Para Brazil Best Sellers, usar estrutura real
+  if (normalizeCategory(mainCategory) === 'Brazil Best Sellers') {
+    console.log(`🎯 Brazil Best Sellers: Usando estrutura real do disco`);
+
+    if (subcategory === 'Best-Value') {
+      return ['Brindle-Medium-Dark-Tones', 'Salt-Pepper-Black-White', 'Salt-Pepper-Brown-White-Tricolor', 'Salt-Pepper-Chocolate-White'];
+    }
+
+    if (subcategory === 'Super-Promo') {
+      return ['Extra-Small', 'Small'];
+    }
+
+    if (subcategory === 'Tones-Mix') {
+      return ['Dark-Tones', 'Exotic-Tones', 'Light-Tones'];
+    }
+
+    console.log(`❌ Subcategoria não reconhecida: ${subcategory}`);
+    return [];
+  }
+
+  // ✅ LÓGICA ORIGINAL para outras categorias (manter todo o resto da função igual)
   const sizes = new Set();
 
   window.categories.forEach(cat => {
@@ -2762,20 +2741,16 @@ function extractAvailableSizes(mainCategory, subcategory) {
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ');
 
-    // Verificar se pertence à categoria principal e subcategoria
     if (pathParts.length >= 3 &&
       pathParts[0].replace(/\s+/g, ' ').trim() === mainCategory.replace(/\s+/g, ' ').trim() &&
       pathParts[1].replace(/\s+/g, ' ').trim() === subcategory.replace(/\s+/g, ' ').trim()) {
 
-      // Último nível = tamanho
       const size = pathParts[2].replace(/\s+/g, ' ').trim();
       sizes.add(size);
-
       console.log(`  📐 Tamanho encontrado: ${size}`);
     }
   });
 
-  // Ordenar tamanhos do menor para maior
   const sortedSizes = Array.from(sizes).sort((a, b) => {
     const sizeOrder = {
       'Small': 1,
@@ -3162,26 +3137,16 @@ function getNavigationOptions(context) {
   return options;
 }
 
-// ✅ FUNÇÃO AUXILIAR: Obter subcategorias para categoria principal
+// ✅ PASSO 2: Encontrar a função getSubcategoriesForMain() e ADICIONAR esta seção
+
 function getSubcategoriesForMain(mainCategoryName) {
-  // ✅ CORREÇÃO ESPECIAL PARA BRAZIL BEST SELLERS
+  // ✅ NOVA LÓGICA: Para Brazil Best Sellers, usar estrutura real
   if (normalizeCategory(mainCategoryName) === 'Brazil Best Sellers') {
-    // Retornar as subcategorias específicas do sidebar em vez das genéricas
-    const sidebarItems = document.querySelectorAll('.category-item[data-subcategory]');
-    const specificSubcategories = [];
-
-    sidebarItems.forEach(item => {
-      const subcategory = item.getAttribute('data-subcategory');
-      if (subcategory) {
-        specificSubcategories.push(subcategory);
-      }
-    });
-
-    console.log(`🎯 Brazil Best Sellers: Retornando ${specificSubcategories.length} subcategorias específicas do sidebar`);
-    return specificSubcategories;
+    console.log(`🎯 Brazil Best Sellers: Retornando subcategorias reais do disco`);
+    return ['Best-Value', 'Super-Promo', 'Tones-Mix'];
   }
 
-  // ✅ LÓGICA ORIGINAL PARA OUTRAS CATEGORIAS
+  // ✅ LÓGICA ORIGINAL para outras categorias (manter o resto igual)
   const subcategories = [];
 
   window.categories.forEach(cat => {
