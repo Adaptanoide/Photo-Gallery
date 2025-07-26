@@ -148,7 +148,7 @@ class GalleryPage {
   }
   
   /**
-   * Carrega categorias
+   * Carrega categorias principais com previews
    */
   async loadCategories() {
     if (this.isLoading) return;
@@ -157,13 +157,18 @@ class GalleryPage {
       this.isLoading = true;
       this.showLoadingState();
       
-      // Buscar categorias da API
+      // Buscar categorias principais da API
       const categories = await window.API.getCategories();
       
       console.log('📂 Categorias carregadas:', categories);
       
       if (Array.isArray(categories) && categories.length > 0) {
-        this.categories = categories;
+        // Filtrar apenas categorias principais (sem parent)
+        this.categories = this.filterMainCategories(categories);
+        
+        // Carregar previews para cada categoria
+        await this.loadCategoryPreviews();
+        
         this.renderCategories();
       } else {
         this.showEmptyState();
@@ -175,6 +180,59 @@ class GalleryPage {
     } finally {
       this.isLoading = false;
     }
+  }
+  
+  /**
+   * Filtra apenas categorias principais
+   */
+  filterMainCategories(categories) {
+    // Identifica as 7 categorias principais baseado nos nomes conhecidos
+    const mainCategoryNames = [
+      'Brazil Best Sellers',
+      'Brazil Top Selected Categories', 
+      'Colombia Cowhides',
+      'Colombia Best Value',
+      'Calfskins',
+      'Sheepskins',
+      'Rodeo Rugs & Round Rugs'
+    ];
+    
+    return categories.filter(category => {
+      const name = category.name || '';
+      return mainCategoryNames.some(mainName => 
+        name.includes(mainName) || mainName.includes(name)
+      );
+    }).slice(0, 7); // Garantir max 7 categorias principais
+  }
+  
+  /**
+   * Carrega previews de fotos para cada categoria
+   */
+  async loadCategoryPreviews() {
+    console.log('🖼️ Carregando previews das categorias...');
+    
+    // Carregar previews em paralelo (máximo 3 por categoria)
+    const previewPromises = this.categories.map(async (category) => {
+      try {
+        const photos = await window.API.getPhotos({
+          categoryId: category.id || category.folderId,
+          limit: 4, // 4 fotos preview por categoria
+          offset: 0
+        });
+        
+        // Adicionar previews à categoria
+        category.previewPhotos = Array.isArray(photos) ? photos.slice(0, 4) : [];
+        
+        console.log(`📷 ${category.name}: ${category.previewPhotos.length} previews carregados`);
+        
+      } catch (error) {
+        console.error(`❌ Erro ao carregar preview para ${category.name}:`, error);
+        category.previewPhotos = [];
+      }
+    });
+    
+    await Promise.all(previewPromises);
+    console.log('✅ Todos os previews carregados');
   }
   
   /**
@@ -261,7 +319,7 @@ class GalleryPage {
   }
   
   /**
-   * Cria card de categoria
+   * Cria card de categoria com preview
    */
   createCategoryCard(category, template) {
     try {
@@ -274,18 +332,19 @@ class GalleryPage {
       // Definir dados
       card.dataset.categoryId = category.id || category.folderId;
       
-      // Imagem da categoria
-      const image = card.querySelector('.category-image');
-      if (image) {
-        // Usar primeira foto como preview ou imagem padrão
-        const imageUrl = this.getCategoryImageUrl(category);
-        image.src = imageUrl;
-        image.alt = `Categoria ${category.name}`;
-        
-        // Fallback para erro de imagem
-        image.onerror = () => {
+      // Container da imagem principal
+      const imageContainer = card.querySelector('.category-image-container');
+      
+      // Se tem previews, criar mosaico
+      if (category.previewPhotos && category.previewPhotos.length > 0) {
+        this.createPreviewMosaic(imageContainer, category.previewPhotos);
+      } else {
+        // Fallback para imagem única
+        const image = card.querySelector('.category-image');
+        if (image) {
           image.src = this.getDefaultCategoryImage();
-        };
+          image.alt = `Categoria ${category.name}`;
+        }
       }
       
       // Nome da categoria
@@ -304,7 +363,7 @@ class GalleryPage {
       // Adicionar acessibilidade
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
-      card.setAttribute('aria-label', `Abrir categoria ${category.name} com ${category.fileCount || 0} fotos`);
+      card.setAttribute('aria-label', `Explorar categoria ${category.name} com ${category.fileCount || 0} fotos`);
       
       // Suporte a teclado
       card.addEventListener('keydown', (e) => {
@@ -320,6 +379,97 @@ class GalleryPage {
       console.error('❌ Erro ao criar card de categoria:', error);
       return null;
     }
+  }
+  
+  /**
+   * Cria mosaico de preview com 4 fotos
+   */
+  createPreviewMosaic(container, previewPhotos) {
+    // Limpar conteúdo atual
+    container.innerHTML = '';
+    
+    // Criar div para mosaico
+    const mosaic = Utils.createElement('div', {
+      className: 'category-preview-mosaic'
+    });
+    
+    // Adicionar até 4 fotos no mosaico
+    const photosToShow = previewPhotos.slice(0, 4);
+    
+    photosToShow.forEach((photo, index) => {
+      const previewImg = Utils.createElement('img', {
+        className: `preview-img preview-img-${index + 1}`,
+        src: this.getPhotoPreviewUrl(photo),
+        alt: `Preview ${index + 1}`,
+        loading: 'lazy'
+      });
+      
+      // Fallback para erro
+      previewImg.onerror = () => {
+        previewImg.src = this.getDefaultPreviewImage();
+      };
+      
+      mosaic.appendChild(previewImg);
+    });
+    
+    // Se tem menos de 4 fotos, preencher com placeholders
+    for (let i = photosToShow.length; i < 4; i++) {
+      const placeholder = Utils.createElement('div', {
+        className: `preview-placeholder preview-img-${i + 1}`
+      });
+      mosaic.appendChild(placeholder);
+    }
+    
+    // Adicionar overlay com informações
+    const overlay = Utils.createElement('div', {
+      className: 'category-overlay'
+    }, [
+      Utils.createElement('div', { className: 'category-info' }, [
+        Utils.createElement('h3', { className: 'category-name' }),
+        Utils.createElement('p', { className: 'category-count' })
+      ]),
+      Utils.createElement('div', { className: 'category-action' }, [
+        Utils.createElement('span', { className: 'btn btn-primary btn-sm' }, 'Explorar')
+      ])
+    ]);
+    
+    container.appendChild(mosaic);
+    container.appendChild(overlay);
+  }
+  
+  /**
+   * Obtém URL da foto para preview
+   */
+  getPhotoPreviewUrl(photo) {
+    if (photo.thumbnail) {
+      return window.API.getImageUrl(photo.thumbnail);
+    }
+    
+    if (photo.highres) {
+      return window.API.getImageUrl(photo.highres, { thumbnail: true });
+    }
+    
+    if (photo.id) {
+      return window.API.getImageUrl(photo.id, { thumbnail: true });
+    }
+    
+    return this.getDefaultPreviewImage();
+  }
+  
+  /**
+   * Imagem padrão para preview
+   */
+  getDefaultPreviewImage() {
+    const svg = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+      <svg width="200" height="150" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100%" height="100%" fill="#252542"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">
+          📷
+        </text>
+      </svg>
+    `)}`;
+    
+    return svg;
   }
   
   /**
