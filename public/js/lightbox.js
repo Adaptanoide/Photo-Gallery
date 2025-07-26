@@ -1063,8 +1063,19 @@ function showLoadMoreNotification(remaining) {
 
 // Função para obter o nome da categoria a partir do folderId - COM FALLBACKS INTELIGENTES
 function getCategoryNameFromFolderId(folderId) {
-  console.log(`🔵 DEBUG: getCategoryNameFromFolderId called with: ${folderId}`); // ← ADICIONAR
-  console.log(`🔵 DEBUG: window.categories available:`, window.categories ? 'YES' : 'NO'); // ← ADICIONAR
+  console.log(`🔵 DEBUG: getCategoryNameFromFolderId called with: ${folderId}`);
+  console.log(`🔵 DEBUG: window.categories available:`, window.categories ? 'YES' : 'NO');
+
+  // ✅ NOVA VERIFICAÇÃO: Se é Brazil Best Sellers, usar breadcrumb
+  const context = getCurrentNavigationContext();
+  if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+    const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
+    if (breadcrumbCurrent) {
+      const subcategoryName = breadcrumbCurrent.textContent.trim();
+      console.log(`🎯 Brazil Best Sellers: Usando nome do breadcrumb: ${subcategoryName}`);
+      return subcategoryName;
+    }
+  }
   // Verificar se temos as categorias carregadas globalmente
   if (window.categories && Array.isArray(window.categories)) {
     const category = window.categories.find(cat => cat.id === folderId);
@@ -1129,7 +1140,7 @@ function showNextCategoryOption() {
     <div class="category-nav-content">
       <div class="category-nav-icon">→</div>
       <h3>End of Category</h3>
-      <p>Continue to <strong>${nextCategory.name}</strong>?</p>
+      <p>Continue to <strong>${nextCategory.displayName || nextCategory.name}</strong>?</p>
       <div class="category-nav-buttons">
         <button class="btn btn-secondary" onclick="removeNavigationOverlay()">Stay Here</button>
         <button class="btn btn-gold" onclick="navigateToNextCategory()">Next Category</button>
@@ -2279,7 +2290,8 @@ function updateGalleryAfterSold() {
   showToast('Gallery updated - sold items removed', 'info');
 }
 
-// ✅ FUNÇÃO: Obter próxima categoria na ordem do sidebar
+// ✅ CORREÇÃO 6: Substituir função getNextCategoryFromSidebar() no lightbox.js
+
 function getNextCategoryFromSidebar() {
   console.log('📋 Usando ordem do sidebar para próxima categoria');
 
@@ -2315,31 +2327,45 @@ function getNextCategoryFromSidebar() {
   const nextSubcategory = sidebarOrder[nextIndex];
   console.log('📋 Próxima categoria:', nextSubcategory);
   console.log('🔍 DEBUG: Procurando em window.categories...');
-  window.categories.forEach(cat => {
-    if (cat.fullPath && cat.fullPath.includes('Brazil  Best Sellers')) {
-      console.log('🔍 DEBUG categoria:', cat.fullPath);
+
+  // ✅ CORREÇÃO: Para Brazil Best Sellers, criar objeto customizado
+  const context = getCurrentNavigationContext();
+  if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+
+    // Buscar categoria real no window.categories
+    const realCategory = window.categories.find(cat => {
+      if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
+
+      // Mapear nomes do sidebar para estrutura real
+      if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Assorted-Natural-Tones');
+      if (nextSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Assorted-Tones') && !cat.fullPath.includes('Natural');
+      if (nextSubcategory === 'Dark-Tones') return cat.fullPath.includes('Dark-Tones') && !cat.fullPath.includes('Brindle');
+      if (nextSubcategory === 'Exotic-Tones') return cat.fullPath.includes('Exotic-Tones');
+      if (nextSubcategory === 'Light-Tones') return cat.fullPath.includes('Light-Tones');
+      if (nextSubcategory === 'Brindle-Medium-Dark-Tones') return cat.fullPath.includes('Brindle-Medium-Dark-Tones');
+      if (nextSubcategory === 'Salt-Pepper-Black-White') return cat.fullPath.includes('Salt-Pepper-Black-White');
+      if (nextSubcategory === 'Salt-Pepper-Chocolate-White') return cat.fullPath.includes('Salt-Pepper-Chocolate-White');
+      if (nextSubcategory === 'Salt-Pepper-Brown-White-Tricolor') return cat.fullPath.includes('Salt-Pepper-Brown-White-Tricolor');
+
+      return false;
+    });
+
+    if (realCategory) {
+      console.log('🔍 DEBUG: Categoria encontrada:', realCategory.fullPath);
+
+      // ✅ CRIAR OBJETO PERSONALIZADO com nome da subcategoria
+      const customCategory = {
+        ...realCategory,
+        displayName: nextSubcategory,  // ← NOME PARA EXIBIR
+        originalName: realCategory.name  // ← NOME ORIGINAL
+      };
+
+      console.log('✅ Retornando categoria customizada:', customCategory.displayName);
+      return customCategory;
     }
-  });
+  }
 
-  const nextCategory = window.categories.find(cat => {
-    if (!cat.fullPath || !cat.fullPath.includes('Brazil  Best Sellers')) return false;
-
-    // Mapear nomes do sidebar para estrutura real
-    if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Natural-Tones');
-    if (nextSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Super-Promo') && cat.fullPath.includes('Assorted-Tones');
-    if (nextSubcategory === 'Dark-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Dark-Tones');
-    if (nextSubcategory === 'Exotic-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Exotic-Tones');
-    if (nextSubcategory === 'Light-Tones') return cat.fullPath.includes('Tones-Mix') && cat.fullPath.includes('Light-Tones');
-    if (nextSubcategory === 'Brindle-Medium-Dark-Tones') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Brindle-Medium-Dark-Tones');
-    if (nextSubcategory === 'Salt-Pepper-Black-White') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Black-White');
-    if (nextSubcategory === 'Salt-Pepper-Chocolate-White') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Chocolate-White');
-    if (nextSubcategory === 'Salt-Pepper-Brown-White-Tricolor') return cat.fullPath.includes('Best-Value') && cat.fullPath.includes('Salt-Pepper-Brown-White-Tricolor');
-
-    return false;
-  });
-
-  console.log('🔍 DEBUG: Categoria encontrada:', nextCategory ? nextCategory.fullPath : 'NÃO ENCONTRADA');
-  return nextCategory || null;
+  return null;
 }
 
 // ✅ FUNÇÃO: Obter categoria anterior na ordem do sidebar
