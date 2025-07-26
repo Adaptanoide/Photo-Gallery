@@ -148,7 +148,7 @@ class GalleryPage {
   }
   
   /**
-   * Carrega categorias principais com previews
+   * Carrega categorias principais (versão simples que funciona)
    */
   async loadCategories() {
     if (this.isLoading) return;
@@ -157,14 +157,17 @@ class GalleryPage {
       this.isLoading = true;
       this.showLoadingState();
       
-      // Buscar categorias principais da API
+      // Buscar TODAS as categorias da API
       const categories = await window.API.getCategories();
       
       console.log('📂 Categorias carregadas:', categories);
       
       if (Array.isArray(categories) && categories.length > 0) {
-        // Filtrar apenas categorias principais (sem parent)
-        this.categories = this.filterMainCategories(categories);
+        // POR ENQUANTO: Mostrar TODAS as categorias (pelo menos funciona)
+        // Limitamos a 20 para não sobrecarregar
+        this.categories = categories.slice(0, 20);
+        
+        console.log(`📊 Mostrando ${this.categories.length} primeiras categorias`);
         
         // Carregar previews para cada categoria
         await this.loadCategoryPreviews();
@@ -227,33 +230,12 @@ class GalleryPage {
   }
   
   /**
-   * Carrega previews de fotos para cada categoria
+   * Carrega previews simplificado (sem mosaico)
    */
   async loadCategoryPreviews() {
-    console.log('🖼️ Carregando previews das categorias...');
-    
-    // Carregar previews em paralelo (máximo 3 por categoria)
-    const previewPromises = this.categories.map(async (category) => {
-      try {
-        const photos = await window.API.getPhotos({
-          categoryId: category.id || category.folderId,
-          limit: 4, // 4 fotos preview por categoria
-          offset: 0
-        });
-        
-        // Adicionar previews à categoria
-        category.previewPhotos = Array.isArray(photos) ? photos.slice(0, 4) : [];
-        
-        console.log(`📷 ${category.name}: ${category.previewPhotos.length} previews carregados`);
-        
-      } catch (error) {
-        console.error(`❌ Erro ao carregar preview para ${category.name}:`, error);
-        category.previewPhotos = [];
-      }
-    });
-    
-    await Promise.all(previewPromises);
-    console.log('✅ Todos os previews carregados');
+    // Por enquanto, não carregar previews complexos
+    // Cada categoria já tem sua própria imagem padrão
+    console.log('📷 Previews simplificados (sem carregamento extra)');
   }
   
   /**
@@ -340,7 +322,7 @@ class GalleryPage {
   }
   
   /**
-   * Cria card de categoria com preview
+   * Cria card de categoria (versão simples)
    */
   createCategoryCard(category, template) {
     try {
@@ -356,35 +338,47 @@ class GalleryPage {
       // Container da imagem principal
       const imageContainer = card.querySelector('.category-image-container');
       
-      // Se tem previews, criar mosaico
-      if (category.previewPhotos && category.previewPhotos.length > 0) {
-        this.createPreviewMosaic(imageContainer, category.previewPhotos);
-      } else {
-        // Fallback para imagem única
-        const image = card.querySelector('.category-image');
-        if (image) {
-          image.src = this.getDefaultCategoryImage();
-          image.alt = `Categoria ${category.name}`;
-        }
-      }
+      // Criar imagem simples (não mosaico)
+      const image = Utils.createElement('img', {
+        className: 'category-image',
+        src: this.getCategoryImageUrl(category),
+        alt: `Categoria ${category.name}`,
+        loading: 'lazy'
+      });
       
-      // Nome da categoria
-      const name = card.querySelector('.category-name');
-      if (name) {
-        name.textContent = category.name || 'Categoria sem nome';
-      }
+      // Fallback para erro
+      image.onerror = () => {
+        image.src = this.getDefaultCategoryImage();
+      };
       
-      // Contagem de fotos
-      const count = card.querySelector('.category-count');
-      if (count) {
-        const fileCount = category.fileCount || 0;
-        count.textContent = `${fileCount} ${fileCount === 1 ? 'foto' : 'fotos'}`;
-      }
+      // Overlay com informações
+      const overlay = Utils.createElement('div', {
+        className: 'category-overlay'
+      }, [
+        Utils.createElement('div', { className: 'category-info' }, [
+          Utils.createElement('h3', { 
+            className: 'category-name'
+          }, category.name || 'Categoria sem nome'),
+          Utils.createElement('p', { 
+            className: 'category-count' 
+          }, `${category.photoCount || 0} fotos`)
+        ]),
+        Utils.createElement('div', { className: 'category-action' }, [
+          Utils.createElement('span', { 
+            className: 'btn btn-primary btn-sm' 
+          }, 'Ver Fotos')
+        ])
+      ]);
+      
+      // Limpar container e adicionar elementos
+      imageContainer.innerHTML = '';
+      imageContainer.appendChild(image);
+      imageContainer.appendChild(overlay);
       
       // Adicionar acessibilidade
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
-      card.setAttribute('aria-label', `Explorar categoria ${category.name} com ${category.fileCount || 0} fotos`);
+      card.setAttribute('aria-label', `Explorar categoria ${category.name} com ${category.photoCount || 0} fotos`);
       
       // Suporte a teclado
       card.addEventListener('keydown', (e) => {
@@ -400,6 +394,24 @@ class GalleryPage {
       console.error('❌ Erro ao criar card de categoria:', error);
       return null;
     }
+  }
+  
+  /**
+   * Obtém URL da imagem para categoria (versão simples)
+   */
+  getCategoryImageUrl(category) {
+    // Se categoria tem preview image
+    if (category.previewImage) {
+      return window.API.getImageUrl(category.previewImage, { thumbnail: true });
+    }
+    
+    // Se categoria tem primeira foto
+    if (category.firstPhoto) {
+      return window.API.getImageUrl(category.firstPhoto, { thumbnail: true });
+    }
+    
+    // Imagem padrão
+    return this.getDefaultCategoryImage();
   }
   
   /**
@@ -547,23 +559,16 @@ class GalleryPage {
   }
   
   /**
-   * Abre categoria principal (mostra subcategorias)
+   * Abre categoria (versão simples)
    */
   openCategory(categoryId) {
     if (!categoryId) return;
     
     console.log('📂 Abrindo categoria:', categoryId);
     
-    // Se é categoria agrupada, navegar para uma página especial de subcategorias
-    if (categoryId.startsWith('group_')) {
-      const categoryName = categoryId.replace('group_', '').replace(/_/g, ' ');
-      const url = `/pages/category.html?main_category=${encodeURIComponent(categoryName)}`;
-      window.Router.navigate(url);
-    } else {
-      // Categoria normal
-      const url = `/pages/category.html?category=${encodeURIComponent(categoryId)}`;
-      window.Router.navigate(url);
-    }
+    // Navegação simples para categoria
+    const url = `/pages/category.html?category=${encodeURIComponent(categoryId)}`;
+    window.Router.navigate(url);
   }
   
   /**

@@ -84,7 +84,12 @@
   opacity: 1;
 }
 
-/* === PHOTOS GRID === */
+.photo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
 .photos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

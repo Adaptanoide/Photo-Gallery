@@ -17,8 +17,6 @@ class CategoryPage {
     // Estado
     this.categoryId = null;
     this.categoryName = null;
-    this.isMainCategory = false;
-    this.mainCategoryName = null;
     this.photos = [];
     this.currentPage = 1;
     this.hasMorePages = true;
@@ -55,21 +53,10 @@ class CategoryPage {
   }
   
   /**
-   * Obtém categoria da URL
+   * Obtém ID da categoria da URL
    */
   getCategoryFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // Verificar se é categoria principal agrupada
-    const mainCategory = urlParams.get('main_category');
-    if (mainCategory) {
-      this.isMainCategory = true;
-      this.mainCategoryName = mainCategory;
-      return `main_${mainCategory}`;
-    }
-    
-    // Categoria normal
-    this.isMainCategory = false;
     return urlParams.get('category');
   }
   
@@ -185,7 +172,7 @@ class CategoryPage {
   }
   
   /**
-   * Carrega conteúdo da categoria (subcategorias OU fotos)
+   * Carrega fotos da categoria
    */
   async loadPhotos(reset = true) {
     if (this.isLoading) return;
@@ -199,22 +186,43 @@ class CategoryPage {
         this.showLoadingState();
       }
       
-      // PRIMEIRO: Tentar buscar subcategorias
-      const subcategories = await this.loadSubcategories();
+      // Buscar fotos da API
+      const photos = await window.API.getPhotos({
+        categoryId: this.categoryId,
+        limit: this.photosPerPage,
+        offset: (this.currentPage - 1) * this.photosPerPage
+      });
       
-      if (subcategories && subcategories.length > 0) {
-        // Tem subcategorias - mostrar elas
-        console.log(`📂 Mostrando ${subcategories.length} subcategorias`);
-        this.renderSubcategories(subcategories);
-        return;
+      console.log(`📷 Fotos carregadas da categoria ${this.categoryId}:`, photos);
+      
+      if (Array.isArray(photos)) {
+        if (reset) {
+          this.photos = photos;
+        } else {
+          this.photos.push(...photos);
+        }
+        
+        // Verificar se tem mais páginas
+        this.hasMorePages = photos.length === this.photosPerPage;
+        
+        if (this.photos.length > 0) {
+          this.renderPhotos();
+          this.updateLoadMoreButton();
+        } else {
+          this.showEmptyState();
+        }
+        
+        // Atualizar título da categoria se disponível
+        if (photos.length > 0 && photos[0].categoryName) {
+          this.updateCategoryTitle(photos[0].categoryName);
+        }
+        
+      } else {
+        this.showEmptyState();
       }
       
-      // NÃO tem subcategorias - buscar fotos finais
-      console.log('📷 Carregando fotos finais...');
-      await this.loadFinalPhotos(reset);
-      
     } catch (error) {
-      console.error('❌ Erro ao carregar conteúdo:', error);
+      console.error('❌ Erro ao carregar fotos:', error);
       this.showErrorState();
     } finally {
       this.isLoading = false;
@@ -226,61 +234,9 @@ class CategoryPage {
    */
   async loadSubcategories() {
     try {
-      // Buscar todas as categorias
-      const allCategories = await window.API.getCategories();
-      
-      if (!Array.isArray(allCategories)) return [];
-      
-      let subcategories = [];
-      
-      if (this.isMainCategory) {
-        // Para categoria principal, buscar todas que começam com esse nome
-        subcategories = allCategories.filter(cat => {
-          const path = cat.relativePath || '';
-          return path.startsWith(this.mainCategoryName);
-        });
-        
-        // Agrupar por segundo nível (subcategorias principais)
-        const grouped = {};
-        subcategories.forEach(cat => {
-          const parts = cat.relativePath.split('/').filter(Boolean);
-          if (parts.length >= 2) {
-            const secondLevel = parts[1];
-            if (!grouped[secondLevel]) {
-              grouped[secondLevel] = {
-                id: `${this.mainCategoryName}_${secondLevel}`.replace(/\s+/g, '_'),
-                name: secondLevel,
-                relativePath: `${this.mainCategoryName}/${secondLevel}`,
-                photoCount: 0,
-                subcategories: []
-              };
-            }
-            grouped[secondLevel].photoCount += cat.photoCount || 0;
-            grouped[secondLevel].subcategories.push(cat);
-          }
-        });
-        
-        subcategories = Object.values(grouped);
-        
-      } else {
-        // Categoria normal - buscar filhos diretos
-        const currentPath = this.getCurrentCategoryPath(allCategories);
-        
-        if (currentPath) {
-          subcategories = allCategories.filter(cat => {
-            const path = cat.relativePath || '';
-            if (path.startsWith(currentPath)) {
-              const relativePart = path.replace(currentPath, '').replace(/^\//, '');
-              const levels = relativePart.split('/').filter(Boolean);
-              return levels.length === 1; // Apenas 1 nível abaixo = filho direto
-            }
-            return false;
-          });
-        }
-      }
-      
-      console.log(`🔍 Encontradas ${subcategories.length} subcategorias para ${this.categoryId}`);
-      return subcategories;
+      // Por enquanto, sempre retornar vazio para mostrar fotos direto
+      // TODO: Implementar lógica de subcategorias quando necessário
+      return [];
       
     } catch (error) {
       console.error('❌ Erro ao buscar subcategorias:', error);
@@ -461,7 +417,7 @@ class CategoryPage {
     Utils.setButtonLoading(this.loadMoreBtn, true);
     
     this.currentPage++;
-    await this.loadFinalPhotos(false);
+    await this.loadPhotos(false);
     
     Utils.setButtonLoading(this.loadMoreBtn, false);
   }
@@ -549,7 +505,7 @@ class CategoryPage {
   }
   
   /**
-   * Renderiza fotos com lazy loading
+   * Renderiza fotos
    */
   renderPhotos() {
     if (!this.photosGrid || !Array.isArray(this.photos)) {
@@ -559,9 +515,6 @@ class CategoryPage {
     // Mostrar grid
     this.hideAllStates();
     Utils.removeClass(this.photosGrid, 'hidden');
-    
-    // Remover classe de subcategorias se existir
-    Utils.removeClass(this.photosGrid, 'subcategories-grid');
     
     // Template da foto
     const template = Utils.$('#photoCardTemplate');
@@ -586,60 +539,11 @@ class CategoryPage {
       }
     });
     
-    // Implementar lazy loading para as imagens recém-adicionadas
-    this.setupLazyLoading();
-    
     console.log(`✅ ${photosToRender.length} fotos renderizadas (página ${this.currentPage})`);
   }
   
   /**
-   * Configura lazy loading para imagens
-   */
-  setupLazyLoading() {
-    const images = this.photosGrid.querySelectorAll('img[data-src]');
-    
-    if (images.length === 0) return;
-    
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          const src = img.dataset.src;
-          
-          if (src) {
-            // Mostrar placeholder de loading
-            Utils.addClass(img.parentElement, 'loading');
-            
-            img.src = src;
-            img.removeAttribute('data-src');
-            
-            img.onload = () => {
-              Utils.removeClass(img.parentElement, 'loading');
-              Utils.addClass(img, 'loaded');
-            };
-            
-            img.onerror = () => {
-              Utils.removeClass(img.parentElement, 'loading');
-              img.src = this.getDefaultPhotoImage();
-            };
-            
-            observer.unobserve(img);
-          }
-        }
-      });
-    }, {
-      root: null,
-      rootMargin: '50px',
-      threshold: 0.1
-    });
-    
-    images.forEach(img => {
-      imageObserver.observe(img);
-    });
-  }
-  
-  /**
-   * Cria card de foto com lazy loading
+   * Cria card de foto simples
    */
   createPhotoCard(photo, template) {
     try {
@@ -652,17 +556,17 @@ class CategoryPage {
       // Definir dados
       card.dataset.photoId = photo.id || photo.photoId;
       
-      // Imagem da foto com lazy loading
+      // Imagem da foto
       const image = card.querySelector('.photo-image');
       if (image) {
         const imageUrl = this.getPhotoImageUrl(photo);
-        
-        // Usar data-src para lazy loading
-        image.dataset.src = imageUrl;
+        image.src = imageUrl;
         image.alt = photo.name || 'Foto da galeria';
         
-        // Placeholder inicial
-        image.src = this.getPlaceholderImage();
+        // Fallback para erro de imagem
+        image.onerror = () => {
+          image.src = this.getDefaultPhotoImage();
+        };
       }
       
       // Título da foto
@@ -700,25 +604,6 @@ class CategoryPage {
       console.error('❌ Erro ao criar card de foto:', error);
       return null;
     }
-  }
-  
-  /**
-   * Imagem placeholder para lazy loading
-   */
-  getPlaceholderImage() {
-    const svg = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-      <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100%" height="100%" fill="#252542"/>
-        <circle cx="200" cy="150" r="30" fill="#4c6ef5" opacity="0.3">
-          <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite"/>
-        </circle>
-        <text x="50%" y="70%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="12">
-          Carregando...
-        </text>
-      </svg>
-    `)}`;
-    
-    return svg;
   }
   
   /**
