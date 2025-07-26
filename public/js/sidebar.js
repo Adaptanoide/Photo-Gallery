@@ -2650,17 +2650,69 @@ function loadPhotosFromMultipleCategories(categories, title) {
 }
 
 // ✅ PASSO 1: Detectar se categoria precisa de abas de tamanho
+// ✅ CORREÇÃO 1: Detector automático de categorias que precisam de abas
 function needsSizeTabs(mainCategoryName) {
-  const categoriesWithTabs = [
-    'Colombia Cowhides',
-    'Colombia Best Value',
-    'Brazil Top Selected Categories'
-  ];
+  if (!window.categories || !Array.isArray(window.categories)) {
+    console.log('❌ window.categories não disponível');
+    return false;
+  }
 
   const normalizedName = normalizeCategory(mainCategoryName);
-  const needsTabs = categoriesWithTabs.includes(normalizedName);
-  console.log(`🔍 Categoria "${normalizedName}" precisa de abas: ${needsTabs}`);
+  console.log(`🔍 Analisando categoria: "${normalizedName}"`);
+
+  // ✅ NOVO: Detectar automaticamente baseado na estrutura hierárquica
+  const categoryHierarchy = analyzeCategoryHierarchy(normalizedName);
+  
+  // Se tem 3+ níveis = precisa de abas
+  const needsTabs = categoryHierarchy.maxLevels >= 3;
+  
+  console.log(`📊 Hierarquia detectada:`, categoryHierarchy);
+  console.log(`🔖 Categoria "${normalizedName}" precisa de abas: ${needsTabs}`);
+  
   return needsTabs;
+}
+
+// ✅ NOVA FUNÇÃO: Analisar hierarquia de qualquer categoria
+function analyzeCategoryHierarchy(mainCategoryName) {
+  const normalizedMain = normalizeCategory(mainCategoryName);
+  
+  // Encontrar todas as subcategorias desta categoria principal
+  const subcategories = new Map(); // subcategoria -> Set de tamanhos/variações
+  let maxLevels = 0;
+  
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+    
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ').map(part => normalizeCategory(part));
+    
+    // Se pertence à categoria principal
+    if (pathParts[0] === normalizedMain) {
+      maxLevels = Math.max(maxLevels, pathParts.length);
+      
+      if (pathParts.length >= 2) {
+        const subcategory = pathParts[1];
+        
+        if (!subcategories.has(subcategory)) {
+          subcategories.set(subcategory, new Set());
+        }
+        
+        // Se tem 3º nível (tamanho/variação)
+        if (pathParts.length >= 3) {
+          const variation = pathParts[2];
+          subcategories.get(subcategory).add(variation);
+        }
+      }
+    }
+  });
+  
+  return {
+    mainCategory: normalizedMain,
+    maxLevels: maxLevels,
+    subcategoriesCount: subcategories.size,
+    subcategories: Array.from(subcategories.keys()),
+    hasVariations: Array.from(subcategories.values()).some(variations => variations.size > 0)
+  };
 }
 
 // ✅ PASSO 1: Extrair tamanhos disponíveis para uma subcategoria
