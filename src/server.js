@@ -42,6 +42,11 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
+// Rota cliente
+app.get('/client', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/client.html'));
+});
+
 // Rota de status
 app.get('/api/status', (req, res) => {
     res.json({
