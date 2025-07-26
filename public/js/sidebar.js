@@ -2650,7 +2650,7 @@ function loadPhotosFromMultipleCategories(categories, title) {
 }
 
 // ✅ PASSO 1: Detectar se categoria precisa de abas de tamanho
-// ✅ CORREÇÃO 1: Detector automático de categorias que precisam de abas
+// ✅ CORREÇÃO 3: Detecção inteligente baseada em subcategorias efetivas
 function needsSizeTabs(mainCategoryName) {
   if (!window.categories || !Array.isArray(window.categories)) {
     console.log('❌ window.categories não disponível');
@@ -2660,43 +2660,78 @@ function needsSizeTabs(mainCategoryName) {
   const normalizedName = normalizeCategory(mainCategoryName);
   console.log(`🔍 Analisando categoria: "${normalizedName}"`);
 
-  // ✅ NOVO: Detectar automaticamente baseado na estrutura hierárquica
+  // ✅ DETECÇÃO INTELIGENTE: Verificar se usa subcategorias genéricas
+  if (usesGenericSubcategories(normalizedName)) {
+    console.log(`🎯 "${normalizedName}" usa subcategorias genéricas - SEM abas`);
+    return false;
+  }
+
+  // ✅ DETECÇÃO AUTOMÁTICA para outras categorias
   const categoryHierarchy = analyzeCategoryHierarchy(normalizedName);
-  
+
   // Se tem 3+ níveis = precisa de abas
   const needsTabs = categoryHierarchy.maxLevels >= 3;
-  
+
   console.log(`📊 Hierarquia detectada:`, categoryHierarchy);
   console.log(`🔖 Categoria "${normalizedName}" precisa de abas: ${needsTabs}`);
-  
+
   return needsTabs;
 }
 
+// ✅ NOVA FUNÇÃO: Detectar categorias que usam subcategorias genéricas
+function usesGenericSubcategories(mainCategoryName) {
+  const normalizedMain = normalizeCategory(mainCategoryName);
+
+  // Detectar se tem subcategorias genéricas típicas
+  const genericPatterns = [
+    'Best-Value', 'Super-Promo', 'Tones-Mix'  // Brazil Best Sellers
+  ];
+
+  let hasGenericSubcategories = false;
+
+  window.categories.forEach(cat => {
+    if (cat.isAll) return;
+
+    const fullPath = cat.fullPath || cat.name;
+    const pathParts = fullPath.split(' → ').map(part => normalizeCategory(part));
+
+    // Se pertence à categoria principal e tem subcategoria genérica
+    if (pathParts[0] === normalizedMain && pathParts.length >= 2) {
+      const subcategory = pathParts[1];
+      if (genericPatterns.some(pattern => subcategory.includes(pattern))) {
+        hasGenericSubcategories = true;
+      }
+    }
+  });
+
+  console.log(`🔍 "${normalizedMain}" tem subcategorias genéricas: ${hasGenericSubcategories}`);
+  return hasGenericSubcategories;
+}
 // ✅ NOVA FUNÇÃO: Analisar hierarquia de qualquer categoria
 function analyzeCategoryHierarchy(mainCategoryName) {
   const normalizedMain = normalizeCategory(mainCategoryName);
-  
+
   // Encontrar todas as subcategorias desta categoria principal
   const subcategories = new Map(); // subcategoria -> Set de tamanhos/variações
   let maxLevels = 0;
-  
+
   window.categories.forEach(cat => {
     if (cat.isAll) return;
-    
+
     const fullPath = cat.fullPath || cat.name;
     const pathParts = fullPath.split(' → ').map(part => normalizeCategory(part));
-    
+
     // Se pertence à categoria principal
     if (pathParts[0] === normalizedMain) {
       maxLevels = Math.max(maxLevels, pathParts.length);
-      
+
       if (pathParts.length >= 2) {
         const subcategory = pathParts[1];
-        
+
         if (!subcategories.has(subcategory)) {
           subcategories.set(subcategory, new Set());
         }
-        
+
         // Se tem 3º nível (tamanho/variação)
         if (pathParts.length >= 3) {
           const variation = pathParts[2];
@@ -2705,7 +2740,7 @@ function analyzeCategoryHierarchy(mainCategoryName) {
       }
     }
   });
-  
+
   return {
     mainCategory: normalizedMain,
     maxLevels: maxLevels,
