@@ -1061,12 +1061,12 @@ function showLoadMoreNotification(remaining) {
   }, 3000);
 }
 
-// Função para obter o nome da categoria a partir do folderId - COM FALLBACKS INTELIGENTES
+// ✅ VERSÃO CORRETA: Função getCategoryNameFromFolderId
 function getCategoryNameFromFolderId(folderId) {
   console.log(`🔵 DEBUG: getCategoryNameFromFolderId called with: ${folderId}`);
   console.log(`🔵 DEBUG: window.categories available:`, window.categories ? 'YES' : 'NO');
 
-  // ✅ NOVA VERIFICAÇÃO: Se é Brazil Best Sellers, usar breadcrumb
+  // ✅ VERIFICAÇÃO ESPECÍFICA: Apenas para Brazil Best Sellers
   const context = getCurrentNavigationContext();
   if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
     const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
@@ -1076,7 +1076,8 @@ function getCategoryNameFromFolderId(folderId) {
       return subcategoryName;
     }
   }
-  // Verificar se temos as categorias carregadas globalmente
+
+  // ✅ LÓGICA ORIGINAL para outras categorias (mantenha todo o resto igual)
   if (window.categories && Array.isArray(window.categories)) {
     const category = window.categories.find(cat => cat.id === folderId);
     if (category) {
@@ -1086,10 +1087,8 @@ function getCategoryNameFromFolderId(folderId) {
 
   // Fallback 1: verificar se estamos numa categoria específica
   if (window.activeCategory) {
-    // Buscar nos elementos da sidebar
     const activeCategoryElement = document.querySelector('.category-item.active');
     if (activeCategoryElement) {
-      // Extrair nome da categoria (remover contadores entre parênteses)
       const fullText = activeCategoryElement.textContent.trim();
       return fullText.replace(/\s*\(\d+\)\s*$/, '');
     }
@@ -1118,7 +1117,6 @@ function getCategoryNameFromFolderId(folderId) {
   // Se não conseguir encontrar, retornar um nome padrão
   return 'Unknown Category';
 }
-
 // Mostrar opção para ir para próxima categoria
 function showNextCategoryOption() {
   // Remover qualquer overlay existente
@@ -2290,81 +2288,82 @@ function updateGalleryAfterSold() {
   showToast('Gallery updated - sold items removed', 'info');
 }
 
-// ✅ CORREÇÃO 6: Substituir função getNextCategoryFromSidebar() no lightbox.js
+// ✅ SOLUÇÃO SIMPLES: Substituir getNextCategoryFromSidebar() no lightbox.js
 
 function getNextCategoryFromSidebar() {
-  console.log('📋 Usando ordem do sidebar para próxima categoria');
+  console.log('🎯 NAVEGAÇÃO SIMPLES: Brazil Best Sellers');
 
-  // Obter subcategorias do sidebar na ordem correta
+  // 1. PEGAR ORDEM EXATA DO SIDEBAR
   const sidebarItems = document.querySelectorAll('.category-item[data-subcategory]');
-  const sidebarOrder = Array.from(sidebarItems).map(item => item.getAttribute('data-subcategory'));
+  const sidebarOrder = Array.from(sidebarItems).map(item => item.textContent.trim());
 
   console.log('📋 Ordem do sidebar:', sidebarOrder);
 
-  // Encontrar categoria atual no breadcrumb
+  // 2. ENCONTRAR SUBCATEGORIA ATUAL
   const breadcrumbCurrent = document.querySelector('.breadcrumb-current');
   if (!breadcrumbCurrent) {
-    console.log('❌ Não foi possível encontrar categoria atual no breadcrumb');
+    console.log('❌ Sem breadcrumb atual');
     return null;
   }
 
-  const currentSubcategory = breadcrumbCurrent.textContent.trim();
-  console.log('📋 Categoria atual:', currentSubcategory);
+  const currentName = breadcrumbCurrent.textContent.trim();
+  console.log('📍 Subcategoria atual:', currentName);
 
-  // Encontrar índice atual e próximo
-  const currentIndex = sidebarOrder.indexOf(currentSubcategory);
+  // 3. ENCONTRAR PRÓXIMA NA LISTA
+  const currentIndex = sidebarOrder.indexOf(currentName);
+  console.log('📍 Índice atual:', currentIndex);
+
   if (currentIndex === -1) {
-    console.log('❌ Categoria atual não encontrada no sidebar');
+    console.log('❌ Subcategoria atual não encontrada no sidebar');
     return null;
   }
 
   const nextIndex = currentIndex + 1;
   if (nextIndex >= sidebarOrder.length) {
-    console.log('📋 Última categoria do sidebar');
+    console.log('🔚 Última subcategoria do Brazil Best Sellers');
     return null;
   }
 
-  const nextSubcategory = sidebarOrder[nextIndex];
-  console.log('📋 Próxima categoria:', nextSubcategory);
-  console.log('🔍 DEBUG: Procurando em window.categories...');
+  const nextSubcategoryName = sidebarOrder[nextIndex];
+  console.log('➡️ Próxima subcategoria:', nextSubcategoryName);
 
-  // ✅ CORREÇÃO: Para Brazil Best Sellers, criar objeto customizado
-  const context = getCurrentNavigationContext();
-  if (context && context.mainCategory && context.mainCategory.includes('Brazil Best Sellers')) {
+  // 4. BUSCAR CATEGORIA CORRESPONDENTE NO WINDOW.CATEGORIES
+  const nextCategory = window.categories.find(cat => {
+    if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
 
-    // Buscar categoria real no window.categories
-    const realCategory = window.categories.find(cat => {
-      if (!cat.fullPath || !cat.fullPath.includes('Brazil Best Sellers')) return false;
+    // Mapeamento direto dos nomes do sidebar
+    const mapping = {
+      'Assorted-Tones Extra-Small': 'Assorted-Tones',
+      'Assorted-Tones Small': 'Assorted-Natural-Tones',
+      'Dark-Tones': 'Dark-Tones',
+      'Exotic-Tones': 'Exotic-Tones',
+      'Light-Tones': 'Light-Tones',
+      'Brindle-Medium-Dark-Tones': 'Brindle-Medium-Dark-Tones',
+      'Salt-Pepper-Black-White': 'Salt-Pepper-Black-White',
+      'Salt-Pepper-Chocolate-White': 'Salt-Pepper-Chocolate-White',
+      'Salt-Pepper-Brown-White-Tricolor': 'Salt-Pepper-Brown-White-Tricolor'
+    };
 
-      // Mapear nomes do sidebar para estrutura real
-      if (nextSubcategory === 'Assorted-Tones Small') return cat.fullPath.includes('Assorted-Natural-Tones');
-      if (nextSubcategory === 'Assorted-Tones Extra-Small') return cat.fullPath.includes('Assorted-Tones') && !cat.fullPath.includes('Natural');
-      if (nextSubcategory === 'Dark-Tones') return cat.fullPath.includes('Dark-Tones') && !cat.fullPath.includes('Brindle');
-      if (nextSubcategory === 'Exotic-Tones') return cat.fullPath.includes('Exotic-Tones');
-      if (nextSubcategory === 'Light-Tones') return cat.fullPath.includes('Light-Tones');
-      if (nextSubcategory === 'Brindle-Medium-Dark-Tones') return cat.fullPath.includes('Brindle-Medium-Dark-Tones');
-      if (nextSubcategory === 'Salt-Pepper-Black-White') return cat.fullPath.includes('Salt-Pepper-Black-White');
-      if (nextSubcategory === 'Salt-Pepper-Chocolate-White') return cat.fullPath.includes('Salt-Pepper-Chocolate-White');
-      if (nextSubcategory === 'Salt-Pepper-Brown-White-Tricolor') return cat.fullPath.includes('Salt-Pepper-Brown-White-Tricolor');
-
+    const pathName = mapping[nextSubcategoryName];
+    if (!pathName) {
+      console.log(`❌ Sem mapeamento para: ${nextSubcategoryName}`);
       return false;
-    });
-
-    if (realCategory) {
-      console.log('🔍 DEBUG: Categoria encontrada:', realCategory.fullPath);
-
-      // ✅ CRIAR OBJETO PERSONALIZADO com nome da subcategoria
-      const customCategory = {
-        ...realCategory,
-        displayName: nextSubcategory,  // ← NOME PARA EXIBIR
-        originalName: realCategory.name  // ← NOME ORIGINAL
-      };
-
-      console.log('✅ Retornando categoria customizada:', customCategory.displayName);
-      return customCategory;
     }
+
+    return cat.fullPath.includes(pathName);
+  });
+
+  if (nextCategory) {
+    console.log('✅ Categoria encontrada:', nextCategory.fullPath);
+
+    // Criar objeto com nome correto para exibição
+    return {
+      ...nextCategory,
+      displayName: nextSubcategoryName  // Nome do sidebar para exibir
+    };
   }
 
+  console.log('❌ Categoria não encontrada para:', nextSubcategoryName);
   return null;
 }
 
