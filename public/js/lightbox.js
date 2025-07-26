@@ -1270,53 +1270,88 @@ function getNextCategory() {
   return getNextCategoryFromSidebarOrder();
 }
 
-// ✅ NOVA FUNÇÃO: Navegação que segue ordem do sidebar
-function getNextCategoryFromSidebarOrder() {
-  // Obter ordem atual do sidebar
-  const sidebarItems = document.querySelectorAll('.category-item[data-subcategory], .category-item[data-category-id]');
-  const sidebarOrder = Array.from(sidebarItems);
+// ✅ CORREÇÃO 4: Substituir função getNextCategoryFromSidebarOrder() no lightbox.js
 
-  if (sidebarOrder.length === 0) {
-    console.log('❌ Sidebar vazio, usando fallback básico');
+function getNextCategoryFromSidebarOrder() {
+  console.log('🔄 Usando navegação restrita à categoria principal atual');
+
+  // ✅ OBTER CONTEXTO ATUAL
+  const context = getCurrentNavigationContext();
+  if (!context || !context.mainCategory) {
+    console.log('❌ Sem contexto da categoria principal');
     return getBasicNextCategory();
   }
 
-  // Encontrar item atual no sidebar
-  let currentSidebarIndex = -1;
+  console.log(`🏗️ Navegando dentro de: ${context.mainCategory}`);
 
-  for (let i = 0; i < sidebarOrder.length; i++) {
-    const item = sidebarOrder[i];
+  // ✅ OBTER APENAS SUBCATEGORIAS DA CATEGORIA PRINCIPAL ATUAL
+  const currentMainCategory = context.mainCategory;
+  const sidebarItems = document.querySelectorAll('.category-item[data-subcategory], .category-item[data-category-id]');
+
+  // Filtrar apenas itens da categoria principal atual
+  const currentCategoryItems = Array.from(sidebarItems).filter(item => {
+    const mainCat = item.getAttribute('data-main-category');
+    const categoryId = item.getAttribute('data-category-id');
+
+    // Se tem data-main-category, comparar diretamente
+    if (mainCat) {
+      return normalizeCategory(mainCat) === normalizeCategory(currentMainCategory);
+    }
+
+    // Se não tem, verificar se categoryId pertence à categoria principal atual
+    if (categoryId) {
+      const category = window.categories.find(cat => cat.id === categoryId);
+      if (category && category.fullPath) {
+        const mainFromPath = category.fullPath.split(' → ')[0];
+        return normalizeCategory(mainFromPath) === normalizeCategory(currentMainCategory);
+      }
+    }
+
+    return false;
+  });
+
+  console.log(`📋 Encontradas ${currentCategoryItems.length} subcategorias na categoria atual`);
+
+  if (currentCategoryItems.length === 0) {
+    console.log('❌ Nenhuma subcategoria encontrada na categoria atual');
+    return null;
+  }
+
+  // ✅ ENCONTRAR SUBCATEGORIA ATUAL
+  let currentIndex = -1;
+
+  for (let i = 0; i < currentCategoryItems.length; i++) {
+    const item = currentCategoryItems[i];
     const subcategory = item.getAttribute('data-subcategory');
     const categoryId = item.getAttribute('data-category-id');
 
-    // Se tem subcategory, comparar por contexto
-    if (subcategory) {
-      const context = getCurrentNavigationContext();
-      if (context && context.subcategory === subcategory) {
-        currentSidebarIndex = i;
+    // Comparar por subcategoria (Brazil Best Sellers)
+    if (subcategory && context.subcategory) {
+      if (normalizeCategory(subcategory) === normalizeCategory(context.subcategory)) {
+        currentIndex = i;
         break;
       }
     }
-    // Se tem categoryId, comparar direto
+    // Comparar por categoryId (outras categorias)
     else if (categoryId === activeCategory) {
-      currentSidebarIndex = i;
+      currentIndex = i;
       break;
     }
   }
 
-  console.log(`📍 Item atual no sidebar: índice ${currentSidebarIndex}`);
+  console.log(`📍 Subcategoria atual: índice ${currentIndex} de ${currentCategoryItems.length}`);
 
-  // Próximo item no sidebar
-  const nextSidebarIndex = currentSidebarIndex + 1;
+  // ✅ PRÓXIMA SUBCATEGORIA NA MESMA CATEGORIA PRINCIPAL
+  const nextIndex = currentIndex + 1;
 
-  if (nextSidebarIndex < sidebarOrder.length) {
-    const nextItem = sidebarOrder[nextSidebarIndex];
+  if (nextIndex < currentCategoryItems.length) {
+    const nextItem = currentCategoryItems[nextIndex];
     const nextSubcategory = nextItem.getAttribute('data-subcategory');
     const nextCategoryId = nextItem.getAttribute('data-category-id');
 
-    console.log(`➡️ Próximo item no sidebar: ${nextSubcategory || nextCategoryId}`);
+    console.log(`➡️ Próxima subcategoria: ${nextSubcategory || nextCategoryId}`);
 
-    // Se é subcategoria, encontrar categoryId correspondente
+    // Se é subcategoria (Brazil Best Sellers)
     if (nextSubcategory) {
       const targetCategory = findCategoryBySubcategory(nextSubcategory);
       if (targetCategory) {
@@ -1334,9 +1369,12 @@ function getNextCategoryFromSidebarOrder() {
     }
   }
 
-  // Se chegou ao fim do sidebar, ir para próxima categoria principal
-  console.log('📁 Fim das subcategorias, tentando próxima categoria principal');
-  return getNextMainCategory();
+  // ✅ FIM DAS SUBCATEGORIAS DA CATEGORIA ATUAL
+  console.log(`🔚 Fim das subcategorias de ${currentMainCategory}`);
+  console.log(`🚫 Navegação entre categorias principais DESABILITADA por enquanto`);
+
+  // ✅ RETORNAR NULL em vez de ir para próxima categoria principal
+  return null;
 }
 
 // ✅ FUNÇÃO AUXILIAR: Encontrar categoria por subcategoria
