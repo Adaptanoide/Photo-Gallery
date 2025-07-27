@@ -47,6 +47,11 @@ app.get('/client', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/client.html'));
 });
 
+// Rota temporária para explorar estrutura Google Drive
+app.get('/drive-explorer', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/drive-explorer.html'));
+});
+
 // Rota de status
 app.get('/api/status', (req, res) => {
     res.json({
@@ -69,11 +74,6 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({ error: 'Rota não encontrada' });
-});
-
-// Rota temporária para explorar estrutura Google Drive
-app.get('/drive-explorer', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/drive-explorer.html'));
 });
 
 // Iniciar servidor
