@@ -214,7 +214,7 @@
     transform: translateY(0);
 }
 
-/* ===== MODAL FULLSCREEN ===== */
+/* ===== MODAL FULLSCREEN REFORMULADO ===== */
 
 /* Modal Container */
 .photo-modal {
@@ -238,33 +238,41 @@
     height: 100%;
 }
 
+/* FULLSCREEN REAL - SEM BORDAS BRANCAS */
 .modal-content {
     position: relative;
-    width: 95vw;
-    height: 95vh;
+    width: 100vw;
+    height: 100vh;
     max-width: none;
-    background: white;
-    border-radius: 8px;
+    background: transparent;
+    border-radius: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* Modal Header */
+/* HEADER OVERLAY - FLUTUA SOBRE A IMAGEM */
 .modal-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 25;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: none;
     flex-shrink: 0;
 }
 
 .modal-header h4 {
     margin: 0;
-    color: #333;
+    color: white;
     font-size: 1rem;
+    font-weight: 600;
 }
 
 .modal-controls {
@@ -273,22 +281,29 @@
     gap: 1rem;
 }
 
+.modal-controls span {
+    color: white;
+    font-size: 0.9rem;
+}
+
 .btn-close {
-    background: none;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     font-size: 1.2rem;
-    color: #666;
+    color: white;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .btn-close:hover {
-    background: #e9ecef;
-    color: #333;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    transform: scale(1.1);
 }
 
-/* Modal Body */
+/* MODAL BODY - IMAGEM FULLSCREEN */
 .modal-body {
     flex: 1;
     display: flex;
@@ -297,7 +312,7 @@
     position: relative;
     background: #000;
     min-height: 0;
-    padding: 10px;
+    padding: 0;
 }
 
 .photo-container {
@@ -307,19 +322,43 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    /* CRÍTICO: Prevenir zoom nativo do browser */
+    touch-action: pan-x pan-y;
 }
 
-/* IMAGENS NO MODAL - PROPORÇÕES MELHORADAS */
+/* IMAGEM FULLSCREEN - MÁXIMO APROVEITAMENTO */
 .modal-body img {
-    max-width: calc(100% - 60px);
-    max-height: calc(100% - 20px);
+    max-width: 100vw;
+    max-height: 100vh;
     object-fit: contain;
-    border-radius: 4px;
+    border-radius: 0;
     width: auto;
     height: auto;
+    transition: transform 0.3s ease;
+    cursor: grab;
+    
+    /* PREVENIR PROBLEMAS DE SELEÇÃO */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    
+    /* OTIMIZAÇÕES DE PERFORMANCE */
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* PREVENIR MENU DE CONTEXTO */
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* Navigation Buttons */
+.modal-body img:active {
+    cursor: grabbing;
+}
+
+/* Navigation Buttons - OTIMIZADOS PARA FULLSCREEN */
 .nav-btn {
     position: absolute;
     top: 50%;
@@ -333,12 +372,14 @@
     color: #333;
     cursor: pointer;
     transition: all 0.2s ease;
-    z-index: 10;
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.nav-btn:hover {
+.nav-btn:hover:not(:disabled) {
     background: white;
     transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .nav-prev {
@@ -350,18 +391,25 @@
 }
 
 .nav-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
+    transform: translateY(-50%);
 }
 
-/* Modal Footer */
+/* FOOTER OVERLAY - FLUTUA SOBRE A IMAGEM */
 .modal-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 25;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background: #f8f9fa;
-    border-top: 1px solid #dee2e6;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border-top: none;
     flex-shrink: 0;
     min-height: 70px;
 }
@@ -370,7 +418,7 @@
     display: flex;
     gap: 1rem;
     font-size: 0.9rem;
-    color: #666;
+    color: white;
 }
 
 .photo-loading-spinner {
@@ -379,6 +427,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     color: white;
+    z-index: 10;
 }
 
 /* ===== ESTADOS E LOADING ===== */
@@ -400,7 +449,7 @@
     opacity: 0.5;
 }
 
-/* ===== RESPONSIVO ===== */
+/* ===== RESPONSIVO FULLSCREEN ===== */
 
 /* Tablets */
 @media (max-width: 768px) {
@@ -412,6 +461,7 @@
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
     
+    /* MODAL MOBILE FULLSCREEN */
     .modal-content {
         width: 100vw;
         height: 100vh;
@@ -426,30 +476,6 @@
         font-size: 0.9rem;
     }
     
-    .modal-body {
-        padding: 5px;
-    }
-    
-    /* MOBILE - IMAGEM MUITO MAIOR */
-    .modal-body img {
-        max-width: calc(100% - 30px);
-        max-height: calc(100% - 10px);
-    }
-    
-    .nav-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 1.1rem;
-    }
-    
-    .nav-prev {
-        left: 8px;
-    }
-    
-    .nav-next {
-        right: 8px;
-    }
-    
     .modal-footer {
         flex-direction: column;
         gap: 0.5rem;
@@ -462,18 +488,33 @@
         text-align: center;
         flex-wrap: wrap;
         font-size: 0.8rem;
+        color: white;
+    }
+    
+    /* NAVEGAÇÃO MOBILE */
+    .nav-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+        /* Touch targets adequados */
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .nav-prev {
+        left: 8px;
+    }
+    
+    .nav-next {
+        right: 8px;
     }
 }
 
 /* Desktop Grande */
 @media (min-width: 1200px) {
     .modal-content {
-        width: 90vw;
-        height: 90vh;
-    }
-    
-    .modal-body img {
-        max-width: calc(100% - 80px);
+        width: 100vw;
+        height: 100vh;
     }
 }
 
@@ -489,6 +530,11 @@
     to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
 .category-card, .folder-card, .photo-thumbnail {
     animation: slideIn 0.3s ease forwards;
 }
@@ -497,53 +543,24 @@
     animation: fadeIn 0.2s ease;
 }
 
-/* ===== SISTEMA DE ZOOM - ADICIONAR AO FINAL DO CLIENT.CSS ===== */
-
-/* Modal Body Melhorado */
-.modal-body {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    background: #000;
-    min-height: 0;
-    padding: 5px; /* Reduzido para maior aproveitamento */
+.modal-content {
+    animation: zoomIn 0.3s ease;
 }
 
-.photo-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 5px; /* Reduzido */
-}
-
-/* IMAGENS COM MELHOR PROPORÇÃO */
-.modal-body img {
-    max-width: calc(100vw - 80px);  /* Maior aproveitamento */
-    max-height: calc(100vh - 140px); /* Maior aproveitamento */
-    object-fit: contain;
-    border-radius: 4px;
-    width: auto;
-    height: auto;
-    transition: transform 0.3s ease;
-}
+/* ===== SISTEMA DE ZOOM INTEGRADO ===== */
 
 /* Zoom Controls Simplificados */
 .zoom-controls-simple {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 70px;
+    right: 15px;
     display: flex;
     align-items: center;
     gap: 6px;
     background: rgba(0, 0, 0, 0.8);
     padding: 6px 10px;
     border-radius: 20px;
-    z-index: 20;
+    z-index: 30;
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
 }
@@ -557,14 +574,14 @@
     background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     transition: all 0.2s ease;
     backdrop-filter: blur(5px);
 }
@@ -583,16 +600,6 @@
     cursor: not-allowed;
 }
 
-/* Zoom Level Indicator Simplificado */
-.zoom-level-simple {
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 500;
-    min-width: 40px;
-    text-align: center;
-    padding: 0 3px;
-}
-
 /* Image States */
 .modal-body img.zoomed {
     cursor: grab;
@@ -602,40 +609,22 @@
     cursor: grabbing;
 }
 
-/* Responsivo Mobile - Melhorado */
+/* Responsivo Mobile - Zoom */
 @media (max-width: 768px) {
-    .modal-body {
-        padding: 3px;
-    }
-    
-    .photo-container {
-        padding: 3px;
-    }
-    
-    /* MOBILE - MÁXIMO APROVEITAMENTO */
-    .modal-body img {
-        max-width: calc(100vw - 20px);  /* Quase tela toda */
-        max-height: calc(100vh - 120px); /* Considerando header/footer menores */
-    }
-    
     .zoom-controls-simple {
-        top: 8px;
-        right: 8px;
+        top: 60px;
+        right: 10px;
         padding: 5px 8px;
         gap: 5px;
     }
     
     .zoom-btn-simple {
-        width: 28px;
-        height: 28px;
-        font-size: 0.75rem;
-        min-height: 44px; /* Touch target */
+        width: 36px;
+        height: 36px;
+        font-size: 0.8rem;
+        /* Touch target adequado */
+        min-height: 44px;
         min-width: 44px;
-    }
-    
-    .zoom-level-simple {
-        font-size: 0.7rem;
-        min-width: 35px;
     }
 }
 
@@ -655,35 +644,99 @@
     }
 }
 
-/* Telas Grandes - Ainda Maior Aproveitamento */
-@media (min-width: 1200px) {
-    .modal-body img {
-        max-width: calc(100vw - 100px);
-        max-height: calc(100vh - 160px);
-    }
+/* ===== OTIMIZAÇÕES DE PERFORMANCE ===== */
+
+/* GPU Acceleration para elementos que fazem transform */
+.photo-container,
+.modal-body img,
+.nav-btn,
+.photo-thumbnail {
+    will-change: transform;
+    transform: translateZ(0);
 }
 
-/* Accessibility */
+/* Otimizações de rendering */
+.modal-body {
+    contain: layout style paint;
+}
+
+.photo-container {
+    contain: layout style;
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Foco visível para navegação por teclado */
+.nav-btn:focus,
+.btn-close:focus,
 .zoom-btn-simple:focus {
-    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
 }
 
-/* Performance */
-.photo-container {
-    will-change: transform;
+/* Alto contraste para usuários com necessidades especiais */
+@media (prefers-contrast: high) {
+    .modal-header,
+    .modal-footer {
+        background: rgba(0, 0, 0, 0.9);
+    }
+    
+    .nav-btn {
+        background: white;
+        border: 2px solid #000;
+    }
 }
 
-.modal-body img {
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+/* Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+    .modal-body img,
+    .nav-btn,
+    .photo-thumbnail,
+    .category-card,
+    .folder-card {
+        transition: none;
+        animation: none;
+    }
 }
 
-/* Prevent selection during interaction */
+/* ===== ESTADOS ESPECIAIS ===== */
+
+/* Quando imagem está carregando */
+.modal-body img[src=""],
+.modal-body img:not([src]) {
+    opacity: 0;
+}
+
+/* Quando zoom está ativo */
+.photo-container.zoom-active {
+    cursor: grabbing;
+}
+
 .photo-container.zoom-active * {
     user-select: none;
     -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
+    pointer-events: none;
+}
+
+/* ===== FALLBACKS ===== */
+
+/* Para browsers que não suportam object-fit */
+@supports not (object-fit: contain) {
+    .modal-body img {
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+}
+
+/* Para browsers que não suportam vh/vw */
+@supports not (width: 100vw) {
+    .modal-content {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .modal-body img {
+        max-width: 100%;
+        max-height: 500px;
+    }
 }
