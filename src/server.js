@@ -10,6 +10,8 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const clientRoutes = require('./routes/client');
 const driveRoutes = require('./routes/drive');
+const Cart = require('./models/Cart');
+const { CartService } = require('./services');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +27,10 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Conectar ao MongoDB
 connectDB();
+
+// ===== TESTE DOS MODELS E SERVICES =====
+console.log('✅ Models carregados: Product, Cart');
+console.log('✅ Services carregados: CartService');
 
 // Rotas
 app.use('/api/auth', authRoutes);

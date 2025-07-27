@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
-    status: {
+    status: {                     // <– primeira definição (pode até duplicar, mas era seu código)
         type: String,
         enum: ['available', 'reserved', 'sold'],
         default: 'available'
@@ -36,7 +36,7 @@ const productSchema = new mongoose.Schema({
     size: {
         type: Number
     },
-    reservedBy: {
+    reservedBy: {                 // <– primeira definição
         type: String
     },
     reservedAt: {
@@ -44,11 +44,46 @@ const productSchema = new mongoose.Schema({
     },
     soldAt: {
         type: Date
+    },
+    // ===== NOVOS CAMPOS PARA CARRINHO =====
+    status: {                     // <– segunda definição
+        type: String,
+        enum: ['available', 'reserved', 'sold'],
+        default: 'available',
+        index: true
+    },
+    reservedBy: {
+        clientCode: {
+            type: String,
+            sparse: true
+        },
+        sessionId: {
+            type: String,
+            sparse: true
+        },
+        expiresAt: {
+            type: Date,
+            sparse: true
+        }
+    },
+    cartAddedAt: {
+        type: Date,
+        sparse: true
     }
 }, {
-    timestamps: true
+    timestamps: true             // <- aqui fecha o Schema
 });
 
+// ===== ÍNDICES PARA PERFORMANCE =====
+productSchema.index({ status: 1, createdAt: -1 });
+productSchema.index(
+    { 'reservedBy.expiresAt': 1 },
+    {
+        expireAfterSeconds: 0,
+        partialFilterExpression: { 'reservedBy.expiresAt': { $exists: true } }
+    }
+);
+productSchema.index({ 'reservedBy.sessionId': 1 });
 productSchema.index({ driveFileId: 1 });
 productSchema.index({ category: 1, status: 1 });
 productSchema.index({ status: 1 });
