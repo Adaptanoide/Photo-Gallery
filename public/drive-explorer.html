@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador Google Drive - Teste</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .depth-selector {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .structure {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .folder-item {
+            margin: 10px 0;
+            border-left: 2px solid #e9ecef;
+            padding-left: 15px;
+        }
+
+        .folder-item.depth-0 { border-left-color: #007bff; }
+        .folder-item.depth-1 { border-left-color: #28a745; }
+        .folder-item.depth-2 { border-left-color: #ffc107; }
+        .folder-item.depth-3 { border-left-color: #dc3545; }
+
+        .folder-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .folder-header:hover {
+            background: #e9ecef;
+        }
+
+        .folder-name {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .folder-meta {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            gap: 15px;
+        }
+
+        .files-list {
+            margin-left: 20px;
+            font-size: 0.9rem;
+        }
+
+        .file-item {
+            padding: 3px 0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .file-item.image {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .path-breadcrumb {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .expand-btn:hover {
+            background: #dee2e6;
+        }
+
+        .collapsed .folder-content {
+            display: none;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> Explorador da Estrutura Google Drive</h1>
+            <p>Análise da hierarquia de pastas para implementação da interface do cliente</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="exploreStructure()">
+                <i class="fas fa-sync-alt"></i> Explorar Estrutura
+            </button>
+            <label>Profundidade máxima:</label>
+            <select class="depth-selector" id="depthSelector">
+                <option value="1">1 nível</option>
+                <option value="2" selected>2 níveis</option>
+                <option value="3">3 níveis</option>
+                <option value="4">4 níveis</option>
+                <option value="5">5 níveis</option>
+            </select>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div>
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Explorando estrutura do Google Drive...</p>
+                <small>Isso pode levar alguns segundos dependendo da quantidade de pastas</small>
+            </div>
+        </div>
+
+        <div id="stats" class="stats" style="display: none;">
+            <h3>📊 Estatísticas da Estrutura</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalFolders">-</div>
+                    <div class="stat-label">Total de Pastas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalFiles">-</div>
+                    <div class="stat-label">Total de Arquivos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalImages">-</div>
+                    <div class="stat-label">Total de Imagens</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="maxDepth">-</div>
+                    <div class="stat-label">Profundidade Máxima</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="structure" class="structure" style="display: none;">
+            <h3>🗂️ Estrutura Hierárquica</h3>
+            <div id="structureContent"></div>
+        </div>
+
+        <div id="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function exploreStructure() {
+            const loading = document.getElementById('loading');
+            const stats = document.getElementById('stats');
+            const structure = document.getElementById('structure');
+            const error = document.getElementById('error');
+            const depth = document.getElementById('depthSelector').value;
+
+            // Mostrar loading
+            loading.style.display = 'block';
+            stats.style.display = 'none';
+            structure.style.display = 'none';
+            error.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/drive/explore?depth=${depth}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Erro ao explorar estrutura');
+                }
+
+                // Atualizar estatísticas
+                document.getElementById('totalFolders').textContent = data.statistics.totalFolders;
+                document.getElementById('totalFiles').textContent = data.statistics.totalFiles;
+                document.getElementById('totalImages').textContent = data.statistics.totalImages;
+                document.getElementById('maxDepth').textContent = data.statistics.maxDepth;
+
+                // Renderizar estrutura
+                renderStructure(data.structure);
+
+                // Mostrar resultados
+                loading.style.display = 'none';
+                stats.style.display = 'block';
+                structure.style.display = 'block';
+
+                console.log('📊 Estrutura completa:', data);
+
+            } catch (err) {
+                console.error('❌ Erro:', err);
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.innerHTML = `
+                    <div class="error">
+                        <strong>Erro ao explorar estrutura:</strong> ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderStructure(folder, depth = 0) {
+            const container = document.getElementById('structureContent');
+            if (depth === 0) container.innerHTML = '';
+
+            const folderDiv = document.createElement('div');
+            folderDiv.className = `folder-item depth-${depth}`;
+            
+            const hasSubfolders = folder.folders && folder.folders.length > 0;
+            const hasFiles = folder.files && folder.files.length > 0;
+
+            folderDiv.innerHTML = `
+                <div class="folder-header">
+                    ${hasSubfolders ? `<button class="expand-btn" onclick="toggleFolder(this)"><i class="fas fa-chevron-down"></i></button>` : '<span style="width: 24px;"></span>'}
+                    <i class="fas fa-folder" style="color: #ffc107;"></i>
+                    <span class="folder-name">${folder.name}</span>
+                    <div class="folder-meta">
+                        <span><i class="fas fa-folder"></i> ${folder.totalSubfolders || 0}</span>
+                        <span><i class="fas fa-file"></i> ${folder.totalFiles || 0}</span>
+                        ${folder.hasImages ? '<span><i class="fas fa-image" style="color: #28a745;"></i> Imagens</span>' : ''}
+                    </div>
+                </div>
+                <div class="path-breadcrumb">📁 ${folder.path ? folder.path.join(' > ') : folder.name}</div>
+                <div class="folder-content">
+                    ${hasFiles ? `
+                        <div class="files-list">
+                            ${folder.files.slice(0, 5).map(file => `
+                                <div class="file-item ${file.isImage ? 'image' : ''}">
+                                    <i class="fas fa-${file.isImage ? 'image' : 'file'}"></i>
+                                    ${file.name}
+                                    ${file.size ? `<small>(${formatFileSize(file.size)})</small>` : ''}
+                                </div>
+                            `).join('')}
+                            ${folder.files.length > 5 ? `<div class="file-item"><small>... e mais ${folder.files.length - 5} arquivos</small></div>` : ''}
+                        </div>
+                    ` : ''}
+                    <div class="subfolders"></div>
+                </div>
+            `;
+
+            container.appendChild(folderDiv);
+
+            // Renderizar subpastas
+            if (hasSubfolders) {
+                const subfoldersContainer = folderDiv.querySelector('.subfolders');
+                folder.folders.forEach(subfolder => {
+                    const subfolderElement = renderSubfolder(subfolder, depth + 1);
+                    subfoldersContainer.appendChild(subfolderElement);
+                });
+            }
+
+            return folderDiv;
+        }
+
+        function renderSubfolder(folder, depth) {
+            const folderDiv = document.createElement('div');
+            folderDiv.className = `folder-item depth-${depth}`;
+            
+            const hasSubfolders = folder.folders && folder.folders.length > 0;
+            const hasFiles = folder.files && folder.files.length > 0;
+
+            folderDiv.innerHTML = `
+                <div class="folder-header">
+                    ${hasSubfolders ? `<button class="expand-btn" onclick="toggleFolder(this)"><i class="fas fa-chevron-down"></i></button>` : '<span style="width: 24px;"></span>'}
+                    <i class="fas fa-folder" style="color: #ffc107;"></i>
+                    <span class="folder-name">${folder.name}</span>
+                    <div class="folder-meta">
+                        <span><i class="fas fa-folder"></i> ${folder.totalSubfolders || 0}</span>
+                        <span><i class="fas fa-file"></i> ${folder.totalFiles || 0}</span>
+                        ${folder.hasImages ? '<span><i class="fas fa-image" style="color: #28a745;"></i> Imagens</span>' : ''}
+                    </div>
+                </div>
+                <div class="path-breadcrumb">📁 ${folder.path ? folder.path.join(' > ') : folder.name}</div>
+                <div class="folder-content">
+                    ${hasFiles ? `
+                        <div class="files-list">
+                            ${folder.files.slice(0, 3).map(file => `
+                                <div class="file-item ${file.isImage ? 'image' : ''}">
+                                    <i class="fas fa-${file.isImage ? 'image' : 'file'}"></i>
+                                    ${file.name}
+                                </div>
+                            `).join('')}
+                            ${folder.files.length > 3 ? `<div class="file-item"><small>... e mais ${folder.files.length - 3} arquivos</small></div>` : ''}
+                        </div>
+                    ` : ''}
+                    <div class="subfolders"></div>
+                </div>
+            `;
+
+            // Renderizar subpastas recursivamente
+            if (hasSubfolders) {
+                const subfoldersContainer = folderDiv.querySelector('.subfolders');
+                folder.folders.forEach(subfolder => {
+                    const subfolderElement = renderSubfolder(subfolder, depth + 1);
+                    subfoldersContainer.appendChild(subfolderElement);
+                });
+            }
+
+            return folderDiv;
+        }
+
+        function toggleFolder(button) {
+            const folderItem = button.closest('.folder-item');
+            folderItem.classList.toggle('collapsed');
+            const icon = button.querySelector('i');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-right');
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // Explorar automaticamente quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            exploreStructure();
+        });
+    </script>
+</body>
+</html>

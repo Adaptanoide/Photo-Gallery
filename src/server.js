@@ -71,6 +71,11 @@ app.use('*', (req, res) => {
     res.status(404).json({ error: 'Rota não encontrada' });
 });
 
+// Rota temporária para explorar estrutura Google Drive
+app.get('/drive-explorer', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/drive-explorer.html'));
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
