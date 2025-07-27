@@ -317,6 +317,9 @@ async function openPhotoModal(photoIndex) {
     const modal = document.getElementById('photoModal');
     modal.style.display = 'flex';
     
+    // NOVO: Inicializar sistema de zoom
+    initializePhotoZoom();
+    
     // Atualizar informações básicas
     document.getElementById('modalPhotoTitle').textContent = photo.name;
     document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${photos.length}`;
@@ -372,6 +375,8 @@ async function loadPhotoInModal(photoId) {
 // Navegar para foto anterior
 function previousPhoto() {
     if (navigationState.currentPhotoIndex > 0) {
+        // NOVO: Notificar mudança de foto para resetar zoom
+        notifyPhotoChange();
         openPhotoModal(navigationState.currentPhotoIndex - 1);
     }
 }
@@ -379,12 +384,16 @@ function previousPhoto() {
 // Navegar para próxima foto
 function nextPhoto() {
     if (navigationState.currentPhotoIndex < navigationState.currentPhotos.length - 1) {
+        // NOVO: Notificar mudança de foto para resetar zoom
+        notifyPhotoChange();
         openPhotoModal(navigationState.currentPhotoIndex + 1);
     }
 }
 
 // Fechar modal de foto
 function closePhotoModal() {
+    // NOVO: Destruir zoom antes de fechar
+    destroyPhotoZoom();
     document.getElementById('photoModal').style.display = 'none';
 }
 
@@ -522,3 +531,21 @@ function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
 }
+
+// ===== INTEGRAÇÃO COM SISTEMA DE ZOOM =====
+
+// Verificar se funções de zoom estão disponíveis
+function isZoomAvailable() {
+    return typeof initializePhotoZoom === 'function' && 
+           typeof notifyPhotoChange === 'function' && 
+           typeof destroyPhotoZoom === 'function';
+}
+
+// Log de inicialização do zoom
+document.addEventListener('DOMContentLoaded', () => {
+    if (isZoomAvailable()) {
+        console.log('✅ Sistema de zoom disponível');
+    } else {
+        console.warn('⚠️ Sistema de zoom não carregado');
+    }
+});

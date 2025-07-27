@@ -496,3 +496,208 @@
 .photo-modal {
     animation: fadeIn 0.2s ease;
 }
+
+/* ===== SISTEMA DE ZOOM - ADICIONAR AO FINAL DO CLIENT.CSS ===== */
+
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 12px;
+    border-radius: 20px;
+    z-index: 20;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.zoom-controls:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+/* Zoom Buttons */
+.zoom-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.zoom-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.zoom-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.zoom-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Zoom Level Indicator */
+.zoom-level {
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    min-width: 45px;
+    text-align: center;
+    padding: 0 4px;
+}
+
+/* Image Zoom States */
+.modal-body img.zoomed {
+    cursor: grab;
+}
+
+.modal-body img.zoomed:active {
+    cursor: grabbing;
+}
+
+.modal-body img.zoom-in-cursor {
+    cursor: zoom-in;
+}
+
+/* Photo Container Zoom */
+.photo-container.zoom-active {
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Zoom Animation */
+@keyframes zoomIn {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes zoomOut {
+    from {
+        transform: scale(1.1);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+/* Responsivo - Mobile */
+@media (max-width: 768px) {
+    .zoom-controls {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+        gap: 6px;
+    }
+    
+    .zoom-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+    
+    .zoom-level {
+        font-size: 0.7rem;
+        min-width: 40px;
+    }
+    
+    /* Ajustar para touch */
+    .zoom-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .zoom-controls {
+        opacity: 0.9;
+    }
+    
+    .zoom-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .zoom-btn:hover {
+        transform: none;
+    }
+    
+    .zoom-btn:active {
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(0.95);
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .zoom-controls {
+        backdrop-filter: blur(3px);
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .zoom-controls {
+        background: rgba(20, 20, 20, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .zoom-btn {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .zoom-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.25);
+    }
+}
+
+/* Accessibility */
+.zoom-btn:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+.zoom-controls[aria-hidden="true"] {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Performance Optimizations */
+.photo-container {
+    will-change: transform;
+}
+
+.modal-body img {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Prevent text selection during zoom/pan */
+.photo-container.zoom-active * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
