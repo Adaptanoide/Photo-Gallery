@@ -5,7 +5,8 @@
  */
 
 // ===== ESTADO DA NAVEGAÇÃO =====
-let navigationState = {
+// Estado da navegação e fotos (EXPOSTO GLOBALMENTE)
+window.navigationState = {
     currentPath: [],
     currentFolderId: null,
     clientData: null,
@@ -13,6 +14,9 @@ let navigationState = {
     currentPhotos: [],
     currentPhotoIndex: 0
 };
+
+// Alias local para compatibilidade
+let navigationState = window.navigationState;
 
 // ===== INICIALIZAÇÃO =====
 
