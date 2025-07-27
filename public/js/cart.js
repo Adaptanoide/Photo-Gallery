@@ -668,17 +668,20 @@ window.closeCartSidebar = function() {
 };
 
 /**
- * Prosseguir para checkout
+ * Prosseguir para finalização da seleção
  */
-window.proceedToCheckout = function() {
+window.proceedToFinalize = function() {
     if (CartSystem.state.totalItems === 0) {
         CartSystem.showNotification('Carrinho vazio', 'warning');
         return;
     }
     
-    // TODO: Implementar checkout na próxima fase
-    CartSystem.showNotification('Checkout será implementado na próxima fase!', 'info');
-    console.log('🛍️ Checkout:', CartSystem.state.items);
+    // TODO: Implementar finalização de seleção na próxima etapa
+    CartSystem.showNotification('Preparando finalização da seleção...', 'info');
+    console.log('🎯 Finalizando seleção:', CartSystem.state.items);
+    
+    // Próximo passo: chamar API de finalização
+    // finalizeSelection();
 };
 
 // ===== INICIALIZAÇÃO AUTOMÁTICA =====
