@@ -676,13 +676,95 @@ window.proceedToFinalize = function() {
         return;
     }
     
-    // TODO: Implementar finalização de seleção na próxima etapa
-    CartSystem.showNotification('Preparando finalização da seleção...', 'info');
-    console.log('🎯 Finalizando seleção:', CartSystem.state.items);
-    
-    // Próximo passo: chamar API de finalização
-    // finalizeSelection();
+    // Chamar API de finalização
+    finalizeSelection();
 };
+
+/**
+ * Finalizar seleção - chamar API backend
+ */
+async function finalizeSelection() {
+    try {
+        CartSystem.setLoading(true);
+        CartSystem.showNotification('Finalizando seleção...', 'info');
+        
+        console.log('🎯 Iniciando finalização da seleção:', CartSystem.state.items);
+        
+        // Buscar dados da sessão do cliente
+        const clientSession = CartSystem.getClientSession();
+        if (!clientSession) {
+            throw new Error('Sessão do cliente não encontrada');
+        }
+        
+        const requestData = {
+            sessionId: CartSystem.state.sessionId,
+            clientCode: clientSession.accessCode,
+            clientName: clientSession.user?.name || 'Cliente'
+        };
+        
+        const response = await fetch('/api/selection/finalize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || 'Erro ao finalizar seleção');
+        }
+        
+        // Sucesso!
+        console.log('✅ Seleção finalizada com sucesso:', result);
+        
+        CartSystem.showNotification('Seleção finalizada com sucesso!', 'success');
+        
+        // Atualizar carrinho (deve estar vazio agora)
+        await CartSystem.loadCart();
+        
+        // Fechar sidebar
+        CartSystem.closeSidebar();
+        
+        // Mostrar detalhes da seleção
+        showSelectionSuccess(result);
+        
+    } catch (error) {
+        console.error('❌ Erro ao finalizar seleção:', error);
+        CartSystem.showNotification(error.message, 'error');
+    } finally {
+        CartSystem.setLoading(false);
+    }
+}
+
+/**
+ * Mostrar modal de sucesso da seleção
+ */
+function showSelectionSuccess(result) {
+    const { selection, googleDrive, nextSteps } = result;
+    
+    const message = `
+        ✅ Seleção finalizada com sucesso!
+        
+        📁 Pasta criada: ${googleDrive.folderCreated}
+        📸 Fotos movidas: ${googleDrive.photosMovedCount}
+        📋 ID da seleção: ${selection.selectionId}
+        
+        ${nextSteps.message}
+        ${nextSteps.expiration}
+        ${nextSteps.contact}
+    `;
+    
+    CartSystem.showNotification(message, 'success');
+    
+    console.log('📋 Detalhes da seleção:', {
+        selectionId: selection.selectionId,
+        folderName: selection.clientFolderName,
+        totalItems: selection.totalItems,
+        status: selection.status
+    });
+}
 
 // ===== INICIALIZAÇÃO AUTOMÁTICA =====
 document.addEventListener('DOMContentLoaded', () => {
