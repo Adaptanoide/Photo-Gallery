@@ -31,22 +31,22 @@ function setupEventListeners() {
     // Verificar se estamos na página inicial (tem botões admin/client)
     const adminBtn = document.getElementById('adminBtn');
     const clientBtn = document.getElementById('clientBtn');
-    
+
     if (adminBtn && clientBtn) {
         // Página inicial - configurar botões principais
         adminBtn.addEventListener('click', showAdminLogin);
         clientBtn.addEventListener('click', showClientLogin);
     }
-    
+
     // Forms - verificar se existem antes de adicionar listeners
     if (elements.adminLoginForm) {
         elements.adminLoginForm.addEventListener('submit', handleAdminLogin);
     }
-    
+
     if (elements.clientLoginForm) {
         elements.clientLoginForm.addEventListener('submit', handleClientLogin);
     }
-    
+
     // Input de código do cliente - verificar se existe
     const clientCodeInput = document.getElementById('clientCode');
     if (clientCodeInput) {
@@ -54,14 +54,14 @@ function setupEventListeners() {
             e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
         });
     }
-    
+
     // Fechar modal clicando fora
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) {
             closeModal(e.target.id);
         }
     });
-    
+
     // ESC para fechar modal
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -73,7 +73,7 @@ function setupEventListeners() {
 // Inicializar aplicação
 function initializeApp() {
     console.log('🚀 Sunshine Cowhides - Sistema iniciado');
-    
+
     // Verificar se há sessão ativa
     const savedSession = localStorage.getItem('sunshineSession');
     if (savedSession) {
@@ -84,7 +84,7 @@ function initializeApp() {
                 AppState.userType = session.userType;
                 AppState.currentUser = session.user;
                 AppState.accessCode = session.accessCode;
-                
+
                 // Redirecionar para área apropriada
                 if (session.userType === 'admin') {
                     //redirectToAdmin(); //Temporario
@@ -136,17 +136,17 @@ function showLoading(show = true) {
 // Handle login admin
 async function handleAdminLogin(e) {
     e.preventDefault();
-    
+
     const username = document.getElementById('adminUser').value.trim();
     const password = document.getElementById('adminPass').value;
-    
+
     if (!username || !password) {
         showNotification('Por favor, preencha todos os campos', 'error');
         return;
     }
-    
+
     showLoading(true);
-    
+
     try {
         const response = await fetch('/api/auth/admin/login', {
             method: 'POST',
@@ -155,9 +155,9 @@ async function handleAdminLogin(e) {
             },
             body: JSON.stringify({ username, password })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             // Salvar sessão
             const session = {
@@ -166,24 +166,24 @@ async function handleAdminLogin(e) {
                 token: data.token,
                 expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
             };
-            
+
             localStorage.setItem('sunshineSession', JSON.stringify(session));
-            
+
             AppState.isLoggedIn = true;
             AppState.userType = 'admin';
             AppState.currentUser = data.user;
-            
+
             showNotification('Login realizado com sucesso!', 'success');
             closeModal('adminModal');
-            
+
             setTimeout(() => {
                 redirectToAdmin();
             }, 1000);
-            
+
         } else {
             showNotification(data.message || 'Credenciais inválidas', 'error');
         }
-        
+
     } catch (error) {
         console.error('Erro no login:', error);
         showNotification('Erro de conexão. Tente novamente.', 'error');
@@ -195,16 +195,16 @@ async function handleAdminLogin(e) {
 // Handle login cliente
 async function handleClientLogin(e) {
     e.preventDefault();
-    
+
     const code = document.getElementById('clientCode').value.trim();
-    
+
     if (!code || code.length !== 4) {
         showNotification('Digite um código válido de 4 dígitos', 'error');
         return;
     }
-    
+
     showLoading(true);
-    
+
     try {
         const response = await fetch('/api/auth/client/verify', {
             method: 'POST',
@@ -213,9 +213,9 @@ async function handleClientLogin(e) {
             },
             body: JSON.stringify({ code })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             // Salvar sessão
             const session = {
@@ -225,25 +225,25 @@ async function handleClientLogin(e) {
                 allowedCategories: data.allowedCategories,
                 expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 horas
             };
-            
+
             localStorage.setItem('sunshineSession', JSON.stringify(session));
-            
+
             AppState.isLoggedIn = true;
             AppState.userType = 'client';
             AppState.accessCode = code;
             AppState.currentUser = data.client;
-            
+
             showNotification(`Bem-vindo, ${data.client.name}!`, 'success');
             closeModal('clientModal');
-            
+
             setTimeout(() => {
                 redirectToClient();
             }, 1000);
-            
+
         } else {
             showNotification(data.message || 'Código inválido ou expirado', 'error');
         }
-        
+
     } catch (error) {
         console.error('Erro na verificação:', error);
         showNotification('Erro de conexão. Tente novamente.', 'error');
@@ -264,33 +264,59 @@ function redirectToClient() {
 
 // Verificar status do sistema
 async function checkSystemStatus() {
+    // Verificar se estamos na página inicial (tem elementos de status)
+    const statusElements = {
+        systemStatus: document.getElementById('systemStatus'),
+        apiStatus: document.getElementById('apiStatus'),
+        driveStatus: document.getElementById('driveStatus'),
+        dbStatus: document.getElementById('dbStatus')
+    };
+
+    // Se não temos os elementos de status, não fazer nada (provavelmente estamos em outra página)
+    if (!statusElements.apiStatus || !statusElements.driveStatus || !statusElements.dbStatus) {
+        console.log('ℹ️ Elementos de status não encontrados - página sem status dashboard');
+        return;
+    }
+
+    console.log('🔍 Verificando status do sistema...');
+
     const statusChecks = [
-        { name: 'api', endpoint: '/api/status', element: elements.apiStatus },
-        { name: 'drive', endpoint: '/api/drive/status', element: elements.driveStatus },
-        { name: 'db', endpoint: '/api/admin/db-status', element: elements.dbStatus }
+        { name: 'api', endpoint: '/api/status', element: statusElements.apiStatus },
+        { name: 'drive', endpoint: '/api/drive/status', element: statusElements.driveStatus },
+        { name: 'db', endpoint: '/api/admin/db-status', element: statusElements.dbStatus }
     ];
-    
+
     for (const check of statusChecks) {
         try {
+            if (!check.element) {
+                console.log(`⚠️ Elemento não encontrado para: ${check.name}`);
+                continue;
+            }
+
             check.element.textContent = 'Verificando...';
             check.element.className = 'status-value status-loading';
-            
+
             const response = await fetch(check.endpoint);
             const data = await response.json();
-            
-            if (response.ok && data.status === 'OK') {
+
+            if (response.ok && (data.status === 'OK' || data.success)) {
                 check.element.textContent = 'Online';
                 check.element.className = 'status-value status-ok';
+                console.log(`✅ ${check.name}: Online`);
             } else {
                 throw new Error(data.message || 'Serviço indisponível');
             }
-            
+
         } catch (error) {
-            console.error(`Erro ao verificar ${check.name}:`, error);
-            check.element.textContent = 'Offline';
-            check.element.className = 'status-value status-error';
+            console.error(`❌ Erro ao verificar ${check.name}:`, error);
+            if (check.element) {
+                check.element.textContent = 'Offline';
+                check.element.className = 'status-value status-error';
+            }
         }
     }
+
+    console.log('✅ Verificação de status concluída');
 }
 
 // Sistema de notificações
@@ -300,7 +326,7 @@ function showNotification(message, type = 'info') {
     if (existing) {
         existing.remove();
     }
-    
+
     // Criar nova notificação
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
@@ -310,7 +336,7 @@ function showNotification(message, type = 'info') {
             <span>${message}</span>
         </div>
     `;
-    
+
     // Adicionar estilos inline (temporário)
     notification.style.cssText = `
         position: fixed;
@@ -328,7 +354,7 @@ function showNotification(message, type = 'info') {
         align-items: center;
         gap: 10px;
     `;
-    
+
     // Cores por tipo
     const colors = {
         success: '#28a745',
@@ -336,11 +362,11 @@ function showNotification(message, type = 'info') {
         warning: '#ffc107',
         info: '#17a2b8'
     };
-    
+
     notification.style.backgroundColor = colors[type] || colors.info;
-    
+
     document.body.appendChild(notification);
-    
+
     // Remover após 4 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease';
@@ -370,9 +396,9 @@ function logout() {
     AppState.userType = null;
     AppState.accessCode = null;
     AppState.currentUser = null;
-    
+
     showNotification('Logout realizado com sucesso', 'success');
-    
+
     setTimeout(() => {
         window.location.href = '/';
     }, 1000);

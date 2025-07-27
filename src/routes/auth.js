@@ -16,7 +16,7 @@ const getGoogleDriveAuth = () => {
         },
         scopes: ['https://www.googleapis.com/auth/drive.readonly']
     });
-    
+
     return google.drive({ version: 'v3', auth });
 };
 
@@ -198,7 +198,7 @@ router.get('/client/data', async (req, res) => {
                 // Remover números e pontos do início para comparação mais flexível
                 const categoryClean = category.name.replace(/^\d+\.\s*/, '').toLowerCase().trim();
                 const allowedClean = allowed.replace(/^\d+\.\s*/, '').toLowerCase().trim();
-                
+
                 // Múltiplas formas de match para maior compatibilidade
                 return (
                     category.name.toLowerCase() === allowed.toLowerCase() ||           // Match exato
@@ -321,9 +321,9 @@ router.post('/admin/setup', async (req, res) => {
 router.get('/debug/accesscode/:code', async (req, res) => {
     try {
         const { code } = req.params;
-        
+
         const accessCode = await AccessCode.findOne({ code });
-        
+
         if (!accessCode) {
             return res.json({
                 success: false,
@@ -331,7 +331,7 @@ router.get('/debug/accesscode/:code', async (req, res) => {
                 code
             });
         }
-        
+
         res.json({
             success: true,
             accessCode: {
@@ -346,7 +346,7 @@ router.get('/debug/accesscode/:code', async (req, res) => {
                 lastUsed: accessCode.lastUsed
             }
         });
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -360,27 +360,27 @@ router.get('/debug/accesscode/:code', async (req, res) => {
 router.post('/fix/accesscode/:code', async (req, res) => {
     try {
         const { code } = req.params;
-        
+
         const accessCode = await AccessCode.findOne({ code });
-        
+
         if (!accessCode) {
             return res.status(404).json({
                 success: false,
                 message: 'Código não encontrado'
             });
         }
-        
+
         // Corrigir categorias para o cliente 7064
         if (code === '7064') {
             const oldCategories = [...accessCode.allowedCategories];
-            
+
             accessCode.allowedCategories = [
                 "1. Colombian Cowhides",
                 "2. Brazil Best Sellers"
             ];
-            
+
             await accessCode.save();
-            
+
             return res.json({
                 success: true,
                 message: 'AccessCode 7064 corrigido com sucesso',
@@ -395,12 +395,12 @@ router.post('/fix/accesscode/:code', async (req, res) => {
                 }
             });
         }
-        
+
         res.json({
             success: false,
             message: 'Código não necessita correção ou não é suportado para correção automática'
         });
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -462,6 +462,115 @@ router.get('/verify-token', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro interno do servidor'
+        });
+    }
+});
+
+// DEBUG COMPLETO: Investigar problema das categorias
+router.get('/debug/categories/:code', async (req, res) => {
+    try {
+        const { code } = req.params;
+
+        // 1. Buscar dados do AccessCode
+        const accessCode = await AccessCode.findOne({ code });
+        if (!accessCode) {
+            return res.json({
+                success: false,
+                message: 'Código não encontrado',
+                code
+            });
+        }
+
+        // 2. Buscar categorias do Google Drive
+        let availableCategories = [];
+        let driveError = null;
+
+        try {
+            const drive = getGoogleDriveAuth();
+            const parentFolderId = process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
+
+            const response = await drive.files.list({
+                q: `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
+                fields: 'files(id, name, modifiedTime)',
+                orderBy: 'name'
+            });
+
+            availableCategories = response.data.files;
+        } catch (error) {
+            driveError = error.message;
+        }
+
+        // 3. Testar TODOS os tipos de filtro possíveis
+        const filterTests = [];
+
+        for (const allowed of accessCode.allowedCategories) {
+            for (const category of availableCategories) {
+                // Diferentes tipos de match
+                const tests = {
+                    exactMatch: category.name.toLowerCase() === allowed.toLowerCase(),
+                    categoryContainsAllowed: category.name.toLowerCase().includes(allowed.toLowerCase()),
+                    allowedContainsCategory: allowed.toLowerCase().includes(category.name.toLowerCase()),
+                    noNumbersMatch: category.name.replace(/^\d+\.\s*/, '').toLowerCase() === allowed.replace(/^\d+\.\s*/, '').toLowerCase(),
+                    partialNoNumbers: category.name.replace(/^\d+\.\s*/, '').toLowerCase().includes(allowed.replace(/^\d+\.\s*/, '').toLowerCase()),
+                    reversePartialNoNumbers: allowed.replace(/^\d+\.\s*/, '').toLowerCase().includes(category.name.replace(/^\d+\.\s*/, '').toLowerCase())
+                };
+
+                const anyMatch = Object.values(tests).some(t => t);
+
+                filterTests.push({
+                    allowed,
+                    categoryName: category.name,
+                    categoryId: category.id,
+                    tests,
+                    matches: anyMatch
+                });
+            }
+        }
+
+        // 4. Aplicar filtro atual
+        const filteredCategories = availableCategories.filter(category => {
+            return accessCode.allowedCategories.some(allowed => {
+                const categoryClean = category.name.replace(/^\d+\.\s*/, '').toLowerCase().trim();
+                const allowedClean = allowed.replace(/^\d+\.\s*/, '').toLowerCase().trim();
+
+                return (
+                    category.name.toLowerCase() === allowed.toLowerCase() ||
+                    category.name.toLowerCase().includes(allowedClean) ||
+                    allowed.toLowerCase().includes(categoryClean) ||
+                    categoryClean === allowedClean ||
+                    category.name.toLowerCase().includes(allowed.toLowerCase()) ||
+                    allowed.toLowerCase().includes(category.name.toLowerCase())
+                );
+            });
+        });
+
+        res.json({
+            success: true,
+            debug: {
+                accessCode: {
+                    code: accessCode.code,
+                    clientName: accessCode.clientName,
+                    allowedCategories: accessCode.allowedCategories,
+                    allowedCount: accessCode.allowedCategories.length
+                },
+                googleDrive: {
+                    error: driveError,
+                    availableCategories: availableCategories.map(c => ({ id: c.id, name: c.name })),
+                    availableCount: availableCategories.length
+                },
+                filtering: {
+                    filteredCategories: filteredCategories.map(c => ({ id: c.id, name: c.name })),
+                    filteredCount: filteredCategories.length,
+                    allFilterTests: filterTests
+                }
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro no debug',
+            error: error.message
         });
     }
 });
