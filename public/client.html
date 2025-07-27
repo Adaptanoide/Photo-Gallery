@@ -24,25 +24,267 @@
 
     <main class="main">
         <div class="container">
-            <h1>🎉 Bem-vindo, João Silva!</h1>
-            <p>Código: 7064 - Acesso liberado para suas categorias</p>
-            
-            <div class="access-cards">
-                <div class="access-card">
-                    <h3><i class="fas fa-images"></i> 1. Colombian Cowhides</h3>
-                    <p>Couros colombianos de alta qualidade</p>
-                    <button class="btn btn-primary">Ver Produtos</button>
+            <!-- Loading inicial -->
+            <div id="clientLoading" class="loading-section">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                </div>
+                <p>Carregando suas categorias...</p>
+            </div>
+
+            <!-- Erro de carregamento -->
+            <div id="clientError" class="error-section" style="display: none;">
+                <div class="error-content">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    <h3>Erro ao carregar dados</h3>
+                    <p id="errorMessage">Não foi possível carregar suas categorias.</p>
+                    <button onclick="loadClientData()" class="btn btn-primary">
+                        <i class="fas fa-redo"></i> Tentar novamente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Conteúdo principal (carregado dinamicamente) -->
+            <div id="clientContent" style="display: none;">
+                <!-- Cabeçalho do cliente -->
+                <div class="client-header">
+                    <h1 id="clientWelcome">🎉 Bem-vindo!</h1>
+                    <p id="clientInfo">Carregando informações...</p>
                 </div>
                 
-                <div class="access-card">
-                    <h3><i class="fas fa-star"></i> 2. Brazil Best Sellers</h3>
-                    <p>Os mais vendidos do Brasil</p>
-                    <button class="btn btn-secondary">Ver Produtos</button>
+                <!-- Categorias permitidas -->
+                <div id="categoriesContainer" class="access-cards">
+                    <!-- Categorias serão carregadas aqui via JavaScript -->
+                </div>
+
+                <!-- Mensagem quando não há categorias -->
+                <div id="noCategoriesMessage" class="no-content" style="display: none;">
+                    <i class="fas fa-folder-open fa-3x"></i>
+                    <h3>Nenhuma categoria disponível</h3>
+                    <p>Entre em contato com o administrador para verificar suas permissões.</p>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Estilos adicionais para elementos dinâmicos -->
+    <style>
+        .loading-section {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            margin-bottom: 1rem;
+            color: var(--primary-color, #007bff);
+        }
+
+        .error-section {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .error-content {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .error-content i {
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+
+        .client-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .client-header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.8rem;
+        }
+
+        .client-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .access-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .access-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary-color, #007bff);
+            transition: transform 0.2s ease;
+        }
+
+        .access-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .access-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .access-card p {
+            margin: 0 0 1rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .no-content {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .no-content i {
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .category-meta {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .access-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .client-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+
     <script src="js/app.js"></script>
+    <script>
+        // Carregar dados do cliente quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadClientData();
+        });
+
+        // Função para carregar dados dinâmicos do cliente
+        async function loadClientData() {
+            const loadingEl = document.getElementById('clientLoading');
+            const errorEl = document.getElementById('clientError');
+            const contentEl = document.getElementById('clientContent');
+            
+            // Mostrar loading
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            contentEl.style.display = 'none';
+
+            try {
+                // Buscar código da sessão
+                const savedSession = localStorage.getItem('sunshineSession');
+                if (!savedSession) {
+                    throw new Error('Sessão não encontrada');
+                }
+
+                const session = JSON.parse(savedSession);
+                if (!session.accessCode) {
+                    throw new Error('Código de acesso não encontrado');
+                }
+
+                // Fazer requisição para buscar dados
+                const response = await fetch(`/api/auth/client/data?code=${session.accessCode}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Erro ao carregar dados');
+                }
+
+                // Atualizar interface com dados recebidos
+                updateClientInterface(data);
+                
+                // Mostrar conteúdo
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+
+            } catch (error) {
+                console.error('Erro ao carregar dados do cliente:', error);
+                
+                // Mostrar erro
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                
+                const errorMsg = document.getElementById('errorMessage');
+                errorMsg.textContent = error.message || 'Erro de conexão';
+            }
+        }
+
+        // Função para atualizar interface com dados do cliente
+        function updateClientInterface(data) {
+            const { client, allowedCategories } = data;
+            
+            // Atualizar cabeçalho
+            const welcomeEl = document.getElementById('clientWelcome');
+            const infoEl = document.getElementById('clientInfo');
+            
+            welcomeEl.textContent = `🎉 Bem-vindo, ${client.name}!`;
+            infoEl.textContent = `Código: ${client.code} - ${allowedCategories.length} categoria(s) disponível(eis)`;
+            
+            // Atualizar categorias
+            const containerEl = document.getElementById('categoriesContainer');
+            const noCategoriesEl = document.getElementById('noCategoriesMessage');
+            
+            if (allowedCategories.length === 0) {
+                containerEl.style.display = 'none';
+                noCategoriesEl.style.display = 'block';
+                return;
+            }
+            
+            // Gerar cards de categorias
+            containerEl.innerHTML = allowedCategories.map((category, index) => `
+                <div class="access-card">
+                    <h3>
+                        <i class="fas fa-folder"></i> 
+                        ${category.name}
+                    </h3>
+                    <p>Categoria com acesso liberado para visualização</p>
+                    <button class="btn btn-primary" onclick="viewCategory('${category.id}', '${category.name}')">
+                        <i class="fas fa-images"></i> Ver Produtos
+                    </button>
+                    <div class="category-meta">
+                        ID: ${category.id}
+                    </div>
+                </div>
+            `).join('');
+            
+            containerEl.style.display = 'grid';
+            noCategoriesEl.style.display = 'none';
+        }
+
+        // Função para visualizar categoria (próxima fase)
+        function viewCategory(categoryId, categoryName) {
+            console.log(`Visualizar categoria: ${categoryName} (${categoryId})`);
+            showNotification(`Em breve: visualização da categoria "${categoryName}"`, 'info');
+        }
+    </script>
 </body>
 </html>
