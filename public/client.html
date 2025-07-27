@@ -87,11 +87,6 @@
                             <h3 id="galleryTitle">Fotos da categoria</h3>
                             <div class="gallery-info">
                                 <span id="photosCount">0 fotos</span>
-                                <div class="gallery-controls">
-                                    <button onclick="toggleViewMode()" class="btn btn-sm" id="viewModeBtn">
-                                        <i class="fas fa-th"></i> Grade
-                                    </button>
-                                </div>
                             </div>
                         </div>
                         
@@ -163,7 +158,7 @@
         </div>
     </div>
 
-    <!-- Estilos melhorados para experiência de fotos -->
+    <!-- Estilos melhorados e corrigidos -->
     <style>
         * {
             box-sizing: border-box;
@@ -290,26 +285,15 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            color: #666;
         }
 
-        .gallery-controls .btn {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        /* Grid de fotos - Diferentes modos de visualização */
+        /* Grid de fotos otimizado */
         .photos-grid {
             display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 1rem;
             transition: all 0.3s ease;
-        }
-
-        .photos-grid.grid-view {
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        }
-
-        .photos-grid.list-view {
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         }
 
         .photo-thumbnail {
@@ -320,6 +304,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             background: #f8f9fa;
+            aspect-ratio: 1;
         }
 
         .photo-thumbnail:hover {
@@ -329,16 +314,32 @@
 
         .photo-thumbnail img {
             width: 100%;
-            height: 180px;
+            height: 100%;
             object-fit: cover;
             transition: opacity 0.3s ease;
         }
 
-        .photo-thumbnail.loading img {
+        .photo-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            color: #666;
+        }
+
+        .photo-placeholder i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
             opacity: 0.5;
         }
 
-        .photo-thumbnail .photo-overlay {
+        .photo-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
@@ -355,15 +356,7 @@
             transform: translateY(0);
         }
 
-        .photo-loading-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #007bff;
-        }
-
-        /* Modal de foto fullscreen */
+        /* Modal fullscreen melhorado */
         .photo-modal {
             position: fixed;
             top: 0;
@@ -387,9 +380,9 @@
 
         .modal-content {
             position: relative;
-            width: 95%;
-            height: 95%;
-            max-width: 1200px;
+            width: 95vw;
+            height: 95vh;
+            max-width: none;
             background: white;
             border-radius: 8px;
             display: flex;
@@ -404,6 +397,7 @@
             padding: 1rem;
             background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
+            flex-shrink: 0;
         }
 
         .modal-header h4 {
@@ -439,19 +433,21 @@
             justify-content: center;
             position: relative;
             background: #000;
+            min-height: 0;
         }
 
         .photo-container {
             position: relative;
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         .modal-body img {
-            max-width: 100%;
+            max-width: calc(100% - 120px);
             max-height: 100%;
             object-fit: contain;
             border-radius: 4px;
@@ -498,6 +494,8 @@
             padding: 1rem;
             background: #f8f9fa;
             border-top: 1px solid #dee2e6;
+            flex-shrink: 0;
+            min-height: 80px;
         }
 
         .photo-info {
@@ -539,13 +537,17 @@
             }
             
             .photos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
             
             .modal-content {
-                width: 100%;
-                height: 100%;
+                width: 100vw;
+                height: 100vh;
                 border-radius: 0;
+            }
+            
+            .modal-body img {
+                max-width: calc(100% - 80px);
             }
             
             .nav-btn {
@@ -565,12 +567,25 @@
             .modal-footer {
                 flex-direction: column;
                 gap: 0.5rem;
-                align-items: stretch;
+                padding: 0.75rem;
+                min-height: 100px;
             }
             
             .photo-info {
                 justify-content: center;
+                text-align: center;
                 flex-wrap: wrap;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .modal-content {
+                width: 90vw;
+                height: 90vh;
+            }
+            
+            .modal-body img {
+                max-width: calc(100% - 140px);
             }
         }
 
@@ -603,8 +618,7 @@
             clientData: null,
             allowedCategories: [],
             currentPhotos: [],
-            currentPhotoIndex: 0,
-            viewMode: 'grid' // 'grid' ou 'list'
+            currentPhotoIndex: 0
         };
 
         // Carregar dados do cliente quando a página carregar
@@ -840,7 +854,7 @@
             }
         }
 
-        // Mostrar galeria de fotos
+        // Mostrar galeria de fotos (CORRIGIDA)
         function showPhotosGallery(photos, folderName) {
             hideAllContainers();
             document.getElementById('photosContainer').style.display = 'block';
@@ -853,25 +867,37 @@
             
             // Gerar grid de fotos
             const gridEl = document.getElementById('photosGrid');
-            gridEl.className = `photos-grid ${navigationState.viewMode}-view`;
             
             if (photos.length === 0) {
                 showNoContent('Nenhuma foto', 'Esta categoria não possui fotos no momento.');
                 return;
             }
             
-            gridEl.innerHTML = photos.map((photo, index) => `
-                <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
-                    <img src="${photo.thumbnailSmall || photo.thumbnailLink || ''}" 
-                         alt="${photo.name}" 
-                         loading="lazy"
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"150\" height=\"150\"><rect width=\"150\" height=\"150\" fill=\"%23f8f9fa\"/><text x=\"50%\" y=\"50%\" font-family=\"Arial\" font-size=\"12\" fill=\"%23666\" text-anchor=\"middle\" dy=\".3em\">Erro</text></svg>'">
-                    <div class="photo-overlay">
-                        <div><strong>${photo.name}</strong></div>
-                        <small>${formatFileSize(photo.size)}</small>
+            gridEl.innerHTML = photos.map((photo, index) => {
+                // Usar thumbnail de melhor qualidade do Google Drive
+                const thumbnailUrl = photo.thumbnailLink ? 
+                    photo.thumbnailLink.replace('=s220', '=s400') : // Melhor qualidade
+                    photo.thumbnailMedium || 
+                    photo.thumbnailSmall || 
+                    '';
+                
+                return `
+                    <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
+                        <img src="${thumbnailUrl}" 
+                             alt="${photo.name}" 
+                             loading="lazy"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="photo-placeholder" style="display: none;">
+                            <i class="fas fa-image"></i>
+                            <small>Imagem não disponível</small>
+                        </div>
+                        <div class="photo-overlay">
+                            <div><strong>${photo.name}</strong></div>
+                            <small>${formatFileSize(photo.size)}</small>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Abrir foto em modal fullscreen
@@ -926,8 +952,15 @@
             } catch (error) {
                 console.error('Erro ao carregar foto:', error);
                 spinner.style.display = 'none';
-                img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Erro ao carregar foto</text></svg>';
                 img.style.display = 'block';
+                
+                // Tentar usar a foto atual como fallback
+                const currentPhoto = navigationState.currentPhotos[navigationState.currentPhotoIndex];
+                if (currentPhoto && currentPhoto.thumbnailLink) {
+                    img.src = currentPhoto.thumbnailLink.replace('=s220', '=s1200');
+                } else {
+                    img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Erro ao carregar foto</text></svg>';
+                }
             }
         }
 
@@ -955,21 +988,6 @@
             const photo = navigationState.currentPhotos[navigationState.currentPhotoIndex];
             console.log('Foto selecionada para carrinho:', photo);
             showNotification(`Em breve: foto "${photo.name}" será adicionada ao carrinho`, 'info');
-        }
-
-        // Alternar modo de visualização
-        function toggleViewMode() {
-            navigationState.viewMode = navigationState.viewMode === 'grid' ? 'list' : 'grid';
-            const btn = document.getElementById('viewModeBtn');
-            const grid = document.getElementById('photosGrid');
-            
-            if (navigationState.viewMode === 'grid') {
-                btn.innerHTML = '<i class="fas fa-th"></i> Grade';
-                grid.className = 'photos-grid grid-view';
-            } else {
-                btn.innerHTML = '<i class="fas fa-list"></i> Lista';
-                grid.className = 'photos-grid list-view';
-            }
         }
 
         // Mostrar/ocultar loading de fotos
