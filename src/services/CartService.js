@@ -58,16 +58,24 @@ class CartService {
                     throw new Error('Produto já foi reservado ou vendido por outro cliente');
                 }
 
-                // 2. Buscar ou criar carrinho
-                let cart = await Cart.findActiveBySession(sessionId).session(session);
+                // 2. Buscar carrinho (ativo ou inativo)
+                let cart = await Cart.findOne({ sessionId }).session(session);
 
                 if (!cart) {
+                    // Criar novo carrinho apenas se não existir nenhum
                     cart = new Cart({
                         sessionId,
                         clientCode,
                         clientName,
                         items: []
                     });
+                } else if (!cart.isActive) {
+                    // Reativar carrinho existente se estiver inativo
+                    console.log(`🔄 Reativando carrinho inativo: ${sessionId}`);
+                    cart.isActive = true;
+                    cart.items = []; // Limpar itens antigos
+                    cart.clientCode = clientCode; // Atualizar dados do cliente
+                    cart.clientName = clientName;
                 }
 
                 // 3. Verificar se item já está no carrinho
