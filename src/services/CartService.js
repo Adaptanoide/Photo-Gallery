@@ -3,13 +3,13 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
 class CartService {
-    
+
     // ===== CONFIGURAÇÕES =====
     static RESERVATION_DURATION = 15 * 60 * 1000; // 15 minutos em ms
     static MAX_ITEMS_PER_CART = 10; // Limite máximo de itens por carrinho
-    
+
     // ===== MÉTODOS PRINCIPAIS =====
-    
+
     /**
      * Adicionar item ao carrinho com reserva
      * @param {string} sessionId - ID da sessão do cliente
@@ -21,24 +21,46 @@ class CartService {
      */
     static async addToCart(sessionId, clientCode, clientName, driveFileId, itemData = {}) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`🛒 Tentando adicionar item ${driveFileId} ao carrinho ${sessionId}`);
-                
-                // 1. Verificar se produto existe e está disponível
-                const product = await Product.findOne({ 
-                    driveFileId,
-                    status: 'available'
+
+                // 1. Verificar se produto existe, senão criar automaticamente
+                let product = await Product.findOne({
+                    driveFileId
                 }).session(session);
-                
+
                 if (!product) {
-                    throw new Error('Produto não encontrado ou não disponível');
+                    // CRIAR PRODUTO AUTOMATICAMENTE A PARTIR DA FOTO DO GOOGLE DRIVE
+                    console.log(`📦 Criando produto automaticamente para foto: ${driveFileId}`);
+
+                    product = new Product({
+                        driveFileId: driveFileId,
+                        fileName: itemData.fileName || 'Produto sem nome',
+                        category: itemData.category || 'Categoria',
+                        subcategory: null,
+                        price: 0, // Será definido depois pelo admin
+                        status: 'available',
+                        thumbnailUrl: itemData.thumbnailUrl || null,
+                        webViewLink: null,
+                        size: null
+                    });
+
+                    await product.save({ session });
+                    console.log(`✅ Produto criado automaticamente: ${product._id} para foto ${driveFileId}`);
+                } else {
+                    console.log(`📦 Produto já existe: ${product._id} para foto ${driveFileId}`);
                 }
-                
+
+                // Verificar se produto está disponível
+                if (product.status !== 'available') {
+                    throw new Error('Produto já foi reservado ou vendido por outro cliente');
+                }
+
                 // 2. Buscar ou criar carrinho
                 let cart = await Cart.findActiveBySession(sessionId).session(session);
-                
+
                 if (!cart) {
                     cart = new Cart({
                         sessionId,
@@ -47,23 +69,23 @@ class CartService {
                         items: []
                     });
                 }
-                
+
                 // 3. Verificar se item já está no carrinho
                 if (cart.hasItem(driveFileId)) {
                     throw new Error('Item já está no carrinho');
                 }
-                
+
                 // 4. Verificar limite de itens
                 if (cart.totalItems >= CartService.MAX_ITEMS_PER_CART) {
                     throw new Error(`Limite máximo de ${CartService.MAX_ITEMS_PER_CART} itens por carrinho`);
                 }
-                
+
                 // 5. Calcular tempo de expiração
                 const expiresAt = new Date(Date.now() + CartService.RESERVATION_DURATION);
-                
+
                 // 6. Reservar produto (operação atômica)
                 const updateResult = await Product.updateOne(
-                    { 
+                    {
                         _id: product._id,
                         status: 'available' // Double-check
                     },
@@ -77,11 +99,11 @@ class CartService {
                         }
                     }
                 ).session(session);
-                
+
                 if (updateResult.matchedCount === 0) {
                     throw new Error('Produto foi reservado por outro cliente');
                 }
-                
+
                 // 7. Adicionar item ao carrinho
                 const cartItem = {
                     productId: product._id,
@@ -92,12 +114,12 @@ class CartService {
                     expiresAt,
                     ...itemData
                 };
-                
+
                 cart.items.push(cartItem);
                 await cart.save({ session });
-                
+
                 console.log(`✅ Item ${driveFileId} adicionado ao carrinho ${sessionId}`);
-                
+
                 return {
                     success: true,
                     message: 'Item adicionado ao carrinho',
@@ -107,7 +129,7 @@ class CartService {
                     timeRemaining: Math.floor(CartService.RESERVATION_DURATION / 1000)
                 };
             });
-            
+
         } catch (error) {
             console.error(`❌ Erro ao adicionar item ao carrinho:`, error);
             throw error;
@@ -115,7 +137,7 @@ class CartService {
             await session.endSession();
         }
     }
-    
+
     /**
      * Remover item do carrinho e liberar reserva
      * @param {string} sessionId - ID da sessão do cliente
@@ -124,24 +146,24 @@ class CartService {
      */
     static async removeFromCart(sessionId, driveFileId) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`🗑️ Removendo item ${driveFileId} do carrinho ${sessionId}`);
-                
+
                 // 1. Buscar carrinho
                 const cart = await Cart.findActiveBySession(sessionId).session(session);
-                
+
                 if (!cart || !cart.hasItem(driveFileId)) {
                     throw new Error('Item não encontrado no carrinho');
                 }
-                
+
                 // 2. Remover item do carrinho
                 cart.items = cart.items.filter(item => item.driveFileId !== driveFileId);
-                
+
                 // 3. Liberar reserva do produto (operação atômica)
                 await Product.updateOne(
-                    { 
+                    {
                         driveFileId,
                         'reservedBy.sessionId': sessionId
                     },
@@ -155,23 +177,23 @@ class CartService {
                         }
                     }
                 ).session(session);
-                
+
                 // 4. Salvar carrinho
                 if (cart.totalItems === 0) {
                     cart.isActive = false;
                 }
-                
+
                 await cart.save({ session });
-                
+
                 console.log(`✅ Item ${driveFileId} removido do carrinho ${sessionId}`);
-                
+
                 return {
                     success: true,
                     message: 'Item removido do carrinho',
                     cart: await this.getCartSummary(sessionId)
                 };
             });
-            
+
         } catch (error) {
             console.error(`❌ Erro ao remover item do carrinho:`, error);
             throw error;
@@ -179,7 +201,7 @@ class CartService {
             await session.endSession();
         }
     }
-    
+
     /**
      * Buscar carrinho completo
      * @param {string} sessionId - ID da sessão do cliente
@@ -188,29 +210,29 @@ class CartService {
     static async getCart(sessionId) {
         try {
             const cart = await Cart.findActiveBySession(sessionId);
-            
+
             if (!cart) {
                 return null;
             }
-            
+
             // Limpar itens expirados antes de retornar
             const hadExpiredItems = cart.cleanExpiredItems();
-            
+
             if (hadExpiredItems) {
                 await cart.save();
-                
+
                 // Liberar reservas dos itens expirados
                 await this.releaseExpiredReservations(sessionId);
             }
-            
+
             return cart;
-            
+
         } catch (error) {
             console.error(`❌ Erro ao buscar carrinho:`, error);
             throw error;
         }
     }
-    
+
     /**
      * Resumo do carrinho (para APIs mais rápidas)
      * @param {string} sessionId - ID da sessão do cliente
@@ -219,7 +241,7 @@ class CartService {
     static async getCartSummary(sessionId) {
         try {
             const cart = await this.getCart(sessionId);
-            
+
             if (!cart) {
                 return {
                     totalItems: 0,
@@ -227,7 +249,7 @@ class CartService {
                     isEmpty: true
                 };
             }
-            
+
             return {
                 totalItems: cart.totalItems,
                 items: cart.items.map(item => ({
@@ -241,7 +263,7 @@ class CartService {
                 isEmpty: cart.totalItems === 0,
                 lastActivity: cart.lastActivity
             };
-            
+
         } catch (error) {
             console.error(`❌ Erro ao buscar resumo do carrinho:`, error);
             return {
@@ -252,7 +274,7 @@ class CartService {
             };
         }
     }
-    
+
     /**
      * Verificar se item está no carrinho
      * @param {string} sessionId - ID da sessão do cliente
@@ -268,9 +290,9 @@ class CartService {
             return false;
         }
     }
-    
+
     // ===== MÉTODOS DE LIMPEZA =====
-    
+
     /**
      * Limpar reservas expiradas para uma sessão específica
      * @param {string} sessionId - ID da sessão do cliente
@@ -278,7 +300,7 @@ class CartService {
     static async releaseExpiredReservations(sessionId) {
         try {
             const now = new Date();
-            
+
             // Liberar reservas expiradas
             const result = await Product.updateMany(
                 {
@@ -290,16 +312,16 @@ class CartService {
                     $unset: { 'reservedBy': 1, 'cartAddedAt': 1 }
                 }
             );
-            
+
             if (result.modifiedCount > 0) {
                 console.log(`🧹 Liberadas ${result.modifiedCount} reservas expiradas para sessão ${sessionId}`);
             }
-            
+
         } catch (error) {
             console.error(`❌ Erro ao liberar reservas expiradas:`, error);
         }
     }
-    
+
     /**
      * Limpeza geral de reservas expiradas (job automático)
      * @returns {object} Estatísticas da limpeza
@@ -307,9 +329,9 @@ class CartService {
     static async cleanupExpiredReservations() {
         try {
             const now = new Date();
-            
+
             console.log(`🧹 Iniciando limpeza de reservas expiradas...`);
-            
+
             // 1. Liberar produtos com reservas expiradas
             const productResult = await Product.updateMany(
                 {
@@ -321,22 +343,22 @@ class CartService {
                     $unset: { 'reservedBy': 1, 'cartAddedAt': 1 }
                 }
             );
-            
+
             // 2. Limpar carrinhos expirados
             const cartCleanupCount = await Cart.cleanupExpiredCarts();
-            
+
             const stats = {
                 productsReleased: productResult.modifiedCount,
                 cartsProcessed: cartCleanupCount,
                 timestamp: now
             };
-            
+
             if (stats.productsReleased > 0 || stats.cartsProcessed > 0) {
                 console.log(`✅ Limpeza concluída:`, stats);
             }
-            
+
             return stats;
-            
+
         } catch (error) {
             console.error(`❌ Erro na limpeza automática:`, error);
             return {
@@ -345,9 +367,9 @@ class CartService {
             };
         }
     }
-    
+
     // ===== MÉTODOS UTILITÁRIOS =====
-    
+
     /**
      * Gerar ID de sessão único
      * @returns {string} ID de sessão
@@ -355,7 +377,7 @@ class CartService {
     static generateSessionId() {
         return `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
-    
+
     /**
      * Estatísticas gerais do sistema de carrinho
      * @returns {object} Estatísticas
@@ -373,7 +395,7 @@ class CartService {
                     { $group: { _id: null, totalItems: { $sum: '$totalItems' } } }
                 ])
             ]);
-            
+
             return {
                 activeCarts: stats[0],
                 inactiveCarts: stats[1],
@@ -383,7 +405,7 @@ class CartService {
                 totalItemsInCarts: stats[5][0]?.totalItems || 0,
                 timestamp: new Date()
             };
-            
+
         } catch (error) {
             console.error(`❌ Erro ao buscar estatísticas:`, error);
             throw error;
