@@ -27,7 +27,7 @@ function setupKeyboardNavigation() {
     document.addEventListener('keydown', (e) => {
         const modal = document.getElementById('photoModal');
         if (modal.style.display !== 'none') {
-            switch(e.key) {
+            switch (e.key) {
                 case 'ArrowLeft':
                     e.preventDefault();
                     previousPhoto();
@@ -52,7 +52,7 @@ async function loadClientData() {
     const loadingEl = document.getElementById('clientLoading');
     const errorEl = document.getElementById('clientError');
     const contentEl = document.getElementById('clientContent');
-    
+
     // Mostrar loading
     loadingEl.style.display = 'block';
     errorEl.style.display = 'none';
@@ -85,19 +85,19 @@ async function loadClientData() {
         // Atualizar interface com dados recebidos
         updateClientInterface(data);
         showCategories();
-        
+
         // Mostrar conteúdo
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
 
     } catch (error) {
         console.error('Erro ao carregar dados do cliente:', error);
-        
+
         // Mostrar erro
         loadingEl.style.display = 'none';
         contentEl.style.display = 'none';
         errorEl.style.display = 'block';
-        
+
         const errorMsg = document.getElementById('errorMessage');
         errorMsg.textContent = error.message || 'Erro de conexão';
     }
@@ -106,11 +106,11 @@ async function loadClientData() {
 // Função para atualizar cabeçalho do cliente
 function updateClientInterface(data) {
     const { client, allowedCategories } = data;
-    
+
     // Atualizar cabeçalho
     const welcomeEl = document.getElementById('clientWelcome');
     const infoEl = document.getElementById('clientInfo');
-    
+
     welcomeEl.textContent = `🎉 Bem-vindo, ${client.name}!`;
     infoEl.textContent = `Código: ${client.code} - ${allowedCategories.length} categoria(s) disponível(eis)`;
 }
@@ -121,15 +121,15 @@ function updateClientInterface(data) {
 function showCategories() {
     hideAllContainers();
     document.getElementById('categoriesContainer').style.display = 'grid';
-    
+
     const containerEl = document.getElementById('categoriesContainer');
     const { allowedCategories } = navigationState;
-    
+
     if (allowedCategories.length === 0) {
         showNoContent('Nenhuma categoria disponível', 'Entre em contato com o administrador para verificar suas permissões.');
         return;
     }
-    
+
     // Gerar cards de categorias
     containerEl.innerHTML = allowedCategories.map(category => `
         <div class="category-card" onclick="navigateToCategory('${category.id}', '${category.name}')">
@@ -143,7 +143,7 @@ function showCategories() {
             </div>
         </div>
     `).join('');
-    
+
     // Esconder breadcrumb na tela inicial
     document.getElementById('breadcrumbContainer').style.display = 'none';
     document.getElementById('backNavigation').style.display = 'none';
@@ -153,7 +153,7 @@ function showCategories() {
 async function navigateToCategory(categoryId, categoryName) {
     navigationState.currentPath = [{ id: categoryId, name: categoryName }];
     navigationState.currentFolderId = categoryId;
-    
+
     updateBreadcrumb();
     await loadFolderContents(categoryId);
 }
@@ -164,17 +164,17 @@ async function navigateToCategory(categoryId, categoryName) {
 async function loadFolderContents(folderId) {
     try {
         showLoading();
-        
+
         // Buscar estrutura da pasta usando o explorador melhorado
         const response = await fetch(`/api/drive/explore/${folderId}?depth=1`);
         const data = await response.json();
-        
+
         if (!data.success) {
             throw new Error(data.message || 'Erro ao carregar pasta');
         }
-        
+
         const folderData = data.structure;
-        
+
         // Verificar se há subpastas ou se há fotos diretas
         if (folderData.hasSubfolders && folderData.folders.length > 0) {
             // Mostrar subpastas
@@ -186,7 +186,7 @@ async function loadFolderContents(folderId) {
             // Pasta vazia
             showNoContent('Pasta vazia', 'Esta categoria não possui conteúdo no momento.');
         }
-        
+
     } catch (error) {
         console.error('Erro ao carregar pasta:', error);
         showNoContent('Erro ao carregar', error.message);
@@ -199,14 +199,14 @@ function showSubfolders(folders) {
     document.getElementById('foldersContainer').style.display = 'grid';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
-    
+
     const containerEl = document.getElementById('foldersContainer');
-    
+
     containerEl.innerHTML = folders.map(folder => {
         // Usar o nome da pasta como descrição do produto
         const description = generateProductDescription(folder.name);
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
-        
+
         return `
             <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${folder.name}')">
                 <h4>
@@ -227,7 +227,7 @@ function showSubfolders(folders) {
 async function navigateToSubfolder(folderId, folderName) {
     navigationState.currentPath.push({ id: folderId, name: folderName });
     navigationState.currentFolderId = folderId;
-    
+
     updateBreadcrumb();
     await loadFolderContents(folderId);
 }
@@ -238,17 +238,17 @@ async function navigateToSubfolder(folderId, folderName) {
 async function loadPhotos(folderId) {
     try {
         showPhotosLoading(true);
-        
+
         const response = await fetch(`/api/drive/photos/${folderId}?limit=100`);
         const data = await response.json();
-        
+
         if (!data.success) {
             throw new Error(data.message || 'Erro ao carregar fotos');
         }
-        
+
         navigationState.currentPhotos = data.photos;
         showPhotosGallery(data.photos, data.folder.name);
-        
+
     } catch (error) {
         console.error('Erro ao carregar fotos:', error);
         showNoContent('Erro ao carregar fotos', error.message);
@@ -263,27 +263,27 @@ function showPhotosGallery(photos, folderName) {
     document.getElementById('photosContainer').style.display = 'block';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
-    
+
     // Atualizar título e contador
     document.getElementById('galleryTitle').textContent = folderName;
     document.getElementById('photosCount').textContent = `${photos.length} foto(s)`;
-    
+
     // Gerar grid de fotos
     const gridEl = document.getElementById('photosGrid');
-    
+
     if (photos.length === 0) {
         showNoContent('Nenhuma foto', 'Esta categoria não possui fotos no momento.');
         return;
     }
-    
+
     gridEl.innerHTML = photos.map((photo, index) => {
         // Usar thumbnail de melhor qualidade do Google Drive
-        const thumbnailUrl = photo.thumbnailLink ? 
+        const thumbnailUrl = photo.thumbnailLink ?
             photo.thumbnailLink.replace('=s220', '=s400') : // Melhor qualidade
-            photo.thumbnailMedium || 
-            photo.thumbnailSmall || 
+            photo.thumbnailMedium ||
+            photo.thumbnailSmall ||
             '';
-        
+
         return `
             <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
                 <img src="${thumbnailUrl}" 
@@ -309,27 +309,27 @@ function showPhotosGallery(photos, folderName) {
 async function openPhotoModal(photoIndex) {
     const photos = navigationState.currentPhotos;
     if (!photos || photoIndex < 0 || photoIndex >= photos.length) return;
-    
+
     navigationState.currentPhotoIndex = photoIndex;
     const photo = photos[photoIndex];
-    
+
     // Mostrar modal
     const modal = document.getElementById('photoModal');
     modal.style.display = 'flex';
-    
+
     // NOVO: Inicializar sistema de zoom
     initializePhotoZoom();
-    
+
     // Atualizar informações básicas
     document.getElementById('modalPhotoTitle').textContent = photo.name;
     document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${photos.length}`;
     document.getElementById('modalPhotoSize').textContent = `Tamanho: ${formatFileSize(photo.size)}`;
     document.getElementById('modalPhotoDate').textContent = `Data: ${formatDate(photo.modifiedTime)}`;
-    
+
     // Atualizar botões de navegação
     document.getElementById('prevBtn').disabled = photoIndex === 0;
     document.getElementById('nextBtn').disabled = photoIndex === photos.length - 1;
-    
+
     // Carregar foto em alta resolução
     await loadPhotoInModal(photo.id);
 }
@@ -338,15 +338,15 @@ async function openPhotoModal(photoIndex) {
 async function loadPhotoInModal(photoId) {
     const img = document.getElementById('modalPhoto');
     const spinner = document.getElementById('photoLoadingSpinner');
-    
+
     try {
         spinner.style.display = 'block';
         img.style.display = 'none';
-        
+
         // Buscar foto em alta resolução
         const response = await fetch(`/api/drive/photo/${photoId}?size=large`);
         const data = await response.json();
-        
+
         if (data.success && data.photo.imageUrl) {
             img.src = data.photo.imageUrl;
             img.onload = () => {
@@ -356,12 +356,12 @@ async function loadPhotoInModal(photoId) {
         } else {
             throw new Error('Erro ao carregar foto');
         }
-        
+
     } catch (error) {
         console.error('Erro ao carregar foto:', error);
         spinner.style.display = 'none';
         img.style.display = 'block';
-        
+
         // Tentar usar a foto atual como fallback
         const currentPhoto = navigationState.currentPhotos[navigationState.currentPhotoIndex];
         if (currentPhoto && currentPhoto.thumbnailLink) {
@@ -378,6 +378,8 @@ function previousPhoto() {
         // NOVO: Notificar mudança de foto para resetar zoom
         notifyPhotoChange();
         openPhotoModal(navigationState.currentPhotoIndex - 1);
+        // NOVO: Notificar carrinho sobre mudança
+        notifyCartOnPhotoChange();
     }
 }
 
@@ -387,6 +389,8 @@ function nextPhoto() {
         // NOVO: Notificar mudança de foto para resetar zoom
         notifyPhotoChange();
         openPhotoModal(navigationState.currentPhotoIndex + 1);
+        // NOVO: Notificar carrinho sobre mudança
+        notifyCartOnPhotoChange();
     }
 }
 
@@ -397,11 +401,26 @@ function closePhotoModal() {
     document.getElementById('photoModal').style.display = 'none';
 }
 
-// Selecionar foto para carrinho (próxima fase)
+// Notificar carrinho sobre mudança de foto
+function notifyCartOnPhotoChange() {
+    if (window.CartSystem && window.CartSystem.updateToggleButton) {
+        // Pequeno delay para garantir que navigationState foi atualizado
+        setTimeout(() => {
+            window.CartSystem.updateToggleButton();
+        }, 100);
+    }
+}
+
+// Selecionar foto para carrinho (AGORA FUNCIONAL)
 function selectPhotoForCart() {
-    const photo = navigationState.currentPhotos[navigationState.currentPhotoIndex];
-    console.log('Foto selecionada para carrinho:', photo);
-    showNotification(`Em breve: foto "${photo.name}" será adicionada ao carrinho`, 'info');
+    // Esta função foi substituída por toggleCartItem() no cart.js
+    // Manter para compatibilidade, mas redirecionar
+    if (window.toggleCartItem) {
+        window.toggleCartItem();
+    } else {
+        console.warn('Sistema de carrinho não carregado');
+        showNotification('Sistema de carrinho carregando...', 'info');
+    }
 }
 
 // ===== NAVEGAÇÃO E BREADCRUMB =====
@@ -409,18 +428,18 @@ function selectPhotoForCart() {
 // Atualizar breadcrumb
 function updateBreadcrumb() {
     const pathEl = document.getElementById('breadcrumbPath');
-    
+
     const breadcrumbHtml = navigationState.currentPath.map((item, index) => {
         const isLast = index === navigationState.currentPath.length - 1;
         return `
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-            ${isLast ? 
+            ${isLast ?
                 `<span class="breadcrumb-item current">${item.name}</span>` :
                 `<button class="breadcrumb-item" onclick="navigateToBreadcrumb(${index})">${item.name}</button>`
             }
         `;
     }).join('');
-    
+
     pathEl.innerHTML = breadcrumbHtml;
 }
 
@@ -429,7 +448,7 @@ async function navigateToBreadcrumb(index) {
     navigationState.currentPath = navigationState.currentPath.slice(0, index + 1);
     const target = navigationState.currentPath[index];
     navigationState.currentFolderId = target.id;
-    
+
     updateBreadcrumb();
     await loadFolderContents(target.id);
 }
@@ -447,11 +466,11 @@ async function navigateBack() {
         navigateToRoot();
         return;
     }
-    
+
     navigationState.currentPath.pop();
     const target = navigationState.currentPath[navigationState.currentPath.length - 1];
     navigationState.currentFolderId = target.id;
-    
+
     updateBreadcrumb();
     await loadFolderContents(target.id);
 }
@@ -475,18 +494,18 @@ function generateProductDescription(folderName) {
         'Brown & White': 'Marrom e branco natural',
         'Exotic': 'Padrões únicos e especiais',
         'Small': 'Tamanho pequeno',
-        'Medium': 'Tamanho médio', 
+        'Medium': 'Tamanho médio',
         'Large': 'Tamanho grande',
         'XL': 'Tamanho extra grande',
         'ML': 'Médio-grande'
     };
-    
+
     for (const [pattern, desc] of Object.entries(patterns)) {
         if (folderName.includes(pattern)) {
             return desc;
         }
     }
-    
+
     return 'Couros de alta qualidade selecionados';
 }
 
@@ -536,9 +555,9 @@ function formatDate(dateString) {
 
 // Verificar se funções de zoom estão disponíveis
 function isZoomAvailable() {
-    return typeof initializePhotoZoom === 'function' && 
-           typeof notifyPhotoChange === 'function' && 
-           typeof destroyPhotoZoom === 'function';
+    return typeof initializePhotoZoom === 'function' &&
+        typeof notifyPhotoChange === 'function' &&
+        typeof destroyPhotoZoom === 'function';
 }
 
 // Log de inicialização do zoom

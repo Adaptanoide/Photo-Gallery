@@ -151,17 +151,75 @@
                     <span id="modalPhotoDate">Data: -</span>
                 </div>
                 <div class="modal-actions">
-                    <button onclick="selectPhotoForCart()" class="btn btn-primary">
-                        <i class="fas fa-shopping-cart"></i> Adicionar ao Carrinho
+                    <button id="cartToggleBtn" onclick="toggleCartItem()" class="btn-cart-toggle">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cartToggleBtnText">Adicionar ao Carrinho</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Sidebar do Carrinho -->
+    <div id="cartSidebar" class="cart-sidebar">
+        <div class="cart-overlay" onclick="closeCartSidebar()"></div>
+        <div class="cart-container">
+            <!-- Header do Carrinho -->
+            <div class="cart-header">
+                <h3><i class="fas fa-shopping-cart"></i> Meu Carrinho</h3>
+                <button onclick="closeCartSidebar()" class="cart-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Conteúdo do Carrinho -->
+            <div class="cart-content">
+                <!-- Loading do carrinho -->
+                <div id="cartLoading" class="cart-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Carregando carrinho...</p>
+                </div>
+                
+                <!-- Carrinho vazio -->
+                <div id="cartEmpty" class="cart-empty" style="display: none;">
+                    <i class="fas fa-shopping-cart fa-3x"></i>
+                    <h4>Carrinho vazio</h4>
+                    <p>Explore nossos produtos e adicione seus couros favoritos!</p>
+                </div>
+                
+                <!-- Lista de itens -->
+                <div id="cartItems" class="cart-items" style="display: none;">
+                    <!-- Itens serão carregados dinamicamente -->
+                </div>
+            </div>
+            
+            <!-- Footer do Carrinho -->
+            <div id="cartFooter" class="cart-footer" style="display: none;">
+                <div class="cart-summary">
+                    <div class="cart-total">
+                        <span id="cartItemCount">0 itens</span>
+                        <span id="cartTimer">⏰ 15:00</span>
+                    </div>
+                    <button onclick="proceedToCheckout()" class="btn btn-primary btn-checkout">
+                        <i class="fas fa-credit-card"></i>
+                        Finalizar Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão flutuante do carrinho -->
+    <button id="cartFloatingBtn" class="cart-floating-btn" onclick="openCartSidebar()">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cartBadge" class="cart-badge">0</span>
+    </button>
+
     <!-- Scripts modularizados -->
     <script src="js/app.js"></script>
     <script src="js/zoom.js"></script>
+    <script src="js/cart.js"></script>
     <script src="js/client.js"></script>
+    
 </body>
 </html>

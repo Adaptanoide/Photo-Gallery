@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const clientRoutes = require('./routes/client');
 const driveRoutes = require('./routes/drive');
+const cartRoutes = require('./routes/cart');
 const Cart = require('./models/Cart');
 const { CartService } = require('./services');
 
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/drive', driveRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {
