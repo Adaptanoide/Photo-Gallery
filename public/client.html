@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -89,12 +91,12 @@
                                 <span id="photosCount">0 fotos</span>
                             </div>
                         </div>
-                        
+
                         <!-- Grid de fotos -->
                         <div id="photosGrid" class="photos-grid">
                             <!-- Fotos serão carregadas aqui -->
                         </div>
-                        
+
                         <!-- Loading de fotos -->
                         <div id="photosLoading" class="photos-loading" style="display: none;">
                             <i class="fas fa-spinner fa-spin"></i>
@@ -126,24 +128,24 @@
                     </button>
                 </div>
             </div>
-            
+
             <div class="modal-body">
                 <button onclick="previousPhoto()" class="nav-btn nav-prev" id="prevBtn">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                
+
                 <div class="photo-container">
                     <img id="modalPhoto" src="" alt="Foto em fullscreen" />
                     <div id="photoLoadingSpinner" class="photo-loading-spinner" style="display: none;">
                         <i class="fas fa-spinner fa-spin fa-2x"></i>
                     </div>
                 </div>
-                
+
                 <button onclick="nextPhoto()" class="nav-btn nav-next" id="nextBtn">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
-            
+
             <div class="modal-footer">
                 <div class="photo-info">
                     <span id="modalPhotoSize">Tamanho: -</span>
@@ -183,7 +185,7 @@
             background: #fff;
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             max-width: 400px;
             margin: 0 auto;
         }
@@ -218,7 +220,7 @@
             padding: 0.75rem 1rem;
             background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             flex-wrap: wrap;
         }
 
@@ -239,25 +241,28 @@
             background: #f8f9fa;
         }
 
-        .categories-grid, .folders-grid {
+        .categories-grid,
+        .folders-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
         }
 
-        .category-card, .folder-card {
+        .category-card,
+        .folder-card {
             background: white;
             padding: 1.5rem;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             transition: all 0.2s ease;
             border-left: 4px solid #007bff;
         }
 
-        .category-card:hover, .folder-card:hover {
+        .category-card:hover,
+        .folder-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         }
 
         .folder-card {
@@ -269,7 +274,7 @@
             background: white;
             border-radius: 8px;
             padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .gallery-header {
@@ -300,7 +305,7 @@
             position: relative;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             transition: all 0.2s ease;
             background: #f8f9fa;
@@ -309,7 +314,7 @@
 
         .photo-thumbnail:hover {
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .photo-thumbnail img {
@@ -344,7 +349,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
             color: white;
             padding: 0.75rem;
             font-size: 0.8rem;
@@ -364,7 +369,7 @@
             width: 100%;
             height: 100%;
             z-index: 10000;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -403,6 +408,7 @@
         .modal-header h4 {
             margin: 0;
             color: #333;
+            font-size: 1rem;
         }
 
         .modal-controls {
@@ -434,6 +440,7 @@
             position: relative;
             background: #000;
             min-height: 0;
+            padding: 10px;
         }
 
         .photo-container {
@@ -443,21 +450,25 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
+        /* CORREÇÃO PRINCIPAL - IMAGENS MAIORES */
         .modal-body img {
-            max-width: calc(100% - 120px);
-            max-height: 100%;
+            max-width: calc(100% - 60px);
+            /* Reduzido de 120px para 60px */
+            max-height: calc(100% - 20px);
+            /* Adicionado controle de altura */
             object-fit: contain;
             border-radius: 4px;
+            width: auto;
+            height: auto;
         }
 
         .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255,255,255,0.9);
+            background: rgba(255, 255, 255, 0.9);
             border: none;
             width: 50px;
             height: 50px;
@@ -475,11 +486,11 @@
         }
 
         .nav-prev {
-            left: 20px;
+            left: 15px;
         }
 
         .nav-next {
-            right: 20px;
+            right: 15px;
         }
 
         .nav-btn:disabled {
@@ -495,7 +506,8 @@
             background: #f8f9fa;
             border-top: 1px solid #dee2e6;
             flex-shrink: 0;
-            min-height: 80px;
+            min-height: 70px;
+            /* Reduzido de 80px */
         }
 
         .photo-info {
@@ -513,95 +525,84 @@
             color: white;
         }
 
-        .photos-loading {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-        }
-
-        .no-content {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
-        }
-
-        .no-content i {
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        /* Responsivo */
+        /* RESPONSIVO MELHORADO */
         @media (max-width: 768px) {
-            .categories-grid, .folders-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .photos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-            
             .modal-content {
                 width: 100vw;
                 height: 100vh;
                 border-radius: 0;
             }
-            
+
+            .modal-header {
+                padding: 0.75rem;
+            }
+
+            .modal-header h4 {
+                font-size: 0.9rem;
+            }
+
+            .modal-body {
+                padding: 5px;
+            }
+
+            /* CORREÇÃO MOBILE - IMAGEM MUITO MAIOR */
             .modal-body img {
-                max-width: calc(100% - 80px);
+                max-width: calc(100% - 30px);
+                /* Reduzido de 80px para 30px! */
+                max-height: calc(100% - 10px);
             }
-            
+
             .nav-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
             }
-            
+
             .nav-prev {
-                left: 10px;
+                left: 8px;
             }
-            
+
             .nav-next {
-                right: 10px;
+                right: 8px;
             }
-            
+
             .modal-footer {
                 flex-direction: column;
                 gap: 0.5rem;
                 padding: 0.75rem;
-                min-height: 100px;
+                min-height: 85px;
             }
-            
+
             .photo-info {
                 justify-content: center;
                 text-align: center;
                 flex-wrap: wrap;
+                font-size: 0.8rem;
             }
         }
 
+        /* TELAS GRANDES - AINDA MAIOR */
         @media (min-width: 1200px) {
             .modal-content {
                 width: 90vw;
                 height: 90vh;
             }
-            
+
             .modal-body img {
-                max-width: calc(100% - 140px);
+                max-width: calc(100% - 80px);
+                /* Mais espaço em telas grandes */
             }
         }
 
-        /* Animações */
+        /* Animações mantidas */
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+            from {
+                opacity: 0;
+            }
 
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .category-card, .folder-card, .photo-thumbnail {
-            animation: slideIn 0.3s ease forwards;
+            to {
+                opacity: 1;
+            }
         }
 
         .photo-modal {
@@ -632,7 +633,7 @@
             document.addEventListener('keydown', (e) => {
                 const modal = document.getElementById('photoModal');
                 if (modal.style.display !== 'none') {
-                    switch(e.key) {
+                    switch (e.key) {
                         case 'ArrowLeft':
                             e.preventDefault();
                             previousPhoto();
@@ -655,7 +656,7 @@
             const loadingEl = document.getElementById('clientLoading');
             const errorEl = document.getElementById('clientError');
             const contentEl = document.getElementById('clientContent');
-            
+
             // Mostrar loading
             loadingEl.style.display = 'block';
             errorEl.style.display = 'none';
@@ -688,19 +689,19 @@
                 // Atualizar interface com dados recebidos
                 updateClientInterface(data);
                 showCategories();
-                
+
                 // Mostrar conteúdo
                 loadingEl.style.display = 'none';
                 contentEl.style.display = 'block';
 
             } catch (error) {
                 console.error('Erro ao carregar dados do cliente:', error);
-                
+
                 // Mostrar erro
                 loadingEl.style.display = 'none';
                 contentEl.style.display = 'none';
                 errorEl.style.display = 'block';
-                
+
                 const errorMsg = document.getElementById('errorMessage');
                 errorMsg.textContent = error.message || 'Erro de conexão';
             }
@@ -709,11 +710,11 @@
         // Função para atualizar cabeçalho do cliente
         function updateClientInterface(data) {
             const { client, allowedCategories } = data;
-            
+
             // Atualizar cabeçalho
             const welcomeEl = document.getElementById('clientWelcome');
             const infoEl = document.getElementById('clientInfo');
-            
+
             welcomeEl.textContent = `🎉 Bem-vindo, ${client.name}!`;
             infoEl.textContent = `Código: ${client.code} - ${allowedCategories.length} categoria(s) disponível(eis)`;
         }
@@ -722,15 +723,15 @@
         function showCategories() {
             hideAllContainers();
             document.getElementById('categoriesContainer').style.display = 'grid';
-            
+
             const containerEl = document.getElementById('categoriesContainer');
             const { allowedCategories } = navigationState;
-            
+
             if (allowedCategories.length === 0) {
                 showNoContent('Nenhuma categoria disponível', 'Entre em contato com o administrador para verificar suas permissões.');
                 return;
             }
-            
+
             // Gerar cards de categorias
             containerEl.innerHTML = allowedCategories.map(category => `
                 <div class="category-card" onclick="navigateToCategory('${category.id}', '${category.name}')">
@@ -744,7 +745,7 @@
                     </div>
                 </div>
             `).join('');
-            
+
             // Esconder breadcrumb na tela inicial
             document.getElementById('breadcrumbContainer').style.display = 'none';
             document.getElementById('backNavigation').style.display = 'none';
@@ -754,7 +755,7 @@
         async function navigateToCategory(categoryId, categoryName) {
             navigationState.currentPath = [{ id: categoryId, name: categoryName }];
             navigationState.currentFolderId = categoryId;
-            
+
             updateBreadcrumb();
             await loadFolderContents(categoryId);
         }
@@ -763,17 +764,17 @@
         async function loadFolderContents(folderId) {
             try {
                 showLoading();
-                
+
                 // Buscar estrutura da pasta usando o explorador melhorado
                 const response = await fetch(`/api/drive/explore/${folderId}?depth=1`);
                 const data = await response.json();
-                
+
                 if (!data.success) {
                     throw new Error(data.message || 'Erro ao carregar pasta');
                 }
-                
+
                 const folderData = data.structure;
-                
+
                 // Verificar se há subpastas ou se há fotos diretas
                 if (folderData.hasSubfolders && folderData.folders.length > 0) {
                     // Mostrar subpastas
@@ -785,7 +786,7 @@
                     // Pasta vazia
                     showNoContent('Pasta vazia', 'Esta categoria não possui conteúdo no momento.');
                 }
-                
+
             } catch (error) {
                 console.error('Erro ao carregar pasta:', error);
                 showNoContent('Erro ao carregar', error.message);
@@ -798,14 +799,14 @@
             document.getElementById('foldersContainer').style.display = 'grid';
             document.getElementById('breadcrumbContainer').style.display = 'block';
             document.getElementById('backNavigation').style.display = 'block';
-            
+
             const containerEl = document.getElementById('foldersContainer');
-            
+
             containerEl.innerHTML = folders.map(folder => {
                 // Usar o nome da pasta como descrição do produto
                 const description = generateProductDescription(folder.name);
                 const hasPhotos = folder.hasImages || folder.imageCount > 0;
-                
+
                 return `
                     <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${folder.name}')">
                         <h4>
@@ -826,7 +827,7 @@
         async function navigateToSubfolder(folderId, folderName) {
             navigationState.currentPath.push({ id: folderId, name: folderName });
             navigationState.currentFolderId = folderId;
-            
+
             updateBreadcrumb();
             await loadFolderContents(folderId);
         }
@@ -835,17 +836,17 @@
         async function loadPhotos(folderId) {
             try {
                 showPhotosLoading(true);
-                
+
                 const response = await fetch(`/api/drive/photos/${folderId}?limit=100`);
                 const data = await response.json();
-                
+
                 if (!data.success) {
                     throw new Error(data.message || 'Erro ao carregar fotos');
                 }
-                
+
                 navigationState.currentPhotos = data.photos;
                 showPhotosGallery(data.photos, data.folder.name);
-                
+
             } catch (error) {
                 console.error('Erro ao carregar fotos:', error);
                 showNoContent('Erro ao carregar fotos', error.message);
@@ -860,27 +861,27 @@
             document.getElementById('photosContainer').style.display = 'block';
             document.getElementById('breadcrumbContainer').style.display = 'block';
             document.getElementById('backNavigation').style.display = 'block';
-            
+
             // Atualizar título e contador
             document.getElementById('galleryTitle').textContent = folderName;
             document.getElementById('photosCount').textContent = `${photos.length} foto(s)`;
-            
+
             // Gerar grid de fotos
             const gridEl = document.getElementById('photosGrid');
-            
+
             if (photos.length === 0) {
                 showNoContent('Nenhuma foto', 'Esta categoria não possui fotos no momento.');
                 return;
             }
-            
+
             gridEl.innerHTML = photos.map((photo, index) => {
                 // Usar thumbnail de melhor qualidade do Google Drive
-                const thumbnailUrl = photo.thumbnailLink ? 
+                const thumbnailUrl = photo.thumbnailLink ?
                     photo.thumbnailLink.replace('=s220', '=s400') : // Melhor qualidade
-                    photo.thumbnailMedium || 
-                    photo.thumbnailSmall || 
+                    photo.thumbnailMedium ||
+                    photo.thumbnailSmall ||
                     '';
-                
+
                 return `
                     <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
                         <img src="${thumbnailUrl}" 
@@ -904,24 +905,24 @@
         async function openPhotoModal(photoIndex) {
             const photos = navigationState.currentPhotos;
             if (!photos || photoIndex < 0 || photoIndex >= photos.length) return;
-            
+
             navigationState.currentPhotoIndex = photoIndex;
             const photo = photos[photoIndex];
-            
+
             // Mostrar modal
             const modal = document.getElementById('photoModal');
             modal.style.display = 'flex';
-            
+
             // Atualizar informações básicas
             document.getElementById('modalPhotoTitle').textContent = photo.name;
             document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${photos.length}`;
             document.getElementById('modalPhotoSize').textContent = `Tamanho: ${formatFileSize(photo.size)}`;
             document.getElementById('modalPhotoDate').textContent = `Data: ${formatDate(photo.modifiedTime)}`;
-            
+
             // Atualizar botões de navegação
             document.getElementById('prevBtn').disabled = photoIndex === 0;
             document.getElementById('nextBtn').disabled = photoIndex === photos.length - 1;
-            
+
             // Carregar foto em alta resolução
             await loadPhotoInModal(photo.id);
         }
@@ -930,15 +931,15 @@
         async function loadPhotoInModal(photoId) {
             const img = document.getElementById('modalPhoto');
             const spinner = document.getElementById('photoLoadingSpinner');
-            
+
             try {
                 spinner.style.display = 'block';
                 img.style.display = 'none';
-                
+
                 // Buscar foto em alta resolução
                 const response = await fetch(`/api/drive/photo/${photoId}?size=large`);
                 const data = await response.json();
-                
+
                 if (data.success && data.photo.imageUrl) {
                     img.src = data.photo.imageUrl;
                     img.onload = () => {
@@ -948,12 +949,12 @@
                 } else {
                     throw new Error('Erro ao carregar foto');
                 }
-                
+
             } catch (error) {
                 console.error('Erro ao carregar foto:', error);
                 spinner.style.display = 'none';
                 img.style.display = 'block';
-                
+
                 // Tentar usar a foto atual como fallback
                 const currentPhoto = navigationState.currentPhotos[navigationState.currentPhotoIndex];
                 if (currentPhoto && currentPhoto.thumbnailLink) {
@@ -1007,36 +1008,36 @@
                 'Brown & White': 'Marrom e branco natural',
                 'Exotic': 'Padrões únicos e especiais',
                 'Small': 'Tamanho pequeno',
-                'Medium': 'Tamanho médio', 
+                'Medium': 'Tamanho médio',
                 'Large': 'Tamanho grande',
                 'XL': 'Tamanho extra grande',
                 'ML': 'Médio-grande'
             };
-            
+
             for (const [pattern, desc] of Object.entries(patterns)) {
                 if (folderName.includes(pattern)) {
                     return desc;
                 }
             }
-            
+
             return 'Couros de alta qualidade selecionados';
         }
 
         // Atualizar breadcrumb
         function updateBreadcrumb() {
             const pathEl = document.getElementById('breadcrumbPath');
-            
+
             const breadcrumbHtml = navigationState.currentPath.map((item, index) => {
                 const isLast = index === navigationState.currentPath.length - 1;
                 return `
                     <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-                    ${isLast ? 
+                    ${isLast ?
                         `<span class="breadcrumb-item current">${item.name}</span>` :
                         `<button class="breadcrumb-item" onclick="navigateToBreadcrumb(${index})">${item.name}</button>`
                     }
                 `;
             }).join('');
-            
+
             pathEl.innerHTML = breadcrumbHtml;
         }
 
@@ -1045,7 +1046,7 @@
             navigationState.currentPath = navigationState.currentPath.slice(0, index + 1);
             const target = navigationState.currentPath[index];
             navigationState.currentFolderId = target.id;
-            
+
             updateBreadcrumb();
             await loadFolderContents(target.id);
         }
@@ -1063,11 +1064,11 @@
                 navigateToRoot();
                 return;
             }
-            
+
             navigationState.currentPath.pop();
             const target = navigationState.currentPath[navigationState.currentPath.length - 1];
             navigationState.currentFolderId = target.id;
-            
+
             updateBreadcrumb();
             await loadFolderContents(target.id);
         }
@@ -1111,4 +1112,5 @@
         }
     </script>
 </body>
+
 </html>
