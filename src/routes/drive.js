@@ -55,7 +55,7 @@ router.get('/status', async (req, res) => {
     }
 });
 
-// Listar pastas (categorias)
+// Listar pastas (categorias) principais
 router.get('/folders', async (req, res) => {
     try {
         const drive = getGoogleDriveAuth();
@@ -82,14 +82,338 @@ router.get('/folders', async (req, res) => {
     }
 });
 
-// Explorar estrutura completa recursivamente
+// Explorar pasta específica para navegação do cliente (MELHORADO)
+router.get('/explore/:folderId', async (req, res) => {
+    try {
+        const drive = getGoogleDriveAuth();
+        const { folderId } = req.params;
+        const maxDepth = parseInt(req.query.depth) || 2;
+        
+        console.log(`📁 Explorando pasta específica: ${folderId}`);
+        
+        // Buscar informações da pasta atual
+        const folderInfo = await drive.files.get({
+            fileId: folderId,
+            fields: 'id, name, mimeType, parents'
+        });
+        
+        // Listar conteúdo da pasta
+        const response = await drive.files.list({
+            q: `'${folderId}' in parents and trashed = false`,
+            fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink)',
+            orderBy: 'name'
+        });
+        
+        const items = response.data.files;
+        const folders = items.filter(item => item.mimeType === 'application/vnd.google-apps.folder');
+        const files = items.filter(item => item.mimeType !== 'application/vnd.google-apps.folder');
+        
+        // Para cada subpasta, buscar informações detalhadas para melhor UX
+        const foldersWithInfo = [];
+        for (const folder of folders) {
+            try {
+                const subResponse = await drive.files.list({
+                    q: `'${folder.id}' in parents and trashed = false`,
+                    fields: 'files(mimeType)',
+                    pageSize: 10
+                });
+                
+                const subItems = subResponse.data.files;
+                const hasImages = subItems.some(file => 
+                    file.mimeType && (
+                        file.mimeType.startsWith('image/') ||
+                        /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file.name || '')
+                    )
+                );
+                
+                const hasSubfolders = subItems.some(file => 
+                    file.mimeType === 'application/vnd.google-apps.folder'
+                );
+                
+                const imageCount = subItems.filter(file => 
+                    file.mimeType && (
+                        file.mimeType.startsWith('image/') ||
+                        /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file.name || '')
+                    )
+                ).length;
+                
+                foldersWithInfo.push({
+                    id: folder.id,
+                    name: folder.name,
+                    hasImages,
+                    hasSubfolders,
+                    imageCount,
+                    totalFiles: subItems.filter(f => f.mimeType !== 'application/vnd.google-apps.folder').length,
+                    totalSubfolders: subItems.filter(f => f.mimeType === 'application/vnd.google-apps.folder').length,
+                    modifiedTime: folder.modifiedTime
+                });
+                
+            } catch (error) {
+                console.error(`Erro ao verificar subpasta ${folder.name}:`, error.message);
+                foldersWithInfo.push({
+                    id: folder.id,
+                    name: folder.name,
+                    hasImages: false,
+                    hasSubfolders: false,
+                    imageCount: 0,
+                    totalFiles: 0,
+                    totalSubfolders: 0,
+                    modifiedTime: folder.modifiedTime
+                });
+            }
+        }
+        
+        // Filtrar e processar arquivos de imagem
+        const imageFiles = files.filter(file => {
+            const isImage = file.mimeType && (
+                file.mimeType.startsWith('image/') ||
+                /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file.name)
+            );
+            return isImage;
+        }).map(file => ({
+            id: file.id,
+            name: file.name,
+            size: file.size,
+            thumbnailLink: file.thumbnailLink,
+            modifiedTime: file.modifiedTime,
+            mimeType: file.mimeType,
+            isImage: true
+        }));
+        
+        const structure = {
+            id: folderInfo.data.id,
+            name: folderInfo.data.name,
+            folders: foldersWithInfo,
+            files: imageFiles,
+            totalSubfolders: folders.length,
+            totalFiles: files.length,
+            totalImages: imageFiles.length,
+            hasImages: imageFiles.length > 0,
+            hasSubfolders: folders.length > 0
+        };
+        
+        console.log(`✅ Pasta explorada: ${structure.name} - ${structure.totalSubfolders} subpastas, ${structure.totalImages} imagens`);
+        
+        res.json({
+            success: true,
+            structure,
+            folderId
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao explorar pasta específica:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao explorar pasta',
+            error: error.message
+        });
+    }
+});
+
+// Buscar fotos de uma pasta específica - OTIMIZADO PARA GALERIA
+router.get('/photos/:folderId', async (req, res) => {
+    try {
+        const drive = getGoogleDriveAuth();
+        const { folderId } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const page = parseInt(req.query.page) || 1;
+        
+        console.log(`🖼️ Buscando fotos da pasta: ${folderId}, limite: ${limit}, página: ${page}`);
+        
+        // Buscar informações da pasta
+        const folderInfo = await drive.files.get({
+            fileId: folderId,
+            fields: 'id, name'
+        });
+        
+        // Buscar arquivos de imagem com filtro otimizado
+        const response = await drive.files.list({
+            q: `'${folderId}' in parents and trashed = false and (mimeType contains 'image/' or name contains '.jpg' or name contains '.jpeg' or name contains '.png' or name contains '.gif' or name contains '.bmp' or name contains '.webp' or name contains '.JPG' or name contains '.JPEG')`,
+            fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink, webViewLink, imageMediaMetadata)',
+            orderBy: 'name',
+            pageSize: limit
+        });
+        
+        const photos = response.data.files.map((photo, index) => ({
+            id: photo.id,
+            name: photo.name,
+            size: photo.size,
+            thumbnailLink: photo.thumbnailLink,
+            webViewLink: photo.webViewLink,
+            modifiedTime: photo.modifiedTime,
+            mimeType: photo.mimeType,
+            index: index,
+            // URLs otimizadas para diferentes tamanhos
+            thumbnailSmall: photo.thumbnailLink ? photo.thumbnailLink.replace('=s220', '=s150') : null,
+            thumbnailMedium: photo.thumbnailLink ? photo.thumbnailLink.replace('=s220', '=s400') : null,
+            thumbnailLarge: photo.thumbnailLink ? photo.thumbnailLink.replace('=s220', '=s800') : null,
+            // Metadados de imagem se disponível
+            dimensions: photo.imageMediaMetadata ? {
+                width: photo.imageMediaMetadata.width,
+                height: photo.imageMediaMetadata.height
+            } : null
+        }));
+        
+        console.log(`✅ Encontradas ${photos.length} fotos na pasta: ${folderInfo.data.name}`);
+        
+        res.json({
+            success: true,
+            photos,
+            pagination: {
+                total: photos.length,
+                page,
+                limit,
+                hasMore: photos.length === limit
+            },
+            folder: {
+                id: folderId,
+                name: folderInfo.data.name
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar fotos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar fotos da pasta',
+            error: error.message
+        });
+    }
+});
+
+// Buscar foto específica para visualização fullscreen
+router.get('/photo/:photoId', async (req, res) => {
+    try {
+        const drive = getGoogleDriveAuth();
+        const { photoId } = req.params;
+        const size = req.query.size || 'large'; // small, medium, large, original
+        
+        console.log(`🔍 Buscando foto específica: ${photoId}, tamanho: ${size}`);
+        
+        // Buscar informações da foto
+        const response = await drive.files.get({
+            fileId: photoId,
+            fields: 'id, name, mimeType, size, modifiedTime, thumbnailLink, webViewLink, imageMediaMetadata, parents'
+        });
+        
+        const photo = response.data;
+        
+        // Gerar URLs em diferentes resoluções
+        let imageUrl = photo.thumbnailLink;
+        if (photo.thumbnailLink) {
+            switch (size) {
+                case 'small':
+                    imageUrl = photo.thumbnailLink.replace('=s220', '=s300');
+                    break;
+                case 'medium':
+                    imageUrl = photo.thumbnailLink.replace('=s220', '=s600');
+                    break;
+                case 'large':
+                    imageUrl = photo.thumbnailLink.replace('=s220', '=s1200');
+                    break;
+                case 'original':
+                    imageUrl = photo.thumbnailLink.replace('=s220', '=s2048');
+                    break;
+                default:
+                    imageUrl = photo.thumbnailLink.replace('=s220', '=s800');
+            }
+        }
+        
+        res.json({
+            success: true,
+            photo: {
+                id: photo.id,
+                name: photo.name,
+                size: photo.size,
+                mimeType: photo.mimeType,
+                modifiedTime: photo.modifiedTime,
+                imageUrl,
+                webViewLink: photo.webViewLink,
+                dimensions: photo.imageMediaMetadata ? {
+                    width: photo.imageMediaMetadata.width,
+                    height: photo.imageMediaMetadata.height
+                } : null,
+                parent: photo.parents ? photo.parents[0] : null
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar foto específica:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar foto',
+            error: error.message
+        });
+    }
+});
+
+// Buscar fotos adjacentes para navegação (anterior/próxima)
+router.get('/photos/:folderId/navigation/:currentPhotoId', async (req, res) => {
+    try {
+        const drive = getGoogleDriveAuth();
+        const { folderId, currentPhotoId } = req.params;
+        
+        console.log(`🧭 Buscando navegação para foto: ${currentPhotoId} na pasta: ${folderId}`);
+        
+        // Buscar todas as fotos da pasta ordenadas
+        const response = await drive.files.list({
+            q: `'${folderId}' in parents and trashed = false and (mimeType contains 'image/' or name contains '.jpg' or name contains '.jpeg' or name contains '.png' or name contains '.gif' or name contains '.bmp' or name contains '.webp')`,
+            fields: 'files(id, name, thumbnailLink)',
+            orderBy: 'name',
+            pageSize: 1000 // Limite alto para pegar todas as fotos
+        });
+        
+        const allPhotos = response.data.files;
+        const currentIndex = allPhotos.findIndex(photo => photo.id === currentPhotoId);
+        
+        if (currentIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Foto não encontrada'
+            });
+        }
+        
+        const previousPhoto = currentIndex > 0 ? allPhotos[currentIndex - 1] : null;
+        const nextPhoto = currentIndex < allPhotos.length - 1 ? allPhotos[currentIndex + 1] : null;
+        
+        res.json({
+            success: true,
+            navigation: {
+                current: {
+                    index: currentIndex,
+                    total: allPhotos.length
+                },
+                previous: previousPhoto ? {
+                    id: previousPhoto.id,
+                    name: previousPhoto.name,
+                    thumbnailLink: previousPhoto.thumbnailLink
+                } : null,
+                next: nextPhoto ? {
+                    id: nextPhoto.id,
+                    name: nextPhoto.name,
+                    thumbnailLink: nextPhoto.thumbnailLink
+                } : null
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar navegação de fotos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar navegação',
+            error: error.message
+        });
+    }
+});
+
+// Explorar estrutura completa recursivamente (MANTIDO DO ORIGINAL)
 router.get('/explore/:folderId?', async (req, res) => {
     try {
         const drive = getGoogleDriveAuth();
         const folderId = req.params.folderId || process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
         const maxDepth = parseInt(req.query.depth) || 3; // Limitar profundidade
         
-        console.log(`🔍 Explorando pasta: ${folderId}, profundidade máxima: ${maxDepth}`);
+        console.log(`🔍 Explorando pasta completa: ${folderId}, profundidade máxima: ${maxDepth}`);
         
         // Função recursiva para explorar estrutura
         async function exploreFolder(currentFolderId, currentDepth = 0, path = []) {
@@ -209,50 +533,6 @@ router.get('/explore/:folderId?', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao explorar estrutura do Google Drive',
-            error: error.message
-        });
-    }
-});
-
-// Buscar fotos de uma pasta específica (para interface do cliente)
-router.get('/photos/:folderId', async (req, res) => {
-    try {
-        const drive = getGoogleDriveAuth();
-        const { folderId } = req.params;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        
-        // Buscar apenas arquivos de imagem
-        const response = await drive.files.list({
-            q: `'${folderId}' in parents and trashed = false and (mimeType contains 'image' or name contains '.jpg' or name contains '.jpeg' or name contains '.png')`,
-            fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink, webViewLink)',
-            orderBy: 'name',
-            pageSize: limit
-        });
-        
-        const photos = response.data.files.map(photo => ({
-            id: photo.id,
-            name: photo.name,
-            size: photo.size,
-            thumbnailLink: photo.thumbnailLink,
-            webViewLink: photo.webViewLink,
-            modifiedTime: photo.modifiedTime
-        }));
-        
-        res.json({
-            success: true,
-            photos,
-            total: photos.length,
-            page,
-            limit,
-            folderId
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro ao buscar fotos:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao buscar fotos da pasta',
             error: error.message
         });
     }

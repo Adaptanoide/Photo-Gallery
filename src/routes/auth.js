@@ -3,7 +3,22 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const Admin = require('../models/Admin');
 const AccessCode = require('../models/AccessCode');
+const { google } = require('googleapis');
+
 const router = express.Router();
+
+// Configuração Google Drive
+const getGoogleDriveAuth = () => {
+    const auth = new google.auth.GoogleAuth({
+        credentials: {
+            client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        },
+        scopes: ['https://www.googleapis.com/auth/drive.readonly']
+    });
+    
+    return google.drive({ version: 'v3', auth });
+};
 
 // Login do administrador
 router.post('/admin/login', async (req, res) => {
@@ -131,6 +146,109 @@ router.post('/client/verify', async (req, res) => {
     }
 });
 
+// Buscar dados do cliente logado com categorias filtradas (MELHORADO)
+router.get('/client/data', async (req, res) => {
+    try {
+        // Buscar código de acesso na sessão (simulado via query param para teste)
+        const { code } = req.query;
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de acesso necessário'
+            });
+        }
+
+        // Buscar dados do cliente
+        const accessCode = await AccessCode.findOne({
+            code: code,
+            isActive: true,
+            expiresAt: { $gt: new Date() }
+        });
+
+        if (!accessCode) {
+            return res.status(404).json({
+                success: false,
+                message: 'Código inválido ou expirado'
+            });
+        }
+
+        // Buscar categorias do Google Drive
+        let availableCategories = [];
+
+        try {
+            const drive = getGoogleDriveAuth();
+            const parentFolderId = process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
+
+            const response = await drive.files.list({
+                q: `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
+                fields: 'files(id, name, modifiedTime)',
+                orderBy: 'name'
+            });
+
+            availableCategories = response.data.files;
+
+        } catch (driveError) {
+            console.error('Erro ao buscar categorias do Drive:', driveError);
+        }
+
+        // FILTRO MELHORADO DE CATEGORIAS
+        const allowedCategories = availableCategories.filter(category => {
+            return accessCode.allowedCategories.some(allowed => {
+                // Remover números e pontos do início para comparação mais flexível
+                const categoryClean = category.name.replace(/^\d+\.\s*/, '').toLowerCase().trim();
+                const allowedClean = allowed.replace(/^\d+\.\s*/, '').toLowerCase().trim();
+                
+                // Múltiplas formas de match para maior compatibilidade
+                return (
+                    category.name.toLowerCase() === allowed.toLowerCase() ||           // Match exato
+                    category.name.toLowerCase().includes(allowedClean) ||              // Categoria contém permitido
+                    allowed.toLowerCase().includes(categoryClean) ||                   // Permitido contém categoria
+                    categoryClean === allowedClean ||                                  // Match sem números
+                    category.name.toLowerCase().includes(allowed.toLowerCase()) ||     // Inclusão direta
+                    allowed.toLowerCase().includes(category.name.toLowerCase())        // Inclusão reversa
+                );
+            });
+        });
+
+        // Log detalhado para debug
+        console.log(`🔍 FILTRO DE CATEGORIAS - Cliente: ${accessCode.clientName}`);
+        console.log(`   Categorias permitidas no DB:`, accessCode.allowedCategories);
+        console.log(`   Categorias disponíveis no Drive:`, availableCategories.map(c => c.name));
+        console.log(`   Categorias filtradas (resultado):`, allowedCategories.map(c => c.name));
+        console.log(`   Total filtradas: ${allowedCategories.length}/${availableCategories.length}`);
+
+        // Atualizar último uso
+        accessCode.lastUsed = new Date();
+        accessCode.usageCount += 1;
+        await accessCode.save();
+
+        res.json({
+            success: true,
+            client: {
+                name: accessCode.clientName,
+                email: accessCode.clientEmail,
+                code: accessCode.code
+            },
+            allowedCategories: allowedCategories,
+            availableCategories: availableCategories,
+            totalCategories: availableCategories.length,
+            allowedCount: allowedCategories.length,
+            debug: {
+                originalAllowed: accessCode.allowedCategories,
+                filteredResult: allowedCategories.map(c => c.name)
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar dados do cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
+    }
+});
+
 // Criar admin inicial (rota especial para setup)
 router.post('/admin/setup', async (req, res) => {
     try {
@@ -199,6 +317,99 @@ router.post('/admin/setup', async (req, res) => {
     }
 });
 
+// DEBUG: Verificar dados do AccessCode (TEMPORÁRIO)
+router.get('/debug/accesscode/:code', async (req, res) => {
+    try {
+        const { code } = req.params;
+        
+        const accessCode = await AccessCode.findOne({ code });
+        
+        if (!accessCode) {
+            return res.json({
+                success: false,
+                message: 'Código não encontrado',
+                code
+            });
+        }
+        
+        res.json({
+            success: true,
+            accessCode: {
+                code: accessCode.code,
+                clientName: accessCode.clientName,
+                clientEmail: accessCode.clientEmail,
+                allowedCategories: accessCode.allowedCategories,
+                isActive: accessCode.isActive,
+                createdAt: accessCode.createdAt,
+                expiresAt: accessCode.expiresAt,
+                usageCount: accessCode.usageCount,
+                lastUsed: accessCode.lastUsed
+            }
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar AccessCode',
+            error: error.message
+        });
+    }
+});
+
+// CORREÇÃO: Atualizar categorias do AccessCode (TEMPORÁRIO)
+router.post('/fix/accesscode/:code', async (req, res) => {
+    try {
+        const { code } = req.params;
+        
+        const accessCode = await AccessCode.findOne({ code });
+        
+        if (!accessCode) {
+            return res.status(404).json({
+                success: false,
+                message: 'Código não encontrado'
+            });
+        }
+        
+        // Corrigir categorias para o cliente 7064
+        if (code === '7064') {
+            const oldCategories = [...accessCode.allowedCategories];
+            
+            accessCode.allowedCategories = [
+                "1. Colombian Cowhides",
+                "2. Brazil Best Sellers"
+            ];
+            
+            await accessCode.save();
+            
+            return res.json({
+                success: true,
+                message: 'AccessCode 7064 corrigido com sucesso',
+                changes: {
+                    before: oldCategories,
+                    after: accessCode.allowedCategories
+                },
+                accessCode: {
+                    code: accessCode.code,
+                    clientName: accessCode.clientName,
+                    allowedCategories: accessCode.allowedCategories
+                }
+            });
+        }
+        
+        res.json({
+            success: false,
+            message: 'Código não necessita correção ou não é suportado para correção automática'
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao corrigir AccessCode',
+            error: error.message
+        });
+    }
+});
+
 // Middleware para verificar JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -254,102 +465,6 @@ router.get('/verify-token', authenticateToken, async (req, res) => {
         });
     }
 });
-
-// Buscar dados do cliente logado com categorias filtradas
-router.get('/client/data', async (req, res) => {
-    try {
-        // Buscar código de acesso na sessão (simulado via query param para teste)
-        const { code } = req.query;
-
-        if (!code) {
-            return res.status(400).json({
-                success: false,
-                message: 'Código de acesso necessário'
-            });
-        }
-
-        // Buscar dados do cliente
-        const accessCode = await AccessCode.findOne({
-            code: code,
-            isActive: true,
-            expiresAt: { $gt: new Date() }
-        });
-
-        if (!accessCode) {
-            return res.status(404).json({
-                success: false,
-                message: 'Código inválido ou expirado'
-            });
-        }
-
-        // Buscar categorias do Google Drive
-        let availableCategories = [];
-
-        try {
-            const drive = getGoogleDriveAuth();
-            const parentFolderId = process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
-
-            const response = await drive.files.list({
-                q: `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
-                fields: 'files(id, name, modifiedTime)',
-                orderBy: 'name'
-            });
-
-            availableCategories = response.data.files;
-
-        } catch (driveError) {
-            console.error('Erro ao buscar categorias do Drive:', driveError);
-        }
-
-        // Filtrar categorias permitidas para o cliente
-        const allowedCategories = availableCategories.filter(category =>
-            accessCode.allowedCategories.some(allowed =>
-                category.name.toLowerCase().includes(allowed.toLowerCase()) ||
-                allowed.toLowerCase().includes(category.name.toLowerCase())
-            )
-        );
-
-        // Atualizar último uso
-        accessCode.lastUsed = new Date();
-        accessCode.usageCount += 1;
-        await accessCode.save();
-
-        res.json({
-            success: true,
-            client: {
-                name: accessCode.clientName,
-                email: accessCode.clientEmail,
-                code: accessCode.code
-            },
-            allowedCategories: allowedCategories,
-            availableCategories: availableCategories,
-            totalCategories: availableCategories.length,
-            allowedCount: allowedCategories.length
-        });
-
-    } catch (error) {
-        console.error('Erro ao buscar dados do cliente:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro interno do servidor'
-        });
-    }
-});
-
-// Função auxiliar para Google Drive (copiar do drive.js)
-const { google } = require('googleapis');
-
-const getGoogleDriveAuth = () => {
-    const auth = new google.auth.GoogleAuth({
-        credentials: {
-            client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        },
-        scopes: ['https://www.googleapis.com/auth/drive.readonly']
-    });
-
-    return google.drive({ version: 'v3', auth });
-};
 
 // Exportar middleware para uso em outras rotas
 router.authenticateToken = authenticateToken;
