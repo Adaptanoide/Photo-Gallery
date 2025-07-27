@@ -28,19 +28,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Botões principais
-    document.getElementById('adminBtn').addEventListener('click', showAdminLogin);
-    document.getElementById('clientBtn').addEventListener('click', showClientLogin);
+    // Verificar se estamos na página inicial (tem botões admin/client)
+    const adminBtn = document.getElementById('adminBtn');
+    const clientBtn = document.getElementById('clientBtn');
     
-    // Forms
-    elements.adminLoginForm.addEventListener('submit', handleAdminLogin);
-    elements.clientLoginForm.addEventListener('submit', handleClientLogin);
+    if (adminBtn && clientBtn) {
+        // Página inicial - configurar botões principais
+        adminBtn.addEventListener('click', showAdminLogin);
+        clientBtn.addEventListener('click', showClientLogin);
+    }
     
-    // Input de código do cliente (apenas números)
+    // Forms - verificar se existem antes de adicionar listeners
+    if (elements.adminLoginForm) {
+        elements.adminLoginForm.addEventListener('submit', handleAdminLogin);
+    }
+    
+    if (elements.clientLoginForm) {
+        elements.clientLoginForm.addEventListener('submit', handleClientLogin);
+    }
+    
+    // Input de código do cliente - verificar se existe
     const clientCodeInput = document.getElementById('clientCode');
-    clientCodeInput.addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    });
+    if (clientCodeInput) {
+        clientCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+        });
+    }
     
     // Fechar modal clicando fora
     window.addEventListener('click', (e) => {
