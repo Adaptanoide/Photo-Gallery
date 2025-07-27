@@ -147,7 +147,7 @@ class PhotoZoomSimplified {
         // Atualizar tamanhos quando imagem carregar
         this.elements.image.addEventListener('load', () => {
             this.updateImageInfo();
-            this.fitToScreen(); // Sempre iniciar com fit
+            this.resetZoom(); // Sempre iniciar resetado
         });
     }
 
@@ -323,7 +323,7 @@ class PhotoZoomSimplified {
         e.preventDefault();
 
         if (this.state.zoom > 1) {
-            this.fitToScreen();
+            this.resetZoom();
         } else {
             this.setZoomCentered(2);
         }
