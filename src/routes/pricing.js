@@ -122,6 +122,37 @@ router.get('/test/categories', async (req, res) => {
     }
 });
 
+// Buscar preço por Google Drive ID (para cliente)
+router.get('/category-price', async (req, res) => {
+    try {
+        const { googleDriveId } = req.query;
+        const category = await PhotoCategory.findByDriveId(googleDriveId);
+        
+        if (!category) {
+            return res.json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+        
+        res.json({
+            success: true,
+            category: {
+                _id: category._id,
+                displayName: category.displayName,
+                basePrice: category.basePrice,
+                formattedPrice: category.basePrice > 0 ? 
+                    `R$ ${category.basePrice.toFixed(2)}` : 'Sem preço'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
+    }
+});
+
 // Todas as rotas de preços precisam de autenticação admin
 router.use(authenticateToken);
 
@@ -643,37 +674,6 @@ router.post('/validate', async (req, res) => {
             success: false,
             message: 'Erro na validação',
             error: error.message
-        });
-    }
-});
-
-// Buscar preço por Google Drive ID (para cliente)
-router.get('/category-price', async (req, res) => {
-    try {
-        const { googleDriveId } = req.query;
-        const category = await PhotoCategory.findByDriveId(googleDriveId);
-        
-        if (!category) {
-            return res.json({
-                success: false,
-                message: 'Categoria não encontrada'
-            });
-        }
-        
-        res.json({
-            success: true,
-            category: {
-                _id: category._id,
-                displayName: category.displayName,
-                basePrice: category.basePrice,
-                formattedPrice: category.basePrice > 0 ? 
-                    `R$ ${category.basePrice.toFixed(2)}` : 'Sem preço'
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro interno do servidor'
         });
     }
 });
