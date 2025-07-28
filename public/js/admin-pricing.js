@@ -1083,10 +1083,162 @@ function renderQuantityRulesError() {
  * Mostrar formulário para adicionar nova regra
  */
 function showAddQuantityRuleForm() {
-    // TODO: Implementar modal ou formulário inline
-    console.log('📦 Abrindo formulário para nova regra de quantidade...');
-    adminPricing.showNotification('Formulário em desenvolvimento', 'info');
+    const container = document.querySelector('#tab-quantity-discounts .quantity-discounts-section');
+    if (!container) return;
+
+    // Verificar se formulário já existe
+    if (document.getElementById('addQuantityRuleForm')) {
+        return; // Já está aberto
+    }
+
+    const formHTML = `
+        <div id="addQuantityRuleForm" class="add-quantity-rule-form">
+            <h6><i class="fas fa-plus"></i> Nova Regra de Desconto por Quantidade</h6>
+            
+            <form id="quantityRuleForm" class="quantity-rule-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Quantidade Mínima</label>
+                        <input type="number" id="minQuantity" class="form-input" 
+                            min="1" step="1" placeholder="5" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Quantidade Máxima</label>
+                        <input type="number" id="maxQuantity" class="form-input" 
+                            min="1" step="1" placeholder="10 (deixe vazio para ∞)">
+                        <small class="form-help">Deixe em branco para "ou mais" (ex: 21+)</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Desconto (%)</label>
+                        <input type="number" id="discountPercent" class="form-input" 
+                            min="0" max="100" step="1" placeholder="5" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Descrição</label>
+                        <input type="text" id="ruleDescription" class="form-input" 
+                            placeholder="Ex: Desconto para pedidos médios" required>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cancelAddQuantityRule()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Regra
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Inserir formulário após as regras existentes
+    const rulesContainer = container.querySelector('.quantity-rules');
+    if (rulesContainer) {
+        rulesContainer.insertAdjacentHTML('afterend', formHTML);
+
+        // Event listener para o formulário
+        const form = document.getElementById('quantityRuleForm');
+        if (form) {
+            form.addEventListener('submit', handleQuantityRuleSubmit);
+        }
+
+        // Focar no primeiro campo
+        const firstInput = document.getElementById('minQuantity');
+        if (firstInput) {
+            firstInput.focus();
+        }
+
+        console.log('📦 Formulário de nova regra exibido');
+    }
 }
+
+/**
+ * Cancelar adição de regra
+ */
+function cancelAddQuantityRule() {
+    const form = document.getElementById('addQuantityRuleForm');
+    if (form) {
+        form.remove();
+        console.log('📦 Formulário cancelado');
+    }
+}
+
+/**
+ * Lidar com submit do formulário de regra de quantidade
+ */
+async function handleQuantityRuleSubmit(e) {
+    e.preventDefault();
+
+    const minQty = parseInt(document.getElementById('minQuantity').value);
+    const maxQty = document.getElementById('maxQuantity').value ?
+        parseInt(document.getElementById('maxQuantity').value) : null;
+    const discount = parseInt(document.getElementById('discountPercent').value);
+    const description = document.getElementById('ruleDescription').value.trim();
+
+    // Validações
+    if (!minQty || minQty < 1) {
+        adminPricing.showNotification('Quantidade mínima deve ser maior que 0', 'error');
+        return;
+    }
+
+    if (maxQty && maxQty <= minQty) {
+        adminPricing.showNotification('Quantidade máxima deve ser maior que mínima', 'error');
+        return;
+    }
+
+    if (!discount || discount < 0 || discount > 100) {
+        adminPricing.showNotification('Desconto deve ser entre 0 e 100%', 'error');
+        return;
+    }
+
+    if (!description) {
+        adminPricing.showNotification('Descrição é obrigatória', 'error');
+        return;
+    }
+
+    try {
+        console.log('📦 Criando nova regra de quantidade...');
+
+        const requestData = {
+            minQuantity: minQty,
+            maxQuantity: maxQty,
+            discountPercent: discount,
+            description: description
+        };
+
+        const response = await fetch('/api/pricing/quantity-discounts', {
+            method: 'POST',
+            headers: {
+                ...adminPricing.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            adminPricing.showNotification('Regra criada com sucesso!', 'success');
+            cancelAddQuantityRule(); // Fechar formulário
+            loadQuantityRules(); // Recarregar lista
+        } else {
+            throw new Error(result.message || 'Erro ao criar regra');
+        }
+
+    } catch (error) {
+        console.error('❌ Erro ao criar regra:', error);
+        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+    }
+}
+
+// Tornar função global
+window.cancelAddQuantityRule = cancelAddQuantityRule;
 
 /**
  * Editar regra de quantidade
