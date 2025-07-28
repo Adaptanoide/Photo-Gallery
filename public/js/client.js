@@ -251,7 +251,8 @@ async function loadPhotos(folderId) {
         }
 
         navigationState.currentPhotos = data.photos;
-        showPhotosGallery(data.photos, data.folder.name);
+        const categoryPrice = await loadCategoryPrice(folderId);
+        showPhotosGallery(data.photos, data.folder.name, categoryPrice);
 
     } catch (error) {
         console.error('Erro ao carregar fotos:', error);
@@ -262,14 +263,19 @@ async function loadPhotos(folderId) {
 }
 
 // Mostrar galeria de fotos
-function showPhotosGallery(photos, folderName) {
+function showPhotosGallery(photos, folderName, categoryPrice) {
     hideAllContainers();
     document.getElementById('photosContainer').style.display = 'block';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
 
     // Atualizar título e contador
-    document.getElementById('galleryTitle').textContent = folderName;
+    const galleryTitle = document.getElementById('galleryTitle');
+    if (categoryPrice && categoryPrice.hasPrice) {
+        galleryTitle.innerHTML = `${folderName} <span class="category-price">${categoryPrice.formattedPrice}</span>`;
+    } else {
+        galleryTitle.textContent = folderName;
+    }
     document.getElementById('photosCount').textContent = `${photos.length} foto(s)`;
 
     // Gerar grid de fotos
@@ -301,6 +307,10 @@ function showPhotosGallery(photos, folderName) {
                 <div class="photo-overlay">
                     <div><strong>${photo.name}</strong></div>
                     <small>${formatFileSize(photo.size)}</small>
+                    <div class="photo-price ${categoryPrice?.hasPrice ? 'has-price' : 'no-price'}">
+                        <i class="fas fa-tag"></i>
+                        <span>${categoryPrice?.formattedPrice || 'Sem preço'}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -572,3 +582,38 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('⚠️ Sistema de zoom não carregado');
     }
 });
+
+// Cache de preços por categoria
+window.categoryPrices = new Map();
+
+// Buscar preço da categoria atual
+async function loadCategoryPrice(folderId) {
+    try {
+        if (window.categoryPrices.has(folderId)) {
+            return window.categoryPrices.get(folderId);
+        }
+
+        const response = await fetch(`/api/pricing/category-price?googleDriveId=${folderId}`);
+        const data = await response.json();
+
+        let priceInfo = {
+            hasPrice: false,
+            price: 0,
+            formattedPrice: 'Sem preço'
+        };
+
+        if (data.success && data.category) {
+            priceInfo = {
+                hasPrice: data.category.basePrice > 0,
+                price: data.category.basePrice || 0,
+                formattedPrice: data.category.formattedPrice
+            };
+        }
+
+        window.categoryPrices.set(folderId, priceInfo);
+        return priceInfo;
+    } catch (error) {
+        console.error('Erro ao buscar preço:', error);
+        return { hasPrice: false, price: 0, formattedPrice: 'Erro no preço' };
+    }
+}

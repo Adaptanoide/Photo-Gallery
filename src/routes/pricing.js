@@ -647,4 +647,78 @@ router.post('/validate', async (req, res) => {
     }
 });
 
+// Buscar categoria específica por ID
+router.get('/categories/:id', async (req, res) => {
+    try {
+        const category = await PhotoCategory.findById(req.params.id);
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+
+        res.json({
+            success: true,
+            category: category.getSummary()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
+    }
+});
+
+// Definir preço de uma categoria
+router.put('/categories/:id/price', async (req, res) => {
+    try {
+        const { price, reason } = req.body;
+        const result = await PricingService.setPriceForCategory(
+            req.params.id,
+            price,
+            'admin',
+            reason || 'Preço definido via interface admin'
+        );
+        
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// Buscar preço por Google Drive ID (para cliente)
+router.get('/category-price', async (req, res) => {
+    try {
+        const { googleDriveId } = req.query;
+        const category = await PhotoCategory.findByDriveId(googleDriveId);
+        
+        if (!category) {
+            return res.json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+        
+        res.json({
+            success: true,
+            category: {
+                _id: category._id,
+                displayName: category.displayName,
+                basePrice: category.basePrice,
+                formattedPrice: category.basePrice > 0 ? 
+                    `R$ ${category.basePrice.toFixed(2)}` : 'Sem preço'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
+    }
+});
+
 module.exports = router;
