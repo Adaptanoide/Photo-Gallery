@@ -1174,21 +1174,36 @@ async function handleQuantityRuleSubmit(e) {
         parseInt(document.getElementById('maxQuantity').value) : null;
     const discount = parseInt(document.getElementById('discountPercent').value);
 
+    // ===== DEBUG LOGS =====
+    console.log('🔍 DEBUG VALORES:');
+    console.log('minQty:', minQty, typeof minQty);
+    console.log('maxQty:', maxQty, typeof maxQty);
+    console.log('discount:', discount, typeof discount);
+    console.log('isNaN(discount):', isNaN(discount));
+    console.log('discount < 0:', discount < 0);
+    console.log('discount > 100:', discount > 100);
+    // ===== FIM DEBUG =====
+
     // Validações
     if (!minQty || minQty < 1) {
+        console.log('❌ Falhou na validação de minQty');
         adminPricing.showNotification('Quantidade mínima deve ser maior que 0', 'error');
         return;
     }
 
     if (maxQty && maxQty <= minQty) {
+        console.log('❌ Falhou na validação de maxQty');
         adminPricing.showNotification('Quantidade máxima deve ser maior que mínima', 'error');
         return;
     }
 
     if (isNaN(discount) || discount < 0 || discount > 100) {
+        console.log('❌ Falhou na validação de discount');
         adminPricing.showNotification('Desconto deve ser entre 0 e 100%', 'error');
         return;
     }
+
+    console.log('✅ Todas as validações passaram');
 
     // Gerar descrição automaticamente
     const rangeText = maxQty ? `${minQty}-${maxQty} fotos` : `${minQty}+ fotos`;
