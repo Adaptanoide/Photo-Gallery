@@ -14,7 +14,7 @@ class AdminClients {
             search: '',
             status: 'all'
         };
-        
+
         this.init();
     }
 
@@ -30,13 +30,13 @@ class AdminClients {
     setupElements() {
         // Container principal
         this.section = document.getElementById('section-clients');
-        
+
         // Elementos que criaremos dinamicamente
         this.clientsContainer = null;
         this.modal = null;
         this.form = null;
         this.table = null;
-        
+
         // Loading
         this.loading = document.getElementById('loading');
     }
@@ -54,23 +54,23 @@ class AdminClients {
         }
 
         this.showLoading(true);
-        
+
         try {
             // Criar HTML da interface
             this.renderClientInterface();
-            
+
             // Carregar dados em paralelo
             await Promise.all([
                 this.loadClients(),
                 this.loadAvailableCategories()
             ]);
-            
+
             // Renderizar tabela
             this.renderClientsTable();
-            
+
             // Configurar event listeners após criar HTML
             this.setupEventListenersAfterRender();
-            
+
         } catch (error) {
             console.error('❌ Erro ao carregar dados iniciais:', error);
             this.showError('Erro ao carregar dados de clientes');
@@ -281,19 +281,19 @@ class AdminClients {
         // Botões principais
         document.getElementById('btnNewClient').addEventListener('click', () => this.openCreateModal());
         document.getElementById('btnRefreshClients').addEventListener('click', () => this.refreshData());
-        
+
         // Filtros
         document.getElementById('searchClients').addEventListener('input', (e) => this.handleSearch(e.target.value));
         document.getElementById('filterStatus').addEventListener('change', (e) => this.handleStatusFilter(e.target.value));
         document.getElementById('sortClients').addEventListener('change', (e) => this.handleSort(e.target.value));
         document.getElementById('btnApplyFilters').addEventListener('click', () => this.applyFilters());
-        
+
         // Formulário
         this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
-        
+
         // Inputs do formulário
         document.getElementById('clientName').addEventListener('input', () => this.generateCodePreview());
-        
+
         // Fechar modal clicando fora
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
@@ -452,7 +452,7 @@ class AdminClients {
     renderStatusBadge(client) {
         const now = new Date();
         const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
-        
+
         if (isExpired) {
             return '<span class="status-badge-client status-expired">Expirado</span>';
         } else if (client.isActive) {
@@ -466,22 +466,22 @@ class AdminClients {
     openCreateModal() {
         this.currentClient = null;
         this.selectedCategories = [];
-        
+
         // Resetar formulário
         this.form.reset();
         document.getElementById('expireDays').value = '30';
         document.getElementById('clientStatus').value = 'true';
-        
+
         // Atualizar títulos
         document.getElementById('modalTitle').textContent = 'Novo Código de Acesso';
         document.getElementById('saveButtonText').textContent = 'Criar Código';
-        
+
         // Gerar preview do código
         this.generateCodePreview();
-        
+
         // Renderizar categorias
         this.renderCategoriesSelection();
-        
+
         // Mostrar modal
         this.modal.classList.add('active');
         document.getElementById('clientName').focus();
@@ -501,7 +501,7 @@ class AdminClients {
 
     renderCategoriesSelection() {
         const container = document.getElementById('categoriesSelection');
-        
+
         if (this.availableCategories.length === 0) {
             container.innerHTML = `
                 <div style="padding: 2rem; text-align: center; color: #666;">
@@ -541,7 +541,7 @@ class AdminClients {
         } else {
             this.selectedCategories = this.selectedCategories.filter(cat => cat !== categoryName);
         }
-        
+
         console.log('📝 Categorias selecionadas:', this.selectedCategories);
     }
 
@@ -556,14 +556,10 @@ class AdminClients {
             isActive: document.getElementById('clientStatus').value === 'true'
         };
 
-        // Validações
-        if (!formData.clientName) {
-            this.showError('Nome do cliente é obrigatório');
-            return;
-        }
-
-        if (formData.allowedCategories.length === 0) {
-            this.showError('Selecione pelo menos uma categoria');
+        // VALIDAÇÕES APRIMORADAS
+        const validationErrors = this.validateFormData(formData);
+        if (validationErrors.length > 0) {
+            this.showError('Erros no formulário:\n' + validationErrors.join('\n'));
             return;
         }
 
@@ -571,14 +567,19 @@ class AdminClients {
             this.showModalLoading(true);
             
             if (this.currentClient) {
-                await this.updateClient(this.currentClient._id, formData);
+                // EDITANDO cliente existente
+                console.log('✏️ Editando cliente:', this.currentClient._id || this.currentClient.code);
+                await this.updateClient(this.currentClient._id || this.currentClient.code, formData);
+                this.showSuccess('Código atualizado com sucesso!');
             } else {
+                // CRIANDO novo cliente
+                console.log('➕ Criando novo cliente');
                 await this.createClient(formData);
+                this.showSuccess('Código criado com sucesso!');
             }
             
             this.closeModal();
             await this.refreshData();
-            this.showSuccess(this.currentClient ? 'Código atualizado com sucesso!' : 'Código criado com sucesso!');
             
         } catch (error) {
             console.error('❌ Erro ao salvar:', error);
@@ -606,6 +607,308 @@ class AdminClients {
         }
 
         return data.accessCode;
+    }
+
+    // ===== FUNÇÃO PARA ATUALIZAR CLIENTE (ESTAVA FALTANDO) =====
+    async updateClient(clientId, formData) {
+        const token = this.getAdminToken();
+
+        console.log('✏️ Atualizando cliente:', clientId, formData);
+
+        const response = await fetch(`/api/admin/access-codes/${clientId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Erro ao atualizar código');
+        }
+
+        console.log('✅ Cliente atualizado com sucesso');
+        return data.accessCode;
+    }
+
+    // ===== FUNÇÃO PARA DELETAR CLIENTE =====
+    async deleteClient(clientId) {
+        const token = this.getAdminToken();
+
+        console.log('🗑️ Deletando cliente:', clientId);
+
+        const response = await fetch(`/api/admin/access-codes/${clientId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Erro ao deletar código');
+        }
+
+        console.log('✅ Cliente deletado com sucesso');
+        return true;
+    }
+
+    // ===== FUNÇÃO PARA TOGGLE STATUS (MELHORADA) =====
+    async updateClientStatus(clientId, isActive) {
+        const token = this.getAdminToken();
+
+        console.log(`🔄 ${isActive ? 'Ativando' : 'Desativando'} cliente:`, clientId);
+
+        const response = await fetch(`/api/admin/access-codes/${clientId}/toggle`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ isActive })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Erro ao alterar status do código');
+        }
+
+        console.log(`✅ Cliente ${isActive ? 'ativado' : 'desativado'} com sucesso`);
+        return data.accessCode;
+    }
+
+    // ===== VALIDAÇÃO AVANÇADA DE FORMULÁRIO =====
+    validateFormData(formData) {
+        const errors = [];
+
+        // Validar nome
+        if (!formData.clientName || formData.clientName.length < 2) {
+            errors.push('Nome deve ter pelo menos 2 caracteres');
+        }
+
+        // Validar email (se fornecido)
+        if (formData.clientEmail && !this.isValidEmail(formData.clientEmail)) {
+            errors.push('Email inválido');
+        }
+
+        // Validar categorias
+        if (!formData.allowedCategories || formData.allowedCategories.length === 0) {
+            errors.push('Selecione pelo menos uma categoria');
+        }
+
+        // Validar dias de expiração
+        if (!formData.expiresInDays || formData.expiresInDays < 1 || formData.expiresInDays > 365) {
+            errors.push('Dias de expiração deve ser entre 1 e 365');
+        }
+
+        return errors;
+    }
+
+    // ===== VALIDAR EMAIL =====
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // ===== FUNÇÃO PARA VERIFICAR CÓDIGO ÚNICO =====
+    async checkCodeUnique(code, excludeId = null) {
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/admin/access-codes/check-unique?code=${code}&exclude=${excludeId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            return data.isUnique;
+
+        } catch (error) {
+            console.error('❌ Erro ao verificar código único:', error);
+            return true; // Em caso de erro, assumir que é único
+        }
+    }
+
+    // ===== GERAR CÓDIGO ÚNICO GARANTIDO =====
+    async generateUniqueCode() {
+        let attempts = 0;
+        let code;
+        let isUnique = false;
+
+        while (!isUnique && attempts < 50) {
+            code = Math.floor(1000 + Math.random() * 9000).toString();
+            isUnique = await this.checkCodeUnique(code);
+            attempts++;
+        }
+
+        if (!isUnique) {
+            throw new Error('Não foi possível gerar código único. Tente novamente.');
+        }
+
+        return code;
+    }
+
+    // ===== FUNÇÃO PARA DUPLICAR CÓDIGO =====
+    duplicateClient(clientId) {
+        const client = this.clients.find(c => c._id === clientId || c.code === clientId);
+        if (!client) return;
+
+        this.currentClient = null; // Resetar para criar novo
+        this.selectedCategories = [...client.allowedCategories];
+
+        // Preencher formulário com dados do cliente existente
+        document.getElementById('clientName').value = client.clientName + ' (Cópia)';
+        document.getElementById('clientEmail').value = client.clientEmail || '';
+        document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
+        document.getElementById('clientStatus').value = 'true'; // Sempre ativo para cópia
+
+        // Gerar novo código
+        this.generateCodePreview();
+
+        // Atualizar títulos
+        document.getElementById('modalTitle').textContent = 'Duplicar Código de Acesso';
+        document.getElementById('saveButtonText').textContent = 'Criar Cópia';
+
+        // Renderizar categorias
+        this.renderCategoriesSelection();
+
+        // Mostrar modal
+        this.modal.classList.add('active');
+        document.getElementById('clientName').focus();
+        document.getElementById('clientName').select();
+    }
+
+    // ===== CONFIRMAÇÃO DE AÇÕES CRÍTICAS =====
+    async confirmAction(action, clientName) {
+        const messages = {
+            delete: `Tem certeza que deseja DELETAR o código do cliente "${clientName}"?\n\nEsta ação não pode ser desfeita.`,
+            deactivate: `Desativar o código do cliente "${clientName}"?\n\nO cliente não conseguirá mais fazer login.`,
+            activate: `Ativar o código do cliente "${clientName}"?\n\nO cliente poderá fazer login novamente.`
+        };
+
+        return confirm(messages[action] || 'Confirmar ação?');
+    }
+
+    // ===== FUNÇÃO PARA EXPORTAR DADOS =====
+    exportClientsData() {
+        try {
+            const dataToExport = this.clients.map(client => ({
+                codigo: client.code,
+                nome: client.clientName,
+                email: client.clientEmail || '',
+                categorias: client.allowedCategories.join('; '),
+                status: client.isActive ? 'Ativo' : 'Inativo',
+                usos: client.usageCount || 0,
+                ultimo_uso: client.lastUsed ? this.formatDate(client.lastUsed) : 'Nunca',
+                expira_em: this.formatDate(client.expiresAt),
+                criado_em: this.formatDate(client.createdAt)
+            }));
+
+            const csvContent = this.convertToCSV(dataToExport);
+            this.downloadCSV(csvContent, `clientes_sunshine_${new Date().toISOString().split('T')[0]}.csv`);
+
+            this.showSuccess('Dados exportados com sucesso!');
+
+        } catch (error) {
+            console.error('❌ Erro ao exportar:', error);
+            this.showError('Erro ao exportar dados');
+        }
+    }
+
+    // ===== CONVERTER PARA CSV =====
+    convertToCSV(data) {
+        if (data.length === 0) return '';
+
+        const headers = Object.keys(data[0]);
+        const csvRows = [];
+
+        // Adicionar cabeçalhos
+        csvRows.push(headers.join(','));
+
+        // Adicionar dados
+        data.forEach(row => {
+            const values = headers.map(header => {
+                const value = row[header];
+                // Escapar aspas e quebras de linha
+                return `"${String(value).replace(/"/g, '""')}"`;
+            });
+            csvRows.push(values.join(','));
+        });
+
+        return csvRows.join('\n');
+    }
+
+    // ===== DOWNLOAD CSV =====
+    downloadCSV(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    // ===== ESTATÍSTICAS DOS CLIENTES =====
+    getClientsStatistics() {
+        const now = new Date();
+
+        const stats = {
+            total: this.clients.length,
+            active: this.clients.filter(c => c.isActive && new Date(c.expiresAt) > now).length,
+            inactive: this.clients.filter(c => !c.isActive).length,
+            expired: this.clients.filter(c => new Date(c.expiresAt) <= now).length,
+            mostUsedCategory: null,
+            totalUsage: this.clients.reduce((sum, c) => sum + (c.usageCount || 0), 0),
+            averageUsage: 0
+        };
+
+        // Calcular média de uso
+        if (stats.total > 0) {
+            stats.averageUsage = Math.round(stats.totalUsage / stats.total * 100) / 100;
+        }
+
+        // Encontrar categoria mais usada
+        const categoryCount = {};
+        this.clients.forEach(client => {
+            client.allowedCategories.forEach(category => {
+                categoryCount[category] = (categoryCount[category] || 0) + (client.usageCount || 0);
+            });
+        });
+
+        if (Object.keys(categoryCount).length > 0) {
+            stats.mostUsedCategory = Object.keys(categoryCount).reduce((a, b) =>
+                categoryCount[a] > categoryCount[b] ? a : b
+            );
+        }
+
+        return stats;
+    }
+
+    // ===== FUNÇÃO PARA SEARCH AVANÇADA =====
+    performAdvancedSearch(query) {
+        const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+
+        return this.clients.filter(client => {
+            const searchableText = [
+                client.clientName,
+                client.clientEmail || '',
+                client.code,
+                ...client.allowedCategories
+            ].join(' ').toLowerCase();
+
+            return searchTerms.every(term => searchableText.includes(term));
+        });
     }
 
     // ===== AÇÕES DA TABELA =====
@@ -646,14 +949,25 @@ class AdminClients {
         const client = this.clients.find(c => c._id === clientId || c.code === clientId);
         if (!client) return;
 
+        const action = client.isActive ? 'deactivate' : 'activate';
+        const confirmed = await this.confirmAction(action, client.clientName);
+        
+        if (!confirmed) return;
+
         try {
-            // TODO: Implementar API de toggle
-            client.isActive = !client.isActive;
+            // Usar a nova função updateClientStatus
+            const newStatus = !client.isActive;
+            await this.updateClientStatus(clientId, newStatus);
+            
+            // Atualizar estado local
+            client.isActive = newStatus;
             this.renderClientsTable();
-            this.showSuccess(`Código ${client.isActive ? 'ativado' : 'desativado'} com sucesso!`);
+            
+            this.showSuccess(`Código ${newStatus ? 'ativado' : 'desativado'} com sucesso!`);
+            
         } catch (error) {
             console.error('❌ Erro ao alterar status:', error);
-            this.showError('Erro ao alterar status do código');
+            this.showError(`Erro ao ${client.isActive ? 'desativar' : 'ativar'} código: ` + error.message);
         }
     }
 
@@ -678,7 +992,7 @@ class AdminClients {
 
         // Aplicar busca
         if (this.filters.search) {
-            filteredClients = filteredClients.filter(client => 
+            filteredClients = filteredClients.filter(client =>
                 client.clientName.toLowerCase().includes(this.filters.search) ||
                 client.code.includes(this.filters.search) ||
                 (client.clientEmail && client.clientEmail.toLowerCase().includes(this.filters.search))
@@ -690,7 +1004,7 @@ class AdminClients {
             filteredClients = filteredClients.filter(client => {
                 const now = new Date();
                 const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
-                
+
                 switch (this.filters.status) {
                     case 'active':
                         return client.isActive && !isExpired;
@@ -825,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientsSection = document.getElementById('section-clients');
     if (clientsSection) {
         observer.observe(clientsSection, { attributes: true });
-        
+
         // Se já estiver visível, inicializar imediatamente
         if (clientsSection.style.display !== 'none') {
             adminClients = new AdminClients();
