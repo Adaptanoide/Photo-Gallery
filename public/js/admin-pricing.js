@@ -984,15 +984,153 @@ async function handleClientRuleSubmit(e) {
  */
 function initializeQuantityDiscountsTab() {
     console.log('📦 Aba de descontos por quantidade inicializada');
+
+    // Event listener para adicionar nova regra
+    const addRuleBtn = document.querySelector('#tab-quantity-discounts .btn.btn-secondary');
+    if (addRuleBtn) {
+        addRuleBtn.addEventListener('click', showAddQuantityRuleForm);
+    }
 }
 
 /**
- * Carregar regras de quantidade
+ * Carregar regras de quantidade do backend
  */
-function loadQuantityRules() {
-    console.log('📦 Carregando regras de quantidade...');
-    // TODO: Implementar carregamento de regras de quantidade
+async function loadQuantityRules() {
+    try {
+        console.log('📦 Carregando regras de quantidade...');
+
+        const response = await fetch('/api/pricing/quantity-discounts', {
+            headers: adminPricing.getAuthHeaders()
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            renderQuantityRules(data.rules);
+            console.log(`✅ ${data.rules.length} regras de quantidade carregadas`);
+        } else {
+            throw new Error(data.message || 'Erro ao buscar regras');
+        }
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar regras de quantidade:', error);
+        renderQuantityRulesError();
+    }
 }
+
+/**
+ * Renderizar regras de quantidade na interface
+ */
+function renderQuantityRules(rules) {
+    const container = document.querySelector('#tab-quantity-discounts .quantity-rules');
+    if (!container) return;
+
+    if (rules.length === 0) {
+        container.innerHTML = `
+            <div class="empty-rules">
+                <i class="fas fa-info-circle"></i>
+                <p>Nenhuma regra de desconto por quantidade configurada</p>
+                <small>Configure descontos automáticos baseados na quantidade de fotos</small>
+            </div>
+        `;
+        return;
+    }
+
+    const rulesHTML = rules.map(rule => {
+        const rangeText = rule.maxQuantity ?
+            `${rule.minQuantity}-${rule.maxQuantity} fotos` :
+            `${rule.minQuantity}+ fotos`;
+
+        return `
+            <div class="quantity-rule" data-rule-id="${rule._id}">
+                <div class="rule-range">${rangeText}</div>
+                <div class="rule-discount">${rule.discountPercent}% desconto</div>
+                <div class="rule-description">${rule.description}</div>
+                <div class="rule-actions">
+                    <button class="btn-sm btn-warning" onclick="editQuantityRule('${rule._id}')">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn-sm btn-danger" onclick="removeQuantityRule('${rule._id}')">
+                        <i class="fas fa-trash"></i> Remover
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = rulesHTML;
+}
+
+/**
+ * Renderizar erro no carregamento
+ */
+function renderQuantityRulesError() {
+    const container = document.querySelector('#tab-quantity-discounts .quantity-rules');
+    if (container) {
+        container.innerHTML = `
+            <div class="error-rules">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao carregar regras de desconto</p>
+                <button class="btn btn-secondary" onclick="loadQuantityRules()">
+                    <i class="fas fa-sync"></i> Tentar Novamente
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Mostrar formulário para adicionar nova regra
+ */
+function showAddQuantityRuleForm() {
+    // TODO: Implementar modal ou formulário inline
+    console.log('📦 Abrindo formulário para nova regra de quantidade...');
+    adminPricing.showNotification('Formulário em desenvolvimento', 'info');
+}
+
+/**
+ * Editar regra de quantidade
+ */
+function editQuantityRule(ruleId) {
+    console.log('📦 Editando regra:', ruleId);
+    adminPricing.showNotification('Edição em desenvolvimento', 'info');
+}
+
+/**
+ * Remover regra de quantidade
+ */
+async function removeQuantityRule(ruleId) {
+    const confirmMessage = 'Tem certeza que deseja remover esta regra de desconto por quantidade?';
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    try {
+        console.log('📦 Removendo regra:', ruleId);
+
+        const response = await fetch(`/api/pricing/quantity-discounts/${ruleId}`, {
+            method: 'DELETE',
+            headers: adminPricing.getAuthHeaders()
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            adminPricing.showNotification('Regra removida com sucesso!', 'success');
+            loadQuantityRules(); // Recarregar lista
+        } else {
+            throw new Error(result.message || 'Erro ao remover regra');
+        }
+
+    } catch (error) {
+        console.error('❌ Erro ao remover regra:', error);
+        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+    }
+}
+
+// Tornar funções globais
+window.editQuantityRule = editQuantityRule;
+window.removeQuantityRule = removeQuantityRule;
 
 // ===== INTEGRAÇÃO AUTOMÁTICA COM MODAL =====
 
@@ -1051,37 +1189,37 @@ if (document.readyState === 'loading') {
  */
 async function removeClientRule(clientCode) {
     if (!adminPricing.currentCategory) return;
-    
+
     // Confirmar remoção
     const confirmMessage = `Tem certeza que deseja remover a regra de desconto para o cliente ${clientCode}?`;
     if (!confirm(confirmMessage)) {
         return;
     }
-    
+
     try {
         console.log(`🗑️ Removendo regra para cliente: ${clientCode}`);
-        
+
         const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules/${clientCode}`, {
             method: 'DELETE',
             headers: adminPricing.getAuthHeaders()
         });
-        
+
         const result = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(result.message || 'Erro ao remover regra');
         }
-        
+
         if (result.success) {
             console.log('✅ Regra removida com sucesso');
             adminPricing.showNotification('Regra removida com sucesso!', 'success');
-            
+
             // Recarregar lista de regras
             await loadClientRules();
         } else {
             throw new Error(result.message || 'Erro desconhecido');
         }
-        
+
     } catch (error) {
         console.error('❌ Erro ao remover regra:', error);
         adminPricing.showNotification(`Erro: ${error.message}`, 'error');
