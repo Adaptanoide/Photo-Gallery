@@ -807,18 +807,23 @@ async function loadClientRules() {
     if (!rulesContainer) return;
 
     try {
-        // Buscar regras da categoria atual
-        const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}`, {
+        console.log('🏷️ Carregando regras de desconto...');
+
+        const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules`, {
             headers: adminPricing.getAuthHeaders()
         });
 
         const data = await response.json();
 
-        if (data.success && data.category.discountRules) {
-            renderClientRules(data.category.discountRules);
+        if (data.success) {
+            renderClientRules(data.discountRules);
+            console.log(`✅ ${data.totalRules} regras carregadas`);
+        } else {
+            throw new Error(data.message || 'Erro ao buscar regras');
         }
     } catch (error) {
         console.error('❌ Erro ao carregar regras de cliente:', error);
+        rulesContainer.innerHTML = '<div class="error">Erro ao carregar regras</div>';
     }
 }
 
@@ -870,25 +875,32 @@ async function loadAvailableClients() {
     if (!clientSelect) return;
 
     try {
-        // TODO: Implementar API para buscar clientes ativos
-        // Por enquanto, dados de exemplo
-        const clients = [
-            { code: '7064', name: 'João Silva' },
-            { code: '6544', name: 'Tiago Teste' },
-            { code: '3590', name: 'testenovo' }
-        ];
+        console.log('👥 Carregando clientes ativos...');
 
-        const optionsHTML = clients.map(client =>
-            `<option value="${client.code}">${client.name} (${client.code})</option>`
-        ).join('');
+        const response = await fetch('/api/pricing/clients/active', {
+            headers: adminPricing.getAuthHeaders()
+        });
 
-        clientSelect.innerHTML = `
-            <option value="">Selecione um cliente...</option>
-            ${optionsHTML}
-        `;
+        const data = await response.json();
+
+        if (data.success) {
+            const optionsHTML = data.clients.map(client =>
+                `<option value="${client.code}">${client.name} (${client.code})</option>`
+            ).join('');
+
+            clientSelect.innerHTML = `
+                <option value="">Selecione um cliente...</option>
+                ${optionsHTML}
+            `;
+
+            console.log(`✅ ${data.clients.length} clientes carregados no dropdown`);
+        } else {
+            throw new Error(data.message || 'Erro ao buscar clientes');
+        }
 
     } catch (error) {
         console.error('❌ Erro ao carregar clientes:', error);
+        clientSelect.innerHTML = '<option value="">Erro ao carregar clientes</option>';
     }
 }
 
