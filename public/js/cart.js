@@ -386,6 +386,28 @@ window.CartSystem = {
     },
 
     /**
+ * Calcular total do carrinho
+ */
+    calculateCartTotal() {
+        let total = 0;
+        let itemsWithPrice = 0;
+
+        this.state.items.forEach(item => {
+            if (item.hasPrice && item.price > 0) {
+                total += item.price;
+                itemsWithPrice++;
+            }
+        });
+
+        return {
+            total,
+            itemsWithPrice,
+            formattedTotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
+            hasIncompletePrice: itemsWithPrice < this.state.items.length
+        };
+    },
+
+    /**
      * Atualizar conteúdo da sidebar
      */
     updateSidebarContent() {
@@ -411,6 +433,20 @@ window.CartSystem = {
 
         // Renderizar itens
         this.renderCartItems();
+
+        // NOVO: Atualizar total do carrinho no footer
+        if (this.elements.itemCount && this.state.totalItems > 0) {
+            const cartTotal = this.calculateCartTotal();
+            const totalText = this.state.totalItems === 0 ? 'Carrinho vazio' :
+                this.state.totalItems === 1 ? '1 item' :
+                    `${this.state.totalItems} itens`;
+
+            this.elements.itemCount.innerHTML = `
+            <div class="items-text">${totalText}</div>
+            ${cartTotal.total > 0 ? `<div class="cart-total-value">${cartTotal.formattedTotal}</div>` : ''}
+            ${cartTotal.hasIncompletePrice ? '<div class="price-note">* Alguns itens sem preço</div>' : ''}
+        `;
+        }
     },
 
     /**
@@ -452,6 +488,12 @@ window.CartSystem = {
                 <div class="cart-item-info">
                     <div class="cart-item-title">${item.fileName}</div>
                     <div class="cart-item-category">${item.category}</div>
+                    <div class="cart-item-price">
+                        ${item.hasPrice ?
+                `<span class="price-value">${item.formattedPrice}</span>` :
+                `<span class="price-consult">Consultar preço</span>`
+            }
+                    </div>
                     <div class="cart-item-timer ${timerClass}">
                         <i class="fas fa-clock"></i>
                         <span id="timer-${item.driveFileId}">${timeText}</span>
@@ -642,10 +684,25 @@ window.toggleCartItem = async function () {
             // Buscar dados da foto atual
             const photoData = window.navigationState?.currentPhotos?.[window.navigationState.currentPhotoIndex];
 
+            // Buscar preço da categoria atual
+            const currentFolderId = window.navigationState?.currentFolderId;
+            let priceInfo = { hasPrice: false, price: 0, formattedPrice: 'Sem preço' };
+
+            if (currentFolderId && window.loadCategoryPrice) {
+                try {
+                    priceInfo = await window.loadCategoryPrice(currentFolderId);
+                } catch (error) {
+                    console.warn('Erro ao buscar preço para carrinho:', error);
+                }
+            }
+
             await CartSystem.addItem(currentPhoto, {
                 fileName: photoData?.name || 'Produto sem nome',
                 category: window.navigationState?.currentPath?.[0]?.name || 'Categoria',
-                thumbnailUrl: photoData?.thumbnailMedium || photoData?.thumbnailLink
+                thumbnailUrl: photoData?.thumbnailMedium || photoData?.thumbnailLink,
+                price: priceInfo.price,
+                formattedPrice: priceInfo.formattedPrice,
+                hasPrice: priceInfo.hasPrice
             });
         }
     } catch (error) {
@@ -690,31 +747,31 @@ async function finalizeSelection() {
             CartSystem.showNotification('Carrinho vazio', 'warning');
             return;
         }
-        
+
         // MOSTRAR MODAL IMEDIATAMENTE - SEM ESPERAR PROCESSAMENTO
         showImmediateSuccessModal();
-        
+
         // Fechar carrinho
         CartSystem.closeSidebar();
-        
+
         // Buscar dados da sessão do cliente
         const clientSession = CartSystem.getClientSession();
         if (!clientSession) {
             console.error('Sessão do cliente não encontrada');
             return;
         }
-        
+
         const requestData = {
             sessionId: CartSystem.state.sessionId,
             clientCode: clientSession.accessCode,
             clientName: clientSession.user?.name || 'Cliente'
         };
-        
+
         console.log('🎯 Iniciando processamento em background:', CartSystem.state.items);
-        
+
         // PROCESSAMENTO EM BACKGROUND - SEM LOADING PARA O CLIENTE
         processSelectionInBackground(requestData);
-        
+
     } catch (error) {
         console.error('❌ Erro ao iniciar finalização:', error);
         CartSystem.showNotification('Erro ao processar seleção. Tente novamente.', 'error');
@@ -727,7 +784,7 @@ async function finalizeSelection() {
 async function processSelectionInBackground(requestData) {
     try {
         console.log('🔄 Processando seleção em background...');
-        
+
         const response = await fetch('/api/selection/finalize', {
             method: 'POST',
             headers: {
@@ -735,19 +792,19 @@ async function processSelectionInBackground(requestData) {
             },
             body: JSON.stringify(requestData)
         });
-        
+
         const result = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(result.message || 'Erro ao finalizar seleção');
         }
-        
+
         // Sucesso em background
         console.log('✅ Seleção processada com sucesso em background:', result);
-        
+
         // Atualizar carrinho (deve estar vazio agora)
         await CartSystem.loadCart();
-        
+
         // Log dos detalhes
         console.log('📋 Detalhes da seleção:', {
             selectionId: result.selection?.selectionId,
@@ -755,7 +812,7 @@ async function processSelectionInBackground(requestData) {
             totalItems: result.selection?.totalItems,
             status: result.selection?.status
         });
-        
+
     } catch (error) {
         console.error('❌ Erro no processamento em background:', error);
         // Não mostrar erro para o cliente - ele já viu o modal de sucesso
@@ -768,54 +825,18 @@ async function processSelectionInBackground(requestData) {
 function showImmediateSuccessModal() {
     // Preencher dados comerciais simples
     document.getElementById('modalItemCount').textContent = `${CartSystem.state.totalItems} ${CartSystem.state.totalItems === 1 ? 'item' : 'itens'}`;
-    
+
     // Mostrar modal
     const modal = document.getElementById('selectionSuccessModal');
     modal.style.display = 'flex';
-    
+
     // Adicionar classe para animação
     setTimeout(() => {
         modal.classList.add('active');
     }, 10);
-    
+
     console.log('✅ Modal de sucesso exibido imediatamente');
 }
-
-/**
- * Mostrar modal de sucesso da seleção
- 
-function showSelectionSuccess(result) {
-    const { selection, googleDrive, nextSteps } = result;
-
-    // Preencher dados no modal
-    document.getElementById('modalSelectionId').textContent = selection.selectionId;
-    document.getElementById('modalItemCount').textContent = `${selection.totalItems} ${selection.totalItems === 1 ? 'item' : 'itens'}`;
-    document.getElementById('modalFolderName').textContent = googleDrive.folderCreated;
-
-    // Mostrar modal
-    const modal = document.getElementById('selectionSuccessModal');
-    modal.style.display = 'flex';
-
-    // Adicionar classe para animação
-    setTimeout(() => {
-        modal.classList.add('active');
-    }, 10);
-
-    // Log para debug
-    console.log('📋 Detalhes da seleção:', {
-        selectionId: selection.selectionId,
-        folderName: selection.clientFolderName,
-        totalItems: selection.totalItems,
-        status: selection.status
-    });
-
-    // Auto-close em 30 segundos (opcional)
-    setTimeout(() => {
-        if (modal.style.display === 'flex') {
-            continueSelection();
-        }
-    }, 30000);
-}*/
 
 // ===== INICIALIZAÇÃO AUTOMÁTICA =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -844,10 +865,10 @@ function goToHome() {
     const modal = document.getElementById('selectionSuccessModal');
     modal.style.display = 'none';
     modal.classList.remove('active');
-    
+
     // Redirecionar imediatamente
     window.location.href = '/';
-    
+
     console.log('🏠 Cliente redirecionado para página inicial');
 }
 
