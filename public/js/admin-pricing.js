@@ -1099,13 +1099,13 @@ function showAddQuantityRuleForm() {
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Quantidade Mínima</label>
-                        <input type="number" id="minQuantity" class="form-input" 
+                        <input type="number" id="minQuantity" name="minQuantity" class="form-input" 
                             min="1" step="1" placeholder="5" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Quantidade Máxima</label>
-                        <input type="number" id="maxQuantity" class="form-input" 
+                        <input type="number" id="maxQuantity" name="maxQuantity" class="form-input" 
                             min="1" step="1" placeholder="10 (deixe vazio para ∞)">
                         <small class="form-help">Deixe em branco para "ou mais" (ex: 21+)</small>
                     </div>
@@ -1114,7 +1114,7 @@ function showAddQuantityRuleForm() {
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Desconto (%)</label>
-                        <input type="number" id="discountPercent" class="form-input" 
+                        <input type="number" id="discountPercent" name="discountPercent" class="form-input" 
                             min="0" max="100" step="1" placeholder="5" required>
                     </div>
                 </div>
@@ -1169,10 +1169,12 @@ function cancelAddQuantityRule() {
 async function handleQuantityRuleSubmit(e) {
     e.preventDefault();
 
-    const minQty = parseInt(document.getElementById('minQuantity').value);
-    const maxQty = document.getElementById('maxQuantity').value ?
-        parseInt(document.getElementById('maxQuantity').value) : null;
-    const discount = parseInt(document.getElementById('discountPercent').value);
+    const form = e.target; // O formulário que foi submetido
+    const formData = new FormData(form);
+
+    const minQty = parseInt(formData.get('minQuantity')) || 0;
+    const maxQty = formData.get('maxQuantity') ? parseInt(formData.get('maxQuantity')) : null;
+    const discount = parseInt(formData.get('discountPercent')) || 0;
 
     // ===== DEBUG LOGS =====
     console.log('🔍 DEBUG VALORES:');
