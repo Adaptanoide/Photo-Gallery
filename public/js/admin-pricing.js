@@ -922,31 +922,58 @@ async function handleClientRuleSubmit(e) {
     }
 
     try {
+        const clientSelect = document.getElementById('clientSelect');
+        const selectedOption = clientSelect.selectedOptions[0];
+
+        if (!selectedOption) {
+            adminPricing.showNotification('Selecione um cliente válido', 'error');
+            return;
+        }
+
         const requestData = {
             clientCode,
-            clientName: document.getElementById('clientSelect').selectedOptions[0].text.split(' (')[0],
+            clientName: selectedOption.text.split(' (')[0], // Extrair nome sem código
             discountPercent: discountType === 'percentage' ?
-                parseInt(document.getElementById('discountPercent').value) : 0,
+                parseInt(document.getElementById('discountPercent').value) || 0 : 0,
             customPrice: discountType === 'custom' ?
-                parseFloat(document.getElementById('customPrice').value) : null
+                parseFloat(document.getElementById('customPrice').value) || null : null
         };
 
-        // TODO: Implementar API para adicionar regra de desconto
-        console.log('📝 Adicionando regra de cliente:', requestData);
+        console.log('📝 Enviando regra para API:', requestData);
 
-        // Simular sucesso por enquanto
-        adminPricing.showNotification('Regra adicionada com sucesso!', 'success');
+        // Chamar API real para adicionar regra
+        const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules`, {
+            method: 'POST',
+            headers: {
+                ...adminPricing.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
 
-        // Limpar formulário
-        e.target.reset();
-        handleDiscountTypeChange({ target: { value: '' } });
+        const result = await response.json();
 
-        // Recarregar regras
-        loadClientRules();
+        if (!response.ok) {
+            throw new Error(result.message || 'Erro ao adicionar regra');
+        }
+
+        if (result.success) {
+            console.log('✅ Regra adicionada com sucesso:', result);
+            adminPricing.showNotification('Regra adicionada com sucesso!', 'success');
+
+            // Limpar formulário
+            e.target.reset();
+            handleDiscountTypeChange({ target: { value: '' } });
+
+            // Recarregar regras para mostrar a nova
+            await loadClientRules();
+        } else {
+            throw new Error(result.message || 'Erro desconhecido');
+        }
 
     } catch (error) {
         console.error('❌ Erro ao adicionar regra:', error);
-        adminPricing.showNotification('Erro ao adicionar regra', 'error');
+        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
     }
 }
 
