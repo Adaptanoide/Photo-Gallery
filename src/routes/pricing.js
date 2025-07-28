@@ -761,4 +761,247 @@ router.get('/categories/:id/discount-rules', async (req, res) => {
     }
 });
 
+// ===== DESCONTOS POR QUANTIDADE =====
+
+/**
+ * GET /api/pricing/quantity-discounts
+ * Buscar todas as regras de desconto por quantidade
+ */
+router.get('/quantity-discounts', async (req, res) => {
+    try {
+        console.log('📦 Buscando regras de desconto por quantidade...');
+        
+        const QuantityDiscount = require('../models/QuantityDiscount');
+        const rules = await QuantityDiscount.getActiveRules();
+        
+        console.log(`✅ ${rules.length} regras de quantidade encontradas`);
+        
+        res.json({
+            success: true,
+            rules: rules,
+            total: rules.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar regras de quantidade:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar regras de desconto por quantidade',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * POST /api/pricing/quantity-discounts
+ * Criar nova regra de desconto por quantidade
+ */
+router.post('/quantity-discounts', async (req, res) => {
+    try {
+        const { minQuantity, maxQuantity, discountPercent, description } = req.body;
+        
+        // Validações básicas
+        if (!minQuantity || minQuantity < 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'Quantidade mínima deve ser maior que 0'
+            });
+        }
+        
+        if (!discountPercent || discountPercent < 0 || discountPercent > 100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Desconto deve ser entre 0 e 100%'
+            });
+        }
+        
+        if (!description || description.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Descrição é obrigatória'
+            });
+        }
+        
+        console.log(`📦 Criando regra de quantidade: ${minQuantity}-${maxQuantity || '∞'} = ${discountPercent}%`);
+        
+        const QuantityDiscount = require('../models/QuantityDiscount');
+        
+        // Validar sobreposição
+        const validation = await QuantityDiscount.validateNoOverlap(minQuantity, maxQuantity);
+        if (!validation.isValid) {
+            return res.status(409).json({
+                success: false,
+                message: validation.message,
+                conflictingRule: validation.conflictingRule
+            });
+        }
+        
+        // Criar regra
+        const newRule = new QuantityDiscount({
+            minQuantity,
+            maxQuantity: maxQuantity || null,
+            discountPercent,
+            description: description.trim(),
+            createdBy: req.user.username
+        });
+        
+        await newRule.save();
+        
+        console.log(`✅ Regra de quantidade criada: ${newRule._id}`);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Regra de desconto criada com sucesso',
+            rule: newRule
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao criar regra de quantidade:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao criar regra de desconto',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * PUT /api/pricing/quantity-discounts/:id
+ * Editar regra de desconto por quantidade
+ */
+router.put('/quantity-discounts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { minQuantity, maxQuantity, discountPercent, description, isActive } = req.body;
+        
+        console.log(`📦 Editando regra de quantidade: ${id}`);
+        
+        const QuantityDiscount = require('../models/QuantityDiscount');
+        const rule = await QuantityDiscount.findById(id);
+        
+        if (!rule) {
+            return res.status(404).json({
+                success: false,
+                message: 'Regra não encontrada'
+            });
+        }
+        
+        // Validar sobreposição se mudando quantidades
+        if (minQuantity !== undefined || maxQuantity !== undefined) {
+            const newMin = minQuantity !== undefined ? minQuantity : rule.minQuantity;
+            const newMax = maxQuantity !== undefined ? maxQuantity : rule.maxQuantity;
+            
+            const validation = await QuantityDiscount.validateNoOverlap(newMin, newMax, id);
+            if (!validation.isValid) {
+                return res.status(409).json({
+                    success: false,
+                    message: validation.message,
+                    conflictingRule: validation.conflictingRule
+                });
+            }
+        }
+        
+        // Atualizar campos
+        if (minQuantity !== undefined) rule.minQuantity = minQuantity;
+        if (maxQuantity !== undefined) rule.maxQuantity = maxQuantity || null;
+        if (discountPercent !== undefined) rule.discountPercent = discountPercent;
+        if (description !== undefined) rule.description = description.trim();
+        if (isActive !== undefined) rule.isActive = isActive;
+        
+        await rule.save();
+        
+        console.log(`✅ Regra de quantidade atualizada: ${id}`);
+        
+        res.json({
+            success: true,
+            message: 'Regra atualizada com sucesso',
+            rule: rule
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao editar regra de quantidade:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao editar regra de desconto',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * DELETE /api/pricing/quantity-discounts/:id
+ * Remover regra de desconto por quantidade
+ */
+router.delete('/quantity-discounts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`📦 Removendo regra de quantidade: ${id}`);
+        
+        const QuantityDiscount = require('../models/QuantityDiscount');
+        const rule = await QuantityDiscount.findByIdAndUpdate(
+            id,
+            { isActive: false },
+            { new: true }
+        );
+        
+        if (!rule) {
+            return res.status(404).json({
+                success: false,
+                message: 'Regra não encontrada'
+            });
+        }
+        
+        console.log(`✅ Regra de quantidade desativada: ${id}`);
+        
+        res.json({
+            success: true,
+            message: 'Regra removida com sucesso'
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao remover regra de quantidade:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao remover regra de desconto',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/quantity-discounts/calculate/:quantity
+ * Calcular desconto para quantidade específica
+ */
+router.get('/quantity-discounts/calculate/:quantity', async (req, res) => {
+    try {
+        const { quantity } = req.params;
+        const qty = parseInt(quantity);
+        
+        if (isNaN(qty) || qty < 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'Quantidade deve ser um número positivo'
+            });
+        }
+        
+        const QuantityDiscount = require('../models/QuantityDiscount');
+        const discount = await QuantityDiscount.calculateDiscount(qty);
+        
+        res.json({
+            success: true,
+            quantity: qty,
+            discount: discount
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular desconto:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao calcular desconto',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
 module.exports = router;
