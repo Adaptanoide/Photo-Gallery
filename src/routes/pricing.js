@@ -6,6 +6,122 @@ const { authenticateToken } = require('./auth');
 
 const router = express.Router();
 
+// ===== ROTAS DE TESTE (SEM AUTENTICAÇÃO) =====
+// REMOVER DEPOIS QUE TUDO FUNCIONAR
+
+router.get('/test/stats', async (req, res) => {
+    try {
+        console.log('🧪 Testando rota /test/stats');
+        
+        // Testar conexão básica
+        const stats = {
+            totalCategories: 0,
+            categoriesWithPrice: 0,
+            categoriesWithoutPrice: 0,
+            totalPhotos: 0,
+            testMode: true,
+            timestamp: new Date()
+        };
+        
+        res.json({
+            success: true,
+            data: stats,
+            message: 'Teste de conexão OK - MongoDB e API funcionando'
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro no teste de stats:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+router.get('/test/sync/status', async (req, res) => {
+    try {
+        console.log('🧪 Testando rota /test/sync/status');
+        
+        const syncStatus = {
+            needingSyncCount: 0,
+            lastSyncDate: null,
+            isOutdated: true,
+            hoursOld: 0,
+            testMode: true
+        };
+        
+        const statistics = {
+            totalCategories: 0,
+            categoriesWithPrice: 0,
+            categoriesWithoutPrice: 0,
+            totalPhotos: 0
+        };
+        
+        res.json({
+            success: true,
+            syncStatus,
+            statistics,
+            message: 'Status de sync - teste OK'
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro no teste de sync status:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+router.get('/test/categories', async (req, res) => {
+    try {
+        console.log('🧪 Testando rota /test/categories');
+        
+        // Retornar dados fake para teste
+        const categories = [
+            {
+                _id: 'test1',
+                displayName: 'Teste Colombian Cowhides > Medium > Brown & White M',
+                googleDrivePath: 'Colombian Cowhides/Medium/Brown & White M',
+                photoCount: 2,
+                basePrice: 0,
+                hasCustomRules: false,
+                updatedAt: new Date()
+            },
+            {
+                _id: 'test2', 
+                displayName: 'Teste Brazilian > Large > Black Pattern',
+                googleDrivePath: 'Brazilian/Large/Black Pattern',
+                photoCount: 5,
+                basePrice: 150.00,
+                hasCustomRules: false,
+                updatedAt: new Date()
+            }
+        ];
+        
+        const pagination = {
+            page: 1,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false
+        };
+        
+        res.json({
+            success: true,
+            categories,
+            pagination,
+            message: 'Categorias de teste carregadas'
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro no teste de categories:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 // Todas as rotas de preços precisam de autenticação admin
 router.use(authenticateToken);
 
@@ -527,125 +643,6 @@ router.post('/validate', async (req, res) => {
             success: false,
             message: 'Erro na validação',
             error: error.message
-        });
-    }
-});
-
-// ADICIONE ESSAS ROTAS NO FINAL do seu arquivo src/routes/pricing.js
-// (DEPOIS das rotas normais, antes do module.exports)
-
-// ===== ROTAS DE TESTE (SEM AUTENTICAÇÃO) =====
-// REMOVER DEPOIS QUE TUDO FUNCIONAR
-
-router.get('/test/stats', async (req, res) => {
-    try {
-        console.log('🧪 Testando rota /test/stats');
-        
-        // Testar conexão básica
-        const stats = {
-            totalCategories: 0,
-            categoriesWithPrice: 0,
-            categoriesWithoutPrice: 0,
-            totalPhotos: 0,
-            testMode: true,
-            timestamp: new Date()
-        };
-        
-        res.json({
-            success: true,
-            data: stats,
-            message: 'Teste de conexão OK - MongoDB e API funcionando'
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro no teste de stats:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-});
-
-router.get('/test/sync/status', async (req, res) => {
-    try {
-        console.log('🧪 Testando rota /test/sync/status');
-        
-        const syncStatus = {
-            needingSyncCount: 0,
-            lastSyncDate: null,
-            isOutdated: true,
-            hoursOld: 0,
-            testMode: true
-        };
-        
-        const statistics = {
-            totalCategories: 0,
-            categoriesWithPrice: 0,
-            categoriesWithoutPrice: 0,
-            totalPhotos: 0
-        };
-        
-        res.json({
-            success: true,
-            syncStatus,
-            statistics,
-            message: 'Status de sync - teste OK'
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro no teste de sync status:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-});
-
-router.get('/test/categories', async (req, res) => {
-    try {
-        console.log('🧪 Testando rota /test/categories');
-        
-        // Retornar dados fake para teste
-        const categories = [
-            {
-                _id: 'test1',
-                displayName: 'Teste Colombian Cowhides > Medium > Brown & White M',
-                googleDrivePath: 'Colombian Cowhides/Medium/Brown & White M',
-                photoCount: 2,
-                basePrice: 0,
-                hasCustomRules: false,
-                updatedAt: new Date()
-            },
-            {
-                _id: 'test2', 
-                displayName: 'Teste Brazilian > Large > Black Pattern',
-                googleDrivePath: 'Brazilian/Large/Black Pattern',
-                photoCount: 5,
-                basePrice: 150.00,
-                hasCustomRules: false,
-                updatedAt: new Date()
-            }
-        ];
-        
-        const pagination = {
-            page: 1,
-            totalPages: 1,
-            hasNext: false,
-            hasPrev: false
-        };
-        
-        res.json({
-            success: true,
-            categories,
-            pagination,
-            message: 'Categorias de teste carregadas'
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro no teste de categories:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
         });
     }
 });
