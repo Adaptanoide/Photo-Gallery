@@ -1256,9 +1256,183 @@ window.cancelAddQuantityRule = cancelAddQuantityRule;
 /**
  * Editar regra de quantidade
  */
-function editQuantityRule(ruleId) {
-    console.log('📦 Editando regra:', ruleId);
-    adminPricing.showNotification('Edição em desenvolvimento', 'info');
+/**
+ * Editar regra de quantidade existente
+ */
+async function editQuantityRule(ruleId) {
+    try {
+        console.log('📦 Carregando regra para edição:', ruleId);
+
+        // Buscar dados da regra atual
+        const response = await fetch('/api/pricing/quantity-discounts', {
+            headers: adminPricing.getAuthHeaders()
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error('Erro ao buscar regras');
+        }
+
+        // Encontrar a regra específica
+        const rule = data.rules.find(r => r._id === ruleId);
+        if (!rule) {
+            throw new Error('Regra não encontrada');
+        }
+
+        // Mostrar formulário de edição com dados preenchidos
+        showEditQuantityRuleForm(rule);
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar regra para edição:', error);
+        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Mostrar formulário de edição com dados preenchidos
+ */
+function showEditQuantityRuleForm(rule) {
+    // Remover formulário existente se houver
+    const existingForm = document.getElementById('addQuantityRuleForm');
+    if (existingForm) {
+        existingForm.remove();
+    }
+
+    const container = document.querySelector('#tab-quantity-discounts .quantity-discounts-section');
+    if (!container) return;
+
+    const formHTML = `
+        <div id="addQuantityRuleForm" class="add-quantity-rule-form edit-mode">
+            <h6><i class="fas fa-edit"></i> Editar Regra de Desconto por Quantidade</h6>
+            
+            <form id="quantityRuleForm" class="quantity-rule-form">
+                <input type="hidden" id="editingRuleId" value="${rule._id}">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Quantidade Mínima</label>
+                        <input type="number" id="minQuantity" name="minQuantity" class="form-input" 
+                            min="1" step="1" value="${rule.minQuantity}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Quantidade Máxima</label>
+                        <input type="number" id="maxQuantity" name="maxQuantity" class="form-input" 
+                            min="1" step="1" value="${rule.maxQuantity || ''}" 
+                            placeholder="Deixe vazio para ∞">
+                        <small class="form-help">Deixe em branco para "ou mais" (ex: 21+)</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Desconto (%)</label>
+                        <input type="number" id="discountPercent" name="discountPercent" class="form-input" 
+                            min="0" max="100" step="1" value="${rule.discountPercent}" required>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cancelAddQuantityRule()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Atualizar Regra
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Inserir formulário
+    const rulesContainer = container.querySelector('.quantity-rules');
+    if (rulesContainer) {
+        rulesContainer.insertAdjacentHTML('afterend', formHTML);
+
+        // Event listener para o formulário
+        const form = document.getElementById('quantityRuleForm');
+        if (form) {
+            form.addEventListener('submit', handleQuantityRuleUpdate);
+        }
+
+        // Focar no primeiro campo
+        const firstInput = document.getElementById('minQuantity');
+        if (firstInput) {
+            firstInput.focus();
+            firstInput.select();
+        }
+
+        console.log('📦 Formulário de edição exibido para regra:', rule._id);
+    }
+}
+
+/**
+ * Lidar com atualização de regra existente
+ */
+async function handleQuantityRuleUpdate(e) {
+    e.preventDefault();
+
+    const ruleId = document.getElementById('editingRuleId').value;
+    if (!ruleId) {
+        adminPricing.showNotification('ID da regra não encontrado', 'error');
+        return;
+    }
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const minQty = parseInt(formData.get('minQuantity')) || 0;
+    const maxQty = formData.get('maxQuantity') ? parseInt(formData.get('maxQuantity')) : null;
+    const discount = parseInt(formData.get('discountPercent')) || 0;
+
+    // Validações (mesmas do criar)
+    if (!minQty || minQty < 1) {
+        adminPricing.showNotification('Quantidade mínima deve ser maior que 0', 'error');
+        return;
+    }
+
+    if (maxQty && maxQty <= minQty) {
+        adminPricing.showNotification('Quantidade máxima deve ser maior que mínima', 'error');
+        return;
+    }
+
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+        adminPricing.showNotification('Desconto deve ser entre 0 e 100%', 'error');
+        return;
+    }
+
+    try {
+        console.log('📦 Atualizando regra de quantidade:', ruleId);
+
+        const requestData = {
+            minQuantity: minQty,
+            maxQuantity: maxQty,
+            discountPercent: discount
+        };
+
+        const response = await fetch(`/api/pricing/quantity-discounts/${ruleId}`, {
+            method: 'PUT',
+            headers: {
+                ...adminPricing.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            adminPricing.showNotification('Regra atualizada com sucesso!', 'success');
+            cancelAddQuantityRule(); // Fechar formulário
+            loadQuantityRules(); // Recarregar lista
+        } else {
+            throw new Error(result.message || 'Erro ao atualizar regra');
+        }
+
+    } catch (error) {
+        console.error('❌ Erro ao atualizar regra:', error);
+        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+    }
 }
 
 /**
