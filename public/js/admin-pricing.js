@@ -703,7 +703,7 @@ window.closePriceModal = function () {
 function initializePriceTabs() {
     const tabButtons = document.querySelectorAll('.price-tab-btn');
     const tabPanels = document.querySelectorAll('.price-tab-panel');
-    
+
     // Event listeners para botões das abas
     tabButtons.forEach(button => {
         button.addEventListener('click', (e) => {
@@ -711,11 +711,11 @@ function initializePriceTabs() {
             switchPriceTab(targetTab);
         });
     });
-    
+
     // Inicializar funcionalidades específicas das abas
     initializeClientPricesTab();
     initializeQuantityDiscountsTab();
-    
+
     console.log('🔖 Sistema de abas do modal de preços inicializado');
 }
 
@@ -725,19 +725,19 @@ function initializePriceTabs() {
 function switchPriceTab(targetTab) {
     const tabButtons = document.querySelectorAll('.price-tab-btn');
     const tabPanels = document.querySelectorAll('.price-tab-panel');
-    
+
     // Remover classes ativas
     tabButtons.forEach(btn => btn.classList.remove('active'));
     tabPanels.forEach(panel => panel.classList.remove('active'));
-    
+
     // Ativar aba selecionada
     const activeButton = document.querySelector(`[data-tab="${targetTab}"]`);
     const activePanel = document.getElementById(`tab-${targetTab}`);
-    
+
     if (activeButton && activePanel) {
         activeButton.classList.add('active');
         activePanel.classList.add('active');
-        
+
         // Carregar dados específicos da aba se necessário
         loadTabData(targetTab);
     }
@@ -769,7 +769,7 @@ function initializeClientPricesTab() {
     if (discountType) {
         discountType.addEventListener('change', handleDiscountTypeChange);
     }
-    
+
     // Event listener para formulário de regra de cliente
     const clientRuleForm = document.getElementById('clientRuleForm');
     if (clientRuleForm) {
@@ -784,11 +784,11 @@ function handleDiscountTypeChange(e) {
     const value = e.target.value;
     const percentageGroup = document.getElementById('percentageGroup');
     const customPriceGroup = document.getElementById('customPriceGroup');
-    
+
     // Esconder todos os grupos
     percentageGroup.style.display = 'none';
     customPriceGroup.style.display = 'none';
-    
+
     // Mostrar grupo relevante
     if (value === 'percentage') {
         percentageGroup.style.display = 'block';
@@ -802,18 +802,18 @@ function handleDiscountTypeChange(e) {
  */
 async function loadClientRules() {
     if (!adminPricing.currentCategory) return;
-    
+
     const rulesContainer = document.getElementById('clientRulesList');
     if (!rulesContainer) return;
-    
+
     try {
         // Buscar regras da categoria atual
         const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}`, {
             headers: adminPricing.getAuthHeaders()
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success && data.category.discountRules) {
             renderClientRules(data.category.discountRules);
         }
@@ -828,7 +828,7 @@ async function loadClientRules() {
 function renderClientRules(rules) {
     const container = document.getElementById('clientRulesList');
     if (!container) return;
-    
+
     if (rules.length === 0) {
         container.innerHTML = `
             <div class="empty-rules">
@@ -838,7 +838,7 @@ function renderClientRules(rules) {
         `;
         return;
     }
-    
+
     const rulesHTML = rules.filter(rule => rule.isActive).map(rule => `
         <div class="client-rule-item">
             <div class="rule-info">
@@ -846,10 +846,10 @@ function renderClientRules(rules) {
                 <span class="client-code">(${rule.clientCode})</span>
             </div>
             <div class="rule-details">
-                ${rule.customPrice ? 
-                    `Preço: R$ ${rule.customPrice.toFixed(2)}` : 
-                    `Desconto: ${rule.discountPercent}%`
-                }
+                ${rule.customPrice ?
+            `Preço: R$ ${rule.customPrice.toFixed(2)}` :
+            `Desconto: ${rule.discountPercent}%`
+        }
             </div>
             <div class="rule-actions">
                 <button class="btn-sm btn-danger" onclick="removeClientRule('${rule.clientCode}')">
@@ -858,7 +858,7 @@ function renderClientRules(rules) {
             </div>
         </div>
     `).join('');
-    
+
     container.innerHTML = rulesHTML;
 }
 
@@ -868,7 +868,7 @@ function renderClientRules(rules) {
 async function loadAvailableClients() {
     const clientSelect = document.getElementById('clientSelect');
     if (!clientSelect) return;
-    
+
     try {
         // TODO: Implementar API para buscar clientes ativos
         // Por enquanto, dados de exemplo
@@ -877,16 +877,16 @@ async function loadAvailableClients() {
             { code: '6544', name: 'Tiago Teste' },
             { code: '3590', name: 'testenovo' }
         ];
-        
-        const optionsHTML = clients.map(client => 
+
+        const optionsHTML = clients.map(client =>
             `<option value="${client.code}">${client.name} (${client.code})</option>`
         ).join('');
-        
+
         clientSelect.innerHTML = `
             <option value="">Selecione um cliente...</option>
             ${optionsHTML}
         `;
-        
+
     } catch (error) {
         console.error('❌ Erro ao carregar clientes:', error);
     }
@@ -897,41 +897,41 @@ async function loadAvailableClients() {
  */
 async function handleClientRuleSubmit(e) {
     e.preventDefault();
-    
+
     if (!adminPricing.currentCategory) return;
-    
+
     const formData = new FormData(e.target);
     const clientCode = document.getElementById('clientSelect').value;
     const discountType = document.getElementById('discountType').value;
-    
+
     if (!clientCode || !discountType) {
         adminPricing.showNotification('Preencha todos os campos obrigatórios', 'error');
         return;
     }
-    
+
     try {
         const requestData = {
             clientCode,
             clientName: document.getElementById('clientSelect').selectedOptions[0].text.split(' (')[0],
-            discountPercent: discountType === 'percentage' ? 
+            discountPercent: discountType === 'percentage' ?
                 parseInt(document.getElementById('discountPercent').value) : 0,
-            customPrice: discountType === 'custom' ? 
+            customPrice: discountType === 'custom' ?
                 parseFloat(document.getElementById('customPrice').value) : null
         };
-        
+
         // TODO: Implementar API para adicionar regra de desconto
         console.log('📝 Adicionando regra de cliente:', requestData);
-        
+
         // Simular sucesso por enquanto
         adminPricing.showNotification('Regra adicionada com sucesso!', 'success');
-        
+
         // Limpar formulário
         e.target.reset();
         handleDiscountTypeChange({ target: { value: '' } });
-        
+
         // Recarregar regras
         loadClientRules();
-        
+
     } catch (error) {
         console.error('❌ Erro ao adicionar regra:', error);
         adminPricing.showNotification('Erro ao adicionar regra', 'error');
@@ -957,18 +957,24 @@ function loadQuantityRules() {
 
 // ===== INTEGRAÇÃO COM SISTEMA EXISTENTE =====
 
-// Modificar função openPriceModal para inicializar abas
-const originalOpenPriceModal = adminPricing.openPriceModal;
-if (typeof originalOpenPriceModal === 'function') {
-    adminPricing.openPriceModal = async function(categoryId, mode = 'create') {
-        await originalOpenPriceModal.call(this, categoryId, mode);
-        
-        // Inicializar abas depois que modal abrir
-        setTimeout(() => {
-            initializePriceTabs();
-            switchPriceTab('base-price'); // Sempre começar na primeira aba
-        }, 100);
-    };
-}
+// Integração com sistema existente - inicializar abas quando modal abrir
+document.addEventListener('DOMContentLoaded', () => {
+    // Aguardar adminPricing estar disponível
+    setTimeout(() => {
+        if (window.adminPricing && window.adminPricing.openPriceModal) {
+            const originalOpenPriceModal = window.adminPricing.openPriceModal;
+
+            window.adminPricing.openPriceModal = async function (categoryId, mode = 'create') {
+                await originalOpenPriceModal.call(this, categoryId, mode);
+
+                // Inicializar abas depois que modal abrir
+                setTimeout(() => {
+                    initializePriceTabs();
+                    switchPriceTab('base-price');
+                }, 150);
+            };
+        }
+    }, 1000);
+});
 
 console.log('🔖 Sistema de abas carregado e integrado');
