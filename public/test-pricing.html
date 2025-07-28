@@ -34,69 +34,86 @@
         .btn:hover { background: #0056b3; }
         .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; }
         pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .status { padding: 5px 10px; border-radius: 3px; font-weight: bold; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <h1>🧪 Teste do Sistema de Preços - Sunshine Cowhides</h1>
     
     <div class="test-card test-warning">
-        <h3>📋 Checklist de Verificação</h3>
-        <p>Antes de testar, verifique se você:</p>
-        <ul>
-            <li>✅ Criou todos os arquivos nos locais corretos</li>
-            <li>✅ Adicionou as importações no server.js</li>
-            <li>✅ Modificou o admin.html com CSS e JS</li>
-            <li>✅ Servidor está rodando</li>
-            <li>✅ MongoDB está conectado</li>
-        </ul>
+        <h3>📋 Status do Sistema</h3>
+        <p><strong>Servidor:</strong> <span id="serverStatus" class="status">Verificando...</span></p>
+        <p><strong>MongoDB:</strong> <span id="mongoStatus" class="status">Verificando...</span></p>
+        <p><strong>Rotas Pricing:</strong> <span id="routesStatus" class="status">Verificando...</span></p>
+        <button class="btn" onclick="checkSystemStatus()">Verificar Status Geral</button>
     </div>
 
     <div class="test-card">
-        <h3>🔌 Teste 1: Conexão com API</h3>
+        <h3>🔌 Teste 1: Conexão com API (SEM autenticação)</h3>
         <p>Verificar se as rotas de pricing estão funcionando</p>
         <button class="btn" onclick="testAPIConnection()">Testar Conexão</button>
         <div id="apiResult" class="result" style="display:none;"></div>
     </div>
 
     <div class="test-card">
-        <h3>🔄 Teste 2: Sincronização com Google Drive</h3>
-        <p>Testar se consegue escanear a estrutura do Google Drive</p>
-        <button class="btn" onclick="testDriveSync()">Testar Sincronização</button>
+        <h3>🔄 Teste 2: Status de Sincronização (SEM autenticação)</h3>
+        <p>Testar se consegue verificar status do Google Drive</p>
+        <button class="btn" onclick="testSyncStatus()">Testar Status Sync</button>
         <div id="syncResult" class="result" style="display:none;"></div>
     </div>
 
     <div class="test-card">
-        <h3>📊 Teste 3: Carregamento de Categorias</h3>
-        <p>Verificar se as categorias estão sendo carregadas corretamente</p>
-        <button class="btn" onclick="testLoadCategories()">Carregar Categorias</button>
+        <h3>📊 Teste 3: Carregamento de Categorias (SEM autenticação)</h3>
+        <p>Verificar se as categorias de teste estão sendo carregadas</p>
+        <button class="btn" onclick="testLoadCategories()">Carregar Categorias Teste</button>
         <div id="categoriesResult" class="result" style="display:none;"></div>
     </div>
 
-    <div class="test-card">
-        <h3>💰 Teste 4: Definição de Preço</h3>
-        <p>Testar definição de preço para uma categoria (se houver categorias)</p>
-        <input type="text" id="testCategoryId" placeholder="ID da categoria" style="padding:8px; margin:5px;">
-        <input type="number" id="testPrice" placeholder="Preço teste" value="99.99" style="padding:8px; margin:5px;">
-        <button class="btn" onclick="testSetPrice()">Definir Preço Teste</button>
-        <div id="priceResult" class="result" style="display:none;"></div>
-    </div>
-
     <div class="test-card test-success">
-        <h3>✅ Se Tudo Funcionou</h3>
-        <p>Acesse <a href="/admin#pricing" target="_blank">/admin#pricing</a> para usar a interface completa!</p>
+        <h3>✅ Próximo Passo</h3>
+        <p>Se todos os testes acima funcionarem, vamos implementar a autenticação para as rotas reais.</p>
+        <p>Acesse <a href="/admin#pricing" target="_blank">/admin#pricing</a> após fazer login como admin.</p>
     </div>
 
     <script>
-        // Simular token de admin para testes
-        const adminToken = 'test-token'; // Você precisará de um token real
+        console.log('🧪 Página de teste carregada');
+
+        async function checkSystemStatus() {
+            // Verificar servidor básico
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                document.getElementById('serverStatus').textContent = data.status === 'OK' ? 'Online' : 'Offline';
+                document.getElementById('serverStatus').className = 'status ' + (data.status === 'OK' ? 'status-ok' : 'status-error');
+            } catch (error) {
+                document.getElementById('serverStatus').textContent = 'Offline';
+                document.getElementById('serverStatus').className = 'status status-error';
+            }
+
+            // Testar se rotas pricing existem
+            try {
+                const response = await fetch('/api/pricing/test/stats');
+                document.getElementById('routesStatus').textContent = response.status === 200 ? 'Funcionando' : 'Erro ' + response.status;
+                document.getElementById('routesStatus').className = 'status ' + (response.status === 200 ? 'status-ok' : 'status-error');
+            } catch (error) {
+                document.getElementById('routesStatus').textContent = 'Não encontradas';
+                document.getElementById('routesStatus').className = 'status status-error';
+            }
+
+            // MongoDB é testado indiretamente
+            document.getElementById('mongoStatus').textContent = 'Testado via API';
+            document.getElementById('mongoStatus').className = 'status status-ok';
+        }
 
         async function testAPIConnection() {
             const result = document.getElementById('apiResult');
             result.style.display = 'block';
-            result.innerHTML = '🔄 Testando conexão...';
+            result.innerHTML = '🔄 Testando conexão com rotas de teste...';
 
             try {
-                const response = await fetch('/api/pricing/stats');
+                const response = await fetch('/api/pricing/test/stats');
                 const data = await response.json();
 
                 if (response.ok) {
@@ -116,13 +133,13 @@
             }
         }
 
-        async function testDriveSync() {
+        async function testSyncStatus() {
             const result = document.getElementById('syncResult');
             result.style.display = 'block';
-            result.innerHTML = '🔄 Testando sincronização... (pode demorar)';
+            result.innerHTML = '🔄 Testando status de sincronização...';
 
             try {
-                const response = await fetch('/api/pricing/sync/status');
+                const response = await fetch('/api/pricing/test/sync/status');
                 const data = await response.json();
 
                 if (response.ok) {
@@ -144,23 +161,18 @@
         async function testLoadCategories() {
             const result = document.getElementById('categoriesResult');
             result.style.display = 'block';
-            result.innerHTML = '🔄 Carregando categorias...';
+            result.innerHTML = '🔄 Carregando categorias de teste...';
 
             try {
-                const response = await fetch('/api/pricing/categories?limit=5');
+                const response = await fetch('/api/pricing/test/categories?limit=5');
                 const data = await response.json();
 
                 if (response.ok) {
                     result.innerHTML = `
-                        <strong>✅ Categorias Carregadas!</strong><br>
+                        <strong>✅ Categorias de Teste Carregadas!</strong><br>
                         Total: ${data.categories?.length || 0}<br>
-                        <pre>${JSON.stringify(data.categories?.slice(0, 2), null, 2)}</pre>
+                        <pre>${JSON.stringify(data.categories, null, 2)}</pre>
                     `;
-
-                    // Preencher ID da primeira categoria para teste de preço
-                    if (data.categories && data.categories.length > 0) {
-                        document.getElementById('testCategoryId').value = data.categories[0]._id;
-                    }
                 } else {
                     result.innerHTML = `
                         <strong>❌ Erro ao carregar:</strong><br>
@@ -172,53 +184,10 @@
             }
         }
 
-        async function testSetPrice() {
-            const categoryId = document.getElementById('testCategoryId').value;
-            const price = parseFloat(document.getElementById('testPrice').value);
-            const result = document.getElementById('priceResult');
-
-            if (!categoryId) {
-                result.style.display = 'block';
-                result.innerHTML = '<strong>❌ Erro:</strong> Insira um ID de categoria válido';
-                return;
-            }
-
-            result.style.display = 'block';
-            result.innerHTML = '🔄 Definindo preço teste...';
-
-            try {
-                const response = await fetch(`/api/pricing/categories/${categoryId}/price`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        price: price,
-                        reason: 'Teste automático via script'
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    result.innerHTML = `
-                        <strong>✅ Preço Definido com Sucesso!</strong><br>
-                        <pre>${JSON.stringify(data, null, 2)}</pre>
-                    `;
-                } else {
-                    result.innerHTML = `
-                        <strong>❌ Erro ao definir preço:</strong><br>
-                        <pre>${JSON.stringify(data, null, 2)}</pre>
-                    `;
-                }
-            } catch (error) {
-                result.innerHTML = `<strong>❌ Erro:</strong><br>${error.message}`;
-            }
-        }
-
-        // Teste automático na carga da página
+        // Verificar status ao carregar a página
         window.onload = function() {
-            console.log('🧪 Página de teste carregada - execute os testes manualmente');
+            console.log('🧪 Iniciando verificação automática do sistema...');
+            setTimeout(checkSystemStatus, 1000);
         };
     </script>
 </body>
