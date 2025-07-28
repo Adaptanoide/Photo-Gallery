@@ -54,7 +54,12 @@ const validateClientData = (req, res, next) => {
  */
 router.post('/add', validateSessionId, validateClientData, async (req, res) => {
     try {
-        const { sessionId, clientCode, clientName, driveFileId, fileName, category, thumbnailUrl } = req.body;
+        // ✅ CORRIGIDO: Extrair TODOS os campos incluindo preços
+        const {
+            sessionId, clientCode, clientName, driveFileId,
+            fileName, category, thumbnailUrl,
+            price, formattedPrice, hasPrice
+        } = req.body;
 
         // Validar driveFileId
         if (!driveFileId || typeof driveFileId !== 'string') {
