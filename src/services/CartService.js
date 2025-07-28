@@ -265,6 +265,9 @@ class CartService {
                     fileName: item.fileName,
                     category: item.category,
                     thumbnailUrl: item.thumbnailUrl,
+                    price: item.price,
+                    formattedPrice: item.formattedPrice,
+                    hasPrice: item.hasPrice,
                     timeRemaining: cart.getTimeRemaining(item.driveFileId),
                     expiresAt: item.expiresAt
                 })),
