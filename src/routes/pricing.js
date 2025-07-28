@@ -678,4 +678,87 @@ router.post('/validate', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/pricing/clients/active
+ * Buscar lista de clientes ativos para dropdowns
+ */
+router.get('/clients/active', async (req, res) => {
+    try {
+        console.log('👥 Buscando clientes ativos para pricing...');
+        
+        // Buscar códigos de acesso ativos
+        const AccessCode = require('../models/AccessCode');
+        const activeClients = await AccessCode.find({ 
+            isActive: true,
+            expiresAt: { $gt: new Date() }
+        })
+        .select('code clientName clientEmail')
+        .sort({ clientName: 1 })
+        .lean();
+        
+        const clientsList = activeClients.map(client => ({
+            code: client.code,
+            name: client.clientName,
+            email: client.clientEmail || ''
+        }));
+        
+        console.log(`✅ ${clientsList.length} clientes ativos encontrados`);
+        
+        res.json({
+            success: true,
+            clients: clientsList,
+            total: clientsList.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar clientes ativos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar clientes ativos',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/categories/:id/discount-rules
+ * Buscar todas as regras de desconto de uma categoria
+ */
+router.get('/categories/:id/discount-rules', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`🏷️ Buscando regras de desconto para categoria: ${id}`);
+        
+        const category = await PhotoCategory.findById(id);
+        
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+        
+        // Filtrar apenas regras ativas
+        const activeRules = category.discountRules.filter(rule => rule.isActive);
+        
+        res.json({
+            success: true,
+            categoryId: id,
+            categoryName: category.displayName,
+            basePrice: category.basePrice,
+            discountRules: activeRules,
+            totalRules: activeRules.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar regras de desconto:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar regras de desconto',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
 module.exports = router;
