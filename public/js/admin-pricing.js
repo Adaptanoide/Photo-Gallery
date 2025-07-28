@@ -46,6 +46,9 @@ class AdminPricing {
         this.priceModal = document.getElementById('priceModal');
         this.priceForm = document.getElementById('priceForm');
 
+        // LOG PARA DEBUG ← ADICIONAR ESTA LINHA
+        console.log('🔵 Modal encontrado:', this.priceModal);
+
         // Loading
         this.loading = document.getElementById('loading');
     }
@@ -105,7 +108,7 @@ class AdminPricing {
             if (data.success) {
                 this.updateSyncStatus(data.syncStatus);
                 this.updateStats(data.statistics);
-                
+
                 // Carregar categorias se sync está ok
                 if (!data.syncStatus.isOutdated) {
                     await this.loadCategories();
@@ -137,9 +140,9 @@ class AdminPricing {
             if (data.success) {
                 const { created, updated, deactivated, errors } = data.summary;
                 const message = `Sincronização concluída: ${created} criadas, ${updated} atualizadas, ${deactivated} removidas, ${errors} erros`;
-                
+
                 this.showSyncStatus(message, errors > 0 ? 'warning' : 'success');
-                
+
                 // Recarregar dados
                 await Promise.all([
                     this.checkSyncStatus(),
@@ -170,7 +173,7 @@ class AdminPricing {
             const message = `${needingSyncCount} categorias precisam de sincronização. Última sincronização: ${hoursOld}h atrás`;
             this.showSyncStatus(message, 'warning');
         } else {
-            const message = lastSyncDate ? 
+            const message = lastSyncDate ?
                 `Sistema sincronizado. Última atualização: ${this.formatDate(lastSyncDate)}` :
                 'Sistema aguardando primeira sincronização';
             this.showSyncStatus(message, lastSyncDate ? 'success' : 'warning');
@@ -253,26 +256,26 @@ class AdminPricing {
                     ${category.basePrice > 0 ? `R$ ${category.basePrice.toFixed(2)}` : 'Sem preço'}
                 </td>
                 <td class="discounts-cell">
-                    ${category.hasCustomRules ? 
-                        `<span class="discount-badge">Personalizado</span>` : 
-                        `<span class="no-discounts">Nenhum</span>`
-                    }
+                    ${category.hasCustomRules ?
+                `<span class="discount-badge">Personalizado</span>` :
+                `<span class="no-discounts">Nenhum</span>`
+            }
                 </td>
                 <td class="last-update-cell">
                     ${this.formatDate(category.updatedAt)}
                 </td>
                 <td class="pricing-actions-cell" onclick="event.stopPropagation();">
                     <div class="pricing-action-buttons">
-                        ${category.basePrice > 0 ? 
-                            `<button class="btn-pricing-action btn-edit-price" 
+                        ${category.basePrice > 0 ?
+                `<button class="btn-pricing-action btn-edit-price" 
                                      onclick="adminPricing.openPriceModal('${category._id}', 'edit')">
                                 <i class="fas fa-edit"></i> Editar
                             </button>` :
-                            `<button class="btn-pricing-action btn-set-price" 
+                `<button class="btn-pricing-action btn-set-price" 
                                      onclick="adminPricing.openPriceModal('${category._id}', 'create')">
                                 <i class="fas fa-dollar-sign"></i> Definir
                             </button>`
-                        }
+            }
                         <button class="btn-pricing-action btn-view-details" 
                                 onclick="adminPricing.viewCategoryDetails('${category._id}')">
                             <i class="fas fa-eye"></i> Ver
@@ -306,8 +309,14 @@ class AdminPricing {
 
             // Mostrar modal
             if (this.priceModal) {
-                this.priceModal.classList.add('active');
-                
+                const modal = document.getElementById('priceModal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.classList.add('active');
+                } else {
+                    console.error('🔴 Modal não encontrado no DOM!');
+                }
+
                 // Focar no campo de preço
                 const priceInput = document.getElementById('newPrice');
                 if (priceInput) {
@@ -348,7 +357,7 @@ class AdminPricing {
         }
 
         if (currentPrice) {
-            currentPrice.textContent = this.currentCategory.basePrice > 0 ? 
+            currentPrice.textContent = this.currentCategory.basePrice > 0 ?
                 `Preço atual: R$ ${this.currentCategory.basePrice.toFixed(2)}` :
                 'Sem preço definido';
         }
@@ -406,7 +415,7 @@ class AdminPricing {
             if (data.success) {
                 this.showNotification(data.message, 'success');
                 this.closePriceModal();
-                
+
                 // Recarregar dados
                 await Promise.all([
                     this.loadCategories(),
@@ -557,8 +566,8 @@ class AdminPricing {
     convertReportToCSV(reportData) {
         // Implementar conversão para CSV
         // Por enquanto, retornar dados básicos
-        return 'Relatório de Preços - Sunshine Cowhides\n' + 
-               JSON.stringify(reportData, null, 2);
+        return 'Relatório de Preços - Sunshine Cowhides\n' +
+            JSON.stringify(reportData, null, 2);
     }
 
     // ===== UTILITÁRIOS =====
@@ -640,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Funções globais para uso no HTML
-window.closePriceModal = function() {
+window.closePriceModal = function () {
     if (adminPricing) {
         adminPricing.closePriceModal();
     }
