@@ -94,6 +94,19 @@ class AdminPricing {
                 }
             });
         }
+
+        // NOVO: Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('priceModal');
+                if (modal && (modal.style.display === 'flex' || modal.classList.contains('active'))) {
+                    this.closePriceModal();
+                }
+            }
+        });
+
+        // NOVO: Log para debug
+        console.log('🔵 Event listeners configurados para modal');
     }
 
     // ===== SINCRONIZAÇÃO COM GOOGLE DRIVE =====
@@ -376,10 +389,20 @@ class AdminPricing {
     }
 
     closePriceModal() {
-        if (this.priceModal) {
-            this.priceModal.classList.remove('active');
+        const modal = document.getElementById('priceModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
         }
+
+        // Limpar formulário
+        const priceInput = document.getElementById('newPrice');
+        const reasonInput = document.getElementById('priceReason');
+        if (priceInput) priceInput.value = '';
+        if (reasonInput) reasonInput.value = '';
+
         this.currentCategory = null;
+        console.log('🔵 Modal fechado');
     }
 
     async handlePriceSubmit(e) {
@@ -413,7 +436,9 @@ class AdminPricing {
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification(data.message, 'success');
+                this.showNotification(data.message || 'Preço salvo com sucesso!', 'success');
+
+                // Fechar modal ANTES de recarregar
                 this.closePriceModal();
 
                 // Recarregar dados
@@ -421,7 +446,6 @@ class AdminPricing {
                     this.loadCategories(),
                     this.checkSyncStatus()
                 ]);
-
             } else {
                 throw new Error(data.message || 'Erro ao salvar preço');
             }
@@ -656,3 +680,17 @@ window.closePriceModal = function () {
 };
 
 window.adminPricing = adminPricing;
+
+// Função global para fechar modal (chamada pelo HTML)
+window.closePriceModal = function () {
+    if (adminPricing) {
+        adminPricing.closePriceModal();
+    } else {
+        // Fallback caso adminPricing não esteja disponível
+        const modal = document.getElementById('priceModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+        }
+    }
+};
