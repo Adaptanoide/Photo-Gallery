@@ -221,49 +221,42 @@
     <script src="js/cart.js"></script>
     <script src="js/client.js"></script>
 
-    <!-- ADICIONAR ESTE BLOCO AQUI: -->
     <!-- Modal de Sucesso da Seleção -->
     <div id="selectionSuccessModal" class="selection-modal" style="display: none;">
         <div class="selection-modal-overlay"></div>
         <div class="selection-modal-content">
             <div class="selection-modal-header">
                 <i class="fas fa-check-circle success-icon"></i>
-                <h2>Seleção Finalizada com Sucesso!</h2>
+                <h2>Seleção Realizada com Sucesso!</h2>
             </div>
             
             <div class="selection-modal-body">
                 <div class="selection-info">
                     <div class="info-item">
-                        <span class="info-label">ID da Seleção:</span>
-                        <span id="modalSelectionId" class="info-value">-</span>
-                    </div>
-                    <div class="info-item">
                         <span class="info-label">Itens Selecionados:</span>
                         <span id="modalItemCount" class="info-value">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Pasta Criada:</span>
-                        <span id="modalFolderName" class="info-value">-</span>
                     </div>
                 </div>
                 
                 <div class="next-steps">
-                    <h3><i class="fas fa-info-circle"></i> Próximos Passos</h3>
+                    <h3><i class="fas fa-handshake"></i> Próximos Passos</h3>
                     <ul>
                         <li>✅ Suas fotos foram reservadas com sucesso</li>
                         <li>📞 Nossa equipe entrará em contato em breve</li>
-                        <li>💰 Negociaremos valores e forma de pagamento</li>
-                        <li>📦 Organizaremos envio após confirmação</li>
+                        <li>💰 Acertaremos valores e forma de pagamento</li>
+                        <li>📦 Organizaremos o envio após confirmação</li>
                     </ul>
+                    
+                    <div class="contact-info">
+                        <p><strong>Obrigado pela preferência!</strong></p>
+                        <p>Aguarde nosso contato para finalizar sua compra.</p>
+                    </div>
                 </div>
             </div>
             
             <div class="selection-modal-footer">
-                <button onclick="continueSelection()" class="btn btn-secondary">
-                    <i class="fas fa-plus"></i> Nova Seleção
-                </button>
-                <button onclick="goToHome()" class="btn btn-primary">
-                    <i class="fas fa-home"></i> Página Inicial
+                <button onclick="goToHome()" class="btn btn-primary btn-full">
+                    <i class="fas fa-home"></i> Voltar ao Início
                 </button>
             </div>
         </div>

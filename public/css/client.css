@@ -1577,3 +1577,66 @@
         color: #fff;
     }
 }
+
+/* ===== ESTILOS ADICIONAIS PARA MODAL SIMPLIFICADO ===== */
+
+/* Contact Info */
+.contact-info {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #bee5eb;
+    text-align: center;
+}
+
+.contact-info p {
+    margin: 0.5rem 0;
+    color: #004085;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.contact-info p:first-child {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Botão full width */
+.selection-modal-footer .btn-full {
+    width: 100%;
+    max-width: none;
+    flex: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Ajuste para mobile - contact info */
+@media (max-width: 768px) {
+    .contact-info {
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+    
+    .contact-info p {
+        font-size: 0.85rem;
+    }
+    
+    .contact-info p:first-child {
+        font-size: 0.9rem;
+    }
+    
+    .selection-modal-footer .btn-full {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-info p {
+        font-size: 0.8rem;
+    }
+    
+    .contact-info p:first-child {
+        font-size: 0.85rem;
+    }
+}
