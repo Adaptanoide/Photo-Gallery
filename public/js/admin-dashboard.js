@@ -169,6 +169,7 @@ class AdminDashboard {
         const titles = {
             dashboard: 'Dashboard',
             clients: 'Gestão de Clientes',
+            pricing: 'Gestão de Preços', // ← NOVA LINHA
             products: 'Gestão de Produtos',
             selections: 'Gestão de Seleções',
             reports: 'Relatórios',
@@ -199,6 +200,10 @@ class AdminDashboard {
                 break;
             case 'clients':
                 // TODO: Implementar carregamento de dados de clientes
+                break;
+            case 'pricing': // ← NOVA SEÇÃO
+                // A inicialização do AdminPricing é automática via observer
+                console.log('💰 Seção de preços ativada');
                 break;
             case 'products':
                 // TODO: Implementar carregamento de dados de produtos
