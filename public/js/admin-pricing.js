@@ -1044,4 +1044,51 @@ if (document.readyState === 'loading') {
     setupModalAutoInitialization();
 }
 
+// ===== REMOÇÃO DE REGRAS DE CLIENTE =====
+
+/**
+ * Remover regra de desconto para cliente específico
+ */
+async function removeClientRule(clientCode) {
+    if (!adminPricing.currentCategory) return;
+    
+    // Confirmar remoção
+    const confirmMessage = `Tem certeza que deseja remover a regra de desconto para o cliente ${clientCode}?`;
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    try {
+        console.log(`🗑️ Removendo regra para cliente: ${clientCode}`);
+        
+        const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules/${clientCode}`, {
+            method: 'DELETE',
+            headers: adminPricing.getAuthHeaders()
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || 'Erro ao remover regra');
+        }
+        
+        if (result.success) {
+            console.log('✅ Regra removida com sucesso');
+            adminPricing.showNotification('Regra removida com sucesso!', 'success');
+            
+            // Recarregar lista de regras
+            await loadClientRules();
+        } else {
+            throw new Error(result.message || 'Erro desconhecido');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao remover regra:', error);
+        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+    }
+}
+
+// Tornar função global para uso no HTML
+window.removeClientRule = removeClientRule;
+
 console.log('🔖 Sistema de abas carregado com auto-inicialização');
