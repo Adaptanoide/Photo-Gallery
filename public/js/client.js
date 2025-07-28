@@ -243,7 +243,7 @@ async function loadPhotos(folderId) {
     try {
         showPhotosLoading(true);
 
-        const response = await fetch(`/api/drive/photos/${folderId}?limit=100`);
+        const response = await fetch(`/api/drive/photos/${folderId}?limit=500`);
         const data = await response.json();
 
         if (!data.success) {

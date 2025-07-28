@@ -215,7 +215,7 @@ router.get('/photos/:folderId', async (req, res) => {
     try {
         const drive = getGoogleDriveAuth();
         const { folderId } = req.params;
-        const limit = parseInt(req.query.limit) || 50;
+        const limit = parseInt(req.query.limit) || 500;
         const page = parseInt(req.query.page) || 1;
         
         console.log(`🖼️ Buscando fotos da pasta: ${folderId}, limite: ${limit}, página: ${page}`);
