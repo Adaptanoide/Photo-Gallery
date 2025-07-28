@@ -744,26 +744,34 @@ async function finalizeSelection() {
 function showSelectionSuccess(result) {
     const { selection, googleDrive, nextSteps } = result;
     
-    const message = `
-        ✅ Seleção finalizada com sucesso!
-        
-        📁 Pasta criada: ${googleDrive.folderCreated}
-        📸 Fotos movidas: ${googleDrive.photosMovedCount}
-        📋 ID da seleção: ${selection.selectionId}
-        
-        ${nextSteps.message}
-        ${nextSteps.expiration}
-        ${nextSteps.contact}
-    `;
+    // Preencher dados no modal
+    document.getElementById('modalSelectionId').textContent = selection.selectionId;
+    document.getElementById('modalItemCount').textContent = `${selection.totalItems} ${selection.totalItems === 1 ? 'item' : 'itens'}`;
+    document.getElementById('modalFolderName').textContent = googleDrive.folderCreated;
     
-    CartSystem.showNotification(message, 'success');
+    // Mostrar modal
+    const modal = document.getElementById('selectionSuccessModal');
+    modal.style.display = 'flex';
     
+    // Adicionar classe para animação
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    // Log para debug
     console.log('📋 Detalhes da seleção:', {
         selectionId: selection.selectionId,
         folderName: selection.clientFolderName,
         totalItems: selection.totalItems,
         status: selection.status
     });
+    
+    // Auto-close em 30 segundos (opcional)
+    setTimeout(() => {
+        if (modal.style.display === 'flex') {
+            continueSelection();
+        }
+    }, 30000);
 }
 
 // ===== INICIALIZAÇÃO AUTOMÁTICA =====
@@ -772,6 +780,56 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         CartSystem.init();
     }, 500);
+});
+
+/**
+ * Continuar com nova seleção
+ */
+function continueSelection() {
+    const modal = document.getElementById('selectionSuccessModal');
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+    
+    // Não redirecionar - cliente continua navegando
+    console.log('🔄 Cliente optou por continuar selecionando');
+}
+
+/**
+ * Ir para página inicial
+ */
+function goToHome() {
+    const modal = document.getElementById('selectionSuccessModal');
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+    
+    // Mostrar loading
+    CartSystem.showNotification('Redirecionando...', 'info');
+    
+    // Redirecionar após 1 segundo
+    setTimeout(() => {
+        window.location.href = '/';
+    }, 1000);
+    
+    console.log('🏠 Cliente redirecionado para página inicial');
+}
+
+// Fechar modal clicando no overlay
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('selectionSuccessModal');
+    const overlay = document.querySelector('.selection-modal-overlay');
+    
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            continueSelection();
+        });
+    }
+    
+    // ESC para fechar modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+            continueSelection();
+        }
+    });
 });
 
 console.log('📦 cart.js carregado - aguardando inicialização...');
