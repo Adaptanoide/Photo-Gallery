@@ -1179,6 +1179,10 @@ async function handleQuantityRuleSubmit(e) {
     console.log('minQty:', minQty, typeof minQty);
     console.log('maxQty:', maxQty, typeof maxQty);
     console.log('discount:', discount, typeof discount);
+    const discountElement = document.getElementById('discountPercent');
+    console.log('🔍 Campo discountPercent:', discountElement);
+    console.log('🔍 Valor bruto:', discountElement ? discountElement.value : 'ELEMENTO NÃO EXISTE');
+    console.log('🔍 Valor como string:', `"${discountElement?.value}"`);
     console.log('isNaN(discount):', isNaN(discount));
     console.log('discount < 0:', discount < 0);
     console.log('discount > 100:', discount > 100);
