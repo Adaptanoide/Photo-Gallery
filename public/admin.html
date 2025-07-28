@@ -461,19 +461,135 @@
                                 </div>
                             </div>
                             
-                            <form id="priceForm" class="price-form">
-                                <div class="form-group">
-                                    <label class="form-label">Novo Preço (R$)</label>
-                                    <input type="number" id="newPrice" class="form-input" 
-                                        min="0" step="0.01" placeholder="0.00" required>
-                                </div>
+                            <!-- NOVO: Sistema de Abas -->
+                            <div class="price-tabs">
+                                <nav class="price-tabs-nav">
+                                    <button type="button" class="price-tab-btn active" data-tab="base-price">
+                                        💰 Preço Base
+                                    </button>
+                                    <button type="button" class="price-tab-btn" data-tab="client-prices">
+                                        👤 Por Cliente
+                                    </button>
+                                    <button type="button" class="price-tab-btn" data-tab="quantity-discounts">
+                                        📦 Por Quantidade
+                                    </button>
+                                </nav>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Motivo da Alteração (Opcional)</label>
-                                    <textarea id="priceReason" class="form-textarea" rows="3" 
-                                            placeholder="Ex: Ajuste de mercado, promoção..."></textarea>
+                                <div class="price-tabs-content">
+                                    <!-- ABA 1: Preço Base (formulário atual) -->
+                                    <div class="price-tab-panel active" id="tab-base-price">
+                                        <form id="priceForm" class="price-form">
+                                            <div class="form-group">
+                                                <label class="form-label">Novo Preço (R$)</label>
+                                                <input type="number" id="newPrice" class="form-input" 
+                                                    min="0" step="0.01" placeholder="0.00" required>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">Motivo da Alteração (Opcional)</label>
+                                                <textarea id="priceReason" class="form-textarea" rows="3" 
+                                                        placeholder="Ex: Ajuste de mercado, promoção..."></textarea>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    
+                                    <!-- ABA 2: Preços por Cliente -->
+                                    <div class="price-tab-panel" id="tab-client-prices">
+                                        <div class="client-prices-section">
+                                            <h5>Preços Personalizados por Cliente</h5>
+                                            <p class="text-muted">Configure preços especiais para clientes específicos</p>
+                                            
+                                            <!-- Lista de regras existentes -->
+                                            <div id="clientRulesList" class="client-rules-list">
+                                                <!-- Será populado via JavaScript -->
+                                            </div>
+                                            
+                                            <!-- Formulário para nova regra -->
+                                            <div class="add-client-rule">
+                                                <h6>Adicionar Nova Regra</h6>
+                                                <form id="clientRuleForm" class="client-rule-form">
+                                                    <div class="form-row">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Cliente</label>
+                                                            <select id="clientSelect" class="form-input" required>
+                                                                <option value="">Selecione um cliente...</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label class="form-label">Tipo de Desconto</label>
+                                                            <select id="discountType" class="form-input" required>
+                                                                <option value="">Selecione...</option>
+                                                                <option value="percentage">Desconto %</option>
+                                                                <option value="custom">Preço Customizado</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="form-row">
+                                                        <div class="form-group" id="percentageGroup" style="display: none;">
+                                                            <label class="form-label">Desconto (%)</label>
+                                                            <input type="number" id="discountPercent" class="form-input" 
+                                                                min="0" max="100" step="1" placeholder="10">
+                                                        </div>
+                                                        <div class="form-group" id="customPriceGroup" style="display: none;">
+                                                            <label class="form-label">Preço Customizado (R$)</label>
+                                                            <input type="number" id="customPrice" class="form-input" 
+                                                                min="0" step="0.01" placeholder="0.00">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-plus"></i>
+                                                        Adicionar Regra
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- ABA 3: Descontos por Quantidade -->
+                                    <div class="price-tab-panel" id="tab-quantity-discounts">
+                                        <div class="quantity-discounts-section">
+                                            <h5>Descontos por Quantidade</h5>
+                                            <p class="text-muted">Configure descontos automáticos baseados na quantidade de fotos</p>
+                                            
+                                            <div class="quantity-rules">
+                                                <div class="quantity-rule">
+                                                    <div class="rule-range">5-10 fotos</div>
+                                                    <div class="rule-discount">5% desconto</div>
+                                                    <div class="rule-actions">
+                                                        <button class="btn-sm btn-warning">Editar</button>
+                                                        <button class="btn-sm btn-danger">Remover</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="quantity-rule">
+                                                    <div class="rule-range">11-20 fotos</div>
+                                                    <div class="rule-discount">10% desconto</div>
+                                                    <div class="rule-actions">
+                                                        <button class="btn-sm btn-warning">Editar</button>
+                                                        <button class="btn-sm btn-danger">Remover</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="quantity-rule">
+                                                    <div class="rule-range">21+ fotos</div>
+                                                    <div class="rule-discount">15% desconto</div>
+                                                    <div class="rule-actions">
+                                                        <button class="btn-sm btn-warning">Editar</button>
+                                                        <button class="btn-sm btn-danger">Remover</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button class="btn btn-secondary">
+                                                <i class="fas fa-plus"></i>
+                                                Nova Regra de Quantidade
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </form>
+                            </div>
                         </div>
                         
                         <div class="price-modal-footer">

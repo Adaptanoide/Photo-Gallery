@@ -686,3 +686,76 @@
 .bg-danger-light {
     background-color: rgba(220, 53, 69, 0.1) !important;
 }
+
+/* ===== SISTEMA DE ABAS NO MODAL DE PREÇOS ===== */
+
+.price-tabs {
+    margin-top: 1rem;
+}
+
+.price-tabs-nav {
+    display: flex;
+    background: #F8F9FA;
+    border-radius: 8px;
+    padding: 0.25rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    gap: 0.25rem;
+}
+
+.price-tab-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.price-tab-btn:hover {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.price-tab-btn.active {
+    background: #28a745;
+    color: white;
+    font-weight: 600;
+}
+
+.price-tabs-content {
+    min-height: 200px;
+}
+
+.price-tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.price-tab-panel.active {
+    display: block;
+}
+
+/* ===== RESPONSIVO PARA ABAS ===== */
+@media (max-width: 640px) {
+    .price-tabs-nav {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .price-tab-btn {
+        min-width: auto;
+        text-align: center;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

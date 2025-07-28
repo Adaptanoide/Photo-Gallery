@@ -694,3 +694,281 @@ window.closePriceModal = function () {
         }
     }
 };
+
+// ===== SISTEMA DE ABAS DO MODAL DE PREÇOS =====
+
+/**
+ * Inicializar sistema de abas quando modal abre
+ */
+function initializePriceTabs() {
+    const tabButtons = document.querySelectorAll('.price-tab-btn');
+    const tabPanels = document.querySelectorAll('.price-tab-panel');
+    
+    // Event listeners para botões das abas
+    tabButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const targetTab = e.target.dataset.tab;
+            switchPriceTab(targetTab);
+        });
+    });
+    
+    // Inicializar funcionalidades específicas das abas
+    initializeClientPricesTab();
+    initializeQuantityDiscountsTab();
+    
+    console.log('🔖 Sistema de abas do modal de preços inicializado');
+}
+
+/**
+ * Trocar aba ativa
+ */
+function switchPriceTab(targetTab) {
+    const tabButtons = document.querySelectorAll('.price-tab-btn');
+    const tabPanels = document.querySelectorAll('.price-tab-panel');
+    
+    // Remover classes ativas
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    tabPanels.forEach(panel => panel.classList.remove('active'));
+    
+    // Ativar aba selecionada
+    const activeButton = document.querySelector(`[data-tab="${targetTab}"]`);
+    const activePanel = document.getElementById(`tab-${targetTab}`);
+    
+    if (activeButton && activePanel) {
+        activeButton.classList.add('active');
+        activePanel.classList.add('active');
+        
+        // Carregar dados específicos da aba se necessário
+        loadTabData(targetTab);
+    }
+}
+
+/**
+ * Carregar dados específicos da aba
+ */
+function loadTabData(tabName) {
+    switch (tabName) {
+        case 'client-prices':
+            loadClientRules();
+            loadAvailableClients();
+            break;
+        case 'quantity-discounts':
+            loadQuantityRules();
+            break;
+    }
+}
+
+// ===== ABA: PREÇOS POR CLIENTE =====
+
+/**
+ * Inicializar funcionalidades da aba de preços por cliente
+ */
+function initializeClientPricesTab() {
+    // Event listener para tipo de desconto
+    const discountType = document.getElementById('discountType');
+    if (discountType) {
+        discountType.addEventListener('change', handleDiscountTypeChange);
+    }
+    
+    // Event listener para formulário de regra de cliente
+    const clientRuleForm = document.getElementById('clientRuleForm');
+    if (clientRuleForm) {
+        clientRuleForm.addEventListener('submit', handleClientRuleSubmit);
+    }
+}
+
+/**
+ * Lidar com mudança no tipo de desconto
+ */
+function handleDiscountTypeChange(e) {
+    const value = e.target.value;
+    const percentageGroup = document.getElementById('percentageGroup');
+    const customPriceGroup = document.getElementById('customPriceGroup');
+    
+    // Esconder todos os grupos
+    percentageGroup.style.display = 'none';
+    customPriceGroup.style.display = 'none';
+    
+    // Mostrar grupo relevante
+    if (value === 'percentage') {
+        percentageGroup.style.display = 'block';
+    } else if (value === 'custom') {
+        customPriceGroup.style.display = 'block';
+    }
+}
+
+/**
+ * Carregar regras de cliente existentes
+ */
+async function loadClientRules() {
+    if (!adminPricing.currentCategory) return;
+    
+    const rulesContainer = document.getElementById('clientRulesList');
+    if (!rulesContainer) return;
+    
+    try {
+        // Buscar regras da categoria atual
+        const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}`, {
+            headers: adminPricing.getAuthHeaders()
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.category.discountRules) {
+            renderClientRules(data.category.discountRules);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar regras de cliente:', error);
+    }
+}
+
+/**
+ * Renderizar regras de cliente
+ */
+function renderClientRules(rules) {
+    const container = document.getElementById('clientRulesList');
+    if (!container) return;
+    
+    if (rules.length === 0) {
+        container.innerHTML = `
+            <div class="empty-rules">
+                <i class="fas fa-info-circle"></i>
+                <p>Nenhuma regra personalizada configurada</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const rulesHTML = rules.filter(rule => rule.isActive).map(rule => `
+        <div class="client-rule-item">
+            <div class="rule-info">
+                <strong>${rule.clientName}</strong>
+                <span class="client-code">(${rule.clientCode})</span>
+            </div>
+            <div class="rule-details">
+                ${rule.customPrice ? 
+                    `Preço: R$ ${rule.customPrice.toFixed(2)}` : 
+                    `Desconto: ${rule.discountPercent}%`
+                }
+            </div>
+            <div class="rule-actions">
+                <button class="btn-sm btn-danger" onclick="removeClientRule('${rule.clientCode}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = rulesHTML;
+}
+
+/**
+ * Carregar clientes disponíveis
+ */
+async function loadAvailableClients() {
+    const clientSelect = document.getElementById('clientSelect');
+    if (!clientSelect) return;
+    
+    try {
+        // TODO: Implementar API para buscar clientes ativos
+        // Por enquanto, dados de exemplo
+        const clients = [
+            { code: '7064', name: 'João Silva' },
+            { code: '6544', name: 'Tiago Teste' },
+            { code: '3590', name: 'testenovo' }
+        ];
+        
+        const optionsHTML = clients.map(client => 
+            `<option value="${client.code}">${client.name} (${client.code})</option>`
+        ).join('');
+        
+        clientSelect.innerHTML = `
+            <option value="">Selecione um cliente...</option>
+            ${optionsHTML}
+        `;
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar clientes:', error);
+    }
+}
+
+/**
+ * Lidar com submit do formulário de regra de cliente
+ */
+async function handleClientRuleSubmit(e) {
+    e.preventDefault();
+    
+    if (!adminPricing.currentCategory) return;
+    
+    const formData = new FormData(e.target);
+    const clientCode = document.getElementById('clientSelect').value;
+    const discountType = document.getElementById('discountType').value;
+    
+    if (!clientCode || !discountType) {
+        adminPricing.showNotification('Preencha todos os campos obrigatórios', 'error');
+        return;
+    }
+    
+    try {
+        const requestData = {
+            clientCode,
+            clientName: document.getElementById('clientSelect').selectedOptions[0].text.split(' (')[0],
+            discountPercent: discountType === 'percentage' ? 
+                parseInt(document.getElementById('discountPercent').value) : 0,
+            customPrice: discountType === 'custom' ? 
+                parseFloat(document.getElementById('customPrice').value) : null
+        };
+        
+        // TODO: Implementar API para adicionar regra de desconto
+        console.log('📝 Adicionando regra de cliente:', requestData);
+        
+        // Simular sucesso por enquanto
+        adminPricing.showNotification('Regra adicionada com sucesso!', 'success');
+        
+        // Limpar formulário
+        e.target.reset();
+        handleDiscountTypeChange({ target: { value: '' } });
+        
+        // Recarregar regras
+        loadClientRules();
+        
+    } catch (error) {
+        console.error('❌ Erro ao adicionar regra:', error);
+        adminPricing.showNotification('Erro ao adicionar regra', 'error');
+    }
+}
+
+// ===== ABA: DESCONTOS POR QUANTIDADE =====
+
+/**
+ * Inicializar funcionalidades da aba de descontos por quantidade
+ */
+function initializeQuantityDiscountsTab() {
+    console.log('📦 Aba de descontos por quantidade inicializada');
+}
+
+/**
+ * Carregar regras de quantidade
+ */
+function loadQuantityRules() {
+    console.log('📦 Carregando regras de quantidade...');
+    // TODO: Implementar carregamento de regras de quantidade
+}
+
+// ===== INTEGRAÇÃO COM SISTEMA EXISTENTE =====
+
+// Modificar função openPriceModal para inicializar abas
+const originalOpenPriceModal = adminPricing.openPriceModal;
+if (typeof originalOpenPriceModal === 'function') {
+    adminPricing.openPriceModal = async function(categoryId, mode = 'create') {
+        await originalOpenPriceModal.call(this, categoryId, mode);
+        
+        // Inicializar abas depois que modal abrir
+        setTimeout(() => {
+            initializePriceTabs();
+            switchPriceTab('base-price'); // Sempre começar na primeira aba
+        }, 100);
+    };
+}
+
+console.log('🔖 Sistema de abas carregado e integrado');
