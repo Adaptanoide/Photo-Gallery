@@ -1,3 +1,4 @@
+//src/server.js
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
@@ -12,6 +13,7 @@ const clientRoutes = require('./routes/client');
 const driveRoutes = require('./routes/drive');
 const cartRoutes = require('./routes/cart');
 const selectionRoutes = require('./routes/selection');
+const pricingRoutes = require('./routes/pricing'); // ← NOVA LINHA
 const Cart = require('./models/Cart');
 const { CartService } = require('./services');
 
@@ -31,8 +33,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 connectDB();
 
 // ===== TESTE DOS MODELS E SERVICES =====
-console.log('✅ Models carregados: Product, Cart');
-console.log('✅ Services carregados: CartService');
+console.log('✅ Models carregados: Product, Cart, PhotoCategory');
+console.log('✅ Services carregados: CartService, PricingService');
 
 // Rotas
 app.use('/api/auth', authRoutes);
@@ -41,6 +43,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/drive', driveRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
+app.use('/api/pricing', pricingRoutes); // ← NOVA LINHA
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {

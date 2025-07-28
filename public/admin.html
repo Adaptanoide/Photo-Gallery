@@ -46,9 +46,10 @@
                 </div>
                 
                 <div class="nav-item">
-                    <a href="#products" class="nav-link" data-section="products">
-                        <i class="fas fa-images"></i>
-                        <span class="nav-text">Gestão de Produtos</span>
+                    <a href="#pricing" class="nav-link" data-section="pricing">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span class="nav-text">Gestão de Preços</span>
+                        <span class="nav-badge" id="pricingBadge" style="display: none;">0</span>
                     </a>
                 </div>
                 
@@ -258,10 +259,233 @@
                     <p>Esta seção será implementada na próxima fase.</p>
                 </div>
                 
-                <!-- Seção Produtos (Hidden por padrão) -->
-                <div id="section-products" class="content-section" style="display: none;">
-                    <h2>Gestão de Produtos - Em Desenvolvimento</h2>
-                    <p>Esta seção será implementada na próxima fase.</p>
+                <div id="section-pricing" class="content-section" style="display: none;">
+                    <!-- Cabeçalho da Seção de Preços -->
+                    <div class="pricing-section-header">
+                        <h2 class="pricing-title">
+                            <i class="fas fa-dollar-sign"></i>
+                            Gestão de Preços
+                        </h2>
+                        <div class="pricing-actions">
+                            <button id="btnSyncDrive" class="btn btn-secondary">
+                                <i class="fas fa-sync-alt"></i>
+                                Sincronizar Google Drive
+                            </button>
+                            <button id="btnPricingReport" class="btn btn-primary">
+                                <i class="fas fa-chart-line"></i>
+                                Relatório
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status da Sincronização -->
+                    <div id="syncStatusCard" class="sync-status-card" style="display: none;">
+                        <div class="sync-status-content">
+                            <div class="sync-status-info">
+                                <h4><i class="fas fa-info-circle"></i> Status da Sincronização</h4>
+                                <p id="syncStatusMessage">Verificando status...</p>
+                            </div>
+                            <div class="sync-status-actions">
+                                <button id="btnForcSync" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Sincronização Forçada
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="pricing-filters">
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Buscar Categoria</label>
+                                <input type="text" id="searchCategories" class="filter-input" 
+                                    placeholder="Nome da categoria, caminho...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status do Preço</label>
+                                <select id="filterPriceStatus" class="filter-select">
+                                    <option value="all">Todas</option>
+                                    <option value="with-price">Com Preço</option>
+                                    <option value="without-price">Sem Preço</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Ordenar por</label>
+                                <select id="sortCategories" class="filter-select">
+                                    <option value="name">Nome A-Z</option>
+                                    <option value="price-high">Maior Preço</option>
+                                    <option value="price-low">Menor Preço</option>
+                                    <option value="photos">Mais Fotos</option>
+                                </select>
+                            </div>
+                            <button id="btnApplyPricingFilters" class="btn-filter">
+                                <i class="fas fa-filter"></i>
+                                Filtrar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas Rápidas -->
+                    <div id="pricingStats" class="pricing-stats" style="display: none;">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Total de Categorias</div>
+                                        <div class="stat-value" id="totalCategoriesCount">-</div>
+                                        <div class="stat-description">Pastas com fotos</div>
+                                    </div>
+                                    <div class="stat-icon primary">
+                                        <i class="fas fa-folder"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Com Preço Definido</div>
+                                        <div class="stat-value" id="categoriesWithPriceCount">-</div>
+                                        <div class="stat-description">Categorias precificadas</div>
+                                    </div>
+                                    <div class="stat-icon success">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Sem Preço</div>
+                                        <div class="stat-value" id="categoriesWithoutPriceCount">-</div>
+                                        <div class="stat-description">Precisam de preço</div>
+                                    </div>
+                                    <div class="stat-icon warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Total de Fotos</div>
+                                        <div class="stat-value" id="totalPhotosCount">-</div>
+                                        <div class="stat-description">Em todas as categorias</div>
+                                    </div>
+                                    <div class="stat-icon secondary">
+                                        <i class="fas fa-images"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Categorias com Preços -->
+                    <div class="pricing-table-container">
+                        <div class="table-header">
+                            <h3 class="table-title">Categorias e Preços</h3>
+                            <div class="table-actions">
+                                <button id="btnBulkPricing" class="btn btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                    Edição em Lote
+                                </button>
+                                <button id="btnExportPricing" class="btn btn-primary">
+                                    <i class="fas fa-download"></i>
+                                    Exportar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <table class="pricing-table">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th>Caminho no Drive</th>
+                                    <th>Fotos</th>
+                                    <th>Preço Base</th>
+                                    <th>Descontos</th>
+                                    <th>Última Atualização</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pricingTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        Carregando categorias...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    <div id="pricingPagination" class="pricing-pagination" style="display: none;">
+                        <button id="btnPrevPage" class="btn btn-secondary">
+                            <i class="fas fa-chevron-left"></i>
+                            Anterior
+                        </button>
+                        <span id="paginationInfo">Página 1 de 1</span>
+                        <button id="btnNextPage" class="btn btn-secondary">
+                            Próxima
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===== MODAL DE EDIÇÃO DE PREÇO ===== -->
+                <div id="priceModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay"></div>
+                    <div class="price-modal-content">
+                        <div class="price-modal-header">
+                            <h3 class="modal-title">
+                                <i class="fas fa-dollar-sign"></i>
+                                <span id="priceModalTitle">Definir Preço</span>
+                            </h3>
+                            <button class="modal-close" onclick="closePriceModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="price-modal-body">
+                            <div class="category-info">
+                                <h4 id="modalCategoryName">Nome da Categoria</h4>
+                                <p id="modalCategoryPath">Caminho no Google Drive</p>
+                                <div class="category-stats">
+                                    <span id="modalPhotoCount">0 fotos</span>
+                                    <span id="modalCurrentPrice">Preço atual: R$ 0,00</span>
+                                </div>
+                            </div>
+                            
+                            <form id="priceForm" class="price-form">
+                                <div class="form-group">
+                                    <label class="form-label">Novo Preço (R$)</label>
+                                    <input type="number" id="newPrice" class="form-input" 
+                                        min="0" step="0.01" placeholder="0.00" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Motivo da Alteração (Opcional)</label>
+                                    <textarea id="priceReason" class="form-textarea" rows="3" 
+                                            placeholder="Ex: Ajuste de mercado, promoção..."></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="price-modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closePriceModal()">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" form="priceForm" class="btn btn-primary" id="btnSavePrice">
+                                <i class="fas fa-save"></i>
+                                Salvar Preço
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Seção Seleções (Hidden por padrão) -->

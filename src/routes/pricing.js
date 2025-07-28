@@ -1,0 +1,534 @@
+// src/routes/pricing.js
+const express = require('express');
+const PricingService = require('../services/PricingService');
+const PhotoCategory = require('../models/PhotoCategory');
+const { authenticateToken } = require('./auth');
+
+const router = express.Router();
+
+// Todas as rotas de preços precisam de autenticação admin
+router.use(authenticateToken);
+
+// ===== SINCRONIZAÇÃO COM GOOGLE DRIVE =====
+
+/**
+ * POST /api/pricing/sync
+ * Sincronizar estrutura do Google Drive com banco de dados
+ */
+router.post('/sync', async (req, res) => {
+    try {
+        const { forceRefresh = false } = req.body;
+        
+        console.log(`🔄 Iniciando sincronização ${forceRefresh ? 'forçada' : 'normal'}...`);
+        
+        const result = await PricingService.scanAndSyncDrive(forceRefresh);
+        
+        res.json({
+            success: true,
+            message: 'Sincronização concluída com sucesso',
+            data: result,
+            summary: result.sync.summary
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro na sincronização:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao sincronizar com Google Drive',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/sync/status
+ * Verificar status da última sincronização
+ */
+router.get('/sync/status', async (req, res) => {
+    try {
+        // Buscar categorias mais antigas (que precisam de sync)
+        const needingSync = await PhotoCategory.findNeedingSync(24); // 24 horas
+        
+        // Última sincronização
+        const lastSync = await PhotoCategory.findOne({ isActive: true })
+            .sort({ lastSync: -1 })
+            .select('lastSync')
+            .lean();
+        
+        // Estatísticas gerais
+        const stats = await PhotoCategory.getPricingStats();
+        
+        res.json({
+            success: true,
+            syncStatus: {
+                needingSyncCount: needingSync.length,
+                lastSyncDate: lastSync?.lastSync || null,
+                isOutdated: needingSync.length > 0,
+                hoursOld: lastSync ? 
+                    Math.round((Date.now() - new Date(lastSync.lastSync)) / (1000 * 60 * 60)) : null
+            },
+            statistics: stats
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao verificar status de sync:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao verificar status',
+            error: error.message
+        });
+    }
+});
+
+// ===== GESTÃO DE CATEGORIAS E PREÇOS =====
+
+/**
+ * GET /api/pricing/categories
+ * Listar todas as categorias com preços para interface admin
+ */
+router.get('/categories', async (req, res) => {
+    try {
+        const { 
+            search = '', 
+            hasPrice = null, 
+            page = 1, 
+            limit = 50 
+        } = req.query;
+        
+        // Filtros
+        const filters = {};
+        if (search) filters.search = search;
+        if (hasPrice !== null) filters.hasPrice = hasPrice === 'true';
+        
+        const categories = await PricingService.getAdminCategoriesList(filters);
+        
+        // Paginação
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + parseInt(limit);
+        const paginatedCategories = categories.slice(startIndex, endIndex);
+        
+        res.json({
+            success: true,
+            categories: paginatedCategories,
+            pagination: {
+                total: categories.length,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(categories.length / limit),
+                hasNext: endIndex < categories.length,
+                hasPrev: page > 1
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao listar categorias:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao carregar categorias',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/categories/:id
+ * Buscar categoria específica com detalhes completos
+ */
+router.get('/categories/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const category = await PhotoCategory.findById(id);
+        
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+        
+        // Informações adicionais
+        const details = {
+            ...category.toObject(),
+            summary: category.getSummary(),
+            priceHistoryCount: category.priceHistory.length,
+            activeDiscountRules: category.discountRules.filter(r => r.isActive).length,
+            lastPriceChange: category.priceHistory.length > 0 ? 
+                category.priceHistory[category.priceHistory.length - 1] : null
+        };
+        
+        res.json({
+            success: true,
+            category: details
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar categoria:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar categoria',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * PUT /api/pricing/categories/:id/price
+ * Definir/atualizar preço de uma categoria
+ */
+router.put('/categories/:id/price', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { price, reason = '' } = req.body;
+        
+        // Validações
+        if (typeof price !== 'number' || price < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Preço deve ser um número não negativo'
+            });
+        }
+        
+        const result = await PricingService.setPriceForCategory(
+            id, 
+            price, 
+            req.user.username, // Do middleware de auth
+            reason
+        );
+        
+        res.json({
+            success: true,
+            message: result.message,
+            data: result
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao definir preço:', error);
+        
+        let statusCode = 500;
+        if (error.message.includes('não encontrada')) statusCode = 404;
+        if (error.message.includes('inativa')) statusCode = 400;
+        if (error.message.includes('negativo')) statusCode = 400;
+        
+        res.status(statusCode).json({
+            success: false,
+            message: error.message,
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+/**
+ * POST /api/pricing/categories/bulk-price
+ * Definir preços em lote para múltiplas categorias
+ */
+router.post('/categories/bulk-price', async (req, res) => {
+    try {
+        const { pricesData, reason = 'Atualização em lote' } = req.body;
+        
+        if (!Array.isArray(pricesData) || pricesData.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Array de preços é obrigatório'
+            });
+        }
+        
+        // Validar dados
+        const validation = PricingService.validatePricingData(pricesData);
+        
+        if (!validation.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dados inválidos',
+                errors: validation.errors,
+                summary: validation.summary
+            });
+        }
+        
+        // Aplicar preços um por um
+        const results = [];
+        let successful = 0;
+        let failed = 0;
+        
+        for (const item of validation.validItems) {
+            try {
+                const result = await PricingService.setPriceForCategory(
+                    item.categoryId,
+                    item.price,
+                    req.user.username,
+                    reason
+                );
+                
+                results.push({
+                    categoryId: item.categoryId,
+                    success: true,
+                    price: item.price,
+                    result
+                });
+                successful++;
+                
+            } catch (error) {
+                results.push({
+                    categoryId: item.categoryId,
+                    success: false,
+                    error: error.message
+                });
+                failed++;
+            }
+        }
+        
+        res.json({
+            success: failed === 0,
+            message: `Atualização em lote: ${successful} sucessos, ${failed} falhas`,
+            results,
+            summary: {
+                total: pricesData.length,
+                successful,
+                failed,
+                processed: successful + failed
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro na atualização em lote:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro na atualização em lote',
+            error: error.message
+        });
+    }
+});
+
+// ===== REGRAS DE DESCONTO POR CLIENTE =====
+
+/**
+ * POST /api/pricing/categories/:id/discount-rules
+ * Adicionar regra de desconto para cliente específico
+ */
+router.post('/categories/:id/discount-rules', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { clientCode, clientName, discountPercent, customPrice } = req.body;
+        
+        // Validações
+        if (!clientCode || clientCode.length !== 4) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de cliente deve ter 4 dígitos'
+            });
+        }
+        
+        if (!clientName) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nome do cliente é obrigatório'
+            });
+        }
+        
+        if (discountPercent && (discountPercent < 0 || discountPercent > 100)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Desconto deve ser entre 0 e 100%'
+            });
+        }
+        
+        if (customPrice && customPrice < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Preço customizado não pode ser negativo'
+            });
+        }
+        
+        // Buscar categoria
+        const category = await PhotoCategory.findById(id);
+        
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+        
+        // Adicionar regra
+        const newRule = category.addDiscountRule(clientCode, clientName, {
+            discountPercent: discountPercent || 0,
+            customPrice: customPrice || null
+        });
+        
+        await category.save();
+        
+        res.json({
+            success: true,
+            message: 'Regra de desconto adicionada com sucesso',
+            rule: newRule,
+            category: category.getSummary()
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao adicionar regra de desconto:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao adicionar regra de desconto',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/pricing/categories/:id/discount-rules/:clientCode
+ * Remover regra de desconto para cliente específico
+ */
+router.delete('/categories/:id/discount-rules/:clientCode', async (req, res) => {
+    try {
+        const { id, clientCode } = req.params;
+        
+        const category = await PhotoCategory.findById(id);
+        
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+        
+        // Remover regra
+        const initialCount = category.discountRules.length;
+        category.discountRules = category.discountRules.filter(
+            rule => rule.clientCode !== clientCode
+        );
+        
+        if (category.discountRules.length === initialCount) {
+            return res.status(404).json({
+                success: false,
+                message: 'Regra de desconto não encontrada para este cliente'
+            });
+        }
+        
+        await category.save();
+        
+        res.json({
+            success: true,
+            message: 'Regra de desconto removida com sucesso',
+            category: category.getSummary()
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao remover regra de desconto:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao remover regra de desconto',
+            error: error.message
+        });
+    }
+});
+
+// ===== CONSULTA DE PREÇOS PARA CLIENTES =====
+
+/**
+ * GET /api/pricing/client/:clientCode/photo/:driveFileId
+ * Obter preço de foto específica para cliente
+ */
+router.get('/client/:clientCode/photo/:driveFileId', async (req, res) => {
+    try {
+        const { clientCode, driveFileId } = req.params;
+        
+        const priceInfo = await PricingService.getPriceForClient(driveFileId, clientCode);
+        
+        res.json({
+            success: true,
+            priceInfo
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar preço para cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar preço',
+            error: error.message
+        });
+    }
+});
+
+// ===== RELATÓRIOS E ESTATÍSTICAS =====
+
+/**
+ * GET /api/pricing/reports/overview
+ * Relatório geral de preços
+ */
+router.get('/reports/overview', async (req, res) => {
+    try {
+        const report = await PricingService.generatePricingReport();
+        
+        res.json({
+            success: true,
+            report
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar relatório:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar relatório',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/stats
+ * Estatísticas rápidas para dashboard
+ */
+router.get('/stats', async (req, res) => {
+    try {
+        const stats = await PhotoCategory.getPricingStats();
+        
+        res.json({
+            success: true,
+            stats
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar estatísticas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar estatísticas',
+            error: error.message
+        });
+    }
+});
+
+// ===== UTILITÁRIOS =====
+
+/**
+ * POST /api/pricing/validate
+ * Validar dados de preços antes de aplicar
+ */
+router.post('/validate', async (req, res) => {
+    try {
+        const { pricesData } = req.body;
+        
+        if (!Array.isArray(pricesData)) {
+            return res.status(400).json({
+                success: false,
+                message: 'pricesData deve ser um array'
+            });
+        }
+        
+        const validation = PricingService.validatePricingData(pricesData);
+        
+        res.json({
+            success: validation.isValid,
+            validation
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro na validação:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro na validação',
+            error: error.message
+        });
+    }
+});
+
+module.exports = router;
