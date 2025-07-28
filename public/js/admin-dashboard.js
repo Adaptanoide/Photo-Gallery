@@ -28,15 +28,15 @@ class AdminDashboard {
         this.sidebarToggle = document.getElementById('sidebarToggle');
         this.adminMain = document.getElementById('adminMain');
         this.pageTitle = document.getElementById('pageTitle');
-        
+
         // Elementos de usuário
         this.userAvatar = document.getElementById('userAvatar');
         this.userName = document.getElementById('userName');
-        
+
         // Elementos de navegação
         this.navLinks = document.querySelectorAll('.nav-link');
         this.contentSections = document.querySelectorAll('.content-section');
-        
+
         // Elementos de loading
         this.loading = document.getElementById('loading');
     }
@@ -66,15 +66,46 @@ class AdminDashboard {
 
     // ===== AUTENTICAÇÃO =====
     checkAuthentication() {
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            console.log('❌ Token não encontrado, redirecionando...');
+        const sessionData = localStorage.getItem('sunshineSession');
+        if (!sessionData) {
+            console.log('❌ Sessão não encontrada, redirecionando...');
             window.location.href = '/';
             return;
         }
 
-        // Verificar se token é válido
-        this.verifyToken(token);
+        try {
+            const session = JSON.parse(sessionData);
+
+            // Verificar se sessão não expirou
+            if (session.expiresAt <= Date.now()) {
+                console.log('❌ Sessão expirada, redirecionando...');
+                localStorage.removeItem('sunshineSession');
+                window.location.href = '/';
+                return;
+            }
+
+            // Verificar se é admin
+            if (session.userType !== 'admin') {
+                console.log('❌ Acesso negado - não é admin, redirecionando...');
+                window.location.href = '/';
+                return;
+            }
+
+            // Verificar se tem token
+            if (!session.token) {
+                console.log('❌ Token não encontrado na sessão, redirecionando...');
+                window.location.href = '/';
+                return;
+            }
+
+            console.log('✅ Sessão admin válida encontrada');
+            this.verifyToken(session.token);
+
+        } catch (error) {
+            console.error('❌ Erro ao ler sessão:', error);
+            localStorage.removeItem('sunshineSession');
+            window.location.href = '/';
+        }
     }
 
     async verifyToken(token) {
@@ -102,12 +133,12 @@ class AdminDashboard {
 
     setUserInfo(user) {
         console.log(`👤 Usuário logado: ${user.username}`);
-        
+
         // Atualizar avatar com primeira letra
         if (this.userAvatar) {
             this.userAvatar.textContent = user.username.charAt(0).toUpperCase();
         }
-        
+
         // Atualizar nome
         if (this.userName) {
             this.userName.textContent = user.username;
@@ -210,10 +241,10 @@ class AdminDashboard {
     // ===== DASHBOARD DATA =====
     async loadDashboardData() {
         console.log('📊 Carregando dados do dashboard...');
-        
+
         try {
             this.showLoading();
-            
+
             // Carregar estatísticas em paralelo
             const [stats, recentSelections, popularProducts] = await Promise.all([
                 this.fetchStats(),
@@ -223,11 +254,11 @@ class AdminDashboard {
 
             // Atualizar cards de estatísticas
             this.updateStatsCards(stats);
-            
+
             // Atualizar tabelas
             this.updateRecentSelectionsTable(recentSelections);
             this.updatePopularProductsTable(popularProducts);
-            
+
             // Atualizar badges na sidebar
             this.updateSidebarBadges(stats);
 
@@ -243,7 +274,9 @@ class AdminDashboard {
 
     async fetchStats() {
         try {
-            const token = localStorage.getItem('adminToken');
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+            const token = session.token;
             const response = await fetch('/api/cart/stats/system', {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -251,7 +284,7 @@ class AdminDashboard {
             });
 
             const data = await response.json();
-            
+
             if (data.success) {
                 this.stats = data.data;
                 return data.data;
@@ -261,7 +294,7 @@ class AdminDashboard {
 
         } catch (error) {
             console.error('❌ Erro ao buscar estatísticas:', error);
-            
+
             // Dados de fallback para desenvolvimento
             return {
                 activeCarts: 0,
@@ -303,7 +336,7 @@ class AdminDashboard {
         try {
             const token = localStorage.getItem('adminToken');
             // TODO: Implementar API de produtos populares
-            
+
             // Dados de exemplo para desenvolvimento
             return [
                 {
@@ -439,7 +472,7 @@ class AdminDashboard {
     // ===== UTILITÁRIOS =====
     formatDate(date) {
         if (!date) return '-';
-        
+
         const d = new Date(date);
         return d.toLocaleDateString('pt-BR', {
             day: '2-digit',
@@ -459,7 +492,7 @@ class AdminDashboard {
             confirmed: 'Confirmado',
             finalized: 'Finalizado'
         };
-        
+
         return statusTexts[status] || status;
     }
 
@@ -512,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Verificar se estamos na página admin
     if (document.body.classList.contains('admin-body')) {
         window.adminDashboard = new AdminDashboard();
-        
+
         // Detectar seção da URL
         const hash = window.location.hash.substring(1);
         if (hash) {
