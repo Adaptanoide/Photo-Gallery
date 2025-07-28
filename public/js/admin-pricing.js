@@ -1117,12 +1117,6 @@ function showAddQuantityRuleForm() {
                         <input type="number" id="discountPercent" class="form-input" 
                             min="0" max="100" step="1" placeholder="5" required>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Descrição</label>
-                        <input type="text" id="ruleDescription" class="form-input" 
-                            placeholder="Ex: Desconto para pedidos médios" required>
-                    </div>
                 </div>
                 
                 <div class="form-actions">
@@ -1179,7 +1173,6 @@ async function handleQuantityRuleSubmit(e) {
     const maxQty = document.getElementById('maxQuantity').value ?
         parseInt(document.getElementById('maxQuantity').value) : null;
     const discount = parseInt(document.getElementById('discountPercent').value);
-    const description = document.getElementById('ruleDescription').value.trim();
 
     // Validações
     if (!minQty || minQty < 1) {
@@ -1192,15 +1185,14 @@ async function handleQuantityRuleSubmit(e) {
         return;
     }
 
-    if (!discount || discount < 0 || discount > 100) {
+    if (isNaN(discount) || discount < 0 || discount > 100) {
         adminPricing.showNotification('Desconto deve ser entre 0 e 100%', 'error');
         return;
     }
 
-    if (!description) {
-        adminPricing.showNotification('Descrição é obrigatória', 'error');
-        return;
-    }
+    // Gerar descrição automaticamente
+    const rangeText = maxQty ? `${minQty}-${maxQty} fotos` : `${minQty}+ fotos`;
+    const description = `${rangeText}: ${discount}% desconto`;
 
     try {
         console.log('📦 Criando nova regra de quantidade...');
