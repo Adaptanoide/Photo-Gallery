@@ -671,42 +671,64 @@ window.CartSystem = {
  * Toggle item no carrinho (chamada pelo botão do modal)
  */
 window.toggleCartItem = async function () {
+    console.log('🟡 toggleCartItem() executado'); // ← NOVO LOG
+
     const currentPhoto = CartSystem.getCurrentModalPhoto();
     if (!currentPhoto) {
+        console.log('❌ Nenhuma foto selecionada'); // ← NOVO LOG
         CartSystem.showNotification('Nenhuma foto selecionada', 'error');
         return;
     }
 
+    console.log('🟡 currentPhoto:', currentPhoto); // ← NOVO LOG
+
     try {
         if (CartSystem.isInCart(currentPhoto)) {
+            console.log('🟡 Removendo item do carrinho'); // ← NOVO LOG
             await CartSystem.removeItem(currentPhoto);
         } else {
+            console.log('🟡 Adicionando item ao carrinho'); // ← NOVO LOG
+
             // Buscar dados da foto atual
             const photoData = window.navigationState?.currentPhotos?.[window.navigationState.currentPhotoIndex];
+            console.log('🟡 photoData:', photoData); // ← NOVO LOG
 
             // Buscar preço da categoria atual
             const currentFolderId = window.navigationState?.currentFolderId;
+            console.log('🟡 currentFolderId para busca:', currentFolderId); // ← NOVO LOG
+
             let priceInfo = { hasPrice: false, price: 0, formattedPrice: 'Sem preço' };
 
             if (currentFolderId && window.loadCategoryPrice) {
                 try {
+                    console.log('🟡 Executando busca de preço...'); // ← NOVO LOG
                     priceInfo = await window.loadCategoryPrice(currentFolderId);
+                    console.log('🟡 Preço encontrado para carrinho:', priceInfo); // ← NOVO LOG
                 } catch (error) {
-                    console.warn('Erro ao buscar preço para carrinho:', error);
+                    console.warn('❌ Erro ao buscar preço para carrinho:', error);
                 }
+            } else {
+                console.log('🟡 Não vai buscar preço:', {
+                    currentFolderId,
+                    loadCategoryPrice: !!window.loadCategoryPrice
+                }); // ← NOVO LOG
             }
 
-            await CartSystem.addItem(currentPhoto, {
+            const itemData = {
                 fileName: photoData?.name || 'Produto sem nome',
                 category: window.navigationState?.currentPath?.[0]?.name || 'Categoria',
                 thumbnailUrl: photoData?.thumbnailMedium || photoData?.thumbnailLink,
                 price: priceInfo.price,
                 formattedPrice: priceInfo.formattedPrice,
                 hasPrice: priceInfo.hasPrice
-            });
+            };
+
+            console.log('🟡 Dados que serão enviados para addItem:', itemData); // ← NOVO LOG
+
+            await CartSystem.addItem(currentPhoto, itemData);
         }
     } catch (error) {
-        console.error('Erro no toggle do carrinho:', error);
+        console.error('❌ Erro no toggle do carrinho:', error);
     }
 };
 
