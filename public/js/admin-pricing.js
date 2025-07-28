@@ -967,26 +967,54 @@ function loadQuantityRules() {
     // TODO: Implementar carregamento de regras de quantidade
 }
 
-// ===== INTEGRAÇÃO COM SISTEMA EXISTENTE =====
+// ===== INTEGRAÇÃO AUTOMÁTICA COM MODAL =====
 
-// Integração com sistema existente - inicializar abas quando modal abrir
+/**
+ * Detectar quando modal de preços abre e inicializar abas automaticamente
+ */
+function setupModalAutoInitialization() {
+    const modal = document.getElementById('priceModal');
+    if (!modal) return;
+
+    // Observer para detectar quando modal fica visível
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const isVisible = modal.style.display === 'flex';
+
+                if (isVisible) {
+                    console.log('🔧 Modal de preços detectado como aberto - inicializando abas...');
+
+                    // Aguardar um pouco para DOM estar pronto
+                    setTimeout(() => {
+                        initializePriceTabs();
+                        switchPriceTab('base-price');
+                        console.log('✅ Abas inicializadas automaticamente');
+                    }, 200);
+                }
+            }
+        });
+    });
+
+    // Observar mudanças no atributo style do modal
+    observer.observe(modal, {
+        attributes: true,
+        attributeFilter: ['style']
+    });
+
+    console.log('👁️ Observer do modal configurado para auto-inicialização');
+}
+
+// Configurar observer quando DOM carregar
 document.addEventListener('DOMContentLoaded', () => {
-    // Aguardar adminPricing estar disponível
-    setTimeout(() => {
-        if (window.adminPricing && window.adminPricing.openPriceModal) {
-            const originalOpenPriceModal = window.adminPricing.openPriceModal;
-
-            window.adminPricing.openPriceModal = async function (categoryId, mode = 'create') {
-                await originalOpenPriceModal.call(this, categoryId, mode);
-
-                // Inicializar abas depois que modal abrir
-                setTimeout(() => {
-                    initializePriceTabs();
-                    switchPriceTab('base-price');
-                }, 150);
-            };
-        }
-    }, 1000);
+    setTimeout(setupModalAutoInitialization, 500);
 });
 
-console.log('🔖 Sistema de abas carregado e integrado');
+// Fallback: também tentar quando o script carrega
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupModalAutoInitialization);
+} else {
+    setupModalAutoInitialization();
+}
+
+console.log('🔖 Sistema de abas carregado com auto-inicialização');
