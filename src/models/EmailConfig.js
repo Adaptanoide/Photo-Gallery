@@ -185,7 +185,7 @@ emailConfigSchema.methods.testConnection = async function() {
     const nodemailer = require('nodemailer');
     
     try {
-        const transporter = nodemailer.createTransporter({
+        const transporter = nodemailer.createTransport({
             host: this.smtp.host,
             port: this.smtp.port,
             secure: this.smtp.secure,
