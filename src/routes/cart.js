@@ -361,6 +361,110 @@ router.post('/:sessionId/extend', validateSessionId, async (req, res) => {
     }
 });
 
+/**
+ * GET /api/cart/:sessionId/calculate-total
+ * Calcular total do carrinho com desconto por quantidade
+ */
+router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        console.log(`💰 Calculando total com descontos para carrinho: ${sessionId}`);
+
+        // Buscar carrinho
+        const cart = await CartService.getCart(sessionId);
+
+        if (!cart || cart.totalItems === 0) {
+            return res.json({
+                success: true,
+                data: {
+                    totalItems: 0,
+                    subtotal: 0,
+                    discountPercent: 0,
+                    discountAmount: 0,
+                    total: 0,
+                    hasDiscount: false,
+                    discountDescription: 'Carrinho vazio'
+                }
+            });
+        }
+
+        // Calcular subtotal (soma dos preços individuais)
+        let subtotal = 0;
+        let itemsWithPrice = 0;
+
+        for (const item of cart.items) {
+            if (item.hasPrice && item.price > 0) {
+                subtotal += item.price;
+                itemsWithPrice++;
+            }
+        }
+
+        console.log(`📊 Subtotal calculado: R$ ${subtotal.toFixed(2)} (${itemsWithPrice} itens com preço)`);
+
+        // Buscar desconto por quantidade
+        const QuantityDiscount = require('../models/QuantityDiscount');
+        const discountInfo = await QuantityDiscount.calculateDiscount(cart.totalItems);
+
+        console.log(`📦 Desconto por quantidade:`, discountInfo);
+
+        // Aplicar desconto sobre subtotal
+        let discountAmount = 0;
+        let total = subtotal;
+
+        if (discountInfo.discountPercent > 0 && subtotal > 0) {
+            discountAmount = (subtotal * discountInfo.discountPercent) / 100;
+            total = subtotal - discountAmount;
+        }
+
+        const result = {
+            sessionId: sessionId,
+            totalItems: cart.totalItems,
+            itemsWithPrice: itemsWithPrice,
+            subtotal: subtotal,
+            discountPercent: discountInfo.discountPercent,
+            discountAmount: discountAmount,
+            total: total,
+            hasDiscount: discountInfo.discountPercent > 0,
+            discountDescription: discountInfo.description,
+            discountRule: discountInfo.rule,
+            formattedSubtotal: `R$ ${subtotal.toFixed(2)}`,
+            formattedDiscountAmount: discountAmount > 0 ? `- R$ ${discountAmount.toFixed(2)}` : 'R$ 0,00',
+            formattedTotal: `R$ ${total.toFixed(2)}`,
+            calculations: {
+                itemBreakdown: cart.items.map(item => ({
+                    fileName: item.fileName,
+                    price: item.price,
+                    formattedPrice: item.formattedPrice,
+                    hasPrice: item.hasPrice
+                }))
+            }
+        };
+
+        console.log(`✅ Total final calculado:`, {
+            subtotal: result.formattedSubtotal,
+            desconto: `${discountInfo.discountPercent}%`,
+            valorDesconto: result.formattedDiscountAmount,
+            total: result.formattedTotal
+        });
+
+        res.json({
+            success: true,
+            message: 'Total calculado com sucesso',
+            data: result
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao calcular total do carrinho:', error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao calcular total',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
 // ===== MIDDLEWARE DE ERRO GLOBAL PARA ROTAS DE CARRINHO =====
 router.use((error, req, res, next) => {
     console.error('❌ Erro não tratado nas rotas de carrinho:', error);

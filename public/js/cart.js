@@ -386,31 +386,78 @@ window.CartSystem = {
     },
 
     /**
- * Calcular total do carrinho
- */
-    calculateCartTotal() {
-        let total = 0;
-        let itemsWithPrice = 0;
+         * Calcular total do carrinho COM desconto por quantidade - VERSÃO NOVA
+         */
+    async calculateCartTotal() {
+        try {
+            // Usar nova API que calcula com desconto por quantidade
+            const response = await fetch(`${this.config.apiBaseUrl}/${this.state.sessionId}/calculate-total`);
+            const result = await response.json();
 
-        this.state.items.forEach(item => {
-            if (item.hasPrice && item.price > 0) {
-                total += item.price;
-                itemsWithPrice++;
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Erro ao calcular total');
             }
-        });
 
-        return {
-            total,
-            itemsWithPrice,
-            formattedTotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
-            hasIncompletePrice: itemsWithPrice < this.state.items.length
-        };
+            const totals = result.data;
+
+            console.log(`💰 Total calculado pelo backend:`, {
+                itens: totals.totalItems,
+                subtotal: totals.formattedSubtotal,
+                desconto: `${totals.discountPercent}%`,
+                valorDesconto: totals.formattedDiscountAmount,
+                total: totals.formattedTotal
+            });
+
+            return {
+                totalItems: totals.totalItems,
+                itemsWithPrice: totals.itemsWithPrice,
+                subtotal: totals.subtotal,
+                discountPercent: totals.discountPercent,
+                discountAmount: totals.discountAmount,
+                total: totals.total,
+                hasDiscount: totals.hasDiscount,
+                discountDescription: totals.discountDescription,
+                formattedSubtotal: totals.formattedSubtotal,
+                formattedDiscountAmount: totals.formattedDiscountAmount,
+                formattedTotal: totals.formattedTotal,
+                hasIncompletePrice: totals.itemsWithPrice < totals.totalItems
+            };
+
+        } catch (error) {
+            console.error('❌ Erro ao calcular total do carrinho:', error);
+
+            // Fallback para cálculo simples em caso de erro
+            let total = 0;
+            let itemsWithPrice = 0;
+
+            this.state.items.forEach(item => {
+                if (item.hasPrice && item.price > 0) {
+                    total += item.price;
+                    itemsWithPrice++;
+                }
+            });
+
+            return {
+                totalItems: this.state.items.length,
+                itemsWithPrice,
+                subtotal: total,
+                discountPercent: 0,
+                discountAmount: 0,
+                total: total,
+                hasDiscount: false,
+                discountDescription: 'Erro no cálculo',
+                formattedSubtotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
+                formattedDiscountAmount: 'R$ 0,00',
+                formattedTotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
+                hasIncompletePrice: itemsWithPrice < this.state.items.length
+            };
+        }
     },
 
     /**
-     * Atualizar conteúdo da sidebar
-     */
-    updateSidebarContent() {
+         * Atualizar conteúdo da sidebar - VERSÃO COM DESCONTO POR QUANTIDADE
+         */
+    async updateSidebarContent() {
         // Mostrar/ocultar seções baseado no estado
         if (this.elements.loading) {
             this.elements.loading.style.display = this.state.isLoading ? 'block' : 'none';
@@ -434,18 +481,49 @@ window.CartSystem = {
         // Renderizar itens
         this.renderCartItems();
 
-        // NOVO: Atualizar total do carrinho no footer
+        // NOVO: Calcular total com desconto por quantidade
         if (this.elements.itemCount && this.state.totalItems > 0) {
-            const cartTotal = this.calculateCartTotal();
+            const cartTotal = await this.calculateCartTotal();
+
             const totalText = this.state.totalItems === 0 ? 'Carrinho vazio' :
                 this.state.totalItems === 1 ? '1 item' :
                     `${this.state.totalItems} itens`;
 
-            this.elements.itemCount.innerHTML = `
-            <div class="items-text">${totalText}</div>
-            ${cartTotal.total > 0 ? `<div class="cart-total-value">${cartTotal.formattedTotal}</div>` : ''}
-            ${cartTotal.hasIncompletePrice ? '<div class="price-note">* Alguns itens sem preço</div>' : ''}
-        `;
+            // Nova interface com subtotal, desconto e total
+            let totalHTML = `<div class="items-text">${totalText}</div>`;
+
+            if (cartTotal.total > 0) {
+                // Se há desconto, mostrar breakdown
+                if (cartTotal.hasDiscount) {
+                    totalHTML += `
+                        <div class="cart-breakdown">
+                            <div class="cart-subtotal">
+                                <span>Subtotal:</span>
+                                <span>${cartTotal.formattedSubtotal}</span>
+                            </div>
+                            <div class="cart-discount">
+                                <span>Desconto ${cartTotal.discountPercent}%:</span>
+                                <span>${cartTotal.formattedDiscountAmount}</span>
+                            </div>
+                            <div class="cart-total-final">
+                                <span><strong>Total:</strong></span>
+                                <span><strong>${cartTotal.formattedTotal}</strong></span>
+                            </div>
+                            <div class="discount-note">${cartTotal.discountDescription}</div>
+                        </div>
+                    `;
+                } else {
+                    // Sem desconto, mostrar total simples
+                    totalHTML += `<div class="cart-total-value">${cartTotal.formattedTotal}</div>`;
+                }
+
+                // Aviso sobre itens sem preço
+                if (cartTotal.hasIncompletePrice) {
+                    totalHTML += '<div class="price-note">* Alguns itens sem preço</div>';
+                }
+            }
+
+            this.elements.itemCount.innerHTML = totalHTML;
         }
     },
 
