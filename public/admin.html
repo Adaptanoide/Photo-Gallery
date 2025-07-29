@@ -612,10 +612,74 @@
                     </div>
                 </div>
 
-                <!-- Seção Seleções (Hidden por padrão) -->
+                <!-- Seção Seleções -->
                 <div id="section-selections" class="content-section" style="display: none;">
-                    <h2>Gestão de Seleções - Em Desenvolvimento</h2>
-                    <p>Esta seção será implementada na próxima fase.</p>
+                    <!-- Cabeçalho -->
+                    <div class="selections-section-header">
+                        <h2 class="selections-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            Gestão de Seleções
+                        </h2>
+                        <div class="selections-actions">
+                            <button id="btnRefreshSelections" class="btn btn-secondary">
+                                <i class="fas fa-sync-alt"></i>
+                                Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="selections-filters">
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Status</label>
+                                <select id="filterSelectionStatus" class="filter-select">
+                                    <option value="pending">Pendentes</option>
+                                    <option value="confirmed">Confirmadas</option>
+                                    <option value="cancelled">Canceladas</option>
+                                    <option value="finalized">Finalizadas</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Cliente</label>
+                                <input type="text" id="searchSelectionClient" class="filter-input" 
+                                    placeholder="Código ou nome do cliente...">
+                            </div>
+                            <button id="btnApplySelectionFilters" class="btn-filter">
+                                <i class="fas fa-filter"></i>
+                                Filtrar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Seleções -->
+                    <div class="selections-table-container">
+                        <div class="table-header">
+                            <h3 class="table-title">Seleções de Clientes</h3>
+                        </div>
+
+                        <table class="selections-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Seleção</th>
+                                    <th>Cliente</th>
+                                    <th>Itens</th>
+                                    <th>Valor Total</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="selectionsTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        Carregando seleções...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Seção Relatórios (Hidden por padrão) -->
@@ -862,6 +926,7 @@
     <script src="js/admin-clients.js"></script>
     <script src="js/admin-pricing.js"></script>
     <script src="js/admin-config.js"></script>
+    <script src="js/admin-selections.js"></script>
     
 </body>
 
