@@ -5,34 +5,35 @@ const Cart = require('../models/Cart');
 const Selection = require('../models/Selection');
 const Product = require('../models/Product');
 const { GoogleDriveService } = require('../services');
+const EmailService = require('../services/EmailService');
 
 const router = express.Router();
 
 /**
  * POST /api/selection/finalize
- * Finalizar seleção do cliente - mover fotos para RESERVED
+ * Finalizar seleção do cliente - mover fotos para RESERVED + enviar email
  */
 router.post('/finalize', async (req, res) => {
     const session = await mongoose.startSession();
-    
+
     try {
         return await session.withTransaction(async () => {
             const { sessionId, clientCode, clientName } = req.body;
-            
+
             console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
-            
+
             // 1. Buscar carrinho ativo
             const cart = await Cart.findActiveBySession(sessionId).session(session);
-            
+
             if (!cart || cart.totalItems === 0) {
                 return res.status(400).json({
                     success: false,
                     message: 'Carrinho vazio ou não encontrado'
                 });
             }
-            
+
             console.log(`📦 Carrinho encontrado: ${cart.totalItems} itens`);
-            
+
             // 2. Buscar produtos detalhados
             const productIds = cart.items.map(item => item.productId);
             const products = await Product.find({
@@ -40,31 +41,31 @@ router.post('/finalize', async (req, res) => {
                 status: 'reserved',
                 'reservedBy.sessionId': sessionId
             }).session(session);
-            
+
             if (products.length !== cart.totalItems) {
                 throw new Error('Alguns itens do carrinho não estão mais disponíveis');
             }
-            
+
             console.log(`✅ Produtos validados: ${products.length} itens`);
-            
+
             // 3. Gerar ID único para a seleção
             const selectionId = Selection.generateSelectionId();
-            
+
             // 4. Criar pasta do cliente no Google Drive
             console.log(`📁 Criando pasta para cliente no Google Drive...`);
-            
+
             const folderResult = await GoogleDriveService.createClientSelectionFolder(
                 clientCode,
                 clientName,
                 cart.totalItems
             );
-            
+
             if (!folderResult.success) {
                 throw new Error('Erro ao criar pasta no Google Drive');
             }
-            
+
             console.log(`✅ Pasta criada: ${folderResult.folderName}`);
-            
+
             // 5. Agrupar produtos por categoria para criar subpastas
             const categoriesMap = {};
             products.forEach(product => {
@@ -73,9 +74,9 @@ router.post('/finalize', async (req, res) => {
                 }
                 categoriesMap[product.category].push(product);
             });
-            
+
             const categories = Object.keys(categoriesMap);
-            
+
             // 6. Criar subpastas por categoria
             let categorySubfolders = {};
             if (categories.length > 1) {
@@ -85,7 +86,7 @@ router.post('/finalize', async (req, res) => {
                     categories
                 );
             }
-            
+
             // 7. Preparar dados dos produtos para movimentação
             const photosToMove = products.map(product => {
                 const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
@@ -97,23 +98,31 @@ router.post('/finalize', async (req, res) => {
                     thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl
                 };
             });
-            
+
             // 8. Mover fotos no Google Drive
             console.log(`📸 Movendo ${photosToMove.length} fotos para pasta de seleção...`);
-            
+
             const moveResult = await GoogleDriveService.movePhotosToSelection(
                 photosToMove,
                 folderResult.folderId,
                 categorySubfolders
             );
-            
+
             if (!moveResult.success) {
                 throw new Error('Erro ao mover fotos no Google Drive');
             }
-            
+
             console.log(`✅ Movimentação concluída: ${moveResult.summary.successful} sucessos, ${moveResult.summary.failed} erros`);
-            
-            // 9. Criar registro de seleção no MongoDB
+
+            // 9. Calcular valor total dos itens
+            let totalValue = 0;
+            cart.items.forEach(item => {
+                if (item.hasPrice && item.price > 0) {
+                    totalValue += item.price;
+                }
+            });
+
+            // 10. Criar registro de seleção no MongoDB
             const selectionData = {
                 selectionId,
                 sessionId,
@@ -122,7 +131,7 @@ router.post('/finalize', async (req, res) => {
                 items: products.map(product => {
                     const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
                     const moveResultItem = moveResult.results.find(r => r.photoId === product.driveFileId);
-                    
+
                     return {
                         productId: product._id,
                         driveFileId: product.driveFileId,
@@ -131,13 +140,13 @@ router.post('/finalize', async (req, res) => {
                         thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
                         originalPath: moveResultItem?.oldParent || 'unknown',
                         newPath: moveResultItem?.newParent || folderResult.folderId,
-                        price: product.price || 0,
+                        price: cartItem?.price || 0,
                         selectedAt: cartItem?.addedAt || new Date(),
                         movedAt: moveResultItem?.success ? new Date() : null
                     };
                 }),
                 totalItems: cart.totalItems,
-                totalValue: 0, // Será calculado automaticamente
+                totalValue: totalValue,
                 status: 'pending',
                 googleDriveInfo: {
                     clientFolderId: folderResult.folderId,
@@ -147,32 +156,68 @@ router.post('/finalize', async (req, res) => {
                 },
                 reservationExpiredAt: new Date(Date.now() + (24 * 60 * 60 * 1000)) // 24 horas para decidir
             };
-            
+
             const selection = new Selection(selectionData);
             selection.addMovementLog('created', `Seleção criada com ${cart.totalItems} itens`);
             selection.addMovementLog('moved', `Fotos movidas para ${folderResult.folderName}`);
-            
+
             await selection.save({ session });
-            
+
             console.log(`✅ Seleção salva no MongoDB: ${selectionId}`);
-            
-            // 10. Atualizar status dos produtos para 'selected'
+
+            // 11. Atualizar status dos produtos para 'sold'
             await Product.updateMany(
                 { _id: { $in: productIds } },
                 {
-                    $set: { status: 'sold' }, // Temporariamente como 'sold' até ter status 'selected'
+                    $set: { status: 'sold' },
                     $unset: { 'reservedBy': 1, 'cartAddedAt': 1 }
                 }
             ).session(session);
-            
-            // 11. Desativar carrinho
+
+            // 12. Desativar carrinho
             cart.isActive = false;
             cart.notes = `Finalizado como seleção ${selectionId}`;
             await cart.save({ session });
-            
+
             console.log(`✅ Carrinho desativado e produtos atualizados`);
-            
-            // 12. Resposta de sucesso
+
+            // 13. NOVO: Enviar email de notificação (em background, não bloquear resposta)
+            setImmediate(async () => {
+                try {
+                    console.log(`📧 Enviando notificação de nova seleção...`);
+
+                    const emailService = EmailService.getInstance();
+                    const emailResult = await emailService.notifyNewSelection({
+                        selectionId,
+                        clientCode,
+                        clientName,
+                        totalItems: cart.totalItems,
+                        totalValue: totalValue,
+                        googleDriveInfo: {
+                            clientFolderName: folderResult.folderName
+                        }
+                    });
+
+                    if (emailResult.success) {
+                        console.log(`✅ Email de notificação enviado com sucesso`);
+
+                        // Adicionar log na seleção
+                        selection.addMovementLog('email_sent', `Email de notificação enviado para admins`);
+                        await selection.save();
+                    } else {
+                        console.warn(`⚠️ Falha ao enviar email de notificação:`, emailResult.error);
+
+                        // Adicionar log de falha
+                        selection.addMovementLog('email_failed', `Falha ao enviar email: ${emailResult.error}`, false, emailResult.error);
+                        await selection.save();
+                    }
+
+                } catch (emailError) {
+                    console.error('❌ Erro no envio de email (background):', emailError);
+                }
+            });
+
+            // 14. Resposta de sucesso (sem aguardar email)
             res.json({
                 success: true,
                 message: 'Seleção finalizada com sucesso!',
@@ -180,6 +225,7 @@ router.post('/finalize', async (req, res) => {
                     selectionId,
                     clientFolderName: folderResult.folderName,
                     totalItems: cart.totalItems,
+                    totalValue: totalValue,
                     status: 'pending'
                 },
                 googleDrive: {
@@ -194,10 +240,10 @@ router.post('/finalize', async (req, res) => {
                 }
             });
         });
-        
+
     } catch (error) {
         console.error('❌ Erro ao finalizar seleção:', error);
-        
+
         res.status(500).json({
             success: false,
             message: 'Erro ao finalizar seleção',
@@ -216,23 +262,23 @@ router.post('/finalize', async (req, res) => {
 router.get('/:selectionId', async (req, res) => {
     try {
         const { selectionId } = req.params;
-        
+
         const selection = await Selection.findOne({ selectionId })
             .populate('items.productId');
-        
+
         if (!selection) {
             return res.status(404).json({
                 success: false,
                 message: 'Seleção não encontrada'
             });
         }
-        
+
         res.json({
             success: true,
             selection: selection.getSummary(),
             details: selection
         });
-        
+
     } catch (error) {
         console.error('❌ Erro ao buscar seleção:', error);
         res.status(500).json({
@@ -251,15 +297,15 @@ router.get('/client/:clientCode', async (req, res) => {
     try {
         const { clientCode } = req.params;
         const limit = parseInt(req.query.limit) || 10;
-        
+
         const selections = await Selection.findByClient(clientCode, limit);
-        
+
         res.json({
             success: true,
             selections: selections.map(s => s.getSummary()),
             total: selections.length
         });
-        
+
     } catch (error) {
         console.error('❌ Erro ao buscar seleções do cliente:', error);
         res.status(500).json({

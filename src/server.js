@@ -43,7 +43,8 @@ app.use('/api/client', clientRoutes);
 app.use('/api/drive', driveRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
-app.use('/api/pricing', pricingRoutes); // ← NOVA LINHA
+app.use('/api/pricing', pricingRoutes);
+app.use('/api/email-config', require('./routes/email-config'));
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {
