@@ -24,11 +24,6 @@ const productSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
-    status: {                     // <– primeira definição (pode até duplicar, mas era seu código)
-        type: String,
-        enum: ['available', 'reserved', 'sold'],
-        default: 'available'
-    },
     thumbnailUrl: {
         type: String
     },
@@ -38,19 +33,10 @@ const productSchema = new mongoose.Schema({
     size: {
         type: Number
     },
-    reservedBy: {                 // <– primeira definição
-        type: String
-    },
-    reservedAt: {
-        type: Date
-    },
-    soldAt: {
-        type: Date
-    },
-    // ===== NOVOS CAMPOS PARA CARRINHO =====
-    status: {                     // <– segunda definição
+    // ===== CAMPOS ÚNICOS (SEM DUPLICAÇÃO) =====
+    status: {
         type: String,
-        enum: ['available', 'reserved', 'sold'],
+        enum: ['available', 'reserved', 'reserved_pending', 'sold'],  // ← NOVO STATUS ADICIONADO
         default: 'available',
         index: true
     },
@@ -71,9 +57,15 @@ const productSchema = new mongoose.Schema({
     cartAddedAt: {
         type: Date,
         sparse: true
+    },
+    reservedAt: {
+        type: Date
+    },
+    soldAt: {
+        type: Date
     }
 }, {
-    timestamps: true             // <- aqui fecha o Schema
+    timestamps: true
 });
 
 // ===== ÍNDICES PARA PERFORMANCE =====
