@@ -165,18 +165,18 @@ async function saveSmtpConfig() {
                 name: formData.get('senderName'),
                 email: formData.get('senderEmail')
             },
-            notifications: currentConfig?.notifications || {
+            notifications: {
                 newSelection: {
                     enabled: true,
-                    recipients: []
+                    recipients: currentConfig?.notifications?.newSelection?.recipients || []
                 },
                 selectionConfirmed: {
                     enabled: true,
-                    recipients: []
+                    recipients: currentConfig?.notifications?.selectionConfirmed?.recipients || []
                 },
                 selectionCancelled: {
                     enabled: false,
-                    recipients: []
+                    recipients: currentConfig?.notifications?.selectionCancelled?.recipients || []
                 }
             }
         };
