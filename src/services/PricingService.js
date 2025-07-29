@@ -264,7 +264,7 @@ class PricingService {
      */
     static async getAdminCategoriesList(filters = {}) {
         try {
-            const query = { isActive: true, photoCount: { $gt: 0 } };
+            const query = { isActive: true, photoCount: { $gte: 0 } };
 
             // Aplicar filtros
             if (filters.hasPrice !== undefined) {
