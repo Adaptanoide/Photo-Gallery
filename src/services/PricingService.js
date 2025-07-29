@@ -85,11 +85,10 @@ class PricingService {
 
             // Iniciar exploração
             const structure = await exploreFolder(this.DRIVE_FOLDER_ROOT);
-
-            // Extrair apenas pastas com fotos (pastas "folha")
+            // Extrair todas as pastas finais (com ou sem fotos)
             const foldersWithPhotos = this.extractFoldersWithPhotos(structure);
 
-            console.log(`📂 Encontradas ${foldersWithPhotos.length} pastas com fotos`);
+            console.log(`📂 Encontradas ${foldersWithPhotos.length} pastas finais (${foldersWithPhotos.filter(f => f.photoCount > 0).length} com fotos, ${foldersWithPhotos.filter(f => f.photoCount === 0).length} vazias)`);
 
             // Sincronizar com banco de dados
             const syncResults = await this.syncWithDatabase(foldersWithPhotos, forceRefresh);
@@ -109,21 +108,21 @@ class PricingService {
     }
 
     /**
-     * Extrair recursivamente todas as pastas que contêm fotos
+     * Extrair recursivamente todas as pastas finais (folhas da árvore)
      * @param {object} structure - Estrutura do Google Drive
-     * @returns {array} Array de pastas com fotos
+     * @returns {array} Array de pastas finais (com ou sem fotos)
      */
     static extractFoldersWithPhotos(structure) {
         const foldersWithPhotos = [];
 
         function extract(node) {
-            // Se a pasta tem fotos, adicionar à lista
-            if (node.hasPhotos && node.photoCount > 0) {
+            // Se é uma pasta final (folha), adicionar à lista independente de ter fotos
+            if (node.subfolders.length === 0) {
                 foldersWithPhotos.push({
                     googleDriveId: node.id,
                     folderName: node.name,
                     googleDrivePath: node.googleDrivePath,
-                    photoCount: node.photoCount,
+                    photoCount: node.photoCount || 0, // Aceitar 0 fotos
                     level: node.level,
                     modifiedTime: node.modifiedTime
                 });
