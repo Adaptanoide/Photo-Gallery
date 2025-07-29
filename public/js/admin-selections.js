@@ -49,7 +49,10 @@ class AdminSelections {
             });
 
             const response = await fetch(`/api/admin/selections?${params}`, {
-                headers: adminPricing.getAuthHeaders()
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
             const data = await response.json();
@@ -175,18 +178,8 @@ class AdminSelections {
     }
 }
 
-// Aguardar adminPricing estar disponível
+// Inicializar quando DOM carregar
 let adminSelections;
 document.addEventListener('DOMContentLoaded', () => {
-    // Aguardar adminPricing estar disponível
-    const initSelections = () => {
-        if (window.adminPricing && window.adminPricing.getAuthHeaders) {
-            adminSelections = new AdminSelections();
-        } else {
-            // Tentar novamente em 100ms
-            setTimeout(initSelections, 100);
-        }
-    };
-    
-    initSelections();
+    adminSelections = new AdminSelections();
 });
