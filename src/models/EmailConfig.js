@@ -180,21 +180,6 @@ emailConfigSchema.index({ configName: 1 });
 
 // ===== MÉTODOS DO SCHEMA =====
 
-// Criptografar senha antes de salvar
-emailConfigSchema.pre('save', async function(next) {
-    if (this.isModified('smtp.auth.pass')) {
-        // Criptografar senha SMTP
-        const saltRounds = 10;
-        this.smtp.auth.pass = await bcrypt.hash(this.smtp.auth.pass, saltRounds);
-    }
-    next();
-});
-
-// Método para descriptografar senha
-emailConfigSchema.methods.getDecryptedPassword = async function(plainPassword) {
-    return await bcrypt.compare(plainPassword, this.smtp.auth.pass);
-};
-
 // Método para testar configuração
 emailConfigSchema.methods.testConnection = async function() {
     const nodemailer = require('nodemailer');
