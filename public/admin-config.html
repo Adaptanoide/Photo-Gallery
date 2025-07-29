@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Sunshine Cowhides Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="css/admin-config.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-sun"></i>
+            <span>Admin Panel</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="/admin#clients"><i class="fas fa-users"></i> Gestão de Clientes</a></li>
+            <li><a href="/admin#pricing"><i class="fas fa-dollar-sign"></i> Gestão de Preços</a></li>
+            <li><a href="/admin#selections"><i class="fas fa-shopping-cart"></i> Gestão de Seleções</a></li>
+            <li><a href="/admin#reports"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+            <li><a href="#" class="active"><i class="fas fa-cog"></i> Configurações</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="adminUsername">admin</span>
+            </div>
+            <button onclick="logout()" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="content-header">
+            <h1><i class="fas fa-cog"></i> Configurações do Sistema</h1>
+            <p>Configure notificações por email e outras configurações do sistema</p>
+        </header>
+
+        <!-- Loading Initial -->
+        <div id="configLoading" class="loading-section">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+            </div>
+            <p>Carregando configurações...</p>
+        </div>
+
+        <!-- Content -->
+        <div id="configContent" style="display: none;">
+            
+            <!-- Email Configuration Section -->
+            <section class="config-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-envelope"></i> Configurações de Email</h2>
+                    <p>Configure o servidor SMTP para envio de notificações</p>
+                </div>
+
+                <div class="config-cards">
+                    <!-- SMTP Configuration -->
+                    <div class="config-card">
+                        <h3><i class="fas fa-server"></i> Servidor SMTP</h3>
+                        
+                        <form id="smtpConfigForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="smtpHost">Host SMTP</label>
+                                    <input type="text" id="smtpHost" name="host" placeholder="smtp.gmail.com" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="smtpPort">Porta</label>
+                                    <input type="number" id="smtpPort" name="port" placeholder="587" required>
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <label for="smtpUser">Email (Usuário)</label>
+                                    <input type="email" id="smtpUser" name="user" placeholder="seuemail@gmail.com" required>
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <label for="smtpPass">Senha de App</label>
+                                    <input type="password" id="smtpPass" name="pass" placeholder="Senha gerada pelo Google" required>
+                                    <small>Use a senha de app gerada pelo Google, não sua senha normal</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="senderName">Nome do Remetente</label>
+                                    <input type="text" id="senderName" name="senderName" placeholder="Sunshine Cowhides" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="senderEmail">Email do Remetente</label>
+                                    <input type="email" id="senderEmail" name="senderEmail" placeholder="seuemail@gmail.com" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" onclick="testConnection()" class="btn btn-secondary">
+                                    <i class="fas fa-plug"></i> Testar Conexão
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Salvar SMTP
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Recipients Configuration -->
+                    <div class="config-card">
+                        <h3><i class="fas fa-users"></i> Destinatários</h3>
+                        
+                        <div class="recipients-section">
+                            <h4>📩 Nova Seleção</h4>
+                            <p>Quem receberá email quando cliente finalizar seleção</p>
+                            
+                            <div class="add-recipient">
+                                <input type="text" id="newRecipientName" placeholder="Nome">
+                                <input type="email" id="newRecipientEmail" placeholder="email@exemplo.com">
+                                <button onclick="addRecipient('newSelection')" class="btn btn-sm">
+                                    <i class="fas fa-plus"></i> Adicionar
+                                </button>
+                            </div>
+                            
+                            <div id="recipientsList" class="recipients-list">
+                                <!-- Recipients will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Section -->
+                <div class="config-card test-section">
+                    <h3><i class="fas fa-flask"></i> Teste de Email</h3>
+                    <p>Envie um email de teste para verificar se tudo está funcionando</p>
+                    
+                    <div class="test-form">
+                        <input type="email" id="testEmail" placeholder="Seu email para teste" required>
+                        <button onclick="sendTestEmail()" class="btn btn-warning">
+                            <i class="fas fa-paper-plane"></i> Enviar Teste
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Section -->
+            <section class="config-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Estatísticas de Email</h2>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-envelope-open"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalEmailsSent">-</h3>
+                            <p>Emails Enviados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="lastEmailSent">-</h3>
+                            <p>Último Email</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="configStatus">-</h3>
+                            <p>Status</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Error Section -->
+        <div id="configError" class="error-section" style="display: none;">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                <h3>Erro ao carregar configurações</h3>
+                <p id="errorMessage">Não foi possível carregar as configurações.</p>
+                <button onclick="loadConfiguration()" class="btn btn-primary">
+                    <i class="fas fa-redo"></i> Tentar novamente
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/admin-config.js"></script>
+</body>
+</html>
