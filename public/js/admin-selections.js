@@ -175,8 +175,18 @@ class AdminSelections {
     }
 }
 
-// Inicializar quando DOM carregar
+// Aguardar adminPricing estar disponível
 let adminSelections;
 document.addEventListener('DOMContentLoaded', () => {
-    adminSelections = new AdminSelections();
+    // Aguardar adminPricing estar disponível
+    const initSelections = () => {
+        if (window.adminPricing && window.adminPricing.getAuthHeaders) {
+            adminSelections = new AdminSelections();
+        } else {
+            // Tentar novamente em 100ms
+            setTimeout(initSelections, 100);
+        }
+    };
+    
+    initSelections();
 });
