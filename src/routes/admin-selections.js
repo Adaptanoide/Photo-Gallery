@@ -7,8 +7,8 @@ const GoogleDriveService = require('../services/GoogleDriveService');
 const { authenticateToken } = require('./auth');
 const router = express.Router();
 
-// TEMPORÁRIO: Comentar auth para teste
-// router.use(authenticateToken);
+// Autenticação obrigatória para todas as rotas
+router.use(authenticateToken);
 
 /**
  * GET /api/admin/selections

@@ -30,6 +30,21 @@ class AdminSelections {
         });
     }
 
+    // ===== NOVO MÉTODO DE AUTENTICAÇÃO (IGUAL AO ADMIN-PRICING) =====
+    getAuthHeaders() {
+        const sessionData = localStorage.getItem('sunshineSession');
+        if (sessionData) {
+            const session = JSON.parse(sessionData);
+            return {
+                'Authorization': `Bearer ${session.token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+        return {
+            'Content-Type': 'application/json'
+        };
+    }
+
     async loadSelections() {
         try {
             const tableBody = document.getElementById('selectionsTableBody');
@@ -49,10 +64,7 @@ class AdminSelections {
             });
 
             const response = await fetch(`/api/selections?${params}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: this.getAuthHeaders()  // ← USAR O NOVO MÉTODO
             });
 
             const data = await response.json();
