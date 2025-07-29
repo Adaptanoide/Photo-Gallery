@@ -77,15 +77,20 @@ router.post('/finalize', async (req, res) => {
 
             const categories = Object.keys(categoriesMap);
 
-            // 6. Criar subpastas por categoria
-            /*let categorySubfolders = {};
-            if (categories.length > 1) {
-                console.log(`📁 Criando subpastas para ${categories.length} categorias...`);
+            // 6. Criar subpastas por categoria - SEMPRE
+            console.log(`📁 Criando subpastas para ${categories.length} categorias...`);
+
+            let categorySubfolders = {};
+            try {
                 categorySubfolders = await GoogleDriveService.createCategorySubfolders(
                     folderResult.folderId,
                     categories
                 );
-            }*/
+                console.log(`✅ Subpastas criadas:`, Object.keys(categorySubfolders));
+            } catch (error) {
+                console.warn(`⚠️ Erro ao criar subpastas, usando pasta principal:`, error.message);
+                categorySubfolders = {}; // Fallback: usar pasta principal
+            }
 
             // 7. Preparar dados dos produtos para movimentação
             const photosToMove = products.map(product => {
