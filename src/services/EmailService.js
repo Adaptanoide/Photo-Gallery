@@ -15,7 +15,7 @@ class EmailService {
     async initialize() {
         try {
             this.config = await EmailConfig.findActiveConfig();
-            
+
             if (!this.config) {
                 console.warn('⚠️ Nenhuma configuração de email ativa encontrada');
                 return false;
@@ -68,7 +68,7 @@ class EmailService {
             }
 
             // Preparar destinatários
-            const recipients = Array.isArray(to) ? 
+            const recipients = Array.isArray(to) ?
                 to.map(recipient => `${recipient.name} <${recipient.email}>`) :
                 to;
 
@@ -97,7 +97,7 @@ class EmailService {
 
         } catch (error) {
             console.error('❌ Erro ao enviar email:', error);
-            
+
             return {
                 success: false,
                 error: error.message
@@ -110,13 +110,21 @@ class EmailService {
      */
     async notifyNewSelection(selectionData) {
         try {
+            // Garantir que o service está inicializado
+            if (!this.isReady()) {
+                const initialized = await this.initialize();
+                if (!initialized) {
+                    throw new Error('EmailService não pôde ser inicializado');
+                }
+            }
+
             if (!this.config?.notifications.newSelection.enabled) {
                 console.log('📧 Notificação de nova seleção desabilitada');
                 return { success: true, message: 'Notificação desabilitada' };
             }
 
             const recipients = this.config.notifications.newSelection.recipients;
-            
+
             if (!recipients || recipients.length === 0) {
                 console.warn('⚠️ Nenhum destinatário configurado para nova seleção');
                 return { success: false, message: 'Nenhum destinatário configurado' };
@@ -163,7 +171,7 @@ class EmailService {
             }
 
             const recipients = this.config.notifications.selectionConfirmed.recipients;
-            
+
             if (!recipients || recipients.length === 0) {
                 return { success: false, message: 'Nenhum destinatário configurado' };
             }
@@ -203,7 +211,7 @@ class EmailService {
             }
 
             const recipients = this.config.notifications.selectionCancelled.recipients;
-            
+
             if (!recipients || recipients.length === 0) {
                 return { success: false, message: 'Nenhum destinatário configurado' };
             }
@@ -273,12 +281,12 @@ class EmailService {
      */
     applyTemplate(template, data) {
         let result = template;
-        
+
         for (const [key, value] of Object.entries(data)) {
             const regex = new RegExp(`{{${key}}}`, 'g');
             result = result.replace(regex, value);
         }
-        
+
         return result;
     }
 
