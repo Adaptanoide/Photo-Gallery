@@ -157,7 +157,7 @@ router.post('/finalize', async (req, res) => {
                     clientFolderId: folderResult.folderId,
                     clientFolderName: folderResult.folderName,
                     clientFolderPath: folderResult.path,
-                    categorySubfolders: new Map(Object.entries(categorySubfolders))
+                    categorySubfolders: categorySubfolders // Usar objeto simples
                 },
                 reservationExpiredAt: new Date(Date.now() + (24 * 60 * 60 * 1000)) // 24 horas para decidir
             };

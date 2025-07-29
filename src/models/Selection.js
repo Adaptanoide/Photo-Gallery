@@ -93,8 +93,8 @@ const selectionSchema = new mongoose.Schema({
             type: String // Caminho completo da pasta
         },
         categorySubfolders: {
-            type: Map,
-            of: String // Mapeamento categoria -> ID da pasta
+            type: Object, // Objeto simples em vez de Map
+            default: {}
         },
         finalFolderId: {
             type: String // ID da pasta final (quando finalizada)
@@ -155,7 +155,7 @@ selectionSchema.index({ reservationExpiredAt: 1 });
 // ===== MÉTODOS DO SCHEMA =====
 
 // Método para adicionar log de movimento
-selectionSchema.methods.addMovementLog = function(action, details, success = true, error = null) {
+selectionSchema.methods.addMovementLog = function (action, details, success = true, error = null) {
     this.movementLog.push({
         action,
         details,
@@ -166,25 +166,25 @@ selectionSchema.methods.addMovementLog = function(action, details, success = tru
 };
 
 // Método para calcular valor total
-selectionSchema.methods.calculateTotalValue = function() {
+selectionSchema.methods.calculateTotalValue = function () {
     this.totalValue = this.items.reduce((total, item) => total + (item.price || 0), 0);
     return this.totalValue;
 };
 
 // Método para verificar se seleção expirou
-selectionSchema.methods.isExpired = function() {
+selectionSchema.methods.isExpired = function () {
     if (!this.reservationExpiredAt) return false;
     return new Date() > this.reservationExpiredAt;
 };
 
 // Método para obter resumo da seleção
-selectionSchema.methods.getSummary = function() {
+selectionSchema.methods.getSummary = function () {
     const categoryCounts = {};
-    
+
     this.items.forEach(item => {
         categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
     });
-    
+
     return {
         selectionId: this.selectionId,
         clientCode: this.clientCode,
@@ -199,13 +199,13 @@ selectionSchema.methods.getSummary = function() {
 };
 
 // Método para marcar como confirmada
-selectionSchema.methods.confirm = function() {
+selectionSchema.methods.confirm = function () {
     this.status = 'confirmed';
     this.addMovementLog('confirmed', 'Seleção confirmada pelo cliente');
 };
 
 // Método para finalizar
-selectionSchema.methods.finalize = function(adminUser) {
+selectionSchema.methods.finalize = function (adminUser) {
     this.status = 'finalized';
     this.processedBy = adminUser;
     this.processedAt = new Date();
@@ -214,7 +214,7 @@ selectionSchema.methods.finalize = function(adminUser) {
 };
 
 // Método para cancelar
-selectionSchema.methods.cancel = function(reason, adminUser = null) {
+selectionSchema.methods.cancel = function (reason, adminUser = null) {
     this.status = 'cancelled';
     if (adminUser) {
         this.processedBy = adminUser;
@@ -226,14 +226,14 @@ selectionSchema.methods.cancel = function(reason, adminUser = null) {
 // ===== MÉTODOS ESTÁTICOS =====
 
 // Gerar ID único de seleção
-selectionSchema.statics.generateSelectionId = function() {
+selectionSchema.statics.generateSelectionId = function () {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 5);
     return `SEL_${timestamp}_${random}`.toUpperCase();
 };
 
 // Buscar seleções por status
-selectionSchema.statics.findByStatus = function(status, limit = 50) {
+selectionSchema.statics.findByStatus = function (status, limit = 50) {
     return this.find({ status })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -241,7 +241,7 @@ selectionSchema.statics.findByStatus = function(status, limit = 50) {
 };
 
 // Buscar seleções de um cliente
-selectionSchema.statics.findByClient = function(clientCode, limit = 10) {
+selectionSchema.statics.findByClient = function (clientCode, limit = 10) {
     return this.find({ clientCode })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -249,7 +249,7 @@ selectionSchema.statics.findByClient = function(clientCode, limit = 10) {
 };
 
 // Buscar seleções expiradas
-selectionSchema.statics.findExpired = function() {
+selectionSchema.statics.findExpired = function () {
     const now = new Date();
     return this.find({
         status: 'pending',
@@ -258,7 +258,7 @@ selectionSchema.statics.findExpired = function() {
 };
 
 // Estatísticas de seleções
-selectionSchema.statics.getStatistics = async function() {
+selectionSchema.statics.getStatistics = async function () {
     const stats = await this.aggregate([
         {
             $group: {
@@ -269,7 +269,7 @@ selectionSchema.statics.getStatistics = async function() {
             }
         }
     ]);
-    
+
     const totalSelections = await this.countDocuments();
     const avgItemsPerSelection = await this.aggregate([
         {
@@ -279,7 +279,7 @@ selectionSchema.statics.getStatistics = async function() {
             }
         }
     ]);
-    
+
     return {
         byStatus: stats,
         totalSelections,
@@ -291,23 +291,23 @@ selectionSchema.statics.getStatistics = async function() {
 // ===== MIDDLEWARE =====
 
 // Pre-save: calcular valores
-selectionSchema.pre('save', function(next) {
+selectionSchema.pre('save', function (next) {
     // Atualizar contagem de itens
     this.totalItems = this.items.length;
-    
+
     // Calcular valor total
     this.calculateTotalValue();
-    
+
     // Definir data de expiração se for nova seleção
     if (this.isNew && !this.reservationExpiredAt) {
         this.reservationExpiredAt = new Date(Date.now() + (2 * 60 * 60 * 1000)); // 2 horas
     }
-    
+
     next();
 });
 
 // Post-save: log
-selectionSchema.post('save', function() {
+selectionSchema.post('save', function () {
     console.log(`📋 Seleção ${this.selectionId} salva - ${this.totalItems} itens, status: ${this.status}`);
 });
 

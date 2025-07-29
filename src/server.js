@@ -45,6 +45,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
+app.use('/api/admin/selections', require('./routes/admin-selections'));
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {
