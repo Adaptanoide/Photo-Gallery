@@ -38,6 +38,7 @@ console.log('✅ Services carregados: CartService, PricingService');
 
 // Rotas
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/selections', require('./routes/admin-selections'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/drive', driveRoutes);
@@ -45,7 +46,6 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
-app.use('/api/admin/selections', require('./routes/admin-selections'));
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {
