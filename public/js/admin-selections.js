@@ -49,9 +49,7 @@ class AdminSelections {
             });
 
             const response = await fetch(`/api/admin/selections?${params}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                }
+                headers: adminPricing.getAuthHeaders()
             });
 
             const data = await response.json();
