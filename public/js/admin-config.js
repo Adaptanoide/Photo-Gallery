@@ -7,20 +7,6 @@
 let currentConfig = null;
 let isLoading = false;
 
-// ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔧 Inicializando configurações...');
-    
-    // Verificar autenticação
-    checkAuthentication();
-    
-    // Carregar configurações
-    loadConfiguration();
-    
-    // Setup form handlers
-    setupFormHandlers();
-});
-
 // ===== AUTENTICAÇÃO =====
 function checkAuthentication() {
     const session = getSession();
@@ -461,3 +447,44 @@ function logout() {
 }
 
 console.log('🔧 admin-config.js carregado');
+
+// ===== INICIALIZAÇÃO GLOBAL =====
+let adminConfig = null;
+
+// Inicializar quando a seção de configurações for ativada
+document.addEventListener('DOMContentLoaded', () => {
+    // Observar mudanças na seção ativa
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const section = document.getElementById('section-settings');
+                if (section && section.style.display !== 'none' && !adminConfig) {
+                    // Seção de configurações foi ativada
+                    console.log('🔧 Seção de configurações ativada - inicializando...');
+                    adminConfig = true;
+                    
+                    // Remover o event listener DOMContentLoaded original e executar inicialização
+                    checkAuthentication();
+                    loadConfiguration();
+                    setupFormHandlers();
+                }
+            }
+        });
+    });
+
+    const settingsSection = document.getElementById('section-settings');
+    if (settingsSection) {
+        observer.observe(settingsSection, { attributes: true });
+
+        // Se já estiver visível, inicializar imediatamente
+        if (settingsSection.style.display !== 'none') {
+            console.log('🔧 Seção de configurações já visível - inicializando...');
+            adminConfig = true;
+            checkAuthentication();
+            loadConfiguration();
+            setupFormHandlers();
+        }
+    }
+});
+
+console.log('🔧 Observer de configurações configurado');
