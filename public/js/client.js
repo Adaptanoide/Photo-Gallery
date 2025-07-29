@@ -586,34 +586,64 @@ document.addEventListener('DOMContentLoaded', () => {
 // Cache de preços por categoria
 window.categoryPrices = new Map();
 
-// Buscar preço da categoria atual
+// Buscar preço da categoria atual - VERSÃO CORRIGIDA
 async function loadCategoryPrice(folderId) {
     try {
         if (window.categoryPrices.has(folderId)) {
             return window.categoryPrices.get(folderId);
         }
 
-        const response = await fetch(`/api/pricing/category-price?googleDriveId=${folderId}`);
+        // NOVO: Buscar código do cliente da sessão
+        let clientCode = null;
+        const savedSession = localStorage.getItem('sunshineSession');
+        if (savedSession) {
+            const session = JSON.parse(savedSession);
+            clientCode = session.accessCode;
+        }
+
+        console.log(`🏷️ Buscando preço para categoria ${folderId}, cliente: ${clientCode || 'ANÔNIMO'}`);
+
+        // NOVO: Incluir clientCode na requisição
+        const url = `/api/pricing/category-price?googleDriveId=${folderId}${clientCode ? `&clientCode=${clientCode}` : ''}`;
+        const response = await fetch(url);
         const data = await response.json();
 
         let priceInfo = {
             hasPrice: false,
             price: 0,
-            formattedPrice: 'Sem preço'
+            formattedPrice: 'Sem preço',
+            priceSource: 'base'
         };
 
         if (data.success && data.category) {
             priceInfo = {
-                hasPrice: data.category.basePrice > 0,
-                price: data.category.basePrice || 0,
-                formattedPrice: data.category.formattedPrice
+                hasPrice: data.category.hasPrice,
+                price: data.category.finalPrice || 0,  // NOVO: usar finalPrice em vez de basePrice
+                formattedPrice: data.category.formattedPrice,
+                priceSource: data.category.priceSource || 'base'  // NOVO: fonte do preço
             };
+
+            // NOVO: Log detalhado para debug
+            console.log(`✅ Preço carregado:`, {
+                categoria: data.category.displayName,
+                cliente: clientCode,
+                precoBase: data.category.basePrice,
+                precoFinal: data.category.finalPrice,
+                precoFormatado: data.category.formattedPrice,
+                fonte: data.category.priceSource
+            });
         }
 
         window.categoryPrices.set(folderId, priceInfo);
         return priceInfo;
+        
     } catch (error) {
-        console.error('Erro ao buscar preço:', error);
-        return { hasPrice: false, price: 0, formattedPrice: 'Erro no preço' };
+        console.error('❌ Erro ao buscar preço:', error);
+        return { 
+            hasPrice: false, 
+            price: 0, 
+            formattedPrice: 'Erro no preço',
+            priceSource: 'erro'
+        };
     }
 }

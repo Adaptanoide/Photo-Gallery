@@ -122,30 +122,61 @@ router.get('/test/categories', async (req, res) => {
     }
 });
 
-// Buscar preço por Google Drive ID (para cliente)
+// Buscar preço por Google Drive ID (para cliente) - VERSÃO CORRIGIDA
 router.get('/category-price', async (req, res) => {
     try {
-        const { googleDriveId } = req.query;
+        const { googleDriveId, clientCode } = req.query;
+        
+        console.log(`🏷️ Buscando preço para categoria ${googleDriveId}, cliente: ${clientCode || 'ANÔNIMO'}`);
+        
         const category = await PhotoCategory.findByDriveId(googleDriveId);
 
         if (!category) {
+            console.log(`❌ Categoria não encontrada: ${googleDriveId}`);
             return res.json({
                 success: false,
                 message: 'Categoria não encontrada'
             });
         }
 
+        // NOVO: Calcular preço específico para o cliente
+        let finalPrice = category.basePrice;
+        let priceSource = 'base';
+        
+        if (clientCode) {
+            // Usar método do model para calcular preço personalizado
+            const clientPrice = category.getPriceForClient(clientCode);
+            if (clientPrice !== category.basePrice) {
+                finalPrice = clientPrice;
+                priceSource = 'personalizado';
+            }
+        }
+
+        const priceInfo = {
+            _id: category._id,
+            displayName: category.displayName,
+            basePrice: category.basePrice,
+            finalPrice: finalPrice,
+            priceSource: priceSource,
+            formattedPrice: finalPrice > 0 ? `R$ ${finalPrice.toFixed(2)}` : 'Sem preço',
+            hasPrice: finalPrice > 0
+        };
+
+        console.log(`✅ Preço calculado:`, {
+            categoria: category.displayName,
+            cliente: clientCode,
+            precoBase: category.basePrice,
+            precoFinal: finalPrice,
+            fonte: priceSource
+        });
+
         res.json({
             success: true,
-            category: {
-                _id: category._id,
-                displayName: category.displayName,
-                basePrice: category.basePrice,
-                formattedPrice: category.basePrice > 0 ?
-                    `R$ ${category.basePrice.toFixed(2)}` : 'Sem preço'
-            }
+            category: priceInfo
         });
+
     } catch (error) {
+        console.error('❌ Erro ao buscar preço:', error);
         res.status(500).json({
             success: false,
             message: 'Erro interno do servidor'
