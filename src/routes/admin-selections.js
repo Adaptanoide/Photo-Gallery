@@ -5,6 +5,9 @@ const GoogleDriveService = require('../services/GoogleDriveService');
 
 const router = express.Router();
 
+// Middleware de autenticação para todas as rotas admin
+router.use(authenticateToken);
+
 /**
  * GET /api/admin/selections
  * Listar todas as seleções pending para admin
