@@ -6,8 +6,17 @@ const { authenticateToken } = require('./auth');
 
 const router = express.Router();
 
-// Middleware de autenticação para todas as rotas admin
-router.use(authenticateToken);
+// ROTA DE TESTE SEM AUTH
+router.get('/test', async (req, res) => {
+    res.json({
+        success: true,
+        message: 'Rota de teste funcionando',
+        timestamp: new Date()
+    });
+});
+
+// TESTE: Comentar auth temporariamente
+// router.use(authenticateToken);
 
 /**
  * GET /api/admin/selections
