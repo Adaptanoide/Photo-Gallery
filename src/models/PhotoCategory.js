@@ -31,7 +31,7 @@ const photoCategorySchema = new mongoose.Schema({
     photoCount: {
         type: Number,
         required: true,
-        min: 1 // Só pastas com fotos
+        min: 0 // Só pastas com fotos
     },
     
     // Preço base da categoria
@@ -222,7 +222,7 @@ photoCategorySchema.statics.findNeedingSync = function(hoursOld = 24) {
 // Estatísticas de preços
 photoCategorySchema.statics.getPricingStats = async function() {
     const stats = await this.aggregate([
-        { $match: { isActive: true, photoCount: { $gt: 0 } } },
+        { $match: { isActive: true, photoCount: { $gte: 0 } } },
         {
             $group: {
                 _id: null,
