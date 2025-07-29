@@ -1,3 +1,5 @@
+//src/models/AccesCode.js
+
 const mongoose = require('mongoose');
 
 const accessCodeSchema = new mongoose.Schema({

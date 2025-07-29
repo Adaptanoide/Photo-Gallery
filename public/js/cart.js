@@ -1,3 +1,5 @@
+//public/js/cart.js
+
 /**
  * CART.JS - SUNSHINE COWHIDES
  * Sistema de carrinho modular para e-commerce de produtos únicos

@@ -1,3 +1,5 @@
+//src/models/QuantityDiscount.js
+
 const mongoose = require('mongoose');
 
 const quantityDiscountSchema = new mongoose.Schema({

@@ -1,3 +1,5 @@
+//src/models/Selection.js
+
 const mongoose = require('mongoose');
 
 const selectionSchema = new mongoose.Schema({

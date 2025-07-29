@@ -1,4 +1,4 @@
-// admin-selections.js - Gestão de Seleções
+//public/js/admin-selections.js - Gestão de Seleções
 class AdminSelections {
     constructor() {
         this.currentPage = 1;

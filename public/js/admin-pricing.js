@@ -1,3 +1,5 @@
+//public/js/admin-princing.js
+
 /**
  * ADMIN PRICING - SUNSHINE COWHIDES
  * JavaScript para gestão de preços integrada ao Google Drive

@@ -1,3 +1,5 @@
+//src/models/PhotoCategory.js
+
 const mongoose = require('mongoose');
 
 const photoCategorySchema = new mongoose.Schema({

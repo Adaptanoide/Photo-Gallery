@@ -1,3 +1,5 @@
+//public/js/admin-client.js
+
 /**
  * ADMIN CLIENTS - SUNSHINE COWHIDES
  * Gestão completa de códigos de acesso e clientes

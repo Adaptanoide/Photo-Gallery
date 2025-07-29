@@ -1,3 +1,5 @@
+//public/js/admin-dashboard.js
+
 /**
  * ADMIN DASHBOARD - SUNSHINE COWHIDES
  * JavaScript principal para área administrativa

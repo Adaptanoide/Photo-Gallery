@@ -1,3 +1,5 @@
+//src/services/PricingService.js
+
 const { google } = require('googleapis');
 const PhotoCategory = require('../models/PhotoCategory');
 

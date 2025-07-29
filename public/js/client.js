@@ -1,3 +1,5 @@
+//public/js/client.js
+
 /**
  * CLIENT.JS - SUNSHINE COWHIDES
  * JavaScript específico para interface do cliente

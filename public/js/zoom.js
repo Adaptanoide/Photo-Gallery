@@ -1,3 +1,5 @@
+//public/js/zoom.js
+
 /**
  * ZOOM SIMPLIFICADO E MELHORADO - SUNSHINE COWHIDES
  * Versão focada em experiência confiável do usuário

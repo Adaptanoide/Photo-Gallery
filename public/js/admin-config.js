@@ -1,3 +1,5 @@
+//public/js/admin-config.js
+
 /**
  * ADMIN-CONFIG.JS - Configurações do Sistema
  * Interface para gerenciar configurações de email e notificações
