@@ -2,6 +2,7 @@ const express = require('express');
 const Selection = require('../models/Selection');
 const Product = require('../models/Product');
 const GoogleDriveService = require('../services/GoogleDriveService');
+const { authenticateToken } = require('./auth');
 
 const router = express.Router();
 
