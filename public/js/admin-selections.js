@@ -48,7 +48,7 @@ class AdminSelections {
                 limit: 20
             });
 
-            const response = await fetch(`/api/admin/selections?${params}`, {
+            const response = await fetch(`/api/selections?${params}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
                     'Content-Type': 'application/json'

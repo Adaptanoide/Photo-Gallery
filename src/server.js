@@ -38,7 +38,7 @@ console.log('✅ Services carregados: CartService, PricingService');
 
 // Rotas
 app.use('/api/auth', authRoutes);
-app.use('/api/admin/selections', require('./routes/admin-selections'));
+app.use('/api/selections', require('./routes/admin-selections'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/drive', driveRoutes);
