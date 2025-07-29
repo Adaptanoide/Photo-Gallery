@@ -8,14 +8,14 @@ const emailConfigSchema = new mongoose.Schema({
         default: 'default',
         unique: true
     },
-    
+
     // Status da configuração
     isActive: {
         type: Boolean,
         default: true,
         index: true
     },
-    
+
     // Configurações SMTP
     smtp: {
         host: {
@@ -45,7 +45,7 @@ const emailConfigSchema = new mongoose.Schema({
             }
         }
     },
-    
+
     // Configurações de envio
     sender: {
         name: {
@@ -61,7 +61,7 @@ const emailConfigSchema = new mongoose.Schema({
             lowercase: true
         }
     },
-    
+
     // Destinatários para notificações
     notifications: {
         newSelection: {
@@ -107,7 +107,7 @@ const emailConfigSchema = new mongoose.Schema({
             }]
         }
     },
-    
+
     // Templates de email
     templates: {
         newSelection: {
@@ -133,7 +133,7 @@ Sistema Sunshine Cowhides`
             }
         }
     },
-    
+
     // Configurações de teste
     testMode: {
         enabled: {
@@ -146,7 +146,7 @@ Sistema Sunshine Cowhides`
             lowercase: true
         }
     },
-    
+
     // Estatísticas
     stats: {
         totalEmailsSent: {
@@ -160,13 +160,13 @@ Sistema Sunshine Cowhides`
             type: Date
         }
     },
-    
+
     // Metadados
     createdBy: {
         type: String,
         required: true
     },
-    
+
     lastModifiedBy: {
         type: String
     }
@@ -181,9 +181,9 @@ emailConfigSchema.index({ configName: 1 });
 // ===== MÉTODOS DO SCHEMA =====
 
 // Método para testar configuração
-emailConfigSchema.methods.testConnection = async function() {
+emailConfigSchema.methods.testConnection = async function () {
     const nodemailer = require('nodemailer');
-    
+
     try {
         const transporter = nodemailer.createTransport({
             host: this.smtp.host,
@@ -194,33 +194,33 @@ emailConfigSchema.methods.testConnection = async function() {
                 pass: this.smtp.auth.pass // Usar senha já descriptografada
             }
         });
-        
+
         await transporter.verify();
-        
+
         // Atualizar estatísticas
         this.stats.lastTestAt = new Date();
         await this.save();
-        
+
         return { success: true, message: 'Conexão SMTP testada com sucesso' };
-        
+
     } catch (error) {
-        return { 
-            success: false, 
-            message: 'Erro na conexão SMTP', 
-            error: error.message 
+        return {
+            success: false,
+            message: 'Erro na conexão SMTP',
+            error: error.message
         };
     }
 };
 
 // Método para incrementar contador de emails
-emailConfigSchema.methods.incrementEmailCounter = function() {
+emailConfigSchema.methods.incrementEmailCounter = function () {
     this.stats.totalEmailsSent += 1;
     this.stats.lastEmailSent = new Date();
     return this.save();
 };
 
 // Método para obter resumo da configuração
-emailConfigSchema.methods.getSummary = function() {
+emailConfigSchema.methods.getSummary = function () {
     return {
         configName: this.configName,
         isActive: this.isActive,
@@ -232,11 +232,7 @@ emailConfigSchema.methods.getSummary = function() {
             // Não retornar senha
         },
         sender: this.sender,
-        notifications: {
-            newSelection: this.notifications.newSelection.enabled,
-            selectionConfirmed: this.notifications.selectionConfirmed.enabled,
-            selectionCancelled: this.notifications.selectionCancelled.enabled
-        },
+        notifications: this.notifications,
         stats: this.stats,
         updatedAt: this.updatedAt
     };
@@ -245,12 +241,12 @@ emailConfigSchema.methods.getSummary = function() {
 // ===== MÉTODOS ESTÁTICOS =====
 
 // Buscar configuração ativa
-emailConfigSchema.statics.findActiveConfig = function() {
+emailConfigSchema.statics.findActiveConfig = function () {
     return this.findOne({ isActive: true });
 };
 
 // Criar configuração padrão
-emailConfigSchema.statics.createDefaultConfig = function(adminUser) {
+emailConfigSchema.statics.createDefaultConfig = function (adminUser) {
     return new this({
         configName: 'default',
         isActive: true,
@@ -292,7 +288,7 @@ emailConfigSchema.statics.createDefaultConfig = function(adminUser) {
 // ===== MIDDLEWARE =====
 
 // Post-save: log
-emailConfigSchema.post('save', function() {
+emailConfigSchema.post('save', function () {
     console.log(`📧 Configuração de email salva: ${this.configName} (ativa: ${this.isActive})`);
 });
 
