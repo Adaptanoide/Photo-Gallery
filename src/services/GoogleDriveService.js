@@ -480,6 +480,120 @@ class GoogleDriveService {
             throw error;
         }
     }
+
+    /**
+     * Reverter foto para localização original usando caminho hierárquico
+     */
+    static async revertPhotoToOriginalLocation(photoId, originalHierarchicalPath) {
+        try {
+            console.log(`🔄 Revertendo foto ${photoId} para: ${originalHierarchicalPath}`);
+
+            // Encontrar ID da pasta de destino pelo caminho hierárquico
+            const destinationFolderId = await this.findFolderByHierarchicalPath(originalHierarchicalPath);
+
+            if (!destinationFolderId) {
+                throw new Error(`Pasta de destino não encontrada para caminho: ${originalHierarchicalPath}`);
+            }
+
+            // Mover foto para pasta original
+            const result = await this.movePhotoToSelection(photoId, destinationFolderId);
+
+            console.log(`✅ Foto revertida: ${result.photoName} → ${originalHierarchicalPath}`);
+
+            return {
+                success: true,
+                photoId,
+                originalPath: originalHierarchicalPath,
+                destinationFolderId
+            };
+
+        } catch (error) {
+            console.error(`❌ Erro ao reverter foto ${photoId}:`, error);
+            return {
+                success: false,
+                photoId,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Encontrar ID da pasta pelo caminho hierárquico
+     * Exemplo: "1 Colombian Cowhides → 1. Medium → Brown & White M"
+     */
+    static async findFolderByHierarchicalPath(hierarchicalPath) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            // Dividir caminho em partes
+            const pathParts = hierarchicalPath.split(' → ').map(part => part.trim());
+
+            console.log(`🔍 Procurando pasta pelo caminho: ${pathParts.join(' → ')}`);
+
+            let currentFolderId = this.FOLDER_IDS.ACTUAL_PICTURES;
+
+            // Navegar pela hierarquia
+            for (const folderName of pathParts) {
+                // Buscar pasta com este nome dentro da pasta atual
+                const response = await drive.files.list({
+                    q: `name='${folderName}' and '${currentFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`,
+                    fields: 'files(id, name)'
+                });
+
+                if (response.data.files.length === 0) {
+                    console.warn(`⚠️ Pasta '${folderName}' não encontrada em '${currentFolderId}'`);
+                    return null;
+                }
+
+                if (response.data.files.length > 1) {
+                    console.warn(`⚠️ Múltiplas pastas encontradas com nome '${folderName}'`);
+                }
+
+                currentFolderId = response.data.files[0].id;
+                console.log(`📁 Encontrada: ${folderName} (${currentFolderId})`);
+            }
+
+            console.log(`✅ Pasta de destino encontrada: ${currentFolderId}`);
+            return currentFolderId;
+
+        } catch (error) {
+            console.error(`❌ Erro ao encontrar pasta pelo caminho '${hierarchicalPath}':`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Limpar pasta vazia (após cancelamento)
+     */
+    static async cleanupEmptyFolder(folderId) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            console.log(`🗑️ Verificando se pasta ${folderId} está vazia para limpeza...`);
+
+            // Verificar se pasta tem arquivos/subpastas
+            const contents = await drive.files.list({
+                q: `'${folderId}' in parents and trashed=false`,
+                fields: 'files(id)'
+            });
+
+            if (contents.data.files.length === 0) {
+                // Pasta está vazia, pode deletar
+                await drive.files.delete({ fileId: folderId });
+                console.log(`✅ Pasta vazia removida: ${folderId}`);
+
+                return { success: true, deleted: true };
+            } else {
+                console.log(`📁 Pasta não está vazia (${contents.data.files.length} itens), mantendo`);
+                return { success: true, deleted: false };
+            }
+
+        } catch (error) {
+            console.warn(`⚠️ Erro ao limpar pasta ${folderId}:`, error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
 }
 
 module.exports = GoogleDriveService;
