@@ -1,8 +1,8 @@
-//public/js/admin-princing.js
+//public/js/admin-pricing.js
 
 /**
  * ADMIN PRICING - SUNSHINE COWHIDES
- * JavaScript para gestão de preços integrada ao Google Drive
+ * JavaScript for price management integrated with Google Drive
  */
 
 class AdminPricing {
@@ -21,24 +21,24 @@ class AdminPricing {
         this.init();
     }
 
-    // ===== INICIALIZAÇÃO =====
+    // ===== INITIALIZATION =====
     init() {
-        console.log('💰 Inicializando Gestão de Preços...');
+        console.log('💰 Initializing Price Management...');
         this.setupElements();
         this.setupEventListeners();
         this.checkSyncStatus();
-        console.log('✅ Gestão de Preços inicializada');
+        console.log('✅ Price Management initialized');
     }
 
     setupElements() {
-        // Container principal
+        // Main container
         this.section = document.getElementById('section-pricing');
         if (!this.section) {
-            console.warn('⚠️ Seção de preços não encontrada');
+            console.warn('⚠️ Pricing section not found');
             return;
         }
 
-        // Elementos principais
+        // Main elements
         this.syncStatusCard = document.getElementById('syncStatusCard');
         this.pricingStats = document.getElementById('pricingStats');
         this.pricingTable = document.getElementById('pricingTableBody');
@@ -48,15 +48,15 @@ class AdminPricing {
         this.priceModal = document.getElementById('priceModal');
         this.priceForm = document.getElementById('priceForm');
 
-        // LOG PARA DEBUG ← ADICIONAR ESTA LINHA
-        console.log('🔵 Modal encontrado:', this.priceModal);
+        // DEBUG LOG
+        console.log('🔵 Modal found:', this.priceModal);
 
         // Loading
         this.loading = document.getElementById('loading');
     }
 
     setupEventListeners() {
-        // Botões principais
+        // Main buttons
         const btnSyncDrive = document.getElementById('btnSyncDrive');
         const btnForcSync = document.getElementById('btnForcSync');
         const btnPricingReport = document.getElementById('btnPricingReport');
@@ -65,7 +65,7 @@ class AdminPricing {
         if (btnForcSync) btnForcSync.addEventListener('click', () => this.syncDrive(true));
         if (btnPricingReport) btnPricingReport.addEventListener('click', () => this.generateReport());
 
-        // Filtros
+        // Filters
         const searchInput = document.getElementById('searchCategories');
         const filterPrice = document.getElementById('filterPriceStatus');
         const sortSelect = document.getElementById('sortCategories');
@@ -76,7 +76,7 @@ class AdminPricing {
         if (sortSelect) sortSelect.addEventListener('change', (e) => this.handleSort(e.target.value));
         if (btnApplyFilters) btnApplyFilters.addEventListener('click', () => this.applyFilters());
 
-        // Paginação
+        // Pagination
         const btnPrevPage = document.getElementById('btnPrevPage');
         const btnNextPage = document.getElementById('btnNextPage');
 
@@ -88,7 +88,7 @@ class AdminPricing {
             this.priceForm.addEventListener('submit', (e) => this.handlePriceSubmit(e));
         }
 
-        // Fechar modal clicando fora
+        // Close modal by clicking outside
         if (this.priceModal) {
             this.priceModal.addEventListener('click', (e) => {
                 if (e.target === this.priceModal || e.target.classList.contains('price-modal-overlay')) {
@@ -97,7 +97,7 @@ class AdminPricing {
             });
         }
 
-        // NOVO: Fechar modal com ESC
+        // NEW: Close modal with ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('priceModal');
@@ -107,11 +107,11 @@ class AdminPricing {
             }
         });
 
-        // NOVO: Log para debug
-        console.log('🔵 Event listeners configurados para modal');
+        // NEW: Debug log
+        console.log('🔵 Event listeners configured for modal');
     }
 
-    // ===== SINCRONIZAÇÃO COM GOOGLE DRIVE =====
+    // ===== GOOGLE DRIVE SYNCHRONIZATION =====
     async checkSyncStatus() {
         try {
             const response = await fetch('/api/pricing/sync/status', {
@@ -124,22 +124,22 @@ class AdminPricing {
                 this.updateSyncStatus(data.syncStatus);
                 this.updateStats(data.statistics);
 
-                // Carregar categorias se sync está ok
+                // Load categories if sync is ok
                 if (!data.syncStatus.isOutdated) {
                     await this.loadCategories();
                 }
             }
 
         } catch (error) {
-            console.error('❌ Erro ao verificar status de sync:', error);
-            this.showSyncStatus('Erro ao verificar status', 'danger');
+            console.error('❌ Error checking sync status:', error);
+            this.showSyncStatus('Error checking status', 'danger');
         }
     }
 
     async syncDrive(forceRefresh = false) {
         try {
             this.setLoading(true);
-            this.showSyncStatus('Sincronizando com Google Drive...', 'warning');
+            this.showSyncStatus('Synchronizing with Google Drive...', 'warning');
 
             const response = await fetch('/api/pricing/sync', {
                 method: 'POST',
@@ -154,26 +154,26 @@ class AdminPricing {
 
             if (data.success) {
                 const { created, updated, deactivated, errors } = data.summary;
-                const message = `Sincronização concluída: ${created} criadas, ${updated} atualizadas, ${deactivated} removidas, ${errors} erros`;
+                const message = `Sync completed: ${created} created, ${updated} updated, ${deactivated} removed, ${errors} errors`;
 
                 this.showSyncStatus(message, errors > 0 ? 'warning' : 'success');
 
-                // Recarregar dados
+                // Reload data
                 await Promise.all([
                     this.checkSyncStatus(),
                     this.loadCategories()
                 ]);
 
-                this.showNotification('Sincronização concluída com sucesso!', 'success');
+                this.showNotification('Synchronization completed successfully!', 'success');
 
             } else {
-                throw new Error(data.message || 'Erro na sincronização');
+                throw new Error(data.message || 'Synchronization error');
             }
 
         } catch (error) {
-            console.error('❌ Erro na sincronização:', error);
-            this.showSyncStatus(`Erro na sincronização: ${error.message}`, 'danger');
-            this.showNotification('Erro na sincronização', 'error');
+            console.error('❌ Synchronization error:', error);
+            this.showSyncStatus(`Sync error: ${error.message}`, 'danger');
+            this.showNotification('Synchronization error', 'error');
         } finally {
             this.setLoading(false);
         }
@@ -185,12 +185,12 @@ class AdminPricing {
         const { needingSyncCount, lastSyncDate, isOutdated, hoursOld } = syncStatus;
 
         if (isOutdated) {
-            const message = `${needingSyncCount} categorias precisam de sincronização. Última sincronização: ${hoursOld}h atrás`;
+            const message = `${needingSyncCount} categories need synchronization. Last sync: ${hoursOld}h ago`;
             this.showSyncStatus(message, 'warning');
         } else {
             const message = lastSyncDate ?
-                `Sistema sincronizado. Última atualização: ${this.formatDate(lastSyncDate)}` :
-                'Sistema aguardando primeira sincronização';
+                `System synchronized. Last update: ${this.formatDate(lastSyncDate)}` :
+                'System awaiting first synchronization';
             this.showSyncStatus(message, lastSyncDate ? 'success' : 'warning');
         }
     }
@@ -207,7 +207,7 @@ class AdminPricing {
         this.syncStatusCard.style.display = 'block';
     }
 
-    // ===== CARREGAMENTO DE CATEGORIAS =====
+    // ===== CATEGORY LOADING =====
     async loadCategories() {
         try {
             const params = new URLSearchParams({
@@ -228,18 +228,18 @@ class AdminPricing {
                 this.renderCategoriesTable();
                 this.updatePagination(data.pagination);
 
-                console.log(`✅ ${this.categories.length} categorias carregadas`);
+                console.log(`✅ ${this.categories.length} categories loaded`);
             } else {
-                throw new Error(data.message || 'Erro ao carregar categorias');
+                throw new Error(data.message || 'Error loading categories');
             }
 
         } catch (error) {
-            console.error('❌ Erro ao carregar categorias:', error);
-            this.showError('Erro ao carregar categorias');
+            console.error('❌ Error loading categories:', error);
+            this.showError('Error loading categories');
         }
     }
 
-    // ===== RENDERIZAÇÃO DA TABELA =====
+    // ===== TABLE RENDERING =====
     renderCategoriesTable() {
         if (!this.pricingTable) return;
 
@@ -248,8 +248,8 @@ class AdminPricing {
                 <tr>
                     <td colspan="7" class="text-center">
                         <i class="fas fa-inbox"></i>
-                        Nenhuma categoria encontrada
-                        <br><small style="color: #666;">Tente sincronizar com o Google Drive</small>
+                        No categories found
+                        <br><small style="color: var(--text-muted);">Try synchronizing with Google Drive</small>
                     </td>
                 </tr>
             `;
@@ -265,15 +265,15 @@ class AdminPricing {
                     ${category.googleDrivePath}
                 </td>
                 <td class="photos-count-cell">
-                    ${category.photoCount} foto${category.photoCount !== 1 ? 's' : ''}
+                    ${category.photoCount} photo${category.photoCount !== 1 ? 's' : ''}
                 </td>
                 <td class="price-cell ${category.basePrice > 0 ? 'has-price' : 'no-price'}">
-                    ${category.basePrice > 0 ? `R$ ${category.basePrice.toFixed(2)}` : 'Sem preço'}
+                    ${category.basePrice > 0 ? `$${category.basePrice.toFixed(2)}` : 'No price'}
                 </td>
                 <td class="discounts-cell">
                     ${category.hasCustomRules ?
-                `<span class="discount-badge">Personalizado</span>` :
-                `<span class="no-discounts">Nenhum</span>`
+                `<span class="discount-badge">Custom</span>` :
+                `<span class="no-discounts">None</span>`
             }
                 </td>
                 <td class="last-update-cell">
@@ -284,16 +284,16 @@ class AdminPricing {
                         ${category.basePrice > 0 ?
                 `<button class="btn-pricing-action btn-edit-price" 
                                      onclick="adminPricing.openPriceModal('${category._id}', 'edit')">
-                                <i class="fas fa-edit"></i> Editar
+                                <i class="fas fa-edit"></i> Edit
                             </button>` :
                 `<button class="btn-pricing-action btn-set-price" 
                                      onclick="adminPricing.openPriceModal('${category._id}', 'create')">
-                                <i class="fas fa-dollar-sign"></i> Definir
+                                <i class="fas fa-dollar-sign"></i> Set
                             </button>`
             }
                         <button class="btn-pricing-action btn-view-details" 
                                 onclick="adminPricing.viewCategoryDetails('${category._id}')">
-                            <i class="fas fa-eye"></i> Ver
+                            <i class="fas fa-eye"></i> View
                         </button>
                     </div>
                 </td>
@@ -303,10 +303,10 @@ class AdminPricing {
         this.pricingTable.innerHTML = rows;
     }
 
-    // ===== MODAL DE PREÇOS =====
+    // ===== PRICE MODAL =====
     async openPriceModal(categoryId, mode = 'create') {
         try {
-            // Buscar detalhes da categoria
+            // Fetch category details
             const response = await fetch(`/api/pricing/categories/${categoryId}`, {
                 headers: this.getAuthHeaders()
             });
@@ -314,25 +314,25 @@ class AdminPricing {
             const data = await response.json();
 
             if (!data.success) {
-                throw new Error(data.message || 'Categoria não encontrada');
+                throw new Error(data.message || 'Category not found');
             }
 
             this.currentCategory = data.category;
 
-            // Atualizar modal
+            // Update modal
             this.updatePriceModal(mode);
 
-            // Mostrar modal
+            // Show modal
             if (this.priceModal) {
                 const modal = document.getElementById('priceModal');
                 if (modal) {
                     modal.style.display = 'flex';
                     modal.classList.add('active');
                 } else {
-                    console.error('🔴 Modal não encontrado no DOM!');
+                    console.error('🔴 Modal not found in DOM!');
                 }
 
-                // Focar no campo de preço
+                // Focus on price field
                 const priceInput = document.getElementById('newPrice');
                 if (priceInput) {
                     setTimeout(() => priceInput.focus(), 100);
@@ -340,15 +340,15 @@ class AdminPricing {
             }
 
         } catch (error) {
-            console.error('❌ Erro ao abrir modal de preço:', error);
-            this.showNotification('Erro ao carregar categoria', 'error');
+            console.error('❌ Error opening price modal:', error);
+            this.showNotification('Error loading category', 'error');
         }
     }
 
     updatePriceModal(mode) {
         if (!this.currentCategory) return;
 
-        // Atualizar títulos
+        // Update titles
         const modalTitle = document.getElementById('priceModalTitle');
         const categoryName = document.getElementById('modalCategoryName');
         const categoryPath = document.getElementById('modalCategoryPath');
@@ -356,7 +356,7 @@ class AdminPricing {
         const currentPrice = document.getElementById('modalCurrentPrice');
 
         if (modalTitle) {
-            modalTitle.textContent = mode === 'edit' ? 'Editar Preço' : 'Definir Preço';
+            modalTitle.textContent = mode === 'edit' ? 'Edit Price' : 'Set Price';
         }
 
         if (categoryName) {
@@ -368,16 +368,16 @@ class AdminPricing {
         }
 
         if (photoCount) {
-            photoCount.textContent = `${this.currentCategory.photoCount} foto${this.currentCategory.photoCount !== 1 ? 's' : ''}`;
+            photoCount.textContent = `${this.currentCategory.photoCount} photo${this.currentCategory.photoCount !== 1 ? 's' : ''}`;
         }
 
         if (currentPrice) {
             currentPrice.textContent = this.currentCategory.basePrice > 0 ?
-                `Preço atual: R$ ${this.currentCategory.basePrice.toFixed(2)}` :
-                'Sem preço definido';
+                `Current price: $${this.currentCategory.basePrice.toFixed(2)}` :
+                'No price set';
         }
 
-        // Pré-preencher formulário se editando
+        // Pre-fill form if editing
         const newPriceInput = document.getElementById('newPrice');
         const reasonInput = document.getElementById('priceReason');
 
@@ -397,14 +397,14 @@ class AdminPricing {
             modal.classList.remove('active');
         }
 
-        // Limpar formulário
+        // Clear form
         const priceInput = document.getElementById('newPrice');
         const reasonInput = document.getElementById('priceReason');
         if (priceInput) priceInput.value = '';
         if (reasonInput) reasonInput.value = '';
 
         this.currentCategory = null;
-        console.log('🔵 Modal fechado');
+        console.log('🔵 Modal closed');
     }
 
     async handlePriceSubmit(e) {
@@ -417,7 +417,7 @@ class AdminPricing {
             const reason = document.getElementById('priceReason').value.trim();
 
             if (isNaN(newPrice) || newPrice < 0) {
-                this.showNotification('Preço deve ser um número válido', 'error');
+                this.showNotification('Price must be a valid number', 'error');
                 return;
             }
 
@@ -438,29 +438,29 @@ class AdminPricing {
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification(data.message || 'Preço salvo com sucesso!', 'success');
+                this.showNotification(data.message || 'Price saved successfully!', 'success');
 
-                // Fechar modal ANTES de recarregar
+                // Close modal BEFORE reloading
                 this.closePriceModal();
 
-                // Recarregar dados
+                // Reload data
                 await Promise.all([
                     this.loadCategories(),
                     this.checkSyncStatus()
                 ]);
             } else {
-                throw new Error(data.message || 'Erro ao salvar preço');
+                throw new Error(data.message || 'Error saving price');
             }
 
         } catch (error) {
-            console.error('❌ Erro ao salvar preço:', error);
-            this.showNotification(`Erro ao salvar preço: ${error.message}`, 'error');
+            console.error('❌ Error saving price:', error);
+            this.showNotification(`Error saving price: ${error.message}`, 'error');
         } finally {
             this.setLoading(false);
         }
     }
 
-    // ===== FILTROS E BUSCA =====
+    // ===== FILTERS AND SEARCH =====
     handleSearch(value) {
         this.filters.search = value;
         this.debounceSearch();
@@ -489,7 +489,7 @@ class AdminPricing {
         this.loadCategories();
     }
 
-    // ===== PAGINAÇÃO =====
+    // ===== PAGINATION =====
     updatePagination(pagination) {
         if (!this.pricingPagination) return;
 
@@ -500,7 +500,7 @@ class AdminPricing {
         const btnNextPage = document.getElementById('btnNextPage');
 
         if (paginationInfo) {
-            paginationInfo.textContent = `Página ${page} de ${totalPages}`;
+            paginationInfo.textContent = `Page ${page} of ${totalPages}`;
         }
 
         if (btnPrevPage) {
@@ -526,7 +526,7 @@ class AdminPricing {
         this.loadCategories();
     }
 
-    // ===== ESTATÍSTICAS =====
+    // ===== STATISTICS =====
     updateStats(statistics) {
         if (!this.pricingStats || !statistics) return;
 
@@ -547,7 +547,7 @@ class AdminPricing {
         this.pricingStats.style.display = 'block';
     }
 
-    // ===== RELATÓRIOS =====
+    // ===== REPORTS =====
     async generateReport() {
         try {
             this.setLoading(true);
@@ -560,14 +560,14 @@ class AdminPricing {
 
             if (data.success) {
                 this.downloadReport(data.report);
-                this.showNotification('Relatório gerado com sucesso!', 'success');
+                this.showNotification('Report generated successfully!', 'success');
             } else {
-                throw new Error(data.message || 'Erro ao gerar relatório');
+                throw new Error(data.message || 'Error generating report');
             }
 
         } catch (error) {
-            console.error('❌ Erro ao gerar relatório:', error);
-            this.showNotification('Erro ao gerar relatório', 'error');
+            console.error('❌ Error generating report:', error);
+            this.showNotification('Error generating report', 'error');
         } finally {
             this.setLoading(false);
         }
@@ -581,7 +581,7 @@ class AdminPricing {
         if (link.download !== undefined) {
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', `relatorio_precos_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `pricing_report_${new Date().toISOString().split('T')[0]}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -590,13 +590,13 @@ class AdminPricing {
     }
 
     convertReportToCSV(reportData) {
-        // Implementar conversão para CSV
-        // Por enquanto, retornar dados básicos
-        return 'Relatório de Preços - Sunshine Cowhides\n' +
+        // Implement CSV conversion
+        // For now, return basic data
+        return 'Pricing Report - Sunshine Cowhides\n' +
             JSON.stringify(reportData, null, 2);
     }
 
-    // ===== UTILITÁRIOS =====
+    // ===== UTILITIES =====
     getAuthHeaders() {
         const sessionData = localStorage.getItem('sunshineSession');
         if (sessionData) {
@@ -610,7 +610,7 @@ class AdminPricing {
 
     formatDate(dateString) {
         if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('pt-BR', {
+        return new Date(dateString).toLocaleDateString('en-US', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
@@ -627,7 +627,7 @@ class AdminPricing {
     }
 
     showNotification(message, type = 'info') {
-        // Integrar com sistema de notificações existente
+        // Integrate with existing notification system
         if (window.showNotification) {
             window.showNotification(message, type);
         } else {
@@ -640,23 +640,23 @@ class AdminPricing {
     }
 
     viewCategoryDetails(categoryId) {
-        // TODO: Implementar visualização detalhada
-        console.log('👁️ Visualizar categoria:', categoryId);
+        // TODO: Implement detailed view
+        console.log('👁️ View category:', categoryId);
     }
 }
 
-// ===== INICIALIZAÇÃO GLOBAL =====
+// ===== GLOBAL INITIALIZATION =====
 let adminPricing = null;
 
-// Inicializar quando a seção de preços for ativada
+// Initialize when pricing section is activated
 document.addEventListener('DOMContentLoaded', () => {
-    // Observar mudanças na seção ativa
+    // Observe changes in active section
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                 const section = document.getElementById('section-pricing');
                 if (section && section.style.display !== 'none' && !adminPricing) {
-                    // Seção de preços foi ativada
+                    // Pricing section was activated
                     adminPricing = new AdminPricing();
                 }
             }
@@ -667,14 +667,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pricingSection) {
         observer.observe(pricingSection, { attributes: true });
 
-        // Se já estiver visível, inicializar imediatamente
+        // If already visible, initialize immediately
         if (pricingSection.style.display !== 'none') {
             adminPricing = new AdminPricing();
         }
     }
 });
 
-// Funções globais para uso no HTML
+// Global functions for HTML usage
 window.closePriceModal = function () {
     if (adminPricing) {
         adminPricing.closePriceModal();
@@ -683,12 +683,12 @@ window.closePriceModal = function () {
 
 window.adminPricing = adminPricing;
 
-// Função global para fechar modal (chamada pelo HTML)
+// Global function to close modal (called by HTML)
 window.closePriceModal = function () {
     if (adminPricing) {
         adminPricing.closePriceModal();
     } else {
-        // Fallback caso adminPricing não esteja disponível
+        // Fallback if adminPricing is not available
         const modal = document.getElementById('priceModal');
         if (modal) {
             modal.style.display = 'none';
@@ -697,16 +697,16 @@ window.closePriceModal = function () {
     }
 };
 
-// ===== SISTEMA DE ABAS DO MODAL DE PREÇOS =====
+// ===== PRICE MODAL TAB SYSTEM =====
 
 /**
- * Inicializar sistema de abas quando modal abre
+ * Initialize tab system when modal opens
  */
 function initializePriceTabs() {
     const tabButtons = document.querySelectorAll('.price-tab-btn');
     const tabPanels = document.querySelectorAll('.price-tab-panel');
 
-    // Event listeners para botões das abas
+    // Event listeners for tab buttons
     tabButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const targetTab = e.target.dataset.tab;
@@ -714,25 +714,25 @@ function initializePriceTabs() {
         });
     });
 
-    // Inicializar funcionalidades específicas das abas
+    // Initialize tab-specific functionalities
     initializeClientPricesTab();
     initializeQuantityDiscountsTab();
 
-    console.log('🔖 Sistema de abas do modal de preços inicializado');
+    console.log('🔖 Price modal tab system initialized');
 }
 
 /**
- * Trocar aba ativa
+ * Switch active tab
  */
 function switchPriceTab(targetTab) {
     const tabButtons = document.querySelectorAll('.price-tab-btn');
     const tabPanels = document.querySelectorAll('.price-tab-panel');
 
-    // Remover classes ativas
+    // Remove active classes
     tabButtons.forEach(btn => btn.classList.remove('active'));
     tabPanels.forEach(panel => panel.classList.remove('active'));
 
-    // Ativar aba selecionada
+    // Activate selected tab
     const activeButton = document.querySelector(`[data-tab="${targetTab}"]`);
     const activePanel = document.getElementById(`tab-${targetTab}`);
 
@@ -740,13 +740,13 @@ function switchPriceTab(targetTab) {
         activeButton.classList.add('active');
         activePanel.classList.add('active');
 
-        // Carregar dados específicos da aba se necessário
+        // Load tab-specific data if needed
         loadTabData(targetTab);
     }
 }
 
 /**
- * Carregar dados específicos da aba
+ * Load tab-specific data
  */
 function loadTabData(tabName) {
     switch (tabName) {
@@ -760,19 +760,19 @@ function loadTabData(tabName) {
     }
 }
 
-// ===== ABA: PREÇOS POR CLIENTE =====
+// ===== TAB: CLIENT PRICES =====
 
 /**
- * Inicializar funcionalidades da aba de preços por cliente
+ * Initialize client prices tab functionality
  */
 function initializeClientPricesTab() {
-    // Event listener para tipo de desconto
+    // Event listener for discount type
     const discountType = document.getElementById('discountType');
     if (discountType) {
         discountType.addEventListener('change', handleDiscountTypeChange);
     }
 
-    // Event listener para formulário de regra de cliente
+    // Event listener for client rule form
     const clientRuleForm = document.getElementById('clientRuleForm');
     if (clientRuleForm) {
         clientRuleForm.addEventListener('submit', handleClientRuleSubmit);
@@ -780,18 +780,18 @@ function initializeClientPricesTab() {
 }
 
 /**
- * Lidar com mudança no tipo de desconto
+ * Handle discount type change
  */
 function handleDiscountTypeChange(e) {
     const value = e.target.value;
     const percentageGroup = document.getElementById('percentageGroup');
     const customPriceGroup = document.getElementById('customPriceGroup');
 
-    // Esconder todos os grupos
+    // Hide all groups
     percentageGroup.style.display = 'none';
     customPriceGroup.style.display = 'none';
 
-    // Mostrar grupo relevante
+    // Show relevant group
     if (value === 'percentage') {
         percentageGroup.style.display = 'block';
     } else if (value === 'custom') {
@@ -800,7 +800,7 @@ function handleDiscountTypeChange(e) {
 }
 
 /**
- * Carregar regras de cliente existentes
+ * Load existing client rules
  */
 async function loadClientRules() {
     if (!adminPricing.currentCategory) return;
@@ -809,7 +809,7 @@ async function loadClientRules() {
     if (!rulesContainer) return;
 
     try {
-        console.log('🏷️ Carregando regras de desconto...');
+        console.log('🏷️ Loading discount rules...');
 
         const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules`, {
             headers: adminPricing.getAuthHeaders()
@@ -819,18 +819,18 @@ async function loadClientRules() {
 
         if (data.success) {
             renderClientRules(data.discountRules);
-            console.log(`✅ ${data.totalRules} regras carregadas`);
+            console.log(`✅ ${data.totalRules} rules loaded`);
         } else {
-            throw new Error(data.message || 'Erro ao buscar regras');
+            throw new Error(data.message || 'Error fetching rules');
         }
     } catch (error) {
-        console.error('❌ Erro ao carregar regras de cliente:', error);
-        rulesContainer.innerHTML = '<div class="error">Erro ao carregar regras</div>';
+        console.error('❌ Error loading client rules:', error);
+        rulesContainer.innerHTML = '<div class="error">Error loading rules</div>';
     }
 }
 
 /**
- * Renderizar regras de cliente
+ * Render client rules
  */
 function renderClientRules(rules) {
     const container = document.getElementById('clientRulesList');
@@ -840,7 +840,7 @@ function renderClientRules(rules) {
         container.innerHTML = `
             <div class="empty-rules">
                 <i class="fas fa-info-circle"></i>
-                <p>Nenhuma regra personalizada configurada</p>
+                <p>No custom rules configured</p>
             </div>
         `;
         return;
@@ -854,8 +854,8 @@ function renderClientRules(rules) {
             </div>
             <div class="rule-details">
                 ${rule.customPrice ?
-            `Preço: R$ ${rule.customPrice.toFixed(2)}` :
-            `Desconto: ${rule.discountPercent}%`
+            `Price: $${rule.customPrice.toFixed(2)}` :
+            `Discount: ${rule.discountPercent}%`
         }
             </div>
             <div class="rule-actions">
@@ -870,14 +870,14 @@ function renderClientRules(rules) {
 }
 
 /**
- * Carregar clientes disponíveis
+ * Load available clients
  */
 async function loadAvailableClients() {
     const clientSelect = document.getElementById('clientSelect');
     if (!clientSelect) return;
 
     try {
-        console.log('👥 Carregando clientes ativos...');
+        console.log('👥 Loading active clients...');
 
         const response = await fetch('/api/pricing/clients/active', {
             headers: adminPricing.getAuthHeaders()
@@ -891,23 +891,23 @@ async function loadAvailableClients() {
             ).join('');
 
             clientSelect.innerHTML = `
-                <option value="">Selecione um cliente...</option>
+                <option value="">Select a client...</option>
                 ${optionsHTML}
             `;
 
-            console.log(`✅ ${data.clients.length} clientes carregados no dropdown`);
+            console.log(`✅ ${data.clients.length} clients loaded in dropdown`);
         } else {
-            throw new Error(data.message || 'Erro ao buscar clientes');
+            throw new Error(data.message || 'Error fetching clients');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao carregar clientes:', error);
-        clientSelect.innerHTML = '<option value="">Erro ao carregar clientes</option>';
+        console.error('❌ Error loading clients:', error);
+        clientSelect.innerHTML = '<option value="">Error loading clients</option>';
     }
 }
 
 /**
- * Lidar com submit do formulário de regra de cliente
+ * Handle client rule form submit
  */
 async function handleClientRuleSubmit(e) {
     e.preventDefault();
@@ -919,7 +919,7 @@ async function handleClientRuleSubmit(e) {
     const discountType = document.getElementById('discountType').value;
 
     if (!clientCode || !discountType) {
-        adminPricing.showNotification('Preencha todos os campos obrigatórios', 'error');
+        adminPricing.showNotification('Please fill all required fields', 'error');
         return;
     }
 
@@ -928,22 +928,22 @@ async function handleClientRuleSubmit(e) {
         const selectedOption = clientSelect.selectedOptions[0];
 
         if (!selectedOption) {
-            adminPricing.showNotification('Selecione um cliente válido', 'error');
+            adminPricing.showNotification('Please select a valid client', 'error');
             return;
         }
 
         const requestData = {
             clientCode,
-            clientName: selectedOption.text.split(' (')[0], // Extrair nome sem código
+            clientName: selectedOption.text.split(' (')[0], // Extract name without code
             discountPercent: discountType === 'percentage' ?
                 parseInt(document.getElementById('discountPercent').value) || 0 : 0,
             customPrice: discountType === 'custom' ?
                 parseFloat(document.getElementById('customPrice').value) || null : null
         };
 
-        console.log('📝 Enviando regra para API:', requestData);
+        console.log('📝 Sending rule to API:', requestData);
 
-        // Chamar API real para adicionar regra
+        // Call real API to add rule
         const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules`, {
             method: 'POST',
             headers: {
@@ -956,38 +956,38 @@ async function handleClientRuleSubmit(e) {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.message || 'Erro ao adicionar regra');
+            throw new Error(result.message || 'Error adding rule');
         }
 
         if (result.success) {
-            console.log('✅ Regra adicionada com sucesso:', result);
-            adminPricing.showNotification('Regra adicionada com sucesso!', 'success');
+            console.log('✅ Rule added successfully:', result);
+            adminPricing.showNotification('Rule added successfully!', 'success');
 
-            // Limpar formulário
+            // Clear form
             e.target.reset();
             handleDiscountTypeChange({ target: { value: '' } });
 
-            // Recarregar regras para mostrar a nova
+            // Reload rules to show the new one
             await loadClientRules();
         } else {
-            throw new Error(result.message || 'Erro desconhecido');
+            throw new Error(result.message || 'Unknown error');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao adicionar regra:', error);
-        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+        console.error('❌ Error adding rule:', error);
+        adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
-// ===== ABA: DESCONTOS POR QUANTIDADE =====
+// ===== TAB: QUANTITY DISCOUNTS =====
 
 /**
- * Inicializar funcionalidades da aba de descontos por quantidade
+ * Initialize quantity discounts tab functionality
  */
 function initializeQuantityDiscountsTab() {
-    console.log('📦 Aba de descontos por quantidade inicializada');
+    console.log('📦 Quantity discounts tab initialized');
 
-    // Event listener para adicionar nova regra
+    // Event listener to add new rule
     const addRuleBtn = document.querySelector('#tab-quantity-discounts .btn.btn-secondary');
     if (addRuleBtn) {
         addRuleBtn.addEventListener('click', showAddQuantityRuleForm);
@@ -995,11 +995,11 @@ function initializeQuantityDiscountsTab() {
 }
 
 /**
- * Carregar regras de quantidade do backend
+ * Load quantity rules from backend
  */
 async function loadQuantityRules() {
     try {
-        console.log('📦 Carregando regras de quantidade...');
+        console.log('📦 Loading quantity rules...');
 
         const response = await fetch('/api/pricing/quantity-discounts', {
             headers: adminPricing.getAuthHeaders()
@@ -1009,19 +1009,19 @@ async function loadQuantityRules() {
 
         if (data.success) {
             renderQuantityRules(data.rules);
-            console.log(`✅ ${data.rules.length} regras de quantidade carregadas`);
+            console.log(`✅ ${data.rules.length} quantity rules loaded`);
         } else {
-            throw new Error(data.message || 'Erro ao buscar regras');
+            throw new Error(data.message || 'Error fetching rules');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao carregar regras de quantidade:', error);
+        console.error('❌ Error loading quantity rules:', error);
         renderQuantityRulesError();
     }
 }
 
 /**
- * Renderizar regras de quantidade na interface
+ * Render quantity rules in interface
  */
 function renderQuantityRules(rules) {
     const container = document.querySelector('#tab-quantity-discounts .quantity-rules');
@@ -1031,8 +1031,8 @@ function renderQuantityRules(rules) {
         container.innerHTML = `
             <div class="empty-rules">
                 <i class="fas fa-info-circle"></i>
-                <p>Nenhuma regra de desconto por quantidade configurada</p>
-                <small>Configure descontos automáticos baseados na quantidade de fotos</small>
+                <p>No quantity discount rules configured</p>
+                <small>Configure automatic discounts based on photo quantity</small>
             </div>
         `;
         return;
@@ -1040,20 +1040,20 @@ function renderQuantityRules(rules) {
 
     const rulesHTML = rules.map(rule => {
         const rangeText = rule.maxQuantity ?
-            `${rule.minQuantity}-${rule.maxQuantity} fotos` :
-            `${rule.minQuantity}+ fotos`;
+            `${rule.minQuantity}-${rule.maxQuantity} photos` :
+            `${rule.minQuantity}+ photos`;
 
         return `
             <div class="quantity-rule" data-rule-id="${rule._id}">
                 <div class="rule-range">${rangeText}</div>
-                <div class="rule-discount">${rule.discountPercent}% desconto</div>
+                <div class="rule-discount">${rule.discountPercent}% discount</div>
                 <div class="rule-description">${rule.description}</div>
                 <div class="rule-actions">
                     <button class="btn-sm btn-warning" onclick="editQuantityRule('${rule._id}')">
-                        <i class="fas fa-edit"></i> Editar
+                        <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn-sm btn-danger" onclick="removeQuantityRule('${rule._id}')">
-                        <i class="fas fa-trash"></i> Remover
+                        <i class="fas fa-trash"></i> Remove
                     </button>
                 </div>
             </div>
@@ -1064,7 +1064,7 @@ function renderQuantityRules(rules) {
 }
 
 /**
- * Renderizar erro no carregamento
+ * Render loading error
  */
 function renderQuantityRulesError() {
     const container = document.querySelector('#tab-quantity-discounts .quantity-rules');
@@ -1072,9 +1072,9 @@ function renderQuantityRulesError() {
         container.innerHTML = `
             <div class="error-rules">
                 <i class="fas fa-exclamation-triangle"></i>
-                <p>Erro ao carregar regras de desconto</p>
+                <p>Error loading discount rules</p>
                 <button class="btn btn-secondary" onclick="loadQuantityRules()">
-                    <i class="fas fa-sync"></i> Tentar Novamente
+                    <i class="fas fa-sync"></i> Try Again
                 </button>
             </div>
         `;
@@ -1082,40 +1082,40 @@ function renderQuantityRulesError() {
 }
 
 /**
- * Mostrar formulário para adicionar nova regra
+ * Show form to add new rule
  */
 function showAddQuantityRuleForm() {
     const container = document.querySelector('#tab-quantity-discounts .quantity-discounts-section');
     if (!container) return;
 
-    // Verificar se formulário já existe
+    // Check if form already exists
     if (document.getElementById('addQuantityRuleForm')) {
-        return; // Já está aberto
+        return; // Already open
     }
 
     const formHTML = `
         <div id="addQuantityRuleForm" class="add-quantity-rule-form">
-            <h6><i class="fas fa-plus"></i> Nova Regra de Desconto por Quantidade</h6>
+            <h6><i class="fas fa-plus"></i> New Quantity Discount Rule</h6>
             
             <form id="quantityRuleForm" class="quantity-rule-form">
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Quantidade Mínima</label>
+                        <label class="form-label">Minimum Quantity</label>
                         <input type="number" id="minQuantity" name="minQuantity" class="form-input" 
                             min="1" step="1" placeholder="5" required>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Quantidade Máxima</label>
+                        <label class="form-label">Maximum Quantity</label>
                         <input type="number" id="maxQuantity" name="maxQuantity" class="form-input" 
-                            min="1" step="1" placeholder="10 (deixe vazio para ∞)">
-                        <small class="form-help">Deixe em branco para "ou mais" (ex: 21+)</small>
+                            min="1" step="1" placeholder="10 (leave empty for ∞)">
+                        <small class="form-help">Leave blank for "or more" (ex: 21+)</small>
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Desconto (%)</label>
+                        <label class="form-label">Discount (%)</label>
                         <input type="number" id="discountPercent" name="discountPercent" class="form-input" 
                             min="0" max="100" step="1" placeholder="5" required>
                     </div>
@@ -1123,55 +1123,55 @@ function showAddQuantityRuleForm() {
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cancelAddQuantityRule()">
-                        <i class="fas fa-times"></i> Cancelar
+                        <i class="fas fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Salvar Regra
+                        <i class="fas fa-save"></i> Save Rule
                     </button>
                 </div>
             </form>
         </div>
     `;
 
-    // Inserir formulário após as regras existentes
+    // Insert form after existing rules
     const rulesContainer = container.querySelector('.quantity-rules');
     if (rulesContainer) {
         rulesContainer.insertAdjacentHTML('afterend', formHTML);
 
-        // Event listener para o formulário
+        // Event listener for form
         const form = document.getElementById('quantityRuleForm');
         if (form) {
             form.addEventListener('submit', handleQuantityRuleSubmit);
         }
 
-        // Focar no primeiro campo
+        // Focus on first field
         const firstInput = document.getElementById('minQuantity');
         if (firstInput) {
             firstInput.focus();
         }
 
-        console.log('📦 Formulário de nova regra exibido');
+        console.log('📦 New rule form displayed');
     }
 }
 
 /**
- * Cancelar adição de regra
+ * Cancel rule addition
  */
 function cancelAddQuantityRule() {
     const form = document.getElementById('addQuantityRuleForm');
     if (form) {
         form.remove();
-        console.log('📦 Formulário cancelado');
+        console.log('📦 Form cancelled');
     }
 }
 
 /**
- * Lidar com submit do formulário de regra de quantidade
+ * Handle quantity rule form submit
  */
 async function handleQuantityRuleSubmit(e) {
     e.preventDefault();
 
-    const form = e.target; // O formulário que foi submetido
+    const form = e.target; // The submitted form
     const formData = new FormData(form);
 
     const minQty = parseInt(formData.get('minQuantity')) || 0;
@@ -1179,46 +1179,46 @@ async function handleQuantityRuleSubmit(e) {
     const discount = parseInt(formData.get('discountPercent')) || 0;
 
     // ===== DEBUG LOGS =====
-    console.log('🔍 DEBUG VALORES:');
+    console.log('🔍 DEBUG VALUES:');
     console.log('minQty:', minQty, typeof minQty);
     console.log('maxQty:', maxQty, typeof maxQty);
     console.log('discount:', discount, typeof discount);
     const discountElement = document.getElementById('discountPercent');
-    console.log('🔍 Campo discountPercent:', discountElement);
-    console.log('🔍 Valor bruto:', discountElement ? discountElement.value : 'ELEMENTO NÃO EXISTE');
-    console.log('🔍 Valor como string:', `"${discountElement?.value}"`);
+    console.log('🔍 discountPercent field:', discountElement);
+    console.log('🔍 Raw value:', discountElement ? discountElement.value : 'ELEMENT DOES NOT EXIST');
+    console.log('🔍 Value as string:', `"${discountElement?.value}"`);
     console.log('isNaN(discount):', isNaN(discount));
     console.log('discount < 0:', discount < 0);
     console.log('discount > 100:', discount > 100);
-    // ===== FIM DEBUG =====
+    // ===== END DEBUG =====
 
-    // Validações
+    // Validations
     if (!minQty || minQty < 1) {
-        console.log('❌ Falhou na validação de minQty');
-        adminPricing.showNotification('Quantidade mínima deve ser maior que 0', 'error');
+        console.log('❌ Failed minQty validation');
+        adminPricing.showNotification('Minimum quantity must be greater than 0', 'error');
         return;
     }
 
     if (maxQty && maxQty <= minQty) {
-        console.log('❌ Falhou na validação de maxQty');
-        adminPricing.showNotification('Quantidade máxima deve ser maior que mínima', 'error');
+        console.log('❌ Failed maxQty validation');
+        adminPricing.showNotification('Maximum quantity must be greater than minimum', 'error');
         return;
     }
 
     if (isNaN(discount) || discount < 0 || discount > 100) {
-        console.log('❌ Falhou na validação de discount');
-        adminPricing.showNotification('Desconto deve ser entre 0 e 100%', 'error');
+        console.log('❌ Failed discount validation');
+        adminPricing.showNotification('Discount must be between 0 and 100%', 'error');
         return;
     }
 
-    console.log('✅ Todas as validações passaram');
+    console.log('✅ All validations passed');
 
-    // Gerar descrição automaticamente
-    const rangeText = maxQty ? `${minQty}-${maxQty} fotos` : `${minQty}+ fotos`;
-    const description = `${rangeText}: ${discount}% desconto`;
+    // Generate description automatically
+    const rangeText = maxQty ? `${minQty}-${maxQty} photos` : `${minQty}+ photos`;
+    const description = `${rangeText}: ${discount}% discount`;
 
     try {
-        console.log('📦 Criando nova regra de quantidade...');
+        console.log('📦 Creating new quantity rule...');
 
         const requestData = {
             minQuantity: minQty,
@@ -1239,62 +1239,59 @@ async function handleQuantityRuleSubmit(e) {
         const result = await response.json();
 
         if (result.success) {
-            adminPricing.showNotification('Regra criada com sucesso!', 'success');
-            cancelAddQuantityRule(); // Fechar formulário
-            loadQuantityRules(); // Recarregar lista
+            adminPricing.showNotification('Rule created successfully!', 'success');
+            cancelAddQuantityRule(); // Close form
+            loadQuantityRules(); // Reload list
         } else {
-            throw new Error(result.message || 'Erro ao criar regra');
+            throw new Error(result.message || 'Error creating rule');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao criar regra:', error);
-        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+        console.error('❌ Error creating rule:', error);
+        adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
-// Tornar função global
+// Make function global
 window.cancelAddQuantityRule = cancelAddQuantityRule;
 
 /**
- * Editar regra de quantidade
- */
-/**
- * Editar regra de quantidade existente
+ * Edit quantity rule
  */
 async function editQuantityRule(ruleId) {
     try {
-        console.log('📦 Carregando regra para edição:', ruleId);
+        console.log('📦 Loading rule for editing:', ruleId);
 
-        // Buscar dados da regra atual
+        // Fetch current rule data
         const response = await fetch('/api/pricing/quantity-discounts', {
             headers: adminPricing.getAuthHeaders()
         });
 
         const data = await response.json();
         if (!data.success) {
-            throw new Error('Erro ao buscar regras');
+            throw new Error('Error fetching rules');
         }
 
-        // Encontrar a regra específica
+        // Find specific rule
         const rule = data.rules.find(r => r._id === ruleId);
         if (!rule) {
-            throw new Error('Regra não encontrada');
+            throw new Error('Rule not found');
         }
 
-        // Mostrar formulário de edição com dados preenchidos
+        // Show edit form with filled data
         showEditQuantityRuleForm(rule);
 
     } catch (error) {
-        console.error('❌ Erro ao carregar regra para edição:', error);
-        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+        console.error('❌ Error loading rule for editing:', error);
+        adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
 /**
- * Mostrar formulário de edição com dados preenchidos
+ * Show edit form with filled data
  */
 function showEditQuantityRuleForm(rule) {
-    // Remover formulário existente se houver
+    // Remove existing form if any
     const existingForm = document.getElementById('addQuantityRuleForm');
     if (existingForm) {
         existingForm.remove();
@@ -1305,30 +1302,30 @@ function showEditQuantityRuleForm(rule) {
 
     const formHTML = `
         <div id="addQuantityRuleForm" class="add-quantity-rule-form edit-mode">
-            <h6><i class="fas fa-edit"></i> Editar Regra de Desconto por Quantidade</h6>
+            <h6><i class="fas fa-edit"></i> Edit Quantity Discount Rule</h6>
             
             <form id="quantityRuleForm" class="quantity-rule-form">
                 <input type="hidden" id="editingRuleId" value="${rule._id}">
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Quantidade Mínima</label>
+                        <label class="form-label">Minimum Quantity</label>
                         <input type="number" id="minQuantity" name="minQuantity" class="form-input" 
                             min="1" step="1" value="${rule.minQuantity}" required>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Quantidade Máxima</label>
+                        <label class="form-label">Maximum Quantity</label>
                         <input type="number" id="maxQuantity" name="maxQuantity" class="form-input" 
                             min="1" step="1" value="${rule.maxQuantity || ''}" 
-                            placeholder="Deixe vazio para ∞">
-                        <small class="form-help">Deixe em branco para "ou mais" (ex: 21+)</small>
+                            placeholder="Leave empty for ∞">
+                        <small class="form-help">Leave blank for "or more" (ex: 21+)</small>
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Desconto (%)</label>
+                        <label class="form-label">Discount (%)</label>
                         <input type="number" id="discountPercent" name="discountPercent" class="form-input" 
                             min="0" max="100" step="1" value="${rule.discountPercent}" required>
                     </div>
@@ -1336,47 +1333,47 @@ function showEditQuantityRuleForm(rule) {
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cancelAddQuantityRule()">
-                        <i class="fas fa-times"></i> Cancelar
+                        <i class="fas fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Atualizar Regra
+                        <i class="fas fa-save"></i> Update Rule
                     </button>
                 </div>
             </form>
         </div>
     `;
 
-    // Inserir formulário
+    // Insert form
     const rulesContainer = container.querySelector('.quantity-rules');
     if (rulesContainer) {
         rulesContainer.insertAdjacentHTML('afterend', formHTML);
 
-        // Event listener para o formulário
+        // Event listener for form
         const form = document.getElementById('quantityRuleForm');
         if (form) {
             form.addEventListener('submit', handleQuantityRuleUpdate);
         }
 
-        // Focar no primeiro campo
+        // Focus on first field
         const firstInput = document.getElementById('minQuantity');
         if (firstInput) {
             firstInput.focus();
             firstInput.select();
         }
 
-        console.log('📦 Formulário de edição exibido para regra:', rule._id);
+        console.log('📦 Edit form displayed for rule:', rule._id);
     }
 }
 
 /**
- * Lidar com atualização de regra existente
+ * Handle existing rule update
  */
 async function handleQuantityRuleUpdate(e) {
     e.preventDefault();
 
     const ruleId = document.getElementById('editingRuleId').value;
     if (!ruleId) {
-        adminPricing.showNotification('ID da regra não encontrado', 'error');
+        adminPricing.showNotification('Rule ID not found', 'error');
         return;
     }
 
@@ -1387,24 +1384,24 @@ async function handleQuantityRuleUpdate(e) {
     const maxQty = formData.get('maxQuantity') ? parseInt(formData.get('maxQuantity')) : null;
     const discount = parseInt(formData.get('discountPercent')) || 0;
 
-    // Validações (mesmas do criar)
+    // Validations (same as create)
     if (!minQty || minQty < 1) {
-        adminPricing.showNotification('Quantidade mínima deve ser maior que 0', 'error');
+        adminPricing.showNotification('Minimum quantity must be greater than 0', 'error');
         return;
     }
 
     if (maxQty && maxQty <= minQty) {
-        adminPricing.showNotification('Quantidade máxima deve ser maior que mínima', 'error');
+        adminPricing.showNotification('Maximum quantity must be greater than minimum', 'error');
         return;
     }
 
     if (isNaN(discount) || discount < 0 || discount > 100) {
-        adminPricing.showNotification('Desconto deve ser entre 0 e 100%', 'error');
+        adminPricing.showNotification('Discount must be between 0 and 100%', 'error');
         return;
     }
 
     try {
-        console.log('📦 Atualizando regra de quantidade:', ruleId);
+        console.log('📦 Updating quantity rule:', ruleId);
 
         const requestData = {
             minQuantity: minQty,
@@ -1424,30 +1421,30 @@ async function handleQuantityRuleUpdate(e) {
         const result = await response.json();
 
         if (result.success) {
-            adminPricing.showNotification('Regra atualizada com sucesso!', 'success');
-            cancelAddQuantityRule(); // Fechar formulário
-            loadQuantityRules(); // Recarregar lista
+            adminPricing.showNotification('Rule updated successfully!', 'success');
+            cancelAddQuantityRule(); // Close form
+            loadQuantityRules(); // Reload list
         } else {
-            throw new Error(result.message || 'Erro ao atualizar regra');
+            throw new Error(result.message || 'Error updating rule');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao atualizar regra:', error);
-        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+        console.error('❌ Error updating rule:', error);
+        adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
 /**
- * Remover regra de quantidade
+ * Remove quantity rule
  */
 async function removeQuantityRule(ruleId) {
-    const confirmMessage = 'Tem certeza que deseja remover esta regra de desconto por quantidade?';
+    const confirmMessage = 'Are you sure you want to remove this quantity discount rule?';
     if (!confirm(confirmMessage)) {
         return;
     }
 
     try {
-        console.log('📦 Removendo regra:', ruleId);
+        console.log('📦 Removing rule:', ruleId);
 
         const response = await fetch(`/api/pricing/quantity-discounts/${ruleId}`, {
             method: 'DELETE',
@@ -1457,88 +1454,88 @@ async function removeQuantityRule(ruleId) {
         const result = await response.json();
 
         if (result.success) {
-            adminPricing.showNotification('Regra removida com sucesso!', 'success');
-            loadQuantityRules(); // Recarregar lista
+            adminPricing.showNotification('Rule removed successfully!', 'success');
+            loadQuantityRules(); // Reload list
         } else {
-            throw new Error(result.message || 'Erro ao remover regra');
+            throw new Error(result.message || 'Error removing rule');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao remover regra:', error);
-        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+        console.error('❌ Error removing rule:', error);
+        adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
-// Tornar funções globais
+// Make functions global
 window.editQuantityRule = editQuantityRule;
 window.removeQuantityRule = removeQuantityRule;
 
-// ===== INTEGRAÇÃO AUTOMÁTICA COM MODAL =====
+// ===== AUTOMATIC MODAL INTEGRATION =====
 
 /**
- * Detectar quando modal de preços abre e inicializar abas automaticamente
+ * Detect when price modal opens and initialize tabs automatically
  */
 function setupModalAutoInitialization() {
     const modal = document.getElementById('priceModal');
     if (!modal) return;
 
-    // Observer para detectar quando modal fica visível
+    // Observer to detect when modal becomes visible
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                 const isVisible = modal.style.display === 'flex';
 
                 if (isVisible) {
-                    console.log('🔧 Modal de preços detectado como aberto - inicializando abas...');
+                    console.log('🔧 Price modal detected as open - initializing tabs...');
 
-                    // Aguardar um pouco para DOM estar pronto
+                    // Wait a bit for DOM to be ready
                     setTimeout(() => {
                         initializePriceTabs();
                         switchPriceTab('base-price');
-                        console.log('✅ Abas inicializadas automaticamente');
+                        console.log('✅ Tabs initialized automatically');
                     }, 200);
                 }
             }
         });
     });
 
-    // Observar mudanças no atributo style do modal
+    // Observe changes in modal style attribute
     observer.observe(modal, {
         attributes: true,
         attributeFilter: ['style']
     });
 
-    console.log('👁️ Observer do modal configurado para auto-inicialização');
+    console.log('👁️ Modal observer configured for auto-initialization');
 }
 
-// Configurar observer quando DOM carregar
+// Configure observer when DOM loads
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(setupModalAutoInitialization, 500);
 });
 
-// Fallback: também tentar quando o script carrega
+// Fallback: also try when script loads
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupModalAutoInitialization);
 } else {
     setupModalAutoInitialization();
 }
 
-// ===== REMOÇÃO DE REGRAS DE CLIENTE =====
+// ===== CLIENT RULE REMOVAL =====
 
 /**
- * Remover regra de desconto para cliente específico
+ * Remove discount rule for specific client
  */
 async function removeClientRule(clientCode) {
     if (!adminPricing.currentCategory) return;
 
-    // Confirmar remoção
-    const confirmMessage = `Tem certeza que deseja remover a regra de desconto para o cliente ${clientCode}?`;
+    // Confirm removal
+    const confirmMessage = `Are you sure you want to remove the discount rule for client ${clientCode}?`;
     if (!confirm(confirmMessage)) {
         return;
     }
 
     try {
-        console.log(`🗑️ Removendo regra para cliente: ${clientCode}`);
+        console.log(`🗑️ Removing rule for client: ${clientCode}`);
 
         const response = await fetch(`/api/pricing/categories/${adminPricing.currentCategory._id}/discount-rules/${clientCode}`, {
             method: 'DELETE',
@@ -1548,26 +1545,26 @@ async function removeClientRule(clientCode) {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.message || 'Erro ao remover regra');
+            throw new Error(result.message || 'Error removing rule');
         }
 
         if (result.success) {
-            console.log('✅ Regra removida com sucesso');
-            adminPricing.showNotification('Regra removida com sucesso!', 'success');
+            console.log('✅ Rule removed successfully');
+            adminPricing.showNotification('Rule removed successfully!', 'success');
 
-            // Recarregar lista de regras
+            // Reload rules list
             await loadClientRules();
         } else {
-            throw new Error(result.message || 'Erro desconhecido');
+            throw new Error(result.message || 'Unknown error');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao remover regra:', error);
-        adminPricing.showNotification(`Erro: ${error.message}`, 'error');
+        console.error('❌ Error removing rule:', error);
+        adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
-// Tornar função global para uso no HTML
+// Make function global for HTML usage
 window.removeClientRule = removeClientRule;
 
-console.log('🔖 Sistema de abas carregado com auto-inicialização');
+console.log('🔖 Tab system loaded with auto-initialization');
