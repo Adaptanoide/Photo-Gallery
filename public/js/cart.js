@@ -167,13 +167,13 @@ window.CartSystem = {
             // Buscar dados da sessão do cliente
             const clientSession = this.getClientSession();
             if (!clientSession) {
-                throw new Error('Sessão do cliente não encontrada');
+                throw new Error('Client session not found');
             }
 
             const requestData = {
                 sessionId: this.state.sessionId,
                 clientCode: clientSession.accessCode,
-                clientName: clientSession.user?.name || 'Cliente',
+                clientName: clientSession.user?.name || 'Client',
                 driveFileId,
                 ...itemData
             };
@@ -189,14 +189,14 @@ window.CartSystem = {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || 'Erro ao adicionar item');
+                throw new Error(result.message || 'Error adding item');
             }
 
             // Atualizar estado local
             await this.loadCart();
 
             // Feedback visual
-            this.showNotification(`Item adicionado ao carrinho!`, 'success');
+            this.showNotification(`Item added to cart!`, 'success');
             this.updateToggleButton();
 
             console.log(`✅ Item ${driveFileId} adicionado ao carrinho`);
@@ -232,14 +232,14 @@ window.CartSystem = {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || 'Erro ao remover item');
+                throw new Error(result.message || 'Error removing item');
             }
 
             // Atualizar estado local
             await this.loadCart();
 
             // Feedback visual
-            this.showNotification(`Item removido do carrinho`, 'info');
+            this.showNotification(`Item removed from cart`, 'info');
             this.updateToggleButton();
 
             console.log(`✅ Item ${driveFileId} removido do carrinho`);
@@ -270,7 +270,7 @@ window.CartSystem = {
                 this.updateUI();
                 this.startTimers();
 
-                console.log(`📦 Carrinho carregado: ${this.state.totalItems} itens`);
+                console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
             } else {
                 // Carrinho vazio ou erro - resetar estado
                 this.state.items = [];
@@ -348,9 +348,9 @@ window.CartSystem = {
         }
 
         if (this.elements.itemCount) {
-            const text = this.state.totalItems === 0 ? 'Carrinho vazio' :
+            const text = this.state.totalItems === 0 ? 'Empty cart' :
                 this.state.totalItems === 1 ? '1 item' :
-                    `${this.state.totalItems} itens`;
+                    `${this.state.totalItems} items`;
             this.elements.itemCount.textContent = text;
         }
     },
@@ -378,7 +378,7 @@ window.CartSystem = {
 
         // Atualizar visual do botão
         this.elements.toggleBtn.classList.toggle('in-cart', inCart);
-        this.elements.toggleBtnText.textContent = inCart ? 'Remover do Carrinho' : 'Adicionar ao Carrinho';
+        this.elements.toggleBtnText.textContent = inCart ? 'Remove from Cart' : 'Add to Cart';
 
         // Atualizar ícone
         const icon = this.elements.toggleBtn.querySelector('i');
@@ -397,7 +397,7 @@ window.CartSystem = {
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                throw new Error(result.message || 'Erro ao calcular total');
+                throw new Error(result.message || 'Error calculating total');
             }
 
             const totals = result.data;
@@ -447,7 +447,7 @@ window.CartSystem = {
                 discountAmount: 0,
                 total: total,
                 hasDiscount: false,
-                discountDescription: 'Erro no cálculo',
+                discountDescription: 'Calculation error',
                 formattedSubtotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
                 formattedDiscountAmount: 'R$ 0,00',
                 formattedTotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
@@ -487,9 +487,9 @@ window.CartSystem = {
         if (this.elements.itemCount && this.state.totalItems > 0) {
             const cartTotal = await this.calculateCartTotal();
 
-            const totalText = this.state.totalItems === 0 ? 'Carrinho vazio' :
+            const totalText = this.state.totalItems === 0 ? 'Empty cart' :
                 this.state.totalItems === 1 ? '1 item' :
-                    `${this.state.totalItems} itens`;
+                    `${this.state.totalItems} items`;
 
             // Nova interface com subtotal, desconto e total
             let totalHTML = `<div class="items-text">${totalText}</div>`;
@@ -504,7 +504,7 @@ window.CartSystem = {
                                 <span>${cartTotal.formattedSubtotal}</span>
                             </div>
                             <div class="cart-discount">
-                                <span>Desconto ${cartTotal.discountPercent}%:</span>
+                                <span>Discount ${cartTotal.discountPercent}%:</span>
                                 <span>${cartTotal.formattedDiscountAmount}</span>
                             </div>
                             <div class="cart-total-final">
@@ -521,7 +521,7 @@ window.CartSystem = {
 
                 // Aviso sobre itens sem preço
                 if (cartTotal.hasIncompletePrice) {
-                    totalHTML += '<div class="price-note">* Alguns itens sem preço</div>';
+                    totalHTML += '<div class="price-note">* Some items without price</div>';
                 }
             }
 
@@ -571,7 +571,7 @@ window.CartSystem = {
                     <div class="cart-item-price">
                         ${item.hasPrice ?
                 `<span class="price-value">${item.formattedPrice}</span>` :
-                `<span class="price-consult">Consultar preço</span>`
+                `<span class="price-consult">Check price</span>`
             }
                     </div>
                     <div class="cart-item-timer ${timerClass}">
@@ -580,7 +580,7 @@ window.CartSystem = {
                     </div>
                 </div>
                 <div class="cart-item-actions">
-                    <button class="cart-item-remove" onclick="CartSystem.removeItem('${item.driveFileId}')" title="Remover item">
+                    <button class="cart-item-remove" onclick="CartSystem.removeItem('${item.driveFileId}')" title="Remove item">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -683,7 +683,7 @@ window.CartSystem = {
         // Recarregar carrinho para sincronizar com servidor
         setTimeout(() => this.loadCart(), 2000);
 
-        this.showNotification('Um item expirou e foi removido do carrinho', 'warning');
+        this.showNotification('An item has expired and was removed from the cart', 'warning');
     },
 
     // ===== UTILITÁRIOS =====
@@ -756,7 +756,7 @@ window.toggleCartItem = async function () {
     const currentPhoto = CartSystem.getCurrentModalPhoto();
     if (!currentPhoto) {
         console.log('❌ Nenhuma foto selecionada'); // ← NOVO LOG
-        CartSystem.showNotification('Nenhuma foto selecionada', 'error');
+        CartSystem.showNotification('No photo selected', 'error');
         return;
     }
 
@@ -777,7 +777,7 @@ window.toggleCartItem = async function () {
             const currentFolderId = window.navigationState?.currentFolderId;
             console.log('🟡 currentFolderId para busca:', currentFolderId); // ← NOVO LOG
 
-            let priceInfo = { hasPrice: false, price: 0, formattedPrice: 'Sem preço' };
+            let priceInfo = { hasPrice: false, price: 0, formattedPrice: 'No price' };
 
             if (currentFolderId && window.loadCategoryPrice) {
                 try {
@@ -795,8 +795,8 @@ window.toggleCartItem = async function () {
             }
 
             const itemData = {
-                fileName: photoData?.name || 'Produto sem nome',
-                category: window.navigationState?.currentPath?.[0]?.name || 'Categoria',
+                fileName: photoData?.name || 'Unnamed product',
+                category: window.navigationState?.currentPath?.[0]?.name || 'Category',
                 thumbnailUrl: photoData?.thumbnailMedium || photoData?.thumbnailLink,
                 price: priceInfo.price,
                 formattedPrice: priceInfo.formattedPrice,
@@ -831,7 +831,7 @@ window.closeCartSidebar = function () {
  */
 window.proceedToFinalize = function () {
     if (CartSystem.state.totalItems === 0) {
-        CartSystem.showNotification('Carrinho vazio', 'warning');
+        CartSystem.showNotification('Empty cart', 'warning');
         return;
     }
 
@@ -846,7 +846,7 @@ async function finalizeSelection() {
     try {
         // Verificar se há itens
         if (CartSystem.state.totalItems === 0) {
-            CartSystem.showNotification('Carrinho vazio', 'warning');
+            CartSystem.showNotification('Empty cart', 'warning');
             return;
         }
 
@@ -866,7 +866,7 @@ async function finalizeSelection() {
         const requestData = {
             sessionId: CartSystem.state.sessionId,
             clientCode: clientSession.accessCode,
-            clientName: clientSession.user?.name || 'Cliente'
+            clientName: clientSession.user?.name || 'Client'
         };
 
         console.log('🎯 Iniciando processamento em background:', CartSystem.state.items);
@@ -876,7 +876,7 @@ async function finalizeSelection() {
 
     } catch (error) {
         console.error('❌ Erro ao iniciar finalização:', error);
-        CartSystem.showNotification('Erro ao processar seleção. Tente novamente.', 'error');
+        CartSystem.showNotification('Error processing selection. Please try again.', 'error');
     }
 }
 
@@ -898,7 +898,7 @@ async function processSelectionInBackground(requestData) {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.message || 'Erro ao finalizar seleção');
+            throw new Error(result.message || 'Error finalizing selection');
         }
 
         // Sucesso em background
@@ -926,7 +926,7 @@ async function processSelectionInBackground(requestData) {
  */
 function showImmediateSuccessModal() {
     // Preencher dados comerciais simples
-    document.getElementById('modalItemCount').textContent = `${CartSystem.state.totalItems} ${CartSystem.state.totalItems === 1 ? 'item' : 'itens'}`;
+    document.getElementById('modalItemCount').textContent = `${CartSystem.state.totalItems} ${CartSystem.state.totalItems === 1 ? 'item' : 'items'}`;
 
     // Mostrar modal
     const modal = document.getElementById('selectionSuccessModal');

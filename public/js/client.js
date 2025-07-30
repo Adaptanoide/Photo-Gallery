@@ -68,12 +68,12 @@ async function loadClientData() {
         // Buscar código da sessão
         const savedSession = localStorage.getItem('sunshineSession');
         if (!savedSession) {
-            throw new Error('Sessão não encontrada');
+            throw new Error('Session not found');
         }
 
         const session = JSON.parse(savedSession);
         if (!session.accessCode) {
-            throw new Error('Código de acesso não encontrado');
+            throw new Error('Access code not found');
         }
 
         // Fazer requisição para buscar dados
@@ -81,7 +81,7 @@ async function loadClientData() {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-            throw new Error(data.message || 'Erro ao carregar dados');
+            throw new Error(data.message || 'Error loading data');
         }
 
         // Salvar dados no estado
@@ -97,7 +97,7 @@ async function loadClientData() {
         contentEl.style.display = 'block';
 
     } catch (error) {
-        console.error('Erro ao carregar dados do cliente:', error);
+        console.error('Error loading client data:', error);
 
         // Mostrar erro
         loadingEl.style.display = 'none';
@@ -105,7 +105,7 @@ async function loadClientData() {
         errorEl.style.display = 'block';
 
         const errorMsg = document.getElementById('errorMessage');
-        errorMsg.textContent = error.message || 'Erro de conexão';
+        errorMsg.textContent = error.message || 'Connection error';
     }
 }
 
@@ -117,8 +117,8 @@ function updateClientInterface(data) {
     const welcomeEl = document.getElementById('clientWelcome');
     const infoEl = document.getElementById('clientInfo');
 
-    welcomeEl.textContent = `🎉 Bem-vindo, ${client.name}!`;
-    infoEl.textContent = `Código: ${client.code} - ${allowedCategories.length} categoria(s) disponível(eis)`;
+    welcomeEl.textContent = `🎉 Welcome, ${client.name}!`;
+    infoEl.textContent = `Code: ${client.code} - ${allowedCategories.length} ${allowedCategories.length === 1 ? 'category' : 'categories'} available`;
 }
 
 // ===== NAVEGAÇÃO DE CATEGORIAS =====
@@ -132,7 +132,7 @@ function showCategories() {
     const { allowedCategories } = navigationState;
 
     if (allowedCategories.length === 0) {
-        showNoContent('Nenhuma categoria disponível', 'Entre em contato com o administrador para verificar suas permissões.');
+        showNoContent('No categories available', 'Please contact the administrator to verify your permissions.');
         return;
     }
 
@@ -143,9 +143,9 @@ function showCategories() {
                 <i class="fas fa-folder"></i> 
                 ${category.name}
             </h3>
-            <p>Categoria com acesso liberado para navegação completa</p>
+            <p>Category with full navigation access enabled</p>
             <div class="category-meta">
-                <i class="fas fa-info-circle"></i> Clique para explorar subcategorias e produtos
+                <i class="fas fa-info-circle"></i> Click to explore subcategories and products
             </div>
         </div>
     `).join('');
@@ -176,7 +176,7 @@ async function loadFolderContents(folderId) {
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.message || 'Erro ao carregar pasta');
+            throw new Error(data.message || 'Error loading folder');
         }
 
         const folderData = data.structure;
@@ -190,12 +190,12 @@ async function loadFolderContents(folderId) {
             await loadPhotos(folderId);
         } else {
             // Pasta vazia
-            showNoContent('Pasta vazia', 'Esta categoria não possui conteúdo no momento.');
+            showNoContent('Empty folder', 'This category has no content at the moment.');
         }
 
     } catch (error) {
-        console.error('Erro ao carregar pasta:', error);
-        showNoContent('Erro ao carregar', error.message);
+        console.error('Error loading folder:', error);
+        showNoContent('Error loading content', error.message);
     }
 }
 
@@ -221,8 +221,8 @@ function showSubfolders(folders) {
                 </h4>
                 <div class="folder-description">${description}</div>
                 <div class="folder-stats">
-                    ${hasPhotos ? `<span><i class="fas fa-image"></i> ${folder.imageCount || folder.totalFiles} foto(s)</span>` : ''}
-                    ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subpasta(s)</span>` : ''}
+                    ${hasPhotos ? `<span><i class="fas fa-image"></i> ${folder.imageCount || folder.totalFiles} photo(s)</span>` : ''}
+                    ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
                 </div>
             </div>
         `;
@@ -249,7 +249,7 @@ async function loadPhotos(folderId) {
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.message || 'Erro ao carregar fotos');
+            throw new Error(data.message || 'Error loading photos');
         }
 
         navigationState.currentPhotos = data.photos;
@@ -257,8 +257,8 @@ async function loadPhotos(folderId) {
         showPhotosGallery(data.photos, data.folder.name, categoryPrice);
 
     } catch (error) {
-        console.error('Erro ao carregar fotos:', error);
-        showNoContent('Erro ao carregar fotos', error.message);
+        console.error('Error loading photos:', error);
+        showNoContent('Error loading photos', error.message);
     } finally {
         showPhotosLoading(false);
     }
@@ -278,13 +278,13 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     } else {
         galleryTitle.textContent = folderName;
     }
-    document.getElementById('photosCount').textContent = `${photos.length} foto(s)`;
+    document.getElementById('photosCount').textContent = `${photos.length} photo(s)`;
 
     // Gerar grid de fotos
     const gridEl = document.getElementById('photosGrid');
 
     if (photos.length === 0) {
-        showNoContent('Nenhuma foto', 'Esta categoria não possui fotos no momento.');
+        showNoContent('No photos', 'This category has no photos at the moment.');
         return;
     }
 
@@ -304,14 +304,14 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="photo-placeholder" style="display: none;">
                     <i class="fas fa-image"></i>
-                    <small>Imagem não disponível</small>
+                    <small>Image not available</small>
                 </div>
                 <div class="photo-overlay">
                     <div><strong>${photo.name}</strong></div>
                     <small>${formatFileSize(photo.size)}</small>
                     <div class="photo-price ${categoryPrice?.hasPrice ? 'has-price' : 'no-price'}">
                         <i class="fas fa-tag"></i>
-                        <span>${categoryPrice?.formattedPrice || 'Sem preço'}</span>
+                        <span>${categoryPrice?.formattedPrice || 'No price'}</span>
                     </div>
                 </div>
             </div>
@@ -339,8 +339,8 @@ async function openPhotoModal(photoIndex) {
     // Atualizar informações básicas
     document.getElementById('modalPhotoTitle').textContent = photo.name;
     document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${photos.length}`;
-    document.getElementById('modalPhotoSize').textContent = `Tamanho: ${formatFileSize(photo.size)}`;
-    document.getElementById('modalPhotoDate').textContent = `Data: ${formatDate(photo.modifiedTime)}`;
+    document.getElementById('modalPhotoSize').textContent = `Size: ${formatFileSize(photo.size)}`;
+    document.getElementById('modalPhotoDate').textContent = `Date: ${formatDate(photo.modifiedTime)}`;
 
     // Atualizar botões de navegação
     document.getElementById('prevBtn').disabled = photoIndex === 0;
@@ -370,11 +370,11 @@ async function loadPhotoInModal(photoId) {
                 img.style.display = 'block';
             };
         } else {
-            throw new Error('Erro ao carregar foto');
+            throw new Error('Error loading photo');
         }
 
     } catch (error) {
-        console.error('Erro ao carregar foto:', error);
+        console.error('Error loading photo:', error);
         spinner.style.display = 'none';
         img.style.display = 'block';
 
@@ -383,7 +383,7 @@ async function loadPhotoInModal(photoId) {
         if (currentPhoto && currentPhoto.thumbnailLink) {
             img.src = currentPhoto.thumbnailLink.replace('=s220', '=s1200');
         } else {
-            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Erro ao carregar foto</text></svg>';
+            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Error loading photo</text></svg>';
         }
     }
 }
@@ -434,8 +434,8 @@ function selectPhotoForCart() {
     if (window.toggleCartItem) {
         window.toggleCartItem();
     } else {
-        console.warn('Sistema de carrinho não carregado');
-        showNotification('Sistema de carrinho carregando...', 'info');
+        console.warn('Cart system not loaded');
+        showNotification('Cart system loading...', 'info');
     }
 }
 
@@ -501,19 +501,19 @@ function showPhotosLoading(show) {
 // Gerar descrição do produto baseada no nome da pasta
 function generateProductDescription(folderName) {
     const patterns = {
-        'Salt & Pepper': 'Padrão mesclado com tons variados',
-        'Best Value': 'Excelente custo-benefício',
-        'Tannery Run': 'Produção especial do curtume',
-        'Tricolor': 'Três cores em padrão natural',
-        'Brindle': 'Padrão tigrado natural',
-        'Black & White': 'Preto e branco clássico',
-        'Brown & White': 'Marrom e branco natural',
-        'Exotic': 'Padrões únicos e especiais',
-        'Small': 'Tamanho pequeno',
-        'Medium': 'Tamanho médio',
-        'Large': 'Tamanho grande',
-        'XL': 'Tamanho extra grande',
-        'ML': 'Médio-grande'
+        'Salt & Pepper': 'Mixed pattern with varied tones',
+        'Best Value': 'Excellent cost-benefit ratio',
+        'Tannery Run': 'Special tannery production',
+        'Tricolor': 'Three colors in natural pattern',
+        'Brindle': 'Natural tiger stripe pattern',
+        'Black & White': 'Classic black and white',
+        'Brown & White': 'Natural brown and white',
+        'Exotic': 'Unique and special patterns',
+        'Small': 'Small size',
+        'Medium': 'Medium size',
+        'Large': 'Large size',
+        'XL': 'Extra large size',
+        'ML': 'Medium-large'
     };
 
     for (const [pattern, desc] of Object.entries(patterns)) {
@@ -522,7 +522,7 @@ function generateProductDescription(folderName) {
         }
     }
 
-    return 'Couros de alta qualidade selecionados';
+    return 'Selected high-quality leathers';
 }
 
 // Ocultar todos os containers
@@ -564,7 +564,8 @@ function formatFileSize(bytes) {
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+    // Pode alterar para 'en-US' se preferir formato americano
+    return date.toLocaleDateString('en-US');
 }
 
 // ===== INTEGRAÇÃO COM SISTEMA DE ZOOM =====
@@ -579,9 +580,9 @@ function isZoomAvailable() {
 // Log de inicialização do zoom
 document.addEventListener('DOMContentLoaded', () => {
     if (isZoomAvailable()) {
-        console.log('✅ Sistema de zoom disponível');
+        console.log('✅ Zoom system available');
     } else {
-        console.warn('⚠️ Sistema de zoom não carregado');
+        console.warn('⚠️ Zoom system not loaded');
     }
 });
 
@@ -603,7 +604,7 @@ async function loadCategoryPrice(folderId) {
             clientCode = session.accessCode;
         }
 
-        console.log(`🏷️ Buscando preço para categoria ${folderId}, cliente: ${clientCode || 'ANÔNIMO'}`);
+        console.log(`🏷️ Loading price for category ${folderId}, client: ${clientCode || 'ANONYMOUS'}`);
 
         // NOVO: Incluir clientCode na requisição
         const url = `/api/pricing/category-price?googleDriveId=${folderId}${clientCode ? `&clientCode=${clientCode}` : ''}`;
@@ -613,7 +614,7 @@ async function loadCategoryPrice(folderId) {
         let priceInfo = {
             hasPrice: false,
             price: 0,
-            formattedPrice: 'Sem preço',
+            formattedPrice: 'No price',
             priceSource: 'base'
         };
 
@@ -626,13 +627,13 @@ async function loadCategoryPrice(folderId) {
             };
 
             // NOVO: Log detalhado para debug
-            console.log(`✅ Preço carregado:`, {
-                categoria: data.category.displayName,
-                cliente: clientCode,
-                precoBase: data.category.basePrice,
-                precoFinal: data.category.finalPrice,
-                precoFormatado: data.category.formattedPrice,
-                fonte: data.category.priceSource
+            console.log(`✅ Price loaded:`, {
+                category: data.category.displayName,
+                client: clientCode,
+                basePrice: data.category.basePrice,
+                finalPrice: data.category.finalPrice,
+                formattedPrice: data.category.formattedPrice,
+                source: data.category.priceSource
             });
         }
 
@@ -640,12 +641,12 @@ async function loadCategoryPrice(folderId) {
         return priceInfo;
         
     } catch (error) {
-        console.error('❌ Erro ao buscar preço:', error);
+        console.error('❌ Error loading price:', error);
         return { 
             hasPrice: false, 
             price: 0, 
-            formattedPrice: 'Erro no preço',
-            priceSource: 'erro'
+            formattedPrice: 'Price error',
+            priceSource: 'error'
         };
     }
 }

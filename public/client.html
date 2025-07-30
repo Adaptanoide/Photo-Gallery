@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cliente - Sunshine Cowhides</title>
+    <title>Client - Sunshine Cowhides</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/client.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-    <header class="header">
+<body class="client-page">
+    <header class="client-luxury-header">
         <div class="container">
-            <div class="logo">
+            <div class="client-header-logo">
                 <i class="fas fa-sun"></i>
-                <span>Sunshine Cowhides - Catálogo</span>
+                <span>Sunshine Cowhides - Gallery</span>
             </div>
-            <nav class="nav">
-                <button onclick="logout()" class="btn btn-primary">
-                    <i class="fas fa-sign-out-alt"></i> Sair
+            <nav class="client-header-nav">
+                <button onclick="logout()" class="client-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span>Logout</span>
                 </button>
             </nav>
         </div>
@@ -30,17 +31,17 @@
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin fa-2x"></i>
                 </div>
-                <p>Carregando suas categorias...</p>
+                <p>Loading your categories...</p>
             </div>
 
             <!-- Erro de carregamento -->
             <div id="clientError" class="error-section" style="display: none;">
                 <div class="error-content">
                     <i class="fas fa-exclamation-triangle fa-2x"></i>
-                    <h3>Erro ao carregar dados</h3>
-                    <p id="errorMessage">Não foi possível carregar suas categorias.</p>
+                    <h3>Error loading data</h3>
+                    <p id="errorMessage">Unable to load your categories.</p>
                     <button onclick="loadClientData()" class="btn btn-primary">
-                        <i class="fas fa-redo"></i> Tentar novamente
+                        <i class="fas fa-redo"></i> Try again
                     </button>
                 </div>
             </div>
@@ -49,15 +50,15 @@
             <div id="clientContent" style="display: none;">
                 <!-- Cabeçalho do cliente -->
                 <div class="client-header">
-                    <h1 id="clientWelcome">🎉 Bem-vindo!</h1>
-                    <p id="clientInfo">Carregando informações...</p>
+                    <h1 id="clientWelcome">🎉 Welcome!</h1>
+                    <p id="clientInfo">Loading information...</p>
                 </div>
 
                 <!-- Navegação breadcrumb -->
                 <div id="breadcrumbContainer" class="breadcrumb-container" style="display: none;">
                     <nav class="breadcrumb">
                         <button class="breadcrumb-item home-btn" onclick="navigateToRoot()">
-                            <i class="fas fa-home"></i> Início
+                            <i class="fas fa-home"></i> Home
                         </button>
                         <div id="breadcrumbPath"></div>
                     </nav>
@@ -66,7 +67,7 @@
                 <!-- Navegação de volta -->
                 <div id="backNavigation" class="back-navigation" style="display: none;">
                     <button onclick="navigateBack()" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Voltar
+                        <i class="fas fa-arrow-left"></i> Back
                     </button>
                 </div>
 
@@ -85,9 +86,9 @@
                     <!-- Galeria de fotos -->
                     <div id="photosContainer" class="photos-gallery" style="display: none;">
                         <div class="gallery-header">
-                            <h3 id="galleryTitle">Fotos da categoria</h3>
+                            <h3 id="galleryTitle">Category Photos</h3>
                             <div class="gallery-info">
-                                <span id="photosCount">0 fotos</span>
+                                <span id="photosCount">0 photos</span>
                             </div>
                         </div>
                         
@@ -99,15 +100,15 @@
                         <!-- Loading de fotos -->
                         <div id="photosLoading" class="photos-loading" style="display: none;">
                             <i class="fas fa-spinner fa-spin"></i>
-                            <p>Carregando fotos...</p>
+                            <p>Loading photos...</p>
                         </div>
                     </div>
 
                     <!-- Mensagem quando não há conteúdo -->
                     <div id="noContentMessage" class="no-content" style="display: none;">
                         <i class="fas fa-folder-open fa-3x"></i>
-                        <h3>Nenhum conteúdo disponível</h3>
-                        <p>Esta categoria está vazia ou ainda não foi configurada.</p>
+                        <h3>No content available</h3>
+                        <p>This category is empty or not yet configured.</p>
                     </div>
                 </div>
             </div>
@@ -119,7 +120,7 @@
         <div class="modal-overlay" onclick="closePhotoModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h4 id="modalPhotoTitle">Nome da foto</h4>
+                <h4 id="modalPhotoTitle">Photo Name</h4>
                 <div class="modal-controls">
                     <span id="modalPhotoCounter">1 / 10</span>
                     <button onclick="closePhotoModal()" class="btn-close">
@@ -134,7 +135,7 @@
                 </button>
                 
                 <div class="photo-container">
-                    <img id="modalPhoto" src="" alt="Foto em fullscreen" />
+                    <img id="modalPhoto" src="" alt="Photo in fullscreen" />
                     <div id="photoLoadingSpinner" class="photo-loading-spinner" style="display: none;">
                         <i class="fas fa-spinner fa-spin fa-2x"></i>
                     </div>
@@ -147,13 +148,13 @@
             
             <div class="modal-footer">
                 <div class="photo-info">
-                    <span id="modalPhotoSize">Tamanho: -</span>
-                    <span id="modalPhotoDate">Data: -</span>
+                    <span id="modalPhotoSize">Size: -</span>
+                    <span id="modalPhotoDate">Date: -</span>
                 </div>
                 <div class="modal-actions">
                     <button id="cartToggleBtn" onclick="toggleCartItem()" class="btn-cart-toggle">
                         <i class="fas fa-shopping-cart"></i>
-                        <span id="cartToggleBtnText">Adicionar ao Carrinho</span>
+                        <span id="cartToggleBtnText">Add to Cart</span>
                     </button>
                 </div>
             </div>
@@ -166,7 +167,7 @@
         <div class="cart-container">
             <!-- Header do Carrinho -->
             <div class="cart-header">
-                <h3><i class="fas fa-shopping-cart"></i> Meu Carrinho</h3>
+                <h3><i class="fas fa-shopping-cart"></i> My Cart</h3>
                 <button onclick="closeCartSidebar()" class="cart-close-btn">
                     <i class="fas fa-times"></i>
                 </button>
@@ -177,14 +178,14 @@
                 <!-- Loading do carrinho -->
                 <div id="cartLoading" class="cart-loading">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <p>Carregando carrinho...</p>
+                    <p>Loading cart...</p>
                 </div>
                 
                 <!-- Carrinho vazio -->
                 <div id="cartEmpty" class="cart-empty" style="display: none;">
                     <i class="fas fa-shopping-cart fa-3x"></i>
-                    <h4>Carrinho vazio</h4>
-                    <p>Explore nossos produtos e adicione seus couros favoritos!</p>
+                    <h4>Empty cart</h4>
+                    <p>Explore our products and add your favorite leathers!</p>
                 </div>
                 
                 <!-- Lista de itens -->
@@ -197,12 +198,12 @@
             <div id="cartFooter" class="cart-footer" style="display: none;">
                 <div class="cart-summary">
                     <div class="cart-total">
-                        <span id="cartItemCount">0 itens</span>
+                        <span id="cartItemCount">0 items</span>
                         <span id="cartTimer">⏰ 15:00</span>
                     </div>
                     <button onclick="proceedToFinalize()" class="btn btn-primary btn-finalize">
                         <i class="fas fa-check-circle"></i>
-                        Finalizar Seleção
+                        Complete Selection
                     </button>
                 </div>
             </div>
@@ -227,36 +228,36 @@
         <div class="selection-modal-content">
             <div class="selection-modal-header">
                 <i class="fas fa-check-circle success-icon"></i>
-                <h2>Seleção Realizada com Sucesso!</h2>
+                <h2>Selection Completed Successfully!</h2>
             </div>
             
             <div class="selection-modal-body">
                 <div class="selection-info">
                     <div class="info-item">
-                        <span class="info-label">Itens Selecionados:</span>
+                        <span class="info-label">Selected Items:</span>
                         <span id="modalItemCount" class="info-value">-</span>
                     </div>
                 </div>
                 
                 <div class="next-steps">
-                    <h3><i class="fas fa-handshake"></i> Próximos Passos</h3>
+                    <h3><i class="fas fa-handshake"></i> Next Steps</h3>
                     <ul>
-                        <li>✅ Suas fotos foram reservadas com sucesso</li>
-                        <li>📞 Nossa equipe entrará em contato em breve</li>
-                        <li>💰 Acertaremos valores e forma de pagamento</li>
-                        <li>📦 Organizaremos o envio após confirmação</li>
+                        <li>✅ Your photos have been successfully reserved</li>
+                        <li>📞 Our team will contact you shortly</li>
+                        <li>💰 We'll arrange pricing and payment methods</li>
+                        <li>📦 We'll organize shipping after confirmation</li>
                     </ul>
                     
                     <div class="contact-info">
-                        <p><strong>Obrigado pela preferência!</strong></p>
-                        <p>Aguarde nosso contato para finalizar sua compra.</p>
+                        <p><strong>Thank you for your preference!</strong></p>
+                        <p>Please wait for our contact to finalize your purchase.</p>
                     </div>
                 </div>
             </div>
             
             <div class="selection-modal-footer">
                 <button onclick="goToHome()" class="btn btn-primary btn-full">
-                    <i class="fas fa-home"></i> Voltar ao Início
+                    <i class="fas fa-home"></i> Back to Home
                 </button>
             </div>
         </div>
