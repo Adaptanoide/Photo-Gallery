@@ -611,38 +611,223 @@ class GoogleDriveService {
     }
 
     /**
-     * Reverter foto para localização original usando caminho hierárquico
+     * Reverter foto para localização original (VERSÃO HÍBRIDA)
+     * Funciona com seleções antigas (IDs) e novas (caminhos hierárquicos)
      */
-    static async revertPhotoToOriginalLocation(photoId, originalHierarchicalPath) {
+    static async revertPhotoToOriginalLocation(photoId, originalPath) {
         try {
-            console.log(`🔄 Revertendo foto ${photoId} para: ${originalHierarchicalPath}`);
+            console.log(`🔄 Revertendo foto ${photoId} para: ${originalPath}`);
 
-            // Encontrar ID da pasta de destino pelo caminho hierárquico
-            const destinationFolderId = await this.findFolderByHierarchicalPath(originalHierarchicalPath);
+            let destinationFolderId;
 
-            if (!destinationFolderId) {
-                throw new Error(`Pasta de destino não encontrada para caminho: ${originalHierarchicalPath}`);
+            // ===== DETECÇÃO AUTOMÁTICA: ID vs CAMINHO =====
+            if (this.isGoogleDriveId(originalPath)) {
+                // É um ID (seleção antiga) - usar diretamente
+                console.log(`🆔 Detectado como ID do Google Drive: ${originalPath}`);
+                destinationFolderId = originalPath;
+
+                // Verificar se ID ainda existe
+                const isValidId = await this.verifyFolderId(originalPath);
+                if (!isValidId) {
+                    console.warn(`⚠️ ID ${originalPath} não é válido, tentando método alternativo...`);
+                    throw new Error(`ID de pasta inválido: ${originalPath}`);
+                }
+
+            } else {
+                // É um caminho hierárquico (seleção nova) - encontrar ID
+                console.log(`🗂️ Detectado como caminho hierárquico: ${originalPath}`);
+                destinationFolderId = await this.findFolderByHierarchicalPath(originalPath);
+
+                if (!destinationFolderId) {
+                    throw new Error(`Pasta não encontrada para caminho: ${originalPath}`);
+                }
             }
 
-            // Mover foto para pasta original
+            // Mover foto para pasta de destino
             const result = await this.movePhotoToSelection(photoId, destinationFolderId);
 
-            console.log(`✅ Foto revertida: ${result.photoName} → ${originalHierarchicalPath}`);
+            console.log(`✅ Foto revertida: ${result.photoName} → ${originalPath}`);
 
             return {
                 success: true,
                 photoId,
-                originalPath: originalHierarchicalPath,
-                destinationFolderId
+                originalPath,
+                destinationFolderId,
+                method: this.isGoogleDriveId(originalPath) ? 'ID_DIRETO' : 'CAMINHO_HIERARQUICO'
             };
 
         } catch (error) {
             console.error(`❌ Erro ao reverter foto ${photoId}:`, error);
+
+            // ===== FALLBACK: TENTAR ENCONTRAR PASTA PAI ATUAL =====
+            try {
+                console.log(`🔄 Tentando fallback para foto ${photoId}...`);
+                const fallbackResult = await this.fallbackRevertPhoto(photoId);
+
+                if (fallbackResult.success) {
+                    console.log(`✅ Fallback bem-sucedido: ${fallbackResult.method}`);
+                    return fallbackResult;
+                }
+            } catch (fallbackError) {
+                console.error(`❌ Fallback também falhou:`, fallbackError);
+            }
+
             return {
                 success: false,
                 photoId,
+                originalPath,
                 error: error.message
             };
+        }
+    }
+
+    /**
+     * Verificar se string é um ID válido do Google Drive
+     */
+    static isGoogleDriveId(str) {
+        // IDs do Google Drive têm formato específico
+        const googleDriveIdPattern = /^[a-zA-Z0-9_-]{25,}$/;
+        return googleDriveIdPattern.test(str) && !str.includes('→');
+    }
+
+    /**
+     * Verificar se ID de pasta ainda existe no Google Drive
+     */
+    static async verifyFolderId(folderId) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            await drive.files.get({
+                fileId: folderId,
+                fields: 'id, name, mimeType'
+            });
+
+            return true;
+        } catch (error) {
+            console.warn(`⚠️ ID ${folderId} não é válido:`, error.message);
+            return false;
+        }
+    }
+
+    /**
+     * Método de fallback: tentar descobrir pasta original da foto
+     */
+    static async fallbackRevertPhoto(photoId) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            console.log(`🔍 Fallback: Analisando foto ${photoId}...`);
+
+            // Buscar informações da foto
+            const photo = await drive.files.get({
+                fileId: photoId,
+                fields: 'id, name, parents'
+            });
+
+            const photoName = photo.data.name;
+            const currentParent = photo.data.parents[0];
+
+            console.log(`📸 Foto: ${photoName}, Parent atual: ${currentParent}`);
+
+            // ===== ESTRATÉGIA 1: ENCONTRAR PASTA COM NOME SIMILAR =====
+            // Extrair possível categoria do nome do arquivo
+            const possibleCategory = this.extractCategoryFromFileName(photoName);
+
+            if (possibleCategory) {
+                console.log(`🎯 Categoria possível extraída: ${possibleCategory}`);
+
+                const categoryFolderId = await this.findCategoryFolder(possibleCategory);
+
+                if (categoryFolderId) {
+                    // Mover para pasta da categoria encontrada
+                    await this.movePhotoToSelection(photoId, categoryFolderId);
+
+                    console.log(`✅ Fallback sucesso: Movido para categoria ${possibleCategory}`);
+
+                    return {
+                        success: true,
+                        photoId,
+                        destinationFolderId: categoryFolderId,
+                        method: 'FALLBACK_CATEGORIA',
+                        details: `Movido para categoria inferida: ${possibleCategory}`
+                    };
+                }
+            }
+
+            // ===== ESTRATÉGIA 2: MOVER PARA ACTUAL_PICTURES RAIZ =====
+            console.log(`🏠 Fallback final: Movendo para ACTUAL_PICTURES raiz`);
+
+            await this.movePhotoToSelection(photoId, this.FOLDER_IDS.ACTUAL_PICTURES);
+
+            return {
+                success: true,
+                photoId,
+                destinationFolderId: this.FOLDER_IDS.ACTUAL_PICTURES,
+                method: 'FALLBACK_RAIZ',
+                details: 'Movido para pasta raiz ACTUAL_PICTURES (requer reorganização manual)'
+            };
+
+        } catch (error) {
+            console.error(`❌ Fallback falhou completamente:`, error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Extrair possível categoria do nome do arquivo
+     */
+    static extractCategoryFromFileName(fileName) {
+        // Remover extensão
+        const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+
+        // Padrões comuns nos seus arquivos
+        const patterns = [
+            /^(.*?)(XL|L|M|S)(\d+)?$/i,           // Brazilian XL2, Colombian M, etc
+            /^(.*?)(Extra Large|Large|Medium|Small)/i, // Extra Large, Medium, etc  
+            /^(.*?)(Black|White|Brown|Salt|Pepper)/i,  // Cores
+            /^(\d+)\s*(.*?)(\d+)?$/                    // 1 Colombian, 2 Brazil, etc
+        ];
+
+        for (const pattern of patterns) {
+            const match = nameWithoutExt.match(pattern);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+        }
+
+        // Fallback: primeira palavra
+        const firstWord = nameWithoutExt.split(/[\s_-]/)[0];
+        return firstWord.length > 2 ? firstWord : null;
+    }
+
+    /**
+     * Encontrar pasta de categoria por nome aproximado
+     */
+    static async findCategoryFolder(categoryHint) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            // Buscar pastas que contenham o hint
+            const response = await drive.files.list({
+                q: `'${this.FOLDER_IDS.ACTUAL_PICTURES}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder' and name contains '${categoryHint}'`,
+                fields: 'files(id, name)',
+                pageSize: 10
+            });
+
+            if (response.data.files.length > 0) {
+                const folder = response.data.files[0];
+                console.log(`📁 Categoria encontrada: ${folder.name} (${folder.id})`);
+                return folder.id;
+            }
+
+            return null;
+
+        } catch (error) {
+            console.error(`❌ Erro ao buscar categoria '${categoryHint}':`, error);
+            return null;
         }
     }
 
