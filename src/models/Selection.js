@@ -112,9 +112,10 @@ const selectionSchema = new mongoose.Schema({
                 'finalized',
                 'email_sent',
                 'email_failed',
-                'approved',      // ← ADICIONAR
-                'moved_to_sold', // ← ADICIONAR
-                'cancelled'      // ← ADICIONAR (para futuro)
+                'approved',
+                'moved_to_sold',
+                'cancelled',
+                'photos_reverted'
             ],
             required: true
         },

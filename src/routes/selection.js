@@ -128,7 +128,7 @@ router.post('/finalize', async (req, res) => {
                         fileName: product.fileName,
                         category: product.category,
                         thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
-                        originalPath: moveResultItem?.oldParent || 'unknown',
+                        originalPath: moveResultItem?.originalHierarchicalPath || 'unknown',
                         newPath: moveResultItem?.newParent || folderResult.folderId,
                         price: cartItem?.price || 0,
                         selectedAt: cartItem?.addedAt || new Date(),
