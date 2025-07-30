@@ -613,7 +613,7 @@
                     </div>
                 </div>
 
-                <!-- Seção Seleções -->
+                <!-- ===== SEÇÃO SELEÇÕES (ATUALIZADA) ===== -->
                 <div id="section-selections" class="content-section" style="display: none;">
                     <!-- Cabeçalho -->
                     <div class="selections-section-header">
@@ -629,6 +629,63 @@
                         </div>
                     </div>
 
+                    <!-- Cards de Estatísticas -->
+                    <div class="selections-stats">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Total Selections</div>
+                                        <div class="stat-value" id="totalSelections">-</div>
+                                        <div class="stat-description" id="totalSelectionsDescription">All time selections</div>
+                                    </div>
+                                    <div class="stat-icon primary">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Pending Approvals</div>
+                                        <div class="stat-value" id="pendingSelections">-</div>
+                                        <div class="stat-description" id="pendingSelectionsDescription">Awaiting approval</div>
+                                    </div>
+                                    <div class="stat-icon warning">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">This Month</div>
+                                        <div class="stat-value" id="thisMonthSelections">-</div>
+                                        <div class="stat-description" id="thisMonthSelectionsDescription">This month</div>
+                                    </div>
+                                    <div class="stat-icon success">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Average Value</div>
+                                        <div class="stat-value" id="averageSelectionValue">-</div>
+                                        <div class="stat-description" id="averageSelectionValueDescription">Per selection</div>
+                                    </div>
+                                    <div class="stat-icon secondary">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Filtros -->
                     <div class="selections-filters">
                         <div class="filters-row">
@@ -639,10 +696,11 @@
                                     <option value="confirmed">Confirmed</option>
                                     <option value="cancelled">Cancelled</option>
                                     <option value="finalized">Finalized</option>
+                                    <option value="all">All</option>
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="filter-label">Client</label>
+                                <label class="filter-label">Search Client</label>
                                 <input type="text" id="searchSelectionClient" class="filter-input" 
                                     placeholder="Code or client name...">
                             </div>
