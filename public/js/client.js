@@ -390,25 +390,25 @@ async function updateModalPriceInfo() {
         const priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
         
         if (priceInfo && priceInfo.hasPrice) {
-            // Mostrar preço + descrição - ELEGANTE E LIMPO
+            // Badge dourado igual aos thumbnails
             document.getElementById('modalPhotoSize').innerHTML = `
-                <strong>${priceInfo.formattedPrice}</strong>
+                <span class="modal-price-badge">${priceInfo.formattedPrice}</span>
             `;
-            document.getElementById('modalPhotoDate').textContent = `Premium leather quality`;
+            document.getElementById('modalPhotoDate').textContent = ''; // Vazio - sem descrição
         } else {
-            // Sem preço - mostrar informações elegantes
+            // Sem preço - badge discreto
             document.getElementById('modalPhotoSize').innerHTML = `
-                <strong>Check price</strong>
+                <span class="modal-price-badge no-price">Check price</span>
             `;
-            document.getElementById('modalPhotoDate').textContent = `Contact for pricing`;
+            document.getElementById('modalPhotoDate').textContent = ''; // Vazio - sem descrição
         }
     } catch (error) {
         console.error('Erro ao carregar preço do modal:', error);
         // Fallback em caso de erro
         document.getElementById('modalPhotoSize').innerHTML = `
-            <strong>Premium Quality</strong>
+            <span class="modal-price-badge no-price">Contact us</span>
         `;
-        document.getElementById('modalPhotoDate').textContent = `Selected leather`;
+        document.getElementById('modalPhotoDate').textContent = ''; // Vazio - sem descrição
     }
 }
 
