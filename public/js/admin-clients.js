@@ -1,8 +1,8 @@
-//public/js/admin-client.js
+//public/js/admin-clients.js
 
 /**
  * ADMIN CLIENTS - SUNSHINE COWHIDES
- * Gestão completa de códigos de acesso e clientes
+ * Complete access code and client management
  */
 
 class AdminClients {
@@ -20,20 +20,20 @@ class AdminClients {
         this.init();
     }
 
-    // ===== INICIALIZAÇÃO =====
+    // ===== INITIALIZATION =====
     init() {
-        console.log('👥 Inicializando Gestão de Clientes...');
+        console.log('👥 Initializing Client Management...');
         this.setupElements();
         this.setupEventListeners();
         this.loadInitialData();
-        console.log('✅ Gestão de Clientes inicializada');
+        console.log('✅ Client Management initialized');
     }
 
     setupElements() {
-        // Container principal
+        // Main container
         this.section = document.getElementById('section-clients');
 
-        // Elementos que criaremos dinamicamente
+        // Elements we'll create dynamically
         this.clientsContainer = null;
         this.modal = null;
         this.form = null;
@@ -44,38 +44,38 @@ class AdminClients {
     }
 
     setupEventListeners() {
-        // Event listeners serão configurados após criar o HTML
-        console.log('🔗 Event listeners configurados');
+        // Event listeners will be configured after creating HTML
+        console.log('🔗 Event listeners configured');
     }
 
-    // ===== RENDERIZAÇÃO INICIAL =====
+    // ===== INITIAL RENDERING =====
     async loadInitialData() {
         if (!this.section) {
-            console.log('⚠️ Seção de clientes não encontrada');
+            console.log('⚠️ Clients section not found');
             return;
         }
 
         this.showLoading(true);
 
         try {
-            // Criar HTML da interface
+            // Create interface HTML
             this.renderClientInterface();
 
-            // Carregar dados em paralelo
+            // Load data in parallel
             await Promise.all([
                 this.loadClients(),
                 this.loadAvailableCategories()
             ]);
 
-            // Renderizar tabela
+            // Render table
             this.renderClientsTable();
 
-            // Configurar event listeners após criar HTML
+            // Setup event listeners after creating HTML
             this.setupEventListenersAfterRender();
 
         } catch (error) {
-            console.error('❌ Erro ao carregar dados iniciais:', error);
-            this.showError('Erro ao carregar dados de clientes');
+            console.error('❌ Error loading initial data:', error);
+            this.showError('Error loading client data');
         } finally {
             this.showLoading(false);
         }
@@ -83,89 +83,89 @@ class AdminClients {
 
     renderClientInterface() {
         this.section.innerHTML = `
-            <!-- Cabeçalho da Seção -->
+            <!-- Section Header -->
             <div class="clients-section-header">
                 <h2 class="clients-title">
                     <i class="fas fa-users"></i>
-                    Gestão de Clientes
+                    Client Management
                 </h2>
                 <div class="clients-actions">
                     <button id="btnRefreshClients" class="btn btn-secondary">
                         <i class="fas fa-sync-alt"></i>
-                        Atualizar
+                        Refresh
                     </button>
                     <button id="btnNewClient" class="btn btn-primary">
                         <i class="fas fa-plus"></i>
-                        Novo Código
+                        New Code
                     </button>
                 </div>
             </div>
 
-            <!-- Filtros -->
+            <!-- Filters -->
             <div class="clients-filters">
                 <div class="filters-row">
                     <div class="filter-group">
-                        <label class="filter-label">Buscar Cliente</label>
+                        <label class="filter-label">Search Client</label>
                         <input type="text" id="searchClients" class="filter-input" 
-                               placeholder="Nome, código ou email...">
+                               placeholder="Name, code or email...">
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">Status</label>
                         <select id="filterStatus" class="filter-select">
-                            <option value="all">Todos</option>
-                            <option value="active">Ativos</option>
-                            <option value="inactive">Inativos</option>
-                            <option value="expired">Expirados</option>
+                            <option value="all">All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="expired">Expired</option>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label class="filter-label">Ordenar</label>
+                        <label class="filter-label">Sort by</label>
                         <select id="sortClients" class="filter-select">
-                            <option value="recent">Mais Recentes</option>
-                            <option value="name">Nome A-Z</option>
-                            <option value="code">Código</option>
-                            <option value="usage">Mais Usados</option>
+                            <option value="recent">Most Recent</option>
+                            <option value="name">Name A-Z</option>
+                            <option value="code">Code</option>
+                            <option value="usage">Most Used</option>
                         </select>
                     </div>
                     <button id="btnApplyFilters" class="btn-filter">
                         <i class="fas fa-filter"></i>
-                        Filtrar
+                        Filter
                     </button>
                 </div>
             </div>
 
-            <!-- Tabela de Códigos -->
+            <!-- Codes Table -->
             <div class="clients-table-container">
                 <table class="clients-table">
                     <thead>
                         <tr>
-                            <th>Código</th>
-                            <th>Cliente</th>
-                            <th>Categorias</th>
-                            <th>Uso</th>
-                            <th>Expira em</th>
+                            <th>Code</th>
+                            <th>Client</th>
+                            <th>Categories</th>
+                            <th>Usage</th>
+                            <th>Expires</th>
                             <th>Status</th>
-                            <th>Ações</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="clientsTableBody">
                         <tr>
                             <td colspan="7" class="text-center">
                                 <i class="fas fa-spinner fa-spin"></i>
-                                Carregando códigos...
+                                Loading codes...
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Modal de Código -->
+            <!-- Client Modal -->
             <div id="clientModal" class="client-modal">
                 <div class="client-modal-content">
                     <div class="client-modal-header">
                         <h3 class="modal-title">
                             <i class="fas fa-user-plus"></i>
-                            <span id="modalTitle">Novo Código de Acesso</span>
+                            <span id="modalTitle">New Access Code</span>
                         </h3>
                         <button class="modal-close" onclick="adminClients.closeModal()">
                             <i class="fas fa-times"></i>
@@ -174,75 +174,75 @@ class AdminClients {
                     
                     <div class="client-modal-body">
                         <form id="clientForm" class="client-form">
-                            <!-- Informações do Cliente -->
+                            <!-- Client Information -->
                             <div class="form-section-clients">
                                 <h4 class="form-section-title-clients">
                                     <i class="fas fa-user"></i>
-                                    Informações do Cliente
+                                    Client Information
                                 </h4>
                                 <div class="form-grid">
                                     <div class="form-group-clients">
-                                        <label class="form-label-clients required">Nome Completo</label>
+                                        <label class="form-label-clients required">Full Name</label>
                                         <input type="text" id="clientName" class="form-input-clients" 
-                                               placeholder="Ex: João Silva" required>
+                                               placeholder="Ex: John Silva" required>
                                     </div>
                                     <div class="form-group-clients">
                                         <label class="form-label-clients">Email</label>
                                         <input type="email" id="clientEmail" class="form-input-clients" 
-                                               placeholder="joao@email.com">
+                                               placeholder="john@email.com">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Código de Acesso -->
+                            <!-- Access Code -->
                             <div class="form-section-clients">
                                 <h4 class="form-section-title-clients">
                                     <i class="fas fa-key"></i>
-                                    Código de Acesso
+                                    Access Code
                                 </h4>
                                 <div class="form-group-clients">
                                     <div id="codePreview" class="code-preview">
                                         ----
                                     </div>
-                                    <small style="color: #666; text-align: center; display: block; margin-top: 0.5rem;">
-                                        Código será gerado automaticamente
+                                    <small style="color: var(--text-muted); text-align: center; display: block; margin-top: 0.5rem;">
+                                        Code will be generated automatically
                                     </small>
                                 </div>
                             </div>
 
-                            <!-- Configurações -->
+                            <!-- Settings -->
                             <div class="form-section-clients">
                                 <h4 class="form-section-title-clients">
                                     <i class="fas fa-cog"></i>
-                                    Configurações
+                                    Settings
                                 </h4>
                                 <div class="form-grid">
                                     <div class="form-group-clients">
-                                        <label class="form-label-clients">Expira em (dias)</label>
+                                        <label class="form-label-clients">Expires in (days)</label>
                                         <input type="number" id="expireDays" class="form-input-clients" 
                                                value="30" min="1" max="365">
                                     </div>
                                     <div class="form-group-clients">
                                         <label class="form-label-clients">Status</label>
                                         <select id="clientStatus" class="form-input-clients">
-                                            <option value="true">Ativo</option>
-                                            <option value="false">Inativo</option>
+                                            <option value="true">Active</option>
+                                            <option value="false">Inactive</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Categorias Permitidas -->
+                            <!-- Allowed Categories -->
                             <div class="form-section-clients">
                                 <h4 class="form-section-title-clients">
                                     <i class="fas fa-folder-open"></i>
-                                    Categorias Permitidas
+                                    Allowed Categories
                                 </h4>
                                 <div class="form-group-clients full-width">
                                     <div id="categoriesSelection" class="categories-selection">
-                                        <div style="padding: 2rem; text-align: center; color: #666;">
+                                        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
                                             <i class="fas fa-spinner fa-spin"></i>
-                                            Carregando categorias...
+                                            Loading categories...
                                         </div>
                                     </div>
                                 </div>
@@ -253,7 +253,7 @@ class AdminClients {
                         <div id="modalLoading" class="loading-overlay">
                             <div class="loading-spinner-modal">
                                 <div class="spinner-modal"></div>
-                                <p>Processando...</p>
+                                <p>Processing...</p>
                             </div>
                         </div>
                     </div>
@@ -261,18 +261,18 @@ class AdminClients {
                     <div class="client-modal-footer">
                         <button type="button" class="btn-modal btn-cancel" onclick="adminClients.closeModal()">
                             <i class="fas fa-times"></i>
-                            Cancelar
+                            Cancel
                         </button>
                         <button type="submit" form="clientForm" class="btn-modal btn-save" id="btnSaveClient">
                             <i class="fas fa-save"></i>
-                            <span id="saveButtonText">Criar Código</span>
+                            <span id="saveButtonText">Create Code</span>
                         </button>
                     </div>
                 </div>
             </div>
         `;
 
-        // Armazenar referências dos elementos
+        // Store element references
         this.clientsContainer = this.section;
         this.modal = document.getElementById('clientModal');
         this.form = document.getElementById('clientForm');
@@ -280,33 +280,33 @@ class AdminClients {
     }
 
     setupEventListenersAfterRender() {
-        // Botões principais
+        // Main buttons
         document.getElementById('btnNewClient').addEventListener('click', () => this.openCreateModal());
         document.getElementById('btnRefreshClients').addEventListener('click', () => this.refreshData());
 
-        // Filtros
+        // Filters
         document.getElementById('searchClients').addEventListener('input', (e) => this.handleSearch(e.target.value));
         document.getElementById('filterStatus').addEventListener('change', (e) => this.handleStatusFilter(e.target.value));
         document.getElementById('sortClients').addEventListener('change', (e) => this.handleSort(e.target.value));
         document.getElementById('btnApplyFilters').addEventListener('click', () => this.applyFilters());
 
-        // Formulário
+        // Form
         this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
 
-        // Inputs do formulário
+        // Form inputs
         document.getElementById('clientName').addEventListener('input', () => this.generateCodePreview());
 
-        // Fechar modal clicando fora
+        // Close modal by clicking outside
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
                 this.closeModal();
             }
         });
 
-        console.log('🔗 Event listeners configurados após renderização');
+        console.log('🔗 Event listeners configured after rendering');
     }
 
-    // ===== CARREGAMENTO DE DADOS =====
+    // ===== DATA LOADING =====
     async loadClients() {
         try {
             const token = this.getAdminToken();
@@ -320,20 +320,20 @@ class AdminClients {
 
             if (data.success) {
                 this.clients = data.codes || [];
-                console.log(`✅ ${this.clients.length} códigos carregados`);
+                console.log(`✅ ${this.clients.length} codes loaded`);
             } else {
-                throw new Error(data.message || 'Erro ao carregar códigos');
+                throw new Error(data.message || 'Error loading codes');
             }
 
         } catch (error) {
-            console.error('❌ Erro ao carregar clientes:', error);
-            // Dados de fallback para desenvolvimento
+            console.error('❌ Error loading clients:', error);
+            // Fallback data for development
             this.clients = [
                 {
                     _id: '1',
                     code: '7064',
-                    clientName: 'João Silva',
-                    clientEmail: 'joao@email.com',
+                    clientName: 'John Silva',
+                    clientEmail: 'john@email.com',
                     allowedCategories: ['1. Colombian Cowhides', '2. Brazil Best Sellers'],
                     isActive: true,
                     usageCount: 3,
@@ -356,13 +356,13 @@ class AdminClients {
                     name: folder.name,
                     modifiedTime: folder.modifiedTime
                 }));
-                console.log(`✅ ${this.availableCategories.length} categorias carregadas`);
+                console.log(`✅ ${this.availableCategories.length} categories loaded`);
             } else {
-                throw new Error(data.message || 'Erro ao carregar categorias');
+                throw new Error(data.message || 'Error loading categories');
             }
 
         } catch (error) {
-            console.error('❌ Erro ao carregar categorias:', error);
+            console.error('❌ Error loading categories:', error);
             // Fallback
             this.availableCategories = [
                 { id: '1', name: '1. Colombian Cowhides' },
@@ -372,7 +372,7 @@ class AdminClients {
         }
     }
 
-    // ===== RENDERIZAÇÃO DA TABELA =====
+    // ===== TABLE RENDERING =====
     renderClientsTable() {
         if (!this.table) return;
 
@@ -381,8 +381,8 @@ class AdminClients {
                 <tr>
                     <td colspan="7" class="text-center">
                         <i class="fas fa-inbox"></i>
-                        Nenhum código encontrado
-                        <br><small style="color: #666;">Clique em "Novo Código" para criar o primeiro</small>
+                        No codes found
+                        <br><small style="color: var(--text-muted);">Click "New Code" to create the first one</small>
                     </td>
                 </tr>
             `;
@@ -394,7 +394,7 @@ class AdminClients {
                 <td class="client-code-cell">${client.code}</td>
                 <td class="client-name-cell">
                     <div>${client.clientName}</div>
-                    <div class="client-email-cell">${client.clientEmail || 'Sem email'}</div>
+                    <div class="client-email-cell">${client.clientEmail || 'No email'}</div>
                 </td>
                 <td class="client-categories-cell">
                     <div class="categories-preview">
@@ -403,7 +403,7 @@ class AdminClients {
                 </td>
                 <td class="client-usage-cell">
                     <div class="usage-count">${client.usageCount || 0}x</div>
-                    <div class="usage-last">${this.formatDate(client.lastUsed, 'Nunca usado')}</div>
+                    <div class="usage-last">${this.formatDate(client.lastUsed, 'Never used')}</div>
                 </td>
                 <td>${this.formatDate(client.expiresAt)}</td>
                 <td class="client-status-cell">
@@ -413,16 +413,16 @@ class AdminClients {
                     <div class="action-buttons">
                         <button class="btn-action btn-view" onclick="adminClients.viewClient('${client._id || client.code}')">
                             <i class="fas fa-eye"></i>
-                            Ver
+                            View
                         </button>
                         <button class="btn-action btn-edit" onclick="adminClients.editClient('${client._id || client.code}')">
                             <i class="fas fa-edit"></i>
-                            Editar
+                            Edit
                         </button>
                         <button class="btn-action btn-toggle ${client.isActive ? '' : 'activate'}" 
                                 onclick="adminClients.toggleClientStatus('${client._id || client.code}')">
                             <i class="fas fa-${client.isActive ? 'ban' : 'check'}"></i>
-                            ${client.isActive ? 'Desativar' : 'Ativar'}
+                            ${client.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                     </div>
                 </td>
@@ -434,7 +434,7 @@ class AdminClients {
 
     renderCategoriesPreview(categories) {
         if (!categories || categories.length === 0) {
-            return '<span style="color: #999; font-style: italic;">Nenhuma categoria</span>';
+            return '<span style="color: var(--text-muted); font-style: italic;">No categories</span>';
         }
 
         const maxShow = 2;
@@ -456,35 +456,35 @@ class AdminClients {
         const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
 
         if (isExpired) {
-            return '<span class="status-badge-client status-expired">Expirado</span>';
+            return '<span class="status-badge-client status-expired">Expired</span>';
         } else if (client.isActive) {
-            return '<span class="status-badge-client status-active">Ativo</span>';
+            return '<span class="status-badge-client status-active">Active</span>';
         } else {
-            return '<span class="status-badge-client status-inactive">Inativo</span>';
+            return '<span class="status-badge-client status-inactive">Inactive</span>';
         }
     }
 
-    // ===== MODAL E FORMULÁRIO =====
+    // ===== MODAL AND FORM =====
     openCreateModal() {
         this.currentClient = null;
         this.selectedCategories = [];
 
-        // Resetar formulário
+        // Reset form
         this.form.reset();
         document.getElementById('expireDays').value = '30';
         document.getElementById('clientStatus').value = 'true';
 
-        // Atualizar títulos
-        document.getElementById('modalTitle').textContent = 'Novo Código de Acesso';
-        document.getElementById('saveButtonText').textContent = 'Criar Código';
+        // Update titles
+        document.getElementById('modalTitle').textContent = 'New Access Code';
+        document.getElementById('saveButtonText').textContent = 'Create Code';
 
-        // Gerar preview do código
+        // Generate code preview
         this.generateCodePreview();
 
-        // Renderizar categorias
+        // Render categories
         this.renderCategoriesSelection();
 
-        // Mostrar modal
+        // Show modal
         this.modal.classList.add('active');
         document.getElementById('clientName').focus();
     }
@@ -496,7 +496,7 @@ class AdminClients {
     }
 
     generateCodePreview() {
-        // Gerar código de 4 dígitos único
+        // Generate unique 4-digit code
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('codePreview').textContent = code;
     }
@@ -506,9 +506,9 @@ class AdminClients {
 
         if (this.availableCategories.length === 0) {
             container.innerHTML = `
-                <div style="padding: 2rem; text-align: center; color: #666;">
+                <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <p>Nenhuma categoria disponível</p>
+                    <p>No categories available</p>
                 </div>
             `;
             return;
@@ -524,7 +524,7 @@ class AdminClients {
                        onchange="adminClients.handleCategoryChange('${category.name}', this.checked)">
                 <div class="category-info">
                     <div class="category-name">${category.name}</div>
-                    <div class="category-details">Atualizada: ${this.formatDate(category.modifiedTime)}</div>
+                    <div class="category-details">Updated: ${this.formatDate(category.modifiedTime)}</div>
                 </div>
                 <div class="category-preview">
                     <i class="fas fa-folder"></i>
@@ -544,7 +544,7 @@ class AdminClients {
             this.selectedCategories = this.selectedCategories.filter(cat => cat !== categoryName);
         }
 
-        console.log('📝 Categorias selecionadas:', this.selectedCategories);
+        console.log('📝 Selected categories:', this.selectedCategories);
     }
 
     async handleFormSubmit(e) {
@@ -558,10 +558,10 @@ class AdminClients {
             isActive: document.getElementById('clientStatus').value === 'true'
         };
 
-        // VALIDAÇÕES APRIMORADAS
+        // ENHANCED VALIDATIONS
         const validationErrors = this.validateFormData(formData);
         if (validationErrors.length > 0) {
-            this.showError('Erros no formulário:\n' + validationErrors.join('\n'));
+            this.showError('Form errors:\n' + validationErrors.join('\n'));
             return;
         }
 
@@ -569,23 +569,23 @@ class AdminClients {
             this.showModalLoading(true);
 
             if (this.currentClient) {
-                // EDITANDO cliente existente
-                console.log('✏️ Editando cliente:', this.currentClient._id || this.currentClient.code);
+                // EDITING existing client
+                console.log('✏️ Editing client:', this.currentClient._id || this.currentClient.code);
                 await this.updateClient(this.currentClient._id || this.currentClient.code, formData);
-                this.showSuccess('Código atualizado com sucesso!');
+                this.showSuccess('Code updated successfully!');
             } else {
-                // CRIANDO novo cliente
-                console.log('➕ Criando novo cliente');
+                // CREATING new client
+                console.log('➕ Creating new client');
                 await this.createClient(formData);
-                this.showSuccess('Código criado com sucesso!');
+                this.showSuccess('Code created successfully!');
             }
 
             this.closeModal();
             await this.refreshData();
 
         } catch (error) {
-            console.error('❌ Erro ao salvar:', error);
-            this.showError(error.message || 'Erro ao salvar código');
+            console.error('❌ Error saving:', error);
+            this.showError(error.message || 'Error saving code');
         } finally {
             this.showModalLoading(false);
         }
@@ -605,17 +605,17 @@ class AdminClients {
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.message || 'Erro ao criar código');
+            throw new Error(data.message || 'Error creating code');
         }
 
         return data.accessCode;
     }
 
-    // ===== FUNÇÃO PARA ATUALIZAR CLIENTE (ESTAVA FALTANDO) =====
+    // ===== UPDATE CLIENT FUNCTION =====
     async updateClient(clientId, formData) {
         const token = this.getAdminToken();
 
-        console.log('✏️ Atualizando cliente:', clientId, formData);
+        console.log('✏️ Updating client:', clientId, formData);
 
         const response = await fetch(`/api/admin/access-codes/${clientId}`, {
             method: 'PUT',
@@ -629,18 +629,18 @@ class AdminClients {
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.message || 'Erro ao atualizar código');
+            throw new Error(data.message || 'Error updating code');
         }
 
-        console.log('✅ Cliente atualizado com sucesso');
+        console.log('✅ Client updated successfully');
         return data.accessCode;
     }
 
-    // ===== FUNÇÃO PARA DELETAR CLIENTE =====
+    // ===== DELETE CLIENT FUNCTION =====
     async deleteClient(clientId) {
         const token = this.getAdminToken();
 
-        console.log('🗑️ Deletando cliente:', clientId);
+        console.log('🗑️ Deleting client:', clientId);
 
         const response = await fetch(`/api/admin/access-codes/${clientId}`, {
             method: 'DELETE',
@@ -652,18 +652,18 @@ class AdminClients {
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.message || 'Erro ao deletar código');
+            throw new Error(data.message || 'Error deleting code');
         }
 
-        console.log('✅ Cliente deletado com sucesso');
+        console.log('✅ Client deleted successfully');
         return true;
     }
 
-    // ===== FUNÇÃO PARA TOGGLE STATUS (MELHORADA) =====
+    // ===== IMPROVED STATUS TOGGLE FUNCTION =====
     async updateClientStatus(clientId, isActive) {
         const token = this.getAdminToken();
 
-        console.log(`🔄 ${isActive ? 'Ativando' : 'Desativando'} cliente:`, clientId);
+        console.log(`🔄 ${isActive ? 'Activating' : 'Deactivating'} client:`, clientId);
 
         const response = await fetch(`/api/admin/access-codes/${clientId}/toggle`, {
             method: 'PATCH',
@@ -677,47 +677,47 @@ class AdminClients {
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.message || 'Erro ao alterar status do código');
+            throw new Error(data.message || 'Error changing code status');
         }
 
-        console.log(`✅ Cliente ${isActive ? 'ativado' : 'desativado'} com sucesso`);
+        console.log(`✅ Client ${isActive ? 'activated' : 'deactivated'} successfully`);
         return data.accessCode;
     }
 
-    // ===== VALIDAÇÃO AVANÇADA DE FORMULÁRIO =====
+    // ===== ADVANCED FORM VALIDATION =====
     validateFormData(formData) {
         const errors = [];
 
-        // Validar nome
+        // Validate name
         if (!formData.clientName || formData.clientName.length < 2) {
-            errors.push('Nome deve ter pelo menos 2 caracteres');
+            errors.push('Name must have at least 2 characters');
         }
 
-        // Validar email (se fornecido)
+        // Validate email (if provided)
         if (formData.clientEmail && !this.isValidEmail(formData.clientEmail)) {
-            errors.push('Email inválido');
+            errors.push('Invalid email address');
         }
 
-        // Validar categorias
+        // Validate categories
         if (!formData.allowedCategories || formData.allowedCategories.length === 0) {
-            errors.push('Selecione pelo menos uma categoria');
+            errors.push('Select at least one category');
         }
 
-        // Validar dias de expiração
+        // Validate expiration days
         if (!formData.expiresInDays || formData.expiresInDays < 1 || formData.expiresInDays > 365) {
-            errors.push('Dias de expiração deve ser entre 1 e 365');
+            errors.push('Expiration days must be between 1 and 365');
         }
 
         return errors;
     }
 
-    // ===== VALIDAR EMAIL =====
+    // ===== VALIDATE EMAIL =====
     isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
 
-    // ===== FUNÇÃO PARA VERIFICAR CÓDIGO ÚNICO =====
+    // ===== CHECK UNIQUE CODE FUNCTION =====
     async checkCodeUnique(code, excludeId = null) {
         try {
             const token = this.getAdminToken();
@@ -731,12 +731,12 @@ class AdminClients {
             return data.isUnique;
 
         } catch (error) {
-            console.error('❌ Erro ao verificar código único:', error);
-            return true; // Em caso de erro, assumir que é único
+            console.error('❌ Error checking unique code:', error);
+            return true; // In case of error, assume it's unique
         }
     }
 
-    // ===== GERAR CÓDIGO ÚNICO GARANTIDO =====
+    // ===== GENERATE GUARANTEED UNIQUE CODE =====
     async generateUniqueCode() {
         let attempts = 0;
         let code;
@@ -749,94 +749,94 @@ class AdminClients {
         }
 
         if (!isUnique) {
-            throw new Error('Não foi possível gerar código único. Tente novamente.');
+            throw new Error('Unable to generate unique code. Please try again.');
         }
 
         return code;
     }
 
-    // ===== FUNÇÃO PARA DUPLICAR CÓDIGO =====
+    // ===== DUPLICATE CODE FUNCTION =====
     duplicateClient(clientId) {
         const client = this.clients.find(c => c._id === clientId || c.code === clientId);
         if (!client) return;
 
-        this.currentClient = null; // Resetar para criar novo
+        this.currentClient = null; // Reset to create new
         this.selectedCategories = [...client.allowedCategories];
 
-        // Preencher formulário com dados do cliente existente
-        document.getElementById('clientName').value = client.clientName + ' (Cópia)';
+        // Fill form with existing client data
+        document.getElementById('clientName').value = client.clientName + ' (Copy)';
         document.getElementById('clientEmail').value = client.clientEmail || '';
         document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
-        document.getElementById('clientStatus').value = 'true'; // Sempre ativo para cópia
+        document.getElementById('clientStatus').value = 'true'; // Always active for copy
 
-        // Gerar novo código
+        // Generate new code
         this.generateCodePreview();
 
-        // Atualizar títulos
-        document.getElementById('modalTitle').textContent = 'Duplicar Código de Acesso';
-        document.getElementById('saveButtonText').textContent = 'Criar Cópia';
+        // Update titles
+        document.getElementById('modalTitle').textContent = 'Duplicate Access Code';
+        document.getElementById('saveButtonText').textContent = 'Create Copy';
 
-        // Renderizar categorias
+        // Render categories
         this.renderCategoriesSelection();
 
-        // Mostrar modal
+        // Show modal
         this.modal.classList.add('active');
         document.getElementById('clientName').focus();
         document.getElementById('clientName').select();
     }
 
-    // ===== CONFIRMAÇÃO DE AÇÕES CRÍTICAS =====
+    // ===== CRITICAL ACTION CONFIRMATION =====
     async confirmAction(action, clientName) {
         const messages = {
-            delete: `Tem certeza que deseja DELETAR o código do cliente "${clientName}"?\n\nEsta ação não pode ser desfeita.`,
-            deactivate: `Desativar o código do cliente "${clientName}"?\n\nO cliente não conseguirá mais fazer login.`,
-            activate: `Ativar o código do cliente "${clientName}"?\n\nO cliente poderá fazer login novamente.`
+            delete: `Are you sure you want to DELETE the code for client "${clientName}"?\n\nThis action cannot be undone.`,
+            deactivate: `Deactivate the code for client "${clientName}"?\n\nThe client will no longer be able to log in.`,
+            activate: `Activate the code for client "${clientName}"?\n\nThe client will be able to log in again.`
         };
 
-        return confirm(messages[action] || 'Confirmar ação?');
+        return confirm(messages[action] || 'Confirm action?');
     }
 
-    // ===== FUNÇÃO PARA EXPORTAR DADOS =====
+    // ===== EXPORT DATA FUNCTION =====
     exportClientsData() {
         try {
             const dataToExport = this.clients.map(client => ({
-                codigo: client.code,
-                nome: client.clientName,
+                code: client.code,
+                name: client.clientName,
                 email: client.clientEmail || '',
-                categorias: client.allowedCategories.join('; '),
-                status: client.isActive ? 'Ativo' : 'Inativo',
-                usos: client.usageCount || 0,
-                ultimo_uso: client.lastUsed ? this.formatDate(client.lastUsed) : 'Nunca',
-                expira_em: this.formatDate(client.expiresAt),
-                criado_em: this.formatDate(client.createdAt)
+                categories: client.allowedCategories.join('; '),
+                status: client.isActive ? 'Active' : 'Inactive',
+                usage: client.usageCount || 0,
+                last_used: client.lastUsed ? this.formatDate(client.lastUsed) : 'Never',
+                expires_on: this.formatDate(client.expiresAt),
+                created_on: this.formatDate(client.createdAt)
             }));
 
             const csvContent = this.convertToCSV(dataToExport);
-            this.downloadCSV(csvContent, `clientes_sunshine_${new Date().toISOString().split('T')[0]}.csv`);
+            this.downloadCSV(csvContent, `sunshine_clients_${new Date().toISOString().split('T')[0]}.csv`);
 
-            this.showSuccess('Dados exportados com sucesso!');
+            this.showSuccess('Data exported successfully!');
 
         } catch (error) {
-            console.error('❌ Erro ao exportar:', error);
-            this.showError('Erro ao exportar dados');
+            console.error('❌ Error exporting:', error);
+            this.showError('Error exporting data');
         }
     }
 
-    // ===== CONVERTER PARA CSV =====
+    // ===== CONVERT TO CSV =====
     convertToCSV(data) {
         if (data.length === 0) return '';
 
         const headers = Object.keys(data[0]);
         const csvRows = [];
 
-        // Adicionar cabeçalhos
+        // Add headers
         csvRows.push(headers.join(','));
 
-        // Adicionar dados
+        // Add data
         data.forEach(row => {
             const values = headers.map(header => {
                 const value = row[header];
-                // Escapar aspas e quebras de linha
+                // Escape quotes and line breaks
                 return `"${String(value).replace(/"/g, '""')}"`;
             });
             csvRows.push(values.join(','));
@@ -861,7 +861,7 @@ class AdminClients {
         }
     }
 
-    // ===== ESTATÍSTICAS DOS CLIENTES =====
+    // ===== CLIENT STATISTICS =====
     getClientsStatistics() {
         const now = new Date();
 
@@ -875,12 +875,12 @@ class AdminClients {
             averageUsage: 0
         };
 
-        // Calcular média de uso
+        // Calculate usage average
         if (stats.total > 0) {
             stats.averageUsage = Math.round(stats.totalUsage / stats.total * 100) / 100;
         }
 
-        // Encontrar categoria mais usada
+        // Find most used category
         const categoryCount = {};
         this.clients.forEach(client => {
             client.allowedCategories.forEach(category => {
@@ -897,7 +897,7 @@ class AdminClients {
         return stats;
     }
 
-    // ===== FUNÇÃO PARA SEARCH AVANÇADA =====
+    // ===== ADVANCED SEARCH FUNCTION =====
     performAdvancedSearch(query) {
         const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
 
@@ -913,12 +913,12 @@ class AdminClients {
         });
     }
 
-    // ===== AÇÕES DA TABELA =====
+    // ===== TABLE ACTIONS =====
     viewClient(clientId) {
         const client = this.clients.find(c => c._id === clientId || c.code === clientId);
         if (client) {
-            // TODO: Implementar modal de visualização
-            console.log('👁️ Visualizar cliente:', client);
+            // TODO: Implement view modal
+            console.log('👁️ View client:', client);
         }
     }
 
@@ -928,36 +928,36 @@ class AdminClients {
 
         this.currentClient = client;
 
-        // CORREÇÃO: Normalizar categorias para match com Google Drive
+        // FIX: Normalize categories to match with Google Drive
         this.selectedCategories = client.allowedCategories.map(category => {
-            // Encontrar categoria correspondente no Google Drive
+            // Find corresponding category in Google Drive
             const matchingCategory = this.availableCategories.find(available => {
                 const normalize = (str) => str.toLowerCase().replace(/^\d+\.?\s*/, '').trim();
                 return normalize(available.name) === normalize(category);
             });
 
-            // Retornar nome do Google Drive se encontrado, senão manter original
+            // Return Google Drive name if found, otherwise keep original
             return matchingCategory ? matchingCategory.name : category;
-        }).filter((cat, index, arr) => arr.indexOf(cat) === index); // Remove duplicatas
+        }).filter((cat, index, arr) => arr.indexOf(cat) === index); // Remove duplicates
 
-        console.log('🔧 Categorias originais:', client.allowedCategories);
-        console.log('🔧 Categorias normalizadas:', this.selectedCategories);
+        console.log('🔧 Original categories:', client.allowedCategories);
+        console.log('🔧 Normalized categories:', this.selectedCategories);
 
-        // Preencher formulário
+        // Fill form
         document.getElementById('clientName').value = client.clientName;
         document.getElementById('clientEmail').value = client.clientEmail || '';
         document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
         document.getElementById('clientStatus').value = client.isActive.toString();
         document.getElementById('codePreview').textContent = client.code;
 
-        // Atualizar títulos
-        document.getElementById('modalTitle').textContent = 'Editar Código de Acesso';
-        document.getElementById('saveButtonText').textContent = 'Salvar Alterações';
+        // Update titles
+        document.getElementById('modalTitle').textContent = 'Edit Access Code';
+        document.getElementById('saveButtonText').textContent = 'Save Changes';
 
-        // Renderizar categorias
+        // Render categories
         this.renderCategoriesSelection();
 
-        // Mostrar modal
+        // Show modal
         this.modal.classList.add('active');
     }
 
@@ -971,23 +971,23 @@ class AdminClients {
         if (!confirmed) return;
 
         try {
-            // Usar a nova função updateClientStatus
+            // Use the new updateClientStatus function
             const newStatus = !client.isActive;
             await this.updateClientStatus(clientId, newStatus);
 
-            // Atualizar estado local
+            // Update local state
             client.isActive = newStatus;
             this.renderClientsTable();
 
-            this.showSuccess(`Código ${newStatus ? 'ativado' : 'desativado'} com sucesso!`);
+            this.showSuccess(`Code ${newStatus ? 'activated' : 'deactivated'} successfully!`);
 
         } catch (error) {
-            console.error('❌ Erro ao alterar status:', error);
-            this.showError(`Erro ao ${client.isActive ? 'desativar' : 'ativar'} código: ` + error.message);
+            console.error('❌ Error changing status:', error);
+            this.showError(`Error ${client.isActive ? 'deactivating' : 'activating'} code: ` + error.message);
         }
     }
 
-    // ===== FILTROS E BUSCA =====
+    // ===== FILTERS AND SEARCH =====
     handleSearch(query) {
         this.filters.search = query.toLowerCase();
         this.applyFilters();
@@ -1006,7 +1006,7 @@ class AdminClients {
     applyFilters() {
         let filteredClients = [...this.clients];
 
-        // Aplicar busca
+        // Apply search
         if (this.filters.search) {
             filteredClients = filteredClients.filter(client =>
                 client.clientName.toLowerCase().includes(this.filters.search) ||
@@ -1015,7 +1015,7 @@ class AdminClients {
             );
         }
 
-        // Aplicar filtro de status
+        // Apply status filter
         if (this.filters.status !== 'all') {
             filteredClients = filteredClients.filter(client => {
                 const now = new Date();
@@ -1034,7 +1034,7 @@ class AdminClients {
             });
         }
 
-        // Aplicar ordenação
+        // Apply sorting
         if (this.filters.sortBy) {
             filteredClients.sort((a, b) => {
                 switch (this.filters.sortBy) {
@@ -1051,7 +1051,7 @@ class AdminClients {
             });
         }
 
-        // Atualizar array temporariamente para renderização
+        // Update array temporarily for rendering
         const originalClients = this.clients;
         this.clients = filteredClients;
         this.renderClientsTable();
@@ -1066,15 +1066,15 @@ class AdminClients {
                 this.loadAvailableCategories()
             ]);
             this.renderClientsTable();
-            this.showSuccess('Dados atualizados com sucesso!');
+            this.showSuccess('Data updated successfully!');
         } catch (error) {
-            this.showError('Erro ao atualizar dados');
+            this.showError('Error updating data');
         } finally {
             this.showLoading(false);
         }
     }
 
-    // ===== UTILITÁRIOS =====
+    // ===== UTILITIES =====
     getAdminToken() {
         const sessionData = localStorage.getItem('sunshineSession');
         if (sessionData) {
@@ -1086,7 +1086,7 @@ class AdminClients {
 
     formatDate(date, fallback = '-') {
         if (!date) return fallback;
-        return new Date(date).toLocaleDateString('pt-BR', {
+        return new Date(date).toLocaleDateString('en-US', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
@@ -1107,7 +1107,7 @@ class AdminClients {
         return text.substring(0, length) + '...';
     }
 
-    // ===== LOADING E FEEDBACK =====
+    // ===== LOADING AND FEEDBACK =====
     showLoading(show) {
         if (this.loading) {
             this.loading.classList.toggle('hidden', !show);
@@ -1122,30 +1122,30 @@ class AdminClients {
     }
 
     showError(message) {
-        console.error('❌ Erro:', message);
-        // TODO: Implementar sistema de notificação melhor
-        alert('Erro: ' + message);
+        console.error('❌ Error:', message);
+        // TODO: Implement better notification system
+        alert('Error: ' + message);
     }
 
     showSuccess(message) {
-        console.log('✅ Sucesso:', message);
-        // TODO: Implementar sistema de notificação melhor
-        alert('Sucesso: ' + message);
+        console.log('✅ Success:', message);
+        // TODO: Implement better notification system
+        alert('Success: ' + message);
     }
 }
 
-// ===== INICIALIZAÇÃO GLOBAL =====
+// ===== GLOBAL INITIALIZATION =====
 let adminClients = null;
 
-// Inicializar quando a seção de clientes for ativada
+// Initialize when clients section is activated
 document.addEventListener('DOMContentLoaded', () => {
-    // Observar mudanças na seção ativa
+    // Observe changes in active section
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                 const section = document.getElementById('section-clients');
                 if (section && section.style.display !== 'none' && !adminClients) {
-                    // Seção de clientes foi ativada
+                    // Clients section was activated
                     adminClients = new AdminClients();
                 }
             }
@@ -1156,12 +1156,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clientsSection) {
         observer.observe(clientsSection, { attributes: true });
 
-        // Se já estiver visível, inicializar imediatamente
+        // If already visible, initialize immediately
         if (clientsSection.style.display !== 'none') {
             adminClients = new AdminClients();
         }
     }
 });
 
-// Expor globalmente para uso em HTML
+// Expose globally for HTML usage
 window.adminClients = adminClients;
