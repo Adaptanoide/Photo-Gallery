@@ -117,7 +117,7 @@ function updateClientInterface(data) {
     const welcomeEl = document.getElementById('clientWelcome');
     const infoEl = document.getElementById('clientInfo');
 
-    welcomeEl.textContent = `🎉 Welcome, ${client.name}!`;
+    welcomeEl.textContent = `Welcome, ${client.name}!`;
     infoEl.textContent = `Code: ${client.code} - ${allowedCategories.length} ${allowedCategories.length === 1 ? 'category' : 'categories'} available`;
 }
 
