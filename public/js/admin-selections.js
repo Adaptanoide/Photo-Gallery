@@ -162,19 +162,163 @@ class AdminSelections {
         });
     }
 
+    /**
+         * Ver detalhes da seleção
+         */
     viewSelection(selectionId) {
-        alert(`Ver detalhes da seleção: ${selectionId}`);
-        // TODO: Implementar modal de detalhes
+        // TODO: Implementar modal de detalhes completo
+        console.log(`👁️ Visualizando seleção: ${selectionId}`);
+        this.showNotification('Funcionalidade de visualização em desenvolvimento', 'info');
     }
 
-    approveSelection(selectionId) {
-        alert(`Aprovar seleção: ${selectionId}`);
-        // TODO: Implementar aprovação
+    /**
+     * Aprovar seleção
+     */
+    async approveSelection(selectionId) {
+        try {
+            // Confirmação do usuário
+            const confirmMessage = `Tem certeza que deseja APROVAR a seleção ${selectionId}?\n\nEsta ação irá:\n• Mover pasta para SYSTEM_SOLD\n• Marcar produtos como vendidos\n• Finalizar a transação`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Pedir observações opcionais
+            const notes = prompt('Observações sobre a aprovação (opcional):');
+
+            this.setLoading(true);
+
+            console.log(`✅ Aprovando seleção: ${selectionId}`);
+
+            const response = await fetch(`/api/selections/${selectionId}/approve`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    adminUser: 'admin', // TODO: Pegar usuário logado
+                    notes: notes || ''
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Erro ao aprovar seleção');
+            }
+
+            if (result.success) {
+                this.showNotification(`✅ Seleção ${selectionId} aprovada com sucesso!`, 'success');
+
+                // Recarregar lista
+                await this.loadSelections();
+
+                console.log('📁 Pasta movida para SYSTEM_SOLD:', result.googleDrive?.finalFolderName);
+            } else {
+                throw new Error(result.message || 'Erro desconhecido na aprovação');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao aprovar seleção:', error);
+            this.showNotification(`Erro ao aprovar: ${error.message}`, 'error');
+        } finally {
+            this.setLoading(false);
+        }
     }
 
-    cancelSelection(selectionId) {
-        alert(`Cancelar seleção: ${selectionId}`);
-        // TODO: Implementar cancelamento
+    /**
+     * Cancelar seleção
+     */
+    async cancelSelection(selectionId) {
+        try {
+            // Confirmação do usuário
+            const confirmMessage = `Tem certeza que deseja CANCELAR a seleção ${selectionId}?\n\nEsta ação irá:\n• Reverter fotos para pastas originais\n• Marcar produtos como disponíveis\n• Cancelar a transação`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Pedir motivo obrigatório
+            const reason = prompt('Motivo do cancelamento (obrigatório):');
+
+            if (!reason || reason.trim() === '') {
+                this.showNotification('Motivo do cancelamento é obrigatório', 'warning');
+                return;
+            }
+
+            this.setLoading(true);
+
+            console.log(`❌ Cancelando seleção: ${selectionId}`);
+
+            const response = await fetch(`/api/selections/${selectionId}/cancel`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    adminUser: 'admin', // TODO: Pegar usuário logado
+                    reason: reason.trim()
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Erro ao cancelar seleção');
+            }
+
+            if (result.success) {
+                const reversion = result.reversion;
+                const successMessage = `✅ Seleção ${selectionId} cancelada com sucesso!\n\n📊 Reversão: ${reversion.successful}/${reversion.total} fotos revertidas`;
+
+                this.showNotification(successMessage, 'success');
+
+                // Recarregar lista
+                await this.loadSelections();
+
+                console.log('🔄 Fotos revertidas:', reversion);
+
+                if (reversion.failed > 0) {
+                    this.showNotification(`⚠️ ${reversion.failed} fotos tiveram problemas na reversão`, 'warning');
+                }
+            } else {
+                throw new Error(result.message || 'Erro desconhecido no cancelamento');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao cancelar seleção:', error);
+            this.showNotification(`Erro ao cancelar: ${error.message}`, 'error');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    /**
+     * Controlar estado de loading
+     */
+    setLoading(isLoading) {
+        this.isLoading = isLoading;
+
+        // Desabilitar botões durante loading
+        const actionButtons = document.querySelectorAll('.btn-action');
+        actionButtons.forEach(btn => {
+            btn.disabled = isLoading;
+        });
+
+        // Mostrar/ocultar indicador de loading se existir
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement) {
+            loadingElement.classList.toggle('hidden', !isLoading);
+        }
+    }
+
+    /**
+     * Mostrar notificações
+     */
+    showNotification(message, type = 'info') {
+        // Integração com sistema de notificações do app.js
+        if (window.showNotification) {
+            window.showNotification(message, type);
+        } else {
+            // Fallback para alert
+            alert(`[${type.toUpperCase()}] ${message}`);
+        }
     }
 
     showError(message) {
