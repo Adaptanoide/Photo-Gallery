@@ -549,7 +549,7 @@ class AdminClients {
 
     async handleFormSubmit(e) {
         e.preventDefault();
-        
+
         const formData = {
             clientName: document.getElementById('clientName').value.trim(),
             clientEmail: document.getElementById('clientEmail').value.trim(),
@@ -567,7 +567,7 @@ class AdminClients {
 
         try {
             this.showModalLoading(true);
-            
+
             if (this.currentClient) {
                 // EDITANDO cliente existente
                 console.log('✏️ Editando cliente:', this.currentClient._id || this.currentClient.code);
@@ -579,10 +579,10 @@ class AdminClients {
                 await this.createClient(formData);
                 this.showSuccess('Código criado com sucesso!');
             }
-            
+
             this.closeModal();
             await this.refreshData();
-            
+
         } catch (error) {
             console.error('❌ Erro ao salvar:', error);
             this.showError(error.message || 'Erro ao salvar código');
@@ -927,7 +927,21 @@ class AdminClients {
         if (!client) return;
 
         this.currentClient = client;
-        this.selectedCategories = [...client.allowedCategories];
+
+        // CORREÇÃO: Normalizar categorias para match com Google Drive
+        this.selectedCategories = client.allowedCategories.map(category => {
+            // Encontrar categoria correspondente no Google Drive
+            const matchingCategory = this.availableCategories.find(available => {
+                const normalize = (str) => str.toLowerCase().replace(/^\d+\.?\s*/, '').trim();
+                return normalize(available.name) === normalize(category);
+            });
+
+            // Retornar nome do Google Drive se encontrado, senão manter original
+            return matchingCategory ? matchingCategory.name : category;
+        }).filter((cat, index, arr) => arr.indexOf(cat) === index); // Remove duplicatas
+
+        console.log('🔧 Categorias originais:', client.allowedCategories);
+        console.log('🔧 Categorias normalizadas:', this.selectedCategories);
 
         // Preencher formulário
         document.getElementById('clientName').value = client.clientName;
@@ -953,20 +967,20 @@ class AdminClients {
 
         const action = client.isActive ? 'deactivate' : 'activate';
         const confirmed = await this.confirmAction(action, client.clientName);
-        
+
         if (!confirmed) return;
 
         try {
             // Usar a nova função updateClientStatus
             const newStatus = !client.isActive;
             await this.updateClientStatus(clientId, newStatus);
-            
+
             // Atualizar estado local
             client.isActive = newStatus;
             this.renderClientsTable();
-            
+
             this.showSuccess(`Código ${newStatus ? 'ativado' : 'desativado'} com sucesso!`);
-            
+
         } catch (error) {
             console.error('❌ Erro ao alterar status:', error);
             this.showError(`Erro ao ${client.isActive ? 'desativar' : 'ativar'} código: ` + error.message);
