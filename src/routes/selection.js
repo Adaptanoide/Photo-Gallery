@@ -170,12 +170,16 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Seleção salva no MongoDB: ${selectionId}`);
 
-            // 11. Atualizar status dos produtos para 'sold'
+            // 11. Atualizar status dos produtos para 'reserved_pending' (aguardando aprovação admin)
             await Product.updateMany(
                 { _id: { $in: productIds } },
                 {
-                    $set: { status: 'sold' },
-                    $unset: { 'reservedBy': 1, 'cartAddedAt': 1 }
+                    $set: {
+                        status: 'reserved_pending',  // ← NOVO: Aguarda aprovação
+                        reservedAt: new Date()       // ← Marca quando foi reservado
+                    },
+                    // ← NÃO remove reservedBy - mantém para rastreamento
+                    $unset: { 'cartAddedAt': 1 }     // ← Remove apenas cartAddedAt
                 }
             ).session(session);
 
