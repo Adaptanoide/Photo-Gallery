@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/pricing-management.css">
     <link rel="stylesheet" href="css/admin-config.css">
     <link rel="stylesheet" href="css/admin-selections.css">
+    <link rel="stylesheet" href="css/admin-components.css">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -45,7 +46,7 @@
                 <div class="nav-item">
                     <a href="#clients" class="nav-link" data-section="clients">
                         <i class="fas fa-users"></i>
-                        <span class="nav-text">Gestão de Clientes</span>
+                        <span class="nav-text">Client Management</span>
                         <span class="nav-badge" id="clientsBadge" style="display: none;">0</span>
                     </a>
                 </div>
@@ -53,7 +54,7 @@
                 <div class="nav-item">
                     <a href="#pricing" class="nav-link" data-section="pricing">
                         <i class="fas fa-dollar-sign"></i>
-                        <span class="nav-text">Gestão de Preços</span>
+                        <span class="nav-text">Price Management</span>
                         <span class="nav-badge" id="pricingBadge" style="display: none;">0</span>
                     </a>
                 </div>
@@ -61,7 +62,7 @@
                 <div class="nav-item">
                     <a href="#selections" class="nav-link" data-section="selections">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="nav-text">Gestão de Seleções</span>
+                        <span class="nav-text">Selection Management</span>
                         <span class="nav-badge" id="selectionsBadge" style="display: none;">0</span>
                     </a>
                 </div>
@@ -69,14 +70,14 @@
                 <div class="nav-item">
                     <a href="#reports" class="nav-link" data-section="reports">
                         <i class="fas fa-chart-bar"></i>
-                        <span class="nav-text">Relatórios</span>
+                        <span class="nav-text">Reports</span>
                     </a>
                 </div>
 
                 <div class="nav-item">
                     <a href="#settings" class="nav-link" data-section="settings">
                         <i class="fas fa-cog"></i>
-                        <span class="nav-text">Configurações</span>
+                        <span class="nav-text">Settings</span>
                     </a>
                 </div>
             </nav>
@@ -115,9 +116,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Total de Clientes</div>
+                                    <div class="stat-title">Total Clients</div>
                                     <div class="stat-value" id="totalClients">-</div>
-                                    <div class="stat-description">Códigos ativos no sistema</div>
+                                    <div class="stat-description">Active codes in system</div>
                                 </div>
                                 <div class="stat-icon primary">
                                     <i class="fas fa-users"></i>
@@ -125,7 +126,7 @@
                             </div>
                             <div class="stat-trend trend-up">
                                 <i class="fas fa-arrow-up"></i>
-                                <span>+12% este mês</span>
+                                <span>+12% this month</span>
                             </div>
                         </div>
 
@@ -133,9 +134,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Produtos Disponíveis</div>
+                                    <div class="stat-title">Available Products</div>
                                     <div class="stat-value" id="availableProducts">-</div>
-                                    <div class="stat-description">Fotos prontas para venda</div>
+                                    <div class="stat-description">Photos ready for sale</div>
                                 </div>
                                 <div class="stat-icon success">
                                     <i class="fas fa-check-circle"></i>
@@ -143,7 +144,7 @@
                             </div>
                             <div class="stat-trend trend-up">
                                 <i class="fas fa-arrow-up"></i>
-                                <span>+5% esta semana</span>
+                                <span>+5% this week</span>
                             </div>
                         </div>
 
@@ -151,9 +152,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Produtos Reservados</div>
+                                    <div class="stat-title">Reserved Products</div>
                                     <div class="stat-value" id="reservedProducts">-</div>
-                                    <div class="stat-description">Em carrinhos ativos</div>
+                                    <div class="stat-description">In active carts</div>
                                 </div>
                                 <div class="stat-icon warning">
                                     <i class="fas fa-clock"></i>
@@ -161,7 +162,7 @@
                             </div>
                             <div class="stat-trend">
                                 <i class="fas fa-minus"></i>
-                                <span>Estável</span>
+                                <span>Stable</span>
                             </div>
                         </div>
 
@@ -169,9 +170,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Seleções Pendentes</div>
+                                    <div class="stat-title">Pending Selections</div>
                                     <div class="stat-value" id="pendingSelections">-</div>
-                                    <div class="stat-description">Aguardando contato</div>
+                                    <div class="stat-description">Awaiting contact</div>
                                 </div>
                                 <div class="stat-icon secondary">
                                     <i class="fas fa-shopping-cart"></i>
@@ -179,7 +180,7 @@
                             </div>
                             <div class="stat-trend trend-down">
                                 <i class="fas fa-arrow-down"></i>
-                                <span>-3% hoje</span>
+                                <span>-3% today</span>
                             </div>
                         </div>
                     </div>
@@ -187,15 +188,15 @@
                     <!-- Tabela: Últimas Seleções -->
                     <div class="data-table-container">
                         <div class="table-header">
-                            <h3 class="table-title">Últimas Seleções</h3>
+                            <h3 class="table-title">Recent Selections</h3>
                             <div class="table-actions">
                                 <button class="btn btn-secondary">
                                     <i class="fas fa-download"></i>
-                                    Exportar
+                                    Export
                                 </button>
                                 <button class="btn btn-primary">
                                     <i class="fas fa-plus"></i>
-                                    Nova Seleção
+                                    New Selection
                                 </button>
                             </div>
                         </div>
@@ -203,12 +204,12 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Cliente</th>
-                                    <th>Código</th>
-                                    <th>Itens</th>
-                                    <th>Data</th>
+                                    <th>Client</th>
+                                    <th>Code</th>
+                                    <th>Items</th>
+                                    <th>Date</th>
                                     <th>Status</th>
-                                    <th>Ações</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="recentSelectionsTable">
@@ -216,7 +217,7 @@
                                 <tr>
                                     <td colspan="6" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i>
-                                        Carregando dados...
+                                        Loading data...
                                     </td>
                                 </tr>
                             </tbody>
@@ -226,11 +227,11 @@
                     <!-- Tabela: Produtos Mais Reservados -->
                     <div class="data-table-container">
                         <div class="table-header">
-                            <h3 class="table-title">Produtos Mais Reservados</h3>
+                            <h3 class="table-title">Most Reserved Products</h3>
                             <div class="table-actions">
                                 <button class="btn btn-secondary">
                                     <i class="fas fa-filter"></i>
-                                    Filtrar
+                                    Filter
                                 </button>
                             </div>
                         </div>
@@ -238,10 +239,10 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Foto</th>
-                                    <th>Categoria</th>
-                                    <th>Reservas</th>
-                                    <th>Última Reserva</th>
+                                    <th>Photo</th>
+                                    <th>Category</th>
+                                    <th>Reservations</th>
+                                    <th>Last Reservation</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -250,7 +251,7 @@
                                 <tr>
                                     <td colspan="5" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i>
-                                        Carregando produtos...
+                                        Loading products...
                                     </td>
                                 </tr>
                             </tbody>
@@ -260,8 +261,8 @@
 
                 <!-- Seção Clientes (Hidden por padrão) -->
                 <div id="section-clients" class="content-section" style="display: none;">
-                    <h2>Gestão de Clientes - Em Desenvolvimento</h2>
-                    <p>Esta seção será implementada na próxima fase.</p>
+                    <h2>Client Management - In Development</h2>
+                    <p>This section will be implemented in the next phase.</p>
                 </div>
 
                 <div id="section-pricing" class="content-section" style="display: none;">
@@ -269,16 +270,16 @@
                     <div class="pricing-section-header">
                         <h2 class="pricing-title">
                             <i class="fas fa-dollar-sign"></i>
-                            Gestão de Preços
+                            Price Management
                         </h2>
                         <div class="pricing-actions">
                             <button id="btnSyncDrive" class="btn btn-secondary">
                                 <i class="fas fa-sync-alt"></i>
-                                Sincronizar Google Drive
+                                Sync Google Drive
                             </button>
                             <button id="btnPricingReport" class="btn btn-primary">
                                 <i class="fas fa-chart-line"></i>
-                                Relatório
+                                Report
                             </button>
                         </div>
                     </div>
@@ -287,13 +288,13 @@
                     <div id="syncStatusCard" class="sync-status-card" style="display: none;">
                         <div class="sync-status-content">
                             <div class="sync-status-info">
-                                <h4><i class="fas fa-info-circle"></i> Status da Sincronização</h4>
-                                <p id="syncStatusMessage">Verificando status...</p>
+                                <h4><i class="fas fa-info-circle"></i> Sync Status</h4>
+                                <p id="syncStatusMessage">Checking status...</p>
                             </div>
                             <div class="sync-status-actions">
                                 <button id="btnForcSync" class="btn btn-warning">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    Sincronização Forçada
+                                    Force Sync
                                 </button>
                             </div>
                         </div>
@@ -303,30 +304,30 @@
                     <div class="pricing-filters">
                         <div class="filters-row">
                             <div class="filter-group">
-                                <label class="filter-label">Buscar Categoria</label>
+                                <label class="filter-label">Search Category</label>
                                 <input type="text" id="searchCategories" class="filter-input"
-                                    placeholder="Nome da categoria, caminho...">
+                                    placeholder="Category name, path...">
                             </div>
                             <div class="filter-group">
-                                <label class="filter-label">Status do Preço</label>
+                                <label class="filter-label">Price Status</label>
                                 <select id="filterPriceStatus" class="filter-select">
-                                    <option value="all">Todas</option>
-                                    <option value="with-price">Com Preço</option>
-                                    <option value="without-price">Sem Preço</option>
+                                    <option value="all">All</option>
+                                    <option value="with-price">With Price</option>
+                                    <option value="without-price">Without Price</option>
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="filter-label">Ordenar por</label>
+                                <label class="filter-label">Sort by</label>
                                 <select id="sortCategories" class="filter-select">
-                                    <option value="name">Nome A-Z</option>
-                                    <option value="price-high">Maior Preço</option>
-                                    <option value="price-low">Menor Preço</option>
-                                    <option value="photos">Mais Fotos</option>
+                                    <option value="name">Name A-Z</option>
+                                    <option value="price-high">Highest Price</option>
+                                    <option value="price-low">Lowest Price</option>
+                                    <option value="photos">Most Photos</option>
                                 </select>
                             </div>
                             <button id="btnApplyPricingFilters" class="btn-filter">
                                 <i class="fas fa-filter"></i>
-                                Filtrar
+                                Filter
                             </button>
                         </div>
                     </div>
@@ -337,9 +338,9 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Total de Categorias</div>
+                                        <div class="stat-title">Total Categories</div>
                                         <div class="stat-value" id="totalCategoriesCount">-</div>
-                                        <div class="stat-description">Pastas com fotos</div>
+                                        <div class="stat-description">Folders with photos</div>
                                     </div>
                                     <div class="stat-icon primary">
                                         <i class="fas fa-folder"></i>
@@ -350,9 +351,9 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Com Preço Definido</div>
+                                        <div class="stat-title">With Price Set</div>
                                         <div class="stat-value" id="categoriesWithPriceCount">-</div>
-                                        <div class="stat-description">Categorias precificadas</div>
+                                        <div class="stat-description">Priced categories</div>
                                     </div>
                                     <div class="stat-icon success">
                                         <i class="fas fa-dollar-sign"></i>
@@ -363,9 +364,9 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Sem Preço</div>
+                                        <div class="stat-title">Without Price</div>
                                         <div class="stat-value" id="categoriesWithoutPriceCount">-</div>
-                                        <div class="stat-description">Precisam de preço</div>
+                                        <div class="stat-description">Need pricing</div>
                                     </div>
                                     <div class="stat-icon warning">
                                         <i class="fas fa-exclamation-triangle"></i>
@@ -376,9 +377,9 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Total de Fotos</div>
+                                        <div class="stat-title">Total Photos</div>
                                         <div class="stat-value" id="totalPhotosCount">-</div>
-                                        <div class="stat-description">Em todas as categorias</div>
+                                        <div class="stat-description">In all categories</div>
                                     </div>
                                     <div class="stat-icon secondary">
                                         <i class="fas fa-images"></i>
@@ -391,15 +392,15 @@
                     <!-- Lista de Categorias com Preços -->
                     <div class="pricing-table-container">
                         <div class="table-header">
-                            <h3 class="table-title">Categorias e Preços</h3>
+                            <h3 class="table-title">Categories and Prices</h3>
                             <div class="table-actions">
                                 <button id="btnBulkPricing" class="btn btn-secondary">
                                     <i class="fas fa-edit"></i>
-                                    Edição em Lote
+                                    Bulk Edit
                                 </button>
                                 <button id="btnExportPricing" class="btn btn-primary">
                                     <i class="fas fa-download"></i>
-                                    Exportar
+                                    Export
                                 </button>
                             </div>
                         </div>
@@ -407,20 +408,20 @@
                         <table class="pricing-table">
                             <thead>
                                 <tr>
-                                    <th>Categoria</th>
-                                    <th>Caminho no Drive</th>
-                                    <th>Fotos</th>
-                                    <th>Preço Base</th>
-                                    <th>Descontos</th>
-                                    <th>Última Atualização</th>
-                                    <th>Ações</th>
+                                    <th>Category</th>
+                                    <th>Drive Path</th>
+                                    <th>Photos</th>
+                                    <th>Base Price</th>
+                                    <th>Discounts</th>
+                                    <th>Last Update</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="pricingTableBody">
                                 <tr>
                                     <td colspan="7" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i>
-                                        Carregando categorias...
+                                        Loading categories...
                                     </td>
                                 </tr>
                             </tbody>
@@ -431,11 +432,11 @@
                     <div id="pricingPagination" class="pricing-pagination" style="display: none;">
                         <button id="btnPrevPage" class="btn btn-secondary">
                             <i class="fas fa-chevron-left"></i>
-                            Anterior
+                            Previous
                         </button>
-                        <span id="paginationInfo">Página 1 de 1</span>
+                        <span id="paginationInfo">Page 1 of 1</span>
                         <button id="btnNextPage" class="btn btn-secondary">
-                            Próxima
+                            Next
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
@@ -448,7 +449,7 @@
                         <div class="price-modal-header">
                             <h3 class="modal-title">
                                 <i class="fas fa-dollar-sign"></i>
-                                <span id="priceModalTitle">Definir Preço</span>
+                                <span id="priceModalTitle">Set Price</span>
                             </h3>
                             <button class="modal-close" onclick="closePriceModal()">
                                 <i class="fas fa-times"></i>
@@ -457,11 +458,11 @@
 
                         <div class="price-modal-body">
                             <div class="category-info">
-                                <h4 id="modalCategoryName">Nome da Categoria</h4>
-                                <p id="modalCategoryPath">Caminho no Google Drive</p>
+                                <h4 id="modalCategoryName">Category Name</h4>
+                                <p id="modalCategoryPath">Google Drive Path</p>
                                 <div class="category-stats">
-                                    <span id="modalPhotoCount">0 fotos</span>
-                                    <span id="modalCurrentPrice">Preço atual: R$ 0,00</span>
+                                    <span id="modalPhotoCount">0 photos</span>
+                                    <span id="modalCurrentPrice">Current price: $0.00</span>
                                 </div>
                             </div>
 
@@ -469,13 +470,13 @@
                             <div class="price-tabs">
                                 <nav class="price-tabs-nav">
                                     <button type="button" class="price-tab-btn active" data-tab="base-price">
-                                        💰 Preço Base
+                                        💰 Base Price
                                     </button>
                                     <button type="button" class="price-tab-btn" data-tab="client-prices">
-                                        👤 Por Cliente
+                                        👤 By Client
                                     </button>
                                     <button type="button" class="price-tab-btn" data-tab="quantity-discounts">
-                                        📦 Por Quantidade
+                                        📦 By Quantity
                                     </button>
                                 </nav>
 
@@ -484,15 +485,15 @@
                                     <div class="price-tab-panel active" id="tab-base-price">
                                         <form id="priceForm" class="price-form">
                                             <div class="form-group">
-                                                <label class="form-label">Novo Preço (R$)</label>
+                                                <label class="form-label">New Price ($)</label>
                                                 <input type="number" id="newPrice" class="form-input" min="0"
                                                     step="0.01" placeholder="0.00" required>
                                             </div>
 
                                             <div class="form-group">
-                                                <label class="form-label">Motivo da Alteração (Opcional)</label>
+                                                <label class="form-label">Reason for Change (Optional)</label>
                                                 <textarea id="priceReason" class="form-textarea" rows="3"
-                                                    placeholder="Ex: Ajuste de mercado, promoção..."></textarea>
+                                                    placeholder="Ex: Market adjustment, promotion..."></textarea>
                                             </div>
                                         </form>
                                     </div>
@@ -500,9 +501,8 @@
                                     <!-- ABA 2: Preços por Cliente -->
                                     <div class="price-tab-panel" id="tab-client-prices">
                                         <div class="client-prices-section">
-                                            <h5>Preços Personalizados por Cliente</h5>
-                                            <p class="text-muted">Configure preços especiais para clientes específicos
-                                            </p>
+                                            <h5>Custom Prices by Client</h5>
+                                            <p class="text-muted">Configure special prices for specific clients</p>
 
                                             <!-- Lista de regras existentes -->
                                             <div id="clientRulesList" class="client-rules-list">
@@ -511,21 +511,21 @@
 
                                             <!-- Formulário para nova regra -->
                                             <div class="add-client-rule">
-                                                <h6>Adicionar Nova Regra</h6>
+                                                <h6>Add New Rule</h6>
                                                 <form id="clientRuleForm" class="client-rule-form">
                                                     <div class="form-row">
                                                         <div class="form-group">
-                                                            <label class="form-label">Cliente</label>
+                                                            <label class="form-label">Client</label>
                                                             <select id="clientSelect" class="form-input" required>
-                                                                <option value="">Selecione um cliente...</option>
+                                                                <option value="">Select a client...</option>
                                                             </select>
                                                         </div>
                                                         <div class="form-group">
-                                                            <label class="form-label">Tipo de Desconto</label>
+                                                            <label class="form-label">Discount Type</label>
                                                             <select id="discountType" class="form-input" required>
-                                                                <option value="">Selecione...</option>
-                                                                <option value="percentage">Desconto %</option>
-                                                                <option value="custom">Preço Customizado</option>
+                                                                <option value="">Select...</option>
+                                                                <option value="percentage">Percentage Discount</option>
+                                                                <option value="custom">Custom Price</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -533,13 +533,13 @@
                                                     <div class="form-row">
                                                         <div class="form-group" id="percentageGroup"
                                                             style="display: none;">
-                                                            <label class="form-label">Desconto (%)</label>
+                                                            <label class="form-label">Discount (%)</label>
                                                             <input type="number" id="discountPercent" class="form-input"
                                                                 min="0" max="100" step="1" placeholder="10">
                                                         </div>
                                                         <div class="form-group" id="customPriceGroup"
                                                             style="display: none;">
-                                                            <label class="form-label">Preço Customizado (R$)</label>
+                                                            <label class="form-label">Custom Price ($)</label>
                                                             <input type="number" id="customPrice" class="form-input"
                                                                 min="0" step="0.01" placeholder="0.00">
                                                         </div>
@@ -547,7 +547,7 @@
 
                                                     <button type="submit" class="btn btn-primary">
                                                         <i class="fas fa-plus"></i>
-                                                        Adicionar Regra
+                                                        Add Rule
                                                     </button>
                                                 </form>
                                             </div>
@@ -557,42 +557,41 @@
                                     <!-- ABA 3: Descontos por Quantidade -->
                                     <div class="price-tab-panel" id="tab-quantity-discounts">
                                         <div class="quantity-discounts-section">
-                                            <h5>Descontos por Quantidade</h5>
-                                            <p class="text-muted">Configure descontos automáticos baseados na quantidade
-                                                de fotos</p>
+                                            <h5>Quantity Discounts</h5>
+                                            <p class="text-muted">Configure automatic discounts based on photo quantity</p>
 
                                             <div class="quantity-rules">
                                                 <div class="quantity-rule">
-                                                    <div class="rule-range">5-10 fotos</div>
-                                                    <div class="rule-discount">5% desconto</div>
+                                                    <div class="rule-range">5-10 photos</div>
+                                                    <div class="rule-discount">5% discount</div>
                                                     <div class="rule-actions">
-                                                        <button class="btn-sm btn-warning">Editar</button>
-                                                        <button class="btn-sm btn-danger">Remover</button>
+                                                        <button class="btn-sm btn-warning">Edit</button>
+                                                        <button class="btn-sm btn-danger">Remove</button>
                                                     </div>
                                                 </div>
 
                                                 <div class="quantity-rule">
-                                                    <div class="rule-range">11-20 fotos</div>
-                                                    <div class="rule-discount">10% desconto</div>
+                                                    <div class="rule-range">11-20 photos</div>
+                                                    <div class="rule-discount">10% discount</div>
                                                     <div class="rule-actions">
-                                                        <button class="btn-sm btn-warning">Editar</button>
-                                                        <button class="btn-sm btn-danger">Remover</button>
+                                                        <button class="btn-sm btn-warning">Edit</button>
+                                                        <button class="btn-sm btn-danger">Remove</button>
                                                     </div>
                                                 </div>
 
                                                 <div class="quantity-rule">
-                                                    <div class="rule-range">21+ fotos</div>
-                                                    <div class="rule-discount">15% desconto</div>
+                                                    <div class="rule-range">21+ photos</div>
+                                                    <div class="rule-discount">15% discount</div>
                                                     <div class="rule-actions">
-                                                        <button class="btn-sm btn-warning">Editar</button>
-                                                        <button class="btn-sm btn-danger">Remover</button>
+                                                        <button class="btn-sm btn-warning">Edit</button>
+                                                        <button class="btn-sm btn-danger">Remove</button>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <button class="btn btn-secondary">
                                                 <i class="fas fa-plus"></i>
-                                                Nova Regra de Quantidade
+                                                New Quantity Rule
                                             </button>
                                         </div>
                                     </div>
@@ -603,11 +602,11 @@
                         <div class="price-modal-footer">
                             <button type="button" class="btn btn-secondary" onclick="closePriceModal()">
                                 <i class="fas fa-times"></i>
-                                Cancelar
+                                Cancel
                             </button>
                             <button type="submit" form="priceForm" class="btn btn-primary" id="btnSavePrice">
                                 <i class="fas fa-save"></i>
-                                Salvar Preço
+                                Save Price
                             </button>
                         </div>
                     </div>
@@ -619,12 +618,12 @@
                     <div class="selections-section-header">
                         <h2 class="selections-title">
                             <i class="fas fa-shopping-cart"></i>
-                            Gestão de Seleções
+                            Selection Management
                         </h2>
                         <div class="selections-actions">
                             <button id="btnRefreshSelections" class="btn btn-secondary">
                                 <i class="fas fa-sync-alt"></i>
-                                Atualizar
+                                Refresh
                             </button>
                         </div>
                     </div>
@@ -635,20 +634,20 @@
                             <div class="filter-group">
                                 <label class="filter-label">Status</label>
                                 <select id="filterSelectionStatus" class="filter-select">
-                                    <option value="pending">Pendentes</option>
-                                    <option value="confirmed">Confirmadas</option>
-                                    <option value="cancelled">Canceladas</option>
-                                    <option value="finalized">Finalizadas</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="finalized">Finalized</option>
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="filter-label">Cliente</label>
+                                <label class="filter-label">Client</label>
                                 <input type="text" id="searchSelectionClient" class="filter-input" 
-                                    placeholder="Código ou nome do cliente...">
+                                    placeholder="Code or client name...">
                             </div>
                             <button id="btnApplySelectionFilters" class="btn-filter">
                                 <i class="fas fa-filter"></i>
-                                Filtrar
+                                Filter
                             </button>
                         </div>
                     </div>
@@ -656,26 +655,26 @@
                     <!-- Tabela de Seleções -->
                     <div class="selections-table-container">
                         <div class="table-header">
-                            <h3 class="table-title">Seleções de Clientes</h3>
+                            <h3 class="table-title">Client Selections</h3>
                         </div>
 
                         <table class="selections-table">
                             <thead>
                                 <tr>
-                                    <th>ID Seleção</th>
-                                    <th>Cliente</th>
-                                    <th>Itens</th>
-                                    <th>Valor Total</th>
-                                    <th>Data</th>
+                                    <th>Selection ID</th>
+                                    <th>Client</th>
+                                    <th>Items</th>
+                                    <th>Total Value</th>
+                                    <th>Date</th>
                                     <th>Status</th>
-                                    <th>Ações</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="selectionsTableBody">
                                 <tr>
                                     <td colspan="7" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i>
-                                        Carregando seleções...
+                                        Loading selections...
                                     </td>
                                 </tr>
                             </tbody>
@@ -685,8 +684,8 @@
 
                 <!-- Seção Relatórios (Hidden por padrão) -->
                 <div id="section-reports" class="content-section" style="display: none;">
-                    <h2>Relatórios - Em Desenvolvimento</h2>
-                    <p>Esta seção será implementada na próxima fase.</p>
+                    <h2>Reports - In Development</h2>
+                    <p>This section will be implemented in the next phase.</p>
                 </div>
 
                 <!-- Seção Configurações (Hidden por padrão) -->
@@ -696,18 +695,18 @@
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin fa-2x"></i>
                         </div>
-                        <p>Carregando configurações...</p>
+                        <p>Loading settings...</p>
                     </div>
 
                     <!-- Erro -->
                     <div id="configError" class="error-section" style="display: none;">
                         <div class="error-content">
                             <i class="fas fa-exclamation-triangle fa-2x"></i>
-                            <h3>Erro ao Carregar Configurações</h3>
-                            <p id="errorMessage">Erro desconhecido</p>
+                            <h3>Error Loading Settings</h3>
+                            <p id="errorMessage">Unknown error</p>
                             <button onclick="location.reload()" class="btn btn-primary">
                                 <i class="fas fa-sync"></i>
-                                Tentar Novamente
+                                Try Again
                             </button>
                         </div>
                     </div>
@@ -718,10 +717,10 @@
                         <div class="config-header">
                             <h2 class="config-title">
                                 <i class="fas fa-cog"></i>
-                                Configurações do Sistema
+                                System Settings
                             </h2>
                             <p class="config-description">
-                                Configure as definições de email e notificações do sistema
+                                Configure email and notification settings for the system
                             </p>
                         </div>
 
@@ -731,9 +730,9 @@
                                 <div class="stat-card">
                                     <div class="stat-header">
                                         <div>
-                                            <div class="stat-title">Emails Enviados</div>
+                                            <div class="stat-title">Emails Sent</div>
                                             <div class="stat-value" id="totalEmailsSent">-</div>
-                                            <div class="stat-description">Total de notificações</div>
+                                            <div class="stat-description">Total notifications</div>
                                         </div>
                                         <div class="stat-icon primary">
                                             <i class="fas fa-envelope"></i>
@@ -744,9 +743,9 @@
                                 <div class="stat-card">
                                     <div class="stat-header">
                                         <div>
-                                            <div class="stat-title">Último Envio</div>
+                                            <div class="stat-title">Last Email</div>
                                             <div class="stat-value" id="lastEmailSent">-</div>
-                                            <div class="stat-description">Data do último email</div>
+                                            <div class="stat-description">Date of last email</div>
                                         </div>
                                         <div class="stat-icon success">
                                             <i class="fas fa-clock"></i>
@@ -757,9 +756,9 @@
                                 <div class="stat-card">
                                     <div class="stat-header">
                                         <div>
-                                            <div class="stat-title">Status da Configuração</div>
+                                            <div class="stat-title">Configuration Status</div>
                                             <div class="stat-value" id="configStatus">-</div>
-                                            <div class="stat-description">Estado atual</div>
+                                            <div class="stat-description">Current state</div>
                                         </div>
                                         <div class="stat-icon warning">
                                             <i class="fas fa-cog"></i>
@@ -774,68 +773,68 @@
                             <div class="config-section-header">
                                 <h3>
                                     <i class="fas fa-server"></i>
-                                    Configuração SMTP
+                                    SMTP Configuration
                                 </h3>
-                                <p>Configure o servidor de email para envio de notificações</p>
+                                <p>Configure email server for sending notifications</p>
                             </div>
 
                             <form id="smtpConfigForm" class="config-form">
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label class="form-label">Servidor SMTP</label>
+                                        <label class="form-label">SMTP Server</label>
                                         <input type="text" id="smtpHost" name="host" class="form-input"
                                             placeholder="smtp.gmail.com" required>
                                         <small class="form-help">Ex: smtp.gmail.com, smtp.outlook.com</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="form-label">Porta</label>
+                                        <label class="form-label">Port</label>
                                         <input type="number" id="smtpPort" name="port" class="form-input"
                                             placeholder="587" value="587" required>
-                                        <small class="form-help">Padrão: 587 (STARTTLS)</small>
+                                        <small class="form-help">Default: 587 (STARTTLS)</small>
                                     </div>
                                 </div>
 
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label class="form-label">Email do Remetente</label>
+                                        <label class="form-label">Sender Email</label>
                                         <input type="email" id="smtpUser" name="user" class="form-input"
-                                            placeholder="sistema@sunshine.com" required>
-                                        <small class="form-help">Email que será usado para enviar</small>
+                                            placeholder="system@sunshine.com" required>
+                                        <small class="form-help">Email that will be used to send</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="form-label">Senha do Email</label>
+                                        <label class="form-label">Email Password</label>
                                         <input type="password" id="smtpPass" name="pass" class="form-input"
                                             placeholder="********" required>
-                                        <small class="form-help">Use senha de app para Gmail</small>
+                                        <small class="form-help">Use app password for Gmail</small>
                                     </div>
                                 </div>
 
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label class="form-label">Nome do Remetente</label>
+                                        <label class="form-label">Sender Name</label>
                                         <input type="text" id="senderName" name="senderName" class="form-input"
                                             placeholder="Sunshine Cowhides" required>
-                                        <small class="form-help">Nome que aparece no email</small>
+                                        <small class="form-help">Name that appears in email</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="form-label">Email do Remetente</label>
+                                        <label class="form-label">Reply Email</label>
                                         <input type="email" id="senderEmail" name="senderEmail" class="form-input"
                                             placeholder="noreply@sunshine.com" required>
-                                        <small class="form-help">Email de resposta (pode ser o mesmo)</small>
+                                        <small class="form-help">Reply email (can be the same)</small>
                                     </div>
                                 </div>
 
                                 <div class="form-actions">
                                     <button type="button" onclick="testConnection()" class="btn btn-secondary">
                                         <i class="fas fa-plug"></i>
-                                        Testar Conexão
+                                        Test Connection
                                     </button>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save"></i>
-                                        Salvar Configuração
+                                        Save Configuration
                                     </button>
                                 </div>
                             </form>
@@ -846,23 +845,23 @@
                             <div class="config-section-header">
                                 <h3>
                                     <i class="fas fa-paper-plane"></i>
-                                    Teste de Email
+                                    Email Test
                                 </h3>
-                                <p>Envie um email de teste para verificar se está funcionando</p>
+                                <p>Send a test email to verify it's working</p>
                             </div>
 
                             <div class="test-email-form">
                                 <div class="form-group">
-                                    <label class="form-label">Email para Teste</label>
+                                    <label class="form-label">Test Email</label>
                                     <div class="input-group">
                                         <input type="email" id="testEmail" class="form-input"
-                                            placeholder="seuemail@teste.com">
+                                            placeholder="youremail@test.com">
                                         <button type="button" onclick="sendTestEmail()" class="btn btn-primary">
                                             <i class="fas fa-paper-plane"></i>
-                                            Enviar Teste
+                                            Send Test
                                         </button>
                                     </div>
-                                    <small class="form-help">Digite um email para enviar um teste</small>
+                                    <small class="form-help">Enter an email to send a test</small>
                                 </div>
                             </div>
                         </div>
@@ -872,39 +871,39 @@
                             <div class="config-section-header">
                                 <h3>
                                     <i class="fas fa-users"></i>
-                                    Destinatários das Notificações
+                                    Notification Recipients
                                 </h3>
-                                <p>Configure quem recebe emails quando clientes finalizam seleções</p>
+                                <p>Configure who receives emails when clients finalize selections</p>
                             </div>
 
                             <!-- Lista de Destinatários -->
                             <div class="recipients-section">
-                                <h4>Destinatários Atuais</h4>
+                                <h4>Current Recipients</h4>
                                 <div id="recipientsList" class="recipients-list">
-                                    <p class="no-recipients">Nenhum destinatário configurado</p>
+                                    <p class="no-recipients">No recipients configured</p>
                                 </div>
                             </div>
 
                             <!-- Adicionar Destinatário -->
                             <div class="add-recipient-section">
-                                <h4>Adicionar Novo Destinatário</h4>
+                                <h4>Add New Recipient</h4>
                                 <div class="add-recipient-form">
                                     <div class="form-grid">
                                         <div class="form-group">
-                                            <label class="form-label">Nome</label>
+                                            <label class="form-label">Name</label>
                                             <input type="text" id="newRecipientName" class="form-input"
-                                                placeholder="João Silva">
+                                                placeholder="John Silva">
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label">Email</label>
                                             <input type="email" id="newRecipientEmail" class="form-input"
-                                                placeholder="joao@sunshine.com">
+                                                placeholder="john@sunshine.com">
                                         </div>
                                     </div>
                                     <button type="button" onclick="addRecipient('newSelection')"
                                         class="btn btn-success">
                                         <i class="fas fa-plus"></i>
-                                        Adicionar Destinatário
+                                        Add Recipient
                                     </button>
                                 </div>
                             </div>
@@ -918,7 +917,7 @@
     <!-- Loading Global -->
     <div id="loading" class="loading hidden">
         <div class="spinner"></div>
-        <p>Carregando...</p>
+        <p>Loading...</p>
     </div>
 
     <!-- Scripts -->
