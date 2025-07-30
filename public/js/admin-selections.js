@@ -136,6 +136,12 @@ class AdminSelections {
                                 Cancelar
                             </button>
                         ` : ''}
+                        ${selection.status === 'confirmed' ? `
+                            <button class="btn-action btn-force-cancel" onclick="adminSelections.forceCancelSelection('${selection.selectionId}')" title="Cancelamento forçado para limpeza">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Cancelar Forçado
+                            </button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -227,17 +233,28 @@ class AdminSelections {
     /**
      * Cancelar seleção
      */
-    async cancelSelection(selectionId) {
+    /**
+         * Cancelar seleção FORÇADO (para seleções confirmadas)
+         */
+    async forceCancelSelection(selectionId) {
         try {
-            // Confirmação do usuário
-            const confirmMessage = `Tem certeza que deseja CANCELAR a seleção ${selectionId}?\n\nEsta ação irá:\n• Reverter fotos para pastas originais\n• Marcar produtos como disponíveis\n• Cancelar a transação`;
+            // Aviso de segurança
+            const warningMessage = `⚠️ CANCELAMENTO FORÇADO ⚠️\n\nVocê está prestes a cancelar forçadamente a seleção ${selectionId}.\n\nEsta operação irá:\n• Reverter fotos de SYSTEM_SOLD para pastas originais\n• Marcar produtos como disponíveis\n• Alterar status para "cancelada"\n\n🚨 ESTA AÇÃO É IRREVERSÍVEL! 🚨\n\nDeseja continuar?`;
 
-            if (!confirm(confirmMessage)) {
+            if (!confirm(warningMessage)) {
+                return;
+            }
+
+            // Texto de confirmação obrigatório
+            const confirmText = prompt(`Para confirmar o cancelamento forçado, digite exatamente:\n\nCONFIRMO CANCELAMENTO FORÇADO`);
+
+            if (confirmText !== 'CONFIRMO CANCELAMENTO FORÇADO') {
+                this.showNotification('Texto de confirmação incorreto. Cancelamento abortado.', 'warning');
                 return;
             }
 
             // Pedir motivo obrigatório
-            const reason = prompt('Motivo do cancelamento (obrigatório):');
+            const reason = prompt('Motivo do cancelamento forçado (obrigatório):');
 
             if (!reason || reason.trim() === '') {
                 this.showNotification('Motivo do cancelamento é obrigatório', 'warning');
@@ -246,44 +263,50 @@ class AdminSelections {
 
             this.setLoading(true);
 
-            console.log(`❌ Cancelando seleção: ${selectionId}`);
+            console.log(`🚨 Cancelamento forçado: ${selectionId}`);
 
-            const response = await fetch(`/api/selections/${selectionId}/cancel`, {
+            const response = await fetch(`/api/selections/${selectionId}/force-cancel`, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
                 body: JSON.stringify({
                     adminUser: 'admin', // TODO: Pegar usuário logado
-                    reason: reason.trim()
+                    reason: reason.trim(),
+                    confirmText: 'CONFIRMO CANCELAMENTO FORÇADO'
                 })
             });
 
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || 'Erro ao cancelar seleção');
+                throw new Error(result.message || 'Erro no cancelamento forçado');
             }
 
             if (result.success) {
                 const reversion = result.reversion;
-                const successMessage = `✅ Seleção ${selectionId} cancelada com sucesso!\n\n📊 Reversão: ${reversion.successful}/${reversion.total} fotos revertidas`;
+                const successMessage = `✅ Cancelamento forçado executado!\n\n📊 Reversão: ${reversion.successful}/${reversion.total} fotos revertidas\n\n⚠️ ${result.warning}`;
 
                 this.showNotification(successMessage, 'success');
 
                 // Recarregar lista
                 await this.loadSelections();
 
-                console.log('🔄 Fotos revertidas:', reversion);
+                console.log('🔄 Fotos revertidas (forçado):', reversion);
 
                 if (reversion.failed > 0) {
-                    this.showNotification(`⚠️ ${reversion.failed} fotos tiveram problemas na reversão`, 'warning');
+                    const failureDetails = reversion.details
+                        .filter(d => !d.success)
+                        .map(d => `• ${d.fileName}: ${d.error}`)
+                        .join('\n');
+
+                    this.showNotification(`⚠️ ${reversion.failed} fotos tiveram problemas:\n\n${failureDetails}`, 'warning');
                 }
             } else {
-                throw new Error(result.message || 'Erro desconhecido no cancelamento');
+                throw new Error(result.message || 'Erro desconhecido no cancelamento forçado');
             }
 
         } catch (error) {
-            console.error('❌ Erro ao cancelar seleção:', error);
-            this.showNotification(`Erro ao cancelar: ${error.message}`, 'error');
+            console.error('❌ Erro no cancelamento forçado:', error);
+            this.showNotification(`Erro no cancelamento forçado: ${error.message}`, 'error');
         } finally {
             this.setLoading(false);
         }

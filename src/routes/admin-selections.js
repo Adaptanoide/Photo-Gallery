@@ -301,4 +301,160 @@ router.post('/:selectionId/cancel', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/selections/:selectionId/force-cancel
+ * Cancelar seleção CONFIRMADA - APENAS PARA LIMPEZA DE TESTES
+ */
+router.post('/:selectionId/force-cancel', async (req, res) => {
+    const session = await mongoose.startSession();
+
+    try {
+        return await session.withTransaction(async () => {
+            const { selectionId } = req.params;
+            const { reason, adminUser, confirmText } = req.body;
+
+            // VERIFICAÇÃO DE SEGURANÇA
+            if (confirmText !== 'CONFIRMO CANCELAMENTO FORÇADO') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Texto de confirmação incorreto. Digite: "CONFIRMO CANCELAMENTO FORÇADO"'
+                });
+            }
+
+            console.log(`🚨 CANCELAMENTO FORÇADO da seleção ${selectionId}...`);
+
+            // 1. Buscar seleção (aceita qualquer status)
+            const selection = await Selection.findOne({ selectionId })
+                .populate('items.productId')
+                .session(session);
+
+            if (!selection) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Seleção não encontrada'
+                });
+            }
+
+            console.log(`📋 Status atual: ${selection.status}`);
+
+            // 2. Reverter fotos do Google Drive
+            console.log('🔄 Revertendo fotos para pastas originais (forçado)...');
+
+            const revertResults = [];
+
+            for (const item of selection.items) {
+                try {
+                    const originalPath = item.originalPath;
+
+                    if (!originalPath) {
+                        console.warn(`⚠️ Item ${item.fileName} sem originalPath - usando fallback`);
+                        revertResults.push({
+                            success: false,
+                            fileName: item.fileName,
+                            error: 'originalPath não encontrado'
+                        });
+                        continue;
+                    }
+
+                    // Reverter foto usando GoogleDriveService (funciona com IDs antigos ou caminhos novos)
+                    const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
+                        item.driveFileId,
+                        originalPath
+                    );
+
+                    revertResults.push({
+                        success: revertResult.success,
+                        fileName: item.fileName,
+                        driveFileId: item.driveFileId,
+                        originalPath: originalPath,
+                        method: revertResult.method || 'UNKNOWN',
+                        error: revertResult.success ? null : revertResult.error
+                    });
+
+                } catch (error) {
+                    console.error(`❌ Erro ao reverter foto ${item.fileName}:`, error);
+                    revertResults.push({
+                        success: false,
+                        fileName: item.fileName,
+                        error: error.message
+                    });
+                }
+            }
+
+            const successfulReverts = revertResults.filter(r => r.success).length;
+            const failedReverts = revertResults.length - successfulReverts;
+
+            console.log(`🔄 Reversão forçada: ${successfulReverts} sucessos, ${failedReverts} falhas`);
+
+            // 3. Atualizar produtos: qualquer status → available
+            const productIds = selection.items.map(item => item.productId);
+
+            await Product.updateMany(
+                { _id: { $in: productIds } },
+                {
+                    $set: {
+                        status: 'available'
+                    },
+                    $unset: {
+                        'reservedBy': 1,
+                        'reservedAt': 1,
+                        'cartAddedAt': 1,
+                        'soldAt': 1
+                    }
+                }
+            ).session(session);
+
+            // 4. Atualizar seleção
+            selection.status = 'cancelled';
+            selection.processedBy = adminUser || 'admin';
+            selection.processedAt = new Date();
+            selection.adminNotes = `CANCELAMENTO FORÇADO: ${reason || 'Limpeza de testes'}`;
+
+            selection.addMovementLog('cancelled', `CANCELAMENTO FORÇADO por ${adminUser || 'admin'}: ${reason || 'Limpeza de testes'}`);
+            selection.addMovementLog('photos_reverted', `${successfulReverts} fotos revertidas (forçado), ${failedReverts} falhas`);
+
+            await selection.save({ session });
+
+            // 5. Tentar limpar pastas vazias
+            const foldersToClean = [
+                selection.googleDriveInfo.finalFolderId,
+                selection.googleDriveInfo.clientFolderId
+            ].filter(Boolean);
+
+            for (const folderId of foldersToClean) {
+                try {
+                    await GoogleDriveService.cleanupEmptyFolder(folderId);
+                } catch (cleanupError) {
+                    console.warn(`⚠️ Erro ao limpar pasta ${folderId}:`, cleanupError.message);
+                }
+            }
+
+            console.log(`✅ CANCELAMENTO FORÇADO de ${selectionId} concluído`);
+
+            res.json({
+                success: true,
+                message: `Seleção ${selectionId} cancelada forçadamente`,
+                selection: selection.getSummary(),
+                reversion: {
+                    total: revertResults.length,
+                    successful: successfulReverts,
+                    failed: failedReverts,
+                    details: revertResults
+                },
+                warning: 'Esta foi uma operação de cancelamento forçado para limpeza'
+            });
+        });
+
+    } catch (error) {
+        console.error('❌ Erro no cancelamento forçado:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro no cancelamento forçado',
+            error: error.message
+        });
+    } finally {
+        await session.endSession();
+    }
+});
+
 module.exports = router;
