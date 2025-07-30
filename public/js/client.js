@@ -302,20 +302,23 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         return `
             <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
                 <img src="${thumbnailUrl}" 
-                     alt="${photo.name}" 
-                     loading="lazy"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    alt="${photo.name}" 
+                    loading="lazy"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                
+                <!-- Badge de preço no canto superior direito -->
+                <div class="photo-price ${categoryPrice?.hasPrice ? '' : 'no-price'}">
+                    ${categoryPrice?.formattedPrice || 'Check price'}
+                </div>
+                
                 <div class="photo-placeholder" style="display: none;">
                     <i class="fas fa-image"></i>
                     <small>Image not available</small>
                 </div>
+                
                 <div class="photo-overlay">
                     <div><strong>${photo.name}</strong></div>
                     <small>${formatFileSize(photo.size)}</small>
-                    <div class="photo-price ${categoryPrice?.hasPrice ? 'has-price' : 'no-price'}">
-                        <i class="fas fa-tag"></i>
-                        <span>${categoryPrice?.formattedPrice || 'No price'}</span>
-                    </div>
                 </div>
             </div>
         `;
