@@ -226,7 +226,7 @@ router.post('/finalize', async (req, res) => {
                 googleDrive: {
                     folderCreated: folderResult.folderName,
                     photosMovedCount: moveResult.summary.successful,
-                    categoriesCreated: Object.keys(categorySubfolders).length
+                    hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0  // ← CORRIGIDO!
                 },
                 nextSteps: {
                     message: 'Suas fotos foram reservadas e movidas para uma pasta exclusiva.',

@@ -105,7 +105,7 @@ const selectionSchema = new mongoose.Schema({
     movementLog: [{
         action: {
             type: String,
-            enum: ['created', 'moved', 'reverted', 'finalized'],
+            enum: ['created', 'moved', 'reverted', 'finalized', 'email_sent', 'email_failed'], // ← ADICIONAR os 2 últimos
             required: true
         },
         timestamp: {
