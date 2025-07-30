@@ -339,11 +339,8 @@ async function openPhotoModal(photoIndex) {
     // NOVO: Inicializar sistema de zoom
     initializePhotoZoom();
 
-    // Atualizar informações básicas
-    document.getElementById('modalPhotoTitle').textContent = photo.name;
-    document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${photos.length}`;
-    document.getElementById('modalPhotoSize').textContent = `Size: ${formatFileSize(photo.size)}`;
-    document.getElementById('modalPhotoDate').textContent = `Date: ${formatDate(photo.modifiedTime)}`;
+    // Atualizar informações comerciais elegantes
+    await updateModalCommercialInfo(photo, photoIndex, photos.length);
 
     // Atualizar botões de navegação
     document.getElementById('prevBtn').disabled = photoIndex === 0;
@@ -351,6 +348,68 @@ async function openPhotoModal(photoIndex) {
 
     // Carregar foto em alta resolução
     await loadPhotoInModal(photo.id);
+}
+
+// Atualizar informações comerciais do modal
+async function updateModalCommercialInfo(photo, photoIndex, totalPhotos) {
+    // 1. HEADER - Nome da categoria em vez de nome técnico
+    const categoryName = getCurrentCategoryDisplayName();
+    document.getElementById('modalPhotoTitle').textContent = categoryName;
+    
+    // 2. CONTADOR (manter como está)
+    document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
+    
+    // 3. FOOTER - Preço e qualidade em vez de dados técnicos
+    await updateModalPriceInfo();
+}
+
+// Obter nome da categoria atual para exibição
+function getCurrentCategoryDisplayName() {
+    const currentPath = navigationState.currentPath;
+    
+    if (currentPath && currentPath.length > 0) {
+        // Se há subcategoria, mostrar: "Categoria Principal > Subcategoria"
+        if (currentPath.length > 1) {
+            const mainCategory = currentPath[0].name;
+            const subCategory = currentPath[currentPath.length - 1].name;
+            return `${mainCategory} › ${subCategory}`;
+        } else {
+            // Apenas categoria principal
+            return currentPath[0].name;
+        }
+    }
+    
+    // Fallback se não houver path
+    return 'Premium Cowhide Selection';
+}
+
+// Atualizar informações de preço no modal
+async function updateModalPriceInfo() {
+    try {
+        const currentFolderId = navigationState.currentFolderId;
+        const priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
+        
+        if (priceInfo && priceInfo.hasPrice) {
+            // Mostrar preço + descrição - ELEGANTE E LIMPO
+            document.getElementById('modalPhotoSize').innerHTML = `
+                <strong>${priceInfo.formattedPrice}</strong>
+            `;
+            document.getElementById('modalPhotoDate').textContent = `Premium leather quality`;
+        } else {
+            // Sem preço - mostrar informações elegantes
+            document.getElementById('modalPhotoSize').innerHTML = `
+                <strong>Check price</strong>
+            `;
+            document.getElementById('modalPhotoDate').textContent = `Contact for pricing`;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar preço do modal:', error);
+        // Fallback em caso de erro
+        document.getElementById('modalPhotoSize').innerHTML = `
+            <strong>Premium Quality</strong>
+        `;
+        document.getElementById('modalPhotoDate').textContent = `Selected leather`;
+    }
 }
 
 // Carregar foto em alta resolução no modal
