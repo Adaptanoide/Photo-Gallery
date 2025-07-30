@@ -1,4 +1,4 @@
-/* ===== CLIENT.CSS LUXUOSO - SUNSHINE COWHIDES ===== */
+/* ===== CLIENT.CSS LUXUOSO POLIDO - SUNSHINE COWHIDES ===== */
 
 /* Reset específico para cliente */
 * {
@@ -69,6 +69,10 @@
     text-align: center;
     padding: 3rem;
     color: var(--text-secondary);
+    background: var(--luxury-medium);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--border-radius-large);
+    margin: 2rem 0;
 }
 
 .loading-spinner {
@@ -107,48 +111,110 @@
     margin-bottom: 1.5rem;
 }
 
-/* Client Header Luxuoso */
+/* ===== CLIENT HEADER ELEGANTE E DISCRETO ===== */
+
 .client-header {
-    text-align: center;
+    text-align: left;
     margin-bottom: 2rem;
-    padding: 2rem;
+    padding: 1.5rem 2rem;
+    background: var(--luxury-medium);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    animation: slideInDown 0.3s ease-out;
+}
+
+/* Accent dourado sutil */
+.client-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
     background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    color: var(--luxury-dark);
-    border-radius: var(--border-radius-large);
-    box-shadow: var(--shadow-gold);
 }
 
 .client-header h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--luxury-dark);
+    margin: 0 0 0.75rem 0;
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
 }
 
 .client-header p {
     margin: 0;
-    color: var(--luxury-dark);
+    color: var(--text-secondary);
     opacity: 0.8;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
-/* ===== NAVEGAÇÃO LUXUOSA ===== */
+/* Badge discreto para o código */
+.client-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--luxury-dark);
+    color: var(--gold-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid var(--border-subtle);
+}
 
-/* Breadcrumb */
+.client-code-badge i {
+    font-size: 0.75rem;
+}
+
+/* Status de categorias */
+.client-categories-status {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ===== NAVEGAÇÃO ELEGANTE ===== */
+
+/* Breadcrumb Container */
 .breadcrumb-container {
     margin-bottom: 1.5rem;
+    animation: slideInDown 0.3s ease-out;
 }
 
+/* Breadcrumb Linear Elegante */
 .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0;
     padding: 1rem 1.5rem;
     background: var(--luxury-medium);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    flex-wrap: wrap;
     border: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.breadcrumb::-webkit-scrollbar {
+    display: none;
+}
+
+/* Breadcrumb Path Container */
+#breadcrumbPath {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .breadcrumb-item {
@@ -164,9 +230,14 @@
     gap: 0.5rem;
     transition: var(--transition);
     font-weight: 500;
+    white-space: nowrap;
+    min-width: 0;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.breadcrumb-item:hover {
+.breadcrumb-item:hover:not(.current) {
     background: var(--gold-light);
     color: var(--gold-hover);
 }
@@ -175,28 +246,70 @@
     color: var(--text-primary);
     background: var(--gold-light);
     cursor: default;
+    font-weight: 600;
 }
 
+.breadcrumb-item.home-btn {
+    flex-shrink: 0;
+    max-width: none;
+    margin-right: 0.5rem;
+}
+
+.breadcrumb-item:focus {
+    outline: 2px solid var(--gold-primary);
+    outline-offset: 2px;
+    background: var(--gold-light);
+}
+
+/* Separadores elegantes */
 .breadcrumb-separator {
     color: var(--text-muted);
     font-size: 0.8rem;
+    margin: 0 0.25rem;
+    flex-shrink: 0;
 }
 
-/* Back Navigation */
+.breadcrumb-separator i {
+    opacity: 0.6;
+}
+
+/* Back Navigation Elegante */
 .back-navigation {
     margin-bottom: 1.5rem;
+    animation: slideInDown 0.3s ease-out;
 }
 
 .back-navigation .btn {
     background: var(--luxury-medium);
     border: 1px solid var(--border-subtle);
     color: var(--text-primary);
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
 }
 
 .back-navigation .btn:hover {
     background: var(--gold-primary);
     color: var(--luxury-dark);
     border-color: var(--gold-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-hover);
+}
+
+.back-navigation .btn i {
+    margin-right: 0.5rem;
+}
+
+/* Ajustes de espaçamento entre seções */
+.breadcrumb-container + .back-navigation {
+    margin-top: -0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.client-header + .breadcrumb-container {
+    margin-top: -0.5rem;
 }
 
 /* ===== GRIDS E CARDS LUXUOSOS ===== */
@@ -995,6 +1108,7 @@
     border-radius: var(--border-radius);
     border-left: 3px solid var(--gold-primary);
     font-size: 0.9rem;
+    transition: all 0.3s ease;
 }
 
 .cart-subtotal {
@@ -1012,6 +1126,7 @@
     margin-bottom: 0.75rem;
     color: var(--gold-primary);
     font-weight: 500;
+    animation: highlightDiscount 0.5s ease;
 }
 
 .cart-total-final {
@@ -1052,6 +1167,18 @@
     font-weight: 500;
     color: var(--text-primary);
     margin-bottom: 0.25rem;
+}
+
+@keyframes highlightDiscount {
+    0% {
+        background: rgba(40, 167, 69, 0.1);
+    }
+    50% {
+        background: rgba(40, 167, 69, 0.2);
+    }
+    100% {
+        background: transparent;
+    }
 }
 
 .btn-finalize {
@@ -1429,9 +1556,77 @@
     box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
 }
 
+/* ===== MELHORIAS GERAIS DE ESPAÇAMENTO ===== */
+
+/* Container principal com melhor espaçamento */
+.client-page .main {
+    padding: 1.5rem 0 3rem 0;
+}
+
+.client-page .container {
+    max-width: 1400px;
+}
+
 /* ===== RESPONSIVE LUXUOSO ===== */
 
 @media (max-width: 768px) {
+    /* Client Header Responsive */
+    .client-header {
+        padding: 1.25rem 1.5rem;
+        text-align: center;
+    }
+    
+    .client-header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .client-header p {
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* Breadcrumb Responsive */
+    .breadcrumb {
+        padding: 0.75rem 1rem;
+        gap: 0;
+    }
+    
+    .breadcrumb-item {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+        max-width: 150px;
+    }
+    
+    .breadcrumb-item.home-btn {
+        padding: 0.4rem 0.5rem;
+    }
+    
+    .breadcrumb-separator {
+        margin: 0 0.15rem;
+        font-size: 0.75rem;
+    }
+
+    /* Back Navigation Responsive */
+    .back-navigation .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Layout Geral */
+    .client-page .main {
+        padding: 1rem 0 2rem 0;
+    }
+    
+    .client-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-container,
+    .back-navigation {
+        margin-bottom: 1rem;
+    }
+
     .categories-grid,
     .folders-grid {
         grid-template-columns: 1fr;
@@ -1454,15 +1649,6 @@
     .client-logout-btn {
         padding: 6px 12px;
         font-size: 0.8rem;
-    }
-
-    .client-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .client-header h1 {
-        font-size: 1.6rem;
     }
 
     .category-card,
@@ -1527,6 +1713,29 @@
 }
 
 @media (max-width: 480px) {
+    /* Ultra responsive */
+    .breadcrumb {
+        padding: 0.6rem 0.75rem;
+    }
+    
+    .breadcrumb-item {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
+        max-width: 120px;
+    }
+    
+    .breadcrumb-item.home-btn span {
+        display: none; /* Mostrar só o ícone em mobile muito pequeno */
+    }
+
+    .client-page .main {
+        padding: 0.75rem 0 1.5rem 0;
+    }
+    
+    .client-header {
+        margin-bottom: 1.25rem;
+    }
+
     .client-header h1 {
         font-size: 1.4rem;
     }
@@ -1567,6 +1776,17 @@
     }
     to {
         opacity: 1;
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -1679,7 +1899,10 @@
     .folder-card,
     .selection-modal,
     .selection-modal-content,
-    .success-icon {
+    .success-icon,
+    .client-header,
+    .breadcrumb-container,
+    .back-navigation {
         transition: none;
         animation: none;
     }
