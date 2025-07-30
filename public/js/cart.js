@@ -653,19 +653,12 @@ window.CartSystem = {
     },
 
     /**
-     * Timer geral do carrinho (menor tempo restante)
+     * Timer geral do carrinho - REMOVIDO
+     * Mantemos apenas os timers individuais dos itens
      */
     startGeneralTimer() {
-        const generalTimer = setInterval(() => {
-            if (this.elements.timer && this.state.items.length > 0) {
-                const minTime = Math.min(...this.state.items.map(item => item.timeRemaining || 0));
-                const minutes = Math.floor(minTime / 60);
-                const seconds = minTime % 60;
-                this.elements.timer.textContent = `⏰ ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }, 1000);
-
-        this.state.timers.set('general', generalTimer);
+        // FUNCIONALIDADE REMOVIDA - apenas timers individuais dos itens
+        console.log('✅ Timers individuais ativos, timer geral removido');
     },
 
     /**

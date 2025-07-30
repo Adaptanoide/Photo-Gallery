@@ -72,6 +72,17 @@
                 </div>
 
                 <!-- Container de conteúdo dinâmico -->
+                <!-- Loading discreto para navegação -->
+                <div id="navigationLoading" class="navigation-loading" style="display: none;">
+                    <div class="loading-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <p>Loading content...</p>
+                </div>
+
+                <!-- Container de conteúdo dinâmico -->
                 <div id="contentContainer">
                     <!-- Categorias principais -->
                     <div id="categoriesContainer" class="categories-grid">
@@ -194,12 +205,12 @@
                 </div>
             </div>
             
-            <!-- Footer do Carrinho -->
+            <!-- Footer do Carrinho - SEM TIMER GLOBAL -->
             <div id="cartFooter" class="cart-footer" style="display: none;">
                 <div class="cart-summary">
                     <div class="cart-total">
                         <span id="cartItemCount">0 items</span>
-                        <span id="cartTimer">⏰ 15:00</span>
+                        <!-- REMOVIDO: <span id="cartTimer">⏰ 15:00</span> -->
                     </div>
                     <button onclick="proceedToFinalize()" class="btn btn-primary btn-finalize">
                         <i class="fas fa-check-circle"></i>

@@ -126,6 +126,7 @@ function updateClientInterface(data) {
 // Mostrar categorias principais
 function showCategories() {
     hideAllContainers();
+    hideLoading(); // NOVO: esconder loading
     document.getElementById('categoriesContainer').style.display = 'grid';
 
     const containerEl = document.getElementById('categoriesContainer');
@@ -202,6 +203,7 @@ async function loadFolderContents(folderId) {
 // Mostrar subpastas
 function showSubfolders(folders) {
     hideAllContainers();
+    hideLoading(); // NOVO: esconder loading
     document.getElementById('foldersContainer').style.display = 'grid';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
@@ -267,6 +269,7 @@ async function loadPhotos(folderId) {
 // Mostrar galeria de fotos
 function showPhotosGallery(photos, folderName, categoryPrice) {
     hideAllContainers();
+    hideLoading(); // NOVO: esconder loading
     document.getElementById('photosContainer').style.display = 'block';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
@@ -525,17 +528,23 @@ function generateProductDescription(folderName) {
     return 'Selected high-quality leathers';
 }
 
-// Ocultar todos os containers
+// Ocultar todos os containers incluindo loading
 function hideAllContainers() {
     document.getElementById('categoriesContainer').style.display = 'none';
     document.getElementById('foldersContainer').style.display = 'none';
     document.getElementById('photosContainer').style.display = 'none';
     document.getElementById('noContentMessage').style.display = 'none';
+    // NOVO: esconder loading também
+    const loadingEl = document.getElementById('navigationLoading');
+    if (loadingEl) {
+        loadingEl.style.display = 'none';
+    }
 }
 
 // Mostrar mensagem de conteúdo vazio
 function showNoContent(title, message) {
     hideAllContainers();
+    hideLoading(); // NOVO: esconder loading
     document.getElementById('noContentMessage').style.display = 'block';
     document.getElementById('noContentMessage').innerHTML = `
         <i class="fas fa-folder-open fa-3x"></i>
@@ -546,9 +555,21 @@ function showNoContent(title, message) {
     document.getElementById('backNavigation').style.display = 'block';
 }
 
-// Mostrar loading genérico
+// Mostrar loading discreto de navegação
 function showLoading() {
     hideAllContainers();
+    const loadingEl = document.getElementById('navigationLoading');
+    if (loadingEl) {
+        loadingEl.style.display = 'flex';
+    }
+}
+
+// Esconder loading de navegação
+function hideLoading() {
+    const loadingEl = document.getElementById('navigationLoading');
+    if (loadingEl) {
+        loadingEl.style.display = 'none';
+    }
 }
 
 // Formatação de tamanho de arquivo
@@ -639,12 +660,12 @@ async function loadCategoryPrice(folderId) {
 
         window.categoryPrices.set(folderId, priceInfo);
         return priceInfo;
-        
+
     } catch (error) {
         console.error('❌ Error loading price:', error);
-        return { 
-            hasPrice: false, 
-            price: 0, 
+        return {
+            hasPrice: false,
+            price: 0,
             formattedPrice: 'Price error',
             priceSource: 'error'
         };
