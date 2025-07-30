@@ -8,59 +8,63 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
+    <!-- Header Simplificado -->
+    <header class="luxury-header">
         <div class="container">
-            <div class="logo">
+            <div class="luxury-header-logo">
                 <i class="fas fa-sun"></i>
                 <span>Sunshine Cowhides</span>
             </div>
-            <nav class="nav">
-                <button id="adminBtn" class="btn btn-primary">
-                    <i class="fas fa-cog"></i> Admin
-                </button>
-                <button id="clientBtn" class="btn btn-secondary">
-                    <i class="fas fa-shopping-cart"></i> Cliente
-                </button>
-            </nav>
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="main">
-        <!-- Welcome Section -->
-        <section id="welcome" class="welcome-section">
-            <div class="container">
-                <h1>Bem-vindo ao Sunshine Cowhides</h1>
-                <p>Sistema de gerenciamento para couros únicos de alta qualidade</p>
-                
-                <div class="access-cards">
-                    <!-- Admin Access -->
-                    <div class="access-card admin-card">
-                        <div class="card-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h3>Acesso Administrativo</h3>
-                        <p>Gerencie produtos, códigos de acesso e configurações</p>
-                        <button class="btn btn-primary" onclick="showAdminLogin()">
-                            Entrar como Admin
-                        </button>
-                    </div>
+    <!-- Welcome Section Luxuosa -->
+    <section id="welcome" class="luxury-welcome-section">
+        <div class="luxury-container">
+            <!-- Logo e Título Elegante -->
+            <div class="luxury-brand">
+                <div class="luxury-logo">
+                    <i class="fas fa-sun"></i>
+                </div>
+                <h1 class="luxury-title">Welcome</h1>
+                <p class="luxury-subtitle">
+                    Please enter your access code to view our premium leather collection.
+                </p>
+            </div>
 
-                    <!-- Client Access -->
-                    <div class="access-card client-card">
-                        <div class="card-icon">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <h3>Acesso do Cliente</h3>
-                        <p>Navegue pelo catálogo e faça sua seleção</p>
-                        <button class="btn btn-secondary" onclick="showClientLogin()">
-                            Entrar com Código
-                        </button>
+            <!-- Formulário de Acesso Direto -->
+            <div class="luxury-access-form">
+                <form id="directClientForm" class="direct-access-form">
+                    <div class="code-input-group">
+                        <input 
+                            type="text" 
+                            id="directClientCode" 
+                            class="luxury-code-input" 
+                            placeholder="0 0 0 0" 
+                            maxlength="4" 
+                            pattern="[0-9]{4}"
+                            autocomplete="off"
+                            required
+                        >
                     </div>
+                    <button type="submit" class="luxury-btn-primary">
+                        <i class="fas fa-unlock"></i>
+                        <span>Enter Gallery</span>
+                    </button>
+                </form>
+                
+                <!-- Link discreto para admin -->
+                <div class="luxury-admin-access">
+                    <button class="luxury-admin-link" onclick="showAdminLogin()">
+                        <i class="fas fa-cog"></i>
+                        Administrative Access
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
         <!-- Admin Login Modal -->
         <div id="adminModal" class="modal">
@@ -109,29 +113,6 @@
             <div class="spinner"></div>
             <p>Carregando...</p>
         </div>
-
-        <!-- Status Section -->
-        <section class="status-section">
-            <div class="container">
-                <div class="status-card">
-                    <h3><i class="fas fa-server"></i> Status do Sistema</h3>
-                    <div id="systemStatus" class="status-info">
-                        <div class="status-item">
-                            <span class="status-label">API:</span>
-                            <span id="apiStatus" class="status-value">Verificando...</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-label">Google Drive:</span>
-                            <span id="driveStatus" class="status-value">Verificando...</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-label">MongoDB:</span>
-                            <span id="dbStatus" class="status-value">Verificando...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <!-- Footer -->

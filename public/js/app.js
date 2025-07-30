@@ -29,14 +29,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Verificar se estamos na página inicial (tem botões admin/client)
+    // Verificar se estamos na página inicial 
     const adminBtn = document.getElementById('adminBtn');
     const clientBtn = document.getElementById('clientBtn');
+    const directClientForm = document.getElementById('directClientForm');
 
+    // Botões originais (se existirem - compatibilidade)
     if (adminBtn && clientBtn) {
-        // Página inicial - configurar botões principais
         adminBtn.addEventListener('click', showAdminLogin);
         clientBtn.addEventListener('click', showClientLogin);
+    }
+
+    // NOVO: Formulário direto de acesso do cliente
+    if (directClientForm) {
+        directClientForm.addEventListener('submit', handleDirectClientLogin);
+    }
+
+    // Input de código direto com formatação
+    const directClientCodeInput = document.getElementById('directClientCode');
+    if (directClientCodeInput) {
+        directClientCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+        });
     }
 
     // Forms - verificar se existem antes de adicionar listeners
@@ -193,14 +207,14 @@ async function handleAdminLogin(e) {
     }
 }
 
-// Handle login cliente
-async function handleClientLogin(e) {
+// Handle login direto do cliente (novo formulário elegante)
+async function handleDirectClientLogin(e) {
     e.preventDefault();
 
-    const code = document.getElementById('clientCode').value.trim();
+    const code = document.getElementById('directClientCode').value.trim();
 
     if (!code || code.length !== 4) {
-        showNotification('Digite um código válido de 4 dígitos', 'error');
+        showNotification('Please enter a valid 4-digit access code', 'error');
         return;
     }
 
@@ -234,20 +248,19 @@ async function handleClientLogin(e) {
             AppState.accessCode = code;
             AppState.currentUser = data.client;
 
-            showNotification(`Bem-vindo, ${data.client.name}!`, 'success');
-            closeModal('clientModal');
+            showNotification(`Welcome, ${data.client.name}!`, 'success');
 
             setTimeout(() => {
                 redirectToClient();
             }, 1000);
 
         } else {
-            showNotification(data.message || 'Código inválido ou expirado', 'error');
+            showNotification(data.message || 'Invalid or expired access code', 'error');
         }
 
     } catch (error) {
-        console.error('Erro na verificação:', error);
-        showNotification('Erro de conexão. Tente novamente.', 'error');
+        console.error('Error verifying access code:', error);
+        showNotification('Connection error. Please try again.', 'error');
     } finally {
         showLoading(false);
     }
