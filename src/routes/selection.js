@@ -77,22 +77,7 @@ router.post('/finalize', async (req, res) => {
 
             const categories = Object.keys(categoriesMap);
 
-            // 6. Criar subpastas por categoria - SEMPRE
-            console.log(`📁 Criando subpastas para ${categories.length} categorias...`);
-
-            let categorySubfolders = {};
-            try {
-                categorySubfolders = await GoogleDriveService.createCategorySubfolders(
-                    folderResult.folderId,
-                    categories
-                );
-                console.log(`✅ Subpastas criadas:`, Object.keys(categorySubfolders));
-            } catch (error) {
-                console.warn(`⚠️ Erro ao criar subpastas, usando pasta principal:`, error.message);
-                categorySubfolders = {}; // Fallback: usar pasta principal
-            }
-
-            // 7. Preparar dados dos produtos para movimentação
+            // 6. Preparar dados dos produtos para movimentação (SEM criar subpastas simples)
             const photosToMove = products.map(product => {
                 const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
                 return {
@@ -104,13 +89,13 @@ router.post('/finalize', async (req, res) => {
                 };
             });
 
-            // 8. Mover fotos no Google Drive
-            console.log(`📸 Movendo ${photosToMove.length} fotos para pasta de seleção...`);
+            // 7. Mover fotos preservando hierarquia completa
+            console.log(`📸 Movendo ${photosToMove.length} fotos com hierarquia preservada...`);
 
             const moveResult = await GoogleDriveService.movePhotosToSelection(
                 photosToMove,
-                folderResult.folderId,
-                categorySubfolders
+                folderResult.folderId
+                // ← Não passa categorySubfolders - hierarquia será recriada automaticamente
             );
 
             if (!moveResult.success) {
@@ -157,7 +142,8 @@ router.post('/finalize', async (req, res) => {
                     clientFolderId: folderResult.folderId,
                     clientFolderName: folderResult.folderName,
                     clientFolderPath: folderResult.path,
-                    categorySubfolders: categorySubfolders // Usar objeto simples
+                    hierarchyPreserved: true, // ← Novo: indica que hierarquia foi preservada
+                    hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0
                 },
                 reservationExpiredAt: new Date(Date.now() + (24 * 60 * 60 * 1000)) // 24 horas para decidir
             };

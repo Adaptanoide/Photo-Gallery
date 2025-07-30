@@ -163,6 +163,74 @@ class GoogleDriveService {
         }
     }
 
+    /**
+     * Recriar hierarquia completa dentro da pasta do cliente
+     * Exemplo: "1 Colombian Cowhides → 1. Medium → Brown & White M"
+     * Cria: clientFolder/1 Colombian Cowhides/1. Medium/Brown & White M/
+     */
+    static async recreateHierarchyInFolder(clientFolderId, hierarchicalPath) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            console.log(`📁 Recriando hierarquia: ${hierarchicalPath}`);
+
+            // Dividir caminho em partes
+            const pathParts = hierarchicalPath.split(' → ').map(part => part.trim());
+
+            let currentFolderId = clientFolderId;
+            const createdPath = [];
+
+            // Criar cada nível da hierarquia
+            for (const folderName of pathParts) {
+                // Verificar se pasta já existe neste nível
+                const existingFolder = await drive.files.list({
+                    q: `name='${folderName}' and '${currentFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`,
+                    fields: 'files(id, name)'
+                });
+
+                if (existingFolder.data.files.length > 0) {
+                    // Pasta já existe
+                    currentFolderId = existingFolder.data.files[0].id;
+                    console.log(`📁 Pasta existente: ${folderName} (${currentFolderId})`);
+                } else {
+                    // Criar nova pasta
+                    const folderMetadata = {
+                        name: folderName,
+                        parents: [currentFolderId],
+                        mimeType: 'application/vnd.google-apps.folder'
+                    };
+
+                    const newFolder = await drive.files.create({
+                        resource: folderMetadata,
+                        fields: 'id, name'
+                    });
+
+                    currentFolderId = newFolder.data.id;
+                    console.log(`✅ Pasta criada: ${folderName} (${currentFolderId})`);
+                }
+
+                createdPath.push(folderName);
+            }
+
+            console.log(`✅ Hierarquia completa criada: ${createdPath.join(' → ')}`);
+
+            return {
+                success: true,
+                finalFolderId: currentFolderId,
+                hierarchicalPath: createdPath.join(' → '),
+                levels: pathParts.length
+            };
+
+        } catch (error) {
+            console.error(`❌ Erro ao recriar hierarquia '${hierarchicalPath}':`, error);
+            return {
+                success: false,
+                error: error.message,
+                finalFolderId: clientFolderId // Fallback para pasta do cliente
+            };
+        }
+    }
+
     // ===== GESTÃO DE SELEÇÕES =====
 
     /**
@@ -285,29 +353,86 @@ class GoogleDriveService {
     }
 
     /**
-     * Mover múltiplas fotos para suas respectivas categorias
-     */
-    static async movePhotosToSelection(photos, clientFolderId, categorySubfolders) {
+         * Mover múltiplas fotos preservando hierarquia completa
+         * VERSÃO MELHORADA: Recria estrutura original dentro da pasta do cliente
+         */
+    static async movePhotosToSelection(photos, clientFolderId, categorySubfolders = {}) {
         try {
-            console.log(`📸 Movendo ${photos.length} fotos para seleção...`);
+            console.log(`📸 Movendo ${photos.length} fotos com preservação de hierarquia...`);
 
             const results = [];
+            const hierarchyCache = new Map(); // Cache para evitar recriar pastas duplicadas
 
             for (const photo of photos) {
                 try {
-                    // Determinar pasta de destino baseada na categoria
-                    const destinationFolder = categorySubfolders[photo.category] || clientFolderId;
+                    console.log(`📸 Processando foto: ${photo.fileName}`);
 
-                    const result = await this.movePhotoToSelection(
-                        photo.driveFileId,
-                        destinationFolder
-                    );
+                    // 1. Buscar informações atuais da foto no Google Drive
+                    const drive = this.getAuthenticatedDrive();
+                    const photoData = await drive.files.get({
+                        fileId: photo.driveFileId,
+                        fields: 'id, name, parents'
+                    });
 
+                    if (!photoData.data.parents || photoData.data.parents.length === 0) {
+                        throw new Error('Foto não possui pasta parent definida');
+                    }
+
+                    const currentParent = photoData.data.parents[0];
+
+                    // 2. Capturar caminho hierárquico completo da foto
+                    const originalHierarchicalPath = await this.buildHierarchicalPath(currentParent);
+
+                    console.log(`📂 Caminho original: ${originalHierarchicalPath}`);
+
+                    // 3. Verificar cache ou recriar hierarquia na pasta do cliente
+                    let destinationFolderId;
+
+                    if (hierarchyCache.has(originalHierarchicalPath)) {
+                        // Usar pasta já criada
+                        destinationFolderId = hierarchyCache.get(originalHierarchicalPath);
+                        console.log(`💾 Usando pasta do cache: ${destinationFolderId}`);
+                    } else {
+                        // Recriar hierarquia completa
+                        const hierarchyResult = await this.recreateHierarchyInFolder(
+                            clientFolderId,
+                            originalHierarchicalPath
+                        );
+
+                        if (!hierarchyResult.success) {
+                            console.warn(`⚠️ Falha ao recriar hierarquia, usando pasta do cliente como fallback`);
+                            destinationFolderId = clientFolderId;
+                        } else {
+                            destinationFolderId = hierarchyResult.finalFolderId;
+                            // Salvar no cache para próximas fotos do mesmo caminho
+                            hierarchyCache.set(originalHierarchicalPath, destinationFolderId);
+                        }
+                    }
+
+                    // 4. Mover foto para pasta de destino
+                    console.log(`📸 Movendo ${photo.fileName} para ${destinationFolderId}`);
+
+                    await drive.files.update({
+                        fileId: photo.driveFileId,
+                        addParents: destinationFolderId,
+                        removeParents: currentParent,
+                        fields: 'id, name, parents'
+                    });
+
+                    // 5. Resultado da movimentação
                     results.push({
-                        ...result,
+                        success: true,
+                        photoId: photo.driveFileId,
+                        photoName: photo.fileName,
+                        oldParent: currentParent,
+                        newParent: destinationFolderId,
+                        originalHierarchicalPath: originalHierarchicalPath,
                         category: photo.category,
                         fileName: photo.fileName
                     });
+
+                    console.log(`✅ Foto movida: ${photo.fileName}`);
+                    console.log(`   📂 Hierarquia preservada: ${originalHierarchicalPath}`);
 
                 } catch (error) {
                     console.error(`❌ Erro ao mover foto ${photo.fileName}:`, error);
@@ -315,6 +440,7 @@ class GoogleDriveService {
                         success: false,
                         photoId: photo.driveFileId,
                         fileName: photo.fileName,
+                        category: photo.category,
                         error: error.message
                     });
                 }
@@ -323,7 +449,9 @@ class GoogleDriveService {
             const successCount = results.filter(r => r.success).length;
             const errorCount = results.length - successCount;
 
-            console.log(`✅ Movimentação concluída: ${successCount} sucessos, ${errorCount} erros`);
+            console.log(`✅ Movimentação concluída com hierarquia preservada:`);
+            console.log(`   📊 ${successCount} sucessos, ${errorCount} erros`);
+            console.log(`   📁 ${hierarchyCache.size} estruturas de pastas criadas`);
 
             return {
                 success: errorCount === 0,
@@ -331,7 +459,8 @@ class GoogleDriveService {
                 summary: {
                     total: photos.length,
                     successful: successCount,
-                    failed: errorCount
+                    failed: errorCount,
+                    hierarchiesCreated: hierarchyCache.size
                 }
             };
 
