@@ -170,12 +170,11 @@ class AdminDashboard {
         // Atualizar título da página
         const titles = {
             dashboard: 'Dashboard',
-            clients: 'Gestão de Clientes',
-            pricing: 'Gestão de Preços', // ← NOVA LINHA
-            products: 'Gestão de Produtos',
-            selections: 'Gestão de Seleções',
-            reports: 'Relatórios',
-            settings: 'Configurações'
+            clients: 'Client Management',
+            pricing: 'Price Management',
+            selections: 'Selection Management',
+            reports: 'Reports',
+            settings: 'Settings'
         };
 
         if (this.pageTitle) {

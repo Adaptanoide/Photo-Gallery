@@ -1,24 +1,24 @@
-//public/js/admin-config.js
+//public/js/admin-config.js - English Translation
 
 /**
- * ADMIN-CONFIG.JS - Configurações do Sistema
- * Interface para gerenciar configurações de email e notificações
+ * ADMIN-CONFIG.JS - System Configuration
+ * Interface for managing email and notification settings
  */
 
-// ===== ESTADO GLOBAL =====
+// ===== GLOBAL STATE =====
 let currentConfig = null;
 let isLoading = false;
 
-// ===== AUTENTICAÇÃO =====
+// ===== AUTHENTICATION =====
 function checkAuthentication() {
     const session = getSession();
     if (!session || !session.token) {
-        console.warn('⚠️ Usuário não autenticado');
+        console.warn('⚠️ User not authenticated');
         window.location.href = '/admin';
         return;
     }
 
-    // Atualizar nome do usuário
+    // Update username
     const usernameEl = document.getElementById('adminUsername');
     if (usernameEl && session.user) {
         usernameEl.textContent = session.user.username || 'admin';
@@ -38,12 +38,12 @@ function getAuthHeaders() {
     };
 }
 
-// ===== CARREGAMENTO DE CONFIGURAÇÕES =====
+// ===== CONFIGURATION LOADING =====
 async function loadConfiguration() {
     try {
         setLoading(true);
 
-        console.log('📧 Carregando configurações de email...');
+        console.log('📧 Loading email configuration...');
 
         const response = await fetch('/api/email-config', {
             headers: getAuthHeaders()
@@ -52,24 +52,24 @@ async function loadConfiguration() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao carregar configurações');
+            throw new Error(data.message || 'Error loading configuration');
         }
 
         currentConfig = data.config;
 
-        // Atualizar interface
+        // Update interface
         updateConfigInterface();
 
-        // Carregar estatísticas
+        // Load statistics
         await loadStats();
 
-        // Mostrar conteúdo
+        // Show content
         showContent();
 
-        console.log('✅ Configurações carregadas');
+        console.log('✅ Configuration loaded');
 
     } catch (error) {
-        console.error('❌ Erro ao carregar configurações:', error);
+        console.error('❌ Error loading configuration:', error);
         showError(error.message);
     } finally {
         setLoading(false);
@@ -79,21 +79,21 @@ async function loadConfiguration() {
 // ===== INTERFACE =====
 function updateConfigInterface() {
     if (!currentConfig) {
-        // Configuração não existe, limpar formulário
+        // Configuration doesn't exist, clear form
         clearForm();
         return;
     }
 
-    // Preencher formulário SMTP
+    // Fill SMTP form
     document.getElementById('smtpHost').value = currentConfig.smtp?.host || '';
     document.getElementById('smtpPort').value = currentConfig.smtp?.port || '';
     document.getElementById('smtpUser').value = currentConfig.smtp?.auth?.user || '';
-    // Não preencher senha por segurança
+    // Don't fill password for security
 
     document.getElementById('senderName').value = currentConfig.sender?.name || '';
     document.getElementById('senderEmail').value = currentConfig.sender?.email || '';
 
-    // Atualizar destinatários
+    // Update recipients list
     updateRecipientsList();
 }
 
@@ -101,7 +101,7 @@ function updateRecipientsList() {
     const listEl = document.getElementById('recipientsList');
 
     if (!currentConfig?.notifications?.newSelection?.recipients) {
-        listEl.innerHTML = '<p class="no-recipients">Nenhum destinatário configurado</p>';
+        listEl.innerHTML = '<p class="no-recipients">No recipients configured</p>';
         return;
     }
 
@@ -113,7 +113,7 @@ function updateRecipientsList() {
                 <strong>${recipient.name}</strong>
                 <span>${recipient.email}</span>
             </div>
-            <button onclick="removeRecipient('${recipient.email}')" class="btn-remove">
+            <button onclick="removeRecipient('${recipient.email}')" class="btn-remove" title="Remove recipient">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -122,19 +122,19 @@ function updateRecipientsList() {
 
 function clearForm() {
     document.getElementById('smtpConfigForm').reset();
-    document.getElementById('recipientsList').innerHTML = '<p class="no-recipients">Nenhum destinatário configurado</p>';
+    document.getElementById('recipientsList').innerHTML = '<p class="no-recipients">No recipients configured</p>';
 }
 
-// ===== SETUP DE FORMULÁRIOS =====
+// ===== FORM SETUP =====
 function setupFormHandlers() {
-    // Form de SMTP
+    // SMTP form
     const smtpForm = document.getElementById('smtpConfigForm');
     smtpForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         await saveSmtpConfig();
     });
 
-    // Enter no campo de teste
+    // Enter key in test field
     const testEmailField = document.getElementById('testEmail');
     testEmailField.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -149,7 +149,7 @@ async function saveSmtpConfig() {
     try {
         setLoading(true);
 
-        console.log('💾 Salvando configuração SMTP...');
+        console.log('💾 Saving SMTP configuration...');
 
         const formData = new FormData(document.getElementById('smtpConfigForm'));
 
@@ -157,7 +157,7 @@ async function saveSmtpConfig() {
             smtp: {
                 host: formData.get('host'),
                 port: parseInt(formData.get('port')),
-                secure: false, // Para porta 587
+                secure: false, // For port 587
                 auth: {
                     user: formData.get('user'),
                     pass: formData.get('pass')
@@ -192,29 +192,29 @@ async function saveSmtpConfig() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao salvar configuração');
+            throw new Error(data.message || 'Error saving configuration');
         }
 
         currentConfig = data.config;
 
-        showNotification('Configuração SMTP salva com sucesso!', 'success');
+        showNotification('SMTP configuration saved successfully!', 'success');
 
-        console.log('✅ Configuração SMTP salva');
+        console.log('✅ SMTP configuration saved');
 
     } catch (error) {
-        console.error('❌ Erro ao salvar SMTP:', error);
+        console.error('❌ Error saving SMTP:', error);
         showNotification(error.message, 'error');
     } finally {
         setLoading(false);
     }
 }
 
-// ===== TESTE DE CONEXÃO =====
+// ===== CONNECTION TEST =====
 async function testConnection() {
     try {
         setLoading(true);
 
-        console.log('🔌 Testando conexão SMTP...');
+        console.log('🔌 Testing SMTP connection...');
 
         const response = await fetch('/api/email-config/test-connection', {
             method: 'POST',
@@ -224,34 +224,34 @@ async function testConnection() {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('Conexão SMTP funcionando!', 'success');
-            console.log('✅ Conexão SMTP OK');
+            showNotification('SMTP connection working!', 'success');
+            console.log('✅ SMTP connection OK');
         } else {
-            showNotification(`Erro na conexão: ${data.message}`, 'error');
-            console.log('❌ Conexão SMTP falhou:', data.error);
+            showNotification(`Connection error: ${data.message}`, 'error');
+            console.log('❌ SMTP connection failed:', data.error);
         }
 
     } catch (error) {
-        console.error('❌ Erro ao testar conexão:', error);
-        showNotification('Erro ao testar conexão', 'error');
+        console.error('❌ Error testing connection:', error);
+        showNotification('Error testing connection', 'error');
     } finally {
         setLoading(false);
     }
 }
 
-// ===== TESTE DE EMAIL =====
+// ===== EMAIL TEST =====
 async function sendTestEmail() {
     try {
         const testEmail = document.getElementById('testEmail').value;
 
         if (!testEmail) {
-            showNotification('Digite um email para teste', 'warning');
+            showNotification('Enter an email for testing', 'warning');
             return;
         }
 
         setLoading(true);
 
-        console.log(`📧 Enviando email de teste para: ${testEmail}`);
+        console.log(`📧 Sending test email to: ${testEmail}`);
 
         const response = await fetch('/api/email-config/test', {
             method: 'POST',
@@ -262,38 +262,38 @@ async function sendTestEmail() {
         const data = await response.json();
 
         if (data.success) {
-            showNotification(`Email de teste enviado para ${testEmail}!`, 'success');
-            console.log('✅ Email de teste enviado');
+            showNotification(`Test email sent to ${testEmail}!`, 'success');
+            console.log('✅ Test email sent');
 
-            // Atualizar estatísticas
+            // Update statistics
             await loadStats();
         } else {
-            showNotification(`Erro ao enviar teste: ${data.error}`, 'error');
-            console.log('❌ Falha no teste de email:', data.error);
+            showNotification(`Error sending test: ${data.error}`, 'error');
+            console.log('❌ Test email failed:', data.error);
         }
 
     } catch (error) {
-        console.error('❌ Erro no teste de email:', error);
-        showNotification('Erro ao enviar email de teste', 'error');
+        console.error('❌ Error in email test:', error);
+        showNotification('Error sending test email', 'error');
     } finally {
         setLoading(false);
     }
 }
 
-// ===== GESTÃO DE DESTINATÁRIOS =====
+// ===== RECIPIENT MANAGEMENT =====
 async function addRecipient(type) {
     try {
         const name = document.getElementById('newRecipientName').value.trim();
         const email = document.getElementById('newRecipientEmail').value.trim();
 
         if (!name || !email) {
-            showNotification('Nome e email são obrigatórios', 'warning');
+            showNotification('Name and email are required', 'warning');
             return;
         }
 
         setLoading(true);
 
-        console.log(`👤 Adicionando destinatário: ${name} <${email}>`);
+        console.log(`👤 Adding recipient: ${name} <${email}>`);
 
         const response = await fetch(`/api/email-config/recipients/${type}`, {
             method: 'POST',
@@ -304,24 +304,24 @@ async function addRecipient(type) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao adicionar destinatário');
+            throw new Error(data.message || 'Error adding recipient');
         }
 
         currentConfig = data.config;
 
-        // Limpar campos
+        // Clear fields
         document.getElementById('newRecipientName').value = '';
         document.getElementById('newRecipientEmail').value = '';
 
-        // Atualizar lista
+        // Update list
         updateRecipientsList();
 
-        showNotification('Destinatário adicionado com sucesso!', 'success');
+        showNotification('Recipient added successfully!', 'success');
 
-        console.log('✅ Destinatário adicionado');
+        console.log('✅ Recipient added');
 
     } catch (error) {
-        console.error('❌ Erro ao adicionar destinatário:', error);
+        console.error('❌ Error adding recipient:', error);
         showNotification(error.message, 'error');
     } finally {
         setLoading(false);
@@ -330,13 +330,13 @@ async function addRecipient(type) {
 
 async function removeRecipient(email) {
     try {
-        if (!confirm(`Remover destinatário ${email}?`)) {
+        if (!confirm(`Remove recipient ${email}?`)) {
             return;
         }
 
         setLoading(true);
 
-        console.log(`🗑️ Removendo destinatário: ${email}`);
+        console.log(`🗑️ Removing recipient: ${email}`);
 
         const response = await fetch(`/api/email-config/recipients/newSelection/${encodeURIComponent(email)}`, {
             method: 'DELETE',
@@ -346,27 +346,27 @@ async function removeRecipient(email) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao remover destinatário');
+            throw new Error(data.message || 'Error removing recipient');
         }
 
         currentConfig = data.config;
 
-        // Atualizar lista
+        // Update list
         updateRecipientsList();
 
-        showNotification('Destinatário removido com sucesso!', 'success');
+        showNotification('Recipient removed successfully!', 'success');
 
-        console.log('✅ Destinatário removido');
+        console.log('✅ Recipient removed');
 
     } catch (error) {
-        console.error('❌ Erro ao remover destinatário:', error);
+        console.error('❌ Error removing recipient:', error);
         showNotification(error.message, 'error');
     } finally {
         setLoading(false);
     }
 }
 
-// ===== ESTATÍSTICAS =====
+// ===== STATISTICS =====
 async function loadStats() {
     try {
         const response = await fetch('/api/email-config/stats', {
@@ -380,7 +380,7 @@ async function loadStats() {
         }
 
     } catch (error) {
-        console.error('❌ Erro ao carregar estatísticas:', error);
+        console.error('❌ Error loading statistics:', error);
     }
 }
 
@@ -390,22 +390,22 @@ function updateStatsDisplay(stats) {
     const lastEmailEl = document.getElementById('lastEmailSent');
     if (stats.lastEmailSent) {
         const date = new Date(stats.lastEmailSent);
-        lastEmailEl.textContent = date.toLocaleDateString('pt-BR');
+        lastEmailEl.textContent = date.toLocaleDateString('en-US');
     } else {
-        lastEmailEl.textContent = 'Nunca';
+        lastEmailEl.textContent = 'Never';
     }
 
     const statusEl = document.getElementById('configStatus');
     if (stats.isConfigured) {
-        statusEl.textContent = 'Configurado';
+        statusEl.textContent = 'Configured';
         statusEl.className = 'status-ok';
     } else {
-        statusEl.textContent = 'Não configurado';
+        statusEl.textContent = 'Not configured';
         statusEl.className = 'status-error';
     }
 }
 
-// ===== UTILITÁRIOS =====
+// ===== UTILITIES =====
 function setLoading(loading) {
     isLoading = loading;
 
@@ -435,11 +435,11 @@ function showError(message) {
 }
 
 function showNotification(message, type = 'info') {
-    // Usar sistema de notificações do app.js se disponível
+    // Use app.js notification system if available
     if (window.showNotification && window.showNotification !== showNotification) {
         window.showNotification(message, type);
     } else {
-        // Fallback simples
+        // Simple fallback
         console.log(`[${type.toUpperCase()}] ${message}`);
         alert(`[${type.toUpperCase()}] ${message}`);
     }
@@ -450,24 +450,24 @@ function logout() {
     window.location.href = '/admin';
 }
 
-console.log('🔧 admin-config.js carregado');
+console.log('🔧 admin-config.js loaded');
 
-// ===== INICIALIZAÇÃO GLOBAL =====
+// ===== GLOBAL INITIALIZATION =====
 let adminConfig = null;
 
-// Inicializar quando a seção de configurações for ativada
+// Initialize when settings section is activated
 document.addEventListener('DOMContentLoaded', () => {
-    // Observar mudanças na seção ativa
+    // Observe changes in active section
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                 const section = document.getElementById('section-settings');
                 if (section && section.style.display !== 'none' && !adminConfig) {
-                    // Seção de configurações foi ativada
-                    console.log('🔧 Seção de configurações ativada - inicializando...');
+                    // Settings section was activated
+                    console.log('🔧 Settings section activated - initializing...');
                     adminConfig = true;
 
-                    // Remover o event listener DOMContentLoaded original e executar inicialização
+                    // Remove original DOMContentLoaded event listener and execute initialization
                     checkAuthentication();
                     loadConfiguration();
                     setupFormHandlers();
@@ -480,9 +480,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsSection) {
         observer.observe(settingsSection, { attributes: true });
 
-        // Se já estiver visível, inicializar imediatamente
+        // If already visible, initialize immediately
         if (settingsSection.style.display !== 'none') {
-            console.log('🔧 Seção de configurações já visível - inicializando...');
+            console.log('🔧 Settings section already visible - initializing...');
             adminConfig = true;
             checkAuthentication();
             loadConfiguration();
@@ -491,4 +491,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log('🔧 Observer de configurações configurado');
+console.log('🔧 Configuration observer configured');
