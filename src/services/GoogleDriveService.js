@@ -526,30 +526,30 @@ class GoogleDriveService {
 
             console.log(`🎯 Finalizando venda da pasta: ${selectionFolderId}`);
 
-            // Criar pasta final em System Sold
-            const now = new Date();
-            const date = now.toISOString().split('T')[0];
-            const finalFolderName = `Client_${clientCode}_${clientName}_FINAL_${date}`;
-
-            const finalFolderId = await this.createFolderIfNotExists(
-                finalFolderName,
-                this.FOLDER_IDS.SYSTEM_SOLD
-            );
-
-            // Mover pasta completa
+            // SIMPLES: Apenas mover pasta de RESERVED para SYSTEM_SOLD
             const drive = this.getAuthenticatedDrive();
+
+            // Buscar nome atual da pasta
+            const folderInfo = await drive.files.get({
+                fileId: selectionFolderId,
+                fields: 'id, name, parents'
+            });
+
+            const currentName = folderInfo.data.name;
+
+            // Mover pasta: RESERVED → SYSTEM_SOLD
             await drive.files.update({
                 fileId: selectionFolderId,
                 addParents: this.FOLDER_IDS.SYSTEM_SOLD,
                 removeParents: this.FOLDER_IDS.RESERVED
             });
 
-            console.log(`✅ Venda finalizada: ${finalFolderName}`);
+            console.log(`✅ Pasta movida para SYSTEM_SOLD: ${currentName}`);
 
             return {
                 success: true,
-                finalFolderId,
-                finalFolderName
+                finalFolderId: selectionFolderId,      // ← Mesmo ID
+                finalFolderName: currentName           // ← Mesmo nome
             };
 
         } catch (error) {
