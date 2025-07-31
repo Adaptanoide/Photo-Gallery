@@ -9,7 +9,8 @@ class GoogleDriveService {
         SALES_ROOT: '1z23OPnm10xxGwjuCH_GTnfQD0YFyE9vt',
         ACTUAL_PICTURES: '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx',
         RESERVED: null,     // Será criada dinamicamente
-        SYSTEM_SOLD: null   // Será criada dinamicamente
+        SYSTEM_SOLD: null,   // Será criada dinamicamente
+        SPECIAL_SELECTIONS: null   // ← NOVA: Para seleções especiais
     };
 
     // ===== AUTENTICAÇÃO =====
@@ -55,9 +56,18 @@ class GoogleDriveService {
                 );
             }
 
+            // Verificar se pasta SPECIAL SELECTIONS existe
+            if (!this.FOLDER_IDS.SPECIAL_SELECTIONS) {
+                this.FOLDER_IDS.SPECIAL_SELECTIONS = await this.createFolderIfNotExists(
+                    'Special Selections',
+                    this.FOLDER_IDS.SALES_ROOT
+                );
+            }
+
             console.log('✅ Pastas principais verificadas/criadas:', {
                 RESERVED: this.FOLDER_IDS.RESERVED,
-                SYSTEM_SOLD: this.FOLDER_IDS.SYSTEM_SOLD
+                SYSTEM_SOLD: this.FOLDER_IDS.SYSTEM_SOLD,
+                SPECIAL_SELECTIONS: this.FOLDER_IDS.SPECIAL_SELECTIONS  // ← ADICIONAR
             });
 
             return {
@@ -295,6 +305,48 @@ class GoogleDriveService {
 
         } catch (error) {
             console.error('❌ Erro ao criar subpastas de categoria:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Criar pasta para seleção especial (método específico para special selections)
+     */
+    static async createSelectionFolder(clientCode, clientName, parentFolderId = null) {
+        try {
+            // Garantir que pastas principais existem
+            await this.ensureSystemFoldersExist();
+
+            // Usar SPECIAL_SELECTIONS como parent se não especificado
+            const targetParentId = parentFolderId || this.FOLDER_IDS.SPECIAL_SELECTIONS;
+
+            if (!targetParentId) {
+                throw new Error('Parent folder ID para Special Selections não foi configurado');
+            }
+
+            // Gerar nome único da pasta
+            const now = new Date();
+            const date = now.toISOString().split('T')[0]; // 2025-01-27
+            const time = now.toTimeString().split(' ')[0].replace(/:/g, 'h'); // 14h30h00
+            const folderName = `CLIENT_${clientCode}_${clientName.replace(/[^\w\s-]/g, '')}_${date}_${time}`;
+
+            console.log(`📁 Criando pasta para seleção especial: ${folderName}`);
+
+            // Criar pasta dentro de Special Selections
+            const folderId = await this.createFolderIfNotExists(
+                folderName,
+                targetParentId
+            );
+
+            return {
+                success: true,
+                folderId,
+                folderName,
+                folderPath: `Special Selections/${folderName}`
+            };
+
+        } catch (error) {
+            console.error('❌ Erro ao criar pasta de seleção especial:', error);
             throw error;
         }
     }
