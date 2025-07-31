@@ -118,7 +118,7 @@ class AdminSpecialSelections {
             const data = await response.json();
             
             if (data.success) {
-                this.availableClients = data.data || [];
+                this.availableClients = data.codes || [];
                 console.log(`✅ ${this.availableClients.length} clientes carregados`);
                 console.log('🔍 Clientes encontrados:', this.availableClients.map(c => `${c.clientName} (${c.code})`));
             } else {
