@@ -56,7 +56,7 @@ class AdminSpecialSelections {
     async loadInitialData() {
         try {
             this.showLoading(true);
-            
+
             // Carregar dados paralelos
             await Promise.all([
                 this.loadStatistics(),
@@ -78,7 +78,7 @@ class AdminSpecialSelections {
     async loadStatistics() {
         try {
             console.log('📊 Carregando estatísticas...');
-            
+
             const response = await fetch('/api/special-selections/stats/overview', {
                 headers: this.getAuthHeaders()
             });
@@ -88,7 +88,7 @@ class AdminSpecialSelections {
             }
 
             const data = await response.json();
-            
+
             if (data.success) {
                 this.stats = { ...this.stats, ...data.data };
                 this.updateBadge();
@@ -106,7 +106,7 @@ class AdminSpecialSelections {
     async loadAvailableClients() {
         try {
             console.log('👥 Carregando clientes disponíveis...');
-            
+
             const response = await fetch('/api/admin/access-codes', {
                 headers: this.getAuthHeaders()
             });
@@ -116,7 +116,7 @@ class AdminSpecialSelections {
             }
 
             const data = await response.json();
-            
+
             if (data.success) {
                 this.availableClients = data.codes || [];
                 console.log(`✅ ${this.availableClients.length} clientes carregados`);
@@ -134,7 +134,7 @@ class AdminSpecialSelections {
     async loadSpecialSelections() {
         try {
             console.log('📋 Carregando seleções especiais...');
-            
+
             const params = new URLSearchParams({
                 page: this.currentPage,
                 limit: 20,
@@ -150,7 +150,7 @@ class AdminSpecialSelections {
             }
 
             const data = await response.json();
-            
+
             if (data.success) {
                 this.specialSelections = data.data || [];
                 this.currentPage = data.pagination?.page || 1;
@@ -391,7 +391,7 @@ class AdminSpecialSelections {
         `;
 
         this.content.innerHTML = html;
-        
+
         // CORREÇÃO: Configurar event listeners APÓS criar HTML
         this.setupAllEventListeners();
     }
@@ -440,14 +440,14 @@ class AdminSpecialSelections {
                         <button class="special-btn-icon edit special-tooltip" data-tooltip="Edit Selection" data-action="edit" data-id="${selection.selectionId}">
                             <i class="fas fa-edit"></i>
                         </button>
-                        ${selection.isActive ? 
-                            `<button class="special-btn-icon special-tooltip" data-tooltip="Deactivate" data-action="deactivate" data-id="${selection.selectionId}">
+                        ${selection.isActive ?
+                `<button class="special-btn-icon special-tooltip" data-tooltip="Deactivate" data-action="deactivate" data-id="${selection.selectionId}">
                                 <i class="fas fa-pause"></i>
                             </button>` :
-                            `<button class="special-btn-icon activate special-tooltip" data-tooltip="Activate" data-action="activate" data-id="${selection.selectionId}">
+                `<button class="special-btn-icon activate special-tooltip" data-tooltip="Activate" data-action="activate" data-id="${selection.selectionId}">
                                 <i class="fas fa-play"></i>
                             </button>`
-                        }
+            }
                         <button class="special-btn-icon delete special-tooltip" data-tooltip="Delete Selection" data-action="delete" data-id="${selection.selectionId}">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -461,8 +461,8 @@ class AdminSpecialSelections {
         if (this.availableClients.length === 0) {
             return '<option value="" disabled>No clients available</option>';
         }
-        
-        return this.availableClients.map(client => 
+
+        return this.availableClients.map(client =>
             `<option value="${client.code}">${client.clientName} (${client.code})</option>`
         ).join('');
     }
@@ -504,22 +504,22 @@ class AdminSpecialSelections {
     // ===== EVENT LISTENERS CORRIGIDOS =====
     setupAllEventListeners() {
         console.log('🔗 Configurando todos os event listeners...');
-        
+
         // Modal event listeners
         this.setupModalEventListeners();
-        
+
         // Botões principais
         this.setupMainButtonListeners();
-        
+
         // Filtros
         this.setupFilterEventListeners();
-        
+
         // Ações da tabela
         this.setupTableActionListeners();
-        
+
         // Paginação
         this.setupPaginationListeners();
-        
+
         console.log('✅ Todos os event listeners configurados');
     }
 
@@ -527,10 +527,10 @@ class AdminSpecialSelections {
         // Botões de fechar modal
         const closeBtn = document.getElementById('specialModalCloseBtn');
         const cancelBtn = document.getElementById('specialModalCancelBtn');
-        
+
         closeBtn?.addEventListener('click', () => this.closeModal());
         cancelBtn?.addEventListener('click', () => this.closeModal());
-        
+
         // Fechar modal clicando fora
         const modal = document.getElementById('specialSelectionModal');
         modal?.addEventListener('click', (e) => {
@@ -553,17 +553,17 @@ class AdminSpecialSelections {
     setupMainButtonListeners() {
         // Botão refresh
         document.getElementById('btnRefreshSpecialSelections')?.addEventListener('click', () => this.refreshData());
-        
+
         // Botão criar (cabeçalho)
         document.getElementById('btnCreateSpecialSelection')?.addEventListener('click', () => this.openCreateModal());
-        
+
         // Botão criar (tabela vazia)
         document.getElementById('btnCreateFirstSelection')?.addEventListener('click', () => this.openCreateModal());
     }
 
     setupFilterEventListeners() {
         document.getElementById('btnApplySpecialFilters')?.addEventListener('click', () => this.applyFilters());
-        
+
         // Enter key nos inputs de filtro
         ['filterSpecialClient', 'filterSpecialSearch'].forEach(id => {
             document.getElementById(id)?.addEventListener('keypress', (e) => {
@@ -647,15 +647,15 @@ class AdminSpecialSelections {
     resetForm() {
         const form = document.getElementById('specialSelectionForm');
         form?.reset();
-        
+
         document.getElementById('showPrices').value = 'true';
         document.getElementById('allowGlobalDiscount').value = 'false';
-        
+
         // Reset switches
         document.getElementById('showPricesSwitch')?.classList.add('active');
         document.getElementById('allowDiscountSwitch')?.classList.remove('active');
         document.getElementById('discountRow').style.display = 'none';
-        
+
         // Atualizar opções de clientes
         const clientSelect = document.getElementById('clientCode');
         if (clientSelect) {
@@ -666,18 +666,18 @@ class AdminSpecialSelections {
     toggleSwitch(fieldName) {
         const switchEl = document.getElementById(fieldName + 'Switch');
         const hiddenInput = document.getElementById(fieldName);
-        
+
         if (!switchEl || !hiddenInput) return;
-        
+
         const isActive = switchEl.classList.contains('active');
         const newValue = !isActive;
-        
+
         if (newValue) {
             switchEl.classList.add('active');
         } else {
             switchEl.classList.remove('active');
         }
-        
+
         hiddenInput.value = newValue.toString();
 
         // Mostrar/esconder linha de desconto
@@ -693,7 +693,7 @@ class AdminSpecialSelections {
     async saveSpecialSelection() {
         try {
             const formData = this.getFormData();
-            
+
             if (!this.validateForm(formData)) {
                 return;
             }
@@ -712,9 +712,18 @@ class AdminSpecialSelections {
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification('Special selection created successfully!', 'success');
+                this.showNotification('Basic info saved! Opening selection builder...', 'success');
                 this.closeModal();
-                await this.refreshData();
+
+                // Salvar dados para o builder
+                localStorage.setItem('builderSelectionName', formData.selectionName);
+                localStorage.setItem('builderClientCode', formData.clientCode);
+                localStorage.setItem('builderClientName', this.getClientName(formData.clientCode));
+
+                // Redirecionar para o builder
+                setTimeout(() => {
+                    window.location.href = `/special-selection-builder.html?name=${encodeURIComponent(formData.selectionName)}&client=${formData.clientCode}&clientName=${encodeURIComponent(this.getClientName(formData.clientCode))}`;
+                }, 1000);
             } else {
                 throw new Error(data.message || 'Failed to create special selection');
             }
@@ -859,7 +868,7 @@ class AdminSpecialSelections {
             isActive: document.getElementById('filterSpecialActive')?.value || 'all',
             search: document.getElementById('filterSpecialSearch')?.value || ''
         };
-        
+
         this.currentPage = 1;
         this.loadSpecialSelections().then(() => this.updateTable());
     }
@@ -877,7 +886,7 @@ class AdminSpecialSelections {
             // Reconfigurar event listeners da tabela
             this.setupTableActionListeners();
         }
-        
+
         // Atualizar paginação
         const paginationContainer = document.querySelector('.special-pagination');
         if (paginationContainer) {
@@ -960,7 +969,7 @@ class AdminSpecialSelections {
     showNotification(message, type = 'info') {
         // Implementar sistema de notificações
         console.log(`${type.toUpperCase()}: ${message}`);
-        
+
         // Fallback para alert por enquanto
         if (type === 'error') {
             alert(`Error: ${message}`);
@@ -970,6 +979,12 @@ class AdminSpecialSelections {
             alert(message);
         }
     }
+
+    getClientName(clientCode) {
+    const client = this.availableClients.find(c => c.code === clientCode);
+    return client ? client.clientName : 'Unknown Client';
+}
+
 }
 
 // ===== INICIALIZAÇÃO GLOBAL =====
@@ -977,13 +992,13 @@ let adminSpecialSelections = null;
 
 // Função para inicialização externa
 if (typeof window !== 'undefined') {
-    window.initSpecialSelections = function() {
+    window.initSpecialSelections = function () {
         if (!adminSpecialSelections) {
             adminSpecialSelections = new AdminSpecialSelections();
         }
         return adminSpecialSelections;
     };
-    
+
     // Disponibilizar globalmente para debugging
     window.adminSpecialSelections = null;
 }
