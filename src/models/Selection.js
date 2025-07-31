@@ -49,7 +49,7 @@ const selectionSchema = new mongoose.Schema({
             type: String,
             trim: true
         },
-        
+
         // Configurações de preços
         pricingConfig: {
             showPrices: {
@@ -198,7 +198,11 @@ const selectionSchema = new mongoose.Schema({
     totalItems: {
         type: Number,
         required: true,
-        min: 1
+        min: function () {
+            // Permitir 0 para seleções especiais, exigir 1+ para normais
+            return this.selectionType === 'special' ? 0 : 1;
+        },
+        default: 0
     },
     totalValue: {
         type: Number,
@@ -228,7 +232,7 @@ const selectionSchema = new mongoose.Schema({
         finalFolderId: {
             type: String // ID da pasta final (quando finalizada)
         },
-        
+
         // ===== NOVO: INFORMAÇÕES ESPECIAIS PARA SELEÇÕES ESPECIAIS =====
         specialSelectionInfo: {
             specialFolderId: String,        // ID da pasta da seleção especial
@@ -397,7 +401,7 @@ selectionSchema.methods.isSpecialSelection = function () {
 // Adicionar categoria customizada
 selectionSchema.methods.addCustomCategory = function (categoryData) {
     const categoryId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-    
+
     const newCategory = {
         categoryId: categoryId,
         categoryName: categoryData.categoryName,
@@ -410,7 +414,7 @@ selectionSchema.methods.addCustomCategory = function (categoryData) {
 
     this.customCategories.push(newCategory);
     this.addMovementLog('category_created', `Categoria customizada criada: ${categoryData.categoryName}`, true, null, { categoryId });
-    
+
     return categoryId;
 };
 
@@ -435,13 +439,13 @@ selectionSchema.methods.movePhotoToCustomCategory = function (photoData, categor
         movedAt: new Date()
     });
 
-    this.addMovementLog('photo_recategorized', 
-        `Foto ${photoData.fileName} movida para categoria ${category.categoryName}`, 
-        true, null, { 
-            photoId: photoData.photoId, 
-            categoryId: categoryId,
-            categoryName: category.categoryName 
-        }
+    this.addMovementLog('photo_recategorized',
+        `Foto ${photoData.fileName} movida para categoria ${category.categoryName}`,
+        true, null, {
+        photoId: photoData.photoId,
+        categoryId: categoryId,
+        categoryName: category.categoryName
+    }
     );
 };
 
@@ -549,7 +553,7 @@ selectionSchema.statics.findByStatus = function (status, limit = 50) {
 // ===== NOVO: BUSCAR SELEÇÕES ESPECIAIS =====
 selectionSchema.statics.findSpecialSelections = function (filters = {}, limit = 50) {
     const query = { selectionType: 'special' };
-    
+
     if (filters.status) query.status = filters.status;
     if (filters.clientCode) query.clientCode = filters.clientCode;
     if (filters.isActive !== undefined) {
@@ -607,7 +611,7 @@ selectionSchema.statics.getStatistics = async function () {
 
     const totalSelections = await this.countDocuments();
     const totalSpecialSelections = await this.countDocuments({ selectionType: 'special' });
-    
+
     const avgItemsPerSelection = await this.aggregate([
         {
             $group: {
@@ -633,8 +637,16 @@ selectionSchema.statics.getStatistics = async function () {
 
 // Pre-save: calcular valores
 selectionSchema.pre('save', function (next) {
-    // Atualizar contagem de itens
-    this.totalItems = this.items.length;
+    // Atualizar contagem de itens baseado no tipo de seleção
+    if (this.selectionType === 'special') {
+        // Para seleções especiais: contar fotos nas categorias customizadas
+        this.totalItems = this.customCategories.reduce((total, category) => {
+            return total + (category.photos ? category.photos.length : 0);
+        }, 0);
+    } else {
+        // Para seleções normais: contar items como sempre
+        this.totalItems = this.items.length;
+    }
 
     // Calcular valor total
     this.calculateTotalValue();
