@@ -173,6 +173,7 @@ class AdminDashboard {
             clients: 'Client Management',
             pricing: 'Price Management',
             selections: 'Selection Management',
+            'special-selections': 'Special Selections', // NOVO
             reports: 'Reports',
             settings: 'Settings'
         };
@@ -211,6 +212,16 @@ class AdminDashboard {
                 break;
             case 'selections':
                 // TODO: Implementar carregamento de dados de seleções
+                break;
+            case 'special-selections':
+                console.log('⭐ Seção de seleções especiais ativada');
+                if (typeof AdminSpecialSelections !== 'undefined') {
+                    if (!window.adminSpecialSelections) {
+                        window.adminSpecialSelections = new AdminSpecialSelections();
+                    }
+                } else if (typeof window.initSpecialSelections === 'function') {
+                    window.adminSpecialSelections = window.initSpecialSelections();
+                }
                 break;
             default:
                 break;

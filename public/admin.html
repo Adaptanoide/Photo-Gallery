@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/admin-pricing-management.css">
     <link rel="stylesheet" href="css/admin-config.css">
     <link rel="stylesheet" href="css/admin-selections.css">
+    <link rel="stylesheet" href="css/admin-special-selections.css">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -65,6 +66,14 @@
                         <i class="fas fa-shopping-cart"></i>
                         <span class="nav-text">Selection Management</span>
                         <span class="nav-badge" id="selectionsBadge" style="display: none;">0</span>
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="#special-selections" class="nav-link" data-section="special-selections">
+                        <i class="fas fa-star"></i>
+                        <span class="nav-text">Special Selections</span>
+                        <span class="nav-badge special" id="specialSelectionsBadge">0</span>
                     </a>
                 </div>
 
@@ -559,7 +568,8 @@
                                     <div class="price-tab-panel" id="tab-quantity-discounts">
                                         <div class="quantity-discounts-section">
                                             <h5>Quantity Discounts</h5>
-                                            <p class="text-muted">Configure automatic discounts based on photo quantity</p>
+                                            <p class="text-muted">Configure automatic discounts based on photo quantity
+                                            </p>
 
                                             <div class="quantity-rules">
                                                 <div class="quantity-rule">
@@ -637,7 +647,8 @@
                                     <div>
                                         <div class="stat-title">Total Selections</div>
                                         <div class="stat-value" id="totalSelections">-</div>
-                                        <div class="stat-description" id="totalSelectionsDescription">All time selections</div>
+                                        <div class="stat-description" id="totalSelectionsDescription">All time
+                                            selections</div>
                                     </div>
                                     <div class="stat-icon primary">
                                         <i class="fas fa-shopping-cart"></i>
@@ -650,7 +661,8 @@
                                     <div>
                                         <div class="stat-title">Pending Approvals</div>
                                         <div class="stat-value" id="pendingSelections">-</div>
-                                        <div class="stat-description" id="pendingSelectionsDescription">Awaiting approval</div>
+                                        <div class="stat-description" id="pendingSelectionsDescription">Awaiting
+                                            approval</div>
                                     </div>
                                     <div class="stat-icon warning">
                                         <i class="fas fa-clock"></i>
@@ -663,7 +675,8 @@
                                     <div>
                                         <div class="stat-title">This Month</div>
                                         <div class="stat-value" id="thisMonthSelections">-</div>
-                                        <div class="stat-description" id="thisMonthSelectionsDescription">This month</div>
+                                        <div class="stat-description" id="thisMonthSelectionsDescription">This month
+                                        </div>
                                     </div>
                                     <div class="stat-icon success">
                                         <i class="fas fa-calendar-alt"></i>
@@ -676,7 +689,8 @@
                                     <div>
                                         <div class="stat-title">Average Value</div>
                                         <div class="stat-value" id="averageSelectionValue">-</div>
-                                        <div class="stat-description" id="averageSelectionValueDescription">Per selection</div>
+                                        <div class="stat-description" id="averageSelectionValueDescription">Per
+                                            selection</div>
                                     </div>
                                     <div class="stat-icon secondary">
                                         <i class="fas fa-dollar-sign"></i>
@@ -701,7 +715,7 @@
                             </div>
                             <div class="filter-group">
                                 <label class="filter-label">Search Client</label>
-                                <input type="text" id="searchSelectionClient" class="filter-input" 
+                                <input type="text" id="searchSelectionClient" class="filter-input"
                                     placeholder="Code or client name...">
                             </div>
                             <button id="btnApplySelectionFilters" class="btn-filter">
@@ -969,6 +983,35 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- NOVA SEÇÃO: SPECIAL SELECTIONS -->
+                <div id="section-special-selections" class="content-section" style="display: none;">
+                    <!-- Loading inicial -->
+                    <div id="specialSelectionsLoading" class="loading-section">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        </div>
+                        <p>Loading special selections...</p>
+                    </div>
+
+                    <!-- Erro de carregamento -->
+                    <div id="specialSelectionsError" class="error-section" style="display: none;">
+                        <div class="error-content">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            <h3>Error loading special selections</h3>
+                            <p id="specialSelectionsErrorMessage">Unable to load special selections data.</p>
+                            <button onclick="window.adminSpecialSelections?.init()" class="btn btn-primary">
+                                <i class="fas fa-redo"></i> Try again
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Conteúdo principal (será criado via JavaScript) -->
+                    <div id="specialSelectionsContent" style="display: none;">
+                        <!-- Será preenchido pelo JavaScript -->
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -986,8 +1029,8 @@
     <script src="js/admin-pricing.js"></script>
     <script src="js/admin-selections.js"></script>
     <script src="js/admin-config.js"></script>
-    
-    
+    <script src="js/admin-special-selections.js"></script>
+
 </body>
 
 </html>
