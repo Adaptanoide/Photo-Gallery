@@ -13,7 +13,9 @@ const clientRoutes = require('./routes/client');
 const driveRoutes = require('./routes/drive');
 const cartRoutes = require('./routes/cart');
 const selectionRoutes = require('./routes/selection');
-const pricingRoutes = require('./routes/pricing'); // ← NOVA LINHA
+const pricingRoutes = require('./routes/pricing');
+const specialSelectionsRoutes = require('./routes/special-selections'); // NOVO
+
 const Cart = require('./models/Cart');
 const { CartService } = require('./services');
 
@@ -33,8 +35,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 connectDB();
 
 // ===== TESTE DOS MODELS E SERVICES =====
-console.log('✅ Models carregados: Product, Cart, PhotoCategory');
-console.log('✅ Services carregados: CartService, PricingService');
+console.log('✅ Models carregados: Product, Cart, PhotoCategory, Selection, AccessCode, PhotoStatus');
+console.log('✅ Services carregados: CartService, PricingService, SpecialSelectionService');
 
 // Rotas
 app.use('/api/auth', authRoutes);
@@ -46,6 +48,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
+app.use('/api/special-selections', specialSelectionsRoutes); // NOVO
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {
@@ -67,11 +70,35 @@ app.get('/drive-explorer', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/drive-explorer.html'));
 });
 
+// NOVA: Rota para testar seleções especiais
+app.get('/special-selections-test', (req, res) => {
+    res.json({
+        message: 'Special Selections API is working!',
+        endpoints: [
+            'GET /api/special-selections - List all special selections',
+            'POST /api/special-selections - Create new special selection',
+            'GET /api/special-selections/:id - Get selection details',
+            'POST /api/special-selections/:id/activate - Activate selection',
+            'POST /api/special-selections/:id/categories - Add custom category',
+            'POST /api/special-selections/:id/photos/move - Move photo to category'
+        ],
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Rota de status
 app.get('/api/status', (req, res) => {
     res.json({
         status: 'OK',
         message: 'Sunshine Cowhides API funcionando',
+        features: [
+            'Normal Selections',
+            'Special Selections', // NOVO
+            'Cart System',
+            'Google Drive Integration',
+            'Pricing Management',
+            'Client Management'
+        ],
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development'
     });
@@ -88,7 +115,16 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Rota não encontrada' });
+    res.status(404).json({ 
+        error: 'Rota não encontrada',
+        availableRoutes: [
+            '/',
+            '/admin',
+            '/client',
+            '/api/status',
+            '/special-selections-test'
+        ]
+    });
 });
 
 // Iniciar servidor
@@ -96,4 +132,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log(`📊 Status: http://localhost:${PORT}/api/status`);
+    console.log(`⭐ Special Selections Test: http://localhost:${PORT}/special-selections-test`);
 });
