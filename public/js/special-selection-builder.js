@@ -10,7 +10,7 @@ class SpecialSelectionBuilder {
     constructor(selectionData) {
         this.selectionData = selectionData; // Dados da seleção (nome, cliente, etc)
         this.currentStockFolder = 'root';
-        this.stockCategories = [];
+        this.stockCategoriesData = [];
         this.stockPhotos = [];
         this.customCategories = [];
         this.selectedPhotos = [];
@@ -39,7 +39,7 @@ class SpecialSelectionBuilder {
 
     setupElements() {
         // Elementos principais
-        this.stockCategories = document.getElementById('stockCategories');
+        this.stockCategoriesElement = document.getElementById('stockCategories');
         this.stockPhotos = document.getElementById('stockPhotos');
         this.stockLoading = document.getElementById('stockLoading');
         this.stockBreadcrumb = document.getElementById('stockBreadcrumb');
@@ -134,7 +134,7 @@ class SpecialSelectionBuilder {
             const data = await response.json();
 
             if (data.success && data.structure && data.structure.folders) {
-                this.stockCategories = data.structure.folders;
+                this.stockCategoriesData = data.structure.folders;
                 this.renderStockCategories();
                 console.log(`✅ ${this.stockCategories.length} categorias carregadas`);
             } else {
@@ -182,30 +182,30 @@ class SpecialSelectionBuilder {
 
     // ===== RENDERIZAÇÃO DA INTERFACE =====
     renderStockCategories() {
-        if (!this.stockCategories || this.stockCategories.length === 0) {
-            this.stockCategories.innerHTML = `
-                <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                    <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                    <p>No categories available</p>
-                </div>
-            `;
+        if (!this.stockCategoriesData || this.stockCategoriesData.length === 0) {
+            this.stockCategoriesElement.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>No categories available</p>
+            </div>
+        `;
             return;
         }
 
-        const html = this.stockCategories.map(category => `
-            <div class="category-item" data-folder-id="${category.id}" data-category-name="${category.name}">
-                <div class="category-icon">
-                    <i class="fas fa-folder"></i>
-                </div>
-                <div class="category-name">${category.name}</div>
-                <div class="category-count">${category.photoCount || 0}</div>
+        const html = this.stockCategoriesData.map(category => `
+        <div class="category-item" data-folder-id="${category.id}" data-category-name="${category.name}">
+            <div class="category-icon">
+                <i class="fas fa-folder"></i>
             </div>
-        `).join('');
+            <div class="category-name">${category.name}</div>
+            <div class="category-count">${category.photoCount || 0}</div>
+        </div>
+    `).join('');
 
-        this.stockCategories.innerHTML = html;
+        this.stockCategoriesElement.innerHTML = html;
 
         // Adicionar event listeners para navegação
-        this.stockCategories.querySelectorAll('.category-item').forEach(item => {
+        this.stockCategoriesElement.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', () => {
                 const folderId = item.dataset.folderId;
                 const categoryName = item.dataset.categoryName;
@@ -214,7 +214,7 @@ class SpecialSelectionBuilder {
         });
 
         // Mostrar lista de categorias, esconder fotos
-        this.stockCategories.style.display = 'block';
+        this.stockCategoriesElement.style.display = 'block';
         this.stockPhotos.style.display = 'none';
     }
 
@@ -262,7 +262,7 @@ class SpecialSelectionBuilder {
         }
 
         // Mostrar fotos, esconder categorias
-        this.stockCategories.style.display = 'none';
+        this.stockCategoriesElement.style.display = 'none';
         this.stockPhotos.style.display = 'grid';
     }
 
