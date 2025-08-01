@@ -229,10 +229,12 @@ class SpecialSelectionBuilder {
         } else {
             const html = this.stockPhotosData.map(photo => `
             <div class="photo-card" 
-                 draggable="true" 
-                 data-photo-id="${photo.id}" 
-                 data-photo-name="${photo.name}"
-                 data-photo-url="${photo.webViewLink}">
+                draggable="true" 
+                data-photo-id="${photo.id}" 
+                data-photo-name="${photo.name}"
+                data-photo-url="${photo.webViewLink}"
+                onclick="window.specialSelectionBuilder.previewPhoto(${index})"
+                style="cursor: pointer;">
                 
                 <img class="photo-image" 
                      src="${photo.thumbnailLink || photo.webViewLink}" 
@@ -245,9 +247,6 @@ class SpecialSelectionBuilder {
                 </div>
                 
                 <div class="photo-actions">
-                    <button class="photo-action-btn" data-action="preview" title="Preview">
-                        <i class="fas fa-eye"></i>
-                    </button>
                     <button class="photo-action-btn" data-action="move" title="Add to Selection">
                         <i class="fas fa-plus"></i>
                     </button>
@@ -301,9 +300,6 @@ class SpecialSelectionBuilder {
                                     <div class="photo-price">$${category.customPrice || photo.originalPrice || '0.00'}</div>
                                 </div>
                                 <div class="photo-actions">
-                                    <button class="photo-action-btn" data-action="preview" title="Preview">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
                                     <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -529,10 +525,12 @@ class SpecialSelectionBuilder {
                 if (actionBtn) {
                     const action = actionBtn.dataset.action;
                     if (action === 'preview') {
-                        this.previewPhoto(this.draggedPhoto || {
-                            url: card.dataset.photoUrl,
-                            name: card.dataset.photoName
-                        });
+                        // Encontrar índice da foto na lista atual
+                        const photoId = card.dataset.photoId;
+                        const photoIndex = this.stockPhotosData.findIndex(p => p.id === photoId);
+                        if (photoIndex !== -1) {
+                            this.previewPhoto(photoIndex);
+                        }
                     } else if (action === 'move') {
                         this.showAddToSelectionModal(card);
                     }

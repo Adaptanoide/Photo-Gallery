@@ -600,11 +600,11 @@
 
     <!-- Photo Modal (igual client.js) -->
     <div id="photoModal" class="photo-modal" style="display: none;">
-        <div class="modal-background" onclick="this.closePhotoModal()"></div>
+        <div class="modal-background" onclick="window.specialSelectionBuilder.closePhotoModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalPhotoTitle">Photo Preview</h3>
-                <button class="close-btn" onclick="this.closePhotoModal()">
+                <button class="close-btn" onclick="window.specialSelectionBuilder.closePhotoModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -632,7 +632,7 @@
                     <button class="btn-action btn-primary" onclick="this.addCurrentPhotoToSelection()">
                         <i class="fas fa-plus"></i> Add to Selection
                     </button>
-                    <button class="btn-action btn-secondary" onclick="this.closePhotoModal()">
+                    <button class="btn-action btn-secondary" onclick="window.specialSelectionBuilder.closePhotoModal()">
                         Close
                     </button>
                 </div>
