@@ -227,7 +227,7 @@ class SpecialSelectionBuilder {
             </div>
         `;
         } else {
-            const html = this.stockPhotosData.map(photo => `
+            const html = this.stockPhotosData.map((photo, index) => `
             <div class="photo-card" 
                 draggable="true" 
                 data-photo-id="${photo.id}" 
