@@ -15,6 +15,8 @@ class SpecialSelectionBuilder {
         this.customCategories = [];
         this.selectedPhotos = [];
         this.expandedCategories = new Set();
+        this.selectedStockPhotos = new Set(); // ← NOVA LINHA
+        this.draggedPhoto = null; // ← NOVA LINHA
         this.isLoading = false;
 
         // Estado da navegação (similar ao client.js)
@@ -233,30 +235,39 @@ class SpecialSelectionBuilder {
                 const movedClass = isPhotoMoved ? ' photo-moved' : '';
 
                 return `
-            <div class="photo-card${movedClass}" 
-                draggable="true" 
-                data-photo-id="${photo.id}" 
-                data-photo-name="${photo.name}"
-                data-photo-url="${photo.webViewLink}"
-                onclick="window.specialSelectionBuilder.previewPhoto(${index})"
-                style="cursor: pointer;">
-                
-                <img class="photo-image" 
-                     src="${photo.thumbnailLink || photo.webViewLink}" 
-                     alt="${photo.name}"
-                     loading="lazy">
-                
-                <div class="photo-info">
-                    <div class="photo-name">${photo.name}</div>
-                    <div class="photo-price">$${photo.price || '0.00'}</div>
+                <div class="photo-card${movedClass}" 
+                    draggable="true" 
+                    data-photo-id="${photo.id}" 
+                    data-photo-name="${photo.name}"
+                    data-photo-url="${photo.webViewLink}"
+                    onclick="window.specialSelectionBuilder.handlePhotoClick(event, ${index})"
+                    style="cursor: pointer;">
+                    
+                    <!-- Checkbox para seleção -->
+                    <div class="photo-checkbox">
+                        <input type="checkbox" 
+                            id="photo_${photo.id}" 
+                            data-photo-index="${index}"
+                            onclick="event.stopPropagation(); window.specialSelectionBuilder.togglePhotoSelection('${photo.id}', ${index})">
+                        <label for="photo_${photo.id}" onclick="event.stopPropagation()"></label>
+                    </div>
+                    
+                    <img class="photo-image" 
+                        src="${photo.thumbnailLink || photo.webViewLink}" 
+                        alt="${photo.name}"
+                        loading="lazy">
+                    
+                    <div class="photo-info">
+                        <div class="photo-name">${photo.name}</div>
+                        <div class="photo-price">$${photo.price || '0.00'}</div>
+                    </div>
+                    
+                    <div class="photo-actions">
+                        <button class="photo-action-btn" data-action="move" title="Add to Selection">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="photo-actions">
-                    <button class="photo-action-btn" data-action="move" title="Add to Selection">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-            </div>
                 `;
             }).join('');
 
@@ -347,6 +358,39 @@ class SpecialSelectionBuilder {
             this.expandedCategories.add(categoryIndex);
             categoryElement.classList.add('expanded');
         }
+    }
+
+    // ===== SISTEMA DE SELEÇÃO MÚLTIPLA =====
+
+    handlePhotoClick(event, photoIndex) {
+        // Se não clicou no checkbox, abrir preview normalmente
+        if (!event.target.closest('.photo-checkbox')) {
+            this.previewPhoto(photoIndex);
+        }
+    }
+
+    togglePhotoSelection(photoId, photoIndex) {
+        const checkbox = document.getElementById(`photo_${photoId}`);
+        const photoCard = checkbox.closest('.photo-card');
+
+        if (this.selectedStockPhotos.has(photoId)) {
+            // Desselecionar
+            this.selectedStockPhotos.delete(photoId);
+            photoCard.classList.remove('selected-checkbox');
+        } else {
+            // Selecionar
+            this.selectedStockPhotos.add(photoId);
+            photoCard.classList.add('selected-checkbox');
+        }
+
+        this.updateSelectionCounter();
+        console.log(`📋 Fotos selecionadas: ${this.selectedStockPhotos.size}`);
+    }
+
+    updateSelectionCounter() {
+        // Por enquanto só log, depois adicionaremos botão
+        const count = this.selectedStockPhotos.size;
+        console.log(`📊 Total selecionadas: ${count}`);
     }
 
     // ===== NAVEGAÇÃO HIERÁRQUICA (ADAPTADO DO CLIENT.JS) =====

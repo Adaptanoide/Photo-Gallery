@@ -803,3 +803,53 @@
 .custom-category-header:hover {
     background: rgba(212, 175, 55, 0.1);
 }
+
+/* ===== SISTEMA DE CHECKBOXES PARA FOTOS ===== */
+
+.photo-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 15;
+}
+
+.photo-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.photo-checkbox label {
+    display: block;
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid var(--gold-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.photo-checkbox label:hover {
+    background: rgba(212, 175, 55, 0.3);
+    transform: scale(1.1);
+}
+
+.photo-checkbox input[type="checkbox"]:checked + label {
+    background: var(--gold-primary);
+}
+
+.photo-checkbox input[type="checkbox"]:checked + label::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--luxury-dark);
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.photo-card.selected-checkbox {
+    border: 2px solid var(--gold-primary);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
