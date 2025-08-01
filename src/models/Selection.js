@@ -198,11 +198,27 @@ const selectionSchema = new mongoose.Schema({
     totalItems: {
         type: Number,
         required: true,
-        min: function () {
-            // Permitir 0 para seleções especiais, exigir 1+ para normais
-            return this.selectionType === 'special' ? 0 : 1;
-        },
-        default: 0
+        default: 0,
+        validate: {
+            validator: function (value) {
+                // Para seleções especiais: permitir 0 ou mais
+                if (this.selectionType === 'special') {
+                    return value >= 0;
+                }
+                // Para seleções normais: exigir 1 ou mais
+                else {
+                    return value >= 1;
+                }
+            },
+            message: function (props) {
+                const selectionType = props.instance.selectionType || 'normal';
+                if (selectionType === 'special') {
+                    return 'Special selections must have 0 or more items (got {VALUE})';
+                } else {
+                    return 'Normal selections must have at least 1 item (got {VALUE})';
+                }
+            }
+        }
     },
     totalValue: {
         type: Number,
