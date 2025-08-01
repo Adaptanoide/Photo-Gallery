@@ -11,7 +11,7 @@ class SpecialSelectionBuilder {
         this.selectionData = selectionData; // Dados da seleção (nome, cliente, etc)
         this.currentStockFolder = 'root';
         this.stockCategoriesData = [];
-        this.stockPhotos = [];
+        this.stockPhotosData = [];
         this.customCategories = [];
         this.selectedPhotos = [];
         this.draggedPhoto = null;
@@ -40,7 +40,7 @@ class SpecialSelectionBuilder {
     setupElements() {
         // Elementos principais
         this.stockCategoriesElement = document.getElementById('stockCategories');
-        this.stockPhotos = document.getElementById('stockPhotos');
+        this.stockPhotosElement = document.getElementById('stockPhotos');
         this.stockLoading = document.getElementById('stockLoading');
         this.stockBreadcrumb = document.getElementById('stockBreadcrumb');
 
@@ -165,9 +165,9 @@ class SpecialSelectionBuilder {
             const data = await response.json();
 
             if (data.success && data.photos) {
-                this.stockPhotos = data.photos;
+                this.stockPhotosData = data.photos;
                 this.renderStockPhotos();
-                console.log(`✅ ${this.stockPhotos.length} fotos carregadas`);
+                console.log(`✅ ${this.stockPhotosData.length} fotos carregadas`);
             } else {
                 throw new Error(data.message || 'Erro ao carregar fotos');
             }
@@ -219,43 +219,43 @@ class SpecialSelectionBuilder {
     }
 
     renderStockPhotos() {
-        if (!this.stockPhotos || this.stockPhotos.length === 0) {
-            this.stockPhotos.innerHTML = `
-                <div style="text-align: center; padding: 2rem; color: var(--text-muted); grid-column: 1 / -1;">
-                    <i class="fas fa-images" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                    <p>No photos in this category</p>
-                </div>
-            `;
+        if (!this.stockPhotosData || this.stockPhotosData.length === 0) {
+            this.stockPhotosElement.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted); grid-column: 1 / -1;">
+                <i class="fas fa-images" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>No photos in this category</p>
+            </div>
+        `;
         } else {
-            const html = this.stockPhotos.map(photo => `
-                <div class="photo-card" 
-                     draggable="true" 
-                     data-photo-id="${photo.id}" 
-                     data-photo-name="${photo.name}"
-                     data-photo-url="${photo.webViewLink}">
-                    
-                    <img class="photo-image" 
-                         src="${photo.thumbnailLink || photo.webViewLink}" 
-                         alt="${photo.name}"
-                         loading="lazy">
-                    
-                    <div class="photo-info">
-                        <div class="photo-name">${photo.name}</div>
-                        <div class="photo-price">$${photo.price || '0.00'}</div>
-                    </div>
-                    
-                    <div class="photo-actions">
-                        <button class="photo-action-btn" data-action="preview" title="Preview">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="photo-action-btn" data-action="move" title="Add to Selection">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
+            const html = this.stockPhotosData.map(photo => `
+            <div class="photo-card" 
+                 draggable="true" 
+                 data-photo-id="${photo.id}" 
+                 data-photo-name="${photo.name}"
+                 data-photo-url="${photo.webViewLink}">
+                
+                <img class="photo-image" 
+                     src="${photo.thumbnailLink || photo.webViewLink}" 
+                     alt="${photo.name}"
+                     loading="lazy">
+                
+                <div class="photo-info">
+                    <div class="photo-name">${photo.name}</div>
+                    <div class="photo-price">$${photo.price || '0.00'}</div>
                 </div>
-            `).join('');
+                
+                <div class="photo-actions">
+                    <button class="photo-action-btn" data-action="preview" title="Preview">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="photo-action-btn" data-action="move" title="Add to Selection">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
 
-            this.stockPhotos.innerHTML = html;
+            this.stockPhotosElement.innerHTML = html;
 
             // Configurar drag & drop
             this.setupPhotoDragDrop();
@@ -263,7 +263,7 @@ class SpecialSelectionBuilder {
 
         // Mostrar fotos, esconder categorias
         this.stockCategoriesElement.style.display = 'none';
-        this.stockPhotos.style.display = 'grid';
+        this.stockPhotosElement.style.display = 'grid';
     }
 
     renderCustomCategories() {
