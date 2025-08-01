@@ -16,7 +16,7 @@ class SpecialSelectionBuilder {
         this.selectedPhotos = [];
         this.draggedPhoto = null;
         this.isLoading = false;
-        
+
         // Estado da navegação (similar ao client.js)
         this.navigationState = {
             currentPath: [],
@@ -43,16 +43,16 @@ class SpecialSelectionBuilder {
         this.stockPhotos = document.getElementById('stockPhotos');
         this.stockLoading = document.getElementById('stockLoading');
         this.stockBreadcrumb = document.getElementById('stockBreadcrumb');
-        
+
         this.customCategoriesContainer = document.getElementById('customCategories');
         this.initialDropZone = document.getElementById('initialDropZone');
-        
+
         // Elementos de informação
         this.selectionNameDisplay = document.getElementById('selectionNameDisplay');
         this.clientNameDisplay = document.getElementById('clientNameDisplay');
         this.photoCount = document.getElementById('photoCount');
         this.categoryCount = document.getElementById('categoryCount');
-        
+
         // Botões
         this.btnSaveAndContinue = document.getElementById('btnSaveAndContinue');
         this.btnCancelBuilder = document.getElementById('btnCancelBuilder');
@@ -81,7 +81,7 @@ class SpecialSelectionBuilder {
 
         // Drop zone events
         this.setupDropZoneEvents();
-        
+
         console.log('🔗 Event listeners configurados para Builder');
     }
 
@@ -122,8 +122,8 @@ class SpecialSelectionBuilder {
             this.showLoading(true);
             console.log('📁 Carregando categorias do estoque...');
 
-            // Reutilizar a mesma API do client.js
-            const response = await fetch('/api/auth/client/data?code=admin', {
+            // Usar endpoint correto para explorar estrutura do Google Drive
+            const response = await fetch('/api/drive/explore/1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx', {
                 headers: this.getAuthHeaders()
             });
 
@@ -133,8 +133,8 @@ class SpecialSelectionBuilder {
 
             const data = await response.json();
 
-            if (data.success && data.categories) {
-                this.stockCategories = data.categories;
+            if (data.success && data.folders) {
+                this.stockCategories = data.folders;  // ← MUDAR de data.categories para data.folders
                 this.renderStockCategories();
                 console.log(`✅ ${this.stockCategories.length} categorias carregadas`);
             } else {
@@ -334,13 +334,13 @@ class SpecialSelectionBuilder {
     // ===== NAVEGAÇÃO (SIMILAR AO CLIENT.JS) =====
     navigateToCategory(folderId, categoryName) {
         console.log(`📂 Navegando para categoria: ${categoryName} (${folderId})`);
-        
+
         // Atualizar breadcrumb
         this.updateBreadcrumb(categoryName, folderId);
-        
+
         // Carregar fotos da categoria
         this.loadStockPhotos(folderId);
-        
+
         // Atualizar estado
         this.currentStockFolder = folderId;
         this.navigationState.currentFolderId = folderId;
@@ -385,7 +385,7 @@ class SpecialSelectionBuilder {
     // ===== DRAG & DROP =====
     setupPhotoDragDrop() {
         const photoCards = this.stockPhotos.querySelectorAll('.photo-card');
-        
+
         photoCards.forEach(card => {
             // Drag start
             card.addEventListener('dragstart', (e) => {
@@ -611,7 +611,7 @@ class SpecialSelectionBuilder {
         // Modal simples para selecionar categoria ou criar nova
         const categoryNames = this.customCategories.map((cat, index) => `${index}: ${cat.name}`).join('\n');
         const options = categoryNames ? `Categories:\n${categoryNames}\n\nEnter category number or 'new' to create:` : 'Enter "new" to create first category:';
-        
+
         const choice = prompt(options, 'new');
         if (!choice) return;
 
@@ -667,9 +667,9 @@ class SpecialSelectionBuilder {
 
             // Por enquanto, simular salvamento (backend será implementado depois)
             console.log('📦 Dados para salvar:', selectionData);
-            
+
             alert(`Selection saved successfully!\n\nCategories: ${this.customCategories.length}\nPhotos: ${this.selectedPhotos.length}\n\nRedirecting to admin panel...`);
-            
+
             // Voltar para admin panel
             window.location.href = '/admin#special-selections';
 
@@ -685,7 +685,7 @@ class SpecialSelectionBuilder {
                 return;
             }
         }
-        
+
         console.log('❌ Cancelando builder...');
         window.location.href = '/admin#special-selections';
     }
