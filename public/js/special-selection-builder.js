@@ -62,6 +62,12 @@ class SpecialSelectionBuilder {
         this.btnAddCategoryBottom = document.getElementById('btnAddCategoryBottom');
         this.btnRefreshStock = document.getElementById('btnRefreshStock');
         this.btnPreviewSelection = document.getElementById('btnPreviewSelection');
+
+        // Elementos de seleção múltipla
+        this.selectionActionsBar = document.getElementById('selectionActionsBar');
+        this.selectionCount = document.getElementById('selectionCount');
+        this.btnMoveSelected = document.getElementById('btnMoveSelected');
+        this.btnClearSelection = document.getElementById('btnClearSelection');
     }
 
     setupEventListeners() {
@@ -72,6 +78,10 @@ class SpecialSelectionBuilder {
         this.btnAddCategoryBottom?.addEventListener('click', () => this.showAddCategoryModal());
         this.btnRefreshStock?.addEventListener('click', () => this.refreshStock());
         this.btnPreviewSelection?.addEventListener('click', () => this.previewSelection());
+
+        // Event listeners para seleção múltipla
+        this.btnMoveSelected?.addEventListener('click', () => this.showMoveSelectedModal());
+        this.btnClearSelection?.addEventListener('click', () => this.clearAllSelections());
 
         // Breadcrumb navigation
         this.stockBreadcrumb?.addEventListener('click', (e) => {
@@ -388,9 +398,41 @@ class SpecialSelectionBuilder {
     }
 
     updateSelectionCounter() {
-        // Por enquanto só log, depois adicionaremos botão
         const count = this.selectedStockPhotos.size;
+
+        if (count > 0) {
+            this.selectionActionsBar.style.display = 'flex';
+            this.selectionCount.textContent = count;
+        } else {
+            this.selectionActionsBar.style.display = 'none';
+        }
+
         console.log(`📊 Total selecionadas: ${count}`);
+    }
+
+    clearAllSelections() {
+        // Limpar checkboxes
+        this.selectedStockPhotos.forEach(photoId => {
+            const checkbox = document.getElementById(`photo_${photoId}`);
+            const photoCard = checkbox?.closest('.photo-card');
+
+            if (checkbox) checkbox.checked = false;
+            if (photoCard) photoCard.classList.remove('selected-checkbox');
+        });
+
+        // Limpar Set
+        this.selectedStockPhotos.clear();
+        this.updateSelectionCounter();
+
+        console.log('🧹 Seleção limpa');
+    }
+
+    showMoveSelectedModal() {
+        // Por enquanto, alerta simples - depois implementaremos modal elegante
+        const count = this.selectedStockPhotos.size;
+        alert(`Ready to move ${count} selected photos!\n\nNext: Implement elegant modal for category selection.`);
+
+        console.log('🚀 Modal de movimentação em massa (implementar próximo)');
     }
 
     // ===== NAVEGAÇÃO HIERÁRQUICA (ADAPTADO DO CLIENT.JS) =====
