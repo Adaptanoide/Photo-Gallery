@@ -281,6 +281,7 @@ class SpecialSelectionBuilder {
         this.initialDropZone.style.display = 'none';
 
         const html = this.customCategories.map((category, index) => `
+        <div class="custom-category${this.expandedCategories.has(index) ? ' expanded' : ''}" data-category-index="${index}">
             <div class="custom-category-header" onclick="window.specialSelectionBuilder.toggleCategory(${index})">
                 <div class="custom-category-info">
                     <button class="category-chevron" onclick="event.stopPropagation(); window.specialSelectionBuilder.toggleCategory(${index})">
