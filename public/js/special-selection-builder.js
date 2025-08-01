@@ -215,7 +215,7 @@ class SpecialSelectionBuilder {
 
         // Mostrar lista de categorias, esconder fotos
         this.stockCategoriesElement.style.display = 'block';
-        this.stockPhotos.style.display = 'none';
+        this.stockPhotosElement.style.display = 'none';
     }
 
     renderStockPhotos() {
@@ -384,7 +384,7 @@ class SpecialSelectionBuilder {
 
     // ===== DRAG & DROP =====
     setupPhotoDragDrop() {
-        const photoCards = this.stockPhotos.querySelectorAll('.photo-card');
+        const photoCards = this.stockPhotosElement.querySelectorAll('.photo-card');
 
         photoCards.forEach(card => {
             // Drag start
