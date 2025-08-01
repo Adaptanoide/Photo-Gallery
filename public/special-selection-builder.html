@@ -613,10 +613,10 @@
                 <div class="photo-container">
                     <img id="modalPhotoImage" src="" alt="" />
                     <div class="photo-navigation">
-                        <button id="prevBtn" onclick="this.prevPhoto()" disabled>
+                        <button id="prevBtn" onclick="window.specialSelectionBuilder.prevPhoto()" disabled>
                             <i class="fas fa-chevron-left"></i>
                         </button>
-                        <button id="nextBtn" onclick="this.nextPhoto()" disabled>
+                        <button id="nextBtn" onclick="window.specialSelectionBuilder.nextPhoto()" disabled>
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
@@ -629,7 +629,8 @@
                     <span id="modalPhotoIndex">1 of 10</span>
                 </div>
                 <div class="photo-actions">
-                    <button class="btn-action btn-primary" onclick="this.addCurrentPhotoToSelection()">
+                    <button class="btn-action btn-primary"
+                        onclick="window.specialSelectionBuilder.addCurrentPhotoToSelection()">
                         <i class="fas fa-plus"></i> Add to Selection
                     </button>
                     <button class="btn-action btn-secondary" onclick="window.specialSelectionBuilder.closePhotoModal()">
