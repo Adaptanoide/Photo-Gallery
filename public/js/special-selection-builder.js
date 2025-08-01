@@ -633,6 +633,7 @@ class SpecialSelectionBuilder {
         this.customCategories.push(newCategory);
         this.selectedPhotos.push(photo);
         this.renderCustomCategories();
+        this.renderStockPhotos();
         this.updateCounts();
 
         console.log('✅ Nova categoria criada:', newCategory);
@@ -650,6 +651,7 @@ class SpecialSelectionBuilder {
             this.customCategories[categoryIndex].photos.push(photo);
             this.selectedPhotos.push(photo);
             this.renderCustomCategories();
+            this.renderStockPhotos();
             this.updateCounts();
 
             console.log(`✅ Foto adicionada à categoria ${this.customCategories[categoryIndex].name}`);
