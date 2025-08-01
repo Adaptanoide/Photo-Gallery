@@ -331,20 +331,112 @@ class SpecialSelectionBuilder {
         this.setupCustomCategoryEvents();
     }
 
-    // ===== NAVEGAÇÃO (SIMILAR AO CLIENT.JS) =====
-    navigateToCategory(folderId, categoryName) {
+    // ===== NAVEGAÇÃO HIERÁRQUICA (ADAPTADO DO CLIENT.JS) =====
+    async navigateToCategory(folderId, categoryName) {
         console.log(`📂 Navegando para categoria: ${categoryName} (${folderId})`);
 
-        // Atualizar breadcrumb
-        this.updateBreadcrumb(categoryName, folderId);
-
-        // Carregar fotos da categoria
-        this.loadStockPhotos(folderId);
-
-        // Atualizar estado
-        this.currentStockFolder = folderId;
+        // Atualizar estado de navegação
+        this.navigationState.currentPath = [{ id: folderId, name: categoryName }];
         this.navigationState.currentFolderId = folderId;
-        this.navigationState.currentPath.push({ name: categoryName, id: folderId });
+
+        this.updateBreadcrumb();
+        await this.loadFolderContents(folderId);
+    }
+
+    async loadFolderContents(folderId) {
+        try {
+            this.showLoading(true);
+            console.log(`📁 Carregando conteúdo da pasta: ${folderId}`);
+
+            // Usar mesma API que client.js
+            const response = await fetch(`/api/drive/explore/${folderId}?depth=1`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Erro ao carregar pasta');
+            }
+
+            const folderData = data.structure;
+
+            // LÓGICA INTELIGENTE (igual client.js)
+            if (folderData.hasSubfolders && folderData.folders.length > 0) {
+                // Mostrar subpastas (navegação mais profunda)
+                this.showSubfolders(folderData.folders);
+            } else if (folderData.hasImages || folderData.totalImages > 0) {
+                // Mostrar fotos (chegou no final da hierarquia)
+                await this.loadStockPhotos(folderId);
+            } else {
+                // Pasta vazia
+                this.showEmptyFolder();
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao carregar conteúdo da pasta:', error);
+            this.showError('Erro ao carregar conteúdo da pasta');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    showSubfolders(folders) {
+        console.log(`📁 Mostrando ${folders.length} subpastas`);
+
+        const html = folders.map(folder => `
+        <div class="category-item" data-folder-id="${folder.id}" data-category-name="${folder.name}">
+            <div class="category-icon">
+                <i class="fas fa-${folder.hasImages ? 'images' : 'folder'}"></i>
+            </div>
+            <div class="category-name">${folder.name}</div>
+            <div class="category-stats">
+                ${folder.imageCount || folder.totalFiles || 0} fotos
+                ${folder.totalSubfolders > 0 ? ` • ${folder.totalSubfolders} pastas` : ''}
+            </div>
+        </div>
+    `).join('');
+
+        this.stockCategoriesElement.innerHTML = html;
+
+        // Event listeners para navegação mais profunda
+        this.stockCategoriesElement.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const folderId = item.dataset.folderId;
+                const categoryName = item.dataset.categoryName;
+                this.navigateToSubfolder(folderId, categoryName);
+            });
+        });
+
+        // Mostrar categorias, esconder fotos
+        this.stockCategoriesElement.style.display = 'block';
+        this.stockPhotosElement.style.display = 'none';
+    }
+
+    async navigateToSubfolder(folderId, folderName) {
+        console.log(`📂 Navegando para subpasta: ${folderName} (${folderId})`);
+
+        // Adicionar ao caminho de navegação
+        this.navigationState.currentPath.push({ id: folderId, name: folderName });
+        this.navigationState.currentFolderId = folderId;
+
+        this.updateBreadcrumb();
+        await this.loadFolderContents(folderId);  // ← Recursivo!
+    }
+
+    showEmptyFolder() {
+        this.stockCategoriesElement.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <p>Pasta vazia</p>
+        </div>
+    `;
+        this.stockCategoriesElement.style.display = 'block';
+        this.stockPhotosElement.style.display = 'none';
     }
 
     navigateToFolder(folderId) {
@@ -360,16 +452,28 @@ class SpecialSelectionBuilder {
         }
     }
 
-    updateBreadcrumb(categoryName, folderId) {
+    updateBreadcrumb() {
+        if (!this.navigationState.currentPath || this.navigationState.currentPath.length === 0) {
+            this.resetBreadcrumb();
+            return;
+        }
+
         const breadcrumbHtml = `
-            <span class="breadcrumb-item" data-folder-id="root">
-                <i class="fas fa-home"></i> Stock
-            </span>
-            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-            <span class="breadcrumb-item active" data-folder-id="${folderId}">
-                <i class="fas fa-folder-open"></i> ${categoryName}
-            </span>
-        `;
+        <span class="breadcrumb-item" data-folder-id="root">
+            <i class="fas fa-home"></i> Stock
+        </span>
+        ${this.navigationState.currentPath.map((item, index) => {
+            const isLast = index === this.navigationState.currentPath.length - 1;
+            return `
+                <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+                ${isLast ?
+                    `<span class="breadcrumb-item active">${item.name}</span>` :
+                    `<span class="breadcrumb-item" data-folder-id="${item.id}">${item.name}</span>`
+                }
+            `;
+        }).join('')}
+    `;
+
         this.stockBreadcrumb.innerHTML = breadcrumbHtml;
     }
 
