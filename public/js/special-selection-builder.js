@@ -227,8 +227,13 @@ class SpecialSelectionBuilder {
             </div>
         `;
         } else {
-            const html = this.stockPhotosData.map((photo, index) => `
-            <div class="photo-card" 
+            const html = this.stockPhotosData.map((photo, index) => {
+                // Verificar se foto já foi movida
+                const isPhotoMoved = this.selectedPhotos.some(selectedPhoto => selectedPhoto.id === photo.id);
+                const movedClass = isPhotoMoved ? ' photo-moved' : '';
+
+                return `
+            <div class="photo-card${movedClass}" 
                 draggable="true" 
                 data-photo-id="${photo.id}" 
                 data-photo-name="${photo.name}"
@@ -252,7 +257,8 @@ class SpecialSelectionBuilder {
                     </button>
                 </div>
             </div>
-        `).join('');
+                `;
+            }).join('');
 
             this.stockPhotosElement.innerHTML = html;
 
