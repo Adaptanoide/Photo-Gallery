@@ -133,8 +133,8 @@ class SpecialSelectionBuilder {
 
             const data = await response.json();
 
-            if (data.success && data.folders) {
-                this.stockCategories = data.folders;  // ← MUDAR de data.categories para data.folders
+            if (data.success && data.structure && data.structure.folders) {
+                this.stockCategories = data.structure.folders;
                 this.renderStockCategories();
                 console.log(`✅ ${this.stockCategories.length} categorias carregadas`);
             } else {

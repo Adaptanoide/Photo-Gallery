@@ -7,15 +7,15 @@ const PhotoStatus = require('../models/PhotoStatus');
 const GoogleDriveService = require('./GoogleDriveService');
 
 class SpecialSelectionService {
-    
+
     // ===== CRIAR NOVA SELEÇÃO ESPECIAL =====
-    
+
     /**
      * Criar uma nova seleção especial
      */
     static async createSpecialSelection(selectionData, adminUser) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`🎯 Criando seleção especial para cliente ${selectionData.clientCode}...`);
@@ -26,10 +26,10 @@ class SpecialSelectionService {
                 }
 
                 // 2. Verificar se cliente existe
-                const existingAccessCode = await AccessCode.findOne({ 
-                    code: selectionData.clientCode 
+                const existingAccessCode = await AccessCode.findOne({
+                    code: selectionData.clientCode
                 }).session(session);
-                
+
                 if (!existingAccessCode) {
                     throw new Error(`Cliente com código ${selectionData.clientCode} não encontrado`);
                 }
@@ -41,8 +41,8 @@ class SpecialSelectionService {
                 // 4. Criar pasta no Google Drive para a seleção especial
                 const driveResult = await GoogleDriveService.createSelectionFolder(
                     selectionData.clientCode,
-                    existingAccessCode.clientName,
-                    GoogleDriveService.FOLDER_IDS.SPECIAL_SELECTIONS || GoogleDriveService.FOLDER_IDS.SALES_ROOT
+                    existingAccessCode.clientName
+                    // Remover o terceiro parâmetro - deixar o método usar o padrão interno
                 );
 
                 // 5. Criar documento de seleção especial
@@ -52,26 +52,26 @@ class SpecialSelectionService {
                     clientCode: selectionData.clientCode,
                     clientName: existingAccessCode.clientName,
                     clientEmail: existingAccessCode.clientEmail,
-                    
+
                     // Definir como seleção especial
                     selectionType: 'special',
-                    
+
                     // Configurações específicas da seleção especial
                     specialSelectionConfig: {
                         selectionName: selectionData.selectionName,
                         description: selectionData.description || '',
-                        
+
                         pricingConfig: {
                             showPrices: selectionData.showPrices !== false,
                             allowGlobalDiscount: selectionData.allowGlobalDiscount || false,
                             globalDiscountPercent: selectionData.globalDiscountPercent || 0
                         },
-                        
+
                         quantityDiscounts: {
                             enabled: selectionData.quantityDiscountsEnabled || false,
                             rules: selectionData.quantityDiscountRules || []
                         },
-                        
+
                         accessConfig: {
                             isActive: false, // Inicia inativa até ser configurada
                             expiresAt: selectionData.expiresAt || null,
@@ -97,7 +97,7 @@ class SpecialSelectionService {
                     customCategories: [],
                     totalItems: 0,
                     totalValue: 0,
-                    
+
                     // Metadados
                     createdBy: adminUser,
                     processedBy: adminUser
@@ -105,9 +105,9 @@ class SpecialSelectionService {
 
                 // 6. Adicionar log inicial
                 specialSelection.addMovementLog(
-                    'special_selection_created', 
+                    'special_selection_created',
                     `Seleção especial criada: ${selectionData.selectionName}`,
-                    true, 
+                    true,
                     null,
                     {
                         selectionName: selectionData.selectionName,
@@ -148,7 +148,7 @@ class SpecialSelectionService {
         try {
             console.log(`📁 Adicionando categoria customizada à seleção ${selectionId}...`);
 
-            const selection = await Selection.findOne({ 
+            const selection = await Selection.findOne({
                 selectionId: selectionId,
                 selectionType: 'special'
             });
@@ -187,12 +187,12 @@ class SpecialSelectionService {
      */
     static async removeCustomCategory(selectionId, categoryId, adminUser) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`🗑️ Removendo categoria ${categoryId} da seleção ${selectionId}...`);
 
-                const selection = await Selection.findOne({ 
+                const selection = await Selection.findOne({
                     selectionId: selectionId,
                     selectionType: 'special'
                 }).session(session);
@@ -218,9 +218,9 @@ class SpecialSelectionService {
 
                 // Adicionar log
                 selection.addMovementLog(
-                    'category_removed', 
+                    'category_removed',
                     `Categoria customizada removida: ${category.categoryName}`,
-                    true, 
+                    true,
                     null,
                     { categoryId, categoryName: category.categoryName, adminUser }
                 );
@@ -250,13 +250,13 @@ class SpecialSelectionService {
      */
     static async movePhotoToCustomCategory(selectionId, photoData, categoryId, adminUser) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`📸 Movendo foto ${photoData.fileName} para categoria ${categoryId}...`);
 
                 // 1. Buscar seleção especial
-                const selection = await Selection.findOne({ 
+                const selection = await Selection.findOne({
                     selectionId: selectionId,
                     selectionType: 'special'
                 }).session(session);
@@ -273,7 +273,7 @@ class SpecialSelectionService {
 
                 // 3. Verificar/criar status da foto
                 let photoStatus = await PhotoStatus.findOne({ photoId: photoData.photoId }).session(session);
-                
+
                 if (!photoStatus) {
                     // Criar status se não existe
                     photoStatus = PhotoStatus.createForPhoto({
@@ -289,8 +289,8 @@ class SpecialSelectionService {
                 // 4. Verificar se foto está disponível
                 if (!photoStatus.isAvailable()) {
                     const reason = photoStatus.isLocked() ? 'está bloqueada por outro admin' :
-                                   photoStatus.isReserved() ? 'está reservada por um cliente' :
-                                   photoStatus.isSold() ? 'já foi vendida' : 'não está disponível';
+                        photoStatus.isReserved() ? 'está reservada por um cliente' :
+                            photoStatus.isSold() ? 'já foi vendida' : 'não está disponível';
                     throw new Error(`A foto ${photoData.fileName} ${reason}`);
                 }
 
@@ -378,7 +378,7 @@ class SpecialSelectionService {
     static async returnPhotoToOriginalLocation(photoId, adminUser, session = null) {
         const useExternalSession = session !== null;
         if (!session) session = await mongoose.startSession();
-        
+
         try {
             const operation = async () => {
                 console.log(`🔄 Devolvendo foto ${photoId} ao estoque original...`);
@@ -430,8 +430,8 @@ class SpecialSelectionService {
 
                 // 7. Restaurar preço original
                 photoStatus.updatePrice(
-                    photoStatus.originalLocation.originalPrice, 
-                    'category', 
+                    photoStatus.originalLocation.originalPrice,
+                    'category',
                     adminUser
                 );
 
@@ -445,7 +445,7 @@ class SpecialSelectionService {
 
                 // 10. Remover do backup
                 if (selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup) {
-                    selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup = 
+                    selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup =
                         selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup.filter(
                             b => b.photoId !== photoId
                         );
@@ -453,9 +453,9 @@ class SpecialSelectionService {
 
                 // 11. Adicionar log
                 selection.addMovementLog(
-                    'photo_returned', 
+                    'photo_returned',
                     `Foto ${photoStatus.fileName} devolvida ao estoque original`,
-                    true, 
+                    true,
                     null,
                     { photoId, adminUser, originalLocation: photoStatus.originalLocation }
                 );
@@ -492,13 +492,13 @@ class SpecialSelectionService {
      */
     static async activateSpecialSelection(selectionId, adminUser) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`🚀 Ativando seleção especial ${selectionId}...`);
 
                 // 1. Buscar seleção especial
-                const selection = await Selection.findOne({ 
+                const selection = await Selection.findOne({
                     selectionId: selectionId,
                     selectionType: 'special'
                 }).session(session);
@@ -514,8 +514,8 @@ class SpecialSelectionService {
                 }
 
                 // 3. Buscar código de acesso do cliente
-                const accessCode = await AccessCode.findOne({ 
-                    code: selection.clientCode 
+                const accessCode = await AccessCode.findOne({
+                    code: selection.clientCode
                 }).session(session);
 
                 if (!accessCode) {
@@ -539,15 +539,15 @@ class SpecialSelectionService {
 
                 // 6. Adicionar logs
                 selection.addMovementLog(
-                    'special_selection_activated', 
+                    'special_selection_activated',
                     `Seleção especial ativada para acesso do cliente`,
-                    true, 
+                    true,
                     null,
-                    { 
-                        adminUser, 
-                        totalPhotos, 
+                    {
+                        adminUser,
+                        totalPhotos,
                         totalCategories: selection.customCategories.length,
-                        clientCode: selection.clientCode 
+                        clientCode: selection.clientCode
                     }
                 );
 
@@ -580,13 +580,13 @@ class SpecialSelectionService {
      */
     static async deactivateSpecialSelection(selectionId, adminUser, returnPhotos = false) {
         const session = await mongoose.startSession();
-        
+
         try {
             return await session.withTransaction(async () => {
                 console.log(`⏸️ Desativando seleção especial ${selectionId}...`);
 
                 // 1. Buscar seleção especial
-                const selection = await Selection.findOne({ 
+                const selection = await Selection.findOne({
                     selectionId: selectionId,
                     selectionType: 'special'
                 }).session(session);
@@ -596,8 +596,8 @@ class SpecialSelectionService {
                 }
 
                 // 2. Buscar código de acesso do cliente
-                const accessCode = await AccessCode.findOne({ 
-                    code: selection.clientCode 
+                const accessCode = await AccessCode.findOne({
+                    code: selection.clientCode
                 }).session(session);
 
                 if (!accessCode) {
@@ -613,8 +613,8 @@ class SpecialSelectionService {
                 }
 
                 // 4. Voltar cliente para acesso normal (usar categorias que tinha antes)
-                const originalCategories = accessCode.allowedCategories.length > 0 ? 
-                    accessCode.allowedCategories : 
+                const originalCategories = accessCode.allowedCategories.length > 0 ?
+                    accessCode.allowedCategories :
                     ['1. Colombian Cowhides', '2. Brazil Best Sellers']; // Categorias padrão
 
                 accessCode.setNormalAccess(originalCategories, adminUser);
@@ -625,15 +625,15 @@ class SpecialSelectionService {
 
                 // 6. Adicionar logs
                 selection.addMovementLog(
-                    'special_selection_deactivated', 
+                    'special_selection_deactivated',
                     `Seleção especial desativada. Cliente voltou para acesso normal.`,
-                    true, 
+                    true,
                     null,
-                    { 
-                        adminUser, 
+                    {
+                        adminUser,
                         returnPhotos,
                         originalCategories,
-                        clientCode: selection.clientCode 
+                        clientCode: selection.clientCode
                     }
                 );
 
@@ -679,7 +679,7 @@ class SpecialSelectionService {
             } = { ...filters, ...options };
 
             const query = { selectionType: 'special' };
-            
+
             if (status) query.status = status;
             if (clientCode) query.clientCode = clientCode;
             if (isActive !== null) query['specialSelectionConfig.accessConfig.isActive'] = isActive;
@@ -728,7 +728,7 @@ class SpecialSelectionService {
      */
     static async getSpecialSelectionDetails(selectionId) {
         try {
-            const selection = await Selection.findOne({ 
+            const selection = await Selection.findOne({
                 selectionId: selectionId,
                 selectionType: 'special'
             }).populate('items.productId');
@@ -765,7 +765,7 @@ class SpecialSelectionService {
                     stats: {
                         totalPhotos: allPhotoIds.length,
                         totalCategories: selection.customCategories.length,
-                        averagePhotoPrice: allPhotoIds.length > 0 ? 
+                        averagePhotoPrice: allPhotoIds.length > 0 ?
                             selection.customCategories.flatMap(cat => cat.photos).reduce((sum, p) => sum + (p.customPrice || 0), 0) / allPhotoIds.length : 0
                     }
                 }
@@ -790,11 +790,11 @@ class SpecialSelectionService {
     static async getStatistics() {
         try {
             const totalSpecial = await Selection.countDocuments({ selectionType: 'special' });
-            const activeSpecial = await Selection.countDocuments({ 
+            const activeSpecial = await Selection.countDocuments({
                 selectionType: 'special',
-                'specialSelectionConfig.accessConfig.isActive': true 
+                'specialSelectionConfig.accessConfig.isActive': true
             });
-            
+
             const statusStats = await Selection.aggregate([
                 { $match: { selectionType: 'special' } },
                 { $group: { _id: '$status', count: { $sum: 1 } } }
