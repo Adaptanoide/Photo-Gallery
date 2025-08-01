@@ -136,7 +136,7 @@ class SpecialSelectionBuilder {
             if (data.success && data.structure && data.structure.folders) {
                 this.stockCategoriesData = data.structure.folders;
                 this.renderStockCategories();
-                console.log(`✅ ${this.stockCategories.length} categorias carregadas`);
+                console.log(`✅ ${this.stockCategoriesData.length} categorias carregadas`);
             } else {
                 throw new Error(data.message || 'Erro ao carregar categorias');
             }
