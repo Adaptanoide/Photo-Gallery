@@ -765,3 +765,21 @@
     opacity: 0.6;
     text-decoration: line-through;
 }
+
+/* ===== CHEVRON PARA CATEGORIAS ===== */
+
+.category-chevron {
+    background: none;
+    border: none;
+    color: var(--gold-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-right: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.category-chevron:hover {
+    color: var(--gold-hover);
+    transform: scale(1.1);
+}

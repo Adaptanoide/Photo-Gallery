@@ -14,7 +14,7 @@ class SpecialSelectionBuilder {
         this.stockPhotosData = [];
         this.customCategories = [];
         this.selectedPhotos = [];
-        this.draggedPhoto = null;
+        this.expandedCategories = new Set();
         this.isLoading = false;
 
         // Estado da navegação (similar ao client.js)
@@ -281,12 +281,14 @@ class SpecialSelectionBuilder {
         this.initialDropZone.style.display = 'none';
 
         const html = this.customCategories.map((category, index) => `
-            <div class="custom-category" data-category-index="${index}">
-                <div class="custom-category-header" onclick="this.parentElement.classList.toggle('expanded')">
-                    <div class="custom-category-info">
-                        <div class="custom-category-name">${category.name}</div>
-                        <div class="custom-category-count">${category.photos.length}</div>
-                    </div>
+            <div class="custom-category-header" onclick="window.specialSelectionBuilder.toggleCategory(${index})">
+                <div class="custom-category-info">
+                    <button class="category-chevron" onclick="event.stopPropagation(); window.specialSelectionBuilder.toggleCategory(${index})">
+                        <i class="fas fa-chevron-${this.expandedCategories.has(index) ? 'up' : 'down'}"></i>
+                    </button>
+                    <div class="custom-category-name">${category.name}</div>
+                    <div class="custom-category-count">${category.photos.length}</div>
+                </div>
                     <div class="custom-category-actions" onclick="event.stopPropagation()">
                         <button class="category-action-btn" data-action="edit-category" data-index="${index}" title="Edit">
                             <i class="fas fa-edit"></i>
@@ -331,6 +333,19 @@ class SpecialSelectionBuilder {
 
         // Setup event listeners para as categorias customizadas
         this.setupCustomCategoryEvents();
+    }
+
+    toggleCategory(categoryIndex) {
+        const categoryElement = document.querySelector(`[data-category-index="${categoryIndex}"]`);
+        if (!categoryElement) return;
+
+        if (this.expandedCategories.has(categoryIndex)) {
+            this.expandedCategories.delete(categoryIndex);
+            categoryElement.classList.remove('expanded');
+        } else {
+            this.expandedCategories.add(categoryIndex);
+            categoryElement.classList.add('expanded');
+        }
     }
 
     // ===== NAVEGAÇÃO HIERÁRQUICA (ADAPTADO DO CLIENT.JS) =====
