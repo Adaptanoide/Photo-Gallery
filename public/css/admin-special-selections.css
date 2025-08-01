@@ -783,3 +783,23 @@
     color: var(--gold-hover);
     transform: scale(1.1);
 }
+
+/* ===== SISTEMA DE EXPANDIR/COLAPSAR CATEGORIAS ===== */
+
+.custom-category-content {
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.custom-category.expanded .custom-category-content {
+    display: block;
+}
+
+.custom-category-header {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.custom-category-header:hover {
+    background: rgba(212, 175, 55, 0.1);
+}

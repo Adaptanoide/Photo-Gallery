@@ -336,7 +336,7 @@ class SpecialSelectionBuilder {
     }
 
     toggleCategory(categoryIndex) {
-        const categoryElement = document.querySelector(`[data-category-index="${categoryIndex}"]`);
+        const categoryElement = document.querySelector(`.custom-category[data-category-index="${categoryIndex}"]`);
         if (!categoryElement) return;
 
         if (this.expandedCategories.has(categoryIndex)) {
