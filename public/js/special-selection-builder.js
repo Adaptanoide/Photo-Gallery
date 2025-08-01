@@ -459,7 +459,7 @@ class SpecialSelectionBuilder {
         }
 
         const breadcrumbHtml = `
-        <span class="breadcrumb-item" data-folder-id="root">
+        <span class="breadcrumb-item" onclick="specialSelectionBuilder.navigateToFolder('root')">
             <i class="fas fa-home"></i> Stock
         </span>
         ${this.navigationState.currentPath.map((item, index) => {
@@ -468,13 +468,25 @@ class SpecialSelectionBuilder {
                 <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
                 ${isLast ?
                     `<span class="breadcrumb-item active">${item.name}</span>` :
-                    `<span class="breadcrumb-item" data-folder-id="${item.id}">${item.name}</span>`
+                    `<button class="breadcrumb-item" onclick="specialSelectionBuilder.navigateToBreadcrumb(${index})">${item.name}</button>`
                 }
             `;
         }).join('')}
     `;
 
         this.stockBreadcrumb.innerHTML = breadcrumbHtml;
+    }
+
+    async navigateToBreadcrumb(index) {
+        console.log(`🧭 Navegando via breadcrumb para índice: ${index}`);
+
+        // Cortar caminho até o índice selecionado
+        this.navigationState.currentPath = this.navigationState.currentPath.slice(0, index + 1);
+        const target = this.navigationState.currentPath[index];
+        this.navigationState.currentFolderId = target.id;
+
+        this.updateBreadcrumb();
+        await this.loadFolderContents(target.id);
     }
 
     resetBreadcrumb() {
@@ -737,14 +749,56 @@ class SpecialSelectionBuilder {
         }
     }
 
-    previewPhoto(photo) {
-        // Reutilizar sistema de zoom existente
-        if (typeof window.zoomApp !== 'undefined' && window.zoomApp.openPhotoModal) {
-            window.zoomApp.openPhotoModal(photo.url, photo.name);
-        } else {
-            // Fallback
-            window.open(photo.url, '_blank');
+    previewPhoto(photoIndex = 0) {
+        if (!this.stockPhotosData || this.stockPhotosData.length === 0) return;
+
+        this.currentPhotoIndex = photoIndex;
+        const photo = this.stockPhotosData[photoIndex];
+
+        // Mostrar modal
+        const modal = document.getElementById('photoModal');
+        modal.style.display = 'flex';
+
+        // Atualizar informações
+        document.getElementById('modalPhotoTitle').textContent = this.getCurrentCategoryName();
+        document.getElementById('modalPhotoName').textContent = photo.name;
+        document.getElementById('modalPhotoIndex').textContent = `${photoIndex + 1} of ${this.stockPhotosData.length}`;
+
+        // Carregar imagem
+        const img = document.getElementById('modalPhotoImage');
+        img.src = photo.thumbnailLarge || photo.thumbnailLink?.replace('=s220', '=s1200') || photo.webViewLink;
+        img.alt = photo.name;
+
+        // Atualizar botões de navegação
+        document.getElementById('prevBtn').disabled = photoIndex === 0;
+        document.getElementById('nextBtn').disabled = photoIndex === this.stockPhotosData.length - 1;
+    }
+
+    closePhotoModal() {
+        document.getElementById('photoModal').style.display = 'none';
+    }
+
+    prevPhoto() {
+        if (this.currentPhotoIndex > 0) {
+            this.previewPhoto(this.currentPhotoIndex - 1);
         }
+    }
+
+    nextPhoto() {
+        if (this.currentPhotoIndex < this.stockPhotosData.length - 1) {
+            this.previewPhoto(this.currentPhotoIndex + 1);
+        }
+    }
+
+    addCurrentPhotoToSelection() {
+        const photo = this.stockPhotosData[this.currentPhotoIndex];
+        // Implementar lógica para adicionar à seleção
+        console.log('📸 Adicionando foto à seleção:', photo.name);
+        this.showAddToSelectionModal(null, photo);
+    }
+
+    getCurrentCategoryName() {
+        return this.navigationState.currentPath[this.navigationState.currentPath.length - 1]?.name || 'Category';
     }
 
     previewSelection() {

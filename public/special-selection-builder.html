@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Build Special Selection - Sunshine Cowhides</title>
-    
+
     <!-- CSS Base + Admin -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin-dashboard.css">
     <link rel="stylesheet" href="css/admin-components.css">
     <link rel="stylesheet" href="css/admin-special-selections.css">
     <link rel="stylesheet" href="css/client.css"> <!-- Reutilizar navegação -->
-    
+
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
+
     <style>
         /* ESTILOS ESPECÍFICOS PARA INTERFACE DUAL */
         .builder-layout {
@@ -22,7 +23,7 @@
             height: 100vh;
             background: var(--luxury-dark);
         }
-        
+
         .builder-sidebar {
             width: 250px;
             background: var(--luxury-medium);
@@ -30,14 +31,14 @@
             display: flex;
             flex-direction: column;
         }
-        
+
         .builder-main {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-        
+
         .builder-header {
             background: var(--luxury-medium);
             padding: 1rem 2rem;
@@ -46,25 +47,25 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .builder-title {
             color: var(--gold-primary);
             font-size: 1.5rem;
             font-weight: 600;
             margin: 0;
         }
-        
+
         .builder-actions {
             display: flex;
             gap: 1rem;
         }
-        
+
         .builder-content {
             flex: 1;
             display: flex;
             overflow: hidden;
         }
-        
+
         .stock-panel {
             flex: 1;
             background: var(--luxury-dark);
@@ -72,14 +73,14 @@
             display: flex;
             flex-direction: column;
         }
-        
+
         .selection-panel {
             flex: 1;
             background: var(--luxury-dark);
             display: flex;
             flex-direction: column;
         }
-        
+
         .panel-header {
             background: var(--luxury-medium);
             padding: 1rem;
@@ -90,19 +91,19 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .panel-content {
             flex: 1;
             overflow: auto;
             padding: 1rem;
         }
-        
+
         /* Navegação hierárquica (reutilizar client.js styles) */
         .breadcrumb-container {
             padding: 1rem;
             border-bottom: 1px solid rgba(212, 175, 55, 0.2);
         }
-        
+
         .breadcrumb {
             display: flex;
             align-items: center;
@@ -110,20 +111,20 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
-        
+
         .breadcrumb-item {
             cursor: pointer;
             transition: color 0.3s ease;
         }
-        
+
         .breadcrumb-item:hover {
             color: var(--gold-primary);
         }
-        
+
         .breadcrumb-separator {
             color: var(--text-muted);
         }
-        
+
         /* Grid de fotos (similar ao client.js) */
         .photos-grid {
             display: grid;
@@ -131,7 +132,7 @@
             gap: 1rem;
             padding: 1rem 0;
         }
-        
+
         .photo-card {
             background: var(--luxury-medium);
             border-radius: 8px;
@@ -141,34 +142,34 @@
             position: relative;
             border: 2px solid transparent;
         }
-        
+
         .photo-card:hover {
             border-color: var(--gold-primary);
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
         }
-        
+
         .photo-card.dragging {
             opacity: 0.8;
             transform: rotate(3deg);
         }
-        
+
         .photo-card.selected {
             border-color: var(--gold-primary);
             background: rgba(212, 175, 55, 0.1);
         }
-        
+
         .photo-image {
             width: 100%;
             height: 120px;
             object-fit: cover;
             display: block;
         }
-        
+
         .photo-info {
             padding: 0.75rem;
         }
-        
+
         .photo-name {
             color: var(--text-primary);
             font-size: 0.8rem;
@@ -178,13 +179,13 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        
+
         .photo-price {
             color: var(--gold-primary);
             font-size: 0.75rem;
             font-weight: 600;
         }
-        
+
         .photo-actions {
             position: absolute;
             top: 0.5rem;
@@ -194,11 +195,11 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-        
+
         .photo-card:hover .photo-actions {
             opacity: 1;
         }
-        
+
         .photo-action-btn {
             background: rgba(0, 0, 0, 0.8);
             color: white;
@@ -213,18 +214,18 @@
             font-size: 0.7rem;
             transition: background 0.3s ease;
         }
-        
+
         .photo-action-btn:hover {
             background: var(--gold-primary);
         }
-        
+
         /* Categorias (lado esquerdo - stock) */
         .categories-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
+
         .category-item {
             padding: 0.75rem 1rem;
             color: var(--text-secondary);
@@ -235,18 +236,18 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .category-item:hover {
             background: rgba(212, 175, 55, 0.1);
             color: var(--gold-primary);
         }
-        
+
         .category-item.active {
             background: rgba(212, 175, 55, 0.2);
             color: var(--gold-primary);
             border-left: 3px solid var(--gold-primary);
         }
-        
+
         .category-icon {
             width: 16px;
             height: 16px;
@@ -254,11 +255,11 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .category-name {
             flex: 1;
         }
-        
+
         .category-count {
             background: var(--luxury-medium);
             color: var(--text-muted);
@@ -266,12 +267,12 @@
             border-radius: 12px;
             font-size: 0.7rem;
         }
-        
+
         /* Custom categories (lado direito) */
         .custom-categories {
             margin-bottom: 2rem;
         }
-        
+
         .custom-category {
             background: var(--luxury-medium);
             border: 1px solid rgba(212, 175, 55, 0.3);
@@ -279,7 +280,7 @@
             margin-bottom: 1rem;
             overflow: hidden;
         }
-        
+
         .custom-category-header {
             background: rgba(212, 175, 55, 0.1);
             padding: 1rem;
@@ -288,22 +289,22 @@
             justify-content: space-between;
             cursor: pointer;
         }
-        
+
         .custom-category-header:hover {
             background: rgba(212, 175, 55, 0.2);
         }
-        
+
         .custom-category-info {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .custom-category-name {
             color: var(--gold-primary);
             font-weight: 600;
         }
-        
+
         .custom-category-count {
             background: var(--gold-primary);
             color: var(--luxury-dark);
@@ -312,12 +313,12 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        
+
         .custom-category-actions {
             display: flex;
             gap: 0.5rem;
         }
-        
+
         .category-action-btn {
             background: transparent;
             color: var(--text-secondary);
@@ -331,22 +332,22 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        
+
         .category-action-btn:hover {
             background: var(--gold-primary);
             color: var(--luxury-dark);
             border-color: var(--gold-primary);
         }
-        
+
         .custom-category-content {
             padding: 1rem;
             display: none;
         }
-        
+
         .custom-category.expanded .custom-category-content {
             display: block;
         }
-        
+
         /* Drop zones */
         .drop-zone {
             border: 2px dashed rgba(212, 175, 55, 0.3);
@@ -357,23 +358,23 @@
             transition: all 0.3s ease;
             margin: 1rem 0;
         }
-        
+
         .drop-zone.drag-over {
             border-color: var(--gold-primary);
             background: rgba(212, 175, 55, 0.1);
             color: var(--gold-primary);
         }
-        
+
         .drop-zone-icon {
             font-size: 2rem;
             margin-bottom: 0.5rem;
             opacity: 0.5;
         }
-        
+
         .drop-zone-text {
             font-size: 0.9rem;
         }
-        
+
         /* Add category button */
         .add-category-btn {
             width: 100%;
@@ -390,11 +391,11 @@
             gap: 0.5rem;
             font-weight: 600;
         }
-        
+
         .add-category-btn:hover {
             background: rgba(212, 175, 55, 0.1);
         }
-        
+
         /* Loading states */
         .loading-spinner {
             display: flex;
@@ -403,24 +404,29 @@
             padding: 2rem;
             color: var(--text-muted);
         }
-        
+
         .loading-spinner i {
             font-size: 1.5rem;
             margin-right: 0.5rem;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         /* Mobile responsivo */
         @media (max-width: 1024px) {
             .builder-content {
                 flex-direction: column;
             }
-            
+
             .stock-panel,
             .selection-panel {
                 flex: none;
@@ -428,12 +434,12 @@
                 border-right: none;
                 border-bottom: 1px solid rgba(212, 175, 55, 0.2);
             }
-            
+
             .photos-grid {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
                 gap: 0.5rem;
             }
-            
+
             .photo-image {
                 height: 80px;
             }
@@ -452,20 +458,25 @@
                     Selection Info
                 </h3>
             </div>
-            
+
             <div style="padding: 1rem; flex: 1;">
                 <div style="margin-bottom: 1rem;">
-                    <label style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Selection Name</label>
-                    <div id="selectionNameDisplay" style="color: var(--text-primary); font-weight: 600;">Premium Selection</div>
+                    <label
+                        style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Selection
+                        Name</label>
+                    <div id="selectionNameDisplay" style="color: var(--text-primary); font-weight: 600;">Premium
+                        Selection</div>
                 </div>
-                
+
                 <div style="margin-bottom: 1rem;">
-                    <label style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Client</label>
+                    <label
+                        style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Client</label>
                     <div id="clientNameDisplay" style="color: var(--text-primary);">Loading...</div>
                 </div>
-                
+
                 <div style="margin-bottom: 1rem;">
-                    <label style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Progress</label>
+                    <label
+                        style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Progress</label>
                     <div style="background: var(--luxury-medium); border-radius: 8px; padding: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                             <span style="color: var(--text-secondary); font-size: 0.8rem;">Photos Selected</span>
@@ -477,7 +488,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div style="margin-top: auto; padding-top: 2rem;">
                     <button id="btnSaveAndContinue" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
                         <i class="fas fa-check"></i>
@@ -524,7 +535,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Breadcrumb para navegação -->
                     <div class="breadcrumb-container">
                         <nav class="breadcrumb" id="stockBreadcrumb">
@@ -533,14 +544,14 @@
                             </span>
                         </nav>
                     </div>
-                    
+
                     <div class="panel-content">
                         <!-- Lista de categorias (quando não estiver em uma categoria) -->
                         <div id="stockCategories" class="categories-list"></div>
-                        
+
                         <!-- Grid de fotos (quando estiver em uma categoria) -->
                         <div id="stockPhotos" class="photos-grid" style="display: none;"></div>
-                        
+
                         <!-- Loading -->
                         <div id="stockLoading" class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
@@ -560,7 +571,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="panel-content">
                         <!-- Drop zone inicial -->
                         <div id="initialDropZone" class="drop-zone">
@@ -572,10 +583,10 @@
                                 <small>or click "Add Category" to create custom categories</small>
                             </div>
                         </div>
-                        
+
                         <!-- Categorias customizadas -->
                         <div id="customCategories" class="custom-categories"></div>
-                        
+
                         <!-- Botão adicionar categoria -->
                         <button class="add-category-btn" id="btnAddCategoryBottom">
                             <i class="fas fa-plus"></i>
@@ -587,9 +598,52 @@
         </main>
     </div>
 
+    <!-- Photo Modal (igual client.js) -->
+    <div id="photoModal" class="photo-modal" style="display: none;">
+        <div class="modal-background" onclick="this.closePhotoModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalPhotoTitle">Photo Preview</h3>
+                <button class="close-btn" onclick="this.closePhotoModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="photo-container">
+                    <img id="modalPhotoImage" src="" alt="" />
+                    <div class="photo-navigation">
+                        <button id="prevBtn" onclick="this.prevPhoto()" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button id="nextBtn" onclick="this.nextPhoto()" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="photo-info">
+                    <span id="modalPhotoName">Photo Name</span>
+                    <span id="modalPhotoIndex">1 of 10</span>
+                </div>
+                <div class="photo-actions">
+                    <button class="btn-action btn-primary" onclick="this.addCurrentPhotoToSelection()">
+                        <i class="fas fa-plus"></i> Add to Selection
+                    </button>
+                    <button class="btn-action btn-secondary" onclick="this.closePhotoModal()">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/app.js"></script>
     <script src="js/zoom.js"></script> <!-- Reutilizar sistema de zoom -->
     <script src="js/special-selection-builder.js"></script> <!-- Novo script principal -->
 </body>
+
 </html>
