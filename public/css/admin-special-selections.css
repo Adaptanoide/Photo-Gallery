@@ -854,59 +854,68 @@
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
 }
 
-/* ===== BARRA DE AÇÕES DE SELEÇÃO ===== */
+/* ===== BARRA DE AÇÕES DE SELEÇÃO MINIMALISTA ===== */
 
 .selection-actions-bar {
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    padding: 1rem 1.5rem;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(44, 44, 52, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--gold-primary);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     animation: slideInDown 0.3s ease;
 }
 
 .selection-info {
-    color: var(--luxury-dark);
+    color: var(--gold-primary);
     font-weight: 600;
-    font-size: 0.95rem;
+    white-space: nowrap;
 }
 
 .selection-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .selection-actions .btn {
-    background: rgba(44, 44, 52, 0.9);
-    color: var(--text-primary);
-    border: 1px solid var(--luxury-dark);
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background: var(--gold-primary);
+    color: var(--luxury-dark);
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .selection-actions .btn:hover {
-    background: var(--luxury-dark);
+    background: var(--gold-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .selection-actions .btn-outline {
     background: transparent;
-    color: var(--luxury-dark);
-    border-color: var(--luxury-dark);
+    color: var(--gold-primary);
+    border: 1px solid var(--gold-primary);
 }
 
 .selection-actions .btn-outline:hover {
-    background: var(--luxury-dark);
-    color: var(--gold-primary);
+    background: var(--gold-primary);
+    color: var(--luxury-dark);
 }
 
 @keyframes slideInDown {
     from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-10px);
     }
     to {
         opacity: 1;

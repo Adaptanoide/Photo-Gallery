@@ -401,13 +401,13 @@ class SpecialSelectionBuilder {
         const count = this.selectedStockPhotos.size;
 
         if (count > 0) {
-            this.selectionActionsBar.style.display = 'flex';
-            this.selectionCount.textContent = count;
+            if (this.selectionActionsBar) this.selectionActionsBar.style.display = 'flex';
+            if (this.selectionCount) this.selectionCount.textContent = count;
+            console.log(`📊 ${count} photos selected - UI updated`);
         } else {
-            this.selectionActionsBar.style.display = 'none';
+            if (this.selectionActionsBar) this.selectionActionsBar.style.display = 'none';
+            console.log(`📊 No photos selected - UI hidden`);
         }
-
-        console.log(`📊 Total selecionadas: ${count}`);
     }
 
     clearAllSelections() {
