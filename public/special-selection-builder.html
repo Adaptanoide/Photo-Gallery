@@ -709,8 +709,16 @@
                             <select id="existingCategoriesSelect" class="special-form-select" style="flex: 2;">
                                 <option value="">Select a category...</option>
                             </select>
-                            <input type="number" id="existingCategoryCustomPrice" class="special-form-input"
-                                placeholder="Custom price" min="0" step="0.01" style="flex: 1;">
+                            <div style="flex: 1;">
+                                <div id="existingCategoryPriceInfo" style="
+                                    font-size: 0.75rem; 
+                                    color: var(--gold-primary); 
+                                    margin-bottom: 0.25rem; 
+                                    display: none;
+                                "></div>
+                                <input type="number" id="existingCategoryCustomPrice" class="special-form-input"
+                                    placeholder="Custom price" min="0" step="0.01">
+                            </div>
                         </div>
                     </div>
 

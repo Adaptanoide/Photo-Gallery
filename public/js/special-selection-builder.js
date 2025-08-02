@@ -643,6 +643,7 @@ class SpecialSelectionBuilder {
 
     updateExistingCategoryPrice(categoryIndex) {
         const existingPriceInput = document.getElementById('existingCategoryCustomPrice');
+        const priceInfoElement = document.getElementById('existingCategoryPriceInfo');
 
         if (!existingPriceInput) return;
 
@@ -650,6 +651,7 @@ class SpecialSelectionBuilder {
             // Nenhuma categoria selecionada
             existingPriceInput.value = '';
             existingPriceInput.placeholder = 'Custom price';
+            if (priceInfoElement) priceInfoElement.style.display = 'none';
             return;
         }
 
@@ -657,22 +659,33 @@ class SpecialSelectionBuilder {
             const selectedCategory = this.customCategories[parseInt(categoryIndex)];
 
             if (selectedCategory && selectedCategory.customPrice) {
-                // Mostrar preço atual da categoria
                 const currentPrice = selectedCategory.customPrice;
-                existingPriceInput.value = currentPrice;
-                existingPriceInput.placeholder = `Current: $${currentPrice}`;
+                // Pegar base price dinâmico do Source Category
+                const basePriceText = document.querySelector('.source-category-price .price-value');
+                const basePrice = basePriceText ? parseFloat(basePriceText.textContent.replace('$', '')) : 0;
 
-                console.log(`💰 Categoria "${selectedCategory.name}" - Preço atual: $${currentPrice}`);
+                // Preencher campo
+                existingPriceInput.value = currentPrice;
+                existingPriceInput.placeholder = 'Edit price';
+
+                // Mostrar info de ajuste
+                if (priceInfoElement) {
+                    priceInfoElement.innerHTML = `<i class="fas fa-edit"></i> Adjusted: $${basePrice} → $${currentPrice} (editable)`;
+                    priceInfoElement.style.display = 'block';
+                }
+
+                console.log(`💰 Categoria "${selectedCategory.name}" - Ajustado: $${basePrice} → $${currentPrice}`);
             } else {
-                // Categoria sem preço customizado
                 existingPriceInput.value = '';
                 existingPriceInput.placeholder = 'Set custom price';
+                if (priceInfoElement) priceInfoElement.style.display = 'none';
             }
 
         } catch (error) {
             console.error('❌ Erro ao buscar preço da categoria:', error);
             existingPriceInput.value = '';
             existingPriceInput.placeholder = 'Custom price';
+            if (priceInfoElement) priceInfoElement.style.display = 'none';
         }
     }
 
