@@ -626,17 +626,17 @@ class SpecialSelectionBuilder {
     }
 
     clearMassSelectionModal() {
-        // Limpar grid de fotos
-        const grid = document.getElementById('selectedPhotosGrid');
-        grid.innerHTML = '';
+        // Limpar grid de fotos (REMOVIDO - não existe mais)
+        // const grid = document.getElementById('selectedPhotosGrid');
+        // grid.innerHTML = '';
 
         // Esconder progress bar
         const progressBar = document.getElementById('massMovementProgress');
-        progressBar.style.display = 'none';
+        if (progressBar) progressBar.style.display = 'none';
 
         // Resetar progress
         const progressFill = document.getElementById('progressFill');
-        progressFill.style.width = '0%';
+        if (progressFill) progressFill.style.width = '0%';
     }
 
     async executeMassMovement() {
