@@ -1469,3 +1469,38 @@
 .photo-list-item .photo-action-btn:hover {
     background: rgba(239, 68, 68, 1);
 }
+
+/* ===== ORIGEM E PREÇOS DAS FOTOS ===== */
+
+.photo-source {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: rgba(212, 175, 55, 0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-bottom: 2px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.photo-price-flow {
+    font-size: 0.8rem;
+    color: var(--gold-primary);
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.photo-price-flow::before {
+    content: "";
+}
+
+/* Ajustar layout do photo-price */
+.photo-price {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+}
