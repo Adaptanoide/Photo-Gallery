@@ -1417,64 +1417,6 @@ class SpecialSelectionBuilder {
         this.closeRenameCategoryModal();
     }
 
-    // NOVA FUNÇÃO: Toggle Grid/List view
-    toggleCategoryView(categoryIndex) {
-        console.log('🔄 Toggle view para categoria:', categoryIndex);
-
-        // Alternar entre grid e list
-        const currentMode = this.categoryViewModes[categoryIndex] || 'grid';
-        this.categoryViewModes[categoryIndex] = currentMode === 'grid' ? 'list' : 'grid';
-
-        console.log(`📋 Modo alterado para: ${this.categoryViewModes[categoryIndex]}`);
-
-        // Re-renderizar para aplicar novo modo
-        this.renderCustomCategories();
-    }
-
-    // NOVA FUNÇÃO: Renderizar fotos baseado no modo (grid/list)
-    renderPhotosView(category, categoryIndex) {
-        const viewMode = this.categoryViewModes[categoryIndex] || 'grid';
-        
-        if (viewMode === 'list') {
-            // LIST VIEW
-            return `
-                <div class="photos-list">
-                    ${category.photos.map(photo => `
-                        <div class="photo-list-item" data-photo-id="${photo.id}">
-                            <div class="photo-list-info">
-                                🖼️ ${photo.name}
-                                <span class="photo-list-price">$${category.customPrice || photo.originalPrice || '0.00'}</span>
-                            </div>
-                            <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${categoryIndex}" title="Remove">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            // GRID VIEW (atual)
-            return `
-                <div class="photos-grid">
-                    ${category.photos.map(photo => `
-                        <div class="photo-card selected" data-photo-id="${photo.id}">
-                            <img class="photo-image" src="${photo.thumbnailLink}" alt="${photo.name}">
-                            <div class="photo-info">
-                                <div class="photo-name">${photo.name}</div>
-                                <div class="photo-price">$${category.customPrice || photo.originalPrice || '0.00'}</div>
-                            </div>
-                            <div class="photo-actions">
-                                <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${categoryIndex}" title="Remove">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-    }
-
     showAddToSelectionModal(photoCard) {
         // Modal simples para selecionar categoria ou criar nova
         const categoryNames = this.customCategories.map((cat, index) => `${index}: ${cat.name}`).join('\n');
