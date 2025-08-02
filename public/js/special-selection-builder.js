@@ -1262,7 +1262,8 @@ class SpecialSelectionBuilder {
         if (categoryIndex >= 0 && categoryIndex < this.customCategories.length) {
             this.customCategories[categoryIndex].photos = this.customCategories[categoryIndex].photos.filter(p => p.id !== photoId);
             this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photoId);
-            this.renderCustomCategories();
+            this.renderCustomCategories(); // ← Re-renderiza DIREITA
+            this.renderStockPhotos();      // ← NOVA LINHA: Re-renderiza ESQUERDA
             this.updateCounts();
 
             console.log(`✅ Foto removida da categoria`);
