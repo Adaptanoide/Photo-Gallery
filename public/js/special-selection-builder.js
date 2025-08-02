@@ -1273,14 +1273,23 @@ class SpecialSelectionBuilder {
     }
 
     deleteCustomCategory(categoryIndex) {
+        console.log('🗑️ Botão delete clicado! Categoria:', categoryIndex);
+
         // Abrir modal ao invés de confirm simples
         this.showDeleteCategoryModal(categoryIndex);
     }
 
     // NOVA FUNÇÃO: Mostrar modal de delete
     showDeleteCategoryModal(categoryIndex) {
+        console.log('📋 Abrindo modal delete para categoria:', categoryIndex);
+
         const category = this.customCategories[categoryIndex];
-        if (!category) return;
+        if (!category) {
+            console.log('❌ Categoria não encontrada!');
+            return;
+        }
+
+        console.log('📋 Categoria encontrada:', category.name);
 
         // Preencher dados do modal
         document.getElementById('deleteCategoryName').textContent = category.name;
