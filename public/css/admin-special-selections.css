@@ -1370,3 +1370,43 @@
         justify-content: center;
     }
 }
+
+/* ===== CATEGORIA ORIGEM NO MODAL ===== */
+
+.source-category-path {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    color: var(--gold-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.3s ease;
+}
+
+.source-category-path:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--gold-primary);
+}
+
+.source-category-price {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.source-category-price .price-value {
+    color: var(--gold-primary);
+    font-weight: 600;
+}
+
+.source-category-price .price-value.error {
+    color: var(--danger);
+}
+
+.source-category-price .price-value.not-defined {
+    color: var(--text-muted);
+}

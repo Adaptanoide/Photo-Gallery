@@ -474,21 +474,99 @@ class SpecialSelectionBuilder {
         console.log('❌ Modal de seleção em massa fechado');
     }
 
-    populateMassSelectionModal() {
+    async populateMassSelectionModal() {
         const count = this.selectedStockPhotos.size;
 
         // Atualizar contador
         const countElement = document.getElementById('massSelectionCount');
         countElement.textContent = count;
 
-        // NÃO popular thumbnails (removido)
-        // this.populateSelectedPhotosGrid(); // ← COMENTADO
+        // Popular categoria origem e buscar preço
+        await this.populateSourceCategory();
 
         // Popular dropdown de categorias
         this.populateExistingCategoriesDropdown();
 
         // Resetar formulário
         this.resetMassSelectionForm();
+    }
+
+    async populateSourceCategory() {
+        const sourcePath = document.getElementById('sourceCategoryPath');
+        const sourcePrice = document.getElementById('sourceCategoryPrice');
+
+        try {
+            // Construir caminho completo
+            const fullPath = this.buildFullCategoryPath();
+            sourcePath.textContent = fullPath;
+
+            // Buscar preço da categoria atual
+            const categoryPrice = await this.getCurrentCategoryPrice();
+
+            if (categoryPrice !== null) {
+                sourcePrice.innerHTML = `Base price: <span style="color: var(--gold-primary); font-weight: 600;">$${categoryPrice.toFixed(2)}</span>`;
+
+                // Pré-popular Custom Price com o preço base
+                const customPriceInput = document.getElementById('customPriceGlobal');
+                if (customPriceInput && !customPriceInput.value) {
+                    customPriceInput.value = categoryPrice.toFixed(2);
+                }
+            } else {
+                sourcePrice.innerHTML = `Base price: <span style="color: var(--text-muted);">Not defined</span>`;
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao carregar dados da categoria origem:', error);
+            sourcePath.textContent = 'Error loading category path';
+            sourcePrice.innerHTML = `Base price: <span style="color: var(--danger);">Error</span>`;
+        }
+    }
+
+    buildFullCategoryPath() {
+        if (!this.navigationState.currentPath || this.navigationState.currentPath.length === 0) {
+            return 'Stock';
+        }
+
+        // Construir caminho: Stock > Brazil Best Sellers > Best Value - Brindle...
+        const pathParts = ['Stock', ...this.navigationState.currentPath.map(item => item.name)];
+        return pathParts.join(' > ');
+    }
+
+    async getCurrentCategoryPrice() {
+        try {
+            if (!this.navigationState.currentPath || this.navigationState.currentPath.length === 0) {
+                return null;
+            }
+
+            // Usar último item do path (categoria final)
+            const currentCategory = this.navigationState.currentPath[this.navigationState.currentPath.length - 1];
+            const categoryName = currentCategory.name;
+
+            console.log(`💰 Buscando preço para categoria: ${categoryName}`);
+
+            // Usar API existente do Price Management
+            const response = await fetch(`/api/pricing/category-price?categoryName=${encodeURIComponent(categoryName)}`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                console.log(`⚠️ Categoria sem preço definido: ${categoryName}`);
+                return null;
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.price !== undefined) {
+                console.log(`✅ Preço encontrado: $${data.price} para ${categoryName}`);
+                return parseFloat(data.price);
+            }
+
+            return null;
+
+        } catch (error) {
+            console.error('❌ Erro ao buscar preço da categoria:', error);
+            return null;
+        }
     }
 
     populateSelectedPhotosGrid() {
