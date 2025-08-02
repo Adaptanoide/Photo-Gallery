@@ -1032,8 +1032,8 @@
 .mass-selection-content {
     position: relative;
     width: 90%;
-    max-width: 900px;
-    max-height: 85vh;
+    max-width: 500px; /* ← REDUZIDO de 900px */
+    max-height: 70vh; /* ← REDUZIDO de 85vh */
     background: linear-gradient(135deg, var(--luxury-medium), var(--luxury-dark));
     border: 2px solid var(--gold-primary);
     border-radius: var(--border-radius-large);

@@ -481,8 +481,8 @@ class SpecialSelectionBuilder {
         const countElement = document.getElementById('massSelectionCount');
         countElement.textContent = count;
 
-        // Popular grid de fotos selecionadas
-        this.populateSelectedPhotosGrid();
+        // NÃO popular thumbnails (removido)
+        // this.populateSelectedPhotosGrid(); // ← COMENTADO
 
         // Popular dropdown de categorias
         this.populateExistingCategoriesDropdown();
@@ -754,14 +754,11 @@ class SpecialSelectionBuilder {
         this.renderStockPhotos();
         this.updateCounts();
 
-        // Fechar modal
-        setTimeout(() => {
-            this.closeMassSelectionModal();
+        // Fechar modal PRIMEIRO
+        this.closeMassSelectionModal();
 
-            // Feedback de sucesso
-            alert(`✅ Success!\n\n${totalPhotos} photos moved to "${categoryName}"\n\nThe photos have been added to your custom selection.`);
-
-        }, 500);
+        // Feedback de sucesso SEM setTimeout (corrige bug)
+        alert(`✅ Success!\n\n${totalPhotos} photos moved to "${categoryName}"\n\nThe photos have been added to your custom selection.`);
 
         console.log(`🎉 Movimentação em massa concluída: ${totalPhotos} fotos para ${categoryName}`);
     }
