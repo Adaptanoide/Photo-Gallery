@@ -1,4 +1,5 @@
 //public/js/app.js
+
 // Estado da aplicação
 const AppState = {
     isLoggedIn: false,

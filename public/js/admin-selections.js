@@ -1,4 +1,5 @@
-// public/js/admin-selections.js - Selection Management (English + Luxury Features)
+// public/js/admin-selections.js
+
 class AdminSelections {
     constructor() {
         this.currentPage = 1;

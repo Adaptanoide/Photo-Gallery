@@ -1,4 +1,5 @@
 // src/routes/pricing.js
+
 const express = require('express');
 const PricingService = require('../services/PricingService');
 const PhotoCategory = require('../models/PhotoCategory');
