@@ -856,71 +856,89 @@
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
 }
 
-/* ===== BARRA DE AÇÕES DE SELEÇÃO MINIMALISTA ===== */
-
+/* ===== BARRA DE AÇÕES INTEGRADA NO HEADER ===== */
 .selection-actions-bar {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(44, 44, 52, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--gold-primary);
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.85rem;
-    z-index: 20;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    animation: slideInDown 0.3s ease;
+    
+    background: rgba(44, 44, 52, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--gold-primary);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    
+    animation: slideInRight 0.3s ease;
+}
+
+/* Estrutura do header para acomodar a barra */
+.panel-header {
+    background: var(--luxury-medium);
+    padding: 1rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    color: var(--text-primary);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panel-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.panel-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Ajustar botões da selection bar */
+.selection-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    font-weight: 600;
 }
 
 .selection-info {
     color: var(--gold-primary);
     font-weight: 600;
-    white-space: nowrap;
 }
 
-.selection-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.selection-actions .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    background: var(--gold-primary);
-    color: var(--luxury-dark);
-    border: none;
-    border-radius: 4px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.selection-actions .btn:hover {
-    background: var(--gold-hover);
-    transform: translateY(-1px);
-}
-
-.selection-actions .btn-outline {
-    background: transparent;
-    color: var(--gold-primary);
-    border: 1px solid var(--gold-primary);
-}
-
-.selection-actions .btn-outline:hover {
-    background: var(--gold-primary);
-    color: var(--luxury-dark);
-}
-
-@keyframes slideInDown {
+/* Animação */
+@keyframes slideInRight {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateX(20px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(0);
+    }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .panel-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .panel-header-left,
+    .panel-header-right {
+        justify-content: center;
     }
 }

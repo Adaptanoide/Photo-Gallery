@@ -401,12 +401,46 @@ class SpecialSelectionBuilder {
         const count = this.selectedStockPhotos.size;
 
         if (count > 0) {
-            if (this.selectionActionsBar) this.selectionActionsBar.style.display = 'flex';
-            if (this.selectionCount) this.selectionCount.textContent = count;
-            console.log(`📊 ${count} photos selected - UI updated`);
+            const headerRight = document.querySelector('.stock-panel .panel-header-right');
+
+            if (headerRight && !headerRight.querySelector('.selection-actions-bar')) {
+                // Criar barra integrada
+                const selectionBar = document.createElement('div');
+                selectionBar.className = 'selection-actions-bar';
+                selectionBar.innerHTML = `
+                <div class="selection-info">
+                    <span id="selectionCount">${count}</span> selected
+                </div>
+                <div class="selection-actions">
+                    <button id="btnMoveSelected" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i>
+                        Move
+                    </button>
+                    <button id="btnClearSelection" class="btn btn-outline">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+                headerRight.appendChild(selectionBar);
+
+                // Reconectar event listeners
+                document.getElementById('btnMoveSelected')?.addEventListener('click', () => this.showMoveSelectedModal());
+                document.getElementById('btnClearSelection')?.addEventListener('click', () => this.clearAllSelections());
+
+                console.log(`📊 Selection bar created with ${count} photos`);
+            } else {
+                // Apenas atualizar contador
+                const selectionCount = document.getElementById('selectionCount');
+                if (selectionCount) selectionCount.textContent = count;
+            }
         } else {
-            if (this.selectionActionsBar) this.selectionActionsBar.style.display = 'none';
-            console.log(`📊 No photos selected - UI hidden`);
+            // Remover barra quando não há seleção
+            const selectionBar = document.querySelector('.selection-actions-bar');
+            if (selectionBar) {
+                selectionBar.remove();
+                console.log(`📊 Selection bar removed`);
+            }
         }
     }
 
