@@ -856,28 +856,7 @@
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
 }
 
-/* ===== BARRA DE AÇÕES INTEGRADA NO HEADER ===== */
-.selection-actions-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    
-    background: rgba(44, 44, 52, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--gold-primary);
-    border-radius: 6px;
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-left: 0.5rem;
-    
-    animation: slideInRight 0.3s ease;
-}
-
-/* Estrutura do header para acomodar a barra */
+/* ===== HEADER DO PAINEL COM CONTROLES FIXOS ===== */
 .panel-header {
     background: var(--luxury-medium);
     padding: 1rem;
@@ -904,26 +883,50 @@
     flex-shrink: 0;
 }
 
-/* ===== CONTROLES FIXOS DE SELEÇÃO ===== */
+/* ===== CONTADOR DE SELEÇÃO SIMÉTRICO ===== */
 .selection-counter {
     color: var(--gold-primary);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     opacity: 0.5;
-    transition: opacity 0.3s ease;
+    transition: all 0.3s ease;
     white-space: nowrap;
+    
+    /* Simetria com os botões */
+    background: rgba(44, 44, 52, 0.7);
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Efeito visual elegante */
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .selection-counter.active {
     opacity: 1;
+    border-color: var(--gold-primary);
+    background: rgba(212, 175, 55, 0.15);
 }
 
-/* Estados dos botões de seleção */
-#btnMoveSelected,
-#btnClearSelection {
+/* ===== BOTÕES DO HEADER SIMÉTRICOS ===== */
+.panel-header-right .btn {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    height: 2.2rem;
+    min-width: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.3s ease;
 }
 
+/* Estados dos botões de seleção */
 #btnMoveSelected:disabled,
 #btnClearSelection:disabled {
     opacity: 0.4;
@@ -937,55 +940,7 @@
     box-shadow: none;
 }
 
-/* Layout responsivo do header direito */
-.panel-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-    .panel-header-right {
-        gap: 0.25rem;
-    }
-    
-    .panel-header-right .btn {
-        padding: 0.25rem 0.4rem;
-        font-size: 0.7rem;
-    }
-    
-    .selection-counter {
-        font-size: 0.7rem;
-    }
-}
-
-/* Ajustar botões da selection bar */
-.selection-actions .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: 4px;
-    font-weight: 600;
-}
-
-.selection-info {
-    color: var(--gold-primary);
-    font-weight: 600;
-}
-
-/* Animação */
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Responsivo */
+/* ===== RESPONSIVO ===== */
 @media (max-width: 768px) {
     .panel-header {
         flex-direction: column;
@@ -996,5 +951,22 @@
     .panel-header-left,
     .panel-header-right {
         justify-content: center;
+    }
+    
+    .panel-header-right {
+        gap: 0.25rem;
+    }
+    
+    .panel-header-right .btn {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+        height: 2rem;
+        min-width: 3.5rem;
+    }
+    
+    .selection-counter {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.6rem;
+        height: 2rem;
     }
 }
