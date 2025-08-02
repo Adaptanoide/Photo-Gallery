@@ -444,11 +444,340 @@ class SpecialSelectionBuilder {
     }
 
     showMoveSelectedModal() {
-        // Por enquanto, alerta simples - depois implementaremos modal elegante
         const count = this.selectedStockPhotos.size;
-        alert(`Ready to move ${count} selected photos!\n\nNext: Implement elegant modal for category selection.`);
 
-        console.log('🚀 Modal de movimentação em massa (implementar próximo)');
+        if (count === 0) {
+            alert('Please select photos first');
+            return;
+        }
+
+        console.log(`🚀 Abrindo modal para ${count} fotos selecionadas`);
+
+        // Abrir modal
+        const modal = document.getElementById('massSelectionModal');
+        modal.style.display = 'flex';
+
+        // Popular modal com dados
+        this.populateMassSelectionModal();
+
+        // Configurar event listeners do modal
+        this.setupMassSelectionModalEvents();
+    }
+
+    closeMassSelectionModal() {
+        const modal = document.getElementById('massSelectionModal');
+        modal.style.display = 'none';
+
+        // Limpar dados do modal
+        this.clearMassSelectionModal();
+
+        console.log('❌ Modal de seleção em massa fechado');
+    }
+
+    populateMassSelectionModal() {
+        const count = this.selectedStockPhotos.size;
+
+        // Atualizar contador
+        const countElement = document.getElementById('massSelectionCount');
+        countElement.textContent = count;
+
+        // Popular grid de fotos selecionadas
+        this.populateSelectedPhotosGrid();
+
+        // Popular dropdown de categorias
+        this.populateExistingCategoriesDropdown();
+
+        // Resetar formulário
+        this.resetMassSelectionForm();
+    }
+
+    populateSelectedPhotosGrid() {
+        const grid = document.getElementById('selectedPhotosGrid');
+        grid.innerHTML = '';
+
+        // Converter Set para Array para facilitar manipulação
+        const selectedPhotosArray = Array.from(this.selectedStockPhotos);
+
+        selectedPhotosArray.forEach(photoId => {
+            // Encontrar dados da foto no stockPhotosData
+            const photoData = this.stockPhotosData.find(photo => photo.id === photoId);
+
+            if (photoData) {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'selected-photo-item';
+                photoItem.innerHTML = `
+                <img src="${photoData.thumbnailLink || photoData.webViewLink}" 
+                     alt="${photoData.name}" 
+                     loading="lazy">
+                <div class="photo-overlay">
+                    ${photoData.name}
+                </div>
+            `;
+
+                grid.appendChild(photoItem);
+            }
+        });
+
+        console.log(`📸 ${selectedPhotosArray.length} fotos populadas no grid`);
+    }
+
+    populateExistingCategoriesDropdown() {
+        const select = document.getElementById('existingCategoriesSelect');
+
+        // Limpar opções existentes (manter apenas a primeira)
+        select.innerHTML = '<option value="">Select a category...</option>';
+
+        // Adicionar categorias customizadas existentes
+        this.customCategories.forEach((category, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${category.name} (${category.photos.length} photos)`;
+            select.appendChild(option);
+        });
+
+        console.log(`📁 ${this.customCategories.length} categorias populadas no dropdown`);
+    }
+
+    resetMassSelectionForm() {
+        // Resetar radio buttons
+        const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
+        const newRadio = document.querySelector('input[name="destination"][value="new"]');
+
+        existingRadio.checked = true;
+        newRadio.checked = false;
+
+        // Resetar selects e inputs
+        document.getElementById('existingCategoriesSelect').value = '';
+        document.getElementById('newCategoryName').value = '';
+        document.getElementById('newCategoryPrice').value = '';
+
+        // Atualizar estados dos campos
+        this.updateDestinationInputsState();
+
+        // Resetar botão de ação
+        this.updateMoveButtonState();
+    }
+
+    updateDestinationInputsState() {
+        const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
+        const newRadio = document.querySelector('input[name="destination"][value="new"]');
+
+        const existingSelect = document.getElementById('existingCategoriesSelect');
+        const newNameInput = document.getElementById('newCategoryName');
+        const newPriceInput = document.getElementById('newCategoryPrice');
+
+        if (existingRadio.checked) {
+            existingSelect.disabled = false;
+            newNameInput.disabled = true;
+            newPriceInput.disabled = true;
+        } else {
+            existingSelect.disabled = true;
+            newNameInput.disabled = false;
+            newPriceInput.disabled = false;
+        }
+
+        this.updateMoveButtonState();
+    }
+
+    updateMoveButtonState() {
+        const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
+        const existingSelect = document.getElementById('existingCategoriesSelect');
+        const newNameInput = document.getElementById('newCategoryName');
+        const moveButton = document.getElementById('btnExecuteMassMovement');
+
+        let canMove = false;
+
+        if (existingRadio.checked) {
+            // Categoria existente selecionada
+            canMove = existingSelect.value !== '';
+        } else {
+            // Nova categoria com nome preenchido
+            canMove = newNameInput.value.trim() !== '';
+        }
+
+        moveButton.disabled = !canMove;
+
+        // Atualizar texto do botão
+        const buttonText = document.getElementById('moveButtonText');
+        const count = this.selectedStockPhotos.size;
+        buttonText.textContent = `Move ${count} Photo${count > 1 ? 's' : ''}`;
+    }
+
+    setupMassSelectionModalEvents() {
+        // Radio buttons para alternar entre categorias existentes/nova
+        const radioButtons = document.querySelectorAll('input[name="destination"]');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', () => this.updateDestinationInputsState());
+        });
+
+        // Dropdown de categorias existentes
+        const existingSelect = document.getElementById('existingCategoriesSelect');
+        existingSelect.addEventListener('change', () => this.updateMoveButtonState());
+
+        // Input de nova categoria
+        const newNameInput = document.getElementById('newCategoryName');
+        newNameInput.addEventListener('input', () => this.updateMoveButtonState());
+
+        // Botão de executar movimentação
+        const moveButton = document.getElementById('btnExecuteMassMovement');
+        moveButton.addEventListener('click', () => this.executeMassMovement());
+
+        console.log('🔧 Event listeners do modal configurados');
+    }
+
+    clearMassSelectionModal() {
+        // Limpar grid de fotos
+        const grid = document.getElementById('selectedPhotosGrid');
+        grid.innerHTML = '';
+
+        // Esconder progress bar
+        const progressBar = document.getElementById('massMovementProgress');
+        progressBar.style.display = 'none';
+
+        // Resetar progress
+        const progressFill = document.getElementById('progressFill');
+        progressFill.style.width = '0%';
+    }
+
+    async executeMassMovement() {
+        const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
+        const existingSelect = document.getElementById('existingCategoriesSelect');
+        const newNameInput = document.getElementById('newCategoryName');
+        const newPriceInput = document.getElementById('newCategoryPrice');
+
+        let targetCategory;
+        let targetCategoryIndex;
+
+        try {
+            // Determinar categoria de destino
+            if (existingRadio.checked) {
+                // Categoria existente
+                targetCategoryIndex = parseInt(existingSelect.value);
+                targetCategory = this.customCategories[targetCategoryIndex];
+
+                if (!targetCategory) {
+                    throw new Error('Categoria selecionada não encontrada');
+                }
+            } else {
+                // Nova categoria
+                const categoryName = newNameInput.value.trim();
+                const categoryPrice = parseFloat(newPriceInput.value) || 0;
+
+                if (!categoryName) {
+                    throw new Error('Nome da categoria é obrigatório');
+                }
+
+                // Criar nova categoria
+                targetCategory = {
+                    name: categoryName,
+                    customPrice: categoryPrice,
+                    photos: []
+                };
+
+                this.customCategories.push(targetCategory);
+                targetCategoryIndex = this.customCategories.length - 1;
+            }
+
+            console.log(`🎯 Movendo para categoria: ${targetCategory.name}`);
+
+            // Executar movimentação
+            await this.performMassMovement(targetCategory, targetCategoryIndex);
+
+        } catch (error) {
+            console.error('❌ Erro na movimentação em massa:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    async performMassMovement(targetCategory, targetCategoryIndex) {
+        const selectedPhotosArray = Array.from(this.selectedStockPhotos);
+        const totalPhotos = selectedPhotosArray.length;
+
+        // Mostrar progress bar
+        const progressBar = document.getElementById('massMovementProgress');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const progressCounter = document.getElementById('progressCounter');
+
+        progressBar.style.display = 'block';
+        progressText.textContent = 'Moving photos...';
+
+        let processedCount = 0;
+
+        // Processar cada foto
+        for (const photoId of selectedPhotosArray) {
+            try {
+                // Encontrar dados da foto
+                const photoData = this.stockPhotosData.find(photo => photo.id === photoId);
+
+                if (photoData) {
+                    // Verificar se foto já existe na categoria
+                    const existingPhoto = targetCategory.photos.find(p => p.id === photoId);
+
+                    if (!existingPhoto) {
+                        // Adicionar foto à categoria
+                        targetCategory.photos.push(photoData);
+                        this.selectedPhotos.push(photoData);
+
+                        console.log(`✅ Foto ${photoData.name} movida para ${targetCategory.name}`);
+                    } else {
+                        console.log(`⚠️ Foto ${photoData.name} já existe na categoria`);
+                    }
+                }
+
+                processedCount++;
+
+                // Atualizar progress bar
+                const progress = (processedCount / totalPhotos) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressCounter.textContent = `${processedCount} / ${totalPhotos}`;
+
+                // Pequena pausa para suavidade visual
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+            } catch (error) {
+                console.error(`❌ Erro ao mover foto ${photoId}:`, error);
+            }
+        }
+
+        // Finalizar movimentação
+        this.finalizeMassMovement(totalPhotos, targetCategory.name);
+    }
+
+    finalizeMassMovement(totalPhotos, categoryName) {
+        // Limpar seleção
+        this.selectedStockPhotos.clear();
+
+        // Atualizar interfaces
+        this.updateSelectionCounter();
+        this.renderCustomCategories();
+        this.renderStockPhotos();
+        this.updateCounts();
+
+        // Fechar modal
+        setTimeout(() => {
+            this.closeMassSelectionModal();
+
+            // Feedback de sucesso
+            alert(`✅ Success!\n\n${totalPhotos} photos moved to "${categoryName}"\n\nThe photos have been added to your custom selection.`);
+
+        }, 500);
+
+        console.log(`🎉 Movimentação em massa concluída: ${totalPhotos} fotos para ${categoryName}`);
+    }
+
+    // Função auxiliar para selecionar todas as fotos visíveis
+    selectAllVisiblePhotos() {
+        const visiblePhotos = document.querySelectorAll('#stockPhotos .photo-card:not(.photo-selected)');
+
+        visiblePhotos.forEach(photoCard => {
+            const photoId = photoCard.dataset.photoId;
+            if (photoId) {
+                this.togglePhotoSelection(photoId);
+            }
+        });
+
+        console.log(`📋 Selecionadas todas as fotos visíveis`);
     }
 
     // ===== NAVEGAÇÃO HIERÁRQUICA (ADAPTADO DO CLIENT.JS) =====
