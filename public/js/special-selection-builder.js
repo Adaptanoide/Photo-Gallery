@@ -1381,21 +1381,56 @@ class SpecialSelectionBuilder {
     }
 
     editCustomCategory(categoryIndex) {
+        // Abrir modal ao invés de prompt
+        this.showRenameCategoryModal(categoryIndex);
+    }
+
+    // NOVA FUNÇÃO: Mostrar modal de rename
+    showRenameCategoryModal(categoryIndex) {
         const category = this.customCategories[categoryIndex];
         if (!category) return;
 
-        const newName = prompt('Edit category name:', category.name);
-        if (newName && newName !== category.name) {
+        // Preencher dados do modal
+        document.getElementById('currentCategoryName').textContent = category.name;
+        document.getElementById('newCategoryNameInput').value = category.name;
+
+        // Armazenar índice para usar na confirmação
+        this.categoryToRename = categoryIndex;
+
+        // Mostrar modal e focar no input
+        document.getElementById('renameCategoryModal').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('newCategoryNameInput').focus();
+            document.getElementById('newCategoryNameInput').select();
+        }, 100);
+    }
+
+    // NOVA FUNÇÃO: Fechar modal
+    closeRenameCategoryModal() {
+        document.getElementById('renameCategoryModal').style.display = 'none';
+        this.categoryToRename = null;
+    }
+
+    // NOVA FUNÇÃO: Confirmar rename
+    confirmRenameCategory() {
+        if (this.categoryToRename === null) return;
+
+        const newName = document.getElementById('newCategoryNameInput').value.trim();
+
+        if (!newName) {
+            alert('Category name cannot be empty!');
+            return;
+        }
+
+        const category = this.customCategories[this.categoryToRename];
+        if (category) {
             category.name = newName;
+            this.renderCustomCategories();
+            console.log(`✅ Categoria renomeada para: ${newName}`);
         }
 
-        const newPrice = prompt('Edit custom price:', category.customPrice || '0.00');
-        if (newPrice) {
-            category.customPrice = parseFloat(newPrice) || null;
-        }
-
-        this.renderCustomCategories();
-        console.log('✅ Categoria editada:', category);
+        // Fechar modal
+        this.closeRenameCategoryModal();
     }
 
     showAddToSelectionModal(photoCard) {
