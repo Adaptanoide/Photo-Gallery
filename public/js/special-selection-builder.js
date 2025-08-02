@@ -1451,11 +1451,56 @@ class SpecialSelectionBuilder {
 
     // ===== UTILITÁRIOS =====
     updateCounts() {
+        // Atualizar contador de seleção
+        const selectionCountElement = document.getElementById('selectionCount');
+        if (selectionCountElement) {
+            selectionCountElement.textContent = this.selectedPhotos.length;
+        }
+
+        // NOVO: Atualizar base price no header
+        this.updateHeaderBasePrice();
+
+        // Contadores do painel direito
         if (this.photoCount) {
             this.photoCount.textContent = this.selectedPhotos.length;
         }
         if (this.categoryCount) {
             this.categoryCount.textContent = this.customCategories.length;
+        }
+    }
+
+    // NOVA FUNÇÃO: Mostrar base price no header
+    updateHeaderBasePrice() {
+        const headerRight = document.querySelector('.panel-header-right');
+
+        if (!headerRight) return;
+
+        // Verificar se já existe elemento de base price
+        let basePriceElement = document.getElementById('headerBasePrice');
+
+        if (!basePriceElement) {
+            // Criar elemento de base price
+            basePriceElement = document.createElement('div');
+            basePriceElement.id = 'headerBasePrice';
+            basePriceElement.style.cssText = `
+            font-size: 0.8rem;
+            color: var(--gold-primary);
+            font-weight: 600;
+            margin-right: 1rem;
+            display: none;
+        `;
+
+            // Inserir antes do counter
+            const selectionCounter = headerRight.querySelector('.selection-counter');
+            headerRight.insertBefore(basePriceElement, selectionCounter);
+        }
+
+        // Atualizar conteúdo (usar this.currentBasePrice se existir)
+        if (this.currentBasePrice && this.currentBasePrice > 0) {
+            basePriceElement.innerHTML = `Base: <span style="color: var(--text-primary);">$${this.currentBasePrice}</span>`;
+            basePriceElement.style.display = 'block';
+        } else {
+            basePriceElement.style.display = 'none';
         }
     }
 
