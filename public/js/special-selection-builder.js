@@ -1466,6 +1466,7 @@ class SpecialSelectionBuilder {
         // NOVO: Atualizar base price no header
         this.updateHeaderBasePrice();
 
+
         // Contadores do painel direito
         if (this.photoCount) {
             this.photoCount.textContent = this.selectedPhotos.length;
@@ -1476,7 +1477,7 @@ class SpecialSelectionBuilder {
     }
 
     // NOVA FUNÇÃO: Mostrar base price no header
-    updateHeaderBasePrice() {
+    async updateHeaderBasePrice() {
         const panelHeaderLeft = document.querySelector('.panel-header-left');
 
         if (!panelHeaderLeft) return;
@@ -1496,25 +1497,31 @@ class SpecialSelectionBuilder {
             display: none;
         `;
 
-            // Adicionar ao final do header left
             panelHeaderLeft.appendChild(basePriceElement);
         }
 
-        // Atualizar conteúdo - pegar do modal source category quando existir
-        const basePriceElement2 = document.querySelector('#sourceCategoryPrice span');
-        if (basePriceElement2) {
-            const basePriceText = basePriceElement2.textContent;
-            const basePrice = parseFloat(basePriceText.replace('$', ''));
+        // NOVO: Buscar preço da categoria atual via API
+        if (this.navigationState && this.navigationState.currentFolderId) {
+            try {
+                const response = await fetch(`/api/pricing/category-price?googleDriveId=${this.navigationState.currentFolderId}`, {
+                    headers: this.getAuthHeaders()
+                });
 
-            if (basePrice > 0) {
-                basePriceElement.innerHTML = `Base: <span style="color: var(--text-primary);">$${basePrice}</span>`;
-                basePriceElement.style.display = 'block';
-            } else {
-                basePriceElement.style.display = 'none';
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.category && data.category.basePrice > 0) {
+                        basePriceElement.innerHTML = `Base: <span style="color: var(--text-primary);">$${data.category.basePrice}</span>`;
+                        basePriceElement.style.display = 'block';
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('💰 Sem preço para esta categoria');
             }
-        } else {
-            basePriceElement.style.display = 'none';
         }
+
+        // Esconder se não tiver preço
+        basePriceElement.style.display = 'none';
     }
 
     refreshStock() {
