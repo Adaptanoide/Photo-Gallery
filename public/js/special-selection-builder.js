@@ -327,23 +327,7 @@ class SpecialSelectionBuilder {
                     </div>
                 </div>
                 <div class="custom-category-content">
-                    <div class="photos-grid">
-                        ${category.photos.map(photo => `
-                            <div class="photo-card selected" data-photo-id="${photo.id}">
-                                <img class="photo-image" src="${photo.thumbnailLink}" alt="${photo.name}">
-                                <div class="photo-info">
-                                    <div class="photo-name">${photo.name}</div>
-                                    <div class="photo-price">$${category.customPrice || photo.originalPrice || '0.00'}</div>
-                                </div>
-                                <div class="photo-actions">
-                                    <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
+                    ${this.renderPhotosView(category, index)}
                     <!-- Drop zone para adicionar mais fotos -->
                     <div class="drop-zone" data-category-index="${index}">
                         <div class="drop-zone-icon">
@@ -1452,6 +1436,50 @@ class SpecialSelectionBuilder {
 
         // Re-renderizar para aplicar novo modo
         this.renderCustomCategories();
+    }
+
+    // NOVA FUNÇÃO: Renderizar fotos baseado no modo (grid/list)
+    renderPhotosView(category, categoryIndex) {
+        const viewMode = this.categoryViewModes[categoryIndex] || 'grid';
+        
+        if (viewMode === 'list') {
+            // LIST VIEW
+            return `
+                <div class="photos-list">
+                    ${category.photos.map(photo => `
+                        <div class="photo-list-item" data-photo-id="${photo.id}">
+                            <div class="photo-list-info">
+                                🖼️ ${photo.name}
+                                <span class="photo-list-price">$${category.customPrice || photo.originalPrice || '0.00'}</span>
+                            </div>
+                            <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${categoryIndex}" title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            // GRID VIEW (atual)
+            return `
+                <div class="photos-grid">
+                    ${category.photos.map(photo => `
+                        <div class="photo-card selected" data-photo-id="${photo.id}">
+                            <img class="photo-image" src="${photo.thumbnailLink}" alt="${photo.name}">
+                            <div class="photo-info">
+                                <div class="photo-name">${photo.name}</div>
+                                <div class="photo-price">$${category.customPrice || photo.originalPrice || '0.00'}</div>
+                            </div>
+                            <div class="photo-actions">
+                                <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${categoryIndex}" title="Remove">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
     }
 
     showAddToSelectionModal(photoCard) {
