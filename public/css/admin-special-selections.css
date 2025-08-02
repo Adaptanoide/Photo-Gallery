@@ -1410,3 +1410,62 @@
 .source-category-price .price-value.not-defined {
     color: var(--text-muted);
 }
+
+/* ===== LIST VIEW STYLES ===== */
+
+.photos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+}
+
+.photo-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    transition: background 0.2s ease;
+}
+
+.photo-list-item:hover {
+    background: rgba(212, 175, 55, 0.2);
+}
+
+.photo-list-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.photo-list-price {
+    color: var(--gold-primary);
+    font-weight: 600;
+    margin-left: auto;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+}
+
+.photo-list-item .photo-action-btn {
+    background: rgba(239, 68, 68, 0.8);
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s ease;
+}
+
+.photo-list-item .photo-action-btn:hover {
+    background: rgba(239, 68, 68, 1);
+}
