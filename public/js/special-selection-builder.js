@@ -1273,10 +1273,27 @@ class SpecialSelectionBuilder {
     }
 
     deleteCustomCategory(categoryIndex) {
-        console.log('🗑️ Botão delete clicado! Categoria:', categoryIndex);
+        console.log('🗑️ FUNÇÃO CHAMADA!');
 
-        // Abrir modal ao invés de confirm simples
-        this.showDeleteCategoryModal(categoryIndex);
+        if (confirm('Delete this category? All photos will return to original folders.')) {
+            const category = this.customCategories[categoryIndex];
+            if (category) {
+                // Remover fotos da seleção
+                category.photos.forEach(photo => {
+                    this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photo.id);
+                });
+
+                // Remover categoria
+                this.customCategories.splice(categoryIndex, 1);
+
+                // Re-renderizar
+                this.renderCustomCategories();
+                this.renderStockPhotos();
+                this.updateCounts();
+
+                console.log(`✅ Categoria deletada: ${category.name}`);
+            }
+        }
     }
 
     // NOVA FUNÇÃO: Mostrar modal de delete
