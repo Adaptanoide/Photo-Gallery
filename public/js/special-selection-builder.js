@@ -329,7 +329,10 @@ class SpecialSelectionBuilder {
                                 <img class="photo-image" src="${photo.thumbnailLink}" alt="${photo.name}">
                                 <div class="photo-info">
                                     <div class="photo-name">${photo.name}</div>
-                                    <div class="photo-price">$${category.customPrice || photo.originalPrice || '0.00'}</div>
+                                    <div class="photo-price">
+                                        <div class="photo-source">[${photo.sourceCategory || 'Unknown'}]</div>
+                                        <div class="photo-price-flow">$${photo.originalPrice || '0.00'} → $${category.customPrice || '0.00'}</div>
+                                    </div>
                                 </div>
                                 <div class="photo-actions">
                                     <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
@@ -1109,7 +1112,9 @@ class SpecialSelectionBuilder {
                     name: card.dataset.photoName,
                     url: card.dataset.photoUrl,
                     thumbnailLink: card.querySelector('.photo-image').src,
-                    originalPrice: card.querySelector('.photo-price').textContent.replace('$', '')
+                    originalPrice: card.querySelector('.photo-price').textContent.replace('$', ''),
+                    sourceCategory: this.getCurrentCategoryName(),
+                    sourcePath: this.getCurrentCategoryPath()
                 };
                 card.classList.add('dragging');
                 console.log('🎯 Drag iniciado:', this.draggedPhoto.name);
@@ -1431,6 +1436,20 @@ class SpecialSelectionBuilder {
 
         // Fechar modal
         this.closeRenameCategoryModal();
+    }
+
+    // NOVA FUNÇÃO: Obter nome da categoria atual
+    getCurrentCategoryName() {
+        if (!this.navigationState.currentPath || this.navigationState.currentPath.length === 0) {
+            return 'Stock';
+        }
+        return this.navigationState.currentPath[this.navigationState.currentPath.length - 1].name;
+    }
+
+    // NOVA FUNÇÃO: Obter caminho completo
+    getCurrentCategoryPath() {
+        if (!this.navigationState.currentPath) return 'Stock';
+        return this.navigationState.currentPath.map(item => item.name).join(' > ');
     }
 
     showAddToSelectionModal(photoCard) {
