@@ -582,6 +582,7 @@ class SpecialSelectionBuilder {
     updateMoveButtonState() {
         const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
         const existingSelect = document.getElementById('existingCategoriesSelect');
+        const newRadio = document.querySelector('input[name="destination"][value="new"]');
         const newNameInput = document.getElementById('newCategoryName');
         const moveButton = document.getElementById('btnExecuteMassMovement');
 
@@ -590,7 +591,7 @@ class SpecialSelectionBuilder {
         if (existingRadio.checked) {
             // Categoria existente selecionada
             canMove = existingSelect.value !== '';
-        } else {
+        } else if (newRadio.checked) {
             // Nova categoria com nome preenchido
             canMove = newNameInput.value.trim() !== '';
         }
@@ -600,7 +601,14 @@ class SpecialSelectionBuilder {
         // Atualizar texto do botão
         const buttonText = document.getElementById('moveButtonText');
         const count = this.selectedStockPhotos.size;
-        buttonText.textContent = `Move ${count} Photo${count > 1 ? 's' : ''}`;
+
+        if (canMove) {
+            buttonText.textContent = `Move ${count} Photo${count > 1 ? 's' : ''}`;
+            moveButton.style.opacity = '1';
+        } else {
+            buttonText.textContent = 'Select Destination First';
+            moveButton.style.opacity = '0.6';
+        }
     }
 
     setupMassSelectionModalEvents() {
@@ -693,32 +701,22 @@ class SpecialSelectionBuilder {
         const selectedPhotosArray = Array.from(this.selectedStockPhotos);
         const totalPhotos = selectedPhotosArray.length;
 
-        // Mostrar progress bar
-        const progressBar = document.getElementById('massMovementProgress');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const progressCounter = document.getElementById('progressCounter');
-
-        progressBar.style.display = 'block';
-        progressText.textContent = 'Moving photos...';
+        // REMOVER: Progress bar (elementos não existem no HTML)
+        console.log(`📋 Processando ${totalPhotos} fotos...`);
 
         let processedCount = 0;
 
-        // Processar cada foto
+        // Processar cada foto (mantém lógica existente)
         for (const photoId of selectedPhotosArray) {
             try {
-                // Encontrar dados da foto
                 const photoData = this.stockPhotosData.find(photo => photo.id === photoId);
 
                 if (photoData) {
-                    // Verificar se foto já existe na categoria
                     const existingPhoto = targetCategory.photos.find(p => p.id === photoId);
 
                     if (!existingPhoto) {
-                        // Adicionar foto à categoria
                         targetCategory.photos.push(photoData);
                         this.selectedPhotos.push(photoData);
-
                         console.log(`✅ Foto ${photoData.name} movida para ${targetCategory.name}`);
                     } else {
                         console.log(`⚠️ Foto ${photoData.name} já existe na categoria`);
@@ -726,14 +724,7 @@ class SpecialSelectionBuilder {
                 }
 
                 processedCount++;
-
-                // Atualizar progress bar
-                const progress = (processedCount / totalPhotos) * 100;
-                progressFill.style.width = `${progress}%`;
-                progressCounter.textContent = `${processedCount} / ${totalPhotos}`;
-
-                // Pequena pausa para suavidade visual
-                await new Promise(resolve => setTimeout(resolve, 100));
+                console.log(`📊 Progresso: ${processedCount}/${totalPhotos}`);
 
             } catch (error) {
                 console.error(`❌ Erro ao mover foto ${photoId}:`, error);
