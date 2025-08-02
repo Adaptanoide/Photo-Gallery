@@ -765,6 +765,51 @@
         </div>
     </div>
 
+    <!-- Modal Delete Category -->
+    <div id="deleteCategoryModal" class="special-selection-modal" style="display: none;">
+        <div class="special-modal-content">
+            <div class="special-modal-header">
+                <h3 class="special-modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                    Delete Category
+                </h3>
+                <button class="special-modal-close" onclick="window.specialSelectionBuilder.closeDeleteCategoryModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="special-modal-body">
+                <div class="delete-warning">
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                            <strong style="color: var(--danger);">Warning: This action cannot be undone</strong>
+                        </div>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            All photos in this category will return to their original folders and become available for selection again.
+                        </p>
+                    </div>
+                    
+                    <div class="category-info">
+                        <p><strong>Category:</strong> <span id="deleteCategoryName">--</span></p>
+                        <p><strong>Photos to return:</strong> <span id="deleteCategoryPhotoCount">0</span> photos</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="special-modal-footer">
+                <button class="btn btn-secondary" onclick="window.specialSelectionBuilder.closeDeleteCategoryModal()">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button id="btnConfirmDeleteCategory" class="btn btn-danger">
+                    <i class="fas fa-trash"></i>
+                    Delete Category
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/app.js"></script>
     <script src="js/zoom.js"></script> <!-- Reutilizar sistema de zoom -->
