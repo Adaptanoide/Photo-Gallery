@@ -306,15 +306,15 @@ class SpecialSelectionBuilder {
 
         const html = this.customCategories.map((category, index) => `
         <div class="custom-category${this.expandedCategories.has(index) ? ' expanded' : ''}" data-category-index="${index}">
-            <div class="custom-category-header" onclick="window.specialSelectionBuilder.toggleCategory(${index})">
+            <div class="custom-category-header">
                 <div class="custom-category-info">
-                    <button class="category-chevron" onclick="event.stopPropagation(); window.specialSelectionBuilder.toggleCategory(${index})">
+                    <button class="category-chevron" onclick="window.specialSelectionBuilder.toggleCategory(${index})">
                         <i class="fas fa-chevron-${this.expandedCategories.has(index) ? 'up' : 'down'}"></i>
                     </button>
                     <div class="custom-category-name">${category.name}</div>
                     <div class="custom-category-count">${category.photos.length}</div>
                 </div>
-                    <div class="custom-category-actions">
+                    <div class="custom-category-actions" onclick="event.stopPropagation()">
                         <button class="category-action-btn" data-action="toggle-view" data-index="${index}" title="Toggle Grid/List View">
                             <i class="fas fa-${this.categoryViewModes && this.categoryViewModes[index] === 'list' ? 'th' : 'list'}"></i>
                         </button>
