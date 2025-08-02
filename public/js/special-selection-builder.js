@@ -1492,12 +1492,12 @@ class SpecialSelectionBuilder {
             basePriceElement = document.createElement('div');
             basePriceElement.id = 'headerBasePrice';
             basePriceElement.style.cssText = `
-            font-size: 0.8rem;
-            color: var(--gold-primary);
-            font-weight: 600;
-            margin-left: 1rem;
-            display: none;
-        `;
+                font-size: 1rem;
+                color: var(--gold-primary);
+                font-weight: 600;
+                margin-left: 1rem;
+                display: none;
+            `;
 
             panelHeaderLeft.appendChild(basePriceElement);
         }
