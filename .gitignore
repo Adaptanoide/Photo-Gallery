@@ -1,8 +1,7 @@
-echo "node_modules
+node_modules/
 .env
 .env.local
 credentials.json
 *.log
 dist/
-build/" > .gitignore
-README.txt
+build/
