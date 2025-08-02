@@ -1477,9 +1477,9 @@ class SpecialSelectionBuilder {
 
     // NOVA FUNÇÃO: Mostrar base price no header
     updateHeaderBasePrice() {
-        const headerRight = document.querySelector('.panel-header-right');
+        const panelHeaderLeft = document.querySelector('.panel-header-left');
 
-        if (!headerRight) return;
+        if (!panelHeaderLeft) return;
 
         // Verificar se já existe elemento de base price
         let basePriceElement = document.getElementById('headerBasePrice');
@@ -1492,19 +1492,26 @@ class SpecialSelectionBuilder {
             font-size: 0.8rem;
             color: var(--gold-primary);
             font-weight: 600;
-            margin-right: 1rem;
+            margin-left: 1rem;
             display: none;
         `;
 
-            // Inserir antes do counter
-            const selectionCounter = headerRight.querySelector('.selection-counter');
-            headerRight.insertBefore(basePriceElement, selectionCounter);
+            // Adicionar ao final do header left
+            panelHeaderLeft.appendChild(basePriceElement);
         }
 
-        // Atualizar conteúdo (usar this.currentBasePrice se existir)
-        if (this.currentBasePrice && this.currentBasePrice > 0) {
-            basePriceElement.innerHTML = `Base: <span style="color: var(--text-primary);">$${this.currentBasePrice}</span>`;
-            basePriceElement.style.display = 'block';
+        // Atualizar conteúdo - pegar do modal source category quando existir
+        const basePriceElement2 = document.querySelector('#sourceCategoryPrice span');
+        if (basePriceElement2) {
+            const basePriceText = basePriceElement2.textContent;
+            const basePrice = parseFloat(basePriceText.replace('$', ''));
+
+            if (basePrice > 0) {
+                basePriceElement.innerHTML = `Base: <span style="color: var(--text-primary);">$${basePrice}</span>`;
+                basePriceElement.style.display = 'block';
+            } else {
+                basePriceElement.style.display = 'none';
+            }
         } else {
             basePriceElement.style.display = 'none';
         }
