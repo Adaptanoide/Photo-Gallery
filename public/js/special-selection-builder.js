@@ -313,7 +313,7 @@ class SpecialSelectionBuilder {
                     <div class="custom-category-name">${category.name}</div>
                     <div class="custom-category-count">${category.photos.length}</div>
                 </div>
-                    <div class="custom-category-actions" onclick="event.stopPropagation()">
+                    <div class="custom-category-actions">
                         <button class="category-action-btn" data-action="edit-category" data-index="${index}" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -1151,13 +1151,17 @@ class SpecialSelectionBuilder {
 
         // Botões de ação das categorias
         this.customCategoriesContainer.addEventListener('click', (e) => {
+            console.log('🎯 CLICK CAPTURADO:', e.target);
+
             const actionBtn = e.target.closest('[data-action]');
+            console.log('🎯 ACTION BTN ENCONTRADO:', actionBtn);
+
             if (!actionBtn) return;
 
             const action = actionBtn.dataset.action;
-
-            // CORRIGIDO: Usar categoryIndex ao invés de index
             const index = parseInt(actionBtn.dataset.index || actionBtn.dataset.categoryIndex);
+
+            console.log(`🎯 Ação clicada: ${action}, index: ${index}`);
             const photoId = actionBtn.dataset.photoId;
 
             console.log(`🎯 Ação clicada: ${action}, index: ${index}, photoId: ${photoId}`);
