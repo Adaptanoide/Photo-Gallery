@@ -314,7 +314,7 @@ class SpecialSelectionBuilder {
                     <div class="custom-category-name">${category.name}</div>
                     <div class="custom-category-count">${category.photos.length}</div>
                 </div>
-                    <div class="custom-category-actions" onclick="event.stopPropagation()">
+                    <div class="custom-category-actions">
                         <button class="category-action-btn" data-action="toggle-view" data-index="${index}" title="Toggle Grid/List View">
                             <i class="fas fa-${this.categoryViewModes && this.categoryViewModes[index] === 'list' ? 'th' : 'list'}"></i>
                         </button>
