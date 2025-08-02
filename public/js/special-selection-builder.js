@@ -1273,11 +1273,41 @@ class SpecialSelectionBuilder {
     }
 
     deleteCustomCategory(categoryIndex) {
-        if (!confirm('Are you sure you want to delete this category? All photos will be removed from the selection.')) {
-            return;
-        }
+        // Abrir modal ao invés de confirm simples
+        this.showDeleteCategoryModal(categoryIndex);
+    }
 
+    // NOVA FUNÇÃO: Mostrar modal de delete
+    showDeleteCategoryModal(categoryIndex) {
         const category = this.customCategories[categoryIndex];
+        if (!category) return;
+
+        // Preencher dados do modal
+        document.getElementById('deleteCategoryName').textContent = category.name;
+        document.getElementById('deleteCategoryPhotoCount').textContent = category.photos.length;
+
+        // Armazenar índice para usar na confirmação
+        this.categoryToDelete = categoryIndex;
+
+        // Mostrar modal
+        document.getElementById('deleteCategoryModal').style.display = 'block';
+
+        // Configurar botão de confirmação
+        const confirmBtn = document.getElementById('btnConfirmDeleteCategory');
+        confirmBtn.onclick = () => this.confirmDeleteCategory();
+    }
+
+    // NOVA FUNÇÃO: Fechar modal
+    closeDeleteCategoryModal() {
+        document.getElementById('deleteCategoryModal').style.display = 'none';
+        this.categoryToDelete = null;
+    }
+
+    // NOVA FUNÇÃO: Confirmar delete
+    confirmDeleteCategory() {
+        if (this.categoryToDelete === null) return;
+
+        const category = this.customCategories[this.categoryToDelete];
         if (category) {
             // Remover fotos da seleção
             category.photos.forEach(photo => {
@@ -1285,12 +1315,18 @@ class SpecialSelectionBuilder {
             });
 
             // Remover categoria
-            this.customCategories.splice(categoryIndex, 1);
+            this.customCategories.splice(this.categoryToDelete, 1);
+
+            // Re-renderizar AMBOS os lados
             this.renderCustomCategories();
+            this.renderStockPhotos(); // ← NOVO: Atualizar visual das fotos
             this.updateCounts();
 
             console.log(`✅ Categoria deletada: ${category.name}`);
         }
+
+        // Fechar modal
+        this.closeDeleteCategoryModal();
     }
 
     // ===== MODALS E INTERACTIONS =====
