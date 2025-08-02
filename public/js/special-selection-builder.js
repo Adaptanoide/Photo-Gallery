@@ -453,9 +453,9 @@ class SpecialSelectionBuilder {
 
         console.log(`🚀 Abrindo modal para ${count} fotos selecionadas`);
 
-        // Abrir modal
+        // Abrir modal - MÉTODO CORRETO
         const modal = document.getElementById('massSelectionModal');
-        modal.style.display = 'flex';
+        modal.classList.add('active');  // ← CORRIGIDO
 
         // Popular modal com dados
         this.populateMassSelectionModal();
@@ -466,7 +466,7 @@ class SpecialSelectionBuilder {
 
     closeMassSelectionModal() {
         const modal = document.getElementById('massSelectionModal');
-        modal.style.display = 'none';
+        modal.classList.remove('active');  // ← CORRIGIDO
 
         // Limpar dados do modal
         this.clearMassSelectionModal();
