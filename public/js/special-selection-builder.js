@@ -285,6 +285,8 @@ class SpecialSelectionBuilder {
 
             // Configurar drag & drop
             this.setupPhotoDragDrop();
+
+            this.updateHeaderBasePrice();
         }
 
         // Mostrar fotos, esconder categorias
