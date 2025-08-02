@@ -323,7 +323,23 @@ class SpecialSelectionBuilder {
                     </div>
                 </div>
                 <div class="custom-category-content">
-                    ${this.renderPhotosView(category, index)}
+                    <div class="photos-grid">
+                        ${category.photos.map(photo => `
+                            <div class="photo-card selected" data-photo-id="${photo.id}">
+                                <img class="photo-image" src="${photo.thumbnailLink}" alt="${photo.name}">
+                                <div class="photo-info">
+                                    <div class="photo-name">${photo.name}</div>
+                                    <div class="photo-price">$${category.customPrice || photo.originalPrice || '0.00'}</div>
+                                </div>
+                                <div class="photo-actions">
+                                    <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
                     <!-- Drop zone para adicionar mais fotos -->
                     <div class="drop-zone" data-category-index="${index}">
                         <div class="drop-zone-icon">
