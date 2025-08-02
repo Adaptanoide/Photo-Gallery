@@ -643,14 +643,25 @@ class SpecialSelectionBuilder {
 
     updateExistingCategoryPrice(categoryIndex) {
         const existingPriceInput = document.getElementById('existingCategoryCustomPrice');
-        const priceInfoElement = document.getElementById('existingCategoryPriceInfo');
+        const fromPriceSpan = document.getElementById('fromPrice');
+        const toPriceSpan = document.getElementById('toPrice');
 
         if (!existingPriceInput) return;
 
+        // Pegar base price
+        const basePriceElement = document.querySelector('#sourceCategoryPrice span');
+        let basePrice = 0;
+        if (basePriceElement) {
+            const basePriceText = basePriceElement.textContent;
+            basePrice = parseFloat(basePriceText.replace('$', ''));
+        }
+
         if (categoryIndex === '' || categoryIndex === null) {
+            // Nenhuma categoria selecionada - valores padrão
             existingPriceInput.value = '';
-            existingPriceInput.placeholder = 'Custom price';
-            if (priceInfoElement) priceInfoElement.style.display = 'none';
+            existingPriceInput.placeholder = 'Select category first';
+            if (fromPriceSpan) fromPriceSpan.textContent = '$--';
+            if (toPriceSpan) toPriceSpan.textContent = '$--';
             return;
         }
 
@@ -660,37 +671,17 @@ class SpecialSelectionBuilder {
             if (selectedCategory && selectedCategory.customPrice) {
                 const currentPrice = selectedCategory.customPrice;
 
-                // CORRIGIDO: Pegar base price do elemento correto
-                const basePriceElement = document.querySelector('#sourceCategoryPrice span');
-                let basePrice = 0;
-
-                if (basePriceElement) {
-                    const basePriceText = basePriceElement.textContent;
-                    basePrice = parseFloat(basePriceText.replace('$', ''));
-                }
-
-                // Preencher campo
+                // Popular valores
                 existingPriceInput.value = currentPrice;
                 existingPriceInput.placeholder = 'Edit price';
-
-                // Mostrar info compacta
-                if (priceInfoElement && basePrice > 0) {
-                    priceInfoElement.innerHTML = `Already adjusted: $${basePrice} → $${currentPrice} (editable)`;
-                    priceInfoElement.style.display = 'block';
-                }
+                if (fromPriceSpan) fromPriceSpan.textContent = `$${basePrice}`;
+                if (toPriceSpan) toPriceSpan.textContent = `$${currentPrice}`;
 
                 console.log(`💰 Categoria "${selectedCategory.name}" - Ajustado: $${basePrice} → $${currentPrice}`);
-            } else {
-                existingPriceInput.value = '';
-                existingPriceInput.placeholder = 'Set custom price';
-                if (priceInfoElement) priceInfoElement.style.display = 'none';
             }
 
         } catch (error) {
             console.error('❌ Erro ao buscar preço da categoria:', error);
-            existingPriceInput.value = '';
-            existingPriceInput.placeholder = 'Custom price';
-            if (priceInfoElement) priceInfoElement.style.display = 'none';
         }
     }
 

@@ -710,15 +710,18 @@
                                 <option value="">Select a category...</option>
                             </select>
                             <div style="flex: 1;">
+                                <div style="
+                                    font-size: 0.75rem; 
+                                    color: var(--text-secondary); 
+                                    margin-bottom: 0.25rem;
+                                    font-weight: 500;
+                                ">
+                                    Already adjusted: <span id="fromPrice" style="color: var(--gold-primary);">$--</span> → 
+                                    <span id="toPrice" style="color: var(--gold-primary);">$--</span> 
+                                    <span style="color: var(--text-muted);">(editable)</span>
+                                </div>
                                 <input type="number" id="existingCategoryCustomPrice" class="special-form-input"
                                     placeholder="Custom price" min="0" step="0.01">
-                                <div id="existingCategoryPriceInfo" style="
-                                    font-size: 0.7rem; 
-                                    color: var(--text-secondary); 
-                                    margin-top: 0.25rem;
-                                    display: none;
-                                    font-style: italic;
-                                "></div>
                             </div>
                         </div>
                     </div>
