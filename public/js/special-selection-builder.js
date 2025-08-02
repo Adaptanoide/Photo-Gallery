@@ -675,7 +675,7 @@ class SpecialSelectionBuilder {
 
                 // Mostrar info compacta
                 if (priceInfoElement && basePrice > 0) {
-                    priceInfoElement.innerHTML = `$${basePrice} → $${currentPrice}`;
+                    priceInfoElement.innerHTML = `Already adjusted: $${basePrice} → $${currentPrice} (editable)`;
                     priceInfoElement.style.display = 'block';
                 }
 
