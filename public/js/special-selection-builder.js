@@ -1171,6 +1171,9 @@ class SpecialSelectionBuilder {
             console.log(`🎯 Ação clicada: ${action}, index: ${index}, photoId: ${photoId}`);
 
             switch (action) {
+                case 'toggle-view':
+                    this.toggleCategoryView(index);
+                    break;
                 case 'edit-category':
                     this.editCustomCategory(index);
                     break;
@@ -1435,6 +1438,20 @@ class SpecialSelectionBuilder {
 
         // Fechar modal
         this.closeRenameCategoryModal();
+    }
+
+    // NOVA FUNÇÃO: Toggle Grid/List view
+    toggleCategoryView(categoryIndex) {
+        console.log('🔄 Toggle view para categoria:', categoryIndex);
+
+        // Alternar entre grid e list
+        const currentMode = this.categoryViewModes[categoryIndex] || 'grid';
+        this.categoryViewModes[categoryIndex] = currentMode === 'grid' ? 'list' : 'grid';
+
+        console.log(`📋 Modo alterado para: ${this.categoryViewModes[categoryIndex]}`);
+
+        // Re-renderizar para aplicar novo modo
+        this.renderCustomCategories();
     }
 
     showAddToSelectionModal(photoCard) {
