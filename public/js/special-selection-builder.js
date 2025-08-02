@@ -648,7 +648,6 @@ class SpecialSelectionBuilder {
         if (!existingPriceInput) return;
 
         if (categoryIndex === '' || categoryIndex === null) {
-            // Nenhuma categoria selecionada
             existingPriceInput.value = '';
             existingPriceInput.placeholder = 'Custom price';
             if (priceInfoElement) priceInfoElement.style.display = 'none';
@@ -660,17 +659,23 @@ class SpecialSelectionBuilder {
 
             if (selectedCategory && selectedCategory.customPrice) {
                 const currentPrice = selectedCategory.customPrice;
-                // Pegar base price dinâmico do Source Category
-                const basePriceText = document.querySelector('.source-category-price .price-value');
-                const basePrice = basePriceText ? parseFloat(basePriceText.textContent.replace('$', '')) : 0;
+
+                // CORRIGIDO: Pegar base price do elemento correto
+                const basePriceElement = document.querySelector('#sourceCategoryPrice span');
+                let basePrice = 0;
+
+                if (basePriceElement) {
+                    const basePriceText = basePriceElement.textContent;
+                    basePrice = parseFloat(basePriceText.replace('$', ''));
+                }
 
                 // Preencher campo
                 existingPriceInput.value = currentPrice;
                 existingPriceInput.placeholder = 'Edit price';
 
-                // Mostrar info de ajuste
-                if (priceInfoElement) {
-                    priceInfoElement.innerHTML = `<i class="fas fa-edit"></i> Adjusted: $${basePrice} → $${currentPrice} (editable)`;
+                // Mostrar info compacta
+                if (priceInfoElement && basePrice > 0) {
+                    priceInfoElement.innerHTML = `$${basePrice} → $${currentPrice}`;
                     priceInfoElement.style.display = 'block';
                 }
 
