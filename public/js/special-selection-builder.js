@@ -632,7 +632,48 @@ class SpecialSelectionBuilder {
             select.appendChild(option);
         });
 
+        // NOVO: Event listener para atualizar preço quando selecionar categoria
+        select.addEventListener('change', (e) => {
+            this.updateExistingCategoryPrice(e.target.value);
+            this.updateMoveButtonState();
+        });
+
         console.log(`📁 ${this.customCategories.length} categorias populadas no dropdown`);
+    }
+
+    updateExistingCategoryPrice(categoryIndex) {
+        const existingPriceInput = document.getElementById('existingCategoryCustomPrice');
+
+        if (!existingPriceInput) return;
+
+        if (categoryIndex === '' || categoryIndex === null) {
+            // Nenhuma categoria selecionada
+            existingPriceInput.value = '';
+            existingPriceInput.placeholder = 'Custom price';
+            return;
+        }
+
+        try {
+            const selectedCategory = this.customCategories[parseInt(categoryIndex)];
+
+            if (selectedCategory && selectedCategory.customPrice) {
+                // Mostrar preço atual da categoria
+                const currentPrice = selectedCategory.customPrice;
+                existingPriceInput.value = currentPrice;
+                existingPriceInput.placeholder = `Current: $${currentPrice}`;
+
+                console.log(`💰 Categoria "${selectedCategory.name}" - Preço atual: $${currentPrice}`);
+            } else {
+                // Categoria sem preço customizado
+                existingPriceInput.value = '';
+                existingPriceInput.placeholder = 'Set custom price';
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao buscar preço da categoria:', error);
+            existingPriceInput.value = '';
+            existingPriceInput.placeholder = 'Custom price';
+        }
     }
 
     resetMassSelectionForm() {
