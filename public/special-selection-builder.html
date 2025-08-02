@@ -533,10 +533,24 @@
                         </div>
 
                         <div class="panel-header-right">
+                            <div class="selection-counter">
+                                <span id="selectionCount">0</span> selected
+                            </div>
+                            
+                            <button id="btnMoveSelected" class="btn btn-sm btn-primary" disabled>
+                                <i class="fas fa-arrow-right"></i>
+                                Move
+                            </button>
+                            
+                            <button id="btnClearSelection" class="btn btn-sm btn-outline" disabled>
+                                <i class="fas fa-times"></i>
+                                Clear
+                            </button>
+                            
                             <button id="btnRefreshStock" class="btn btn-sm btn-outline">
                                 <i class="fas fa-sync-alt"></i>
+                                Refresh
                             </button>
-                            <!-- Selection Actions Bar será inserida aqui via JavaScript -->
                         </div>
                     </div>
 

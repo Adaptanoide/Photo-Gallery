@@ -904,6 +904,62 @@
     flex-shrink: 0;
 }
 
+/* ===== CONTROLES FIXOS DE SELEÇÃO ===== */
+.selection-counter {
+    color: var(--gold-primary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+}
+
+.selection-counter.active {
+    opacity: 1;
+}
+
+/* Estados dos botões de seleção */
+#btnMoveSelected,
+#btnClearSelection {
+    transition: all 0.3s ease;
+}
+
+#btnMoveSelected:disabled,
+#btnClearSelection:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#btnMoveSelected:disabled:hover,
+#btnClearSelection:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Layout responsivo do header direito */
+.panel-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .panel-header-right {
+        gap: 0.25rem;
+    }
+    
+    .panel-header-right .btn {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.7rem;
+    }
+    
+    .selection-counter {
+        font-size: 0.7rem;
+    }
+}
+
 /* Ajustar botões da selection bar */
 .selection-actions .btn {
     padding: 0.25rem 0.5rem;
