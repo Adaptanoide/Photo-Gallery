@@ -660,6 +660,112 @@
         </div>
     </div>
 
+    <!-- Modal de Seleção em Massa -->
+    <div id="massSelectionModal" class="mass-selection-modal" style="display: none;">
+        <div class="modal-background" onclick="window.specialSelectionBuilder.closeMassSelectionModal()"></div>
+        <div class="modal-content mass-selection-content">
+            <!-- Header do Modal -->
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-arrow-right"></i>
+                    Move Selected Photos
+                </h3>
+                <button class="close-btn" onclick="window.specialSelectionBuilder.closeMassSelectionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Body do Modal -->
+            <div class="modal-body mass-selection-body">
+                <!-- Informações da Seleção -->
+                <div class="selection-summary">
+                    <div class="summary-info">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="massSelectionCount">0</span> photos selected for movement
+                    </div>
+                    <div class="summary-actions">
+                        <button class="btn btn-sm btn-outline"
+                            onclick="window.specialSelectionBuilder.selectAllVisiblePhotos()">
+                            <i class="fas fa-check-double"></i>
+                            Select All Visible
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid de Fotos Selecionadas -->
+                <div class="selected-photos-section">
+                    <h4 class="section-title">Selected Photos</h4>
+                    <div id="selectedPhotosGrid" class="selected-photos-grid">
+                        <!-- Será populado via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Seleção de Destino -->
+                <div class="destination-section">
+                    <h4 class="section-title">Move to Category</h4>
+
+                    <div class="destination-options">
+                        <!-- Dropdown de Categorias Existentes -->
+                        <div class="destination-option">
+                            <label class="option-label">
+                                <input type="radio" name="destination" value="existing" checked>
+                                <span class="option-text">Existing Category</span>
+                            </label>
+                            <select id="existingCategoriesSelect" class="category-select">
+                                <option value="">Select a category...</option>
+                                <!-- Será populado via JavaScript -->
+                            </select>
+                        </div>
+
+                        <!-- Criar Nova Categoria -->
+                        <div class="destination-option">
+                            <label class="option-label">
+                                <input type="radio" name="destination" value="new">
+                                <span class="option-text">Create New Category</span>
+                            </label>
+                            <div class="new-category-inputs">
+                                <input type="text" id="newCategoryName" class="form-input"
+                                    placeholder="Category name..." disabled>
+                                <input type="number" id="newCategoryPrice" class="form-input"
+                                    placeholder="Price (optional)" min="0" step="0.01" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Progresso -->
+                <div id="massMovementProgress" class="movement-progress" style="display: none;">
+                    <div class="progress-info">
+                        <span id="progressText">Moving photos...</span>
+                        <span id="progressCounter">0 / 0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="modal-footer">
+                <div class="footer-info">
+                    <i class="fas fa-info-circle"></i>
+                    Photos will be moved preserving their original quality and metadata
+                </div>
+                <div class="footer-actions">
+                    <button class="btn btn-secondary"
+                        onclick="window.specialSelectionBuilder.closeMassSelectionModal()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button id="btnExecuteMassMovement" class="btn btn-primary" disabled>
+                        <i class="fas fa-arrow-right"></i>
+                        <span id="moveButtonText">Move Photos</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/app.js"></script>
     <script src="js/zoom.js"></script> <!-- Reutilizar sistema de zoom -->
