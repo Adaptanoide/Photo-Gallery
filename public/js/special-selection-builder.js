@@ -14,7 +14,6 @@ class SpecialSelectionBuilder {
         this.stockPhotosData = [];
         this.customCategories = [];
         this.selectedPhotos = [];
-        this.categoryViewModes = {}; // index -> 'grid' ou 'list'
         this.expandedCategories = new Set();
         this.selectedStockPhotos = new Set(); // ← NOVA LINHA
         this.draggedPhoto = null; // ← NOVA LINHA
@@ -315,9 +314,6 @@ class SpecialSelectionBuilder {
                     <div class="custom-category-count">${category.photos.length}</div>
                 </div>
                     <div class="custom-category-actions">
-                        <button class="category-action-btn" data-action="toggle-view" data-index="${index}" title="Toggle Grid/List View">
-                            <i class="fas fa-${this.categoryViewModes && this.categoryViewModes[index] === 'list' ? 'th' : 'list'}"></i>
-                        </button>
                         <button class="category-action-btn" data-action="edit-category" data-index="${index}" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -1155,9 +1151,6 @@ class SpecialSelectionBuilder {
             console.log(`🎯 Ação clicada: ${action}, index: ${index}, photoId: ${photoId}`);
 
             switch (action) {
-                case 'toggle-view':
-                    this.toggleCategoryView(index);
-                    break;
                 case 'edit-category':
                     this.editCustomCategory(index);
                     break;
