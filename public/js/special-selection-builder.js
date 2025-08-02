@@ -1153,8 +1153,12 @@ class SpecialSelectionBuilder {
             if (!actionBtn) return;
 
             const action = actionBtn.dataset.action;
-            const index = parseInt(actionBtn.dataset.index);
+
+            // CORRIGIDO: Usar categoryIndex ao invés de index
+            const index = parseInt(actionBtn.dataset.index || actionBtn.dataset.categoryIndex);
             const photoId = actionBtn.dataset.photoId;
+
+            console.log(`🎯 Ação clicada: ${action}, index: ${index}, photoId: ${photoId}`);
 
             switch (action) {
                 case 'edit-category':
@@ -1164,6 +1168,7 @@ class SpecialSelectionBuilder {
                     this.deleteCustomCategory(index);
                     break;
                 case 'remove':
+                    console.log(`🗑️ Removendo foto ${photoId} da categoria ${index}`);
                     this.removePhotoFromCategory(photoId, index);
                     break;
                 case 'preview':
