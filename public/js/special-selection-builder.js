@@ -667,7 +667,7 @@ class SpecialSelectionBuilder {
 
         const existingSelect = document.getElementById('existingCategoriesSelect');
         const newNameInput = document.getElementById('newCategoryName');
-        const newPriceInput = document.getElementById('newCategoryPrice');
+        const newPriceInput = document.getElementById('newCategoryCustomPrice');
 
         if (existingRadio.checked) {
             existingSelect.disabled = false;
@@ -754,7 +754,7 @@ class SpecialSelectionBuilder {
         const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
         const existingSelect = document.getElementById('existingCategoriesSelect');
         const newNameInput = document.getElementById('newCategoryName');
-        const newPriceInput = document.getElementById('newCategoryPrice');
+        const newPriceInput = document.getElementById('newCategoryCustomPrice');
 
         let targetCategory;
         let targetCategoryIndex;
