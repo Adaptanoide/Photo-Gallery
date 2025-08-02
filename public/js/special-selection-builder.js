@@ -534,33 +534,52 @@ class SpecialSelectionBuilder {
 
     async getCurrentCategoryPrice() {
         try {
+            // Debug: verificar estado da navegação
+            console.log('🔍 Debug navigationState:', this.navigationState);
+            console.log('🔍 Debug currentPath:', this.navigationState.currentPath);
+
             if (!this.navigationState.currentPath || this.navigationState.currentPath.length === 0) {
+                console.log('⚠️ Nenhum caminho de navegação encontrado');
                 return null;
             }
 
             // Usar último item do path (categoria final)
             const currentCategory = this.navigationState.currentPath[this.navigationState.currentPath.length - 1];
-            const categoryName = currentCategory.name;
+            console.log('🔍 Debug currentCategory:', currentCategory);
 
-            console.log(`💰 Buscando preço para categoria: ${categoryName}`);
+            if (!currentCategory || !currentCategory.name) {
+                console.log('⚠️ Categoria atual não tem nome válido');
+                return null;
+            }
+
+            const categoryName = currentCategory.name;
+            console.log(`💰 Buscando preço para categoria: "${categoryName}"`);
 
             // Usar API existente do Price Management
             const response = await fetch(`/api/pricing/category-price?categoryName=${encodeURIComponent(categoryName)}`, {
                 headers: this.getAuthHeaders()
             });
 
+            console.log('🌐 Response status:', response.status);
+
             if (!response.ok) {
-                console.log(`⚠️ Categoria sem preço definido: ${categoryName}`);
+                if (response.status === 404) {
+                    console.log(`⚠️ Categoria sem preço definido: ${categoryName}`);
+                } else {
+                    console.log(`❌ Erro HTTP ${response.status} ao buscar preço`);
+                }
                 return null;
             }
 
             const data = await response.json();
+            console.log('📦 Response data:', data);
 
             if (data.success && data.price !== undefined) {
                 console.log(`✅ Preço encontrado: $${data.price} para ${categoryName}`);
                 return parseFloat(data.price);
             }
 
+            console.log('⚠️ Response sem preço válido');
             return null;
 
         } catch (error) {
