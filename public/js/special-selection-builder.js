@@ -636,28 +636,26 @@ class SpecialSelectionBuilder {
     }
 
     resetMassSelectionForm() {
-        // Resetar radio buttons
         const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
         const newRadio = document.querySelector('input[name="destination"][value="new"]');
 
         if (existingRadio) existingRadio.checked = true;
         if (newRadio) newRadio.checked = false;
 
-        // Resetar selects e inputs (verificar se existem)
+        // Limpar todos os campos
         const existingSelect = document.getElementById('existingCategoriesSelect');
+        const existingPriceInput = document.getElementById('existingCategoryCustomPrice');
         const newNameInput = document.getElementById('newCategoryName');
-        const newPriceInput = document.getElementById('newCategoryCustomPrice'); // ← NOVO ID
-        const notesInput = document.getElementById('priceAdjustmentNotes'); // ← NOVO CAMPO
+        const newPriceInput = document.getElementById('newCategoryCustomPrice');
+        const notesInput = document.getElementById('priceAdjustmentNotes');
 
         if (existingSelect) existingSelect.value = '';
+        if (existingPriceInput) existingPriceInput.value = '';
         if (newNameInput) newNameInput.value = '';
         if (newPriceInput) newPriceInput.value = '';
         if (notesInput) notesInput.value = '';
 
-        // Atualizar estados dos campos
         this.updateDestinationInputsState();
-
-        // Resetar botão de ação
         this.updateMoveButtonState();
     }
 
@@ -666,17 +664,26 @@ class SpecialSelectionBuilder {
         const newRadio = document.querySelector('input[name="destination"][value="new"]');
 
         const existingSelect = document.getElementById('existingCategoriesSelect');
+        const existingPriceInput = document.getElementById('existingCategoryCustomPrice');
         const newNameInput = document.getElementById('newCategoryName');
         const newPriceInput = document.getElementById('newCategoryCustomPrice');
 
-        if (existingRadio.checked) {
-            existingSelect.disabled = false;
-            newNameInput.disabled = true;
-            newPriceInput.disabled = true;
-        } else {
-            existingSelect.disabled = true;
-            newNameInput.disabled = false;
-            newPriceInput.disabled = false;
+        if (existingRadio && existingRadio.checked) {
+            // Habilitar Existing Category
+            if (existingSelect) existingSelect.disabled = false;
+            if (existingPriceInput) existingPriceInput.disabled = false;
+
+            // Desabilitar Create New
+            if (newNameInput) newNameInput.disabled = true;
+            if (newPriceInput) newPriceInput.disabled = true;
+        } else if (newRadio && newRadio.checked) {
+            // Desabilitar Existing Category
+            if (existingSelect) existingSelect.disabled = true;
+            if (existingPriceInput) existingPriceInput.disabled = true;
+
+            // Habilitar Create New
+            if (newNameInput) newNameInput.disabled = false;
+            if (newPriceInput) newPriceInput.disabled = false;
         }
 
         this.updateMoveButtonState();

@@ -705,9 +705,13 @@
                             <input type="radio" name="destination" value="existing" checked>
                             <span>Existing Category</span>
                         </label>
-                        <select id="existingCategoriesSelect" class="special-form-select">
-                            <option value="">Select a category...</option>
-                        </select>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="existingCategoriesSelect" class="special-form-select" style="flex: 2;">
+                                <option value="">Select a category...</option>
+                            </select>
+                            <input type="number" id="existingCategoryCustomPrice" class="special-form-input"
+                                placeholder="Custom price" min="0" step="0.01" style="flex: 1;">
+                        </div>
                     </div>
 
                     <div>
@@ -715,7 +719,7 @@
                             <input type="radio" name="destination" value="new">
                             <span>Create New Category</span>
                         </label>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
                             <input type="text" id="newCategoryName" class="special-form-input"
                                 placeholder="Category name..." disabled style="flex: 2;">
                             <input type="number" id="newCategoryCustomPrice" class="special-form-input"
@@ -733,15 +737,6 @@
                     <small style="color: var(--text-muted); font-size: 0.75rem;">
                         This note will help track pricing decisions and justifications
                     </small>
-                </div>
-
-                <!-- Custom Price Global -->
-                <div class="special-form-group">
-                    <label class="special-form-label">Custom Price (optional)</label>
-                    <input type="number" id="customPriceGlobal" class="special-form-input"
-                        placeholder="Override price for this selection..." min="0" step="0.01">
-                    <small style="color: var(--text-muted); font-size: 0.8rem;">Works for both existing and new
-                        categories</small>
                 </div>
             </div>
 
