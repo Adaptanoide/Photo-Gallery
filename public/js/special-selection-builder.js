@@ -556,7 +556,7 @@ class SpecialSelectionBuilder {
             console.log(`💰 Buscando preço para categoria: "${categoryName}"`);
 
             // Usar API existente do Price Management
-            const response = await fetch(`/api/pricing/category-price?categoryName=${encodeURIComponent(categoryName)}`, {
+            const response = await fetch(`/api/pricing/category-price?googleDriveId=${encodeURIComponent(this.navigationState.currentFolderId)}`, {
                 headers: this.getAuthHeaders()
             });
 
@@ -572,11 +572,11 @@ class SpecialSelectionBuilder {
             }
 
             const data = await response.json();
-            console.log('📦 Response data:', data);
+            console.log('📦 Response data DETALHADO:', JSON.stringify(data, null, 2));
 
-            if (data.success && data.price !== undefined) {
-                console.log(`✅ Preço encontrado: $${data.price} para ${categoryName}`);
-                return parseFloat(data.price);
+            if (data.success && data.category && data.category.basePrice !== undefined) {
+                console.log(`✅ Preço encontrado: $${data.category.basePrice} para ${categoryName}`);
+                return parseFloat(data.category.basePrice);
             }
 
             console.log('⚠️ Response sem preço válido');
@@ -640,13 +640,19 @@ class SpecialSelectionBuilder {
         const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
         const newRadio = document.querySelector('input[name="destination"][value="new"]');
 
-        existingRadio.checked = true;
-        newRadio.checked = false;
+        if (existingRadio) existingRadio.checked = true;
+        if (newRadio) newRadio.checked = false;
 
-        // Resetar selects e inputs
-        document.getElementById('existingCategoriesSelect').value = '';
-        document.getElementById('newCategoryName').value = '';
-        document.getElementById('newCategoryPrice').value = '';
+        // Resetar selects e inputs (verificar se existem)
+        const existingSelect = document.getElementById('existingCategoriesSelect');
+        const newNameInput = document.getElementById('newCategoryName');
+        const newPriceInput = document.getElementById('newCategoryCustomPrice'); // ← NOVO ID
+        const notesInput = document.getElementById('priceAdjustmentNotes'); // ← NOVO CAMPO
+
+        if (existingSelect) existingSelect.value = '';
+        if (newNameInput) newNameInput.value = '';
+        if (newPriceInput) newPriceInput.value = '';
+        if (notesInput) notesInput.value = '';
 
         // Atualizar estados dos campos
         this.updateDestinationInputsState();
