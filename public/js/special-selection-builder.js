@@ -329,16 +329,16 @@ class SpecialSelectionBuilder {
                                 <img class="photo-image" src="${photo.thumbnailLink}" alt="${photo.name}">
                                 <div class="photo-info">
                                     <div class="photo-name">${photo.name}</div>
-                                    <div class="photo-price">
-                                        <div class="photo-source">[${photo.sourceCategory || 'Unknown'}]</div>
-                                        <div class="photo-price-flow">$${photo.originalPrice || '0.00'} → $${category.customPrice || '0.00'}</div>
-                                    </div>
                                 </div>
                                 <div class="photo-actions">
                                     <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
+                            </div>
+                            <div class="photo-details">
+                                <div class="photo-source">[${photo.sourceCategory || 'Unknown'}]</div>
+                                <div class="photo-price-flow">$${photo.originalPrice || '0.00'} → $${category.customPrice || '0.00'}</div>
                             </div>
                         `).join('')}
                     </div>

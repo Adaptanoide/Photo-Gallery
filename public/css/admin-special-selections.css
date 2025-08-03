@@ -1470,37 +1470,24 @@
     background: rgba(239, 68, 68, 1);
 }
 
-/* ===== ORIGEM E PREÇOS DAS FOTOS ===== */
+/* ===== DETALHES FORA DO THUMBNAIL ===== */
 
-.photo-source {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    background: rgba(212, 175, 55, 0.15);
-    padding: 1px 4px;
-    border-radius: 3px;
-    margin-bottom: 2px;
+.photo-details {
+    margin-top: 4px;
+    padding: 4px 6px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 4px;
     text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    line-height: 1.2;
 }
 
-.photo-price-flow {
-    font-size: 0.75rem;
+.photo-details .photo-source {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.photo-details .photo-price-flow {
+    font-size: 0.8rem;
     color: var(--gold-primary);
     font-weight: 600;
-    text-align: center;
-    white-space: nowrap;
-    line-height: 1.3;
-}
-
-/* Ajustar layout do photo-price para mostrar em coluna */
-.custom-category .photo-price {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    align-items: center;
-    padding: 2px;
 }
