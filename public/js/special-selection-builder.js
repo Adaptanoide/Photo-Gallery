@@ -307,11 +307,12 @@ class SpecialSelectionBuilder {
         <div class="custom-category${this.expandedCategories.has(index) ? ' expanded' : ''}" data-category-index="${index}">
             <div class="custom-category-header" onclick="window.specialSelectionBuilder.toggleCategory(${index})" style="cursor: pointer;">
                 <div class="custom-category-info">
-                    <button class="category-chevron" onclick="event.stopPropagation();">
+                    <button class="category-chevron" onclick="window.specialSelectionBuilder.toggleCategory(${index})">
                         <i class="fas fa-chevron-${this.expandedCategories.has(index) ? 'up' : 'down'}"></i>
                     </button>
                     <div class="custom-category-name">${category.name}</div>
                     <div class="custom-category-count">${category.photos.length}</div>
+                    <div class="custom-category-price">$${category.customPrice || '0.00'}</div>
                 </div>
                     <div class="custom-category-actions">
                         <button class="category-action-btn" data-action="edit-category" data-index="${index}" title="Edit">
