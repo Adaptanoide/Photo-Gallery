@@ -1112,7 +1112,7 @@ class SpecialSelectionBuilder {
                     name: card.dataset.photoName,
                     url: card.dataset.photoUrl,
                     thumbnailLink: card.querySelector('.photo-image').src,
-                    originalPrice: card.querySelector('.photo-price').textContent.replace('$', ''),
+                    originalPrice: this.getCurrentCategoryBasePrice(),
                     sourceCategory: this.getCurrentCategoryName(),
                     sourcePath: this.getCurrentCategoryPath()
                 };
@@ -1450,6 +1450,18 @@ class SpecialSelectionBuilder {
     getCurrentCategoryPath() {
         if (!this.navigationState.currentPath) return 'Stock';
         return this.navigationState.currentPath.map(item => item.name).join(' > ');
+    }
+
+    // NOVA FUNÇÃO: Obter preço base da categoria atual
+    getCurrentCategoryBasePrice() {
+        // Tentar obter do header de preço base
+        const basePriceElement = document.querySelector('#sourceCategoryPrice span');
+        if (basePriceElement) {
+            const priceText = basePriceElement.textContent.replace('$', '');
+            const price = parseFloat(priceText);
+            return isNaN(price) ? '0.00' : price.toFixed(2);
+        }
+        return '0.00';
     }
 
     showAddToSelectionModal(photoCard) {
