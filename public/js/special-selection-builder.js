@@ -273,8 +273,11 @@ class SpecialSelectionBuilder {
                     </div>
                     
                     <div class="photo-actions">
-                        <button class="photo-action-btn" data-action="move" title="Add to Selection">
-                            <i class="fas fa-plus"></i>
+                        <button class="photo-action-btn" data-action="info" data-photo-id="${photo.id}" data-category-index="${index}" title="Photo Details">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
@@ -335,10 +338,6 @@ class SpecialSelectionBuilder {
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                            </div>
-                            <div class="photo-details">
-                                <div class="photo-source">[${photo.sourceCategory || 'Unknown'}]</div>
-                                <div class="photo-price-flow">$${photo.originalPrice || '0.00'} → $${category.customPrice || '0.00'}</div>
                             </div>
                         `).join('')}
                     </div>
