@@ -647,47 +647,8 @@ class SpecialSelectionBuilder {
     }
 
     updateExistingCategoryPrice(categoryIndex) {
-        const existingPriceInput = document.getElementById('existingCategoryCustomPrice');
-        const fromPriceSpan = document.getElementById('fromPrice');
-        const toPriceSpan = document.getElementById('toPrice');
-
-        if (!existingPriceInput) return;
-
-        // Pegar base price
-        const basePriceElement = document.querySelector('#sourceCategoryPrice span');
-        let basePrice = 0;
-        if (basePriceElement) {
-            const basePriceText = basePriceElement.textContent;
-            basePrice = parseFloat(basePriceText.replace('$', ''));
-        }
-
-        if (categoryIndex === '' || categoryIndex === null) {
-            // Nenhuma categoria selecionada - valores padrão
-            existingPriceInput.value = '';
-            existingPriceInput.placeholder = 'Select category first';
-            if (fromPriceSpan) fromPriceSpan.textContent = '$--';
-            if (toPriceSpan) toPriceSpan.textContent = '$--';
-            return;
-        }
-
-        try {
-            const selectedCategory = this.customCategories[parseInt(categoryIndex)];
-
-            if (selectedCategory && selectedCategory.customPrice) {
-                const currentPrice = selectedCategory.customPrice;
-
-                // Popular valores
-                existingPriceInput.value = currentPrice;
-                existingPriceInput.placeholder = 'Edit price';
-                if (fromPriceSpan) fromPriceSpan.textContent = `$${basePrice}`;
-                if (toPriceSpan) toPriceSpan.textContent = `$${currentPrice}`;
-
-                console.log(`💰 Categoria "${selectedCategory.name}" - Ajustado: $${basePrice} → $${currentPrice}`);
-            }
-
-        } catch (error) {
-            console.error('❌ Erro ao buscar preço da categoria:', error);
-        }
+        // Função simplificada - apenas para manter compatibilidade
+        console.log(`📁 Categoria ${categoryIndex} selecionada`);
     }
 
     resetMassSelectionForm() {
@@ -726,7 +687,6 @@ class SpecialSelectionBuilder {
         if (existingRadio && existingRadio.checked) {
             // Habilitar Existing Category
             if (existingSelect) existingSelect.disabled = false;
-            if (existingPriceInput) existingPriceInput.disabled = false;
 
             // Desabilitar Create New
             if (newNameInput) newNameInput.disabled = true;
@@ -734,7 +694,6 @@ class SpecialSelectionBuilder {
         } else if (newRadio && newRadio.checked) {
             // Desabilitar Existing Category
             if (existingSelect) existingSelect.disabled = true;
-            if (existingPriceInput) existingPriceInput.disabled = true;
 
             // Habilitar Create New
             if (newNameInput) newNameInput.disabled = false;
