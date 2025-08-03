@@ -16,6 +16,7 @@ class SpecialSelectionBuilder {
         this.selectedPhotos = [];
         this.expandedCategories = new Set();
         this.selectedStockPhotos = new Set(); // ← NOVA LINHA
+        this.isProcessingClick = false; // ← ADICIONAR ESTA LINHA
         this.draggedPhoto = null; // ← NOVA LINHA
         this.isLoading = false;
 
@@ -873,11 +874,17 @@ class SpecialSelectionBuilder {
 
                     if (!existingPhoto) {
                         // Enriquecer foto com dados adicionais (igual ao drag/drop)
+                        // Pegar base price UMA VEZ só, não para cada foto
+                        const basePrice = await this.getCurrentCategoryBasePrice();
+                        const sourceCategory = this.getCurrentCategoryName();
+                        const sourcePath = this.getCurrentCategoryPath();
+
+                        // Depois no loop:
                         const enrichedPhoto = {
                             ...photoData,
-                            originalPrice: await this.getCurrentCategoryBasePrice(),
-                            sourceCategory: this.getCurrentCategoryName(),
-                            sourcePath: this.getCurrentCategoryPath()
+                            originalPrice: basePrice,
+                            sourceCategory: sourceCategory,
+                            sourcePath: sourcePath
                         };
 
                         targetCategory.photos.push(enrichedPhoto);
@@ -1156,6 +1163,10 @@ class SpecialSelectionBuilder {
 
         // Botões de ação das categorias
         this.customCategoriesContainer.addEventListener('click', (e) => {
+            // Debounce para evitar múltiplos clicks
+            if (this.isProcessingClick) return;
+            this.isProcessingClick = true;
+
             console.log('🎯 CLICK CAPTURADO:', e.target);
 
             const actionBtn = e.target.closest('[data-action]');
@@ -1189,6 +1200,11 @@ class SpecialSelectionBuilder {
                     // Implementar preview
                     break;
             }
+
+            // Reset do debounce após 300ms
+            setTimeout(() => {
+                this.isProcessingClick = false;
+            }, 300);
         });
     }
 
@@ -1506,7 +1522,30 @@ class SpecialSelectionBuilder {
 
         if (!photo) return;
 
-        alert(`📋 Photo Details\n\n📸 ${photo.name}\n📂 ${photo.sourceCategory || 'Unknown'}\n💰 Base: $${photo.originalPrice || '0.00'} → Custom: $${category.customPrice || '0.00'}`);
+        // Evitar múltiplas chamadas
+        if (document.getElementById('photoInfoModal')) return;
+
+        // Criar modal dinâmico
+        const modal = document.createElement('div');
+        modal.id = 'photoInfoModal';
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 9999; display: flex;
+            align-items: center; justify-content: center;
+        `;
+
+        modal.innerHTML = `
+            <div style="background: #2c2c34; padding: 2rem; border-radius: 8px; max-width: 400px; border: 2px solid #d4af37;">
+                <h3 style="color: #d4af37; margin-bottom: 1rem;">📋 Photo Details</h3>
+                <p style="color: white; margin-bottom: 0.5rem;">📸 ${photo.name}</p>
+                <p style="color: white; margin-bottom: 0.5rem;">📂 ${photo.sourceCategory || 'Unknown'}</p>
+                <p style="color: white; margin-bottom: 1.5rem;">💰 Base: $${photo.originalPrice || '0.00'} → Custom: $${category.customPrice || '0.00'}</p>
+                <button onclick="document.getElementById('photoInfoModal').remove()" 
+                    style="padding: 0.5rem 1rem; background: #d4af37; color: #2c2c34; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">OK</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
     }
 
     showAddToSelectionModal(photoCard) {
