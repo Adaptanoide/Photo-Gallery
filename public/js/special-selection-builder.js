@@ -1455,15 +1455,33 @@ class SpecialSelectionBuilder {
     }
 
     // NOVA FUNÇÃO: Obter preço base da categoria atual
-    getCurrentCategoryBasePrice() {
-        // Tentar obter do header de preço base
-        const basePriceElement = document.querySelector('#sourceCategoryPrice span');
-        if (basePriceElement) {
-            const priceText = basePriceElement.textContent.replace('$', '');
-            const price = parseFloat(priceText);
-            return isNaN(price) ? '0.00' : price.toFixed(2);
+    async getCurrentCategoryBasePrice() {
+        try {
+            // Tentar pegar do header primeiro (elemento correto)
+            const headerPriceElement = document.getElementById('headerBasePrice');
+            if (headerPriceElement && headerPriceElement.textContent && headerPriceElement.textContent !== 'Loading...') {
+                const priceText = headerPriceElement.textContent.replace(/[R$\s]/g, '');
+                const price = parseFloat(priceText);
+                if (!isNaN(price)) return price.toFixed(2);
+            }
+
+            // Se não tem no header, buscar diretamente da API
+            if (this.navigationState.currentFolderId) {
+                const response = await fetch(`/api/pricing/category-price?googleDriveId=${this.navigationState.currentFolderId}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.category && data.category.basePrice) {
+                        return data.category.basePrice.toFixed(2);
+                    }
+                }
+            }
+
+            return '0.00';
+        } catch (error) {
+            console.log('Erro ao obter preço base:', error);
+            return '0.00';
         }
-        return '0.00';
     }
 
     // NOVA FUNÇÃO: Mostrar informações da foto
