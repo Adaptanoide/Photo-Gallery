@@ -273,9 +273,6 @@ class SpecialSelectionBuilder {
                     </div>
                     
                     <div class="photo-actions">
-                        <button class="photo-action-btn" data-action="info" data-photo-id="${photo.id}" data-category-index="${index}" title="Photo Details">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
                         <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
                             <i class="fas fa-times"></i>
                         </button>
@@ -334,6 +331,9 @@ class SpecialSelectionBuilder {
                                     <div class="photo-name">${photo.name}</div>
                                 </div>
                                 <div class="photo-actions">
+                                    <button class="photo-action-btn" data-action="info" data-photo-id="${photo.id}" data-category-index="${index}" title="Photo Details">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
                                     <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -1171,6 +1171,9 @@ class SpecialSelectionBuilder {
             console.log(`🎯 Ação clicada: ${action}, index: ${index}, photoId: ${photoId}`);
 
             switch (action) {
+                case 'info':
+                    this.showPhotoInfo(photoId, index);
+                    break;
                 case 'edit-category':
                     this.editCustomCategory(index);
                     break;
@@ -1461,6 +1464,16 @@ class SpecialSelectionBuilder {
             return isNaN(price) ? '0.00' : price.toFixed(2);
         }
         return '0.00';
+    }
+
+    // NOVA FUNÇÃO: Mostrar informações da foto
+    showPhotoInfo(photoId, categoryIndex) {
+        const category = this.customCategories[categoryIndex];
+        const photo = category.photos.find(p => p.id === photoId);
+
+        if (!photo) return;
+
+        alert(`📋 Photo Details\n\n📸 ${photo.name}\n📂 ${photo.sourceCategory || 'Unknown'}\n💰 Base: $${photo.originalPrice || '0.00'} → Custom: $${category.customPrice || '0.00'}`);
     }
 
     showAddToSelectionModal(photoCard) {
