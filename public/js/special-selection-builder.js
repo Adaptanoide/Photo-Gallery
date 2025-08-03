@@ -806,6 +806,12 @@ class SpecialSelectionBuilder {
     }
 
     async executeMassMovement() {
+        // Mostrar loading
+        const moveButton = document.getElementById('btnExecuteMassMovement');
+        const originalText = moveButton.innerHTML;
+        moveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        moveButton.disabled = true;
+
         const existingRadio = document.querySelector('input[name="destination"][value="existing"]');
         const existingSelect = document.getElementById('existingCategoriesSelect');
         const newNameInput = document.getElementById('newCategoryName');
@@ -852,6 +858,12 @@ class SpecialSelectionBuilder {
         } catch (error) {
             console.error('❌ Erro na movimentação em massa:', error);
             alert(`Error: ${error.message}`);
+        } finally {
+            // Restaurar botão
+            const moveButton = document.getElementById('btnExecuteMassMovement');
+            const originalText = '<i class="fas fa-arrow-right"></i> <span id="moveButtonText">Move Photos</span>';
+            moveButton.innerHTML = originalText;
+            moveButton.disabled = false;
         }
     }
 
@@ -1163,9 +1175,11 @@ class SpecialSelectionBuilder {
 
         // Botões de ação das categorias
         this.customCategoriesContainer.addEventListener('click', (e) => {
-            // Debounce para evitar múltiplos clicks
-            if (this.isProcessingClick) return;
-            this.isProcessingClick = true;
+            // Debounce apenas para ação 'info' (que causava loop)
+            if (actionBtn && actionBtn.dataset.action === 'info' && this.isProcessingClick) return;
+            if (actionBtn && actionBtn.dataset.action === 'info') {
+                this.isProcessingClick = true;
+            }
 
             console.log('🎯 CLICK CAPTURADO:', e.target);
 
@@ -1201,10 +1215,12 @@ class SpecialSelectionBuilder {
                     break;
             }
 
-            // Reset do debounce após 300ms
-            setTimeout(() => {
-                this.isProcessingClick = false;
-            }, 300);
+            // Reset do debounce apenas se foi ação 'info'
+            if (action === 'info') {
+                setTimeout(() => {
+                    this.isProcessingClick = false;
+                }, 300);
+            }
         });
     }
 
