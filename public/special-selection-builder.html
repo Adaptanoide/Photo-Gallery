@@ -705,9 +705,25 @@
                             <input type="radio" name="destination" value="existing" checked>
                             <span>Existing Category</span>
                         </label>
-                        <select id="existingCategoriesSelect" class="special-form-select">
-                            <option value="">Select a category...</option>
-                        </select>
+                            <div>
+                                <select id="existingCategoriesSelect" class="special-form-select">
+                                    <option value="">Select a category...</option>
+                                </select>
+                                <div id="existingCategoryPriceInfo" style="
+                                    margin-top: 0.5rem;
+                                    padding: 0.5rem;
+                                    background: rgba(212, 175, 55, 0.1);
+                                    border-radius: 4px;
+                                    font-size: 0.85rem;
+                                    color: var(--text-secondary);
+                                    text-align: center;
+                                    display: none;
+                                ">
+                                    Already adjusted: 
+                                    <span id="fromPrice" style="color: var(--gold-primary); font-weight: 600;">$--</span> → 
+                                    <span id="toPrice" style="color: var(--gold-primary); font-weight: 600;">$--</span>
+                                </div>
+                            </div>
                     </div>
 
                     <div>

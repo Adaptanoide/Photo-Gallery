@@ -647,8 +647,41 @@ class SpecialSelectionBuilder {
     }
 
     updateExistingCategoryPrice(categoryIndex) {
-        // Função simplificada - apenas para manter compatibilidade
-        console.log(`📁 Categoria ${categoryIndex} selecionada`);
+        const fromPriceSpan = document.getElementById('fromPrice');
+        const toPriceSpan = document.getElementById('toPrice');
+        const priceInfoDiv = document.getElementById('existingCategoryPriceInfo');
+
+        if (categoryIndex === '' || categoryIndex === null) {
+            // Ocultar info quando nenhuma categoria selecionada
+            if (priceInfoDiv) priceInfoDiv.style.display = 'none';
+            return;
+        }
+
+        try {
+            const selectedCategory = this.customCategories[parseInt(categoryIndex)];
+
+            // Pegar base price da categoria origem
+            const basePriceElement = document.querySelector('#sourceCategoryPrice span');
+            let basePrice = 0;
+            if (basePriceElement) {
+                const basePriceText = basePriceElement.textContent;
+                basePrice = parseFloat(basePriceText.replace('$', '')) || 0;
+            }
+
+            if (selectedCategory && selectedCategory.customPrice) {
+                const currentPrice = selectedCategory.customPrice;
+
+                // Mostrar informações
+                if (fromPriceSpan) fromPriceSpan.textContent = `$${basePrice.toFixed(2)}`;
+                if (toPriceSpan) toPriceSpan.textContent = `$${currentPrice.toFixed(2)}`;
+                if (priceInfoDiv) priceInfoDiv.style.display = 'block';
+
+                console.log(`💰 Categoria "${selectedCategory.name}" - Base: $${basePrice} → Custom: $${currentPrice}`);
+            }
+        } catch (error) {
+            console.error('❌ Erro ao buscar preço da categoria:', error);
+            if (priceInfoDiv) priceInfoDiv.style.display = 'none';
+        }
     }
 
     resetMassSelectionForm() {
