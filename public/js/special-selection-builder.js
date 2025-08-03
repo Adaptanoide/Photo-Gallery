@@ -1385,14 +1385,17 @@ class SpecialSelectionBuilder {
         this.showRenameCategoryModal(categoryIndex);
     }
 
-    // NOVA FUNÇÃO: Mostrar modal de rename
+    // NOVA FUNÇÃO: Mostrar modal de edição
     showRenameCategoryModal(categoryIndex) {
         const category = this.customCategories[categoryIndex];
         if (!category) return;
 
-        // Preencher dados do modal
+        // Preencher dados atuais
         document.getElementById('currentCategoryName').textContent = category.name;
         document.getElementById('newCategoryNameInput').value = category.name;
+
+        document.getElementById('currentCategoryPrice').textContent = `$${category.customPrice || '0.00'}`;
+        document.getElementById('newCategoryPriceInput').value = category.customPrice || '';
 
         // Armazenar índice para usar na confirmação
         this.categoryToRename = categoryIndex;
@@ -1411,11 +1414,12 @@ class SpecialSelectionBuilder {
         this.categoryToRename = null;
     }
 
-    // NOVA FUNÇÃO: Confirmar rename
+    // NOVA FUNÇÃO: Confirmar edição
     confirmRenameCategory() {
         if (this.categoryToRename === null) return;
 
         const newName = document.getElementById('newCategoryNameInput').value.trim();
+        const newPrice = document.getElementById('newCategoryPriceInput').value.trim();
 
         if (!newName) {
             alert('Category name cannot be empty!');
@@ -1424,9 +1428,19 @@ class SpecialSelectionBuilder {
 
         const category = this.customCategories[this.categoryToRename];
         if (category) {
+            // Atualizar nome
             category.name = newName;
+
+            // Atualizar preço (se fornecido)
+            if (newPrice && !isNaN(parseFloat(newPrice))) {
+                category.customPrice = parseFloat(newPrice);
+            } else if (newPrice === '') {
+                category.customPrice = null; // Remove preço customizado
+            }
+
+            // Re-renderizar
             this.renderCustomCategories();
-            console.log(`✅ Categoria renomeada para: ${newName}`);
+            console.log(`✅ Categoria editada: "${newName}" - Preço: $${category.customPrice || '0.00'}`);
         }
 
         // Fechar modal
