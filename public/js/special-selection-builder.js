@@ -1105,13 +1105,13 @@ class SpecialSelectionBuilder {
 
         photoCards.forEach(card => {
             // Drag start
-            card.addEventListener('dragstart', (e) => {
+            card.addEventListener('dragstart', async (e) => {
                 this.draggedPhoto = {
                     id: card.dataset.photoId,
                     name: card.dataset.photoName,
                     url: card.dataset.photoUrl,
                     thumbnailLink: card.querySelector('.photo-image').src,
-                    originalPrice: this.getCurrentCategoryBasePrice(),
+                    originalPrice: await this.getCurrentCategoryBasePrice(),
                     sourceCategory: this.getCurrentCategoryName(),
                     sourcePath: this.getCurrentCategoryPath()
                 };
