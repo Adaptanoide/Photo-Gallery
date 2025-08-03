@@ -872,8 +872,16 @@ class SpecialSelectionBuilder {
                     const existingPhoto = targetCategory.photos.find(p => p.id === photoId);
 
                     if (!existingPhoto) {
-                        targetCategory.photos.push(photoData);
-                        this.selectedPhotos.push(photoData);
+                        // Enriquecer foto com dados adicionais (igual ao drag/drop)
+                        const enrichedPhoto = {
+                            ...photoData,
+                            originalPrice: await this.getCurrentCategoryBasePrice(),
+                            sourceCategory: this.getCurrentCategoryName(),
+                            sourcePath: this.getCurrentCategoryPath()
+                        };
+
+                        targetCategory.photos.push(enrichedPhoto);
+                        this.selectedPhotos.push(enrichedPhoto);
                         console.log(`✅ Foto ${photoData.name} movida para ${targetCategory.name}`);
                     } else {
                         console.log(`⚠️ Foto ${photoData.name} já existe na categoria`);
