@@ -294,7 +294,8 @@ const selectionSchema = new mongoose.Schema({
                 'price_customized',
                 'discount_applied',
                 'special_selection_activated',
-                'special_selection_deactivated'
+                'special_selection_deactivated',
+                'photo_returned'  // ✅ ADICIONE ESTA LINHA!
             ],
             required: true
         },
@@ -445,14 +446,14 @@ selectionSchema.methods.addCustomCategory = function (categoryData) {
     };
 
     this.customCategories.push(newCategory);
-    
+
     // ✅ LOG MELHORADO COM INFO DO GOOGLE DRIVE
     this.addMovementLog(
-        'category_created', 
-        `Categoria customizada criada: ${categoryData.categoryName}`, 
-        true, 
-        null, 
-        { 
+        'category_created',
+        `Categoria customizada criada: ${categoryData.categoryName}`,
+        true,
+        null,
+        {
             categoryId,
             categoryName: categoryData.categoryName,
             googleDriveFolderId: categoryData.googleDriveFolderId,
