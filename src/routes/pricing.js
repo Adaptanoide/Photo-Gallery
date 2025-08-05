@@ -192,16 +192,34 @@ router.get('/category-price', async (req, res) => {
             });
         }
 
-        // NOVO: Usar hierarquia inteligente para calcular preço
-        let finalPrice = category.basePrice;
+        // ===== CORREÇÃO: CALCULAR PREÇO FINAL =====
+
+        let finalPrice = 0;
         let priceSource = 'base';
         let hierarchy = null;
 
-        if (clientCode) {
-            const priceResult = await category.getPriceForClient(clientCode);
-            finalPrice = priceResult.finalPrice;
-            priceSource = priceResult.appliedRule;
-            hierarchy = PricingService.getHierarchyExplanation(priceResult.appliedRule);
+        // Se é categoria especial, usar preço customizado diretamente
+        if (category.isCustomCategory) {
+            finalPrice = category.basePrice; // Preço customizado já está em basePrice
+            priceSource = 'special_selection';
+            hierarchy = 'Custom price from special selection';
+
+            console.log(`💰 Usando preço customizado: $${finalPrice} (fonte: special_selection)`);
+        } else {
+            // Lógica normal para categorias regulares
+            finalPrice = category.basePrice;
+            priceSource = 'base';
+
+            if (clientCode) {
+                try {
+                    const priceResult = await category.getPriceForClient(clientCode);
+                    finalPrice = priceResult.finalPrice;
+                    priceSource = priceResult.appliedRule;
+                    hierarchy = PricingService.getHierarchyExplanation(priceResult.appliedRule);
+                } catch (error) {
+                    console.log(`⚠️ Erro ao calcular preço hierárquico, usando base: ${error.message}`);
+                }
+            }
         }
 
         const priceInfo = {
@@ -214,6 +232,15 @@ router.get('/category-price', async (req, res) => {
             formattedPrice: finalPrice > 0 ? `$${finalPrice.toFixed(2)}` : 'No price',
             hasPrice: finalPrice > 0
         };
+
+        console.log(`✅ Preço calculado:`, {
+            categoria: category.displayName,
+            cliente: clientCode || 'ANÔNIMO',
+            precoBase: category.basePrice,
+            precoFinal: finalPrice,
+            fonte: priceSource,
+            isSpecial: category.isCustomCategory || false
+        });
 
         console.log(`✅ Preço calculado:`, {
             categoria: category.displayName,
