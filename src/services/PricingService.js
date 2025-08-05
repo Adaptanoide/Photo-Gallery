@@ -347,12 +347,13 @@ class PricingService {
     }
 
     /**
-     * Obter preço para cliente específico
+     * Obter preço para cliente específico com hierarquia inteligente
      * @param {string} googleDriveId - ID da pasta no Google Drive
      * @param {string} clientCode - Código do cliente
-     * @returns {object} Informações de preço
+     * @param {number} quantity - Quantidade de fotos (padrão: 1)
+     * @returns {object} Informações detalhadas de preço
      */
-    static async getPriceForClient(googleDriveId, clientCode) {
+    static async getPriceForClient(googleDriveId, clientCode, quantity = 1) {
         try {
             const category = await PhotoCategory.findByDriveId(googleDriveId);
 
@@ -364,15 +365,22 @@ class PricingService {
                 };
             }
 
-            const finalPrice = category.getPriceForClient(clientCode);
-            const hasDiscount = finalPrice < category.basePrice;
+            // Usar novo método com hierarquia
+            const priceResult = await category.getPriceForClient(clientCode, quantity);
+            const hasDiscount = priceResult.finalPrice < category.basePrice;
 
             return {
-                hasPrice: finalPrice > 0,
-                price: finalPrice,
+                hasPrice: priceResult.finalPrice > 0,
+                price: priceResult.finalPrice,
                 basePrice: category.basePrice,
                 hasDiscount,
-                discountAmount: hasDiscount ? category.basePrice - finalPrice : 0,
+                discountAmount: hasDiscount ? category.basePrice - priceResult.finalPrice : 0,
+
+                // 🆕 NOVAS INFORMAÇÕES HIERÁRQUICAS
+                appliedRule: priceResult.appliedRule,
+                ruleDetails: priceResult.ruleDetails,
+                hierarchy: this.getHierarchyExplanation(priceResult.appliedRule),
+
                 category: {
                     id: category._id,
                     displayName: category.displayName,
@@ -384,6 +392,42 @@ class PricingService {
             console.error('❌ Erro ao buscar preço para cliente:', error);
             throw error;
         }
+    }
+
+    /**
+     * Explicação da hierarquia aplicada
+     * @param {string} appliedRule - Regra aplicada
+     * @returns {object} Explicação da hierarquia
+     */
+    static getHierarchyExplanation(appliedRule) {
+        const explanations = {
+            'client-custom-price': {
+                priority: 1,
+                badge: '🥇 CLIENT RULE',
+                description: 'Custom price for this specific client',
+                color: '#d4af37'
+            },
+            'client-discount': {
+                priority: 1,
+                badge: '🥇 CLIENT RULE',
+                description: 'Percentage discount for this specific client',
+                color: '#d4af37'
+            },
+            'quantity-discount': {
+                priority: 2,
+                badge: '🥈 QUANTITY RULE',
+                description: 'Volume discount based on photo quantity',
+                color: '#c0c0c0'
+            },
+            'base-price': {
+                priority: 3,
+                badge: '🥉 BASE PRICE',
+                description: 'Standard category price',
+                color: '#cd7f32'
+            }
+        };
+
+        return explanations[appliedRule] || explanations['base-price'];
     }
 
     // ===== RELATÓRIOS E ESTATÍSTICAS =====

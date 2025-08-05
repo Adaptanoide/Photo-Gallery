@@ -16,13 +16,13 @@ router.post('/create-test-code', async (req, res) => {
         let code;
         let codeExists = true;
         let attempts = 0;
-        
+
         while (codeExists && attempts < 100) {
             code = Math.floor(1000 + Math.random() * 9000).toString();
             codeExists = await AccessCode.findOne({ code });
             attempts++;
         }
-        
+
         const accessCode = new AccessCode({
             code,
             clientName: "João Silva",
@@ -30,16 +30,16 @@ router.post('/create-test-code', async (req, res) => {
             allowedCategories: ["1. Colombian Cowhides", "2. Brazil Best Sellers"],
             createdBy: "admin"
         });
-        
+
         await accessCode.save();
-        
+
         res.json({
             success: true,
             message: 'Código criado com sucesso',
             code: code,
             client: "João Silva"
         });
-        
+
     } catch (error) {
         console.error('Erro ao criar código:', error);
         res.status(500).json({
@@ -57,16 +57,16 @@ router.get('/db-status', async (req, res) => {
     try {
         // Testar conexão fazendo uma operação simples
         await mongoose.connection.db.admin().ping();
-        
+
         const collections = await mongoose.connection.db.listCollections().toArray();
-        
+
         res.json({
             status: 'OK',
             message: 'MongoDB conectado',
             database: mongoose.connection.name,
             collections: collections.map(c => c.name)
         });
-        
+
     } catch (error) {
         console.error('Erro ao verificar DB:', error);
         res.status(500).json({
@@ -82,12 +82,12 @@ router.get('/access-codes', async (req, res) => {
         const codes = await AccessCode.find()
             .sort({ createdAt: -1 })
             .limit(50);
-            
+
         res.json({
             success: true,
             codes
         });
-        
+
     } catch (error) {
         console.error('Erro ao buscar códigos:', error);
         res.status(500).json({
@@ -100,50 +100,69 @@ router.get('/access-codes', async (req, res) => {
 // Criar código de acesso
 router.post('/access-codes', async (req, res) => {
     try {
-        const { clientName, clientEmail, allowedCategories, expiresInDays = 30 } = req.body;
-        
+        const {
+            clientName,
+            clientEmail,
+            clientPhone,
+            companyName,
+            addressLine1,
+            addressLine2,
+            city,
+            state,
+            zipCode,
+            allowedCategories,
+            expiresInDays = 30
+        } = req.body;
+
         if (!clientName || !allowedCategories || allowedCategories.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Nome do cliente e categorias são obrigatórios'
             });
         }
-        
+
         // Gerar código único de 4 dígitos
         let code;
         let codeExists = true;
         let attempts = 0;
-        
+
         while (codeExists && attempts < 100) {
             code = Math.floor(1000 + Math.random() * 9000).toString();
             codeExists = await AccessCode.findOne({ code });
             attempts++;
         }
-        
+
         if (codeExists) {
             return res.status(500).json({
                 success: false,
                 message: 'Não foi possível gerar código único'
             });
         }
-        
+
         const accessCode = new AccessCode({
             code,
             clientName,
             clientEmail,
+            clientPhone,
+            companyName,
+            addressLine1,
+            addressLine2,
+            city,
+            state,
+            zipCode,
             allowedCategories,
             expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
             createdBy: req.user.username
         });
-        
+
         await accessCode.save();
-        
+
         res.json({
             success: true,
             message: 'Código criado com sucesso',
             accessCode
         });
-        
+
     } catch (error) {
         console.error('Erro ao criar código:', error);
         res.status(500).json({
@@ -159,10 +178,23 @@ router.post('/access-codes', async (req, res) => {
 router.put('/access-codes/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { clientName, clientEmail, allowedCategories, expiresInDays, isActive } = req.body;
-        
+        const {
+            clientName,
+            clientEmail,
+            clientPhone,
+            companyName,
+            addressLine1,
+            addressLine2,
+            city,
+            state,
+            zipCode,
+            allowedCategories,
+            expiresInDays,
+            isActive
+        } = req.body;
+
         console.log(`✏️ Atualizando código: ${id}`);
-        
+
         // Validações
         if (!clientName || !allowedCategories || allowedCategories.length === 0) {
             return res.status(400).json({
@@ -170,16 +202,23 @@ router.put('/access-codes/:id', async (req, res) => {
                 message: 'Nome do cliente e categorias são obrigatórios'
             });
         }
-        
+
         // Calcular nova data de expiração
         const expiresAt = new Date(Date.now() + (expiresInDays || 30) * 24 * 60 * 60 * 1000);
-        
+
         // Atualizar no banco
         const updatedCode = await AccessCode.findByIdAndUpdate(
             id,
             {
                 clientName: clientName.trim(),
                 clientEmail: clientEmail ? clientEmail.trim() : undefined,
+                clientPhone: clientPhone ? clientPhone.trim() : undefined,
+                companyName: companyName ? companyName.trim() : undefined,
+                addressLine1: addressLine1 ? addressLine1.trim() : undefined,
+                addressLine2: addressLine2 ? addressLine2.trim() : undefined,
+                city: city ? city.trim() : undefined,
+                state: state ? state.trim() : undefined,
+                zipCode: zipCode ? zipCode.trim() : undefined,
                 allowedCategories,
                 expiresAt,
                 isActive: isActive !== false, // Default true
@@ -187,7 +226,6 @@ router.put('/access-codes/:id', async (req, res) => {
             },
             { new: true, runValidators: true }
         );
-
         if (!updatedCode) {
             return res.status(404).json({
                 success: false,
@@ -205,14 +243,14 @@ router.put('/access-codes/:id', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao atualizar código:', error);
-        
+
         if (error.name === 'ValidationError') {
             return res.status(400).json({
                 success: false,
                 message: 'Dados inválidos: ' + Object.values(error.errors).map(e => e.message).join(', ')
             });
         }
-        
+
         res.status(500).json({
             success: false,
             message: 'Erro interno do servidor'
@@ -225,25 +263,25 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
     try {
         const { id } = req.params;
         const { isActive } = req.body;
-        
+
         console.log(`🔄 Toggle status código: ${id} → ${isActive ? 'ATIVAR' : 'DESATIVAR'}`);
-        
+
         // Buscar código atual
         const accessCode = await AccessCode.findById(id);
-        
+
         if (!accessCode) {
             return res.status(404).json({
                 success: false,
                 message: 'Código não encontrado'
             });
         }
-        
+
         // Atualizar status
         accessCode.isActive = isActive;
         accessCode.updatedAt = new Date();
-        
+
         await accessCode.save();
-        
+
         console.log(`✅ Código ${accessCode.code} ${isActive ? 'ativado' : 'desativado'} com sucesso`);
 
         res.json({
@@ -265,25 +303,25 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
 router.delete('/access-codes/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         console.log(`🗑️ Deletando código: ${id}`);
-        
+
         // Buscar código antes de deletar
         const accessCode = await AccessCode.findById(id);
-        
+
         if (!accessCode) {
             return res.status(404).json({
                 success: false,
                 message: 'Código não encontrado'
             });
         }
-        
+
         // Verificar se código está sendo usado ativamente
         // TODO: Implementar verificação de uso ativo (carrinho, sessão, etc.)
-        
+
         // Deletar código
         await AccessCode.findByIdAndDelete(id);
-        
+
         console.log(`✅ Código ${accessCode.code} deletado com sucesso`);
 
         res.json({
@@ -305,23 +343,23 @@ router.delete('/access-codes/:id', async (req, res) => {
 router.get('/access-codes/check-unique', async (req, res) => {
     try {
         const { code, exclude } = req.query;
-        
+
         if (!code) {
             return res.status(400).json({
                 success: false,
                 message: 'Código é obrigatório'
             });
         }
-        
+
         // Construir query
         const query = { code };
         if (exclude) {
             query._id = { $ne: exclude };
         }
-        
+
         // Verificar se código já existe
         const existingCode = await AccessCode.findOne(query);
-        
+
         res.json({
             success: true,
             isUnique: !existingCode,
@@ -341,7 +379,7 @@ router.get('/access-codes/check-unique', async (req, res) => {
 router.get('/access-codes/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         // Buscar por ID ou por código
         const accessCode = await AccessCode.findOne({
             $or: [
@@ -362,7 +400,7 @@ router.get('/access-codes/:id', async (req, res) => {
             daysUntilExpiry: Math.ceil((accessCode.expiresAt - new Date()) / (1000 * 60 * 60 * 24)),
             isExpired: accessCode.expiresAt < new Date(),
             daysSinceCreated: Math.ceil((new Date() - accessCode.createdAt) / (1000 * 60 * 60 * 24)),
-            daysSinceLastUsed: accessCode.lastUsed ? 
+            daysSinceLastUsed: accessCode.lastUsed ?
                 Math.ceil((new Date() - accessCode.lastUsed) / (1000 * 60 * 60 * 24)) : null
         };
 
@@ -385,30 +423,30 @@ router.get('/access-codes/:id', async (req, res) => {
 router.get('/access-codes-stats', async (req, res) => {
     try {
         const now = new Date();
-        
+
         // Agregação para estatísticas
         const stats = await AccessCode.aggregate([
             {
                 $group: {
                     _id: null,
                     total: { $sum: 1 },
-                    active: { 
-                        $sum: { 
+                    active: {
+                        $sum: {
                             $cond: [
-                                { $and: [{ $eq: ['$isActive', true] }, { $gt: ['$expiresAt', now] }] }, 
-                                1, 
+                                { $and: [{ $eq: ['$isActive', true] }, { $gt: ['$expiresAt', now] }] },
+                                1,
                                 0
-                            ] 
+                            ]
                         }
                     },
-                    inactive: { 
-                        $sum: { 
-                            $cond: [{ $eq: ['$isActive', false] }, 1, 0] 
+                    inactive: {
+                        $sum: {
+                            $cond: [{ $eq: ['$isActive', false] }, 1, 0]
                         }
                     },
-                    expired: { 
-                        $sum: { 
-                            $cond: [{ $lt: ['$expiresAt', now] }, 1, 0] 
+                    expired: {
+                        $sum: {
+                            $cond: [{ $lt: ['$expiresAt', now] }, 1, 0]
                         }
                     },
                     totalUsage: { $sum: '$usageCount' },

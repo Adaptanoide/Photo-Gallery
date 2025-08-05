@@ -111,40 +111,53 @@ const selectionSchema = new mongoose.Schema({
     customCategories: [{
         categoryId: {
             type: String,
-            required: true
+            required: true,
+            default: () => `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         },
         categoryName: {
             type: String,
-            required: true,
-            trim: true
+            required: true
         },
         categoryDisplayName: {
             type: String,
-            trim: true
+            default: function () { return this.categoryName; }
         },
-        // Preço base desta categoria customizada
         baseCategoryPrice: {
             type: Number,
-            min: 0,
             default: 0
         },
-        // Informações sobre categoria original (para tracking)
-        originalCategoryInfo: {
-            originalCategoryName: String,
-            originalCategoryPrice: Number,
-            originalPath: String
+        // ✅ NOVOS CAMPOS PARA GOOGLE DRIVE
+        googleDriveFolderId: {
+            type: String,
+            default: null
         },
-        // Fotos desta categoria
+        googleDriveFolderName: {
+            type: String,
+            default: null
+        },
+        originalCategoryInfo: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {}
+        },
         photos: [{
-            photoId: String,
-            fileName: String,
+            photoId: {
+                type: String,
+                required: true
+            },
+            fileName: {
+                type: String,
+                required: true
+            },
             originalLocation: {
                 path: String,
                 categoryName: String,
                 price: Number
             },
-            customPrice: Number, // Preço específico desta foto (sobrescreve baseCategoryPrice)
-            movedAt: {
+            customPrice: {
+                type: Number,
+                default: null
+            },
+            addedAt: {
                 type: Date,
                 default: Date.now
             }
@@ -424,12 +437,28 @@ selectionSchema.methods.addCustomCategory = function (categoryData) {
         categoryDisplayName: categoryData.categoryDisplayName || categoryData.categoryName,
         baseCategoryPrice: categoryData.baseCategoryPrice || 0,
         originalCategoryInfo: categoryData.originalCategoryInfo || {},
+        // ✅ NOVOS CAMPOS PARA GOOGLE DRIVE
+        googleDriveFolderId: categoryData.googleDriveFolderId || null,
+        googleDriveFolderName: categoryData.googleDriveFolderName || null,
         photos: [],
         createdAt: new Date()
     };
 
     this.customCategories.push(newCategory);
-    this.addMovementLog('category_created', `Categoria customizada criada: ${categoryData.categoryName}`, true, null, { categoryId });
+    
+    // ✅ LOG MELHORADO COM INFO DO GOOGLE DRIVE
+    this.addMovementLog(
+        'category_created', 
+        `Categoria customizada criada: ${categoryData.categoryName}`, 
+        true, 
+        null, 
+        { 
+            categoryId,
+            categoryName: categoryData.categoryName,
+            googleDriveFolderId: categoryData.googleDriveFolderId,
+            googleDriveFolderName: categoryData.googleDriveFolderName
+        }
+    );
 
     return categoryId;
 };

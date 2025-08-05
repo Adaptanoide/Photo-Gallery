@@ -175,6 +175,88 @@ router.get('/client/data', async (req, res) => {
             });
         }
 
+        // ===== NOVO: DETECTAR TIPO DE ACESSO =====
+        if (accessCode.accessType === 'special') {
+            console.log(`🔑 Código de acesso ESPECIAL ${accessCode.code} - seleção ${accessCode.specialSelection.selectionCode} - ${accessCode.clientName}`);
+
+            try {
+                // Buscar seleção especial ativa
+                const Selection = require('../models/Selection');
+                const selection = await Selection.findById(accessCode.specialSelection.selectionId);
+
+                if (!selection) {
+                    console.error(`❌ Seleção especial não encontrada: ${accessCode.specialSelection.selectionId}`);
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Special selection not found'
+                    });
+                }
+
+                if (!selection.specialSelectionConfig?.accessConfig?.isActive) {
+                    console.error(`❌ Seleção especial inativa: ${selection.selectionId}`);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Special selection is not active'
+                    });
+                }
+
+                // Converter customCategories para formato esperado pelo cliente
+                const specialCategories = selection.customCategories
+                    .filter(cat => cat.googleDriveFolderId) // Apenas categorias com pasta criada
+                    .map(cat => ({
+                        id: cat.googleDriveFolderId,           // ID da pasta no Google Drive
+                        name: cat.categoryDisplayName || cat.categoryName,
+                        modifiedTime: cat.createdAt || new Date().toISOString()
+                    }));
+
+                console.log(`✅ Categorias especiais encontradas (${specialCategories.length}):`);
+                specialCategories.forEach((cat, i) => {
+                    console.log(`   ${i + 1}. "${cat.name}" (ID: ${cat.id})`);
+                });
+
+                // Atualizar último uso
+                accessCode.lastUsed = new Date();
+                accessCode.usageCount += 1;
+                await accessCode.save();
+
+                // Resposta para cliente especial
+                return res.json({
+                    success: true,
+                    client: {
+                        name: accessCode.clientName,
+                        email: accessCode.clientEmail,
+                        code: accessCode.code
+                    },
+                    allowedCategories: specialCategories,      // ← Categorias customizadas navegáveis!
+                    accessType: 'special',
+                    specialSelectionInfo: {
+                        selectionName: selection.specialSelectionConfig.selectionName,
+                        description: selection.specialSelectionConfig.description,
+                        totalCategories: specialCategories.length
+                    },
+                    totalCategories: specialCategories.length,
+                    allowedCount: specialCategories.length,
+                    debug: {
+                        selectionId: selection.selectionId,
+                        isActive: selection.specialSelectionConfig.accessConfig.isActive,
+                        customCategoriesTotal: selection.customCategories.length,
+                        categoriesWithFolders: specialCategories.length
+                    }
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao processar acesso especial:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error processing special selection access',
+                    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+                });
+            }
+        }
+
+        // ===== ACESSO NORMAL: MANTER LÓGICA EXISTENTE =====
+        console.log(`🔑 Código de acesso NORMAL ${accessCode.code} - ${accessCode.allowedCategories.length} categorias - ${accessCode.clientName}`);
+
         // Buscar categorias do Google Drive
         let availableCategories = [];
 

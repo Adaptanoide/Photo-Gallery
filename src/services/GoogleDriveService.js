@@ -351,6 +351,181 @@ class GoogleDriveService {
         }
     }
 
+    /**
+ * Criar pasta para categoria customizada dentro da seleção especial
+ */
+    static async createCustomCategoryFolder(parentSelectionFolderId, categoryName) {
+        try {
+            console.log(`📁 Criando pasta para categoria customizada: ${categoryName}`);
+
+            // Limpar nome da categoria para usar como nome de pasta
+            const cleanCategoryName = categoryName
+                .replace(/[^\w\s-]/g, '')  // Remove caracteres especiais
+                .trim()
+                .replace(/\s+/g, '_');     // Substitui espaços por underscores
+
+            // Criar pasta dentro da pasta da seleção especial
+            const categoryFolderId = await this.createFolderIfNotExists(
+                cleanCategoryName,
+                parentSelectionFolderId
+            );
+
+            console.log(`✅ Pasta de categoria customizada criada: ${cleanCategoryName} (${categoryFolderId})`);
+
+            return {
+                success: true,
+                categoryFolderId,
+                categoryFolderName: cleanCategoryName,
+                parentFolderId: parentSelectionFolderId
+            };
+
+        } catch (error) {
+            console.error(`❌ Erro ao criar pasta de categoria '${categoryName}':`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Mover foto para categoria customizada específica
+     */
+    static async movePhotoToCustomCategory(photoId, categoryFolderId, categoryName) {
+        try {
+            console.log(`📸 Movendo foto ${photoId} para categoria customizada: ${categoryName}`);
+
+            // Usar método existente movePhotoToSelection
+            const result = await this.movePhotoToSelection(photoId, categoryFolderId);
+
+            console.log(`✅ Foto movida para categoria customizada: ${result.photoName} → ${categoryName}`);
+
+            return {
+                success: true,
+                photoId,
+                photoName: result.photoName,
+                categoryFolderId,
+                categoryName,
+                oldParent: result.oldParent,
+                newParent: categoryFolderId,
+                originalHierarchicalPath: result.originalHierarchicalPath
+            };
+
+        } catch (error) {
+            console.error(`❌ Erro ao mover foto ${photoId} para categoria '${categoryName}':`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Criar múltiplas pastas de categorias customizadas
+     */
+    static async createMultipleCustomCategoryFolders(parentSelectionFolderId, categoryNames) {
+        try {
+            console.log(`📁 Criando ${categoryNames.length} pastas de categorias customizadas...`);
+
+            const results = {};
+
+            for (const categoryName of categoryNames) {
+                try {
+                    const result = await this.createCustomCategoryFolder(
+                        parentSelectionFolderId,
+                        categoryName
+                    );
+
+                    results[categoryName] = {
+                        success: true,
+                        folderId: result.categoryFolderId,
+                        folderName: result.categoryFolderName
+                    };
+
+                    console.log(`✅ Categoria criada: ${categoryName} → ${result.categoryFolderId}`);
+
+                } catch (error) {
+                    console.error(`❌ Erro ao criar categoria '${categoryName}':`, error);
+                    results[categoryName] = {
+                        success: false,
+                        error: error.message
+                    };
+                }
+            }
+
+            const successCount = Object.values(results).filter(r => r.success).length;
+            console.log(`✅ Criação de categorias concluída: ${successCount}/${categoryNames.length} sucessos`);
+
+            return {
+                success: successCount > 0,
+                results,
+                summary: {
+                    total: categoryNames.length,
+                    successful: successCount,
+                    failed: categoryNames.length - successCount
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Erro ao criar múltiplas categorias customizadas:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obter estrutura navegável de uma seleção especial
+     * Para o cliente navegar pelas categorias customizadas
+     */
+    static async getSpecialSelectionNavigableStructure(selectionFolderId) {
+        try {
+            const drive = this.getAuthenticatedDrive();
+
+            console.log(`📂 Buscando estrutura navegável da seleção: ${selectionFolderId}`);
+
+            // Buscar todas as subpastas (categorias customizadas)
+            const categoryFolders = await drive.files.list({
+                q: `'${selectionFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`,
+                fields: 'files(id, name, createdTime)',
+                orderBy: 'name'
+            });
+
+            // Para cada categoria, buscar quantas fotos tem
+            const categories = [];
+
+            for (const folder of categoryFolders.data.files) {
+                // Contar fotos na categoria
+                const photosResponse = await drive.files.list({
+                    q: `'${folder.id}' in parents and trashed=false and (mimeType contains 'image/' or name contains '.jpg' or name contains '.jpeg' or name contains '.png')`,
+                    fields: 'files(id)',
+                    pageSize: 1000
+                });
+
+                categories.push({
+                    id: folder.id,
+                    name: folder.name,
+                    displayName: folder.name.replace(/_/g, ' '), // Converter underscores de volta para espaços
+                    photoCount: photosResponse.data.files.length,
+                    createdTime: folder.createdTime,
+                    hasImages: photosResponse.data.files.length > 0,
+                    hasSubfolders: false  // Categorias customizadas são folhas
+                });
+            }
+
+            console.log(`✅ Estrutura navegável obtida: ${categories.length} categorias customizadas`);
+
+            return {
+                success: true,
+                structure: {
+                    folderId: selectionFolderId,
+                    folderType: 'special_selection',
+                    folders: categories,
+                    totalCategories: categories.length,
+                    totalPhotos: categories.reduce((total, cat) => total + cat.photoCount, 0),
+                    hasSubfolders: categories.length > 0,
+                    hasImages: false  // Fotos estão nas subcategorias, não na raiz
+                }
+            };
+
+        } catch (error) {
+            console.error(`❌ Erro ao obter estrutura navegável da seleção ${selectionFolderId}:`, error);
+            throw error;
+        }
+    }
+
     // ===== MOVIMENTAÇÃO DE ARQUIVOS =====
 
     /**

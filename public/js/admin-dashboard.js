@@ -167,6 +167,37 @@ class AdminDashboard {
             }
         });
 
+        // ===== CORREÇÃO: REFRESH AUTOMÁTICO COM RETRY INTELIGENTE =====
+        if (section === 'clients') {
+            const doRefresh = () => {
+                let attempts = 0;
+                const maxAttempts = 10; // 10 tentativas = 5 segundos total
+
+                const tryRefresh = () => {
+                    attempts++;
+
+                    if (window.adminClients && window.adminClients.refreshData) {
+                        console.log('🔄 Auto-refresh: Client Management data...');
+                        window.adminClients.refreshData();
+                        return; // ✅ SUCESSO
+                    }
+
+                    if (attempts < maxAttempts) {
+                        console.log(`⏳ Auto-refresh attempt ${attempts}/${maxAttempts} - waiting for adminClients...`);
+                        setTimeout(tryRefresh, 500); // Tentar novamente em 500ms
+                    } else {
+                        console.warn('⚠️ Auto-refresh failed - adminClients not available after 5 seconds');
+                    }
+                };
+
+                tryRefresh();
+            };
+
+            setTimeout(doRefresh, 100); // ✅ INICIAR MAIS CEDO
+        }
+
+        // Fechar sidebar em mobile após navegação
+
         // Atualizar título da página
         const titles = {
             dashboard: 'Dashboard',
@@ -215,12 +246,13 @@ class AdminDashboard {
                 break;
             case 'special-selections':
                 console.log('⭐ Seção de seleções especiais ativada');
-                if (typeof AdminSpecialSelections !== 'undefined') {
-                    if (!window.adminSpecialSelections) {
-                        window.adminSpecialSelections = new AdminSpecialSelections();
-                    }
+                if (window.adminSpecialSelections) {
+                    console.log('✅ AdminSpecialSelections já existe, usando instância atual');
                 } else if (typeof window.initSpecialSelections === 'function') {
+                    console.log('🎯 Inicializando AdminSpecialSelections via função global');
                     window.adminSpecialSelections = window.initSpecialSelections();
+                } else {
+                    console.warn('⚠️ AdminSpecialSelections não disponível');
                 }
                 break;
             default:

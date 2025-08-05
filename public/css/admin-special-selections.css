@@ -1491,3 +1491,48 @@
     color: var(--gold-primary);
     font-weight: 600;
 }
+
+/* Checkbox desabilitado para fotos movidas */
+.photo-checkbox-disabled {
+    opacity: 0.5;
+    pointer-events: none; /* Impede cliques */
+}
+
+.photo-checkbox-disabled input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.photo-checkbox-disabled label {
+    cursor: not-allowed;
+    background: rgba(148, 163, 184, 0.3) !important; /* Cinza mais claro */
+    border-color: rgba(148, 163, 184, 0.5) !important;
+}
+
+.photo-checkbox-disabled label:hover {
+    background: rgba(148, 163, 184, 0.3) !important; /* Sem efeito hover */
+    transform: none !important; /* Sem animação hover */
+}
+
+/* Tooltip para fotos movidas */
+.photo-card.photo-moved .photo-checkbox-disabled::before {
+    content: 'Already moved';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(148, 163, 184, 0.9);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.photo-card.photo-moved .photo-checkbox-disabled:hover::before {
+    opacity: 1;
+    visibility: visible;
+}

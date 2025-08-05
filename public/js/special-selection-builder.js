@@ -232,13 +232,18 @@ class SpecialSelectionBuilder {
     }
 
     renderStockPhotos() {
+        // ✅ DEBUG LOGS - INÍCIO
+        console.log(`🔥 DEBUG renderStockPhotos: selectedStockPhotos.size = ${this.selectedStockPhotos.size}`);
+        const selectionCountElement = document.getElementById('selectionCount');
+        console.log(`🔥 DEBUG renderStockPhotos: DOM antes = ${selectionCountElement?.textContent}`);
+
         if (!this.stockPhotosData || this.stockPhotosData.length === 0) {
             this.stockPhotosElement.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: var(--text-muted); grid-column: 1 / -1;">
-                <i class="fas fa-images" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <p>No photos in this category</p>
-            </div>
-        `;
+                <div style="text-align: center; padding: 2rem; color: var(--text-muted); grid-column: 1 / -1;">
+                    <i class="fas fa-images" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>No photos in this category</p>
+                </div>
+            `;
         } else {
             const html = this.stockPhotosData.map((photo, index) => {
                 // Verificar se foto já foi movida
@@ -246,40 +251,35 @@ class SpecialSelectionBuilder {
                 const movedClass = isPhotoMoved ? ' photo-moved' : '';
 
                 return `
-                <div class="photo-card${movedClass}" 
-                    draggable="true" 
-                    data-photo-id="${photo.id}" 
-                    data-photo-name="${photo.name}"
-                    data-photo-url="${photo.webViewLink}"
-                    onclick="window.specialSelectionBuilder.handlePhotoClick(event, ${index})"
-                    style="cursor: pointer;">
-                    
-                    <!-- Checkbox para seleção -->
-                    <div class="photo-checkbox">
-                        <input type="checkbox" 
-                            id="photo_${photo.id}" 
-                            data-photo-index="${index}"
-                            onclick="event.stopPropagation(); window.specialSelectionBuilder.togglePhotoSelection('${photo.id}', ${index})">
-                        <label for="photo_${photo.id}" onclick="event.stopPropagation()"></label>
+                    <div class="photo-card${movedClass}" 
+                        draggable="true" 
+                        data-photo-id="${photo.id}" 
+                        data-photo-name="${photo.name}"
+                        data-photo-url="${photo.webViewLink}"
+                        onclick="window.specialSelectionBuilder.handlePhotoClick(event, ${index})"
+                        style="cursor: pointer;">
+                        
+                        <!-- Checkbox para seleção múltipla -->
+                        <div class="photo-checkbox${isPhotoMoved ? ' photo-checkbox-disabled' : ''}">
+                            <input type="checkbox" 
+                                id="photo_${photo.id}" 
+                                data-photo-index="${index}"
+                                ${isPhotoMoved ? 'disabled' : ''}
+                                onclick="event.stopPropagation(); window.specialSelectionBuilder.togglePhotoSelection('${photo.id}', ${index})">
+                            <label for="photo_${photo.id}" onclick="event.stopPropagation()"></label>
+                        </div>
+                        
+                        <img class="photo-image" 
+                            src="${photo.thumbnailLink || photo.webViewLink}" 
+                            alt="${photo.name}"
+                            loading="lazy">
+                        
+                        <div class="photo-info">
+                            <div class="photo-name">${photo.name}</div>
+                            <div class="photo-price">$${photo.price || '0.00'}</div>
+                        </div>
                     </div>
-                    
-                    <img class="photo-image" 
-                        src="${photo.thumbnailLink || photo.webViewLink}" 
-                        alt="${photo.name}"
-                        loading="lazy">
-                    
-                    <div class="photo-info">
-                        <div class="photo-name">${photo.name}</div>
-                        <div class="photo-price">$${photo.price || '0.00'}</div>
-                    </div>
-                    
-                    <div class="photo-actions">
-                        <button class="photo-action-btn" data-action="remove" data-photo-id="${photo.id}" data-category-index="${index}" title="Remove">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                `;
+                    `;
             }).join('');
 
             this.stockPhotosElement.innerHTML = html;
@@ -289,6 +289,9 @@ class SpecialSelectionBuilder {
 
             this.updateHeaderBasePrice();
         }
+
+        // ✅ DEBUG LOGS - FINAL
+        console.log(`🔥 DEBUG renderStockPhotos: DOM depois = ${document.getElementById('selectionCount')?.textContent}`);
 
         // Mostrar fotos, esconder categorias
         this.stockCategoriesElement.style.display = 'none';
@@ -305,16 +308,16 @@ class SpecialSelectionBuilder {
         this.initialDropZone.style.display = 'none';
 
         const html = this.customCategories.map((category, index) => `
-        <div class="custom-category${this.expandedCategories.has(index) ? ' expanded' : ''}" data-category-index="${index}">
-            <div class="custom-category-header" onclick="window.specialSelectionBuilder.toggleCategory(${index})" style="cursor: pointer;">
-                <div class="custom-category-info">
-                    <button class="category-chevron" onclick="window.specialSelectionBuilder.toggleCategory(${index})">
-                        <i class="fas fa-chevron-${this.expandedCategories.has(index) ? 'up' : 'down'}"></i>
-                    </button>
-                    <div class="custom-category-name">${category.name}</div>
-                    <div class="custom-category-count">${category.photos.length}</div>
-                    <div class="custom-category-price">$${category.customPrice || '0.00'}</div>
-                </div>
+            <div class="custom-category${this.expandedCategories.has(index) ? ' expanded' : ''}" data-category-index="${index}">
+                <div class="custom-category-header" data-header-index="${index}" style="cursor: pointer;">
+                    <div class="custom-category-info">
+                        <button class="category-chevron" data-chevron-index="${index}">
+                            <i class="fas fa-chevron-${this.expandedCategories.has(index) ? 'up' : 'down'}"></i>
+                        </button>
+                        <div class="custom-category-name">${category.name}</div>
+                        <div class="custom-category-count">${category.photos.length}</div>
+                        <div class="custom-category-price">Custom Price: $${category.customPrice || '0.00'}</div>
+                    </div>
                     <div class="custom-category-actions">
                         <button class="category-action-btn" data-action="edit-category" data-index="${index}" title="Edit">
                             <i class="fas fa-edit"></i>
@@ -365,14 +368,29 @@ class SpecialSelectionBuilder {
 
     toggleCategory(categoryIndex) {
         const categoryElement = document.querySelector(`.custom-category[data-category-index="${categoryIndex}"]`);
-        if (!categoryElement) return;
+        if (!categoryElement) {
+            console.warn(`Categoria ${categoryIndex} não encontrada`);
+            return;
+        }
+
+        const chevronIcon = categoryElement.querySelector('.category-chevron i');
 
         if (this.expandedCategories.has(categoryIndex)) {
+            // Colapsar
             this.expandedCategories.delete(categoryIndex);
             categoryElement.classList.remove('expanded');
+            if (chevronIcon) {
+                chevronIcon.className = 'fas fa-chevron-down';
+            }
+            console.log(`📁 Categoria ${categoryIndex} colapsada`);
         } else {
+            // Expandir
             this.expandedCategories.add(categoryIndex);
             categoryElement.classList.add('expanded');
+            if (chevronIcon) {
+                chevronIcon.className = 'fas fa-chevron-up';
+            }
+            console.log(`📁 Categoria ${categoryIndex} expandida`);
         }
     }
 
@@ -923,8 +941,10 @@ class SpecialSelectionBuilder {
         // Limpar seleção
         this.selectedStockPhotos.clear();
 
-        // Atualizar interfaces
+        // Forçar reset do contador
         this.updateSelectionCounter();
+
+        // Atualizar interfaces
         this.renderCustomCategories();
         this.renderStockPhotos();
         this.updateCounts();
@@ -932,7 +952,7 @@ class SpecialSelectionBuilder {
         // Fechar modal PRIMEIRO
         this.closeMassSelectionModal();
 
-        // Feedback de sucesso SEM setTimeout (corrige bug)
+        // Feedback de sucesso
         alert(`✅ Success!\n\n${totalPhotos} photos moved to "${categoryName}"\n\nThe photos have been added to your custom selection.`);
 
         console.log(`🎉 Movimentação em massa concluída: ${totalPhotos} fotos para ${categoryName}`);
@@ -1121,6 +1141,9 @@ class SpecialSelectionBuilder {
 
     // ===== DRAG & DROP =====
     setupPhotoDragDrop() {
+        // ✅ DEBUG LOG
+        console.log(`🔥 DEBUG setupPhotoDragDrop: selectedStockPhotos.size = ${this.selectedStockPhotos.size}`);
+
         const photoCards = this.stockPhotosElement.querySelectorAll('.photo-card');
 
         photoCards.forEach(card => {
@@ -1166,6 +1189,7 @@ class SpecialSelectionBuilder {
         });
     }
 
+
     setupCustomCategoryEvents() {
         // Drop zones das categorias customizadas
         const dropZones = this.customCategoriesContainer.querySelectorAll('.drop-zone');
@@ -1173,55 +1197,65 @@ class SpecialSelectionBuilder {
             this.setupDropZone(dropZone);
         });
 
-        // Botões de ação das categorias
-        this.customCategoriesContainer.addEventListener('click', (e) => {
-            // Debounce apenas para ação 'info' (que causava loop)
-            if (actionBtn && actionBtn.dataset.action === 'info' && this.isProcessingClick) return;
-            if (actionBtn && actionBtn.dataset.action === 'info') {
-                this.isProcessingClick = true;
-            }
+        // 🔥 CORREÇÃO CRÍTICA: Event listeners específicos e limpos
 
-            console.log('🎯 CLICK CAPTURADO:', e.target);
+        // 1. Headers clicáveis (expand/collapse)
+        this.customCategoriesContainer.querySelectorAll('[data-header-index]').forEach(header => {
+            header.addEventListener('click', (e) => {
+                // Verificar se o clique foi em um botão de ação
+                if (e.target.closest('.category-action-btn')) {
+                    return; // Não expandir/colapsar se clicou em botão
+                }
 
-            const actionBtn = e.target.closest('[data-action]');
-            console.log('🎯 ACTION BTN ENCONTRADO:', actionBtn);
-
-            if (!actionBtn) return;
-
-            const action = actionBtn.dataset.action;
-            const index = parseInt(actionBtn.dataset.index || actionBtn.dataset.categoryIndex);
-
-            console.log(`🎯 Ação clicada: ${action}, index: ${index}`);
-            const photoId = actionBtn.dataset.photoId;
-
-            console.log(`🎯 Ação clicada: ${action}, index: ${index}, photoId: ${photoId}`);
-
-            switch (action) {
-                case 'info':
-                    this.showPhotoInfo(photoId, index);
-                    break;
-                case 'edit-category':
-                    this.editCustomCategory(index);
-                    break;
-                case 'delete-category':
-                    this.deleteCustomCategory(index);
-                    break;
-                case 'remove':
-                    console.log(`🗑️ Removendo foto ${photoId} da categoria ${index}`);
-                    this.removePhotoFromCategory(photoId, index);
-                    break;
-                case 'preview':
-                    // Implementar preview
-                    break;
-            }
-
-            // Reset do debounce apenas se foi ação 'info'
-            if (action === 'info') {
-                setTimeout(() => {
-                    this.isProcessingClick = false;
-                }, 300);
-            }
+                const index = parseInt(header.dataset.headerIndex);
+                this.toggleCategory(index);
+            });
         });
+
+        // 2. Botões de chevron (expand/collapse alternativo)
+        this.customCategoriesContainer.querySelectorAll('[data-chevron-index]').forEach(chevron => {
+            chevron.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evitar duplo trigger
+                const index = parseInt(chevron.dataset.chevronIndex);
+                this.toggleCategory(index);
+            });
+        });
+
+        // 3. Botões de ação das categorias
+        this.customCategoriesContainer.querySelectorAll('[data-action]').forEach(actionBtn => {
+            actionBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evitar propagação para o header
+
+                const action = actionBtn.dataset.action;
+                const index = parseInt(actionBtn.dataset.index || actionBtn.dataset.categoryIndex);
+                const photoId = actionBtn.dataset.photoId;
+
+                console.log(`🎯 Ação executada: ${action}, index: ${index}, photoId: ${photoId}`);
+
+                // Executar ação sem debounce complexo
+                switch (action) {
+                    case 'info':
+                        this.showPhotoInfo(photoId, index);
+                        break;
+                    case 'edit-category':
+                        this.editCustomCategory(index);
+                        break;
+                    case 'delete-category':
+                        this.deleteCustomCategory(index);
+                        break;
+                    case 'remove':
+                        this.removePhotoFromCategory(photoId, index);
+                        break;
+                    case 'preview':
+                        // Implementar preview se necessário
+                        break;
+                    default:
+                        console.warn(`Ação desconhecida: ${action}`);
+                }
+            });
+        });
+
+        console.log('🔗 Event listeners das categorias customizadas configurados corretamente');
     }
 
     setupDropZone(dropZone) {
@@ -1650,32 +1684,186 @@ class SpecialSelectionBuilder {
     // ===== SALVAR E FINALIZAR =====
     async saveSelection() {
         try {
+            console.log('💾 Salvando seleção especial...');
+
+            // 1. Validações básicas
             if (this.customCategories.length === 0) {
                 alert('Please add at least one category with photos before saving.');
                 return;
             }
 
-            console.log('💾 Salvando seleção especial...');
+            const totalPhotos = this.customCategories.reduce((total, cat) => total + cat.photos.length, 0);
+            if (totalPhotos === 0) {
+                alert('Please add at least one photo to your categories before saving.');
+                return;
+            }
 
-            const selectionData = {
-                ...this.selectionData,
-                customCategories: this.customCategories,
-                totalPhotos: this.selectedPhotos.length,
-                totalCustomCategories: this.customCategories.length
-            };
+            // 2. Mostrar loading no botão
+            const saveButton = this.btnSaveAndContinue;
+            const originalText = saveButton.innerHTML;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Selection...';
+            saveButton.disabled = true;
 
-            // Por enquanto, simular salvamento (backend será implementado depois)
-            console.log('📦 Dados para salvar:', selectionData);
+            // 3. Buscar ID da seleção especial criada no admin
+            const selectionId = this.getSelectionIdFromStorage();
+            if (!selectionId) {
+                throw new Error('Selection ID not found. Please restart the process from admin panel.');
+            }
 
-            alert(`Selection saved successfully!\n\nCategories: ${this.customCategories.length}\nPhotos: ${this.selectedPhotos.length}\n\nRedirecting to admin panel...`);
+            // 4. Processar e salvar cada categoria customizada
+            for (const [categoryIndex, category] of this.customCategories.entries()) {
+                console.log(`📁 Processando categoria: ${category.name} (${category.photos.length} fotos)`);
 
-            // Voltar para admin panel
+                // 4.1. Adicionar categoria customizada à seleção
+                const categoryResponse = await fetch(`/api/special-selections/${selectionId}/categories`, {
+                    method: 'POST',
+                    headers: this.getAuthHeaders(),
+                    body: JSON.stringify({
+                        categoryName: category.name,
+                        categoryDisplayName: category.name,
+                        baseCategoryPrice: category.customPrice || 0,
+                        originalCategoryInfo: {
+                            totalPhotos: category.photos.length,
+                            createdAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (!categoryResponse.ok) {
+                    const errorData = await categoryResponse.json();
+                    throw new Error(`Failed to create category "${category.name}": ${errorData.message}`);
+                }
+
+                const categoryData = await categoryResponse.json();
+                const categoryId = categoryData.data.categoryId;
+
+                console.log(`✅ Categoria "${category.name}" criada com ID: ${categoryId}`);
+
+                // 4.2. Mover cada foto para a categoria
+                for (const [photoIndex, photo] of category.photos.entries()) {
+                    console.log(`📸 Movendo foto ${photoIndex + 1}/${category.photos.length}: ${photo.name}`);
+
+                    const photoResponse = await fetch(`/api/special-selections/${selectionId}/photos/move`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders(),
+                        body: JSON.stringify({
+                            photoId: photo.id,
+                            fileName: photo.name,
+                            categoryId: categoryId,
+                            originalPath: photo.sourcePath || this.getCurrentCategoryPath(),
+                            originalParentId: this.navigationState.currentFolderId,
+                            originalCategory: photo.sourceCategory || this.getCurrentCategoryName(),
+                            originalPrice: parseFloat(photo.originalPrice) || 0,
+                            customPrice: category.customPrice || null
+                        })
+                    });
+
+                    if (!photoResponse.ok) {
+                        const errorData = await photoResponse.json();
+                        console.warn(`⚠️ Erro ao mover foto ${photo.name}: ${errorData.message}`);
+                        // Continue com as outras fotos mesmo se uma falhar
+                        continue;
+                    }
+
+                    const photoData = await photoResponse.json();
+                    console.log(`✅ Foto movida: ${photo.name}`);
+                }
+
+                console.log(`✅ Categoria "${category.name}" processada completamente`);
+            }
+
+            // 5. Ativar a seleção especial
+            console.log('🚀 Ativando seleção especial...');
+            const activateResponse = await fetch(`/api/special-selections/${selectionId}/activate`, {
+                method: 'POST',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!activateResponse.ok) {
+                const errorData = await activateResponse.json();
+                throw new Error(`Failed to activate selection: ${errorData.message}`);
+            }
+
+            const activateData = await activateResponse.json();
+            console.log('✅ Seleção especial ativada:', activateData.data);
+
+            // 6. Limpar dados temporários
+            this.clearBuilderStorage();
+
+            // 7. Feedback de sucesso
+            const successMessage = `🎉 Special Selection created successfully!
+
+    📋 Selection: ${this.selectionData.selectionName}
+    👤 Client: ${this.selectionData.clientName} (${this.selectionData.clientCode})
+    📁 Categories: ${this.customCategories.length}
+    📸 Total Photos: ${totalPhotos}
+
+    The client now has access to this special selection.`;
+
+            alert(successMessage);
+
+            // 8. Redirecionar para admin panel
+            console.log('🔄 Redirecionando para admin panel...');
             window.location.href = '/admin#special-selections';
 
         } catch (error) {
-            console.error('❌ Erro ao salvar seleção:', error);
-            alert(`Error saving selection: ${error.message}`);
+            console.error('❌ Erro ao salvar seleção especial:', error);
+            
+            const errorMessage = `❌ Error saving special selection:
+
+    ${error.message}
+
+    Please try again or contact support if the problem persists.`;
+            
+            alert(errorMessage);
+        } finally {
+            // 9. Restaurar botão (se ainda estiver na página)
+            if (this.btnSaveAndContinue) {
+                const saveButton = this.btnSaveAndContinue;
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Save & Continue';
+                saveButton.disabled = false;
+            }
         }
+    }
+
+    // ===== FUNÇÕES AUXILIARES PARA A CORREÇÃO =====
+
+    // Função para buscar ID da seleção do localStorage/URL
+    getSelectionIdFromStorage() {
+        // Primeiro tentar pegar da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectionId = urlParams.get('selectionId');
+        
+        if (selectionId) {
+            console.log(`🔍 Selection ID encontrado na URL: ${selectionId}`);
+            return selectionId;
+        }
+
+        // Depois tentar localStorage
+        const storedId = localStorage.getItem('currentSelectionId');
+        if (storedId) {
+            console.log(`🔍 Selection ID encontrado no localStorage: ${storedId}`);
+            return storedId;
+        }
+
+        // Se não encontrar, mostrar erro
+        console.error('❌ Selection ID não encontrado nem na URL nem no localStorage');
+        return null;
+    }
+
+    // Função para limpar dados temporários após salvar
+    clearBuilderStorage() {
+        const keysToRemove = [
+            'builderSelectionName',
+            'builderClientCode', 
+            'builderClientName',
+            'currentSelectionId'
+        ];
+        
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`🧹 Removido localStorage: ${key}`);
+        });
     }
 
     cancelBuilder() {
@@ -1691,17 +1879,16 @@ class SpecialSelectionBuilder {
 
     // ===== UTILITÁRIOS =====
     updateCounts() {
-        // Atualizar contador de seleção
+        // ✅ CORREÇÃO: Usar selectedStockPhotos (lado esquerdo) ao invés de selectedPhotos (lado direito)
         const selectionCountElement = document.getElementById('selectionCount');
         if (selectionCountElement) {
-            selectionCountElement.textContent = this.selectedPhotos.length;
+            selectionCountElement.textContent = this.selectedStockPhotos.size; // ← CORRIGIDO!
         }
 
         // NOVO: Atualizar base price no header
         this.updateHeaderBasePrice();
 
-
-        // Contadores do painel direito
+        // Contadores do painel direito (estes estão corretos - usam selectedPhotos)
         if (this.photoCount) {
             this.photoCount.textContent = this.selectedPhotos.length;
         }
@@ -1784,6 +1971,8 @@ class SpecialSelectionBuilder {
     }
 }
 
+
+
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
     // Verificar se temos dados da seleção (passados via URL params ou localStorage)
@@ -1801,3 +1990,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('🏗️ special-selection-builder.js carregado');
+

@@ -700,6 +700,8 @@ class AdminSpecialSelections {
 
             this.setLoading('btnSaveSpecialSelection', true);
 
+            console.log('📤 Enviando dados para criar seleção especial:', formData);
+
             const response = await fetch('/api/special-selections', {
                 method: 'POST',
                 headers: {
@@ -710,20 +712,37 @@ class AdminSpecialSelections {
             });
 
             const data = await response.json();
+            console.log('📥 Resposta da API:', data);
 
             if (data.success) {
+                // ✅ CORREÇÃO CRÍTICA: Capturar o selectionId retornado pela API
+                const selectionId = data.data.selectionId;
+
+                if (!selectionId) {
+                    throw new Error('Selection ID not returned by server');
+                }
+
+                console.log(`✅ Seleção especial criada com ID: ${selectionId}`);
+
                 this.showNotification('Basic info saved! Opening selection builder...', 'success');
                 this.closeModal();
 
-                // Salvar dados para o builder
+                // ✅ CORREÇÃO: Salvar o Selection ID no localStorage
+                localStorage.setItem('currentSelectionId', selectionId);
+
+                // Salvar dados para o builder (mantido como estava)
                 localStorage.setItem('builderSelectionName', formData.selectionName);
                 localStorage.setItem('builderClientCode', formData.clientCode);
                 localStorage.setItem('builderClientName', this.getClientName(formData.clientCode));
 
-                // Redirecionar para o builder
+                // ✅ CORREÇÃO: Incluir selectionId na URL do builder
                 setTimeout(() => {
-                    window.location.href = `/special-selection-builder.html?name=${encodeURIComponent(formData.selectionName)}&client=${formData.clientCode}&clientName=${encodeURIComponent(this.getClientName(formData.clientCode))}`;
+                    const builderUrl = `/special-selection-builder.html?selectionId=${selectionId}&name=${encodeURIComponent(formData.selectionName)}&client=${formData.clientCode}&clientName=${encodeURIComponent(this.getClientName(formData.clientCode))}`;
+
+                    console.log(`🔄 Redirecionando para: ${builderUrl}`);
+                    window.location.href = builderUrl;
                 }, 1000);
+
             } else {
                 throw new Error(data.message || 'Failed to create special selection');
             }
@@ -777,6 +796,15 @@ class AdminSpecialSelections {
         }
 
         try {
+            // ✅ PREVENIR MÚLTIPLAS CHAMADAS
+            const button = document.querySelector(`button[data-action="activate"][data-id="${selectionId}"]`);
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+
+            console.log(`🚀 Ativando seleção especial: ${selectionId}`);
+
             const response = await fetch(`/api/special-selections/${selectionId}/activate`, {
                 method: 'POST',
                 headers: this.getAuthHeaders()
@@ -786,7 +814,12 @@ class AdminSpecialSelections {
 
             if (data.success) {
                 this.showNotification('Special selection activated successfully!', 'success');
-                await this.refreshData();
+                console.log(`✅ Seleção ativada: ${selectionId}`);
+
+                // ✅ AGUARDAR ANTES DE REFRESH PARA EVITAR RACE CONDITIONS
+                setTimeout(async () => {
+                    await this.refreshData();
+                }, 1000);
             } else {
                 throw new Error(data.message || 'Failed to activate selection');
             }
@@ -794,6 +827,15 @@ class AdminSpecialSelections {
         } catch (error) {
             console.error('❌ Erro ao ativar seleção:', error);
             this.showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // ✅ RESTAURAR BOTÃO (se ainda existir)
+            setTimeout(() => {
+                const button = document.querySelector(`button[data-action="activate"][data-id="${selectionId}"]`);
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-play"></i>';
+                }
+            }, 2000);
         }
     }
 
@@ -803,6 +845,15 @@ class AdminSpecialSelections {
         }
 
         try {
+            // ✅ PREVENIR MÚLTIPLAS CHAMADAS
+            const button = document.querySelector(`button[data-action="deactivate"][data-id="${selectionId}"]`);
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+
+            console.log(`⏸️ Desativando seleção especial: ${selectionId}`);
+
             const response = await fetch(`/api/special-selections/${selectionId}/deactivate`, {
                 method: 'POST',
                 headers: {
@@ -816,7 +867,12 @@ class AdminSpecialSelections {
 
             if (data.success) {
                 this.showNotification('Special selection deactivated successfully!', 'success');
-                await this.refreshData();
+                console.log(`✅ Seleção desativada: ${selectionId}`);
+
+                // ✅ AGUARDAR ANTES DE REFRESH PARA EVITAR RACE CONDITIONS
+                setTimeout(async () => {
+                    await this.refreshData();
+                }, 1000);
             } else {
                 throw new Error(data.message || 'Failed to deactivate selection');
             }
@@ -824,6 +880,15 @@ class AdminSpecialSelections {
         } catch (error) {
             console.error('❌ Erro ao desativar seleção:', error);
             this.showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // ✅ RESTAURAR BOTÃO (se ainda existir)
+            setTimeout(() => {
+                const button = document.querySelector(`button[data-action="deactivate"][data-id="${selectionId}"]`);
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-pause"></i>';
+                }
+            }, 2000);
         }
     }
 
@@ -981,9 +1046,9 @@ class AdminSpecialSelections {
     }
 
     getClientName(clientCode) {
-    const client = this.availableClients.find(c => c.code === clientCode);
-    return client ? client.clientName : 'Unknown Client';
-}
+        const client = this.availableClients.find(c => c.code === clientCode);
+        return client ? client.clientName : 'Unknown Client';
+    }
 
 }
 
@@ -993,10 +1058,10 @@ let adminSpecialSelections = null;
 // Função para inicialização externa
 if (typeof window !== 'undefined') {
     window.initSpecialSelections = function () {
-        if (!adminSpecialSelections) {
-            adminSpecialSelections = new AdminSpecialSelections();
+        if (!window.adminSpecialSelections) {
+            window.adminSpecialSelections = new AdminSpecialSelections();
         }
-        return adminSpecialSelections;
+        return window.adminSpecialSelections;
     };
 
     // Disponibilizar globalmente para debugging
@@ -1006,10 +1071,10 @@ if (typeof window !== 'undefined') {
 // Inicializar quando a seção for carregada
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        if (document.getElementById('section-special-selections')) {
-            console.log('🌟 Preparando inicialização do Admin Special Selections...');
+        if (document.getElementById('section-special-selections') && !window.adminSpecialSelections) {
+            window.adminSpecialSelections = new AdminSpecialSelections();
         }
-    }, 1000);
+    }, 100);
 });
 
 console.log('⭐ admin-special-selections.js carregado - aguardando inicialização...');

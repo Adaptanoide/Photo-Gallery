@@ -82,6 +82,12 @@ class AdminClients {
     }
 
     renderClientInterface() {
+        // ✅ OCULTAR LOADING INICIAL ANTES DE CRIAR INTERFACE
+        const initialLoading = document.getElementById('clientsInitialLoading');
+        if (initialLoading) {
+            initialLoading.style.display = 'none';
+        }
+
         this.section.innerHTML = `
             <!-- Section Header -->
             <div class="clients-section-header">
@@ -96,7 +102,7 @@ class AdminClients {
                     </button>
                     <button id="btnNewClient" class="btn btn-primary">
                         <i class="fas fa-plus"></i>
-                        New Code
+                        New Client
                     </button>
                 </div>
             </div>
@@ -107,7 +113,7 @@ class AdminClients {
                     <div class="filter-group">
                         <label class="filter-label">Search Client</label>
                         <input type="text" id="searchClients" class="filter-input" 
-                               placeholder="Name, code or email...">
+                            placeholder="Name, code or email...">
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">Status</label>
@@ -141,7 +147,7 @@ class AdminClients {
                         <tr>
                             <th>Code</th>
                             <th>Client</th>
-                            <th>Categories</th>
+                            <th>Access Type</th>
                             <th>Usage</th>
                             <th>Expires</th>
                             <th>Status</th>
@@ -175,24 +181,69 @@ class AdminClients {
                     <div class="client-modal-body">
                         <form id="clientForm" class="client-form">
                             <!-- Client Information -->
-                            <div class="form-section-clients">
-                                <h4 class="form-section-title-clients">
-                                    <i class="fas fa-user"></i>
-                                    Client Information
-                                </h4>
-                                <div class="form-grid">
-                                    <div class="form-group-clients">
-                                        <label class="form-label-clients required">Full Name</label>
-                                        <input type="text" id="clientName" class="form-input-clients" 
-                                               placeholder="Ex: John Silva" required>
-                                    </div>
-                                    <div class="form-group-clients">
-                                        <label class="form-label-clients">Email</label>
-                                        <input type="email" id="clientEmail" class="form-input-clients" 
-                                               placeholder="john@email.com">
-                                    </div>
-                                </div>
-                            </div>
+                                        <div class="form-section-clients">
+                                            <h4 class="form-section-title-clients">
+                                                <i class="fas fa-user"></i>
+                                                Client Information
+                                            </h4>
+                                            <div class="form-grid">
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients required">Full Name</label>
+                                                    <input type="text" id="clientName" class="form-input-clients" 
+                                                        placeholder="e.g. John Smith" required>
+                                                </div>
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients">Company Name</label>
+                                                    <input type="text" id="companyName" class="form-input-clients" 
+                                                        placeholder="e.g. ABC Industries LLC">
+                                                </div>
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients">Email</label>
+                                                    <input type="email" id="clientEmail" class="form-input-clients" 
+                                                        placeholder="e.g. contact@company.com">
+                                                </div>
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients">Phone Number</label>
+                                                    <input type="tel" id="clientPhone" class="form-input-clients" 
+                                                        placeholder="e.g. (555) 123-4567">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Address Information -->
+                                        <div class="form-section-clients">
+                                            <h4 class="form-section-title-clients">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                Address Information
+                                            </h4>
+                                            <div class="form-grid">
+                                                <div class="form-group-clients full-width">
+                                                    <label class="form-label-clients">Address Line 1</label>
+                                                    <input type="text" id="addressLine1" class="form-input-clients" 
+                                                        placeholder="e.g. 123 Main Street">
+                                                </div>
+                                                <div class="form-group-clients full-width">
+                                                    <label class="form-label-clients">Address Line 2</label>
+                                                    <input type="text" id="addressLine2" class="form-input-clients" 
+                                                        placeholder="e.g. Suite 100 (Optional)">
+                                                </div>
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients">City</label>
+                                                    <input type="text" id="city" class="form-input-clients" 
+                                                        placeholder="e.g. New York">
+                                                </div>
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients">State</label>
+                                                    <input type="text" id="state" class="form-input-clients" 
+                                                        placeholder="e.g. NY, CA, TX" maxlength="20">
+                                                </div>
+                                                <div class="form-group-clients">
+                                                    <label class="form-label-clients">ZIP Code</label>
+                                                    <input type="text" id="zipCode" class="form-input-clients" 
+                                                        placeholder="e.g. 10001 or 10001-1234" maxlength="15">
+                                                </div>
+                                            </div>
+                                        </div>
 
                             <!-- Access Code -->
                             <div class="form-section-clients">
@@ -220,14 +271,7 @@ class AdminClients {
                                     <div class="form-group-clients">
                                         <label class="form-label-clients">Expires in (days)</label>
                                         <input type="number" id="expireDays" class="form-input-clients" 
-                                               value="30" min="1" max="365">
-                                    </div>
-                                    <div class="form-group-clients">
-                                        <label class="form-label-clients">Status</label>
-                                        <select id="clientStatus" class="form-input-clients">
-                                            <option value="true">Active</option>
-                                            <option value="false">Inactive</option>
-                                        </select>
+                                            value="30" min="1" max="365">
                                     </div>
                                 </div>
                             </div>
@@ -267,6 +311,171 @@ class AdminClients {
                             <i class="fas fa-save"></i>
                             <span id="saveButtonText">Create Code</span>
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client View Modal -->
+            <div id="clientViewModal" class="client-view-modal">
+                <div class="client-view-content">
+                    <div class="client-view-header">
+                        <h3 class="client-view-title">
+                            <i class="fas fa-eye"></i>
+                            <span id="viewModalTitle">Client Details</span>
+                        </h3>
+                        <button class="client-view-close" onclick="adminClients.closeViewModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="client-view-body">
+                        <!-- Seção: Informações Básicas -->
+                        <div class="view-section">
+                            <h4 class="view-section-title">
+                                <i class="fas fa-user"></i>
+                                Basic Information
+                            </h4>
+                            <div class="view-info-grid">
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Full Name</div>
+                                    <div class="view-info-value" id="viewClientName">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Company</div>
+                                    <div class="view-info-value" id="viewClientCompany">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Email</div>
+                                    <div class="view-info-value" id="viewClientEmail">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Phone</div>
+                                    <div class="view-info-value" id="viewClientPhone">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Address</div>
+                                    <div class="view-info-value" id="viewClientAddress">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Access Code</div>
+                                    <div class="view-info-value" id="viewClientCode">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Current Status</div>
+                                    <div class="view-info-value" id="viewClientStatus">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção: Configuração de Acesso -->
+                        <div class="view-section">
+                            <h4 class="view-section-title">
+                                <i class="fas fa-key"></i>
+                                Access Configuration
+                            </h4>
+                            <div class="view-info-grid">
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Access Type</div>
+                                    <div class="view-info-value" id="viewAccessType">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Expiration Date</div>
+                                    <div class="view-info-value" id="viewExpirationDate">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Created On</div>
+                                    <div class="view-info-value" id="viewCreatedDate">-</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Days Until Expiry</div>
+                                    <div class="view-info-value" id="viewDaysLeft">-</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Categorias Permitidas -->
+                            <div style="margin-top: 1.5rem;">
+                                <div class="view-info-label">Allowed Categories</div>
+                                <div class="view-categories-list" id="viewAllowedCategories">
+                                    <!-- Categories will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção: Estatísticas de Uso -->
+                        <div class="view-section">
+                            <h4 class="view-section-title">
+                                <i class="fas fa-chart-bar"></i>
+                                Usage Statistics
+                            </h4>
+                            <div class="view-stats-grid">
+                                <div class="view-stat-card">
+                                    <span class="view-stat-number" id="viewTotalLogins">-</span>
+                                    <div class="view-stat-label">Total Logins</div>
+                                </div>
+                                <div class="view-stat-card">
+                                    <span class="view-stat-number" id="viewDaysActive">-</span>
+                                    <div class="view-stat-label">Days Active</div>
+                                </div>
+                                <div class="view-stat-card">
+                                    <span class="view-stat-number" id="viewLastAccess">-</span>
+                                    <div class="view-stat-label">Days Since Last Access</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção: Informações de Segurança -->
+                        <div class="view-section">
+                            <h4 class="view-section-title">
+                                <i class="fas fa-shield-alt"></i>
+                                Security & Audit
+                            </h4>
+                            <div class="view-info-grid">
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Last IP Address</div>
+                                    <div class="view-info-value" id="viewLastIP">Not tracked</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Last Device</div>
+                                    <div class="view-info-value" id="viewLastDevice">Not tracked</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Account Type</div>
+                                    <div class="view-info-value" id="viewAccountType">Standard</div>
+                                </div>
+                                <div class="view-info-item">
+                                    <div class="view-info-label">Risk Level</div>
+                                    <div class="view-info-value" id="viewRiskLevel">Low</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Confirmação Luxury -->
+            <div id="luxuryConfirmModal" class="luxury-confirm-modal">
+                <div class="luxury-confirm-content">
+                    <div class="luxury-confirm-header">
+                        <div class="luxury-confirm-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3 class="luxury-confirm-title" id="confirmTitle">Confirm Action</h3>
+                    </div>
+                    <div class="luxury-confirm-body">
+                        <p class="luxury-confirm-message" id="confirmMessage">Are you sure?</p>
+                        <div class="luxury-confirm-details" id="confirmDetails" style="display: none;">
+                            Additional details here
+                        </div>
+                        <div class="luxury-confirm-actions">
+                            <button class="luxury-confirm-btn luxury-confirm-btn-cancel" onclick="adminClients.closeLuxuryConfirm()">
+                                <i class="fas fa-times"></i>
+                                Cancel
+                            </button>
+                            <button class="luxury-confirm-btn luxury-confirm-btn-confirm" id="confirmActionBtn">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -382,7 +591,7 @@ class AdminClients {
                     <td colspan="7" class="text-center">
                         <i class="fas fa-inbox"></i>
                         No codes found
-                        <br><small style="color: var(--text-muted);">Click "New Code" to create the first one</small>
+                        <br><small style="color: var(--text-muted);">Click "New Client" to create the first one</small>
                     </td>
                 </tr>
             `;
@@ -396,9 +605,9 @@ class AdminClients {
                     <div>${client.clientName}</div>
                     <div class="client-email-cell">${client.clientEmail || 'No email'}</div>
                 </td>
-                <td class="client-categories-cell">
-                    <div class="categories-preview">
-                        ${this.renderCategoriesPreview(client.allowedCategories)}
+                <td class="client-access-type-cell">
+                    <div class="access-type-preview">
+                        ${this.renderAccessType(client)}
                     </div>
                 </td>
                 <td class="client-usage-cell">
@@ -413,16 +622,20 @@ class AdminClients {
                     <div class="action-buttons">
                         <button class="btn-action btn-view" onclick="adminClients.viewClient('${client._id || client.code}')">
                             <i class="fas fa-eye"></i>
-                            View
+                            <span>View</span>
                         </button>
                         <button class="btn-action btn-edit" onclick="adminClients.editClient('${client._id || client.code}')">
                             <i class="fas fa-edit"></i>
-                            Edit
+                            <span>Edit</span>
                         </button>
                         <button class="btn-action btn-toggle ${client.isActive ? '' : 'activate'}" 
                                 onclick="adminClients.toggleClientStatus('${client._id || client.code}')">
-                            <i class="fas fa-${client.isActive ? 'ban' : 'check'}"></i>
-                            ${client.isActive ? 'Deactivate' : 'Activate'}
+                            <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
+                            <span>${client.isActive ? 'Deactivate' : 'Activate'}</span>
+                        </button>
+                        <button class="btn-action btn-delete" onclick="adminClients.deleteClient('${client._id || client.code}')">
+                            <i class="fas fa-trash"></i>
+                            <span>Delete</span>
                         </button>
                     </div>
                 </td>
@@ -451,6 +664,17 @@ class AdminClients {
         return html;
     }
 
+    renderAccessType(client) {
+        // Detectar tipo de acesso
+        const accessType = client.accessType || 'normal'; // fallback para clients antigos
+
+        if (accessType === 'special') {
+            return '<span class="access-type-badge access-special">Special</span>';
+        } else {
+            return '<span class="access-type-badge access-normal">Regular</span>';
+        }
+    }
+
     renderStatusBadge(client) {
         const now = new Date();
         const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
@@ -471,8 +695,18 @@ class AdminClients {
 
         // Reset form
         this.form.reset();
+
+        // Reset all fields explicitly
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientEmail').value = '';
+        document.getElementById('clientPhone').value = '';
+        document.getElementById('companyName').value = '';
+        document.getElementById('addressLine1').value = '';
+        document.getElementById('addressLine2').value = '';
+        document.getElementById('city').value = '';
+        document.getElementById('state').value = '';
+        document.getElementById('zipCode').value = '';
         document.getElementById('expireDays').value = '30';
-        document.getElementById('clientStatus').value = 'true';
 
         // Update titles
         document.getElementById('modalTitle').textContent = 'New Access Code';
@@ -553,9 +787,16 @@ class AdminClients {
         const formData = {
             clientName: document.getElementById('clientName').value.trim(),
             clientEmail: document.getElementById('clientEmail').value.trim(),
+            clientPhone: document.getElementById('clientPhone').value.trim(),
+            companyName: document.getElementById('companyName').value.trim(),
+            addressLine1: document.getElementById('addressLine1').value.trim(),
+            addressLine2: document.getElementById('addressLine2').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            state: document.getElementById('state').value.trim().toUpperCase(),
+            zipCode: document.getElementById('zipCode').value.trim(),
             allowedCategories: this.selectedCategories,
             expiresInDays: parseInt(document.getElementById('expireDays').value),
-            isActive: document.getElementById('clientStatus').value === 'true'
+            isActive: true  // Sempre ativo no formulário, usamos botões para alterar
         };
 
         // ENHANCED VALIDATIONS
@@ -916,10 +1157,81 @@ class AdminClients {
     // ===== TABLE ACTIONS =====
     viewClient(clientId) {
         const client = this.clients.find(c => c._id === clientId || c.code === clientId);
-        if (client) {
-            // TODO: Implement view modal
-            console.log('👁️ View client:', client);
+        if (!client) {
+            this.showError('Client not found');
+            return;
         }
+
+        console.log('👁️ Opening view modal for client:', client.clientName);
+
+        // Preencher dados básicos
+        document.getElementById('viewModalTitle').textContent = `${client.clientName} - Details`;
+        document.getElementById('viewClientName').textContent = client.clientName;
+        document.getElementById('viewClientEmail').textContent = client.clientEmail || 'No email provided';
+        document.getElementById('viewClientCode').textContent = client.code;
+
+        // Dados adicionais (se os elementos existirem no HTML)
+        const phoneElement = document.getElementById('viewClientPhone');
+        const companyElement = document.getElementById('viewClientCompany');
+        const addressElement = document.getElementById('viewClientAddress');
+
+        if (phoneElement) phoneElement.textContent = client.clientPhone || 'Not provided';
+        if (companyElement) companyElement.textContent = client.companyName || 'Not provided';
+        if (addressElement) {
+            const addressParts = [
+                client.addressLine1,
+                client.addressLine2,
+                client.city,
+                client.state,
+                client.zipCode
+            ].filter(part => part && part.trim());
+
+            addressElement.textContent = addressParts.length > 0 ? addressParts.join(', ') : 'Not provided';
+        }
+
+        // Status com badge
+        const statusEl = document.getElementById('viewClientStatus');
+        const now = new Date();
+        const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
+
+        if (isExpired) {
+            statusEl.innerHTML = '<span style="color: #ef4444;">⚠️ Expired</span>';
+        } else if (client.isActive) {
+            statusEl.innerHTML = '<span style="color: #22c55e;">✅ Active</span>';
+        } else {
+            statusEl.innerHTML = '<span style="color: #f59e0b;">⏸️ Inactive</span>';
+        }
+
+        // Configuração de acesso
+        document.getElementById('viewAccessType').textContent = client.accessType || 'Regular';
+        document.getElementById('viewExpirationDate').textContent = this.formatDate(client.expiresAt);
+        document.getElementById('viewCreatedDate').textContent = this.formatDate(client.createdAt);
+        document.getElementById('viewDaysLeft').textContent = this.calculateDaysUntilExpiry(client.expiresAt) + ' days';
+
+        // Categorias permitidas
+        const categoriesContainer = document.getElementById('viewAllowedCategories');
+        if (client.allowedCategories && client.allowedCategories.length > 0) {
+            categoriesContainer.innerHTML = client.allowedCategories.map(category =>
+                `<span class="view-category-tag">${category}</span>`
+            ).join('');
+        } else {
+            categoriesContainer.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">No categories assigned</span>';
+        }
+
+        // Estatísticas de uso
+        document.getElementById('viewTotalLogins').textContent = client.usageCount || 0;
+        document.getElementById('viewDaysActive').textContent = this.calculateDaysActive(client.createdAt);
+        document.getElementById('viewLastAccess').textContent = this.calculateDaysSinceLastAccess(client.lastUsed);
+
+        // Informações de segurança (placeholder para futuras implementações)
+        document.getElementById('viewLastIP').textContent = client.lastIP || 'Not tracked';
+        document.getElementById('viewLastDevice').textContent = client.lastDevice || 'Not tracked';
+        document.getElementById('viewAccountType').textContent = client.accessType === 'special' ? 'Special Access' : 'Standard';
+        document.getElementById('viewRiskLevel').textContent = isExpired ? 'Medium' : 'Low';
+
+        // Mostrar modal
+        document.getElementById('clientViewModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
     editClient(clientId) {
@@ -943,11 +1255,21 @@ class AdminClients {
         console.log('🔧 Original categories:', client.allowedCategories);
         console.log('🔧 Normalized categories:', this.selectedCategories);
 
-        // Fill form
+        // Fill form - Basic Info
         document.getElementById('clientName').value = client.clientName;
         document.getElementById('clientEmail').value = client.clientEmail || '';
+        document.getElementById('clientPhone').value = client.clientPhone || '';
+        document.getElementById('companyName').value = client.companyName || '';
+
+        // Fill form - Address Info  
+        document.getElementById('addressLine1').value = client.addressLine1 || '';
+        document.getElementById('addressLine2').value = client.addressLine2 || '';
+        document.getElementById('city').value = client.city || '';
+        document.getElementById('state').value = client.state || '';
+        document.getElementById('zipCode').value = client.zipCode || '';
+
+        // Fill form - Settings
         document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
-        document.getElementById('clientStatus').value = client.isActive.toString();
         document.getElementById('codePreview').textContent = client.code;
 
         // Update titles
@@ -965,26 +1287,30 @@ class AdminClients {
         const client = this.clients.find(c => c._id === clientId || c.code === clientId);
         if (!client) return;
 
-        const action = client.isActive ? 'deactivate' : 'activate';
-        const confirmed = await this.confirmAction(action, client.clientName);
+        const isActivating = !client.isActive;
 
-        if (!confirmed) return;
-
-        try {
-            // Use the new updateClientStatus function
-            const newStatus = !client.isActive;
-            await this.updateClientStatus(clientId, newStatus);
-
-            // Update local state
-            client.isActive = newStatus;
-            this.renderClientsTable();
-
-            this.showSuccess(`Code ${newStatus ? 'activated' : 'deactivated'} successfully!`);
-
-        } catch (error) {
-            console.error('❌ Error changing status:', error);
-            this.showError(`Error ${client.isActive ? 'deactivating' : 'activating'} code: ` + error.message);
-        }
+        // ✅ MODAL LUXURY EM VEZ DE CONFIRM FEIO
+        this.showLuxuryConfirm({
+            title: isActivating ? 'Activate Client Code' : 'Deactivate Client Code',
+            message: `${isActivating ? 'Activate' : 'Deactivate'} the access code for "${client.clientName}"?`,
+            details: isActivating
+                ? 'The client will be able to log in and access the system.'
+                : 'The client will lose access to the system immediately.',
+            icon: isActivating ? 'fas fa-play' : 'fas fa-pause',
+            actionText: isActivating ? 'Activate' : 'Deactivate',
+            buttonClass: isActivating ? 'btn-activate' : 'btn-deactivate',
+            onConfirm: async () => {
+                try {
+                    await this.updateClientStatus(clientId, isActivating);
+                    client.isActive = isActivating;
+                    this.renderClientsTable();
+                    console.log(`✅ Client ${isActivating ? 'activated' : 'deactivated'}: ${client.clientName}`);
+                } catch (error) {
+                    console.error('❌ Error changing status:', error);
+                    this.showError(`Error ${isActivating ? 'activating' : 'deactivating'} code: ` + error.message);
+                }
+            }
+        });
     }
 
     // ===== FILTERS AND SEARCH =====
@@ -1066,7 +1392,7 @@ class AdminClients {
                 this.loadAvailableCategories()
             ]);
             this.renderClientsTable();
-            this.showSuccess('Data updated successfully!');
+            console.log('✅ Client data refreshed successfully'); // ✅ SÓ LOG, SEM ALERT
         } catch (error) {
             this.showError('Error updating data');
         } finally {
@@ -1109,8 +1435,31 @@ class AdminClients {
 
     // ===== LOADING AND FEEDBACK =====
     showLoading(show) {
-        if (this.loading) {
-            this.loading.classList.toggle('hidden', !show);
+        // ✅ LOADING INTELIGENTE: Só na área de dados, não na sidebar
+        const tableContainer = this.section?.querySelector('.clients-table-container');
+
+        if (!tableContainer) return; // Se não existe tabela, não fazer loading
+
+        let dataLoading = tableContainer.querySelector('.luxury-loading');
+
+        if (!dataLoading && show) {
+            // Criar loading apenas na área dos dados
+            dataLoading = document.createElement('div');
+            dataLoading.className = 'luxury-loading';
+            dataLoading.style.position = 'absolute';
+            dataLoading.style.borderRadius = '8px';
+            dataLoading.innerHTML = `
+            <div class="luxury-loading-spinner"></div>
+            <div class="luxury-loading-text">Updating data...</div>
+        `;
+
+            // Tornar container relativo para o loading absoluto
+            tableContainer.style.position = 'relative';
+            tableContainer.appendChild(dataLoading);
+        }
+
+        if (dataLoading) {
+            dataLoading.style.display = show ? 'flex' : 'none';
         }
     }
 
@@ -1132,7 +1481,110 @@ class AdminClients {
         // TODO: Implement better notification system
         alert('Success: ' + message);
     }
+
+    closeViewModal() {
+        document.getElementById('clientViewModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Funções auxiliares para estatísticas
+    calculateDaysActive(createdAt) {
+        if (!createdAt) return 0;
+        const now = new Date();
+        const created = new Date(createdAt);
+        const diffTime = Math.abs(now - created);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }
+
+    calculateDaysSinceLastAccess(lastUsed) {
+        if (!lastUsed) return 'Never';
+        const now = new Date();
+        const lastAccess = new Date(lastUsed);
+        const diffTime = Math.abs(now - lastAccess);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays === 1 ? '1 day' : `${diffDays} days`;
+    }
+
+    async deleteClient(clientId) {
+        const client = this.clients.find(c => c._id === clientId || c.code === clientId);
+        if (!client) {
+            this.showError('Client not found');
+            return;
+        }
+
+        const confirmed = confirm(`Are you sure you want to DELETE the access code for "${client.clientName}"?\n\nThis action cannot be undone and will remove the client completely from the system.`);
+
+        if (!confirmed) return;
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/admin/access-codes/${clientId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Error deleting client');
+            }
+
+            this.showSuccess('Client deleted successfully!');
+            await this.refreshData();
+
+        } catch (error) {
+            console.error('❌ Error deleting client:', error);
+            this.showError(`Error deleting client: ${error.message}`);
+        }
+    }
+
+    // ===== SISTEMA DE CONFIRMAÇÃO LUXURY =====
+    showLuxuryConfirm(options) {
+        const modal = document.getElementById('luxuryConfirmModal');
+        const title = document.getElementById('confirmTitle');
+        const message = document.getElementById('confirmMessage');
+        const details = document.getElementById('confirmDetails');
+        const actionBtn = document.getElementById('confirmActionBtn');
+
+        // Configurar conteúdo do modal
+        title.textContent = options.title || 'Confirm Action';
+        message.textContent = options.message || 'Are you sure?';
+
+        if (options.details) {
+            details.textContent = options.details;
+            details.style.display = 'block';
+        } else {
+            details.style.display = 'none';
+        }
+
+        // Configurar botão de ação
+        actionBtn.innerHTML = `<i class="${options.icon || 'fas fa-check'}"></i> ${options.actionText || 'Confirm'}`;
+        actionBtn.className = `luxury-confirm-btn luxury-confirm-btn-confirm ${options.buttonClass || ''}`;
+
+        // Configurar ação do botão
+        actionBtn.onclick = () => {
+            this.closeLuxuryConfirm();
+            if (options.onConfirm) {
+                options.onConfirm();
+            }
+        };
+
+        // Mostrar modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeLuxuryConfirm() {
+        const modal = document.getElementById('luxuryConfirmModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
 }
+
 
 // ===== GLOBAL INITIALIZATION =====
 let adminClients = null;
@@ -1147,6 +1599,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (section && section.style.display !== 'none' && !adminClients) {
                     // Clients section was activated
                     adminClients = new AdminClients();
+                    window.adminClients = adminClients; // ✅ ADICIONAR ESTA LINHA
                 }
             }
         });
@@ -1159,9 +1612,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // If already visible, initialize immediately
         if (clientsSection.style.display !== 'none') {
             adminClients = new AdminClients();
+            window.adminClients = adminClients; // ✅ EXPOSIÇÃO GLOBAL CORRETA
         }
     }
 });
-
-// Expose globally for HTML usage
-window.adminClients = adminClients;

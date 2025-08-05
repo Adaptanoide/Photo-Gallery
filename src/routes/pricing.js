@@ -127,10 +127,62 @@ router.get('/test/categories', async (req, res) => {
 router.get('/category-price', async (req, res) => {
     try {
         const { googleDriveId, clientCode } = req.query;
-        
+
         console.log(`🏷️ Buscando preço para categoria ${googleDriveId}, cliente: ${clientCode || 'ANÔNIMO'}`);
-        
-        const category = await PhotoCategory.findByDriveId(googleDriveId);
+
+        // ===== NOVO: DETECTAR CLIENTE ESPECIAL =====
+        let category = null;
+        let isSpecialClient = false;
+
+        if (clientCode) {
+            // Verificar se cliente tem acesso especial
+            const AccessCode = require('../models/AccessCode');
+            const accessCode = await AccessCode.findOne({ code: clientCode });
+
+            if (accessCode && accessCode.accessType === 'special') {
+                console.log(`🔑 Cliente especial detectado: ${clientCode} - buscando preço customizado`);
+                isSpecialClient = true;
+
+                try {
+                    // Buscar seleção especial
+                    const Selection = require('../models/Selection');
+                    const selection = await Selection.findById(accessCode.specialSelection.selectionId);
+
+                    if (selection) {
+                        // Buscar categoria customizada pelo googleDriveFolderId
+                        const customCategory = selection.customCategories.find(
+                            cat => cat.googleDriveFolderId === googleDriveId
+                        );
+
+                        if (customCategory) {
+                            // Converter categoria customizada para formato compatível
+                            category = {
+                                _id: customCategory.categoryId,
+                                displayName: customCategory.categoryDisplayName || customCategory.categoryName,
+                                basePrice: customCategory.baseCategoryPrice || 0,
+                                getPriceForClient: () => customCategory.baseCategoryPrice || 0, // Método mock
+                                isCustomCategory: true,
+                                selectionId: selection.selectionId
+                            };
+
+                            console.log(`✅ Categoria especial encontrada: ${category.displayName} - Preço: R$ ${category.basePrice}`);
+                        } else {
+                            console.log(`❌ Categoria customizada não encontrada: ${googleDriveId}`);
+                        }
+                    } else {
+                        console.log(`❌ Seleção especial não encontrada: ${accessCode.specialSelection.selectionId}`);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao buscar categoria especial:', error);
+                }
+            }
+        }
+
+        // Se não é cliente especial ou não encontrou categoria especial, buscar categoria normal
+        if (!category) {
+            console.log(`🔍 Buscando categoria normal: ${googleDriveId}`);
+            category = await PhotoCategory.findByDriveId(googleDriveId);
+        }
 
         if (!category) {
             console.log(`❌ Categoria não encontrada: ${googleDriveId}`);
@@ -140,17 +192,16 @@ router.get('/category-price', async (req, res) => {
             });
         }
 
-        // NOVO: Calcular preço específico para o cliente
+        // NOVO: Usar hierarquia inteligente para calcular preço
         let finalPrice = category.basePrice;
         let priceSource = 'base';
-        
+        let hierarchy = null;
+
         if (clientCode) {
-            // Usar método do model para calcular preço personalizado
-            const clientPrice = category.getPriceForClient(clientCode);
-            if (clientPrice !== category.basePrice) {
-                finalPrice = clientPrice;
-                priceSource = 'personalizado';
-            }
+            const priceResult = await category.getPriceForClient(clientCode);
+            finalPrice = priceResult.finalPrice;
+            priceSource = priceResult.appliedRule;
+            hierarchy = PricingService.getHierarchyExplanation(priceResult.appliedRule);
         }
 
         const priceInfo = {
@@ -159,7 +210,8 @@ router.get('/category-price', async (req, res) => {
             basePrice: category.basePrice,
             finalPrice: finalPrice,
             priceSource: priceSource,
-            formattedPrice: finalPrice > 0 ? `R$ ${finalPrice.toFixed(2)}` : 'Sem preço',
+            hierarchy: hierarchy,
+            formattedPrice: finalPrice > 0 ? `$${finalPrice.toFixed(2)}` : 'No price',
             hasPrice: finalPrice > 0
         };
 
@@ -353,12 +405,12 @@ router.get('/categories/:id', async (req, res) => {
 
 /**
  * PUT /api/pricing/categories/:id/price
- * Definir/atualizar preço de uma categoria
+ * Definir/atualizar preço de uma categoria e QB Item
  */
 router.put('/categories/:id/price', async (req, res) => {
     try {
         const { id } = req.params;
-        const { price, reason = '' } = req.body;
+        const { price, qbItem = '', reason = '' } = req.body;
 
         // Validações
         if (typeof price !== 'number' || price < 0) {
@@ -368,21 +420,35 @@ router.put('/categories/:id/price', async (req, res) => {
             });
         }
 
-        const result = await PricingService.setPriceForCategory(
-            id,
-            price,
-            req.user.username, // Do middleware de auth
-            reason
-        );
+        // Buscar categoria
+        const category = await PhotoCategory.findById(id);
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Categoria não encontrada'
+            });
+        }
+
+        // Atualizar preço (usando método existente)
+        category.updatePrice(price, req.user.username, reason);
+
+        // Atualizar QB Item
+        category.qbItem = qbItem.trim();
+
+        await category.save();
 
         res.json({
             success: true,
-            message: result.message,
-            data: result
+            message: price > 0 ? 'Preço e QB Item atualizados com sucesso' : 'QB Item atualizado com sucesso',
+            data: {
+                category: category.getSummary(),
+                newPrice: price,
+                qbItem: category.qbItem
+            }
         });
 
     } catch (error) {
-        console.error('❌ Erro ao definir preço:', error);
+        console.error('❌ Erro ao definir preço/QB Item:', error);
 
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
@@ -548,6 +614,55 @@ router.post('/categories/:id/discount-rules', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao adicionar regra de desconto',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * PUT /api/pricing/categories/:id/pricing-mode
+ * Alterar modo de precificação da categoria
+ */
+router.put('/categories/:id/pricing-mode', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { pricingMode } = req.body;
+
+        // Validar modo
+        const validModes = ['base', 'client', 'quantity'];
+        if (!validModes.includes(pricingMode)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid pricing mode. Must be: base, client, or quantity'
+            });
+        }
+
+        const category = await PhotoCategory.findById(id);
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        // Atualizar modo
+        category.pricingMode = pricingMode;
+        await category.save();
+
+        console.log(`🎛️ Pricing mode updated: ${category.displayName} → ${pricingMode}`);
+
+        res.json({
+            success: true,
+            message: `Pricing mode changed to ${pricingMode}`,
+            category: category.getSummary(),
+            pricingMode: pricingMode
+        });
+
+    } catch (error) {
+        console.error('❌ Error updating pricing mode:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating pricing mode',
             error: error.message
         });
     }

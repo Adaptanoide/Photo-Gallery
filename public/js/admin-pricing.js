@@ -258,42 +258,35 @@ class AdminPricing {
 
         const rows = this.categories.map(category => `
             <tr onclick="adminPricing.viewCategoryDetails('${category._id}')">
-                <td class="category-name-cell">
-                    <strong>${category.displayName}</strong>
+                <td class="qb-item-cell">
+                    <div class="qb-item-container">
+                        <span class="qb-item-display">${category.qbItem || 'Not set'}</span>
+                        <button class="btn-edit-qb" onclick="event.stopPropagation(); adminPricing.editQBItem('${category._id}', '${(category.qbItem || '').replace(/'/g, '&#39;')}')" title="Edit QB Item">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
                 </td>
-                <td class="category-path-cell" title="${category.googleDrivePath}">
-                    ${category.googleDrivePath}
+                <td class="category-description-cell" title="${category.googleDrivePath}">
+                    <strong>${this.cleanCategoryName(category.displayName)}</strong>
                 </td>
                 <td class="photos-count-cell">
-                    ${category.photoCount} photo${category.photoCount !== 1 ? 's' : ''}
+                    <span class="photo-count-badge">${category.photoCount}</span>
+                    <small class="photo-label">photo${category.photoCount !== 1 ? 's' : ''}</small>
                 </td>
                 <td class="price-cell ${category.basePrice > 0 ? 'has-price' : 'no-price'}">
-                    ${category.basePrice > 0 ? `$${category.basePrice.toFixed(2)}` : 'No price'}
-                </td>
-                <td class="discounts-cell">
-                    ${category.hasCustomRules ?
-                `<span class="discount-badge">Custom</span>` :
-                `<span class="no-discounts">None</span>`
-            }
-                </td>
-                <td class="last-update-cell">
-                    ${this.formatDate(category.updatedAt)}
+                    <div class="price-display">
+                        ${category.basePrice > 0 ? `<span class="price-value">$${category.basePrice.toFixed(2)}</span>` : '<span class="no-price-text">No price</span>'}
+                    </div>
                 </td>
                 <td class="pricing-actions-cell" onclick="event.stopPropagation();">
                     <div class="pricing-action-buttons">
-                        ${category.basePrice > 0 ?
-                `<button class="btn-pricing-action btn-edit-price" 
-                                     onclick="adminPricing.openPriceModal('${category._id}', 'edit')">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>` :
-                `<button class="btn-pricing-action btn-set-price" 
-                                     onclick="adminPricing.openPriceModal('${category._id}', 'create')">
-                                <i class="fas fa-dollar-sign"></i> Set
-                            </button>`
-            }
+                        <button class="btn-pricing-action btn-edit-price" 
+                                onclick="adminPricing.openPriceModal('${category._id}', 'edit')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
                         <button class="btn-pricing-action btn-view-details" 
                                 onclick="adminPricing.viewCategoryDetails('${category._id}')">
-                            <i class="fas fa-eye"></i> View
+                            <i class="fas fa-info-circle"></i> Details
                         </button>
                     </div>
                 </td>
@@ -356,15 +349,15 @@ class AdminPricing {
         const currentPrice = document.getElementById('modalCurrentPrice');
 
         if (modalTitle) {
-            modalTitle.textContent = mode === 'edit' ? 'Edit Price' : 'Set Price';
+            modalTitle.textContent = mode === 'edit' ? 'Edit Price & QB Item' : 'Set Price & QB Item';
         }
 
         if (categoryName) {
-            categoryName.textContent = this.currentCategory.displayName;
+            categoryName.textContent = this.cleanCategoryName(this.currentCategory.displayName);
         }
 
         if (categoryPath) {
-            categoryPath.textContent = this.currentCategory.googleDrivePath;
+            categoryPath.style.display = 'none'; // Ocultar descrição duplicada
         }
 
         if (photoCount) {
@@ -372,22 +365,42 @@ class AdminPricing {
         }
 
         if (currentPrice) {
-            currentPrice.textContent = this.currentCategory.basePrice > 0 ?
+            const priceText = this.currentCategory.basePrice > 0 ?
                 `Current price: $${this.currentCategory.basePrice.toFixed(2)}` :
                 'No price set';
+            const qbText = this.currentCategory.qbItem ?
+                ` | QB Item: ${this.currentCategory.qbItem}` :
+                ' | QB Item: Not set';
+            currentPrice.textContent = priceText + qbText;
         }
 
         // Pre-fill form if editing
         const newPriceInput = document.getElementById('newPrice');
+        const qbItemInput = document.getElementById('qbItemInput');
         const reasonInput = document.getElementById('priceReason');
 
         if (newPriceInput) {
             newPriceInput.value = mode === 'edit' ? this.currentCategory.basePrice.toFixed(2) : '';
         }
 
+        if (qbItemInput) {
+            qbItemInput.value = this.currentCategory.qbItem || '';
+        }
+
         if (reasonInput) {
             reasonInput.value = '';
         }
+
+        // ===== NOVAS LINHAS ADICIONADAS =====
+        // Inicializar pricing mode toggles
+        this.initializePricingModeToggles();
+
+        // Definir modo atual
+        const currentMode = this.currentCategory.pricingMode || 'base';
+        this.setInitialToggleState(currentMode);
+
+        // Atualizar visibilidade das abas
+        this.updateTabsVisibilityToggle(currentMode);
     }
 
     closePriceModal() {
@@ -414,7 +427,10 @@ class AdminPricing {
 
         try {
             const newPrice = parseFloat(document.getElementById('newPrice').value);
-            const reason = document.getElementById('priceReason').value.trim();
+            const qbItem = document.getElementById('qbItemInput') ? document.getElementById('qbItemInput').value.trim() : '';
+            const reasonSelect = document.getElementById('priceReasonSelect').value;
+            const customReason = document.getElementById('priceReason').value.trim();
+            const reason = reasonSelect === 'Other' ? customReason : reasonSelect;
 
             if (isNaN(newPrice) || newPrice < 0) {
                 this.showNotification('Price must be a valid number', 'error');
@@ -431,15 +447,14 @@ class AdminPricing {
                 },
                 body: JSON.stringify({
                     price: newPrice,
-                    reason: reason
+                    qbItem: qbItem,
+                    reason: reason || (qbItem ? `QB Item updated: ${qbItem}` : '')
                 })
             });
 
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification(data.message || 'Price saved successfully!', 'success');
-
                 // Close modal BEFORE reloading
                 this.closePriceModal();
 
@@ -639,10 +654,484 @@ class AdminPricing {
         this.showNotification(message, 'error');
     }
 
-    viewCategoryDetails(categoryId) {
-        // TODO: Implement detailed view
-        console.log('👁️ View category:', categoryId);
+    async viewCategoryDetails(categoryId) {
+        try {
+            console.log('👁️ Loading category details:', categoryId);
+
+            // Buscar detalhes completos da categoria
+            const response = await fetch(`/api/pricing/categories/${categoryId}`, {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Category not found');
+            }
+
+            // Mostrar modal de detalhes
+            this.showCategoryDetailsModal(data.category);
+
+        } catch (error) {
+            console.error('❌ Error loading category details:', error);
+            this.showNotification('Error loading category details', 'error');
+        }
     }
+
+    // ===== EDIÇÃO RÁPIDA DE QB ITEM =====
+    async editQBItem(categoryId, currentQBItem = '') {
+        // Buscar dados da categoria primeiro
+        const category = this.categories.find(cat => cat._id === categoryId);
+        const cleanDescription = category ? this.cleanCategoryName(category.displayName) : 'Unknown category';
+
+        // Mostrar modal customizado com descrição
+        this.showQBItemModal(categoryId, currentQBItem, cleanDescription);
+    }
+
+    // ===== MODAL QB ITEM CUSTOMIZADO =====
+    showQBItemModal(categoryId, currentQBItem = '', categoryDescription = '') {
+        // Criar modal HTML
+        const modalHTML = `
+            <div id="qbItemModal" class="price-modal" style="display: flex;">
+                <div class="price-modal-overlay" onclick="this.parentElement.remove()"></div>
+                <div class="price-modal-content" style="max-width: 600px;">
+                    <div class="price-modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-edit"></i>
+                            <span>Edit QB Item</span>
+                        </h3>
+                        <button class="modal-close" onclick="this.closest('.price-modal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="price-modal-body">
+                        <div class="category-info" style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--text-primary); margin: 0 0 0.5rem 0; font-size: 1.1rem;">Category:</h4>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem; font-family: inherit;">${categoryDescription}</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">QB Item Code</label>
+                            <input type="text" id="qbItemQuickInput" class="form-input" 
+                                value="${currentQBItem}" placeholder="e.g. COW-BRN-M-001" maxlength="50">
+                            <small class="form-help" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
+                                QuickBooks item identifier for accounting integration
+                            </small>
+                        </div>
+                    </div>
+                    <div class="price-modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="this.closest('.price-modal').remove()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="adminPricing.saveQBItemQuick('${categoryId}')">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Focar no input
+        setTimeout(() => {
+            const input = document.getElementById('qbItemQuickInput');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 100);
+    }
+
+    async saveQBItemQuick(categoryId) {
+        const input = document.getElementById('qbItemQuickInput');
+        if (!input) return;
+
+        const newQBItem = input.value.trim();
+
+        try {
+            const response = await fetch(`/api/pricing/categories/${categoryId}/price`, {
+                method: 'PUT',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    price: 0, // Manter preço atual (será ignorado no backend)
+                    qbItem: newQBItem,
+                    reason: 'QB Item updated via quick edit'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                await this.loadCategories(); // Recarregar tabela
+
+                // Fechar modal
+                document.getElementById('qbItemModal')?.remove();
+            } else {
+                throw new Error(data.message || 'Error updating QB Item');
+            }
+
+        } catch (error) {
+            console.error('❌ Error updating QB Item:', error);
+            this.showNotification(`Error updating QB Item: ${error.message}`, 'error');
+        }
+    }
+
+    // ===== LIMPEZA DE NOMES =====
+    cleanCategoryName(displayName) {
+        if (!displayName) return '';
+
+        const prefixToRemove = 'Sunshine Cowhides Actual Pictures →';
+        if (displayName.startsWith(prefixToRemove)) {
+            return displayName.substring(prefixToRemove.length).trim();
+        }
+
+        return displayName;
+    }
+
+    // ===== MODAL DE DETALHES DA CATEGORIA =====
+    showCategoryDetailsModal(category) {
+        const cleanDescription = this.cleanCategoryName(category.displayName);
+        const lastPriceChange = category.priceHistory && category.priceHistory.length > 0 ?
+            category.priceHistory[category.priceHistory.length - 1] : null;
+
+        const modalHTML = `
+            <div id="categoryDetailsModal" class="price-modal" style="display: flex;">
+                <div class="price-modal-overlay" onclick="this.parentElement.remove()"></div>
+                <div class="price-modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                    <div class="price-modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-info-circle"></i>
+                            <span>${cleanDescription}</span>
+                        </h3>
+                        <button class="modal-close" onclick="this.closest('.price-modal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="price-modal-body">
+                        <!-- Informações Básicas -->
+                        <div class="details-section">
+                            <h4 class="details-section-title">📊 Basic Information</h4>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Category Name:</label>
+                                    <span>${cleanDescription}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>QB Item:</label>
+                                    <span class="qb-item-inline">${category.qbItem || 'Not set'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Photo Count:</label>
+                                    <span class="photo-count-inline">${category.photoCount} photos</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Base Price:</label>
+                                    <span class="price-inline ${category.basePrice > 0 ? 'has-price' : 'no-price'}">
+                                        ${category.basePrice > 0 ? `$${category.basePrice.toFixed(2)}` : 'No price set'}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Status:</label>
+                                    <span class="status-badge ${category.isActive ? 'active' : 'inactive'}">
+                                        ${category.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Created:</label>
+                                    <span>${this.formatDate(category.createdAt)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Last Updated:</label>
+                                    <span>${this.formatDate(category.updatedAt)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Last Sync:</label>
+                                    <span>${this.formatDate(category.lastSync)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Google Drive Info -->
+                        <div class="details-section">
+                            <h4 class="details-section-title">📁 Google Drive Information</h4>
+                            <div class="details-grid">
+                                <div class="detail-item full-width">
+                                    <label>Drive Path:</label>
+                                    <span class="drive-path">${category.googleDrivePath}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Drive ID:</label>
+                                    <span class="drive-id">${category.googleDriveId}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Folder Name:</label>
+                                    <span>${category.folderName}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Histórico de Preços -->
+                        <div class="details-section">
+                            <h4 class="details-section-title">💰 Price History</h4>
+                            ${this.renderPriceHistory(category.priceHistory)}
+                        </div>
+
+                        <!-- Regras de Desconto -->
+                        <div class="details-section">
+                            <h4 class="details-section-title">🏷️ Discount Rules</h4>
+                            ${this.renderDiscountRules(category.discountRules)}
+                        </div>
+                    </div>
+
+                    <div class="price-modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="this.closest('.price-modal').remove()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="this.closest('.price-modal').remove(); adminPricing.openPriceModal('${category._id}', 'edit')">
+                            <i class="fas fa-edit"></i> Edit Price & QB Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    // ===== RENDER PRICE HISTORY =====
+    renderPriceHistory(priceHistory) {
+        if (!priceHistory || priceHistory.length === 0) {
+            return `<div class="empty-state">No price changes recorded</div>`;
+        }
+
+        const historyHTML = priceHistory.slice(-5).reverse().map(change => `
+            <div class="history-item">
+                <div class="history-change">
+                    <span class="old-price">$${change.oldPrice.toFixed(2)}</span>
+                    <i class="fas fa-arrow-right"></i>
+                    <span class="new-price">$${change.newPrice.toFixed(2)}</span>
+                </div>
+                <div class="history-meta">
+                    <span class="history-user">${change.changedBy}</span>
+                    <span class="history-date">${this.formatDate(change.changedAt)}</span>
+                </div>
+                ${change.reason ? `<div class="history-reason"><strong>Reason:</strong> ${change.reason}</div>` : ''}
+            </div>
+        `).join('');
+
+        return `<div class="history-list">${historyHTML}</div>`;
+    }
+
+    // ===== RENDER DISCOUNT RULES =====
+    renderDiscountRules(discountRules) {
+        const activeRules = discountRules ? discountRules.filter(rule => rule.isActive) : [];
+
+        if (activeRules.length === 0) {
+            return `<div class="empty-state">No discount rules configured</div>`;
+        }
+
+        const rulesHTML = activeRules.map(rule => `
+            <div class="rule-item">
+                <div class="rule-client">
+                    <strong>${rule.clientName}</strong>
+                    <span class="client-code">(${rule.clientCode})</span>
+                </div>
+                <div class="rule-discount">
+                    ${rule.customPrice ?
+                `Custom Price: $${rule.customPrice.toFixed(2)}` :
+                `Discount: ${rule.discountPercent}%`
+            }
+                </div>
+                <div class="rule-date">${this.formatDate(rule.createdAt)}</div>
+            </div>
+        `).join('');
+
+        return `<div class="rules-list">${rulesHTML}</div>`;
+    }
+
+    // ===== GERENCIAR DROPDOWN DE RAZÕES =====
+    handleReasonChange(selectedValue) {
+        const customReasonGroup = document.getElementById('customReasonGroup');
+        const priceReasonTextarea = document.getElementById('priceReason');
+
+        if (selectedValue === 'Other') {
+            customReasonGroup.style.display = 'block';
+            priceReasonTextarea.focus();
+        } else {
+            customReasonGroup.style.display = 'none';
+            priceReasonTextarea.value = '';
+        }
+    }
+
+    // ===== PRICING MODE TOGGLES =====
+    initializePricingModeToggles() {
+        // Aguardar elementos estarem no DOM
+        setTimeout(() => {
+            const toggles = document.querySelectorAll('.toggle-switch input[type="checkbox"]');
+            const sliders = document.querySelectorAll('.toggle-slider');
+
+            console.log(`🔍 Found ${toggles.length} toggles and ${sliders.length} sliders to initialize`);
+
+            if (toggles.length === 0) {
+                console.warn('⚠️ No toggles found in DOM yet');
+                return;
+            }
+
+            // Event listeners nos checkboxes
+            toggles.forEach((toggle, index) => {
+                toggle.addEventListener('change', (e) => {
+                    console.log(`🎛️ Toggle ${toggle.id} changed to:`, e.target.checked);
+                    this.handleToggleChange(e.target);
+                });
+                console.log(`✅ Event listener added to ${toggle.id}`);
+            });
+
+            // Event listeners nos sliders (que capturam os cliques)
+            sliders.forEach((slider, index) => {
+                slider.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const checkbox = slider.previousElementSibling;
+                    if (checkbox && checkbox.type === 'checkbox') {
+                        console.log(`🎛️ Slider clicked, triggering ${checkbox.id}`);
+                        this.handleToggleChange(checkbox);
+                    }
+                });
+                console.log(`✅ Event listener added to slider ${index}`);
+            });
+
+            console.log('🎛️ Pricing mode toggles initialized successfully');
+        }, 100);
+    }
+
+    handleToggleChange(activeToggle) {
+        if (!this.currentCategory) return;
+
+        const newMode = activeToggle.dataset.mode;
+
+        console.log(`🎛️ Toggle ${activeToggle.id} clicked, activating mode: ${newMode}`);
+
+        // Sempre ativar o modo (desativar outros e ativar este)
+        this.deactivateOtherToggles(activeToggle);
+        activeToggle.checked = true;
+
+        // Ativar o modo selecionado
+        this.activatePricingMode(newMode);
+    }
+
+    deactivateOtherToggles(activeToggle) {
+        const allToggles = document.querySelectorAll('.toggle-switch input[type="checkbox"]');
+
+        allToggles.forEach(toggle => {
+            if (toggle !== activeToggle) {
+                toggle.checked = false;
+            }
+        });
+    }
+
+    async activatePricingMode(mode) {
+        try {
+            console.log(`🎛️ Activating pricing mode: ${mode}`);
+
+            // Atualizar no backend
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/pricing-mode`, {
+                method: 'PUT',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ pricingMode: mode })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Atualizar categoria local
+                this.currentCategory.pricingMode = mode;
+
+                // Mostrar/esconder abas baseado no modo
+                this.updateTabsVisibilityToggle(mode);
+
+                console.log(`✅ Pricing mode activated: ${mode}`);
+            } else {
+                throw new Error(data.message || 'Error updating pricing mode');
+            }
+
+        } catch (error) {
+            console.error('❌ Error activating pricing mode:', error);
+            this.showNotification(`Error: ${error.message}`, 'error');
+        }
+    }
+
+    updateTabsVisibilityToggle(mode) {
+        // Encontrar todos os painéis
+        const basePanel = document.getElementById('tab-base-price');
+        const clientPanel = document.getElementById('tab-client-prices');
+        const quantityPanel = document.getElementById('tab-quantity-discounts');
+
+        // Esconder todos os painéis
+        if (basePanel) basePanel.classList.remove('active');
+        if (clientPanel) clientPanel.classList.remove('active');
+        if (quantityPanel) quantityPanel.classList.remove('active');
+
+        // Mostrar painel baseado no modo
+        switch (mode) {
+            case 'client':
+                if (basePanel) basePanel.classList.add('active');
+                if (clientPanel) clientPanel.classList.add('active');
+                // Carregar dados da aba client
+                if (typeof loadClientRules === 'function') loadClientRules();
+                if (typeof loadAvailableClients === 'function') loadAvailableClients();
+                break;
+
+            case 'quantity':
+                if (basePanel) basePanel.classList.add('active');
+                if (quantityPanel) quantityPanel.classList.add('active');
+                // Carregar dados da aba quantity
+                if (typeof loadQuantityRules === 'function') loadQuantityRules();
+                break;
+
+            case 'base':
+            default:
+                if (basePanel) basePanel.classList.add('active');
+                break;
+        }
+
+        console.log(`🎛️ Panels updated for mode: ${mode}. Active panels: ${document.querySelectorAll('.price-tab-panel.active').length}`);
+    }
+
+    setInitialToggleState(mode) {
+        // Definir estado inicial dos toggles
+        const toggleBase = document.getElementById('toggleBase');
+        const toggleClient = document.getElementById('toggleClient');
+        const toggleQuantity = document.getElementById('toggleQuantity');
+
+        // Reset all
+        if (toggleBase) toggleBase.checked = false;
+        if (toggleClient) toggleClient.checked = false;
+        if (toggleQuantity) toggleQuantity.checked = false;
+
+        // Ativar o correto
+        switch (mode) {
+            case 'client':
+                if (toggleClient) toggleClient.checked = true;
+                break;
+            case 'quantity':
+                if (toggleQuantity) toggleQuantity.checked = true;
+                break;
+            case 'base':
+            default:
+                if (toggleBase) toggleBase.checked = true;
+                break;
+        }
+    }
+
 }
 
 // ===== GLOBAL INITIALIZATION =====
@@ -702,24 +1191,6 @@ window.closePriceModal = function () {
 /**
  * Initialize tab system when modal opens
  */
-function initializePriceTabs() {
-    const tabButtons = document.querySelectorAll('.price-tab-btn');
-    const tabPanels = document.querySelectorAll('.price-tab-panel');
-
-    // Event listeners for tab buttons
-    tabButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const targetTab = e.target.dataset.tab;
-            switchPriceTab(targetTab);
-        });
-    });
-
-    // Initialize tab-specific functionalities
-    initializeClientPricesTab();
-    initializeQuantityDiscountsTab();
-
-    console.log('🔖 Price modal tab system initialized');
-}
 
 /**
  * Switch active tab
@@ -1479,32 +1950,6 @@ function setupModalAutoInitialization() {
     const modal = document.getElementById('priceModal');
     if (!modal) return;
 
-    // Observer to detect when modal becomes visible
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                const isVisible = modal.style.display === 'flex';
-
-                if (isVisible) {
-                    console.log('🔧 Price modal detected as open - initializing tabs...');
-
-                    // Wait a bit for DOM to be ready
-                    setTimeout(() => {
-                        initializePriceTabs();
-                        switchPriceTab('base-price');
-                        console.log('✅ Tabs initialized automatically');
-                    }, 200);
-                }
-            }
-        });
-    });
-
-    // Observe changes in modal style attribute
-    observer.observe(modal, {
-        attributes: true,
-        attributeFilter: ['style']
-    });
-
     console.log('👁️ Modal observer configured for auto-initialization');
 }
 
@@ -1563,6 +2008,8 @@ async function removeClientRule(clientCode) {
         adminPricing.showNotification(`Error: ${error.message}`, 'error');
     }
 }
+
+
 
 // Make function global for HTML usage
 window.removeClientRule = removeClientRule;

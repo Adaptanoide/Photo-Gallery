@@ -157,22 +157,39 @@ class SpecialSelectionService {
                 throw new Error('Seleção especial não encontrada');
             }
 
-            // Adicionar categoria customizada
+            // ✅ NOVO: Criar pasta da categoria no Google Drive
+            const selectionFolderId = selection.googleDriveInfo.specialSelectionInfo.specialFolderId;
+
+            const driveResult = await GoogleDriveService.createCustomCategoryFolder(
+                selectionFolderId,
+                categoryData.categoryName
+            );
+
+            if (!driveResult.success) {
+                throw new Error(`Erro ao criar pasta no Google Drive: ${driveResult.error}`);
+            }
+
+            // Adicionar categoria customizada com ID da pasta
             const categoryId = selection.addCustomCategory({
                 categoryName: categoryData.categoryName,
                 categoryDisplayName: categoryData.categoryDisplayName,
                 baseCategoryPrice: categoryData.baseCategoryPrice || 0,
-                originalCategoryInfo: categoryData.originalCategoryInfo || {}
+                originalCategoryInfo: categoryData.originalCategoryInfo || {},
+                // ✅ NOVO: Salvar ID da pasta no Google Drive
+                googleDriveFolderId: driveResult.categoryFolderId,
+                googleDriveFolderName: driveResult.categoryFolderName
             });
 
             await selection.save();
 
             console.log(`✅ Categoria customizada adicionada: ${categoryData.categoryName}`);
+            console.log(`📁 Pasta criada no Google Drive: ${driveResult.categoryFolderId}`);
 
             return {
                 success: true,
                 categoryId: categoryId,
                 categoryName: categoryData.categoryName,
+                googleDriveFolderId: driveResult.categoryFolderId,
                 message: 'Categoria customizada adicionada com sucesso'
             };
 
@@ -271,11 +288,30 @@ class SpecialSelectionService {
                     throw new Error('Categoria customizada não encontrada');
                 }
 
+                // ✅ VERIFICAR SE CATEGORIA TEM PASTA NO GOOGLE DRIVE
+                if (!category.googleDriveFolderId) {
+                    // Se não tem, criar agora (fallback para categorias antigas)
+                    console.log('⚠️ Categoria sem pasta do Google Drive, criando...');
+
+                    const selectionFolderId = selection.googleDriveInfo.specialSelectionInfo.specialFolderId;
+                    const driveResult = await GoogleDriveService.createCustomCategoryFolder(
+                        selectionFolderId,
+                        category.categoryName
+                    );
+
+                    if (driveResult.success) {
+                        category.googleDriveFolderId = driveResult.categoryFolderId;
+                        category.googleDriveFolderName = driveResult.categoryFolderName;
+                        await selection.save({ session });
+                    } else {
+                        throw new Error('Erro ao criar pasta da categoria no Google Drive');
+                    }
+                }
+
                 // 3. Verificar/criar status da foto
                 let photoStatus = await PhotoStatus.findOne({ photoId: photoData.photoId }).session(session);
 
                 if (!photoStatus) {
-                    // Criar status se não existe
                     photoStatus = PhotoStatus.createForPhoto({
                         photoId: photoData.photoId,
                         fileName: photoData.fileName,
@@ -297,10 +333,11 @@ class SpecialSelectionService {
                 // 5. Bloquear foto temporariamente
                 photoStatus.lock(adminUser, 'moving', 30);
 
-                // 6. Mover foto no Google Drive
-                const driveResult = await GoogleDriveService.movePhotoToSelection(
+                // ✅ 6. MOVER FOTO PARA PASTA DA CATEGORIA CUSTOMIZADA (NÃO PASTA RAIZ!)
+                const driveResult = await GoogleDriveService.movePhotoToCustomCategory(
                     photoData.photoId,
-                    selection.googleDriveInfo.specialSelectionInfo.specialFolderId
+                    category.googleDriveFolderId,  // ← PASTA DA CATEGORIA!
+                    category.categoryName
                 );
 
                 if (!driveResult.success) {
@@ -322,7 +359,7 @@ class SpecialSelectionService {
                 photoStatus.moveTo({
                     locationType: 'special_selection',
                     currentPath: `Special Selections/${selection.googleDriveInfo.clientFolderName}/${category.categoryName}`,
-                    currentParentId: selection.googleDriveInfo.specialSelectionInfo.specialFolderId,
+                    currentParentId: category.googleDriveFolderId,  // ← PASTA DA CATEGORIA!
                     currentCategory: category.categoryName,
                     specialSelectionId: selection._id
                 }, adminUser, 'admin');
@@ -354,13 +391,15 @@ class SpecialSelectionService {
                 await selection.save({ session });
 
                 console.log(`✅ Foto movida: ${photoData.fileName} → ${category.categoryName}`);
+                console.log(`📁 Pasta de destino: ${category.googleDriveFolderId}`);
 
                 return {
                     success: true,
                     photoId: photoData.photoId,
                     categoryName: category.categoryName,
+                    categoryFolderId: category.googleDriveFolderId,
                     newPrice: photoData.customPrice || category.baseCategoryPrice || 0,
-                    message: 'Foto movida com sucesso'
+                    message: 'Foto movida com sucesso para categoria navegável'
                 };
             });
 
