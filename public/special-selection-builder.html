@@ -532,6 +532,12 @@
                             <span>Stock Browser</span>
                         </div>
 
+                        <!-- ✅ NOVO: Loading no header -->
+                        <div id="headerLoading" class="header-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Loading...</span>
+                        </div>
+
                         <div class="panel-header-right">
                             <div class="selection-counter">
                                 <span id="selectionCount" class="selection-number">0</span>
@@ -570,12 +576,6 @@
 
                         <!-- Grid de fotos (quando estiver em uma categoria) -->
                         <div id="stockPhotos" class="photos-grid" style="display: none;"></div>
-
-                        <!-- Loading -->
-                        <div id="stockLoading" class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            Loading stock...
-                        </div>
                     </div>
                 </div>
 
@@ -622,15 +622,33 @@
         <div class="modal-background" onclick="window.specialSelectionBuilder.closePhotoModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalPhotoTitle">Photo Preview</h3>
-                <button class="close-btn" onclick="window.specialSelectionBuilder.closePhotoModal()">
+                <div class="modal-header-left">
+                    <h3 id="modalPhotoTitle">Photo Preview</h3>
+                </div>
+
+                <div class="modal-header-center">
+                    <label class="modal-checkbox-compact">
+                        <input type="checkbox" id="modalPhotoCheckbox" class="modal-photo-checkbox">
+                        <span class="checkbox-custom-compact"></span>
+                        <span class="checkbox-text-compact">Select</span>
+                    </label>
+
+                    <div class="modal-selection-compact">
+                        <span id="modalSelectionCount">0 selected</span>
+                        <button id="modalMoveSelected" class="btn-compact btn-move" disabled>
+                            <i class="fas fa-arrow-right"></i> Move
+                        </button>
+                    </div>
+                </div>
+
+                <button class="close-btn-improved" onclick="window.specialSelectionBuilder.closePhotoModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body" style="position: relative;">
                 <div class="photo-container">
-                    <img id="modalPhotoImage" src="" alt="" />
+                    <img id="modalPhoto" src="" alt="" />
                     <button id="prevBtn" class="nav-btn nav-prev" onclick="window.specialSelectionBuilder.prevPhoto()"
                         disabled>
                         <i class="fas fa-chevron-left"></i>
@@ -646,6 +664,7 @@
                 <div class="photo-info">
                     <span id="modalPhotoName">Photo Name</span>
                     <span id="modalPhotoIndex">1 of 10</span>
+                    <span id="modalBasePrice" class="base-price-display">Base Price: $--</span>
                 </div>
                 <div class="photo-actions">
                     <button class="btn-action btn-primary"
@@ -705,11 +724,11 @@
                             <input type="radio" name="destination" value="existing" checked>
                             <span>Existing Category</span>
                         </label>
-                            <div>
-                                <select id="existingCategoriesSelect" class="special-form-select">
-                                    <option value="">Select a category...</option>
-                                </select>
-                                <div id="existingCategoryPriceInfo" style="
+                        <div>
+                            <select id="existingCategoriesSelect" class="special-form-select">
+                                <option value="">Select a category...</option>
+                            </select>
+                            <div id="existingCategoryPriceInfo" style="
                                     margin-top: 0.5rem;
                                     padding: 0.5rem;
                                     background: rgba(212, 175, 55, 0.1);
@@ -719,11 +738,11 @@
                                     text-align: center;
                                     display: none;
                                 ">
-                                    Already adjusted: 
-                                    <span id="fromPrice" style="color: var(--gold-primary); font-weight: 600;">$--</span> → 
-                                    <span id="toPrice" style="color: var(--gold-primary); font-weight: 600;">$--</span>
-                                </div>
+                                Already adjusted:
+                                <span id="fromPrice" style="color: var(--gold-primary); font-weight: 600;">$--</span> →
+                                <span id="toPrice" style="color: var(--gold-primary); font-weight: 600;">$--</span>
                             </div>
+                        </div>
                     </div>
 
                     <div>
@@ -790,7 +809,7 @@
         <div
             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2c2c34; padding: 2rem; border-radius: 8px; max-width: 450px; border: 2px solid #d4af37;">
             <h3 style="color: #d4af37; margin-bottom: 1rem;">✏️ Edit Category</h3>
-            
+
             <!-- Nome da categoria -->
             <div style="margin-bottom: 1rem;">
                 <p style="color: white; margin-bottom: 0.5rem;">Category name: <span id="currentCategoryName"
@@ -813,7 +832,8 @@
                 <button onclick="window.specialSelectionBuilder.closeRenameCategoryModal()"
                     style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
                 <button onclick="window.specialSelectionBuilder.confirmRenameCategory()"
-                    style="padding: 0.5rem 1rem; background: #d4af37; color: #2c2c34; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Save Changes</button>
+                    style="padding: 0.5rem 1rem; background: #d4af37; color: #2c2c34; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Save
+                    Changes</button>
             </div>
         </div>
     </div>

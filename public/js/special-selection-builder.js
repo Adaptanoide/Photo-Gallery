@@ -229,8 +229,10 @@ class SpecialSelectionBuilder {
         // Mostrar lista de categorias, esconder fotos
         this.stockCategoriesElement.style.display = 'block';
         this.stockPhotosElement.style.display = 'none';
-    }
 
+        // ✅ DESLIGAR LOADING
+        this.showLoading(false);
+    }
     renderStockPhotos() {
         // ✅ DEBUG LOGS - INÍCIO
         console.log(`🔥 DEBUG renderStockPhotos: selectedStockPhotos.size = ${this.selectedStockPhotos.size}`);
@@ -296,6 +298,9 @@ class SpecialSelectionBuilder {
         // Mostrar fotos, esconder categorias
         this.stockCategoriesElement.style.display = 'none';
         this.stockPhotosElement.style.display = 'grid';
+
+        // ✅ DESLIGAR LOADING
+        this.showLoading(false);
     }
 
     renderCustomCategories() {
@@ -1056,6 +1061,9 @@ class SpecialSelectionBuilder {
         // Mostrar categorias, esconder fotos
         this.stockCategoriesElement.style.display = 'block';
         this.stockPhotosElement.style.display = 'none';
+
+        // ✅ DESLIGAR LOADING
+        this.showLoading(false);
     }
 
     async navigateToSubfolder(folderId, folderName) {
@@ -1078,6 +1086,9 @@ class SpecialSelectionBuilder {
     `;
         this.stockCategoriesElement.style.display = 'block';
         this.stockPhotosElement.style.display = 'none';
+
+        // ✅ DESLIGAR LOADING
+        this.showLoading(false);
     }
 
     navigateToFolder(folderId) {
@@ -1635,32 +1646,85 @@ class SpecialSelectionBuilder {
         modal.style.display = 'flex';
 
         // Atualizar informações
-        document.getElementById('modalPhotoTitle').textContent = this.getCurrentCategoryName();
+        // Atualizar informações
+        const fullPath = this.buildFullCategoryPath();
+        document.getElementById('modalPhotoTitle').textContent = fullPath;
         document.getElementById('modalPhotoName').textContent = photo.name;
         document.getElementById('modalPhotoIndex').textContent = `${photoIndex + 1} of ${this.stockPhotosData.length}`;
 
-        // Carregar imagem
-        const img = document.getElementById('modalPhotoImage');
+        // Carregar imagem (ID CORRIGIDO)
+        const img = document.getElementById('modalPhoto');
         img.src = photo.thumbnailLarge || photo.thumbnailLink?.replace('=s220', '=s1200') || photo.webViewLink;
         img.alt = photo.name;
+
+        // ✅ NOVO: Configurar loading para quando imagem carregar
+        img.onload = () => {
+            // Esconder loading quando imagem carregar
+            this.showModalPhotoLoading(false);
+        };
+
+        img.onerror = () => {
+            // Esconder loading mesmo se der erro
+            this.showModalPhotoLoading(false);
+        };
 
         // Atualizar botões de navegação
         document.getElementById('prevBtn').disabled = photoIndex === 0;
         document.getElementById('nextBtn').disabled = photoIndex === this.stockPhotosData.length - 1;
+
+        // ✅ NOVO: Inicializar zoom
+        setTimeout(() => {
+            if (window.initializePhotoZoom) {
+                window.initializePhotoZoom();
+            }
+        }, 100);
+
+        // ✅ NOVO: Sincronizar checkbox
+        this.syncModalCheckbox(photo.id);
+
+        // ✅ NOVO: Atualizar contador de seleção no modal
+        this.updateModalSelectionCounter();
+
+        // ✅ NOVO: Setup event listener do checkbox
+        this.setupModalCheckboxListener(photo.id);
+
+        // ✅ NOVO: Mostrar informações da categoria no header
+        this.updateModalCategoryInfo();
     }
 
     closePhotoModal() {
         document.getElementById('photoModal').style.display = 'none';
+
+        // ✅ NOVO: Destruir zoom
+        if (window.destroyPhotoZoom) {
+            window.destroyPhotoZoom();
+        }
     }
 
     prevPhoto() {
         if (this.currentPhotoIndex > 0) {
+            // Mostrar loading
+            this.showModalPhotoLoading(true);
+
+            // Notificar mudança de foto para zoom
+            if (window.notifyPhotoChange) {
+                window.notifyPhotoChange();
+            }
+
             this.previewPhoto(this.currentPhotoIndex - 1);
         }
     }
 
     nextPhoto() {
         if (this.currentPhotoIndex < this.stockPhotosData.length - 1) {
+            // Mostrar loading
+            this.showModalPhotoLoading(true);
+
+            // Notificar mudança de foto para zoom
+            if (window.notifyPhotoChange) {
+                window.notifyPhotoChange();
+            }
+
             this.previewPhoto(this.currentPhotoIndex + 1);
         }
     }
@@ -1808,13 +1872,13 @@ class SpecialSelectionBuilder {
 
         } catch (error) {
             console.error('❌ Erro ao salvar seleção especial:', error);
-            
+
             const errorMessage = `❌ Error saving special selection:
 
     ${error.message}
 
     Please try again or contact support if the problem persists.`;
-            
+
             alert(errorMessage);
         } finally {
             // 9. Restaurar botão (se ainda estiver na página)
@@ -1833,7 +1897,7 @@ class SpecialSelectionBuilder {
         // Primeiro tentar pegar da URL
         const urlParams = new URLSearchParams(window.location.search);
         const selectionId = urlParams.get('selectionId');
-        
+
         if (selectionId) {
             console.log(`🔍 Selection ID encontrado na URL: ${selectionId}`);
             return selectionId;
@@ -1855,11 +1919,11 @@ class SpecialSelectionBuilder {
     clearBuilderStorage() {
         const keysToRemove = [
             'builderSelectionName',
-            'builderClientCode', 
+            'builderClientCode',
             'builderClientName',
             'currentSelectionId'
         ];
-        
+
         keysToRemove.forEach(key => {
             localStorage.removeItem(key);
             console.log(`🧹 Removido localStorage: ${key}`);
@@ -1951,9 +2015,15 @@ class SpecialSelectionBuilder {
     }
 
     showLoading(show) {
+        console.log(`🔍 showLoading(${show}) chamado - NOVO HEADER`);
+
         this.isLoading = show;
-        if (this.stockLoading) {
-            this.stockLoading.style.display = show ? 'flex' : 'none';
+
+        // ✅ NOVO: Usar loading do header
+        const headerLoading = document.getElementById('headerLoading');
+        if (headerLoading) {
+            headerLoading.style.display = show ? 'flex' : 'none';
+            console.log(`🔍 Header loading display: ${headerLoading.style.display}`);
         }
     }
 
@@ -1969,6 +2039,158 @@ class SpecialSelectionBuilder {
             'Authorization': `Bearer ${session.token}`
         };
     }
+
+    // ===== FUNÇÕES DO MODAL COM CHECKBOX =====
+
+    syncModalCheckbox(photoId) {
+        const modalCheckbox = document.getElementById('modalPhotoCheckbox');
+        if (modalCheckbox) {
+            const isSelected = this.selectedStockPhotos.has(photoId);
+            modalCheckbox.checked = isSelected;
+
+            // Verificar se foto foi movida
+            const isPhotoMoved = this.selectedPhotos.some(selectedPhoto => selectedPhoto.id === photoId);
+            modalCheckbox.disabled = isPhotoMoved;
+
+            // Visual feedback se foi movida
+            const checkboxLabel = document.querySelector('.modal-checkbox-label');
+            if (checkboxLabel) {
+                if (isPhotoMoved) {
+                    checkboxLabel.style.opacity = '0.5';
+                    checkboxLabel.querySelector('.checkbox-text').textContent = 'Already moved';
+                } else {
+                    checkboxLabel.style.opacity = '1';
+                    checkboxLabel.querySelector('.checkbox-text').textContent = 'Select this photo';
+                }
+            }
+        }
+    }
+
+    setupModalCheckboxListener(photoId) {
+        const modalCheckbox = document.getElementById('modalPhotoCheckbox');
+
+        // Remover listener anterior se existir
+        if (this.currentModalCheckboxListener) {
+            modalCheckbox.removeEventListener('change', this.currentModalCheckboxListener);
+        }
+
+        // Criar novo listener
+        this.currentModalCheckboxListener = (e) => {
+            if (e.target.checked) {
+                this.selectedStockPhotos.add(photoId);
+            } else {
+                this.selectedStockPhotos.delete(photoId);
+            }
+
+            // Sincronizar com checkbox do grid principal
+            const gridCheckbox = document.getElementById(`photo_${photoId}`);
+            if (gridCheckbox) {
+                gridCheckbox.checked = e.target.checked;
+                const photoCard = gridCheckbox.closest('.photo-card');
+                if (photoCard) {
+                    if (e.target.checked) {
+                        photoCard.classList.add('selected-checkbox');
+                    } else {
+                        photoCard.classList.remove('selected-checkbox');
+                    }
+                }
+            }
+
+            // Atualizar contadores
+            this.updateSelectionCounter();
+            this.updateModalSelectionCounter();
+        };
+
+        modalCheckbox.addEventListener('change', this.currentModalCheckboxListener);
+    }
+
+    updateModalSelectionCounter() {
+        const count = this.selectedStockPhotos.size;
+        const countElement = document.getElementById('modalSelectionCount');
+        const moveButton = document.getElementById('modalMoveSelected');
+
+        if (countElement) {
+            countElement.textContent = count === 1 ? '1 selected' : `${count} selected`;
+        }
+
+        if (moveButton) {
+            moveButton.disabled = count === 0;
+        }
+    }
+
+    // ===== FUNÇÃO PARA ATUALIZAR INFO DA CATEGORIA NO MODAL =====
+
+    async updateModalCategoryInfo() {
+        const basePriceElement = document.getElementById('modalBasePrice');
+
+        if (basePriceElement) {
+            try {
+                // Buscar preço da categoria atual
+                const basePrice = await this.getCurrentCategoryBasePrice();
+
+                if (basePrice && parseFloat(basePrice) > 0) {
+                    basePriceElement.textContent = `Base Price: $${parseFloat(basePrice).toFixed(2)}`;
+                    basePriceElement.style.display = 'inline-block';
+                } else {
+                    basePriceElement.textContent = 'Base Price: Not defined';
+                    basePriceElement.style.opacity = '0.6';
+                    basePriceElement.style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.log('❌ Erro ao buscar preço base para modal:', error);
+                basePriceElement.textContent = 'Base Price: --';
+                basePriceElement.style.display = 'inline-block';
+            }
+        }
+    }
+
+    // ===== LOADING DA NAVEGAÇÃO DO MODAL =====
+
+    showModalPhotoLoading(show) {
+        const modalBody = document.querySelector('#photoModal .modal-body');
+        const img = document.getElementById('modalPhoto');
+
+        if (!modalBody) return;
+
+        // Remover loading existente
+        const existingLoading = modalBody.querySelector('.modal-photo-loading');
+        if (existingLoading) {
+            existingLoading.remove();
+        }
+
+        if (show) {
+            // Adicionar efeito translúcido na imagem
+            if (img) {
+                img.classList.add('loading-transition');
+            }
+
+            // Criar loading overlay
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'modal-photo-loading';
+            loadingOverlay.innerHTML = `
+            <div class="loading-spinner-modal">
+                <div class="spinner-icon">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="spinner-text">Loading...</div>
+            </div>
+        `;
+
+            modalBody.appendChild(loadingOverlay);
+
+            // Ativar loading com delay para animação
+            setTimeout(() => {
+                loadingOverlay.classList.add('active');
+            }, 50);
+
+        } else {
+            // Remover efeito translúcido da imagem
+            if (img) {
+                img.classList.remove('loading-transition');
+            }
+        }
+    }
+
 }
 
 

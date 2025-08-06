@@ -343,7 +343,7 @@ class AdminSpecialSelections {
                                 </div>
                             </div>
 
-                            <div class="special-form-row">
+                            <div class="special-form-row single">
                                 <div class="special-form-group">
                                     <div class="special-checkbox-group">
                                         <div class="special-switch active" id="showPricesSwitch">
@@ -352,28 +352,6 @@ class AdminSpecialSelections {
                                         <label class="special-switch-label">Show Prices to Client</label>
                                     </div>
                                     <div class="special-form-help">Whether the client can see product prices</div>
-                                </div>
-                                <div class="special-form-group">
-                                    <div class="special-checkbox-group">
-                                        <div class="special-switch" id="allowDiscountSwitch">
-                                            <input type="hidden" id="allowGlobalDiscount" value="false">
-                                        </div>
-                                        <label class="special-switch-label">Allow Global Discount</label>
-                                    </div>
-                                    <div class="special-form-help">Enable percentage discounts for this selection</div>
-                                </div>
-                            </div>
-
-                            <div class="special-form-row" id="discountRow" style="display: none;">
-                                <div class="special-form-group">
-                                    <label class="special-form-label">Global Discount (%)</label>
-                                    <input type="number" id="globalDiscountPercent" class="special-form-input" min="0" max="100" value="0" placeholder="0">
-                                    <div class="special-form-help">Percentage discount applied to all products</div>
-                                </div>
-                                <div class="special-form-group">
-                                    <label class="special-form-label">Expiration Date</label>
-                                    <input type="datetime-local" id="expiresAt" class="special-form-input">
-                                    <div class="special-form-help">When this selection expires (optional)</div>
                                 </div>
                             </div>
                         </form>
@@ -544,8 +522,6 @@ class AdminSpecialSelections {
         const allowDiscountSwitch = document.getElementById('allowDiscountSwitch');
 
         showPricesSwitch?.addEventListener('click', () => this.toggleSwitch('showPrices'));
-        allowDiscountSwitch?.addEventListener('click', () => this.toggleSwitch('allowGlobalDiscount'));
-
         // Save button
         document.getElementById('btnSaveSpecialSelection')?.addEventListener('click', () => this.saveSpecialSelection());
     }
@@ -649,12 +625,9 @@ class AdminSpecialSelections {
         form?.reset();
 
         document.getElementById('showPrices').value = 'true';
-        document.getElementById('allowGlobalDiscount').value = 'false';
 
         // Reset switches
         document.getElementById('showPricesSwitch')?.classList.add('active');
-        document.getElementById('allowDiscountSwitch')?.classList.remove('active');
-        document.getElementById('discountRow').style.display = 'none';
 
         // Atualizar opções de clientes
         const clientSelect = document.getElementById('clientCode');
@@ -680,13 +653,6 @@ class AdminSpecialSelections {
 
         hiddenInput.value = newValue.toString();
 
-        // Mostrar/esconder linha de desconto
-        if (fieldName === 'allowGlobalDiscount') {
-            const discountRow = document.getElementById('discountRow');
-            if (discountRow) {
-                discountRow.style.display = newValue ? 'grid' : 'none';
-            }
-        }
     }
 
     // ===== CRUD OPERATIONS =====
