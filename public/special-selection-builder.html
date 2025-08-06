@@ -839,6 +839,50 @@
         </div>
     </div>
 
+    <!-- Modal Add New Category - LUXURY STYLE (INATIVO) -->
+    <div id="addCategoryModalLuxury" class="special-selection-modal">
+        <div class="special-modal-content">
+            <div class="special-modal-header">
+                <h3 class="special-modal-title">
+                    <i class="fas fa-plus"></i>
+                    Add New Category
+                </h3>
+                <button class="special-modal-close"
+                    onclick="document.getElementById('addCategoryModalLuxury').classList.remove('active')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="special-modal-body">
+                <div class="special-form-group">
+                    <label class="special-form-label">
+                        <i class="fas fa-tag"></i>
+                        Category Name
+                    </label>
+                    <input type="text" id="luxuryNameInput" class="special-form-input"
+                        placeholder="Enter category name..." value="Custom Category">
+                </div>
+
+                <div class="special-form-group">
+                    <label class="special-form-label">
+                        <i class="fas fa-dollar-sign"></i>
+                        Custom Price (optional)
+                    </label>
+                    <input type="number" id="luxuryPriceInput" class="special-form-input" placeholder="0.00" min="0"
+                        step="0.01" value="0.00">
+                </div>
+            </div>
+
+            <div class="special-modal-footer">
+                <button class="btn btn-secondary"
+                    onclick="document.getElementById('addCategoryModalLuxury').classList.remove('active')">
+                    Cancel
+                </button>
+                <button class="btn btn-primary">
+                    Create Category
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
