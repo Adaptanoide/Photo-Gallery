@@ -1267,7 +1267,7 @@ class SpecialSelectionBuilder {
                         this.editCustomCategory(index);
                         break;
                     case 'delete-category':
-                        this.deleteCustomCategory(index);
+                        this.showDeleteCategoryModal(index);
                         break;
                     case 'remove':
                         this.removePhotoFromCategory(photoId, index);
