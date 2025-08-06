@@ -75,7 +75,7 @@ class SpecialSelectionBuilder {
         // Botões principais
         this.btnSaveAndContinue?.addEventListener('click', () => this.saveSelection());
         this.btnCancelBuilder?.addEventListener('click', () => this.cancelBuilder());
-        this.btnAddCategory?.addEventListener('click', () => this.showAddCategoryModal());
+        this.btnAddCategory?.addEventListener('click', () => this.showAddCategoryModalLuxury());
         this.btnAddCategoryBottom?.addEventListener('click', () => this.showAddCategoryModal());
         this.btnRefreshStock?.addEventListener('click', () => this.refreshStock());
         this.btnPreviewSelection?.addEventListener('click', () => this.previewSelection());
@@ -1457,6 +1457,46 @@ class SpecialSelectionBuilder {
 
         // Fechar modal
         this.closeDeleteCategoryModal();
+    }
+
+    // ===== MODAL LUXURY - TESTE =====
+    showAddCategoryModalLuxury() {
+        document.getElementById('addCategoryModalLuxury').classList.add('active');
+
+        // Focar no input
+        setTimeout(() => {
+            document.getElementById('luxuryNameInput').focus();
+            document.getElementById('luxuryNameInput').select();
+        }, 100);
+    }
+
+    confirmAddCategoryLuxury() {
+        const categoryName = document.getElementById('luxuryNameInput').value.trim();
+        if (!categoryName) {
+            alert('Please enter a category name');
+            return;
+        }
+
+        const customPrice = parseFloat(document.getElementById('luxuryPriceInput').value) || null;
+
+        // ✅ USAR MESMA LÓGICA da função original
+        const newCategory = {
+            id: `custom_${Date.now()}`,
+            name: categoryName,
+            customPrice: customPrice,
+            photos: []
+        };
+
+        this.customCategories.push(newCategory);
+        this.renderCustomCategories();
+        this.updateCounts();
+
+        console.log('✅ Nova categoria luxury criada:', newCategory);
+
+        // Fechar modal e limpar campos
+        document.getElementById('addCategoryModalLuxury').classList.remove('active');
+        document.getElementById('luxuryNameInput').value = 'Custom Category';
+        document.getElementById('luxuryPriceInput').value = '0.00';
     }
 
     // ===== MODALS E INTERACTIONS =====
