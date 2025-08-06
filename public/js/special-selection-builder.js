@@ -793,6 +793,9 @@ class SpecialSelectionBuilder {
     }
 
     setupMassSelectionModalEvents() {
+        // ✅ NOVO: Remover listeners antigos PRIMEIRO
+        this.removeMassSelectionModalEvents();
+
         // Radio buttons para alternar entre categorias existentes/nova
         const radioButtons = document.querySelectorAll('input[name="destination"]');
         radioButtons.forEach(radio => {
@@ -812,6 +815,16 @@ class SpecialSelectionBuilder {
         moveButton.addEventListener('click', () => this.executeMassMovement());
 
         console.log('🔧 Event listeners do modal configurados');
+    }
+
+    // ✅ NOVA FUNÇÃO: Remover listeners
+    removeMassSelectionModalEvents() {
+        const moveButton = document.getElementById('btnExecuteMassMovement');
+        if (moveButton) {
+            // Clona o botão para remover TODOS os listeners
+            const newButton = moveButton.cloneNode(true);
+            moveButton.parentNode.replaceChild(newButton, moveButton);
+        }
     }
 
     clearMassSelectionModal() {
@@ -891,6 +904,9 @@ class SpecialSelectionBuilder {
     }
 
     async performMassMovement(targetCategory, targetCategoryIndex) {
+        console.log('🚨 DEBUG: performMassMovement EXECUTANDO - INÍCIO');
+        console.log('🚨 DEBUG: targetCategory:', targetCategory.name);
+
         const selectedPhotosArray = Array.from(this.selectedStockPhotos);
         const totalPhotos = selectedPhotosArray.length;
 
@@ -957,8 +973,7 @@ class SpecialSelectionBuilder {
         // Fechar modal PRIMEIRO
         this.closeMassSelectionModal();
 
-        // Feedback de sucesso
-        alert(`✅ Success!\n\n${totalPhotos} photos moved to "${categoryName}"\n\nThe photos have been added to your custom selection.`);
+        console.log(`✅ ${totalPhotos} photos moved to "${categoryName}"`);
 
         console.log(`🎉 Movimentação em massa concluída: ${totalPhotos} fotos para ${categoryName}`);
     }
@@ -2053,15 +2068,27 @@ class SpecialSelectionBuilder {
             modalCheckbox.disabled = isPhotoMoved;
 
             // Visual feedback se foi movida
-            const checkboxLabel = document.querySelector('.modal-checkbox-label');
+            const checkboxLabel = document.querySelector('.modal-checkbox-compact');
             if (checkboxLabel) {
                 if (isPhotoMoved) {
                     checkboxLabel.style.opacity = '0.5';
-                    checkboxLabel.querySelector('.checkbox-text').textContent = 'Already moved';
+                    checkboxLabel.querySelector('.checkbox-text-compact').textContent = 'Moved';
                 } else {
                     checkboxLabel.style.opacity = '1';
-                    checkboxLabel.querySelector('.checkbox-text').textContent = 'Select this photo';
+                    checkboxLabel.querySelector('.checkbox-text-compact').textContent = 'Select';
                 }
+            }
+
+            // ✅ NOVO: Aplicar visual "moved" na imagem
+            const modalImage = document.getElementById('modalPhoto');
+            const modalBody = modalImage?.closest('.modal-body');
+
+            if (isPhotoMoved) {
+                modalImage?.classList.add('photo-moved');
+                modalBody?.classList.add('photo-moved');
+            } else {
+                modalImage?.classList.remove('photo-moved');
+                modalBody?.classList.remove('photo-moved');
             }
         }
     }
@@ -2189,6 +2216,16 @@ class SpecialSelectionBuilder {
                 img.classList.remove('loading-transition');
             }
         }
+    }
+
+    moveFromFullscreen() {
+        // 1. Fechar fullscreen
+        this.closePhotoModal();
+
+        // 2. Abrir modal massa selection após delay
+        setTimeout(() => {
+            this.showMoveSelectedModal();
+        }, 300);
     }
 
 }
