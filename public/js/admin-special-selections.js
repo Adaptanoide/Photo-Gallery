@@ -384,11 +384,8 @@ class AdminSpecialSelections {
                         </div>
                         <h3 class="special-empty-title">No Special Selections Yet</h3>
                         <p class="special-empty-description">
-                            Create your first special selection to provide personalized experiences for your clients.
+                            Use the "Create Special Selection" button above to create your personalized selection for clients.
                         </p>
-                        <button id="btnCreateFirstSelection" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Create First Selection
-                        </button>
                     </td>
                 </tr>
             `;
@@ -532,9 +529,6 @@ class AdminSpecialSelections {
 
         // Botão criar (cabeçalho)
         document.getElementById('btnCreateSpecialSelection')?.addEventListener('click', () => this.openCreateModal());
-
-        // Botão criar (tabela vazia)
-        document.getElementById('btnCreateFirstSelection')?.addEventListener('click', () => this.openCreateModal());
     }
 
     setupFilterEventListeners() {
@@ -690,7 +684,6 @@ class AdminSpecialSelections {
 
                 console.log(`✅ Seleção especial criada com ID: ${selectionId}`);
 
-                this.showNotification('Basic info saved! Opening selection builder...', 'success');
                 this.closeModal();
 
                 // ✅ CORREÇÃO: Salvar o Selection ID no localStorage
