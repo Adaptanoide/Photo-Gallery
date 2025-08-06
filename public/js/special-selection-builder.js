@@ -167,6 +167,20 @@ class SpecialSelectionBuilder {
             this.showLoading(true);
             console.log(`📷 Carregando fotos da pasta: ${folderId}`);
 
+            // CACHE: Verificar se já temos esta pasta
+            const cacheKey = `photos_${folderId}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const cacheData = JSON.parse(cached);
+                if (cacheData.expires > Date.now()) {
+                    console.log('⚡ CACHE HIT - Fotos instantâneas!');
+                    this.stockPhotosData = cacheData.photos;
+                    this.renderStockPhotos();
+                    console.log(`✅ ${cacheData.photos.length} fotos do cache`);
+                    return; // Pula API
+                }
+            }
+
             const response = await fetch(`/api/drive/photos/${folderId}`, {
                 headers: this.getAuthHeaders()
             });
@@ -179,8 +193,16 @@ class SpecialSelectionBuilder {
 
             if (data.success && data.photos) {
                 this.stockPhotosData = data.photos;
+
+                // CACHE: Salvar fotos para próxima vez
+                const cacheData = {
+                    photos: data.photos,
+                    expires: Date.now() + (6 * 60 * 60 * 1000) // 6 horas
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+
                 this.renderStockPhotos();
-                console.log(`✅ ${this.stockPhotosData.length} fotos carregadas`);
+                console.log(`✅ ${this.stockPhotosData.length} fotos carregadas e cacheadas`);
             } else {
                 throw new Error(data.message || 'Erro ao carregar fotos');
             }
