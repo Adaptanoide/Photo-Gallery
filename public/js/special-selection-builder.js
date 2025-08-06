@@ -1223,6 +1223,12 @@ class SpecialSelectionBuilder {
             this.setupDropZone(dropZone);
         });
 
+        // ✅ NOVO: Área expandida de drop
+        const categoryContents = this.customCategoriesContainer.querySelectorAll('.custom-category-content');
+        categoryContents.forEach(content => {
+            this.setupExpandedDropZone(content);
+        });
+
         // 🔥 CORREÇÃO CRÍTICA: Event listeners específicos e limpos
 
         // 1. Headers clicáveis (expand/collapse)
@@ -1299,6 +1305,29 @@ class SpecialSelectionBuilder {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
             const categoryIndex = parseInt(dropZone.dataset.categoryIndex);
+            this.handlePhotoDrop(e, categoryIndex);
+        });
+    }
+
+    setupExpandedDropZone(categoryContent) {
+        const categoryIndex = parseInt(categoryContent.closest('.custom-category').dataset.categoryIndex);
+
+        categoryContent.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            categoryContent.classList.add('category-drag-over');
+        });
+
+        categoryContent.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            // Só remove se saiu completamente da categoria
+            if (!categoryContent.contains(e.relatedTarget)) {
+                categoryContent.classList.remove('category-drag-over');
+            }
+        });
+
+        categoryContent.addEventListener('drop', (e) => {
+            e.preventDefault();
+            categoryContent.classList.remove('category-drag-over');
             this.handlePhotoDrop(e, categoryIndex);
         });
     }
