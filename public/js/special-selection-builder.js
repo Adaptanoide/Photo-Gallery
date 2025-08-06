@@ -1030,6 +1030,27 @@ class SpecialSelectionBuilder {
         try {
             this.showLoading(true);
             console.log(`📁 Carregando conteúdo da pasta: ${folderId}`);
+            // CACHE: Verificar estrutura da pasta
+            const cacheKey = `folder_structure_${folderId}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const cacheData = JSON.parse(cached);
+                if (cacheData.expires > Date.now()) {
+                    console.log('🗂️ CACHE HIT - Estrutura instantânea!');
+                    const folderData = cacheData.structure;
+
+                    // Usar mesma lógica de processamento
+                    if (folderData.hasSubfolders && folderData.folders.length > 0) {
+                        this.showSubfolders(folderData.folders);
+                    } else if (folderData.hasImages || folderData.totalImages > 0) {
+                        await this.loadStockPhotos(folderId);
+                    } else {
+                        this.showEmptyFolder();
+                    }
+                    console.log('✅ Estrutura carregada do cache');
+                    return; // Pular API
+                }
+            }
 
             // Usar mesma API que client.js
             const response = await fetch(`/api/drive/explore/${folderId}?depth=1`, {
@@ -1047,6 +1068,13 @@ class SpecialSelectionBuilder {
             }
 
             const folderData = data.structure;
+
+            // CACHE: Salvar estrutura para próxima vez
+            const cacheData = {
+                structure: folderData,
+                expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
+            };
+            localStorage.setItem(cacheKey, JSON.stringify(cacheData));
 
             // LÓGICA INTELIGENTE (igual client.js)
             if (folderData.hasSubfolders && folderData.folders.length > 0) {
