@@ -76,7 +76,7 @@ class SpecialSelectionBuilder {
         this.btnSaveAndContinue?.addEventListener('click', () => this.saveSelection());
         this.btnCancelBuilder?.addEventListener('click', () => this.cancelBuilder());
         this.btnAddCategory?.addEventListener('click', () => this.showAddCategoryModalLuxury());
-        this.btnAddCategoryBottom?.addEventListener('click', () => this.showAddCategoryModal());
+        this.btnAddCategoryBottom?.addEventListener('click', () => this.showAddCategoryModalLuxury());
         this.btnRefreshStock?.addEventListener('click', () => this.refreshStock());
         this.btnPreviewSelection?.addEventListener('click', () => this.previewSelection());
 
