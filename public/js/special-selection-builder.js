@@ -1324,25 +1324,20 @@ class SpecialSelectionBuilder {
 
     // ===== GERENCIAMENTO DE CATEGORIAS CUSTOMIZADAS =====
     createCategoryWithPhoto(photo) {
-        const categoryName = prompt('Enter category name:', 'Custom Category');
-        if (!categoryName) return;
+        // Armazenar foto para usar após confirmação  
+        this.pendingPhotoForNewCategory = photo;
 
-        const customPrice = prompt('Enter custom price (optional):', photo.originalPrice || '0.00');
+        // Abrir modal luxury
+        document.getElementById('addCategoryModalLuxury').classList.add('active');
 
-        const newCategory = {
-            id: `custom_${Date.now()}`,
-            name: categoryName,
-            customPrice: parseFloat(customPrice) || null,
-            photos: [photo]
-        };
+        // Pré-preencher preço da foto
+        document.getElementById('luxuryPriceInput').value = photo.originalPrice || '0.00';
 
-        this.customCategories.push(newCategory);
-        this.selectedPhotos.push(photo);
-        this.renderCustomCategories();
-        this.renderStockPhotos();
-        this.updateCounts();
-
-        console.log('✅ Nova categoria criada:', newCategory);
+        // Focar no input de nome
+        setTimeout(() => {
+            document.getElementById('luxuryNameInput').focus();
+            document.getElementById('luxuryNameInput').select();
+        }, 100);
     }
 
     addPhotoToCategory(photo, categoryIndex) {
@@ -1487,8 +1482,23 @@ class SpecialSelectionBuilder {
             photos: []
         };
 
+        // ✅ NOVO: Se há foto pendente (drag & drop), adicionar à categoria
+        if (this.pendingPhotoForNewCategory) {
+            newCategory.photos.push(this.pendingPhotoForNewCategory);
+            this.selectedPhotos.push(this.pendingPhotoForNewCategory);
+
+            // Limpar foto pendente
+            this.pendingPhotoForNewCategory = null;
+        }
+
         this.customCategories.push(newCategory);
         this.renderCustomCategories();
+
+        // Se havia foto, re-renderizar lado esquerdo também
+        if (newCategory.photos.length > 0) {
+            this.renderStockPhotos();
+        }
+
         this.updateCounts();
 
         console.log('✅ Nova categoria luxury criada:', newCategory);
@@ -1497,27 +1507,6 @@ class SpecialSelectionBuilder {
         document.getElementById('addCategoryModalLuxury').classList.remove('active');
         document.getElementById('luxuryNameInput').value = 'Custom Category';
         document.getElementById('luxuryPriceInput').value = '0.00';
-    }
-
-    // ===== MODALS E INTERACTIONS =====
-    showAddCategoryModal() {
-        const categoryName = prompt('Enter category name:', 'Custom Category');
-        if (!categoryName) return;
-
-        const customPrice = prompt('Enter custom price (optional):', '0.00');
-
-        const newCategory = {
-            id: `custom_${Date.now()}`,
-            name: categoryName,
-            customPrice: parseFloat(customPrice) || null,
-            photos: []
-        };
-
-        this.customCategories.push(newCategory);
-        this.renderCustomCategories();
-        this.updateCounts();
-
-        console.log('✅ Nova categoria vazia criada:', newCategory);
     }
 
     editCustomCategory(categoryIndex) {
