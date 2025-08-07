@@ -116,7 +116,7 @@ router.get('/explore/:folderId', async (req, res) => {
                 const subResponse = await drive.files.list({
                     q: `'${folder.id}' in parents and trashed = false`,
                     fields: 'files(mimeType)',
-                    pageSize: 10
+                    pageSize: 1000
                 });
                 
                 const subItems = subResponse.data.files;

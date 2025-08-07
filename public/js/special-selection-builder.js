@@ -199,7 +199,7 @@ class SpecialSelectionBuilder {
                 // CACHE: Salvar fotos para próxima vez
                 const cacheData = {
                     photos: data.photos,
-                    expires: Date.now() + (6 * 60 * 60 * 1000) // 6 horas
+                    expires: Date.now() + (15 * 60 * 1000) // 15 minutos
                 };
                 localStorage.setItem(cacheKey, JSON.stringify(cacheData));
 
@@ -235,7 +235,7 @@ class SpecialSelectionBuilder {
                 <i class="fas fa-folder"></i>
             </div>
             <div class="category-name">${category.name}</div>
-            <div class="category-count">${category.photoCount || 0}</div>
+            <div class="category-count">${(category.photoCount && category.photoCount > 0) ? category.photoCount + ' photos' : ''}</div>
         </div>
     `).join('');
 
@@ -1074,7 +1074,7 @@ class SpecialSelectionBuilder {
             // CACHE: Salvar estrutura para próxima vez
             const cacheData = {
                 structure: folderData,
-                expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
+                expires: Date.now() + (15 * 60 * 1000) // 15 minutos
             };
             localStorage.setItem(cacheKey, JSON.stringify(cacheData));
 
@@ -1108,8 +1108,7 @@ class SpecialSelectionBuilder {
             </div>
             <div class="category-name">${folder.name}</div>
             <div class="category-stats">
-                ${folder.imageCount || folder.totalFiles || 0} fotos
-                ${folder.totalSubfolders > 0 ? ` • ${folder.totalSubfolders} pastas` : ''}
+                ${(folder.imageCount > 0 && !folder.totalSubfolders) ? `${folder.imageCount} photos` : ''}
             </div>
         </div>
     `).join('');
@@ -1867,11 +1866,11 @@ class SpecialSelectionBuilder {
 
     previewSelection() {
         console.log('📋 Abrindo Preview da Seleção...');
-        
+
         // Calcular dados para preview
         const totalCategories = this.customCategories.length;
         const totalPhotos = this.selectedPhotos.length;
-        
+
         // Calcular valor estimado
         let estimatedValue = 0;
         this.customCategories.forEach(category => {
@@ -1879,7 +1878,7 @@ class SpecialSelectionBuilder {
                 estimatedValue += category.photos.length * category.customPrice;
             }
         });
-        
+
         // Criar modal HTML dinamicamente
         const modalHtml = `
             <div id="previewModal" class="help-modal">
@@ -1920,19 +1919,19 @@ class SpecialSelectionBuilder {
                 </div>
             </div>
         `;
-        
+
         // Adicionar ao DOM
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
+
         // Mostrar modal
         const modal = document.getElementById('previewModal');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        
+
         // Event listeners
         document.getElementById('previewModalClose').addEventListener('click', () => this.closePreviewModal());
         document.getElementById('previewCloseBtn').addEventListener('click', () => this.closePreviewModal());
-        
+
         console.log('✅ Preview Modal aberto');
     }
 
@@ -1940,11 +1939,11 @@ class SpecialSelectionBuilder {
         if (this.customCategories.length === 0) {
             return '<p class="preview-empty">No categories created yet.</p>';
         }
-        
+
         return this.customCategories.map((category, index) => {
             const photoCount = category.photos.length;
             const categoryValue = photoCount * (category.customPrice || 0);
-            
+
             return `
                 <div class="preview-category">
                     <div class="preview-category-header">
@@ -2295,7 +2294,10 @@ class SpecialSelectionBuilder {
             // 6. Limpar dados temporários
             this.clearBuilderStorage();
 
-            // 7. Feedback de sucesso
+            // 7. Limpar cache do estoque (dados frescos para próxima seleção)
+            this.clearStockCache();
+
+            // 8. Feedback de sucesso
             const successMessage = `🎉 Special Selection created successfully!
 
     📋 Selection: ${this.selectionData.selectionName}
@@ -2369,6 +2371,18 @@ class SpecialSelectionBuilder {
             localStorage.removeItem(key);
             console.log(`🧹 Removido localStorage: ${key}`);
         });
+    }
+
+    clearStockCache() {
+        console.log('🧹 Limpando cache do estoque após seleção...');
+
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('photos_') || key.startsWith('folders_')) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        console.log('🚀 Cache do estoque limpo - próxima navegação será atualizada');
     }
 
     cancelBuilder() {
