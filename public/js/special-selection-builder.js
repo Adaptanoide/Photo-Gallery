@@ -63,6 +63,7 @@ class SpecialSelectionBuilder {
         this.btnAddCategoryBottom = document.getElementById('btnAddCategoryBottom');
         this.btnRefreshStock = document.getElementById('btnRefreshStock');
         this.btnPreviewSelection = document.getElementById('btnPreviewSelection');
+        this.btnBuilderHelp = document.getElementById('btnBuilderHelp');
 
         // Elementos de seleção múltipla
         this.selectionActionsBar = document.getElementById('selectionActionsBar');
@@ -79,6 +80,7 @@ class SpecialSelectionBuilder {
         this.btnAddCategoryBottom?.addEventListener('click', () => this.showAddCategoryModalLuxury());
         this.btnRefreshStock?.addEventListener('click', () => this.refreshStock());
         this.btnPreviewSelection?.addEventListener('click', () => this.previewSelection());
+        this.btnBuilderHelp?.addEventListener('click', () => this.showHelpModal());
 
         // Event listeners para seleção múltipla
         this.btnMoveSelected?.addEventListener('click', () => this.showMoveSelectedModal());
@@ -1866,6 +1868,222 @@ class SpecialSelectionBuilder {
     previewSelection() {
         // Modal de preview da seleção completa
         alert(`Selection Preview:\n\nCategories: ${this.customCategories.length}\nTotal Photos: ${this.selectedPhotos.length}\n\nThis will show a preview of the complete selection in the future.`);
+    }
+
+    showHelpModal() {
+        console.log('🌟 Abrindo Help Modal...');
+
+        // Resetar step para 1 sempre que abrir modal
+        this.currentHelpStep = 1;
+
+        // Criar modal HTML dinamicamente
+        const modalHtml = `
+            <div id="helpModal" class="help-modal">
+                <div class="help-modal-content">
+                    <div class="help-modal-header">
+                        <h3><i class="fas fa-question-circle"></i> Special Selection Builder Guide</h3>
+                        <button id="helpModalClose" class="help-modal-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="help-modal-body">
+                        <div class="help-step" id="helpStep1">
+                            <h4>🌟 Step 1 of 5: Find Your Photos</h4>
+                            <div class="help-content">
+                                <p><strong>📁 Left Panel = Your Stock</strong><br>
+                                Navigate through folders to find photos</p>
+                                <ul>
+                                    <li>Click folders to expand</li>
+                                    <li>Use breadcrumbs to go back</li>
+                                    <li>Cache makes it super fast!</li>
+                                </ul>
+                                <p class="help-tip">💡 Tip: Start with your most popular categories</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-modal-footer">
+                        <button id="helpSkip" class="btn btn-outline">Skip Tutorial</button>
+                        <div class="help-navigation">
+                        <div class="help-navigation">
+                            <button id="helpPrevious" class="btn btn-outline" style="display: none;">← Previous</button>
+                            <span class="help-step-counter">Step 1 of 5</span>
+                            <button id="helpNext" class="btn btn-primary">Next Step →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Mostrar modal
+        const modal = document.getElementById('helpModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // Event listeners
+        document.getElementById('helpModalClose').addEventListener('click', () => this.closeHelpModal());
+        document.getElementById('helpSkip').addEventListener('click', () => this.closeHelpModal());
+        document.getElementById('helpNext').addEventListener('click', () => this.nextHelpStep());
+        document.getElementById('helpPrevious').addEventListener('click', () => this.previousHelpStep());
+        console.log('✅ Help Modal aberto');
+    }
+
+    closeHelpModal() {
+        const modal = document.getElementById('helpModal');
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = '';
+        }
+        console.log('🔒 Help Modal fechado');
+    }
+
+    nextHelpStep() {
+        // Inicializar currentHelpStep se não existir
+        if (!this.currentHelpStep) this.currentHelpStep = 1;
+
+        // Avançar para próximo step
+        this.currentHelpStep++;
+
+        // Máximo 5 steps
+        if (this.currentHelpStep > 5) {
+            this.closeHelpModal();
+            return;
+        }
+
+        console.log(`🔄 Navegando para Help Step ${this.currentHelpStep}`);
+
+        // Atualizar conteúdo do modal
+        this.updateHelpStep();
+    }
+
+    previousHelpStep() {
+        if (!this.currentHelpStep) this.currentHelpStep = 1;
+        this.currentHelpStep--;
+        if (this.currentHelpStep < 1) this.currentHelpStep = 1;
+        console.log(`🔄 Voltando para Help Step ${this.currentHelpStep}`);
+        this.updateHelpStep();
+    }
+
+    updateHelpStep() {
+        const stepContent = this.getHelpStepContent(this.currentHelpStep);
+        const helpBody = document.querySelector('.help-modal-body');
+        const stepCounter = document.querySelector('.help-step-counter');
+
+        if (helpBody) {
+            helpBody.innerHTML = stepContent;
+        }
+
+        if (stepCounter) {
+            stepCounter.textContent = `Step ${this.currentHelpStep} of 5`;
+        }
+
+        // Controlar botões
+        this.updateHelpButtons();
+    }
+
+    getHelpStepContent(step) {
+        const steps = {
+            1: `
+                <div class="help-step" id="helpStep1">
+                    <h4>🌟 Step 1 of 5: Find Your Photos</h4>
+                    <div class="help-content">
+                        <p><strong>📁 Left Panel = Your Stock</strong><br>
+                        Navigate through folders to find photos</p>
+                        <ul>
+                            <li>Click folders to expand</li>
+                            <li>Use breadcrumbs to go back</li>
+                            <li>Cache makes it super fast!</li>
+                        </ul>
+                        <p class="help-tip">💡 Tip: Start with your most popular categories</p>
+                    </div>
+                </div>
+            `,
+            2: `
+                <div class="help-step" id="helpStep2">
+                    <h4>🌟 Step 2 of 5: Create Custom Categories</h4>
+                    <div class="help-content">
+                        <p><strong>🏷️ Right Panel = Your Selection</strong><br>
+                        Create themed categories for your client:</p>
+                        <ul>
+                            <li>"Premium Collection"</li>
+                            <li>"Best Value Options"</li>
+                            <li>"Seasonal Specials"</li>
+                        </ul>
+                        <p class="help-tip">💰 Set base price for each category</p>
+                    </div>
+                </div>
+            `,
+            3: `
+                <div class="help-step" id="helpStep3">
+                    <h4>🌟 Step 3 of 5: Move Your Photos</h4>
+                    <div class="help-content">
+                        <p><strong>🖱️ Drag from Left → Right</strong><br>
+                        Move photos to organize your selection:</p>
+                        <ul>
+                            <li>Select individual photos</li>
+                            <li>Or use bulk selection (checkboxes)</li>
+                            <li>Drop into categories you created</li>
+                            <li>Photos organize automatically!</li>
+                        </ul>
+                        <p class="help-tip">⚡ Pro tip: Use checkboxes to move multiple photos at once</p>
+                    </div>
+                </div>
+            `,
+            4: `
+                <div class="help-step" id="helpStep4">
+                    <h4>🌟 Step 4 of 5: Set Custom Prices</h4>
+                    <div class="help-content">
+                        <p><strong>💰 Flexible Pricing Options:</strong></p>
+                        <ul>
+                            <li>Category base price (all photos)</li>
+                            <li>Individual photo pricing</li>
+                            <li>Custom prices override base</li>
+                        </ul>
+                        <p class="help-tip">📊 Prices show as elegant golden badges</p>
+                    </div>
+                </div>
+            `,
+            5: `
+                <div class="help-step" id="helpStep5">
+                    <h4>🌟 Step 5 of 5: Go Live!</h4>
+                    <div class="help-content">
+                        <p><strong>🚀 Save & Continue:</strong></p>
+                        <ul>
+                            <li>Creates Google Drive folders</li>
+                            <li>Moves photos to organized structure</li>
+                            <li>Activates for client access</li>
+                            <li>Client gets special access instantly!</li>
+                        </ul>
+                        <p class="help-tip">✨ Your client sees only your selection</p>
+                    </div>
+                </div>
+            `
+        };
+
+        return steps[step] || steps[1];
+    }
+
+    updateHelpButtons() {
+        const prevBtn = document.getElementById('helpPrevious');
+        const nextBtn = document.getElementById('helpNext');
+
+        // Controlar botão Previous (ocultar no Step 1)
+        if (prevBtn) {
+            prevBtn.style.display = this.currentHelpStep > 1 ? 'inline-flex' : 'none';
+        }
+
+        // Controlar botão Next (alterar texto no Step 5)
+        if (nextBtn) {
+            if (this.currentHelpStep >= 5) {
+                nextBtn.innerHTML = '<i class="fas fa-check"></i> Finish';
+            } else {
+                nextBtn.innerHTML = 'Next Step →';
+            }
+        }
+
+        console.log(`🔘 Botões atualizados para step ${this.currentHelpStep} - Previous: ${this.currentHelpStep > 1 ? 'visible' : 'hidden'}`);
     }
 
     // ===== SALVAR E FINALIZAR =====
