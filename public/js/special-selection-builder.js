@@ -1866,8 +1866,108 @@ class SpecialSelectionBuilder {
     }
 
     previewSelection() {
-        // Modal de preview da seleção completa
-        alert(`Selection Preview:\n\nCategories: ${this.customCategories.length}\nTotal Photos: ${this.selectedPhotos.length}\n\nThis will show a preview of the complete selection in the future.`);
+        console.log('📋 Abrindo Preview da Seleção...');
+        
+        // Calcular dados para preview
+        const totalCategories = this.customCategories.length;
+        const totalPhotos = this.selectedPhotos.length;
+        
+        // Calcular valor estimado
+        let estimatedValue = 0;
+        this.customCategories.forEach(category => {
+            if (category.customPrice && category.photos.length > 0) {
+                estimatedValue += category.photos.length * category.customPrice;
+            }
+        });
+        
+        // Criar modal HTML dinamicamente
+        const modalHtml = `
+            <div id="previewModal" class="help-modal">
+                <div class="help-modal-content">
+                    <div class="help-modal-header">
+                        <h3><i class="fas fa-eye"></i> Selection Preview</h3>
+                        <button id="previewModalClose" class="help-modal-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="help-modal-body">
+                        <div class="preview-summary">
+                            <h4><i class="fas fa-chart-bar"></i> Summary</h4>
+                            <div class="preview-stats">
+                                <div class="preview-stat">
+                                    <span class="stat-number">${totalCategories}</span>
+                                    <span class="stat-label">Custom Categories</span>
+                                </div>
+                                <div class="preview-stat">
+                                    <span class="stat-number">${totalPhotos}</span>
+                                    <span class="stat-label">Total Photos</span>
+                                </div>
+                                <div class="preview-stat">
+                                    <span class="stat-number">$${estimatedValue.toFixed(2)}</span>
+                                    <span class="stat-label">Estimated Value</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="preview-categories">
+                            <h4><i class="fas fa-folder-open"></i> Categories Breakdown</h4>
+                            ${this.generateCategoriesPreview()}
+                        </div>
+                    </div>
+                    <div class="help-modal-footer">
+                        <button id="previewCloseBtn" class="btn btn-primary">Close Preview</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = document.getElementById('previewModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Event listeners
+        document.getElementById('previewModalClose').addEventListener('click', () => this.closePreviewModal());
+        document.getElementById('previewCloseBtn').addEventListener('click', () => this.closePreviewModal());
+        
+        console.log('✅ Preview Modal aberto');
+    }
+
+    generateCategoriesPreview() {
+        if (this.customCategories.length === 0) {
+            return '<p class="preview-empty">No categories created yet.</p>';
+        }
+        
+        return this.customCategories.map((category, index) => {
+            const photoCount = category.photos.length;
+            const categoryValue = photoCount * (category.customPrice || 0);
+            
+            return `
+                <div class="preview-category">
+                    <div class="preview-category-header">
+                        <i class="fas fa-folder"></i>
+                        <span class="category-name">${category.name}</span>
+                        <span class="category-price">$${(category.customPrice || 0).toFixed(2)}</span>
+                    </div>
+                    <div class="preview-category-details">
+                        <span class="category-photos">${photoCount} photo${photoCount !== 1 ? 's' : ''}</span>
+                        <span class="category-value">Value: $${categoryValue.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    closePreviewModal() {
+        const modal = document.getElementById('previewModal');
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = '';
+        }
+        console.log('🔒 Preview Modal fechado');
     }
 
     showHelpModal() {
