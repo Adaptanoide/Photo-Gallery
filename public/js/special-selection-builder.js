@@ -2086,7 +2086,7 @@ class SpecialSelectionBuilder {
         const steps = {
             1: `
                 <div class="help-step" id="helpStep1">
-                    <h4>🌟 Step 1 of 5: Find Your Photos</h4>
+                    <h4> Step 1 of 5: Find Your Photos</h4>
                     <div class="help-content">
                         <p><strong>📁 Left Panel = Your Stock</strong><br>
                         Navigate through folders to find photos</p>
@@ -2101,7 +2101,7 @@ class SpecialSelectionBuilder {
             `,
             2: `
                 <div class="help-step" id="helpStep2">
-                    <h4>🌟 Step 2 of 5: Create Custom Categories</h4>
+                    <h4> Step 2 of 5: Create Custom Categories</h4>
                     <div class="help-content">
                         <p><strong>🏷️ Right Panel = Your Selection</strong><br>
                         Create themed categories for your client:</p>
@@ -2116,7 +2116,7 @@ class SpecialSelectionBuilder {
             `,
             3: `
                 <div class="help-step" id="helpStep3">
-                    <h4>🌟 Step 3 of 5: Move Your Photos</h4>
+                    <h4> Step 3 of 5: Move Your Photos</h4>
                     <div class="help-content">
                         <p><strong>🖱️ Drag from Left → Right</strong><br>
                         Move photos to organize your selection:</p>
@@ -2132,7 +2132,7 @@ class SpecialSelectionBuilder {
             `,
             4: `
                 <div class="help-step" id="helpStep4">
-                    <h4>🌟 Step 4 of 5: Set Custom Prices</h4>
+                    <h4> Step 4 of 5: Set Custom Prices</h4>
                     <div class="help-content">
                         <p><strong>💰 Flexible Pricing Options:</strong></p>
                         <ul>
@@ -2146,7 +2146,7 @@ class SpecialSelectionBuilder {
             `,
             5: `
                 <div class="help-step" id="helpStep5">
-                    <h4>🌟 Step 5 of 5: Go Live!</h4>
+                    <h4> Step 5 of 5: Go Live!</h4>
                     <div class="help-content">
                         <p><strong>🚀 Save & Continue:</strong></p>
                         <ul>
@@ -2205,126 +2205,85 @@ class SpecialSelectionBuilder {
             // 2. Mostrar loading no botão
             const saveButton = this.btnSaveAndContinue;
             const originalText = saveButton.innerHTML;
-            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Selection...';
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             saveButton.disabled = true;
 
-            // 3. Buscar ID da seleção especial criada no admin
+            // 3. Buscar ID da seleção especial
             const selectionId = this.getSelectionIdFromStorage();
             if (!selectionId) {
                 throw new Error('Selection ID not found. Please restart the process from admin panel.');
             }
 
-            // 4. Processar e salvar cada categoria customizada
-            for (const [categoryIndex, category] of this.customCategories.entries()) {
-                console.log(`📁 Processando categoria: ${category.name} (${category.photos.length} fotos)`);
+            // ✅ 4. NOVA LÓGICA: Salvar dados no localStorage para processamento
+            const selectionData = {
+                selectionId: selectionId,
+                customCategories: this.customCategories.map(category => ({
+                    name: category.name,
+                    customPrice: category.customPrice || 0,
+                    photos: category.photos.map(photo => ({
+                        id: photo.id,
+                        name: photo.name,
+                        sourcePath: photo.sourcePath || this.getCurrentCategoryPath(),
+                        sourceCategory: photo.sourceCategory || this.getCurrentCategoryName(),
+                        originalPrice: parseFloat(photo.originalPrice) || 0
+                    }))
+                })),
+                currentFolderId: this.navigationState.currentFolderId,
+                totalPhotos: totalPhotos
+            };
 
-                // 4.1. Adicionar categoria customizada à seleção
-                const categoryResponse = await fetch(`/api/special-selections/${selectionId}/categories`, {
-                    method: 'POST',
-                    headers: this.getAuthHeaders(),
-                    body: JSON.stringify({
-                        categoryName: category.name,
-                        categoryDisplayName: category.name,
-                        baseCategoryPrice: category.customPrice || 0,
-                        originalCategoryInfo: {
-                            totalPhotos: category.photos.length,
-                            createdAt: new Date().toISOString()
-                        }
-                    })
-                });
+            // Salvar para processamento background
+            localStorage.setItem('pendingSelectionData', JSON.stringify(selectionData));
+            console.log('🔍 DEBUG customCategories no Save:', JSON.stringify(this.customCategories, null, 2));
+            console.log(`📦 Dados salvos para processamento: ${totalPhotos} fotos em ${this.customCategories.length} categorias`);
 
-                if (!categoryResponse.ok) {
-                    const errorData = await categoryResponse.json();
-                    throw new Error(`Failed to create category "${category.name}": ${errorData.message}`);
-                }
-
-                const categoryData = await categoryResponse.json();
-                const categoryId = categoryData.data.categoryId;
-
-                console.log(`✅ Categoria "${category.name}" criada com ID: ${categoryId}`);
-
-                // 4.2. Mover cada foto para a categoria
-                for (const [photoIndex, photo] of category.photos.entries()) {
-                    console.log(`📸 Movendo foto ${photoIndex + 1}/${category.photos.length}: ${photo.name}`);
-
-                    const photoResponse = await fetch(`/api/special-selections/${selectionId}/photos/move`, {
-                        method: 'POST',
-                        headers: this.getAuthHeaders(),
-                        body: JSON.stringify({
-                            photoId: photo.id,
-                            fileName: photo.name,
-                            categoryId: categoryId,
-                            originalPath: photo.sourcePath || this.getCurrentCategoryPath(),
-                            originalParentId: this.navigationState.currentFolderId,
-                            originalCategory: photo.sourceCategory || this.getCurrentCategoryName(),
-                            originalPrice: parseFloat(photo.originalPrice) || 0,
-                            customPrice: category.customPrice || null
-                        })
-                    });
-
-                    if (!photoResponse.ok) {
-                        const errorData = await photoResponse.json();
-                        console.warn(`⚠️ Erro ao mover foto ${photo.name}: ${errorData.message}`);
-                        // Continue com as outras fotos mesmo se uma falhar
-                        continue;
-                    }
-
-                    const photoData = await photoResponse.json();
-                    console.log(`✅ Foto movida: ${photo.name}`);
-                }
-
-                console.log(`✅ Categoria "${category.name}" processada completamente`);
-            }
-
-            // 5. Ativar a seleção especial
-            console.log('🚀 Ativando seleção especial...');
-            const activateResponse = await fetch(`/api/special-selections/${selectionId}/activate`, {
+            // ✅ 5. CHAMAR NOVA ROTA ASSÍNCRONA
+            const response = await fetch(`/api/special-selections/${selectionId}/process-async`, {
                 method: 'POST',
-                headers: this.getAuthHeaders()
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify(selectionData)
             });
 
-            if (!activateResponse.ok) {
-                const errorData = await activateResponse.json();
-                throw new Error(`Failed to activate selection: ${errorData.message}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Failed to start processing: ${errorData.message}`);
             }
 
-            const activateData = await activateResponse.json();
-            console.log('✅ Seleção especial ativada:', activateData.data);
+            const result = await response.json();
+            console.log('🚀 Processamento iniciado:', result);
 
-            // 6. Limpar dados temporários
-            this.clearBuilderStorage();
-
-            // 7. Limpar cache do estoque (dados frescos para próxima seleção)
-            this.clearStockCache();
-
-            // 8. Feedback de sucesso
-            const successMessage = `🎉 Special Selection created successfully!
+            // ✅ 6. REDIRECT IMEDIATO - SEM ESPERAR PROCESSAMENTO!
+            const successMessage = `🎉 Special Selection processing started!
 
     📋 Selection: ${this.selectionData.selectionName}
     👤 Client: ${this.selectionData.clientName} (${this.selectionData.clientCode})
     📁 Categories: ${this.customCategories.length}
     📸 Total Photos: ${totalPhotos}
 
-    The client now has access to this special selection.`;
+    Processing is happening in the background.
+    You can monitor progress in the Admin Panel.`;
+            console.log('🎯 ANTES do modal:', successMessage);
+            this.showSuccessModal(successMessage);
+            // Limpar dados temporários
+            this.clearBuilderStorage();
+            this.clearStockCache();
 
-            alert(successMessage);
-
-            // 8. Redirecionar para admin panel
+            // Redirect imediato para admin
             console.log('🔄 Redirecionando para admin panel...');
-            window.location.href = '/admin#special-selections';
 
         } catch (error) {
-            console.error('❌ Erro ao salvar seleção especial:', error);
+            console.error('❌ Erro ao iniciar processamento:', error);
 
-            const errorMessage = `❌ Error saving special selection:
+            const errorMessage = `❌ Error starting special selection processing:
 
     ${error.message}
 
     Please try again or contact support if the problem persists.`;
 
             alert(errorMessage);
+
         } finally {
-            // 9. Restaurar botão (se ainda estiver na página)
+            // Restaurar botão se ainda estiver na página
             if (this.btnSaveAndContinue) {
                 const saveButton = this.btnSaveAndContinue;
                 saveButton.innerHTML = '<i class="fas fa-save"></i> Save & Continue';
@@ -2393,7 +2352,7 @@ class SpecialSelectionBuilder {
         }
 
         console.log('❌ Cancelando builder...');
-        window.location.href = '/admin#special-selections';
+        // TEMP: window.location.href = "/admin#special-selections";
     }
 
     // ===== UTILITÁRIOS =====
@@ -2666,6 +2625,40 @@ class SpecialSelectionBuilder {
         setTimeout(() => {
             this.showMoveSelectedModal();
         }, 300);
+    }
+
+    // ===== MODAL DE SUCESSO LUXURY =====
+    showSuccessModal(message) {
+        // Criar modal dinamicamente
+        const modalHtml = `
+            <div id="luxurySuccessModal" class="luxury-modal-overlay">
+                <div class="luxury-modal">
+                    <div class="luxury-modal-header">
+                        <div class="luxury-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h2 class="luxury-title">Success!</h2>
+                    </div>
+                    <div class="luxury-modal-body">
+                        <p class="luxury-message">${message.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    <div class="luxury-modal-footer">
+                        <button class="luxury-btn" onclick="document.getElementById('luxurySuccessModal').remove(); window.location.href='/admin#special-selections';">
+                            <i class="fas fa-check"></i>
+                            Continue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Adicionar ao body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Mostrar modal
+        setTimeout(() => {
+            document.getElementById('luxurySuccessModal').classList.add('show');
+        }, 100);
     }
 
 }

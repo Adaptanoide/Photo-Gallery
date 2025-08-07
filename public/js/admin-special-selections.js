@@ -36,6 +36,7 @@ class AdminSpecialSelections {
         this.setupElements();
         this.setupEventListeners();
         this.loadInitialData();
+        this.startAutoRefresh(); // ← ADICIONAR ESTA LINHA
         console.log('✅ Admin Special Selections inicializado');
     }
 
@@ -251,17 +252,10 @@ class AdminSpecialSelections {
                         <label class="special-filter-label">Status</label>
                         <select id="filterSpecialStatus" class="special-filter-select">
                             <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Active</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                    <div class="special-filter-group">
-                        <label class="special-filter-label">Active State</label>
-                        <select id="filterSpecialActive" class="special-filter-select">
-                            <option value="all">All States</option>
-                            <option value="true">Active Only</option>
-                            <option value="false">Inactive Only</option>
+                            <option value="processing">🔄 Processing</option>
+                            <option value="active">✅ Active</option>
+                            <option value="inactive">⏸️ Inactive</option>
+                            <option value="cancelled">❌ Cancelled</option>
                         </select>
                     </div>
                     <div class="special-filter-group">
@@ -399,9 +393,9 @@ class AdminSpecialSelections {
                 <td>${selection.clientName}</td>
                 <td><code>${selection.clientCode}</code></td>
                 <td>
-                    <span class="special-status-badge ${selection.isActive ? 'active' : 'inactive'}">
-                        <i class="fas fa-${selection.isActive ? 'check-circle' : 'pause-circle'}"></i>
-                        ${selection.isActive ? 'Active' : 'Inactive'}
+                    <span class="special-status-badge ${this.getStatusClass(selection)}">
+                        ${this.getStatusIcon(selection)}
+                        ${this.getStatusLabel(selection)}
                     </span>
                 </td>
                 <td>${selection.totalCustomCategories || 0} categories</td>
@@ -886,13 +880,36 @@ class AdminSpecialSelections {
     }
 
     applyFilters() {
-        this.filters = {
-            status: document.getElementById('filterSpecialStatus')?.value || 'all',
+        const statusFilter = document.getElementById('filterSpecialStatus')?.value || 'all';
+
+        // Mapear filtros visuais para lógica do backend
+        let backendFilters = {
             clientCode: document.getElementById('filterSpecialClient')?.value || '',
-            isActive: document.getElementById('filterSpecialActive')?.value || 'all',
             search: document.getElementById('filterSpecialSearch')?.value || ''
         };
 
+        // Converter status visual para filtros backend
+        switch (statusFilter) {
+            case 'processing':
+                backendFilters.status = 'pending';
+                break;
+            case 'active':
+                backendFilters.status = 'confirmed';
+                backendFilters.isActive = true;
+                break;
+            case 'inactive':
+                backendFilters.status = 'confirmed';
+                backendFilters.isActive = false;
+                break;
+            case 'cancelled':
+                backendFilters.status = 'cancelled';
+                break;
+            default:
+                backendFilters.status = 'all';
+                backendFilters.isActive = 'all';
+        }
+
+        this.filters = backendFilters;
         this.currentPage = 1;
         this.loadSpecialSelections().then(() => this.updateTable());
     }
@@ -1007,6 +1024,61 @@ class AdminSpecialSelections {
     getClientName(clientCode) {
         const client = this.availableClients.find(c => c.code === clientCode);
         return client ? client.clientName : 'Unknown Client';
+    }
+
+    // ===== AUTO-REFRESH INTELIGENTE =====
+    startAutoRefresh() {
+        // Limpar intervalo existente se houver
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+
+        // Refresh a cada 10 segundos SE tiver seleções processando
+        this.autoRefreshInterval = setInterval(async () => {
+            const hasProcessing = this.hasProcessingSelections();
+
+            if (hasProcessing) {
+                console.log('🔄 Auto-refresh: Atualizando seleções em processamento...');
+                try {
+                    await this.loadSpecialSelections();
+                    this.updateTable();
+                } catch (error) {
+                    console.warn('⚠️ Erro no auto-refresh:', error);
+                }
+            }
+        }, 10000); // 10 segundos
+
+        console.log('✅ Auto-refresh iniciado');
+    }
+
+    hasProcessingSelections() {
+        return this.specialSelections.some(s => s.status === 'pending');
+    }
+
+
+    // ===== NOVOS MÉTODOS PARA STATUS VISUAL =====
+    getStatusClass(selection) {
+        if (selection.status === 'pending') return 'processing';
+        if (selection.status === 'confirmed' && selection.isActive) return 'active';
+        if (selection.status === 'confirmed' && !selection.isActive) return 'inactive';
+        if (selection.status === 'cancelled') return 'cancelled';
+        return 'inactive';
+    }
+
+    getStatusIcon(selection) {
+        if (selection.status === 'pending') return '<i class="fas fa-spinner fa-spin"></i>';
+        if (selection.status === 'confirmed' && selection.isActive) return '<i class="fas fa-check-circle"></i>';
+        if (selection.status === 'confirmed' && !selection.isActive) return '<i class="fas fa-pause-circle"></i>';
+        if (selection.status === 'cancelled') return '<i class="fas fa-times-circle"></i>';
+        return '<i class="fas fa-question-circle"></i>';
+    }
+
+    getStatusLabel(selection) {
+        if (selection.status === 'pending') return 'Processing...';
+        if (selection.status === 'confirmed' && selection.isActive) return 'Active';
+        if (selection.status === 'confirmed' && !selection.isActive) return 'Inactive';
+        if (selection.status === 'cancelled') return 'Cancelled';
+        return 'Unknown';
     }
 
 }

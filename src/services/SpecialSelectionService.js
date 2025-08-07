@@ -79,6 +79,16 @@ class SpecialSelectionService {
                         }
                     },
 
+                    // ✅ NOVO: Informações do Google Drive
+                    googleDriveInfo: {
+                        specialSelectionInfo: {
+                            specialFolderId: driveResult.folderId,
+                            specialFolderName: driveResult.folderName,
+                            folderPath: driveResult.folderPath
+                        }
+                    },
+
+
                     // Informações do Google Drive
                     googleDriveInfo: {
                         clientFolderId: driveResult.folderId,

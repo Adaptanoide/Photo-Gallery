@@ -123,7 +123,7 @@ router.post('/', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao criar seleção especial:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrado')) statusCode = 404;
         if (error.message.includes('obrigatório')) statusCode = 400;
@@ -155,7 +155,7 @@ router.get('/:selectionId', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao obter detalhes da seleção especial:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
 
@@ -179,8 +179,8 @@ router.delete('/:selectionId', async (req, res) => {
         console.log(`🗑️ Deletando seleção especial ${selectionId}...`);
 
         const result = await SpecialSelectionService.deactivateSpecialSelection(
-            selectionId, 
-            adminUser, 
+            selectionId,
+            adminUser,
             returnPhotos === 'true'
         );
 
@@ -192,7 +192,7 @@ router.delete('/:selectionId', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao deletar seleção especial:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
 
@@ -247,7 +247,7 @@ router.post('/:selectionId/categories', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao adicionar categoria:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
         if (error.message.includes('obrigatório')) statusCode = 400;
@@ -280,7 +280,7 @@ router.delete('/:selectionId/categories/:categoryId', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao remover categoria:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
 
@@ -335,9 +335,9 @@ router.post('/:selectionId/photos/move', async (req, res) => {
         };
 
         const result = await SpecialSelectionService.movePhotoToCustomCategory(
-            selectionId, 
-            photoData, 
-            categoryId, 
+            selectionId,
+            photoData,
+            categoryId,
             adminUser
         );
 
@@ -349,7 +349,7 @@ router.post('/:selectionId/photos/move', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao mover foto:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
         if (error.message.includes('não está disponível')) statusCode = 409; // Conflict
@@ -383,7 +383,7 @@ router.post('/:selectionId/photos/:photoId/return', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao devolver foto:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
 
@@ -417,7 +417,7 @@ router.post('/:selectionId/activate', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao ativar seleção especial:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
         if (error.message.includes('não tem fotos')) statusCode = 400;
@@ -442,8 +442,8 @@ router.post('/:selectionId/deactivate', async (req, res) => {
         console.log(`⏸️ Desativando seleção especial ${selectionId}...`);
 
         const result = await SpecialSelectionService.deactivateSpecialSelection(
-            selectionId, 
-            adminUser, 
+            selectionId,
+            adminUser,
             returnPhotos
         );
 
@@ -455,7 +455,7 @@ router.post('/:selectionId/deactivate', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao desativar seleção especial:', error);
-        
+
         let statusCode = 500;
         if (error.message.includes('não encontrada')) statusCode = 404;
 
@@ -582,7 +582,7 @@ router.post('/photos/:photoId/lock', async (req, res) => {
         console.log(`🔒 Bloqueando foto ${photoId} para ${adminUser}...`);
 
         let photoStatus = await PhotoStatus.findOne({ photoId });
-        
+
         if (!photoStatus) {
             return res.status(404).json({
                 success: false,
@@ -636,7 +636,7 @@ router.delete('/photos/:photoId/lock', async (req, res) => {
         console.log(`🔓 Desbloqueando foto ${photoId}...`);
 
         let photoStatus = await PhotoStatus.findOne({ photoId });
-        
+
         if (!photoStatus) {
             return res.status(404).json({
                 success: false,
@@ -682,5 +682,176 @@ router.delete('/photos/:photoId/lock', async (req, res) => {
         });
     }
 });
+
+// ===== NOVA ROTA: PROCESSAMENTO ASSÍNCRONO =====
+
+/**
+ * POST /api/special-selections/:selectionId/process-async
+ * Iniciar processamento assíncrono da seleção especial
+ */
+router.post('/:selectionId/process-async', async (req, res) => {
+    try {
+        const { selectionId } = req.params;
+        const adminUser = req.user?.username || 'admin';
+
+        console.log(`🚀 Iniciando processamento assíncrono: ${selectionId}`);
+
+        // 1. Verificar se seleção existe
+        const selection = await Selection.findOne({
+            selectionId: selectionId,
+            selectionType: 'special'
+        });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Seleção especial não encontrada'
+            });
+        }
+
+        // 1.5. SALVAR DADOS RECEBIDOS NO BANCO (MAPEANDO CAMPOS)
+        const { customCategories } = req.body;
+        if (customCategories && customCategories.length > 0) {
+            // Mapear campos do frontend para o schema MongoDB
+            const mappedCategories = customCategories.map(cat => ({
+                categoryName: cat.name,
+                baseCategoryPrice: cat.customPrice || 0,
+                photos: cat.photos.map(photo => ({
+                    photoId: photo.id,
+                    fileName: photo.name,
+                    customPrice: parseFloat(photo.originalPrice) || 0,
+                    originalLocation: {
+                        sourceCategory: photo.sourceCategory,
+                        sourcePath: photo.sourcePath
+                    }
+                }))
+            }));
+
+            selection.customCategories = mappedCategories;
+            await selection.save();
+            console.log(`💾 Dados salvos no banco: ${mappedCategories.length} categorias com ${mappedCategories.reduce((total, cat) => total + cat.photos.length, 0)} fotos`);
+        }
+
+        // 2. RETORNAR IMEDIATAMENTE
+        res.json({
+            success: true,
+            message: 'Processamento iniciado em background',
+            status: 'processing',
+            selectionId: selectionId
+        });
+
+        // 3. PROCESSAR EM BACKGROUND (sem await!)
+        processSelectionInBackground(selectionId, adminUser)
+            .catch(error => {
+                console.error(`❌ Erro no processamento background: ${selectionId}`, error);
+            });
+
+    } catch (error) {
+        console.error('❌ Erro ao iniciar processamento assíncrono:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * Processar seleção especial em background
+ */
+async function processSelectionInBackground(selectionId, adminUser) {
+    try {
+        console.log(`🔄 [BACKGROUND] Processando ${selectionId}...`);
+
+        // ✅ BUSCAR SELEÇÃO UMA VEZ SÓ
+        const selection = await Selection.findOne({ selectionId });
+        if (!selection) {
+            console.warn(`⚠️ [BACKGROUND] Seleção ${selectionId} não encontrada no banco`);
+            return;
+        }
+
+        // ✅ SIMULAR PROCESSAMENTO PROPORCIONAL (3 segundos por foto)
+        const totalPhotos = selection.customCategories.reduce((total, cat) => total + cat.photos.length, 0);
+        const processingTime = Math.max(5000, totalPhotos * 3000); // Mínimo 5s, 3s por foto
+
+        console.log(`⏱️ [BACKGROUND] Simulando processamento de ${totalPhotos} fotos (${processingTime / 1000}s)...`);
+        await processPhotosReally(selection, adminUser);
+
+        // ✅ ATUALIZAR STATUS NO BANCO
+        selection.status = 'confirmed'; // Mudar de 'pending' para 'confirmed'
+        selection.addMovementLog(
+            'finalized',  // ✅ Esta ação existe no enum
+            'Processamento simulado concluído',
+            true,
+            null,
+            { adminUser, completedAt: new Date(), totalPhotos, processingTime }
+        );
+        await selection.save();
+        console.log(`✅ [BACKGROUND] Status atualizado no banco: ${selectionId} → confirmed`);
+
+        console.log(`✅ [BACKGROUND] Processamento simulado completo: ${selectionId}`);
+
+    } catch (error) {
+        console.error(`❌ [BACKGROUND] Erro no processamento de ${selectionId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Processar fotos realmente - mover para Google Drive
+ */
+async function processPhotosReally(selection, adminUser) {
+    const GoogleDriveService = require('../services/GoogleDriveService');
+    const totalPhotos = selection.customCategories.reduce((total, cat) => total + cat.photos.length, 0);
+
+    console.log(`🚀 [REAL PROCESSING] Iniciando processamento REAL de ${totalPhotos} fotos...`);
+
+    try {
+        // 1. A pasta da seleção principal já existe (criada na inicialização)
+        const selectionFolderName = `CLIENT_${selection.clientCode}_${selection.clientName}_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_')}`;
+        console.log(`📁 Utilizando pasta da seleção: ${selectionFolderName}`);
+
+        // Buscar ID da pasta principal da seleção (já criada)
+        const mainFolderId = selection.googleDriveInfo?.specialSelectionInfo?.specialFolderId;
+
+        // 2. Para cada categoria personalizada
+        for (let i = 0; i < selection.customCategories.length; i++) {
+            const category = selection.customCategories[i];
+            console.log(`📂 Processando categoria: ${category.categoryName} (${category.photos.length} fotos)`);
+
+            // Criar pasta da categoria
+            const result = await GoogleDriveService.createCustomCategoryFolder(mainFolderId, category.categoryName);
+            const categoryFolderId = result.categoryFolderId;
+            console.log(`📁 Pasta da categoria criada: ${categoryFolderId}`);
+            // ✅ SALVAR ID DA PASTA NA CATEGORIA
+            category.googleDriveFolderId = categoryFolderId;
+            // 3. Para cada foto da categoria
+            for (let j = 0; j < category.photos.length; j++) {
+                const photo = category.photos[j];
+                console.log(`📸 Movendo foto ${j + 1}/${category.photos.length}: ${photo.fileName}`);
+
+                try {
+                    // ✅ MOVER FOTO REAL para pasta da categoria
+                    await GoogleDriveService.movePhotoToCustomCategory(photo.photoId, categoryFolderId, category.categoryName);
+                    console.log(`✅ Foto ${photo.fileName} movida para ${category.categoryName}`);
+                } catch (photoError) {
+                    console.error(`❌ Erro ao mover foto ${photo.fileName}:`, photoError);
+                    // Continuar com próxima foto mesmo se uma falhar
+                }
+            }
+
+            console.log(`✅ Categoria ${category.categoryName} processada (${category.photos.length} fotos)`);
+        }
+
+        // ✅ SALVAR TODAS AS ALTERAÇÕES NO MONGODB
+        await selection.save();
+        console.log(`💾 IDs das pastas salvos no MongoDB`);
+        console.log(`🎉 [REAL PROCESSING] Processamento REAL concluído: ${totalPhotos} fotos processadas`);
+
+    } catch (error) {
+        console.error(`❌ [REAL PROCESSING] Erro no processamento real:`, error);
+        throw error;
+    }
+}
 
 module.exports = router;
