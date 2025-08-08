@@ -562,6 +562,7 @@ class AdminSpecialSelections {
     }
 
     setupFilterEventListeners() {
+        // ✅ CÓDIGO EXISTENTE - MANTIDO INTACTO
         document.getElementById('btnApplySpecialFilters')?.addEventListener('click', () => this.applyFilters());
 
         // Enter key nos inputs de filtro
@@ -570,6 +571,17 @@ class AdminSpecialSelections {
                 if (e.key === 'Enter') this.applyFilters();
             });
         });
+
+        // ✅ NOVO: Filtro automático no dropdown Status
+        try {
+            const statusSelect = document.getElementById('filterSpecialStatus');
+            if (statusSelect) {
+                statusSelect.addEventListener('change', () => this.applyFilters());
+            }
+        } catch (error) {
+            console.warn('Erro ao adicionar filtro automático:', error);
+            // Se der erro, filtros manuais continuam funcionando normalmente
+        }
     }
 
     removeTableActionListeners() {
