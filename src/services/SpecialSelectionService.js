@@ -776,18 +776,36 @@ class SpecialSelectionService {
 
             const query = { selectionType: 'special' };
 
-            if (status) query.status = status;
-            if (clientCode) query.clientCode = clientCode;
-            if (isActive !== null) query['specialSelectionConfig.accessConfig.isActive'] = isActive;
+            // ✅ TRATAMENTO CORRETO DOS FILTROS ESPECIAIS:
+            if (status && status !== 'all') {
+                query.status = status;
+            }
+
+            if (clientCode && clientCode.trim() !== '') {
+                query.clientCode = clientCode;
+            }
+
+            if (isActive !== null && isActive !== 'all') {
+                // ✅ VERSÃO MAIS SEGURA (aceita string E boolean):
+                if (isActive === true || isActive === 'true') {
+                    query['specialSelectionConfig.accessConfig.isActive'] = true;
+                } else if (isActive === false || isActive === 'false') {
+                    query['specialSelectionConfig.accessConfig.isActive'] = false;
+                }
+            }
+
+            // ✅ ADICIONAR ESTAS 3 LINHAS AQUI:
 
             const sortOptions = {};
             sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
 
             const selections = await Selection.find(query)
                 .sort(sortOptions)
                 .limit(limit * 1)
                 .skip((page - 1) * limit)
                 .populate('items.productId');
+
 
             const total = await Selection.countDocuments(query);
 

@@ -33,10 +33,14 @@ router.get('/', async (req, res) => {
             sortOrder = 'desc'
         } = req.query;
 
-        const filters = {};
+        // ✅ ADICIONAR:
+
+        const filters = {}; ``
         if (status) filters.status = status;
         if (clientCode) filters.clientCode = clientCode;
-        if (isActive !== undefined) filters.isActive = isActive === 'true';
+        if (isActive !== undefined && isActive !== 'all') {
+            filters.isActive = isActive === 'true' || isActive === true;
+        }
 
         const options = {
             page: parseInt(page),
@@ -44,6 +48,7 @@ router.get('/', async (req, res) => {
             sortBy,
             sortOrder
         };
+
 
         const result = await SpecialSelectionService.listSpecialSelections(filters, options);
 

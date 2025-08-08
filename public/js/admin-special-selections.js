@@ -928,6 +928,8 @@ class AdminSpecialSelections {
     applyFilters() {
         const statusFilter = document.getElementById('filterSpecialStatus')?.value || 'all';
 
+        // ✅ ADICIONAR:
+
         // Mapear filtros visuais para lógica do backend
         let backendFilters = {
             clientCode: document.getElementById('filterSpecialClient')?.value || '',
@@ -955,7 +957,12 @@ class AdminSpecialSelections {
                 backendFilters.isActive = 'all';
         }
 
+        // ✅ ADICIONAR AQUI:
+
+
         this.filters = backendFilters;
+
+
         this.currentPage = 1;
         this.loadSpecialSelections().then(() => this.updateTable());
     }

@@ -157,6 +157,126 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Seleção salva no MongoDB: ${selectionId}`);
 
+            // ✅ NOVO: Se cliente especial, devolver fotos não selecionadas automaticamente
+            const AccessCode = require('../models/AccessCode');
+            const SpecialSelectionService = require('../services/SpecialSelectionService');
+
+            try {
+                console.log(`🔍 Verificando se cliente ${clientCode} é especial...`);
+
+                const accessCode = await AccessCode.findOne({ code: clientCode }).session(session);
+
+                if (accessCode && accessCode.accessType === 'special' && accessCode.specialSelection) {
+                    console.log(`🎯 Cliente especial detectado! Seleção: ${accessCode.specialSelection.selectionCode}`);
+
+                    // Buscar a Special Selection ativa
+                    const specialSelection = await Selection.findOne({
+                        selectionId: accessCode.specialSelection.selectionCode,
+                        selectionType: 'special',
+                        status: { $in: ['confirmed', 'active'] }
+                    }).session(session);
+
+                    if (specialSelection) {
+                        console.log(`📋 Special Selection encontrada: ${specialSelection.selectionId}`);
+
+                        // Identificar fotos selecionadas pelo cliente
+                        const selectedPhotoIds = products.map(p => p.driveFileId);
+                        console.log(`📸 Fotos selecionadas pelo cliente: ${selectedPhotoIds.length}`);
+
+                        // Buscar fotos não selecionadas na Special Selection
+                        const unselectedPhotos = [];
+                        specialSelection.customCategories.forEach(category => {
+                            category.photos.forEach(photo => {
+                                if (!selectedPhotoIds.includes(photo.photoId)) {
+                                    unselectedPhotos.push({
+                                        photoId: photo.photoId,
+                                        fileName: photo.fileName,
+                                        categoryName: category.categoryName
+                                    });
+                                }
+                            });
+                        });
+
+                        console.log(`🔄 Fotos não selecionadas encontradas: ${unselectedPhotos.length}`);
+
+                        if (unselectedPhotos.length > 0) {
+                            console.log(`🚀 Iniciando devolução automática de ${unselectedPhotos.length} fotos...`);
+
+                            // Devolver cada foto não selecionada usando nossa função que já funciona
+                            for (const photo of unselectedPhotos) {
+                                try {
+                                    console.log(`📸 Devolvendo foto: ${photo.fileName}`);
+
+                                    const returnResult = await SpecialSelectionService.returnPhotoToOriginalLocation(
+                                        photo.photoId,
+                                        'system_auto', // Admin automático
+                                        session
+                                    );
+
+                                    if (returnResult.success) {
+                                        console.log(`✅ Foto devolvida: ${photo.fileName}`);
+                                    } else {
+                                        console.warn(`⚠️ Falha ao devolver foto: ${photo.fileName}`);
+                                    }
+
+                                } catch (photoError) {
+                                    console.error(`❌ Erro ao devolver foto ${photo.fileName}:`, photoError);
+                                    // Continuar com próxima foto mesmo se uma falhar
+                                }
+                            }
+
+                            // Atualizar Special Selection para status 'completed'
+                            specialSelection.status = 'confirmed';
+                            specialSelection.addMovementLog(
+                                'finalized',
+                                `Seleção finalizada: ${selectedPhotoIds.length} fotos reservadas, ${unselectedPhotos.length} fotos devolvidas automaticamente`,
+                                true,
+                                null,
+                                {
+                                    clientSelection: selectionId,
+                                    selectedCount: selectedPhotoIds.length,
+                                    returnedCount: unselectedPhotos.length,
+                                    autoReturn: true
+                                }
+                            );
+
+                            await specialSelection.save({ session });
+
+                            console.log(`✅ Special Selection finalizada automaticamente: ${specialSelection.selectionId}`);
+                            console.log(`📊 Resultado: ${selectedPhotoIds.length} reservadas, ${unselectedPhotos.length} devolvidas`);
+                        } else {
+                            console.log(`✅ Todas as fotos da Special Selection foram selecionadas pelo cliente`);
+
+                            // Marcar Special Selection como totalmente finalizada
+                            specialSelection.status = 'confirmed';
+                            specialSelection.addMovementLog(
+                                'finalized',
+                                `Seleção finalizada: todas as ${selectedPhotoIds.length} fotos foram selecionadas pelo cliente`,
+                                true,
+                                null,
+                                {
+                                    clientSelection: selectionId,
+                                    selectedCount: selectedPhotoIds.length,
+                                    returnedCount: 0,
+                                    fullSelection: true
+                                }
+                            );
+
+                            await specialSelection.save({ session });
+                        }
+                    } else {
+                        console.warn(`⚠️ Special Selection não encontrada ou não ativa para cliente ${clientCode}`);
+                    }
+                } else {
+                    console.log(`✅ Cliente regular detectado: ${clientCode} - sem devolução automática necessária`);
+                }
+
+            } catch (autoReturnError) {
+                console.error(`❌ Erro na devolução automática para cliente ${clientCode}:`, autoReturnError);
+                // NÃO quebrar a transação principal - apenas logar o erro
+                // A seleção normal ainda será processada normalmente
+            }
+
             // 11. Atualizar status dos produtos para 'reserved_pending' (aguardando aprovação admin)
             await Product.updateMany(
                 { _id: { $in: productIds } },
