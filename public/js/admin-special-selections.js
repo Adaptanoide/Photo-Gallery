@@ -58,7 +58,6 @@ class AdminSpecialSelections {
         try {
             this.showLoading(true);
 
-            // Carregar dados paralelos
             await Promise.all([
                 this.loadStatistics(),
                 this.loadAvailableClients(),
@@ -67,6 +66,9 @@ class AdminSpecialSelections {
 
             this.createInterface();
             this.showContent();
+
+            // ✅ ADICIONAR ESTA LINHA AQUI:
+            this.checkAutoFilter();
 
         } catch (error) {
             console.error('❌ Erro ao carregar dados iniciais:', error);
@@ -376,9 +378,9 @@ class AdminSpecialSelections {
                         <div class="special-empty-icon">
                             <i class="fas fa-star"></i>
                         </div>
-                        <h3 class="special-empty-title">No Special Selections Yet</h3>
+                        <h3 class="special-empty-title">No Selections Found</h3>
                         <p class="special-empty-description">
-                            Use the "Create Special Selection" button above to create your personalized selection for clients.
+                            No selections match the current filter. Try switching to "Active" or "All Status" to see your completed selections.
                         </p>
                     </td>
                 </tr>
@@ -492,6 +494,40 @@ class AdminSpecialSelections {
         console.log('✅ Todos os event listeners configurados');
     }
 
+    // ===== AUTO-FILTER DETECTION =====
+    checkAutoFilter() {
+        const autoFilter = sessionStorage.getItem('autoFilter');
+
+        console.log('🔍 Verificando auto-filter:', autoFilter);
+
+        if (autoFilter === 'processing') {
+            console.log('🎯 Auto-aplicando filtro Processing...');
+
+            // Aguardar interface carregar
+            setTimeout(() => {
+                // 1. Selecionar filtro Processing
+                const statusSelect = document.getElementById('filterSpecialStatus');
+                if (statusSelect) {
+                    statusSelect.value = 'processing';
+                }
+
+                // 2. Aplicar filtro automaticamente
+                this.filters.status = 'pending';
+                this.currentPage = 1;
+
+                // 3. Carregar com filtro aplicado
+                this.loadSpecialSelections().then(() => {
+                    this.updateTable();
+                    console.log('✅ Filtro Processing aplicado!');
+                });
+
+                // 4. Limpar sessionStorage
+                sessionStorage.removeItem('autoFilter');
+
+            }, 800);
+        }
+    }
+
     setupModalEventListeners() {
         // Botões de fechar modal
         const closeBtn = document.getElementById('specialModalCloseBtn');
@@ -534,6 +570,16 @@ class AdminSpecialSelections {
                 if (e.key === 'Enter') this.applyFilters();
             });
         });
+    }
+
+    removeTableActionListeners() {
+        const tableBody = document.getElementById('specialSelectionsTableBody');
+        if (tableBody) {
+            // Clonar tabela para remover TODOS os listeners
+            const newTableBody = tableBody.cloneNode(true);
+            tableBody.parentNode.replaceChild(newTableBody, tableBody);
+            console.log('🧹 Event listeners da tabela removidos');
+        }
     }
 
     setupTableActionListeners() {
@@ -924,7 +970,8 @@ class AdminSpecialSelections {
         const tbody = document.getElementById('specialSelectionsTableBody');
         if (tbody) {
             tbody.innerHTML = this.renderTableRows();
-            // Reconfigurar event listeners da tabela
+            // REMOVER listeners antigos ANTES de adicionar novos
+            this.removeTableActionListeners();
             this.setupTableActionListeners();
         }
 

@@ -2643,7 +2643,7 @@ class SpecialSelectionBuilder {
                         <p class="luxury-message">${message.replace(/\n/g, '<br>')}</p>
                     </div>
                     <div class="luxury-modal-footer">
-                        <button class="luxury-btn" onclick="document.getElementById('luxurySuccessModal').remove(); window.location.href='/admin#special-selections';">
+                        <button class="luxury-btn" onclick="document.getElementById('luxurySuccessModal').remove(); sessionStorage.setItem('autoFilter', 'processing'); window.location.href='/admin#special-selections';">
                             <i class="fas fa-check"></i>
                             Continue
                         </button>

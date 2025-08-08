@@ -786,8 +786,20 @@ async function processSelectionInBackground(selectionId, adminUser) {
             null,
             { adminUser, completedAt: new Date(), totalPhotos, processingTime }
         );
-        await selection.save();
-        console.log(`✅ [BACKGROUND] Status atualizado no banco: ${selectionId} → confirmed`);
+        // ✅ RECARREGAR SELECTION DO BANCO ANTES DE SALVAR (evitar sobrescrever backup)
+        const updatedSelection = await Selection.findOne({ selectionId });
+        if (updatedSelection) {
+            updatedSelection.status = 'confirmed';
+            updatedSelection.addMovementLog(
+                'finalized',
+                'Processamento simulado concluído',
+                true,
+                null,
+                { adminUser, completedAt: new Date(), totalPhotos, processingTime }
+            );
+            await updatedSelection.save();
+            console.log(`✅ [BACKGROUND] Status atualizado no banco: ${selectionId} → confirmed (backup preservado)`);
+        }
 
         console.log(`✅ [BACKGROUND] Processamento simulado completo: ${selectionId}`);
 
@@ -831,8 +843,37 @@ async function processPhotosReally(selection, adminUser) {
                 console.log(`📸 Movendo foto ${j + 1}/${category.photos.length}: ${photo.fileName}`);
 
                 try {
-                    // ✅ MOVER FOTO REAL para pasta da categoria
+                    // ✅ CAPTURAR LOCALIZAÇÃO ORIGINAL ANTES DE MOVER
+                    const drive = GoogleDriveService.getAuthenticatedDrive();
+
+                    // Buscar informações atuais da foto
+                    const photoInfo = await drive.files.get({
+                        fileId: photo.photoId,
+                        fields: 'id, name, parents'
+                    });
+
+                    if (photoInfo.data.parents && photoInfo.data.parents.length > 0) {
+                        const originalParentId = photoInfo.data.parents[0];
+                        const originalPath = await GoogleDriveService.buildHierarchicalPath(originalParentId);
+
+                        // Inicializar backup array se não existir
+                        if (!selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup) {
+                            selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup = [];
+                        }
+
+                        // Salvar backup
+                        selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup.push({
+                            photoId: photo.photoId,
+                            originalPath: originalPath,
+                            originalParentId: originalParentId
+                        });
+
+                        console.log(`💾 Backup salvo: ${photo.fileName} → ${originalPath}`);
+                    }
+
+                    // ✅ MOVER FOTO REAL para pasta da categoria  
                     await GoogleDriveService.movePhotoToCustomCategory(photo.photoId, categoryFolderId, category.categoryName);
+                    console.log(`✅ Foto ${photo.fileName} movida para ${category.categoryName}`);
                     console.log(`✅ Foto ${photo.fileName} movida para ${category.categoryName}`);
                 } catch (photoError) {
                     console.error(`❌ Erro ao mover foto ${photo.fileName}:`, photoError);
@@ -844,8 +885,10 @@ async function processPhotosReally(selection, adminUser) {
         }
 
         // ✅ SALVAR TODAS AS ALTERAÇÕES NO MONGODB
+        console.log(`🔍 DEBUG: Backup antes do save:`, selection.googleDriveInfo?.specialSelectionInfo?.originalPhotosBackup?.length || 0);
         await selection.save();
         console.log(`💾 IDs das pastas salvos no MongoDB`);
+        console.log(`🔍 DEBUG: Backup após save:`, selection.googleDriveInfo?.specialSelectionInfo?.originalPhotosBackup?.length || 0);
         console.log(`🎉 [REAL PROCESSING] Processamento REAL concluído: ${totalPhotos} fotos processadas`);
 
     } catch (error) {

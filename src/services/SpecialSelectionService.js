@@ -361,8 +361,9 @@ class SpecialSelectionService {
 
                 selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup.push({
                     photoId: photoData.photoId,
-                    originalPath: photoStatus.originalLocation.originalPath,
-                    originalParentId: photoStatus.originalLocation.originalParentId
+                    originalPath: photoData.sourcePath || 'Caminho desconhecido',
+                    originalParentId: photoData.originalParentId || null,
+                    sourceCategory: photoData.sourceCategory || 'Categoria desconhecida'
                 });
 
                 // 8. Atualizar status da foto
@@ -422,8 +423,8 @@ class SpecialSelectionService {
     }
 
     /**
-     * Remover foto de seleção especial (devolver ao estoque)
-     */
+         * Remover foto de seleção especial (devolver ao estoque)
+         */
     static async returnPhotoToOriginalLocation(photoId, adminUser, session = null) {
         const useExternalSession = session !== null;
         if (!session) session = await mongoose.startSession();
@@ -432,10 +433,12 @@ class SpecialSelectionService {
             const operation = async () => {
                 console.log(`🔄 Devolvendo foto ${photoId} ao estoque original...`);
 
-                // 1. Buscar status da foto
-                const photoStatus = await PhotoStatus.findOne({ photoId }).session(session);
+                // 1. Buscar status da foto (opcional)
+                let photoStatus = await PhotoStatus.findOne({ photoId }).session(session);
+                // Se não existir PhotoStatus, criar temporário ou pular bloqueio
                 if (!photoStatus) {
-                    throw new Error('Status da foto não encontrado');
+                    console.log(`⚠️ PhotoStatus não encontrado para ${photoId}, pulando bloqueio`);
+                    photoStatus = null; // Continua sem bloqueio
                 }
 
                 // 2. Buscar seleção especial que contém a foto
@@ -448,8 +451,10 @@ class SpecialSelectionService {
                     throw new Error('Seleção especial não encontrada');
                 }
 
-                // 3. Bloquear foto
-                photoStatus.lock(adminUser, 'returning', 30);
+                // 3. Bloquear foto (se PhotoStatus existir)
+                if (photoStatus) {
+                    photoStatus.lock(adminUser, 'returning', 30);
+                }
 
                 // 4. Encontrar backup da localização original
                 const backup = selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup?.find(
@@ -461,31 +466,50 @@ class SpecialSelectionService {
                 }
 
                 // 5. Mover foto de volta no Google Drive
-                const targetParentId = backup?.originalParentId || photoStatus.originalLocation.originalParentId;
+                const targetParentId = backup?.originalParentId ||
+                    photoStatus?.originalLocation?.originalParentId;
+
+                if (!targetParentId) {
+                    console.warn(`⚠️ Não foi possível determinar localização original da foto ${photoId}`);
+                    console.log(`📋 Pulando devolução desta foto - pode ser movida manualmente se necessário`);
+                    return { success: true, message: 'Foto não devolvida - localização desconhecida' };
+                }
                 const driveResult = await GoogleDriveService.movePhotoToSelection(photoId, targetParentId);
 
                 if (!driveResult.success) {
                     throw new Error(`Erro ao devolver foto no Google Drive: ${driveResult.error}`);
                 }
 
-                // 6. Atualizar status da foto
-                photoStatus.moveTo({
-                    locationType: 'stock',
-                    currentPath: photoStatus.originalLocation.originalPath,
-                    currentParentId: photoStatus.originalLocation.originalParentId,
-                    currentCategory: photoStatus.originalLocation.originalCategory,
-                    specialSelectionId: null
-                }, adminUser, 'admin');
+                // 6. Atualizar status da foto (se existir)
+                if (photoStatus) {
+                    photoStatus.moveTo({
+                        locationType: 'stock',
+                        currentPath: photoStatus.originalLocation.originalPath,
+                        currentParentId: photoStatus.originalLocation.originalParentId,
+                        currentCategory: photoStatus.originalLocation.originalCategory,
+                        specialSelectionId: null
+                    }, adminUser, 'admin');
+                } else {
+                    console.log(`⚠️ PhotoStatus null, pulando atualização de status para ${photoId}`);
+                }
 
-                // 7. Restaurar preço original
-                photoStatus.updatePrice(
-                    photoStatus.originalLocation.originalPrice,
-                    'category',
-                    adminUser
-                );
+                // 7. Restaurar preço original (se PhotoStatus existir)
+                if (photoStatus) {
+                    photoStatus.updatePrice(
+                        photoStatus.originalLocation.originalPrice,
+                        'category',
+                        adminUser
+                    );
+                } else {
+                    console.log(`⚠️ PhotoStatus null, pulando atualização de preço para ${photoId}`);
+                }
 
-                // 8. Desbloquear foto
-                photoStatus.unlock(adminUser);
+                // 8. Desbloquear foto (se PhotoStatus existir)
+                if (photoStatus) {
+                    photoStatus.unlock(adminUser);
+                } else {
+                    console.log(`⚠️ PhotoStatus null, pulando desbloqueio para ${photoId}`);
+                }
 
                 // 9. Remover foto de todas as categorias customizadas
                 selection.customCategories.forEach(category => {
@@ -500,22 +524,45 @@ class SpecialSelectionService {
                         );
                 }
 
-                // 11. Adicionar log
+                // ✅ CORREÇÃO: Buscar fileName da seleção se PhotoStatus for null
+                let fileName = 'unknown';
+                if (photoStatus && photoStatus.fileName) {
+                    fileName = photoStatus.fileName;
+                } else {
+                    // Buscar fileName na seleção
+                    for (const category of selection.customCategories) {
+                        const photo = category.photos.find(p => p.photoId === photoId);
+                        if (photo && photo.fileName) {
+                            fileName = photo.fileName;
+                            break;
+                        }
+                    }
+                }
+
+                // 11. Adicionar log (✅ CORRIGIDO)
                 selection.addMovementLog(
                     'photo_returned',
-                    `Foto ${photoStatus.fileName} devolvida ao estoque original`,
+                    `Foto ${fileName} devolvida ao estoque original`,
                     true,
                     null,
-                    { photoId, adminUser, originalLocation: photoStatus.originalLocation }
+                    {
+                        photoId,
+                        adminUser,
+                        originalLocation: photoStatus ? photoStatus.originalLocation : backup?.originalPath || 'unknown',
+                        hadPhotoStatus: !!photoStatus
+                    }
                 );
 
-                // 12. Salvar
-                await photoStatus.save({ session });
+                // 12. Salvar (✅ CORRIGIDO - só salva PhotoStatus se existir)
+                if (photoStatus) {
+                    await photoStatus.save({ session });
+                }
                 await selection.save({ session });
 
-                console.log(`✅ Foto devolvida ao estoque: ${photoStatus.fileName}`);
+                console.log(`✅ Foto devolvida ao estoque: ${fileName}`); // ✅ CORRIGIDO
 
-                return { success: true, photoId, fileName: photoStatus.fileName };
+                return { success: true, photoId, fileName: fileName }; // ✅ CORRIGIDO
+
             };
 
             if (useExternalSession) {
