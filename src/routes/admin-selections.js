@@ -19,13 +19,34 @@ router.get('/', async (req, res) => {
     try {
         const { status = 'pending', page = 1, limit = 50 } = req.query;
 
-        const selections = await Selection.find({ status })
+        // ✅ CORREÇÃO: Tratar "All Status"
+        let query = {};
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+
+        // ✅ NOVA LÓGICA: Selection Management SÓ vê seleções que CLIENTE processou
+        query.$or = [
+            // Seleções normais (sempre mostrar)
+            { selectionType: { $ne: 'special' } },
+            // Seleções especiais SÓ se cliente finalizou (não admin actions)
+            {
+                selectionType: 'special',
+                status: { $in: ['confirmed', 'finalized'] },
+                // E que não foram canceladas apenas pelo admin
+                'movementLog.extraData.clientSelection': { $exists: true }
+            }
+        ];
+
+        // Se status for 'all', query fica vazio = busca TODAS as seleções
+
+        const selections = await Selection.find(query)
             .sort({ createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .populate('items.productId');
 
-        const total = await Selection.countDocuments({ status });
+        const total = await Selection.countDocuments(query);
 
         res.json({
             success: true,
@@ -55,6 +76,62 @@ router.get('/', async (req, res) => {
             success: false,
             message: 'Erro ao carregar seleções',
             error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/selections/stats
+ * Estatísticas COMPLETAS (normal + special selections)
+ */
+router.get('/stats', async (req, res) => {
+    try {
+        console.log('📊 Carregando estatísticas completas...');
+        // ✅ USAR MESMA LÓGICA: SÓ seleções que cliente processou
+        const query = {};
+        query.$or = [
+            { selectionType: { $ne: 'special' } },
+            {
+                selectionType: 'special',
+                status: { $in: ['confirmed', 'finalized'] },
+                'movementLog.extraData.clientSelection': { $exists: true }
+            }
+        ];
+
+        const totalSelections = await Selection.countDocuments(query);
+        const pendingQuery = { ...query, status: 'pending' };
+        const pendingSelections = await Selection.countDocuments(pendingQuery);
+
+        // Seleções deste mês
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const thisMonthSelections = await Selection.countDocuments({
+            createdAt: { $gte: startOfMonth }
+        });
+
+        // Valor médio
+        const avgResult = await Selection.aggregate([
+            { $group: { _id: null, avg: { $avg: '$totalValue' } } }
+        ]);
+        const averageValue = avgResult[0]?.avg || 0;
+
+        res.json({
+            success: true,
+            stats: {
+                totalSelections,
+                pendingSelections,
+                thisMonthSelections,
+                averageValue
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar estatísticas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao carregar estatísticas'
         });
     }
 });

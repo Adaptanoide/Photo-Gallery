@@ -76,7 +76,7 @@ class AdminSelections {
     async refreshData() {
         console.log('🔄 Refreshing all selection data...');
         this.setLoading(true);
-        
+
         try {
             await Promise.all([
                 this.loadStatistics(),
@@ -122,14 +122,14 @@ class AdminSelections {
         this.updateStatCard('totalSelections', this.stats.totalSelections, 'All time selections');
         this.updateStatCard('pendingSelections', this.stats.pendingSelections, 'Awaiting approval');
         this.updateStatCard('thisMonthSelections', this.stats.thisMonthSelections, 'This month');
-        this.updateStatCard('averageSelectionValue', 
+        this.updateStatCard('averageSelectionValue',
             this.formatCurrency(this.stats.averageValue), 'Per selection');
     }
 
     updateStatCard(elementId, value, description) {
         const valueElement = document.getElementById(elementId);
         const descElement = document.getElementById(`${elementId}Description`);
-        
+
         if (valueElement) {
             valueElement.textContent = value;
             valueElement.style.opacity = '0';
@@ -137,7 +137,7 @@ class AdminSelections {
                 valueElement.style.opacity = '1';
             }, 100);
         }
-        
+
         if (descElement) {
             descElement.textContent = description;
         }
@@ -178,6 +178,8 @@ class AdminSelections {
 
             if (data.success) {
                 this.renderSelections(data.selections);
+                // ✅ LOG TEMPORÁRIO PARA DEBUG:
+                console.log('🔍 PRIMEIRA SELEÇÃO DEBUG:', data.selections[0]);
                 console.log(`✅ ${data.selections.length} selections loaded`);
             } else {
                 throw new Error(data.message);
@@ -207,8 +209,10 @@ class AdminSelections {
 
         tableBody.innerHTML = selections.map(selection => `
             <tr>
-                <td class="selection-id-cell">
-                    <strong>${selection.selectionId}</strong>
+                <td class="type-cell">
+                    <span class="type-badge ${selection.selectionType || 'normal'}">
+                        ${selection.selectionId.startsWith('SPEC_') ? '⭐ Special' : '📄 Regular'}
+                    </span>
                 </td>
                 <td class="client-info-cell">
                     <div class="client-name">${selection.clientName}</div>

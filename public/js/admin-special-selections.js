@@ -1118,7 +1118,9 @@ class AdminSpecialSelections {
     }
 
     hasProcessingSelections() {
-        return this.specialSelections.some(s => s.status === 'pending');
+        // Só considerar "processing" se realmente está sendo processado
+        // Status 'pending' = criada/aguardando ativação (NÃO é processing)
+        return this.specialSelections.some(s => s.status === 'pending' && s.customCategories && s.customCategories.length > 0);
     }
 
 

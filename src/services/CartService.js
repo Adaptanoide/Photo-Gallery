@@ -55,6 +55,20 @@ class CartService {
                     console.log(`📦 Produto já existe: ${product._id} para foto ${driveFileId}`);
                 }
 
+                console.log(`🔍 DEBUG PRODUTO: ${driveFileId} - status: '${product.status}', reservedBy: ${JSON.stringify(product.reservedBy)}`);
+
+                // ✅ LIMPEZA AUTOMÁTICA: Produtos expirados ou órfãos
+                if (product.status === 'reserved_pending' && product.reservedBy?.expiresAt) {
+                    const now = new Date();
+                    const expiresAt = new Date(product.reservedBy.expiresAt);
+                    if (now > expiresAt) {
+                        console.log(`🧹 PRODUTO EXPIRADO: ${driveFileId} - liberando automaticamente`);
+                        product.status = 'available';
+                        product.reservedBy = undefined;
+                        await product.save({ session });
+                    }
+                }
+
                 // Verificar se produto está disponível
                 if (product.status !== 'available') {
                     throw new Error('Produto já foi reservado ou vendido por outro cliente');

@@ -98,6 +98,25 @@ router.post('/', async (req, res) => {
             });
         }
 
+        // ✅ NOVA VALIDAÇÃO: Verificar se cliente já tem seleção especial ativa
+        const existingActive = await Selection.findOne({
+            clientCode: clientCode,
+            selectionType: 'special',
+            'specialSelectionConfig.accessConfig.isActive': true
+        });
+
+        if (existingActive) {
+            return res.status(400).json({
+                success: false,
+                message: `Cliente ${clientCode} já possui uma seleção especial ativa: ${existingActive.specialSelectionConfig?.selectionName || existingActive.selectionId}`,
+                existingSelection: {
+                    selectionId: existingActive.selectionId,
+                    selectionName: existingActive.specialSelectionConfig?.selectionName,
+                    createdAt: existingActive.createdAt
+                }
+            });
+        }
+
         const adminUser = req.user?.username || 'admin';
 
         const selectionData = {
@@ -782,8 +801,9 @@ async function processSelectionInBackground(selectionId, adminUser) {
         console.log(`⏱️ [BACKGROUND] Simulando processamento de ${totalPhotos} fotos (${processingTime / 1000}s)...`);
         await processPhotosReally(selection, adminUser);
 
-        // ✅ ATUALIZAR STATUS NO BANCO
-        selection.status = 'confirmed'; // Mudar de 'pending' para 'confirmed'
+        // ✅ CORREÇÃO: Admin processando ≠ Cliente finalizando
+        // Status permanece 'pending' até CLIENTE finalizar
+        // selection.status = 'confirmed'; // ← COMENTAR ESTA LINHA
         selection.addMovementLog(
             'finalized',  // ✅ Esta ação existe no enum
             'Processamento simulado concluído',
@@ -794,7 +814,9 @@ async function processSelectionInBackground(selectionId, adminUser) {
         // ✅ RECARREGAR SELECTION DO BANCO ANTES DE SALVAR (evitar sobrescrever backup)
         const updatedSelection = await Selection.findOne({ selectionId });
         if (updatedSelection) {
+            console.log(`🔍 ANTES DO STATUS: ${updatedSelection.status}`);
             updatedSelection.status = 'confirmed';
+            console.log(`🔍 DEPOIS DO STATUS: ${updatedSelection.status}`);
             updatedSelection.addMovementLog(
                 'finalized',
                 'Processamento simulado concluído',
@@ -803,7 +825,7 @@ async function processSelectionInBackground(selectionId, adminUser) {
                 { adminUser, completedAt: new Date(), totalPhotos, processingTime }
             );
             await updatedSelection.save();
-            console.log(`✅ [BACKGROUND] Status atualizado no banco: ${selectionId} → confirmed (backup preservado)`);
+            console.log(`✅ [BACKGROUND] Processamento concluído: ${selectionId} - status: confirmed (backup preservado)`);
         }
 
         console.log(`✅ [BACKGROUND] Processamento simulado completo: ${selectionId}`);

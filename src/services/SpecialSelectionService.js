@@ -128,7 +128,9 @@ class SpecialSelectionService {
                 );
 
                 // 7. Salvar seleção
+                console.log('🔍 STATUS ANTES DO SAVE:', specialSelection.status);
                 await specialSelection.save({ session });
+                console.log('🔍 STATUS DEPOIS DO SAVE:', specialSelection.status);
 
                 console.log(`✅ Seleção especial criada: ${selectionId}`);
 
@@ -631,7 +633,8 @@ class SpecialSelectionService {
 
                 // 5. Ativar seleção especial
                 selection.specialSelectionConfig.accessConfig.isActive = true;
-                selection.status = 'confirmed'; // Disponível para acesso
+                // ✅ CORREÇÃO: Status permanece 'pending' até cliente finalizar
+                // selection.status permanece como estava (pending)
 
                 // 6. Adicionar logs
                 selection.addMovementLog(
