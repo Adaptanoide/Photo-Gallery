@@ -1120,13 +1120,14 @@ class AdminSpecialSelections {
     hasProcessingSelections() {
         // Só considerar "processing" se realmente está sendo processado
         // Status 'pending' = criada/aguardando ativação (NÃO é processing)
-        return this.specialSelections.some(s => s.status === 'pending' && s.customCategories && s.customCategories.length > 0);
+        return this.specialSelections.some(s => s.status === 'pending' && (!s.items || s.items.length === 0));
     }
 
 
     // ===== NOVOS MÉTODOS PARA STATUS VISUAL =====
     getStatusClass(selection) {
-        if (selection.status === 'pending') return 'processing';
+        if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) return 'processing';
+        if (selection.status === 'pending' && selection.items && selection.items.length > 0) return 'pending-approval';
         if (selection.status === 'confirmed' && selection.isActive) return 'active';
         if (selection.status === 'confirmed' && !selection.isActive) return 'inactive';
         if (selection.status === 'cancelled') return 'cancelled';
@@ -1134,7 +1135,8 @@ class AdminSpecialSelections {
     }
 
     getStatusIcon(selection) {
-        if (selection.status === 'pending') return '<i class="fas fa-spinner fa-spin"></i>';
+        if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) return '<i class="fas fa-spinner fa-spin"></i>';
+if (selection.status === 'pending' && selection.items && selection.items.length > 0) return '<i class="fas fa-clock"></i>';
         if (selection.status === 'confirmed' && selection.isActive) return '<i class="fas fa-check-circle"></i>';
         if (selection.status === 'confirmed' && !selection.isActive) return '<i class="fas fa-pause-circle"></i>';
         if (selection.status === 'cancelled') return '<i class="fas fa-times-circle"></i>';
@@ -1142,7 +1144,8 @@ class AdminSpecialSelections {
     }
 
     getStatusLabel(selection) {
-        if (selection.status === 'pending') return 'Processing...';
+        if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) return 'Processing...';
+if (selection.status === 'pending' && selection.items && selection.items.length > 0) return 'Pending Approval';
         if (selection.status === 'confirmed' && selection.isActive) return 'Active';
         if (selection.status === 'confirmed' && !selection.isActive) return 'Inactive';
         if (selection.status === 'cancelled') return 'Cancelled';

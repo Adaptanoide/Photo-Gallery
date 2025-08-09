@@ -2669,3 +2669,8 @@
 .luxury-btn:active {
     transform: translateY(0);
 }
+
+.special-status-badge.pending-approval {
+    background-color: #f59e0b;
+    color: white;
+}

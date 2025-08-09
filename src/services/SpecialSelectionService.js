@@ -815,6 +815,8 @@ class SpecialSelectionService {
             // Processar dados para resposta
             const processedSelections = selections.map(selection => ({
                 ...selection.getSpecialSelectionSummary(),
+                // ✅ ADICIONAR O CAMPO ITEMS AQUI
+                items: selection.items || [],
                 customCategories: selection.customCategories.map(cat => ({
                     categoryId: cat.categoryId,
                     categoryName: cat.categoryName,

@@ -49,10 +49,22 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Produtos validados: ${products.length} itens`);
 
-            // 3. Gerar ID único para a seleção
-            const selectionId = Selection.generateSelectionId();
+            // 3. ✅ NOVA ORDEM: Verificar PRIMEIRO se é cliente especial
+            const AccessCode = require('../models/AccessCode');
+            const SpecialSelectionService = require('../services/SpecialSelectionService');
 
-            // 4. Criar pasta do cliente no Google Drive
+            console.log(`🔍 Verificando tipo de cliente ${clientCode}...`);
+            const accessCode = await AccessCode.findOne({ code: clientCode }).session(session);
+
+            const isSpecialClient = accessCode &&
+                accessCode.accessType === 'special' &&
+                accessCode.specialSelection;
+
+            let selectionId;
+            let selection;
+            let specialSelection = null;
+
+            // 4. Criar pasta do cliente no Google Drive (comum para ambos os tipos)
             console.log(`📁 Criando pasta para cliente no Google Drive...`);
 
             const folderResult = await GoogleDriveService.createClientSelectionFolder(
@@ -67,18 +79,7 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Pasta criada: ${folderResult.folderName}`);
 
-            // 5. Agrupar produtos por categoria para criar subpastas
-            const categoriesMap = {};
-            products.forEach(product => {
-                if (!categoriesMap[product.category]) {
-                    categoriesMap[product.category] = [];
-                }
-                categoriesMap[product.category].push(product);
-            });
-
-            const categories = Object.keys(categoriesMap);
-
-            // 6. Preparar dados dos produtos para movimentação (SEM criar subpastas simples)
+            // 5. Preparar dados dos produtos para movimentação
             const photosToMove = products.map(product => {
                 const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
                 return {
@@ -90,13 +91,12 @@ router.post('/finalize', async (req, res) => {
                 };
             });
 
-            // 7. Mover fotos preservando hierarquia completa
+            // 6. Mover fotos preservando hierarquia completa
             console.log(`📸 Movendo ${photosToMove.length} fotos com hierarquia preservada...`);
 
             const moveResult = await GoogleDriveService.movePhotosToSelection(
                 photosToMove,
                 folderResult.folderId
-                // ← Não passa categorySubfolders - hierarquia será recriada automaticamente
             );
 
             if (!moveResult.success) {
@@ -105,7 +105,7 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Movimentação concluída: ${moveResult.summary.successful} sucessos, ${moveResult.summary.failed} erros`);
 
-            // 9. Calcular valor total dos itens
+            // 7. Calcular valor total dos itens
             let totalValue = 0;
             cart.items.forEach(item => {
                 if (item.hasPrice && item.price > 0) {
@@ -113,13 +113,58 @@ router.post('/finalize', async (req, res) => {
                 }
             });
 
-            // 10. Criar registro de seleção no MongoDB
-            const selectionData = {
-                selectionId,
-                sessionId,
-                clientCode,
-                clientName,
-                items: products.map(product => {
+            // 8. ✅ LÓGICA CONDICIONAL: Cliente Especial vs Normal
+            if (isSpecialClient) {
+                // ===== CLIENTE ESPECIAL =====
+                console.log(`🎯 Cliente especial detectado! Processando seleção especial...`);
+
+                // Buscar a Special Selection existente
+                specialSelection = await Selection.findOne({
+                    selectionId: accessCode.specialSelection.selectionCode,
+                    selectionType: 'special',
+                    status: { $in: ['confirmed', 'active'] }
+                }).session(session);
+
+                if (!specialSelection) {
+                    throw new Error('Seleção especial não encontrada ou não ativa');
+                }
+
+                console.log(`📋 Special Selection encontrada: ${specialSelection.selectionId}`);
+                selectionId = specialSelection.selectionId;
+
+                // Atualizar a seleção especial com informações da finalização
+                specialSelection.status = 'pending'; // ← MUDA para pending (aguardando aprovação)
+
+                // Garantir que googleDriveInfo existe completamente
+                if (!specialSelection.googleDriveInfo) {
+                    specialSelection.googleDriveInfo = {};
+                }
+
+                // Preservar ou criar specialSelectionInfo
+                if (!specialSelection.googleDriveInfo.specialSelectionInfo) {
+                    specialSelection.googleDriveInfo.specialSelectionInfo = {
+                        specialFolderId: specialSelection.googleDriveInfo.clientFolderId || '',
+                        specialFolderName: specialSelection.googleDriveInfo.clientFolderName || '',
+                        originalPhotosBackup: []
+                    };
+                }
+
+                // Atualizar apenas os campos necessários
+                specialSelection.googleDriveInfo.clientFolderId = folderResult.folderId;
+                specialSelection.googleDriveInfo.clientFolderName = folderResult.folderName;
+                specialSelection.googleDriveInfo.clientFolderPath = folderResult.path;
+
+                // Adicionar informações de finalização
+                specialSelection.googleDriveInfo.finalizationInfo = {
+                    finalizedAt: new Date(),
+                    totalItemsSelected: cart.totalItems,
+                    totalValueSelected: totalValue,
+                    hierarchyPreserved: true,
+                    hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0
+                };
+
+                // Adicionar items finalizados à seleção especial
+                specialSelection.items = products.map(product => {
                     const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
                     const moveResultItem = moveResult.results.find(r => r.photoId === product.driveFileId);
 
@@ -135,169 +180,159 @@ router.post('/finalize', async (req, res) => {
                         selectedAt: cartItem?.addedAt || new Date(),
                         movedAt: moveResultItem?.success ? new Date() : null
                     };
-                }),
-                totalItems: cart.totalItems,
-                totalValue: totalValue,
-                status: 'pending',
-                googleDriveInfo: {
-                    clientFolderId: folderResult.folderId,
-                    clientFolderName: folderResult.folderName,
-                    clientFolderPath: folderResult.path,
-                    hierarchyPreserved: true, // ← Novo: indica que hierarquia foi preservada
-                    hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0
-                },
-                reservationExpiredAt: new Date(Date.now() + (24 * 60 * 60 * 1000)) // 24 horas para decidir
-            };
+                });
 
-            const selection = new Selection(selectionData);
-            selection.addMovementLog('created', `Seleção criada com ${cart.totalItems} itens`);
-            selection.addMovementLog('moved', `Fotos movidas para ${folderResult.folderName}`);
+                specialSelection.totalItems = cart.totalItems;
+                specialSelection.totalValue = totalValue;
+                specialSelection.reservationExpiredAt = new Date(Date.now() + (24 * 60 * 60 * 1000)); // 24 horas
 
-            await selection.save({ session });
+                // Adicionar log de movimentação
+                specialSelection.addMovementLog(
+                    'finalized',
+                    `Cliente finalizou seleção: ${cart.totalItems} fotos selecionadas`,
+                    true,
+                    null,
+                    {
+                        clientFolderId: folderResult.folderId,
+                        clientFolderName: folderResult.folderName,
+                        totalItems: cart.totalItems,
+                        totalValue: totalValue
+                    }
+                );
 
-            console.log(`✅ Seleção salva no MongoDB: ${selectionId}`);
+                // Processar devolução de fotos não selecionadas
+                const selectedPhotoIds = products.map(p => p.driveFileId);
+                console.log(`📸 Fotos selecionadas pelo cliente: ${selectedPhotoIds.length}`);
 
-            // ✅ NOVO: Se cliente especial, devolver fotos não selecionadas automaticamente
-            const AccessCode = require('../models/AccessCode');
-            const SpecialSelectionService = require('../services/SpecialSelectionService');
-
-            try {
-                console.log(`🔍 Verificando se cliente ${clientCode} é especial...`);
-
-                const accessCode = await AccessCode.findOne({ code: clientCode }).session(session);
-
-                if (accessCode && accessCode.accessType === 'special' && accessCode.specialSelection) {
-                    console.log(`🎯 Cliente especial detectado! Seleção: ${accessCode.specialSelection.selectionCode}`);
-
-                    // Buscar a Special Selection ativa
-                    const specialSelection = await Selection.findOne({
-                        selectionId: accessCode.specialSelection.selectionCode,
-                        selectionType: 'special',
-                        status: { $in: ['confirmed', 'active'] }
-                    }).session(session);
-
-                    if (specialSelection) {
-                        console.log(`📋 Special Selection encontrada: ${specialSelection.selectionId}`);
-
-                        // Identificar fotos selecionadas pelo cliente
-                        const selectedPhotoIds = products.map(p => p.driveFileId);
-                        console.log(`📸 Fotos selecionadas pelo cliente: ${selectedPhotoIds.length}`);
-
-                        // Buscar fotos não selecionadas na Special Selection
-                        const unselectedPhotos = [];
-                        specialSelection.customCategories.forEach(category => {
-                            category.photos.forEach(photo => {
-                                if (!selectedPhotoIds.includes(photo.photoId)) {
-                                    unselectedPhotos.push({
-                                        photoId: photo.photoId,
-                                        fileName: photo.fileName,
-                                        categoryName: category.categoryName
-                                    });
-                                }
+                const unselectedPhotos = [];
+                specialSelection.customCategories.forEach(category => {
+                    category.photos.forEach(photo => {
+                        if (!selectedPhotoIds.includes(photo.photoId)) {
+                            unselectedPhotos.push({
+                                photoId: photo.photoId,
+                                fileName: photo.fileName,
+                                categoryName: category.categoryName
                             });
-                        });
+                        }
+                    });
+                });
 
-                        console.log(`🔄 Fotos não selecionadas encontradas: ${unselectedPhotos.length}`);
+                console.log(`🔄 Fotos não selecionadas encontradas: ${unselectedPhotos.length}`);
 
-                        if (unselectedPhotos.length > 0) {
-                            console.log(`🚀 Iniciando devolução automática de ${unselectedPhotos.length} fotos...`);
+                if (unselectedPhotos.length > 0) {
+                    console.log(`🚀 Iniciando devolução automática de ${unselectedPhotos.length} fotos...`);
 
-                            // Devolver cada foto não selecionada usando nossa função que já funciona
-                            for (const photo of unselectedPhotos) {
-                                try {
-                                    console.log(`📸 Devolvendo foto: ${photo.fileName}`);
+                    for (const photo of unselectedPhotos) {
+                        try {
+                            console.log(`📸 Devolvendo foto: ${photo.fileName}`);
 
-                                    const returnResult = await SpecialSelectionService.returnPhotoToOriginalLocation(
-                                        photo.photoId,
-                                        'system_auto', // Admin automático
-                                        session
-                                    );
+                            const returnResult = await SpecialSelectionService.returnPhotoToOriginalLocation(
+                                photo.photoId,
+                                'system_auto',
+                                session
+                            );
 
-                                    if (returnResult.success) {
-                                        console.log(`✅ Foto devolvida: ${photo.fileName}`);
-                                    } else {
-                                        console.warn(`⚠️ Falha ao devolver foto: ${photo.fileName}`);
-                                    }
-
-                                } catch (photoError) {
-                                    console.error(`❌ Erro ao devolver foto ${photo.fileName}:`, photoError);
-                                    // Continuar com próxima foto mesmo se uma falhar
-                                }
+                            if (returnResult.success) {
+                                console.log(`✅ Foto devolvida: ${photo.fileName}`);
+                            } else {
+                                console.warn(`⚠️ Falha ao devolver foto: ${photo.fileName}`);
                             }
 
-                            // Atualizar Special Selection para status 'completed'
-                            specialSelection.status = 'confirmed';
-                            specialSelection.addMovementLog(
-                                'finalized',
-                                `Seleção finalizada: ${selectedPhotoIds.length} fotos reservadas, ${unselectedPhotos.length} fotos devolvidas automaticamente`,
-                                true,
-                                null,
-                                {
-                                    clientSelection: selectionId,
-                                    selectedCount: selectedPhotoIds.length,
-                                    returnedCount: unselectedPhotos.length,
-                                    autoReturn: true
-                                }
-                            );
-
-                            await specialSelection.save({ session });
-
-                            console.log(`✅ Special Selection finalizada automaticamente: ${specialSelection.selectionId}`);
-                            console.log(`📊 Resultado: ${selectedPhotoIds.length} reservadas, ${unselectedPhotos.length} devolvidas`);
-                        } else {
-                            console.log(`✅ Todas as fotos da Special Selection foram selecionadas pelo cliente`);
-
-                            // Marcar Special Selection como totalmente finalizada
-                            specialSelection.status = 'confirmed';
-                            specialSelection.addMovementLog(
-                                'finalized',
-                                `Seleção finalizada: todas as ${selectedPhotoIds.length} fotos foram selecionadas pelo cliente`,
-                                true,
-                                null,
-                                {
-                                    clientSelection: selectionId,
-                                    selectedCount: selectedPhotoIds.length,
-                                    returnedCount: 0,
-                                    fullSelection: true
-                                }
-                            );
-
-                            await specialSelection.save({ session });
+                        } catch (photoError) {
+                            console.error(`❌ Erro ao devolver foto ${photo.fileName}:`, photoError);
                         }
-                    } else {
-                        console.warn(`⚠️ Special Selection não encontrada ou não ativa para cliente ${clientCode}`);
                     }
-                } else {
-                    console.log(`✅ Cliente regular detectado: ${clientCode} - sem devolução automática necessária`);
+
+                    specialSelection.addMovementLog(
+                        'auto_return',
+                        `${unselectedPhotos.length} fotos não selecionadas foram devolvidas automaticamente`,
+                        true,
+                        null,
+                        {
+                            returnedCount: unselectedPhotos.length,
+                            selectedCount: selectedPhotoIds.length
+                        }
+                    );
                 }
 
-            } catch (autoReturnError) {
-                console.error(`❌ Erro na devolução automática para cliente ${clientCode}:`, autoReturnError);
-                // NÃO quebrar a transação principal - apenas logar o erro
-                // A seleção normal ainda será processada normalmente
+                await specialSelection.save({ session });
+                selection = specialSelection; // Para usar na resposta
+
+                console.log(`✅ Special Selection atualizada para status 'pending'`);
+
+            } else {
+                // ===== CLIENTE NORMAL =====
+                console.log(`📋 Cliente normal detectado. Criando nova seleção...`);
+
+                // Gerar ID único para a seleção normal
+                selectionId = Selection.generateSelectionId();
+
+                // Criar nova seleção normal
+                const selectionData = {
+                    selectionId,
+                    sessionId,
+                    clientCode,
+                    clientName,
+                    items: products.map(product => {
+                        const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
+                        const moveResultItem = moveResult.results.find(r => r.photoId === product.driveFileId);
+
+                        return {
+                            productId: product._id,
+                            driveFileId: product.driveFileId,
+                            fileName: product.fileName,
+                            category: product.category,
+                            thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
+                            originalPath: moveResultItem?.originalHierarchicalPath || 'unknown',
+                            newPath: moveResultItem?.newParent || folderResult.folderId,
+                            price: cartItem?.price || 0,
+                            selectedAt: cartItem?.addedAt || new Date(),
+                            movedAt: moveResultItem?.success ? new Date() : null
+                        };
+                    }),
+                    totalItems: cart.totalItems,
+                    totalValue: totalValue,
+                    status: 'pending',
+                    selectionType: 'regular', // ← Explicitamente marcar como regular
+                    googleDriveInfo: {
+                        clientFolderId: folderResult.folderId,
+                        clientFolderName: folderResult.folderName,
+                        clientFolderPath: folderResult.path,
+                        hierarchyPreserved: true,
+                        hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0
+                    },
+                    reservationExpiredAt: new Date(Date.now() + (24 * 60 * 60 * 1000))
+                };
+
+                selection = new Selection(selectionData);
+                selection.addMovementLog('created', `Seleção criada com ${cart.totalItems} itens`);
+                selection.addMovementLog('moved', `Fotos movidas para ${folderResult.folderName}`);
+
+                await selection.save({ session });
+
+                console.log(`✅ Seleção normal salva no MongoDB: ${selectionId}`);
             }
 
-            // 11. Atualizar status dos produtos para 'reserved_pending' (aguardando aprovação admin)
+            // 9. Atualizar status dos produtos (comum para ambos)
             await Product.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {
-                        status: 'reserved_pending',  // ← NOVO: Aguarda aprovação
-                        reservedAt: new Date()       // ← Marca quando foi reservado
+                        status: 'reserved_pending',
+                        reservedAt: new Date()
                     },
-                    // ← NÃO remove reservedBy - mantém para rastreamento
-                    $unset: { 'cartAddedAt': 1 }     // ← Remove apenas cartAddedAt
+                    $unset: { 'cartAddedAt': 1 }
                 }
             ).session(session);
 
-            // 12. Desativar carrinho
+            // 10. Desativar carrinho (comum para ambos)
             cart.isActive = false;
             cart.notes = `Finalizado como seleção ${selectionId}`;
             await cart.save({ session });
 
             console.log(`✅ Carrinho desativado e produtos atualizados`);
 
-            // 13. NOVO: Enviar email de notificação (em background, não bloquear resposta)
+            // 11. Enviar email de notificação (em background)
             setImmediate(async () => {
                 try {
                     console.log(`📧 Enviando notificação de nova seleção...`);
@@ -311,21 +346,14 @@ router.post('/finalize', async (req, res) => {
                         totalValue: totalValue,
                         googleDriveInfo: {
                             clientFolderName: folderResult.folderName
-                        }
+                        },
+                        isSpecialSelection: isSpecialClient
                     });
 
                     if (emailResult.success) {
                         console.log(`✅ Email de notificação enviado com sucesso`);
-
-                        // Adicionar log na seleção
-                        selection.addMovementLog('email_sent', `Email de notificação enviado para admins`);
-                        await selection.save();
                     } else {
                         console.warn(`⚠️ Falha ao enviar email de notificação:`, emailResult.error);
-
-                        // Adicionar log de falha
-                        selection.addMovementLog('email_failed', `Falha ao enviar email: ${emailResult.error}`, false, emailResult.error);
-                        await selection.save();
                     }
 
                 } catch (emailError) {
@@ -333,7 +361,7 @@ router.post('/finalize', async (req, res) => {
                 }
             });
 
-            // 14. Resposta de sucesso (sem aguardar email)
+            // 12. Resposta de sucesso
             res.json({
                 success: true,
                 message: 'Seleção finalizada com sucesso!',
@@ -342,12 +370,13 @@ router.post('/finalize', async (req, res) => {
                     clientFolderName: folderResult.folderName,
                     totalItems: cart.totalItems,
                     totalValue: totalValue,
-                    status: 'pending'
+                    status: 'pending',
+                    type: isSpecialClient ? 'special' : 'regular'
                 },
                 googleDrive: {
                     folderCreated: folderResult.folderName,
                     photosMovedCount: moveResult.summary.successful,
-                    hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0  // ← CORRIGIDO!
+                    hierarchiesCreated: moveResult.summary.hierarchiesCreated || 0
                 },
                 nextSteps: {
                     message: 'Suas fotos foram reservadas e movidas para uma pasta exclusiva.',

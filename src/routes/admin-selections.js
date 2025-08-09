@@ -32,9 +32,9 @@ router.get('/', async (req, res) => {
             // Seleções especiais SÓ se cliente finalizou (não admin actions)
             {
                 selectionType: 'special',
-                status: { $in: ['confirmed', 'finalized'] },
+                status: 'pending',
                 // E que não foram canceladas apenas pelo admin
-                'movementLog.extraData.clientSelection': { $exists: true }
+                'movementLog.action': 'finalized'
             }
         ];
 
@@ -93,8 +93,8 @@ router.get('/stats', async (req, res) => {
             { selectionType: { $ne: 'special' } },
             {
                 selectionType: 'special',
-                status: { $in: ['confirmed', 'finalized'] },
-                'movementLog.extraData.clientSelection': { $exists: true }
+                status: 'pending',
+                'movementLog.action': 'finalized'
             }
         ];
 
