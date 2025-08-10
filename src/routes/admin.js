@@ -276,6 +276,42 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
             });
         }
 
+        // ===== VERIFICAR PENDÊNCIAS ANTES DE ATIVAR =====
+        if (!accessCode.isActive && isActive) { // Tentando ATIVAR
+            console.log('🔍 Verificando pendências antes de ativar...');
+
+            // Importar o modelo Selection
+            const Selection = require('../models/Selection');
+
+            // Verificar se tem QUALQUER seleção pendente
+            const pendingSelection = await Selection.findOne({
+                clientCode: accessCode.code,
+                status: 'pending'
+            });
+
+            if (pendingSelection) {
+                const type = pendingSelection.selectionType === 'special' ? 'ESPECIAL' : 'REGULAR';
+                console.log(`❌ Bloqueado: Cliente tem seleção ${type} pendente`);
+                return res.status(400).json({
+                    success: false,
+                    message: `Cliente tem seleção ${type} pendente (${pendingSelection.selectionId}). Aprove ou cancele antes de reativar.`,
+                    pendingSelection: pendingSelection.selectionId
+                });
+            }
+
+            // Verificar se tem categorias (para clientes normais)
+            if (accessCode.accessType === 'normal' && (!accessCode.allowedCategories || accessCode.allowedCategories.length === 0)) {
+                console.log('❌ Bloqueado: Cliente sem categorias configuradas');
+                return res.status(400).json({
+                    success: false,
+                    message: 'Configure as categorias antes de ativar o cliente. Use o botão Edit.'
+                });
+            }
+
+            console.log('✅ Sem pendências - pode ativar');
+        }
+        // ===== FIM DA VERIFICAÇÃO =====
+
         // Atualizar status
         accessCode.isActive = isActive;
         accessCode.updatedAt = new Date();

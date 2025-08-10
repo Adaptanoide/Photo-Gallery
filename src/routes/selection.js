@@ -262,18 +262,21 @@ router.post('/finalize', async (req, res) => {
 
                 // SEMPRE atualizar status e salvar
                 specialSelection.status = 'pending';
-                await specialSelection.save({ session });
+                // Save movido para depois da reversão
 
-                // Reverter cliente para acesso normal após finalizar Special Selection
-                console.log('🔄 Revertendo cliente para acesso NORMAL após finalizar Special Selection...');
+                // ===== DESATIVAR CLIENTE APÓS FINALIZAR SPECIAL SELECTION =====
+                console.log('🔒 Desativando acesso do cliente após finalizar Special Selection...');
 
                 try {
-                    // Atualizar AccessCode para normal
+                    // Reverter para normal mas DESATIVAR o acesso
                     const updatedAccessCode = await AccessCode.findOneAndUpdate(
                         { code: clientCode },
                         {
                             $set: {
-                                accessType: 'normal'
+                                accessType: 'normal',
+                                isActive: false,
+                                // Restaurar categorias originais ou usar padrão
+                                allowedCategories: accessCode.specialSelection?.originalCategories || ['Brazil Best Sellers']
                             },
                             $unset: {
                                 specialSelection: 1
@@ -286,19 +289,27 @@ router.post('/finalize', async (req, res) => {
                     );
 
                     if (updatedAccessCode) {
-                        console.log(`✅ AccessCode ${clientCode} revertido: ${updatedAccessCode.accessType}`);
+                        console.log(`🔒 Cliente ${clientCode} DESATIVADO após finalizar seleção`);
+                        console.log(`   AccessType: ${updatedAccessCode.accessType}`);
+                        console.log(`   Ativo: ${updatedAccessCode.isActive}`);
+                        console.log(`   Categorias: mantidas as originais`);
+                        console.log(`   ➡️ Cliente precisa contatar vendedor para novo acesso`);
                     }
 
                     // Marcar Special Selection como inativa
                     specialSelection.isActive = false;
-                    await specialSelection.save({ session });
 
-                    console.log('✅ Cliente pode acessar estoque regular novamente');
+                    // SALVAR TUDO
+                    await specialSelection.save({ session });
+                    console.log('✅ Special Selection salva como pending e inativa');
+                    console.log('🔒 Cliente SEM ACESSO até admin reativar');
 
                 } catch (revertError) {
-                    console.error('⚠️ Erro ao reverter access type (não crítico):', revertError);
-                    // Continuar mesmo se falhar - não é crítico
+                    console.error('⚠️ Erro ao desativar cliente:', revertError);
+                    // Se falhar, ainda tentar salvar a selection
+                    await specialSelection.save({ session });
                 }
+                // ===== FIM DA DESATIVAÇÃO =====
 
                 selection = specialSelection; // Para usar na resposta
                 console.log(`✅ Special Selection salva com status 'pending'`);
@@ -354,6 +365,34 @@ router.post('/finalize', async (req, res) => {
                 await selection.save({ session });
 
                 console.log(`✅ Seleção normal salva no MongoDB: ${selectionId}`);
+
+                // ===== DESATIVAR CLIENTE APÓS SELEÇÃO REGULAR =====
+                console.log('🔒 Desativando cliente após finalizar seleção REGULAR...');
+
+                try {
+                    const updatedAccessCode = await AccessCode.findOneAndUpdate(
+                        { code: clientCode },
+                        {
+                            $set: {
+                                isActive: false,  // DESATIVAR!
+                                // Manter tipo normal e categorias como estão
+                            }
+                        },
+                        {
+                            session,
+                            new: true
+                        }
+                    );
+
+                    if (updatedAccessCode) {
+                        console.log(`🔒 Cliente ${clientCode} DESATIVADO após seleção regular`);
+                        console.log(`   ➡️ Cliente precisa contatar vendedor para novo acesso`);
+                    }
+
+                } catch (desactivateError) {
+                    console.error('⚠️ Erro ao desativar cliente (regular):', desactivateError);
+                }
+                // ===== FIM DA DESATIVAÇÃO REGULAR =====
             }
 
             // 9. Atualizar status dos produtos (comum para ambos)

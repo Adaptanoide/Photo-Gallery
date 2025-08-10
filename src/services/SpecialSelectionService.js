@@ -620,11 +620,16 @@ class SpecialSelectionService {
                     throw new Error('Código de acesso do cliente não encontrado');
                 }
 
+                // 3.5 GUARDAR CATEGORIAS ORIGINAIS ANTES DE MUDAR
+                const originalCategories = [...accessCode.allowedCategories]; // Clonar array
+                console.log(`📦 Guardando categorias originais: ${originalCategories.join(', ')}`);
+
                 // 4. Configurar acesso especial no AccessCode
                 accessCode.setSpecialAccess({
                     selectionId: selection._id,
                     selectionCode: selectionId,
                     selectionName: selection.specialSelectionConfig.selectionName,
+                    originalCategories: originalCategories,
                     showPrices: selection.specialSelectionConfig.pricingConfig.showPrices,
                     showDiscountInfo: selection.specialSelectionConfig.quantityDiscounts.enabled,
                     welcomeMessage: `Welcome to your special selection: ${selection.specialSelectionConfig.selectionName}`,
