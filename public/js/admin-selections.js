@@ -239,10 +239,6 @@ class AdminSelections {
                 </td>
                 <td class="actions-cell">
                     <div class="action-buttons">
-                        <button class="btn-action btn-view" onclick="adminSelections.viewSelection('${selection.selectionId}')">
-                            <i class="fas fa-eye"></i>
-                            View
-                        </button>
                         ${this.getActionButtons(selection)}
                     </div>
                 </td>
@@ -270,7 +266,7 @@ class AdminSelections {
             'pending': 'Pending',
             'confirmed': 'Confirmed',
             'cancelled': 'Cancelled',
-            'finalized': 'Finalized'
+            'finalized': 'SOLD'
         };
         return statusMap[status] || status;
     }
@@ -278,12 +274,21 @@ class AdminSelections {
     // ===== GET ACTION BUTTONS =====
     getActionButtons(selection) {
         let buttons = '';
-
+        
+        // VIEW para TODOS os status (sempre primeiro)
+        buttons += `
+            <button class="btn-action btn-view" onclick="adminSelections.viewSelection('${selection.selectionId}')">
+                <i class="fas fa-eye"></i>
+                View
+            </button>
+        `;
+        
+        // PENDING - adiciona Mark as Sold e Cancel
         if (selection.status === 'pending') {
             buttons += `
                 <button class="btn-action btn-approve" onclick="adminSelections.approveSelection('${selection.selectionId}')">
-                    <i class="fas fa-check"></i>
-                    Approve
+                    <i class="fas fa-check-circle"></i>
+                    Mark as Sold
                 </button>
                 <button class="btn-action btn-cancel" onclick="adminSelections.cancelSelection('${selection.selectionId}')">
                     <i class="fas fa-times"></i>
@@ -291,8 +296,9 @@ class AdminSelections {
                 </button>
             `;
         }
-
-        if (selection.status === 'confirmed') {
+        
+        // CONFIRMED - adiciona Force Cancel (para limpeza)
+        else if (selection.status === 'confirmed') {
             buttons += `
                 <button class="btn-action btn-force-cancel" onclick="adminSelections.forceCancelSelection('${selection.selectionId}')" title="Force cancellation for cleanup">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -300,7 +306,10 @@ class AdminSelections {
                 </button>
             `;
         }
-
+        
+        // FINALIZED/SOLD - não adiciona mais nada (só View)
+        // CANCELLED - não adiciona mais nada (só View)
+        
         return buttons;
     }
 

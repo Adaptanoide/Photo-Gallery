@@ -287,7 +287,6 @@ const selectionSchema = new mongoose.Schema({
                 'moved_to_sold',
                 'cancelled',
                 'photos_reverted',
-                // ===== NOVO: AÇÕES PARA SELEÇÕES ESPECIAIS =====
                 'special_selection_created',
                 'photo_recategorized',
                 'category_created',
@@ -295,7 +294,8 @@ const selectionSchema = new mongoose.Schema({
                 'discount_applied',
                 'special_selection_activated',
                 'special_selection_deactivated',
-                'photo_returned'  // ✅ ADICIONE ESTA LINHA!
+                'photo_returned',
+                'auto_return'  // ← ADICIONE ESTA LINHA!
             ],
             required: true
         },
@@ -506,6 +506,7 @@ selectionSchema.methods.getSpecialSelectionSummary = function () {
 
     return {
         selectionId: this.selectionId,
+        selectionType: this.selectionType,
         selectionName: this.specialSelectionConfig?.selectionName || 'Unnamed Special Selection',
         clientCode: this.clientCode,
         clientName: this.clientName,

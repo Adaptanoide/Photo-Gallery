@@ -234,17 +234,15 @@ router.post('/finalize', async (req, res) => {
 
                             if (returnResult.success) {
                                 console.log(`✅ Foto devolvida: ${photo.fileName}`);
-                            } else {
-                                console.warn(`⚠️ Falha ao devolver foto: ${photo.fileName}`);
                             }
-
-                        } catch (photoError) {
-                            console.error(`❌ Erro ao devolver foto ${photo.fileName}:`, photoError);
+                        } catch (error) {
+                            console.error(`❌ Erro ao devolver foto ${photo.fileName}:`, error);
                         }
                     }
 
                     specialSelection.addMovementLog(
-                        'auto_return',
+                        'photos_returned',
+                        // LINHA 248-270 NOVA:
                         `${unselectedPhotos.length} fotos não selecionadas foram devolvidas automaticamente`,
                         true,
                         null,
@@ -253,12 +251,57 @@ router.post('/finalize', async (req, res) => {
                             selectedCount: selectedPhotoIds.length
                         }
                     );
+
+                    // Recarregar seleção após devolução para evitar conflito
+                    console.log(`🔄 Recarregando seleção após devolução automática...`);
+                    specialSelection = await Selection.findById(specialSelection._id).session(session);
+
+                } else {
+                    console.log(`✅ Sem devolução automática - continuando normalmente`);
                 }
 
+                // SEMPRE atualizar status e salvar
+                specialSelection.status = 'pending';
                 await specialSelection.save({ session });
-                selection = specialSelection; // Para usar na resposta
 
-                console.log(`✅ Special Selection atualizada para status 'pending'`);
+                // Reverter cliente para acesso normal após finalizar Special Selection
+                console.log('🔄 Revertendo cliente para acesso NORMAL após finalizar Special Selection...');
+
+                try {
+                    // Atualizar AccessCode para normal
+                    const updatedAccessCode = await AccessCode.findOneAndUpdate(
+                        { code: clientCode },
+                        {
+                            $set: {
+                                accessType: 'normal'
+                            },
+                            $unset: {
+                                specialSelection: 1
+                            }
+                        },
+                        {
+                            session,
+                            new: true
+                        }
+                    );
+
+                    if (updatedAccessCode) {
+                        console.log(`✅ AccessCode ${clientCode} revertido: ${updatedAccessCode.accessType}`);
+                    }
+
+                    // Marcar Special Selection como inativa
+                    specialSelection.isActive = false;
+                    await specialSelection.save({ session });
+
+                    console.log('✅ Cliente pode acessar estoque regular novamente');
+
+                } catch (revertError) {
+                    console.error('⚠️ Erro ao reverter access type (não crítico):', revertError);
+                    // Continuar mesmo se falhar - não é crítico
+                }
+
+                selection = specialSelection; // Para usar na resposta
+                console.log(`✅ Special Selection salva com status 'pending'`);
 
             } else {
                 // ===== CLIENTE NORMAL =====
@@ -293,7 +336,7 @@ router.post('/finalize', async (req, res) => {
                     totalItems: cart.totalItems,
                     totalValue: totalValue,
                     status: 'pending',
-                    selectionType: 'regular', // ← Explicitamente marcar como regular
+                    selectionType: 'normal', // ← Explicitamente marcar como regular
                     googleDriveInfo: {
                         clientFolderId: folderResult.folderId,
                         clientFolderName: folderResult.folderName,

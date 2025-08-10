@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
             // Seleções especiais SÓ se cliente finalizou (não admin actions)
             {
                 selectionType: 'special',
-                status: 'pending',
+                status: { $in: ['pending', 'finalized', 'cancelled'] },
                 // E que não foram canceladas apenas pelo admin
                 'movementLog.action': 'finalized'
             }
@@ -93,13 +93,13 @@ router.get('/stats', async (req, res) => {
             { selectionType: { $ne: 'special' } },
             {
                 selectionType: 'special',
-                status: 'pending',
+                status: { $in: ['pending', 'finalized', 'cancelled'] },
                 'movementLog.action': 'finalized'
             }
         ];
 
         const totalSelections = await Selection.countDocuments(query);
-        const pendingQuery = { ...query, status: 'pending' };
+        const pendingQuery = { ...query, status: { $in: ['pending'] } };
         const pendingSelections = await Selection.countDocuments(pendingQuery);
 
         // Seleções deste mês
@@ -195,7 +195,7 @@ router.post('/:selectionId/approve', async (req, res) => {
             ).session(session);
 
             // 4. Atualizar seleção
-            selection.status = 'confirmed';
+            selection.status = 'finalized';
             selection.processedBy = adminUser || 'admin';
             selection.processedAt = new Date();
             selection.finalizedAt = new Date();
@@ -267,47 +267,94 @@ router.post('/:selectionId/cancel', async (req, res) => {
                 });
             }
 
-            // 2. Reverter fotos no Google Drive usando caminhos originais
-            console.log('🔄 Revertendo fotos para pastas originais...');
-
+            // 2. Reverter fotos no Google Drive
+            console.log('🔄 Revertendo fotos...');
             const revertResults = [];
 
-            for (const item of selection.items) {
-                try {
-                    // Usar originalPath para encontrar pasta de destino
-                    const originalPath = item.originalPath;
+            // Verificar se tem backup (Special Selections)
+            if (selection.googleDriveInfo?.specialSelectionInfo?.originalPhotosBackup?.length > 0) {
+                console.log('📦 Usando backup de Special Selection para reverter...');
 
-                    if (!originalPath) {
-                        console.warn(`⚠️ Item ${item.fileName} sem originalPath - usando fallback`);
+                for (const backup of selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup) {
+                    try {
+                        console.log(`📸 Revertendo ${backup.photoId} para: ${backup.originalPath}`);
+
+                        const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
+                            backup.photoId,
+                            backup.originalPath
+                        );
+
+                        revertResults.push({
+                            success: revertResult.success,
+                            photoId: backup.photoId,
+                            originalPath: backup.originalPath
+                        });
+
+                    } catch (error) {
+                        console.warn(`⚠️ Erro ao reverter, usando fallback para raiz...`);
+
+                        // Fallback: mover para raiz do estoque
+                        await GoogleDriveService.movePhotoToSelection(
+                            backup.photoId,
+                            '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx' // ACTUAL_PICTURES
+                        );
+
+                        revertResults.push({
+                            success: true,
+                            photoId: backup.photoId,
+                            fallback: true
+                        });
+                    }
+                }
+            } else {
+                // Seleções regulares - usar originalPath dos items
+                console.log('📦 Processando seleção regular...');
+
+                for (const item of selection.items) {
+                    try {
+                        // Verificar se tem originalPath
+                        if (item.originalPath && item.originalPath !== 'unknown') {
+                            console.log(`📸 Revertendo ${item.fileName} para: ${item.originalPath}`);
+
+                            try {
+                                const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
+                                    item.driveFileId,
+                                    item.originalPath
+                                );
+
+                                revertResults.push({
+                                    success: revertResult.success,
+                                    fileName: item.fileName,
+                                    originalPath: item.originalPath
+                                });
+                                continue; // Próximo item
+                            } catch (error) {
+                                console.warn(`⚠️ Erro ao reverter para caminho original, usando fallback...`);
+                            }
+                        }
+
+                        // Fallback: mover para raiz se não tiver originalPath ou se falhar
+                        console.log(`📦 Movendo ${item.fileName} para raiz (fallback)...`);
+                        await GoogleDriveService.movePhotoToSelection(
+                            item.driveFileId,
+                            '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx' // ACTUAL_PICTURES
+                        );
+
+                        revertResults.push({
+                            success: true,
+                            fileName: item.fileName,
+                            driveFileId: item.driveFileId,
+                            movedTo: 'Raiz do estoque (fallback)'
+                        });
+
+                    } catch (error) {
+                        console.error(`❌ Erro ao mover ${item.fileName}:`, error);
                         revertResults.push({
                             success: false,
                             fileName: item.fileName,
-                            error: 'originalPath não encontrado'
+                            error: error.message
                         });
-                        continue;
                     }
-
-                    // Reverter foto usando GoogleDriveService
-                    const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
-                        item.driveFileId,
-                        originalPath
-                    );
-
-                    revertResults.push({
-                        success: revertResult.success,
-                        fileName: item.fileName,
-                        driveFileId: item.driveFileId,
-                        originalPath: originalPath,
-                        error: revertResult.success ? null : revertResult.error
-                    });
-
-                } catch (error) {
-                    console.error(`❌ Erro ao reverter foto ${item.fileName}:`, error);
-                    revertResults.push({
-                        success: false,
-                        fileName: item.fileName,
-                        error: error.message
-                    });
                 }
             }
 

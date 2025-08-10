@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 
         // ✅ ADICIONAR:
 
-        const filters = {}; ``
+        const filters = {};
         if (status) filters.status = status;
         if (clientCode) filters.clientCode = clientCode;
         if (isActive !== undefined && isActive !== 'all') {
@@ -98,17 +98,17 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // ✅ NOVA VALIDAÇÃO: Verificar se cliente já tem seleção especial ativa
+        // ✅ VALIDAÇÃO: Verificar se cliente tem seleção especial não finalizada
         const existingActive = await Selection.findOne({
             clientCode: clientCode,
             selectionType: 'special',
-            'specialSelectionConfig.accessConfig.isActive': true
+            status: { $nin: ['finalized', 'cancelled'] }  // NÃO finalizadas ou canceladas
         });
 
         if (existingActive) {
             return res.status(400).json({
                 success: false,
-                message: `Cliente ${clientCode} já possui uma seleção especial ativa: ${existingActive.specialSelectionConfig?.selectionName || existingActive.selectionId}`,
+                message: `Cliente ${clientCode} já possui uma seleção especial (${existingActive.status}): ${existingActive.specialSelectionConfig?.selectionName || existingActive.selectionId}`,
                 existingSelection: {
                     selectionId: existingActive.selectionId,
                     selectionName: existingActive.specialSelectionConfig?.selectionName,

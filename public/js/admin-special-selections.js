@@ -156,6 +156,11 @@ class AdminSpecialSelections {
 
             if (data.success) {
                 this.specialSelections = data.data || [];
+                // DEBUG TEMPORÁRIO
+                console.log('🔍 DEBUG - Primeira seleção:');
+                if (this.specialSelections[0]) {
+                    console.log(this.specialSelections[0]);
+                }
                 this.currentPage = data.pagination?.page || 1;
                 this.totalPages = data.pagination?.pages || 1;
                 console.log(`✅ ${this.specialSelections.length} seleções especiais carregadas`);
@@ -405,27 +410,81 @@ class AdminSpecialSelections {
                 <td>${this.formatDate(selection.createdAt)}</td>
                 <td>
                     <div class="special-actions-group">
-                        <button class="special-btn-icon special-tooltip" data-tooltip="View Details" data-action="view" data-id="${selection.selectionId}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="special-btn-icon edit special-tooltip" data-tooltip="Edit Selection" data-action="edit" data-id="${selection.selectionId}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        ${selection.isActive ?
-                `<button class="special-btn-icon special-tooltip" data-tooltip="Deactivate" data-action="deactivate" data-id="${selection.selectionId}">
-                                <i class="fas fa-pause"></i>
-                            </button>` :
-                `<button class="special-btn-icon activate special-tooltip" data-tooltip="Activate" data-action="activate" data-id="${selection.selectionId}">
-                                <i class="fas fa-play"></i>
-                            </button>`
-            }
-                        <button class="special-btn-icon delete special-tooltip" data-tooltip="Delete Selection" data-action="delete" data-id="${selection.selectionId}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${this.getActionButtons(selection)}
                     </div>
                 </td>
             </tr>
         `).join('');
+    }
+
+    getActionButtons(selection) {
+        // SOLD/FINALIZED - só View
+        if (selection.status === 'finalized') {
+            return `
+                <button class="special-btn-icon special-tooltip" 
+                        data-tooltip="View Details" 
+                        data-action="view" 
+                        data-id="${selection.selectionId}">
+                    <i class="fas fa-eye"></i>
+                </button>
+            `;
+        }
+        // PENDING APPROVAL - só View
+        if (selection.status === 'pending') {
+            return `
+                <button class="special-btn-icon special-tooltip" 
+                        data-tooltip="View Details" 
+                        data-action="view" 
+                        data-id="${selection.selectionId}">
+                    <i class="fas fa-eye"></i>
+                </button>
+        `;
+        }
+
+        // INACTIVE - Activate e Delete
+        if (selection.status === 'confirmed' && !selection.isActive) {
+            return `
+                <button class="special-btn-icon activate special-tooltip" 
+                        data-tooltip="Activate" 
+                        data-action="activate" 
+                        data-id="${selection.selectionId}">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="special-btn-icon delete special-tooltip" 
+                        data-tooltip="Delete" 
+                        data-action="delete" 
+                        data-id="${selection.selectionId}">
+                    <i class="fas fa-trash"></i>
+                </button>
+        `;
+        }
+
+        // ACTIVE - só Deactivate  
+        if (selection.status === 'confirmed' && selection.isActive) {
+            return `
+                <button class="special-btn-icon special-tooltip" 
+                        data-tooltip="Deactivate" 
+                        data-action="deactivate" 
+                        data-id="${selection.selectionId}">
+                    <i class="fas fa-pause"></i>
+                </button>
+        `;
+        }
+
+        // CANCELLED - só View
+        if (selection.status === 'cancelled') {
+            return `
+            <button class="special-btn-icon special-tooltip" 
+                    data-tooltip="View Details" 
+                    data-action="view" 
+                    data-id="${selection.selectionId}">
+                <i class="fas fa-eye"></i>
+            </button>
+        `;
+        }
+
+        // PROCESSING - nenhum botão
+        return '<span class="text-muted">Processing...</span>';
     }
 
     renderClientOptions() {
@@ -1118,38 +1177,88 @@ class AdminSpecialSelections {
     }
 
     hasProcessingSelections() {
-        // Só considerar "processing" se realmente está sendo processado
-        // Status 'pending' = criada/aguardando ativação (NÃO é processing)
-        return this.specialSelections.some(s => s.status === 'pending' && (!s.items || s.items.length === 0));
+        // Usar a nova função helper para verificar
+        const hasProcessing = this.specialSelections.some(s => {
+            return this.getProcessingStatus(s) === 'processing';
+        });
+
+        if (hasProcessing) {
+            console.log('📋 Tem seleções processando');
+        } else {
+            console.log('✅ Nenhuma seleção processando');
+            // Parar auto-refresh se não tem nada processando
+            if (this.autoRefreshInterval) {
+                clearInterval(this.autoRefreshInterval);
+                this.autoRefreshInterval = null;
+            }
+        }
+
+        return hasProcessing;
     }
 
+
+    // ===== FUNÇÃO HELPER PARA DETERMINAR STATUS REAL =====
+    getProcessingStatus(selection) {
+        // Para special selections
+        if (selection.selectionType === 'special') {
+            // PENDING com items VAZIO = está processando
+            if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) {
+                return 'processing';
+            }
+            // PENDING com items PREENCHIDO = aguardando aprovação
+            if (selection.status === 'pending' && selection.items && selection.items.length > 0) {
+                return 'pending_approval';
+            }
+            // CONFIRMED = ver se está ativo ou não
+            if (selection.status === 'confirmed') {
+                return selection.isActive ? 'active' : 'inactive';
+            }
+        }
+        // Outros status
+        return selection.status;
+    }
 
     // ===== NOVOS MÉTODOS PARA STATUS VISUAL =====
     getStatusClass(selection) {
-        if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) return 'processing';
-        if (selection.status === 'pending' && selection.items && selection.items.length > 0) return 'pending-approval';
-        if (selection.status === 'confirmed' && selection.isActive) return 'active';
-        if (selection.status === 'confirmed' && !selection.isActive) return 'inactive';
-        if (selection.status === 'cancelled') return 'cancelled';
-        return 'inactive';
+        const realStatus = this.getProcessingStatus(selection);
+
+        switch (realStatus) {
+            case 'processing': return 'processing';
+            case 'active': return 'active';
+            case 'inactive': return 'inactive';
+            case 'pending_approval': return 'pending-approval';
+            case 'finalized': return 'finalized';
+            case 'cancelled': return 'cancelled';
+            default: return 'unknown';
+        }
     }
 
     getStatusIcon(selection) {
-        if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) return '<i class="fas fa-spinner fa-spin"></i>';
-if (selection.status === 'pending' && selection.items && selection.items.length > 0) return '<i class="fas fa-clock"></i>';
-        if (selection.status === 'confirmed' && selection.isActive) return '<i class="fas fa-check-circle"></i>';
-        if (selection.status === 'confirmed' && !selection.isActive) return '<i class="fas fa-pause-circle"></i>';
-        if (selection.status === 'cancelled') return '<i class="fas fa-times-circle"></i>';
-        return '<i class="fas fa-question-circle"></i>';
+        const realStatus = this.getProcessingStatus(selection);
+
+        switch (realStatus) {
+            case 'processing': return '<i class="fas fa-spinner fa-spin"></i>';
+            case 'active': return '<i class="fas fa-check-circle"></i>';
+            case 'inactive': return '<i class="fas fa-pause-circle"></i>';
+            case 'pending_approval': return '<i class="fas fa-clock"></i>';
+            case 'finalized': return '<i class="fas fa-check-double"></i>';
+            case 'cancelled': return '<i class="fas fa-times-circle"></i>';
+            default: return '<i class="fas fa-question-circle"></i>';
+        }
     }
 
     getStatusLabel(selection) {
-        if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) return 'Processing...';
-if (selection.status === 'pending' && selection.items && selection.items.length > 0) return 'Pending Approval';
-        if (selection.status === 'confirmed' && selection.isActive) return 'Active';
-        if (selection.status === 'confirmed' && !selection.isActive) return 'Inactive';
-        if (selection.status === 'cancelled') return 'Cancelled';
-        return 'Unknown';
+        const realStatus = this.getProcessingStatus(selection);
+
+        switch (realStatus) {
+            case 'processing': return 'Processing...';
+            case 'active': return 'Active';
+            case 'inactive': return 'Inactive';
+            case 'pending_approval': return 'Pending Approval';
+            case 'finalized': return 'FINALIZED';
+            case 'cancelled': return 'Cancelled';
+            default: return 'Unknown';
+        }
     }
 
 }
