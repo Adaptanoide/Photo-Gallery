@@ -163,7 +163,7 @@
 
 .special-filters-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: 1fr 1fr 2fr auto;
     gap: 1rem;
     align-items: end;
 }
@@ -2761,4 +2761,50 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+
+/* Para quando a tabela é recriada (volta de outra aba) */
+.special-status-badge.deleting {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.special-status-badge.deleting .spinner-inline {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #dc3545;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Status Deleting */
+.badge-deleting {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-deleting .spinner-inline {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #dc3545;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }

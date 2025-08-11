@@ -248,6 +248,7 @@ class AdminDashboard {
                 console.log('⭐ Seção de seleções especiais ativada');
                 if (window.adminSpecialSelections) {
                     console.log('✅ AdminSpecialSelections já existe, usando instância atual');
+                    window.adminSpecialSelections.refreshData();  // ← LINHA NOVA AQUI
                 } else if (typeof window.initSpecialSelections === 'function') {
                     console.log('🎯 Inicializando AdminSpecialSelections via função global');
                     window.adminSpecialSelections = window.initSpecialSelections();

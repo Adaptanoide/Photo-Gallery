@@ -167,6 +167,21 @@ router.post('/:selectionId/approve', async (req, res) => {
                 });
             }
 
+            // ========= INÍCIO DO CÓDIGO NOVO =========
+            // NOVO: Marcar como approving ANTES de processar
+            selection.status = 'approving';
+            selection.processStatus = {
+                active: true,
+                type: 'approving',
+                message: `Approving selection...`,
+                totalItems: selection.items.length,
+                startedAt: new Date()
+            };
+            await selection.save({ session });
+
+            console.log('📊 Status atualizado para APPROVING');
+            // ========= FIM DO CÓDIGO NOVO =========
+
             // 2. Mover pasta no Google Drive: RESERVED → SYSTEM_SOLD
             console.log('📁 Movendo pasta para SYSTEM_SOLD...');
 
@@ -200,6 +215,13 @@ router.post('/:selectionId/approve', async (req, res) => {
             selection.processedAt = new Date();
             selection.finalizedAt = new Date();
             selection.adminNotes = notes || '';
+
+            // ========= INÍCIO DO CÓDIGO NOVO =========
+            // NOVO: Limpar processStatus após conclusão
+            selection.processStatus = {
+                active: false
+            };
+            // ========= FIM DO CÓDIGO NOVO =========
 
             // Atualizar info do Google Drive
             selection.googleDriveInfo.finalFolderId = moveResult.finalFolderId;
@@ -266,6 +288,19 @@ router.post('/:selectionId/cancel', async (req, res) => {
                     message: 'Apenas seleções pendentes podem ser canceladas'
                 });
             }
+
+            // NOVO: Marcar como cancelling ANTES de processar
+            selection.status = 'cancelling';
+            selection.processStatus = {
+                active: true,
+                type: 'cancelling',
+                message: `Cancelling selection...`,
+                totalItems: selection.items.length,
+                startedAt: new Date()
+            };
+            await selection.save({ session });
+
+            console.log('📊 Status atualizado para CANCELLING');
 
             // 2. Reverter fotos no Google Drive
             console.log('🔄 Revertendo fotos...');
@@ -385,6 +420,11 @@ router.post('/:selectionId/cancel', async (req, res) => {
             selection.processedBy = adminUser || 'admin';
             selection.processedAt = new Date();
             selection.adminNotes = reason || 'Cancelada pelo admin';
+
+            // NOVO: Limpar processStatus após conclusão
+            selection.processStatus = {
+                active: false
+            };
 
             selection.addMovementLog('cancelled', `Seleção cancelada por ${adminUser || 'admin'}: ${reason || 'Sem motivo especificado'}`);
             selection.addMovementLog('photos_reverted', `${successfulReverts} fotos revertidas, ${failedReverts} falhas`);

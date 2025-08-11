@@ -240,7 +240,7 @@ const selectionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'finalized', 'cancelled'],
+        enum: ['pending', 'confirmed', 'finalized', 'cancelled', 'cancelling', 'approving', 'deleting'],
         default: 'pending',
         index: true
     },
@@ -700,7 +700,7 @@ selectionSchema.pre('save', function (next) {
 
     // Definir data de expiração se for nova seleção
     if (this.isNew && !this.reservationExpiredAt) {
-        this.reservationExpiredAt = new Date(Date.now() + (2 * 60 * 60 * 1000)); // 2 horas
+        this.reservationExpiredAt = new Date(Date.now() + (4 * 60 * 60 * 1000)); // 4 horas
     }
 
     // ===== NOVO: VALIDAÇÕES PARA SELEÇÕES ESPECIAIS =====

@@ -667,3 +667,46 @@
         padding: 0.35rem 0.6rem;
     }
 }
+
+/* ========= STATUS CANCELLING - ADICIONAR NO FINAL ========= */
+.badge-cancelling {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.spinner-inline {
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    opacity: 0.5;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* ========= FIM DO CSS CANCELLING ========= */
+
+/* Status Approving - ADICIONAR NO FINAL */
+.badge-approving {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}

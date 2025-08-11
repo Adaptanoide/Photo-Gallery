@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/admin-config.css">
     <link rel="stylesheet" href="css/admin-selections.css">
     <link rel="stylesheet" href="css/admin-special-selections.css">
+    <link rel="stylesheet" href="/css/ui-system.css">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -728,11 +729,10 @@
                             <div class="filter-group">
                                 <label class="filter-label">Status</label>
                                 <select id="filterSelectionStatus" class="filter-select">
-                                    <option value="pending">Pending</option>
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                    <option value="finalized">Finalized</option>
-                                    <option value="all">All</option>
+                                    <option value="all">📋 All Status</option>
+                                    <option value="pending">🕐 Pending</option>
+                                    <option value="cancelled">❌ Cancelled</option>
+                                    <option value="finalized">✅ Sold</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -1052,6 +1052,7 @@
     <script src="js/admin-selections.js"></script>
     <script src="js/admin-config.js"></script>
     <script src="js/admin-special-selections.js"></script>
+    <script src="/js/ui-system.js"></script>
 
 </body>
 

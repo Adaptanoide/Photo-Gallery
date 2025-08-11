@@ -1473,13 +1473,13 @@ class AdminClients {
     showError(message) {
         console.error('❌ Error:', message);
         // TODO: Implement better notification system
-        alert('Error: ' + message);
+        UISystem.showToast('error', message);
     }
 
     showSuccess(message) {
         console.log('✅ Success:', message);
         // TODO: Implement better notification system
-        alert('Success: ' + message);
+        UISystem.showToast('success', message);
     }
 
     closeViewModal() {
@@ -1513,7 +1513,12 @@ class AdminClients {
             return;
         }
 
-        const confirmed = confirm(`Are you sure you want to DELETE the access code for "${client.clientName}"?\n\nThis action cannot be undone and will remove the client completely from the system.`);
+        const confirmed = await UISystem.confirm(
+            'Delete Client',
+            `Are you sure you want to DELETE the access code for "${client.clientName}"?<br><br>This action cannot be undone and will remove the client completely from the system.`,
+            'Delete',
+            'Cancel'
+        );
 
         if (!confirmed) return;
 

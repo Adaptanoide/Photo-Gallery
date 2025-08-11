@@ -72,15 +72,20 @@ window.CartSystem = {
 
     // ===== GESTÃO DE SESSÃO =====
     generateSessionId() {
-        let sessionId = localStorage.getItem('cartSessionId');
+        // Pegar código do cliente para criar chave única
+        const savedSession = localStorage.getItem('sunshineSession');
+        const clientCode = savedSession ? JSON.parse(savedSession).user.code : 'guest';
 
+        // Criar chave única por cliente
+        const storageKey = `cartSessionId_${clientCode}`;
+
+        let sessionId = localStorage.getItem(storageKey);
         if (!sessionId) {
             sessionId = `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            localStorage.setItem('cartSessionId', sessionId);
+            localStorage.setItem(storageKey, sessionId);
         }
-
         this.state.sessionId = sessionId;
-        console.log(`🔑 Session ID: ${sessionId}`);
+        console.log(`🔑 Session ID [${clientCode}]: ${sessionId}`);
     },
 
     // ===== CACHE DE ELEMENTOS DOM =====

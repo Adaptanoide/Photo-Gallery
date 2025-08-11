@@ -208,7 +208,7 @@ class AdminSelections {
         }
 
         tableBody.innerHTML = selections.map(selection => `
-            <tr>
+            <tr data-selection-id="${selection.selectionId}">
                 <td class="type-cell">
                     <span class="type-badge ${selection.selectionType || 'normal'}">
                         ${selection.selectionId.startsWith('SPEC_') ? '⭐ Special' : '📄 Regular'}
@@ -274,7 +274,7 @@ class AdminSelections {
     // ===== GET ACTION BUTTONS =====
     getActionButtons(selection) {
         let buttons = '';
-        
+
         // VIEW para TODOS os status (sempre primeiro)
         buttons += `
             <button class="btn-action btn-view" onclick="adminSelections.viewSelection('${selection.selectionId}')">
@@ -282,7 +282,7 @@ class AdminSelections {
                 View
             </button>
         `;
-        
+
         // PENDING - adiciona Mark as Sold e Cancel
         if (selection.status === 'pending') {
             buttons += `
@@ -296,7 +296,7 @@ class AdminSelections {
                 </button>
             `;
         }
-        
+
         // CONFIRMED - adiciona Force Cancel (para limpeza)
         else if (selection.status === 'confirmed') {
             buttons += `
@@ -306,10 +306,10 @@ class AdminSelections {
                 </button>
             `;
         }
-        
+
         // FINALIZED/SOLD - não adiciona mais nada (só View)
         // CANCELLED - não adiciona mais nada (só View)
-        
+
         return buttons;
     }
 
@@ -489,90 +489,160 @@ class AdminSelections {
 
     // ===== APPROVE SELECTION =====
     async approveSelection(selectionId) {
+        // Confirm com modal bonito
+        const confirmed = await UISystem.confirm(
+            'Approve this selection?',
+            'This will move photos to SOLD folder and finalize the transaction.'
+        );
+
+        if (!confirmed) return;
+
+        // Encontrar a linha na tabela
+        const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
+        if (!row) {
+            console.error('Row not found for selection:', selectionId);
+            UISystem.showToast('error', 'Could not find selection in table');
+            return;
+        }
+
+        // Atualizar status visual para "APPROVING..."
+        const statusCell = row.querySelector('td:nth-child(5)'); // 5ª coluna é status
+        const originalStatus = statusCell ? statusCell.innerHTML : '';
+
+        if (statusCell) {
+            statusCell.innerHTML = `
+                <span class="badge badge-approving">
+                    <span class="spinner-inline"></span>
+                    APPROVING...
+                </span>
+            `;
+        }
+
+        // NOVO: Esconder botões durante processamento
+        const actionsCell = row.querySelector('td:last-child');
+        const originalActions = actionsCell ? actionsCell.innerHTML : '';
+
+        if (actionsCell) {
+            actionsCell.innerHTML = `
+                <div style="text-align: center;">
+                    <span style="color: #28a745; font-size: 20px;">🔒</span>
+                    <br>
+                    <small style="color: #999;">Locked</small>
+                </div>
+            `;
+        }
+
         try {
-            const confirmMessage = `Are you sure you want to APPROVE selection ${selectionId}?\n\nThis action will:\n• Move folder to SYSTEM_SOLD\n• Mark products as sold\n• Finalize the transaction`;
-
-            if (!confirm(confirmMessage)) {
-                return;
-            }
-
-            const notes = prompt('Notes about approval (optional):');
-
-            this.setLoading(true);
-            console.log(`✅ Approving selection: ${selectionId}`);
-
             const response = await fetch(`/api/selections/${selectionId}/approve`, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
                 body: JSON.stringify({
-                    adminUser: 'admin', // TODO: Get logged user
-                    notes: notes || ''
+                    adminUser: 'admin',
+                    notes: ''
                 })
             });
 
-            const result = await response.json();
+            if (response.ok) {
+                UISystem.showToast('success', 'Selection approved successfully! Products marked as SOLD.');
 
-            if (!response.ok) {
-                throw new Error(result.message || 'Error approving selection');
-            }
-
-            if (result.success) {
-                this.showNotification(`✅ Selection ${selectionId} approved successfully!`, 'success');
-                await this.refreshData();
-                console.log('📁 Folder moved to SYSTEM_SOLD:', result.googleDrive?.finalFolderName);
+                // Recarregar tabela após 2 segundos
+                setTimeout(() => {
+                    this.loadSelections();
+                }, 2000);
             } else {
-                throw new Error(result.message || 'Unknown error in approval');
+                throw new Error('Failed to approve');
             }
-
         } catch (error) {
-            console.error('❌ Error approving selection:', error);
-            this.showNotification(`Error approving: ${error.message}`, 'error');
-        } finally {
-            this.setLoading(false);
+            console.error('Error approving:', error);
+            UISystem.showToast('error', 'Error approving selection');
+
+            // Reverter status visual em caso de erro
+            if (statusCell) {
+                statusCell.innerHTML = originalStatus;
+            }
+            if (actionsCell) {
+                actionsCell.innerHTML = originalActions;
+            }
         }
     }
 
-    // ===== CANCEL SELECTION =====
     async cancelSelection(selectionId) {
+        // Confirm com modal bonito
+        const confirmed = await UISystem.confirm(
+            'Cancel this selection?',
+            'All photos will be returned to their original locations. This may take a few minutes.'
+        );
+
+        if (!confirmed) return;
+
+        // Encontrar a linha na tabela
+        const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
+        if (!row) {
+            console.error('Row not found for selection:', selectionId);
+            UISystem.showToast('error', 'Could not find selection in table');
+            return;
+        }
+
+        // Atualizar status visual para "CANCELLING..."
+        const statusCell = row.querySelector('td:nth-child(5)'); // 5ª coluna é status
+        const originalStatus = statusCell ? statusCell.innerHTML : '';
+
+        if (statusCell) {
+            statusCell.innerHTML = `
+                <span class="badge badge-cancelling">
+                    <span class="spinner-inline"></span>
+                    CANCELLING...
+                </span>
+            `;
+        }
+
+        // NOVO: Esconder botões durante processamento
+        const actionsCell = row.querySelector('td:last-child'); // Última coluna são as ações
+        const originalActions = actionsCell ? actionsCell.innerHTML : '';
+
+        if (actionsCell) {
+            actionsCell.innerHTML = `
+                <div style="text-align: center;">
+                    <span style="color: #dc3545; font-size: 20px;">🔒</span>
+                    <br>
+                    <small style="color: #999;">Locked</small>
+                </div>
+            `;
+        }
+
         try {
-            const confirmMessage = `Are you sure you want to CANCEL selection ${selectionId}?\n\nThis action will:\n• Release reserved photos\n• Notify the client\n• Change status to cancelled`;
-
-            if (!confirm(confirmMessage)) {
-                return;
-            }
-
-            const reason = prompt('Reason for cancellation (optional):');
-
-            this.setLoading(true);
-            console.log(`❌ Cancelling selection: ${selectionId}`);
-
             const response = await fetch(`/api/selections/${selectionId}/cancel`, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
                 body: JSON.stringify({
                     adminUser: 'admin',
-                    reason: reason || ''
+                    reason: 'Cancelled by admin'
                 })
             });
 
-            const result = await response.json();
+            if (response.ok) {
+                UISystem.showToast('success', 'Selection cancelled successfully!');
 
-            if (!response.ok) {
-                throw new Error(result.message || 'Error cancelling selection');
-            }
-
-            if (result.success) {
-                this.showNotification(`✅ Selection ${selectionId} cancelled successfully!`, 'success');
-                await this.refreshData();
+                // Recarregar tabela após 2 segundos
+                setTimeout(() => {
+                    this.loadSelections();
+                }, 2000);
             } else {
-                throw new Error(result.message || 'Unknown error in cancellation');
+                throw new Error('Failed to cancel');
+            }
+        } catch (error) {
+            console.error('Error cancelling:', error);
+            UISystem.showToast('error', 'Error cancelling selection');
+
+            // Reverter status visual em caso de erro
+            if (statusCell) {
+                statusCell.innerHTML = originalStatus;
             }
 
-        } catch (error) {
-            console.error('❌ Error cancelling selection:', error);
-            this.showNotification(`Error cancelling: ${error.message}`, 'error');
-        } finally {
-            this.setLoading(false);
+            // NOVO: Restaurar botões em caso de erro
+            if (actionsCell) {
+                actionsCell.innerHTML = originalActions;
+            }
         }
     }
 

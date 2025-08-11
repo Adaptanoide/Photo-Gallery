@@ -108,7 +108,7 @@ router.post('/', async (req, res) => {
         if (existingActive) {
             return res.status(400).json({
                 success: false,
-                message: `Cliente ${clientCode} já possui uma seleção especial (${existingActive.status}): ${existingActive.specialSelectionConfig?.selectionName || existingActive.selectionId}`,
+                message: `Cliente ${clientCode} já possui uma seleção especial: ${existingActive.specialSelectionConfig?.selectionName || existingActive.selectionId}`,
                 existingSelection: {
                     selectionId: existingActive.selectionId,
                     selectionName: existingActive.specialSelectionConfig?.selectionName,
@@ -201,6 +201,22 @@ router.delete('/:selectionId', async (req, res) => {
         const adminUser = req.user?.username || 'admin';
 
         console.log(`🗑️ Deletando seleção especial ${selectionId}...`);
+
+        // NOVO: Marcar como deleting antes de processar
+        const Selection = require('../models/Selection');
+        const selection = await Selection.findOne({ selectionId });
+
+        if (selection) {
+            selection.status = 'deleting';
+            selection.processStatus = {
+                active: true,
+                type: 'deleting',
+                message: 'Deleting special selection...',
+                startedAt: new Date()
+            };
+            await selection.save();
+            console.log('📊 Status atualizado para DELETING');
+        }
 
         const result = await SpecialSelectionService.deactivateSpecialSelection(
             selectionId,

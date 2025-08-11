@@ -188,7 +188,7 @@ class AdminSpecialSelections {
                     </h2>
                 </div>
                 <div class="special-selections-actions">
-                    <button id="btnRefreshSpecialSelections" class="btn btn-outline">
+                    <button id="btnRefreshSpecialSelections" class="btn btn-secondary">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                     <button id="btnCreateSpecialSelection" class="btn btn-primary">
@@ -259,7 +259,8 @@ class AdminSpecialSelections {
                         <label class="special-filter-label">Status</label>
                         <select id="filterSpecialStatus" class="special-filter-select">
                             <option value="all">All Status</option>
-                            <option value="processing">🔄 Processing</option>
+                            <option value="processing">⚙️ Processing</option>
+                            <option value="pending_approval">⏳ Pending Approval</option>
                             <option value="active">✅ Active</option>
                             <option value="inactive">⏸️ Inactive</option>
                             <option value="cancelled">❌ Cancelled</option>
@@ -275,8 +276,8 @@ class AdminSpecialSelections {
                     </div>
                     <div class="special-filter-group">
                         <label class="special-filter-label">&nbsp;</label>
-                        <button id="btnApplySpecialFilters" class="btn btn-outline">
-                            <i class="fas fa-filter"></i> Apply Filters
+                        <button id="btnApplySpecialFilters" class="btn-filter">
+                            <i class="fas fa-filter"></i> Filter
                         </button>
                     </div>
                 </div>
@@ -393,7 +394,7 @@ class AdminSpecialSelections {
         }
 
         return this.specialSelections.map(selection => `
-            <tr>
+            <tr data-selection-id="${selection.selectionId}">
                 <td>
                     <strong>${selection.selectionName || 'Unnamed Selection'}</strong>
                 </td>
@@ -418,6 +419,27 @@ class AdminSpecialSelections {
     }
 
     getActionButtons(selection) {
+        // Se está processando, mostrar locked
+        const realStatus = this.getProcessingStatus(selection);
+        if (realStatus === 'processing') {
+            return `
+                <div style="text-align: center;">
+                    <span style="color: #dbb934; font-size: 20px;">🔒</span>
+                    <br>
+                    <small style="color: #999;">Locked</small>
+                </div>
+            `;
+        }
+        // Se está deletando, mostrar locked
+        if (selection.status === 'deleting') {
+            return `
+                <div style="text-align: center;">
+                    <span style="color: #dc3545; font-size: 20px;">🔒</span>
+                    <br>
+                    <small style="color: #999;">Locked</small>
+                </div>
+            `;
+        }
         // SOLD/FINALIZED - só View
         if (selection.status === 'finalized') {
             return `
@@ -819,7 +841,17 @@ class AdminSpecialSelections {
 
         } catch (error) {
             console.error('❌ Erro ao salvar seleção especial:', error);
-            this.showNotification(`Error: ${error.message}`, 'error');
+            // Verificar se é erro de cliente com seleção pendente
+            if (error.message.includes('já possui uma seleção especial')) {
+                UISystem.showModal({
+                    icon: '⚠️',
+                    title: 'Cliente já tem Special Selection',
+                    content: `<p>${error.message}</p>`,
+                    footer: `<button class="btn-primary" onclick="this.closest('.ui-modal-backdrop').remove()">OK</button>`
+                });
+            } else {
+                UISystem.showToast('error', `Error: ${error.message}`);
+            }
         } finally {
             this.setLoading('btnSaveSpecialSelection', false);
         }
@@ -861,9 +893,14 @@ class AdminSpecialSelections {
     }
 
     async activateSelection(selectionId) {
-        if (!confirm('Are you sure you want to activate this special selection? The client will immediately gain access to it.')) {
-            return;
-        }
+        const confirmed = await UISystem.confirm(
+            'Activate Special Selection',
+            'Are you sure you want to activate this special selection? The client will immediately gain access to it.',
+            'Activate',
+            'Cancel'
+        );
+
+        if (!confirmed) return;
 
         try {
             // ✅ PREVENIR MÚLTIPLAS CHAMADAS
@@ -910,9 +947,14 @@ class AdminSpecialSelections {
     }
 
     async deactivateSelection(selectionId) {
-        if (!confirm('Are you sure you want to deactivate this special selection? The client will lose access to it.')) {
-            return;
-        }
+        const confirmed = await UISystem.confirm(
+            'Deactivate Special Selection',
+            'Are you sure you want to deactivate this special selection? The client will lose access to it.',
+            'Deactivate',
+            'Cancel'
+        );
+
+        if (!confirmed) return;
 
         try {
             // ✅ PREVENIR MÚLTIPLAS CHAMADAS
@@ -963,8 +1005,39 @@ class AdminSpecialSelections {
     }
 
     async deleteSelection(selectionId) {
-        if (!confirm('Are you sure you want to delete this special selection? This action cannot be undone. All photos will be returned to the original stock.')) {
-            return;
+        // Confirm com modal bonito
+        const confirmed = await UISystem.confirm(
+            'Delete this special selection?',
+            'This action cannot be undone. All photos will be returned to the original stock.'
+        );
+
+        if (!confirmed) return;
+
+        // Encontrar a linha na tabela
+        const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
+        if (row) {
+            // Atualizar status visual para "DELETING..."
+            const statusCell = row.querySelector('.status-cell, td:nth-child(4)');
+            if (statusCell) {
+                statusCell.innerHTML = `
+                <span class="badge badge-deleting">
+                    <span class="spinner-inline"></span>
+                    DELETING...
+                </span>
+            `;
+            }
+
+            // Desabilitar botões
+            const actionsCell = row.querySelector('.actions-cell, td:last-child');
+            if (actionsCell) {
+                actionsCell.innerHTML = `
+                <div style="text-align: center;">
+                    <span style="color: #dc3545; font-size: 20px;">🔒</span>
+                    <br>
+                    <small style="color: #999;">Locked</small>
+                </div>
+            `;
+            }
         }
 
         try {
@@ -976,15 +1049,23 @@ class AdminSpecialSelections {
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification('Special selection deleted successfully!', 'success');
-                await this.refreshData();
+                UISystem.showToast('success', 'Special selection deleted successfully!');
+
+                // Recarregar tabela após 2 segundos
+                setTimeout(() => {
+                    this.refreshData();
+                }, 2000);
             } else {
                 throw new Error(data.message || 'Failed to delete selection');
             }
-
         } catch (error) {
             console.error('❌ Erro ao deletar seleção:', error);
-            this.showNotification(`Error: ${error.message}`, 'error');
+            UISystem.showToast('error', `Error: ${error.message}`);
+
+            // Reverter visual se der erro
+            if (row) {
+                this.refreshData();
+            }
         }
     }
 
@@ -993,7 +1074,6 @@ class AdminSpecialSelections {
         console.log('🔄 Atualizando dados...');
         await this.loadInitialData();
         this.updateTable();
-        this.showNotification('Data refreshed successfully!', 'success');
     }
 
     applyFilters() {
@@ -1022,6 +1102,11 @@ class AdminSpecialSelections {
                 break;
             case 'cancelled':
                 backendFilters.status = 'cancelled';
+                break;
+            case 'pending_approval':
+                backendFilters.status = 'pending';
+                // Flag especial para diferenciar de processing
+                backendFilters.pendingApproval = true;
                 break;
             default:
                 backendFilters.status = 'all';
@@ -1133,16 +1218,16 @@ class AdminSpecialSelections {
     }
 
     showNotification(message, type = 'info') {
-        // Implementar sistema de notificações
+        // Sistema de notificações com UISystem
         console.log(`${type.toUpperCase()}: ${message}`);
 
-        // Fallback para alert por enquanto
+        // Usar UISystem.showToast ao invés de alert
         if (type === 'error') {
-            alert(`Error: ${message}`);
+            UISystem.showToast('error', message);
         } else if (type === 'success') {
-            alert(`Success: ${message}`);
+            UISystem.showToast('success', message);
         } else {
-            alert(message);
+            UISystem.showToast('info', message);
         }
     }
 
@@ -1199,6 +1284,10 @@ class AdminSpecialSelections {
 
     // ===== FUNÇÃO HELPER PARA DETERMINAR STATUS REAL =====
     getProcessingStatus(selection) {
+        // ADICIONAR ESTAS LINHAS NO INÍCIO:
+        if (selection.status === 'deleting') {
+            return 'deleting';
+        }
         // Para special selections
         if (selection.selectionType === 'special') {
             // PENDING com items VAZIO = está processando
@@ -1224,6 +1313,7 @@ class AdminSpecialSelections {
 
         switch (realStatus) {
             case 'processing': return 'processing';
+            case 'deleting': return 'deleting';
             case 'active': return 'active';
             case 'inactive': return 'inactive';
             case 'pending_approval': return 'pending-approval';
@@ -1238,6 +1328,7 @@ class AdminSpecialSelections {
 
         switch (realStatus) {
             case 'processing': return '<i class="fas fa-spinner fa-spin"></i>';
+            case 'deleting': return '<i class="fas fa-spinner fa-spin"></i>';
             case 'active': return '<i class="fas fa-check-circle"></i>';
             case 'inactive': return '<i class="fas fa-pause-circle"></i>';
             case 'pending_approval': return '<i class="fas fa-clock"></i>';
@@ -1252,6 +1343,7 @@ class AdminSpecialSelections {
 
         switch (realStatus) {
             case 'processing': return 'Processing...';
+            case 'deleting': return 'Deleting...';
             case 'active': return 'Active';
             case 'inactive': return 'Inactive';
             case 'pending_approval': return 'Pending Approval';

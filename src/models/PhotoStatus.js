@@ -463,7 +463,7 @@ photoStatusSchema.methods.renewLock = function(adminUser, additionalMinutes = 30
 };
 
 // ===== SISTEMA DE RESERVA =====
-photoStatusSchema.methods.reserve = function(clientData, durationMinutes = 120) {
+photoStatusSchema.methods.reserve = function(clientData, durationMinutes = 240) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (durationMinutes * 60 * 1000));
 

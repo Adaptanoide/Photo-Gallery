@@ -1,37 +1,96 @@
-// SCRIPT DE LIMPEZA DO BANCO DE DADOS
-// Manter apenas cliente 6544 e limpar todos os dados de teste
+// SCRIPT DE LIMPEZA COMPLETA DO BANCO DE DADOS
+// MANTÉM APENAS ADMINS - LIMPA TODO O RESTO
 require('dotenv').config();
 const mongoose = require('mongoose');
-const AccessCode = require('./src/models/AccessCode');
-const Selection = require('./src/models/Selection');
-const PhotoStatus = require('./src/models/PhotoStatus');
-const Cart = require('./src/models/Cart');
+
 async function cleanupDatabase() {
     try {
-        console.log('🧹 INICIANDO LIMPEZA COMPLETA...');
+        console.log('🧹 INICIANDO LIMPEZA TOTAL DO BANCO...');
+        console.log('⚠️  AVISO: Isto vai ZERAR o banco (exceto admins)!\n');
 
-        // 1. DELETAR TODOS OS CLIENTES (inclusive 6544)
-        console.log('🗑️ Removendo TODOS os clientes...');
-        const deletedClients = await AccessCode.deleteMany({});
-        console.log(`✅ ${deletedClients.deletedCount} clientes removidos`);
+        // Importar TODOS os modelos
+        const AccessCode = require('./src/models/AccessCode');
+        const Selection = require('./src/models/Selection');
+        const PhotoStatus = require('./src/models/PhotoStatus');
+        const Cart = require('./src/models/Cart');
+        const Product = require('./src/models/Product');
+        const PhotoCategory = require('./src/models/PhotoCategory');
+        const QuantityDiscount = require('./src/models/QuantityDiscount');
+        const EmailConfig = require('./src/models/EmailConfig');
 
-        // 2. DELETAR TODAS AS SELEÇÕES  
-        console.log('🗑️ Removendo TODAS as seleções...');
-        const deletedSelections = await Selection.deleteMany({});
-        console.log(`✅ ${deletedSelections.deletedCount} seleções removidas`);
+        // Tentar importar Sale se existir
+        let Sale;
+        try {
+            Sale = require('./src/models/Sale');
+        } catch (e) {
+            console.log('📌 Modelo Sale não encontrado (normal)');
+        }
 
-        // 3. LIMPAR PHOTO STATUS
-        console.log('🗑️ Removendo photo status...');
-        const deletedPhotoStatus = await PhotoStatus.deleteMany({});
-        console.log(`✅ ${deletedPhotoStatus.deletedCount} photo status removidos`);
+        // 1. LIMPAR PRODUCTS (IMPORTANTE - RESOLVE O BUG!)
+        console.log('🗑️ Limpando PRODUCTS e reservas bugadas...');
+        const deletedProducts = await Product.deleteMany({});
+        console.log(`✅ ${deletedProducts.deletedCount} produtos removidos`);
 
-        // 4. LIMPAR TODOS OS CARRINHOS
-        console.log('🗑️ Removendo TODOS os carrinhos...');
+        // 2. LIMPAR CARRINHOS
+        console.log('🗑️ Limpando todos os carrinhos...');
         const deletedCarts = await Cart.deleteMany({});
         console.log(`✅ ${deletedCarts.deletedCount} carrinhos removidos`);
 
-        console.log('✅ MANTIDOS: PhotoCategory (preços), QuantityDiscount, EmailConfig');
-        console.log('🎉 LIMPEZA COMPLETA CONCLUÍDA!');
+        // 3. LIMPAR SELEÇÕES
+        console.log('🗑️ Limpando todas as seleções...');
+        const deletedSelections = await Selection.deleteMany({});
+        console.log(`✅ ${deletedSelections.deletedCount} seleções removidas`);
+
+        // 4. LIMPAR CLIENTES
+        console.log('🗑️ Limpando todos os clientes...');
+        const deletedClients = await AccessCode.deleteMany({});
+        console.log(`✅ ${deletedClients.deletedCount} clientes removidos`);
+
+        // 5. LIMPAR PHOTO STATUS
+        console.log('🗑️ Limpando photo status...');
+        const deletedPhotoStatus = await PhotoStatus.deleteMany({});
+        console.log(`✅ ${deletedPhotoStatus.deletedCount} photo status removidos`);
+
+        // 6. LIMPAR SALES (se existir)
+        if (Sale) {
+            console.log('🗑️ Limpando vendas...');
+            const deletedSales = await Sale.deleteMany({});
+            console.log(`✅ ${deletedSales.deletedCount} vendas removidas`);
+        }
+
+        // 7. LIMPAR PREÇOS E CATEGORIAS
+        console.log('🗑️ Limpando categorias de preços...');
+        const deletedCategories = await PhotoCategory.deleteMany({});
+        console.log(`✅ ${deletedCategories.deletedCount} categorias de preços removidas`);
+
+        // 8. LIMPAR DESCONTOS
+        console.log('🗑️ Limpando regras de desconto...');
+        const deletedDiscounts = await QuantityDiscount.deleteMany({});
+        console.log(`✅ ${deletedDiscounts.deletedCount} descontos removidos`);
+
+        // 9. MANTER CONFIGURAÇÕES DE EMAIL
+        console.log('✅ MANTIDO: Configurações de Email (para não perder SMTP)');
+
+        // VERIFICAR O QUE FOI MANTIDO
+        console.log('\n✅ MANTIDO: Admins (para você fazer login)');
+        console.log('✅ MANTIDO: EmailConfig (configurações SMTP)');
+
+        // Contar admins mantidos
+        const Admin = require('./src/models/Admin');
+        const adminCount = await Admin.countDocuments({});
+        console.log(`📊 ${adminCount} admin(s) mantido(s) no sistema`);
+
+        console.log('\n🎉 LIMPEZA CONCLUÍDA COM SUCESSO!');
+        console.log('📊 Banco de dados está ZERADO (exceto admins)!');
+
+        // Verificar se ainda há produtos com reserva (não deveria ter)
+        const remainingProducts = await Product.countDocuments({});
+        if (remainingProducts > 0) {
+            console.log(`⚠️  ERRO: ${remainingProducts} produtos ainda existem!`);
+        } else {
+            console.log('✅ Todos os produtos foram limpos');
+            console.log('✅ Foto 16482 e todas as outras estão livres agora!');
+        }
 
         return { success: true };
 
@@ -43,25 +102,35 @@ async function cleanupDatabase() {
 
 // EXECUTAR LIMPEZA
 async function runCleanup() {
-    console.log('🚀 SCRIPT DE LIMPEZA DO SUNSHINE COWHIDES');
-    console.log('⚠️ ATENÇÃO: Esta operação é IRREVERSÍVEL');
-    console.log('📋 Vai deletar TODOS os dados exceto preços (PhotoCategory)\n');
+    console.log('🚀 SUNSHINE COWHIDES - LIMPEZA TOTAL');
+    console.log('='.repeat(50));
+    console.log('⚠️  ESTA OPERAÇÃO É IRREVERSÍVEL!');
+    console.log('✅ Mantém apenas: ADMINS');
+    console.log('🗑️  Remove: Clientes, Produtos, Carrinhos, Seleções,');
+    console.log('           Preços, Descontos, Emails, Photo Status');
+    console.log('='.repeat(50));
+    console.log('');
 
-    // Conectar ao MongoDB se não estiver conectado
+    // Conectar ao MongoDB
     if (mongoose.connection.readyState !== 1) {
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log('🔗 Conectado ao MongoDB');
+        console.log('🔗 Conectado ao MongoDB\n');
     }
 
     const result = await cleanupDatabase();
 
     if (result.success) {
-        console.log('\n📈 PRÓXIMOS PASSOS:');
-        console.log('1. Verificar dashboard (deve mostrar 0 clientes)');
-        console.log('2. Criar novos clientes para testes');
-        console.log('3. Testar Special Selections do zero');
-        console.log('4. Price Management mantido intacto ✅');
+        console.log('\n📋 PRÓXIMOS PASSOS:');
+        console.log('1. ✅ Você pode fazer login como admin');
+        console.log('2. 📝 Criar novos clientes de teste');
+        console.log('3. 💰 Reconfigurar preços se necessário');
+        console.log('4. 📸 Todas as fotos estão 100% livres');
+        console.log('5. 🧪 Sistema pronto para testes limpos');
     }
+
+    // Desconectar
+    await mongoose.disconnect();
+    console.log('\n🔌 Desconectado do MongoDB');
 
     return result;
 }
