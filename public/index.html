@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sunshine Cowhides - Dashboard</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/images/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/images/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/images/favicon/site.webmanifest" />
+
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/home-light-theme.css">
+    <link rel="stylesheet" href="css/toast-notifications.css">
+    <link rel="stylesheet" href="css/admin-modal-dark.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
 </head>
-<body>
+
+<body class="home-page">
     <!-- Header Simplificado -->
     <header class="luxury-header">
         <div class="container">
@@ -20,69 +34,62 @@
 
     <!-- Main Content -->
     <main class="main">
-    <!-- Welcome Section Luxuosa -->
-    <section id="welcome" class="luxury-welcome-section">
-        <div class="luxury-container">
-            <!-- Logo e Título Elegante -->
-            <div class="luxury-brand">
-                <div class="luxury-logo">
-                    <i class="fas fa-sun"></i>
-                </div>
-                <h1 class="luxury-title">Welcome</h1>
-                <p class="luxury-subtitle">
-                    Please enter your access code to view our premium leather collection.
-                </p>
-            </div>
-
-            <!-- Formulário de Acesso Direto -->
-            <div class="luxury-access-form">
-                <form id="directClientForm" class="direct-access-form">
-                    <div class="code-input-group">
-                        <input 
-                            type="text" 
-                            id="directClientCode" 
-                            class="luxury-code-input" 
-                            placeholder="0 0 0 0" 
-                            maxlength="4" 
-                            pattern="[0-9]{4}"
-                            autocomplete="off"
-                            required
-                        >
+        <!-- Welcome Section Luxuosa -->
+        <section id="welcome" class="luxury-welcome-section">
+            <div class="luxury-container">
+                <!-- Logo e Título Elegante -->
+                <div class="luxury-brand">
+                    <div class="luxury-logo">
+                        <img src="/images/logo-transparent.png" alt="Sunshine Cowhides Logo" class="company-logo">
                     </div>
-                    <button type="submit" class="luxury-btn-primary">
-                        <i class="fas fa-unlock"></i>
-                        <span>Enter Gallery</span>
-                    </button>
-                </form>
-                
-                <!-- Link discreto para admin -->
-                <div class="luxury-admin-access">
-                    <button class="luxury-admin-link" onclick="showAdminLogin()">
-                        <i class="fas fa-cog"></i>
-                        Administrative Access
-                    </button>
+                    <h1 class="luxury-title">Welcome</h1>
+                    <p class="luxury-subtitle">
+                        Please enter your access code to view our premium leather collection.
+                    </p>
+                </div>
+
+                <!-- Formulário de Acesso Direto -->
+                <div class="luxury-access-form">
+                    <form id="directClientForm" class="direct-access-form">
+                        <div class="code-input-group">
+                            <input type="text" id="directClientCode" class="luxury-code-input" placeholder="0 0 0 0"
+                                maxlength="4" pattern="[0-9]{4}" autocomplete="off" required>
+                        </div>
+                        <button type="submit" class="luxury-btn-primary">
+                            <i class="fas fa-unlock"></i>
+                            <span>Enter Gallery</span>
+                        </button>
+                    </form>
+
+                    <!-- Link discreto para admin -->
+                    <div class="luxury-admin-access">
+                        <button class="luxury-admin-link" onclick="showAdminLogin()">
+                            <i class="fas fa-cog"></i>
+                            Administrative Access
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
         <!-- Admin Login Modal -->
         <div id="adminModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal('adminModal')">&times;</span>
-                <h2><i class="fas fa-shield-alt"></i> Login Administrativo</h2>
+                <h2><i class="fas fa-shield-alt"></i> Administrative Login</h2>
                 <form id="adminLoginForm">
                     <div class="form-group">
-                        <label>Usuário:</label>
+                        <label>Username:</label>
                         <input type="text" id="adminUser" required>
                     </div>
                     <div class="form-group">
-                        <label>Senha:</label>
+                        <label>Password:</label>
                         <input type="password" id="adminPass" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-full">
-                        <i class="fas fa-sign-in-alt"></i> Entrar
+                        <i class="fas fa-sign-in-alt"></i> Sign In
                     </button>
+                </form>
                 </form>
             </div>
         </div>
@@ -118,10 +125,11 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy;  2025 Sunshine Cowhides. All rights reserved worldwide.</p>
+            <p>&copy; 2025 Sunshine Cowhides. All rights reserved worldwide.</p>
         </div>
     </footer>
 
     <script src="js/app.js"></script>
 </body>
+
 </html>

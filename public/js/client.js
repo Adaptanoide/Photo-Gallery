@@ -299,6 +299,9 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
             photo.thumbnailSmall ||
             '';
 
+        // Verificar se está no carrinho
+        const isInCart = window.CartSystem && CartSystem.isInCart(photo.id);
+
         return `
             <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
                 <img src="${thumbnailUrl}" 
@@ -310,6 +313,14 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
                 <div class="photo-price ${categoryPrice?.hasPrice ? '' : 'no-price'}">
                     ${categoryPrice?.formattedPrice || 'Check price'}
                 </div>
+
+                <!-- NOVO: Botão Add to Cart -->
+                <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
+                        onclick="event.stopPropagation(); addToCartFromThumbnail('${photo.id}', ${index})"
+                        title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
+                    <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
+                    <span>${isInCart ? 'Remove' : 'Add'}</span>
+                </button>
                 
                 <div class="photo-placeholder" style="display: none;">
                     <i class="fas fa-image"></i>
@@ -351,6 +362,13 @@ async function openPhotoModal(photoIndex) {
 
     // Carregar foto em alta resolução
     await loadPhotoInModal(photo.id);
+
+    // SINCRONIZAR BOTÃO DO CARRINHO NO MODAL
+    if (window.CartSystem && window.CartSystem.updateToggleButton) {
+        setTimeout(() => {
+            window.CartSystem.updateToggleButton();
+        }, 100);
+    }
 }
 
 // Atualizar informações comerciais do modal
@@ -358,10 +376,10 @@ async function updateModalCommercialInfo(photo, photoIndex, totalPhotos) {
     // 1. HEADER - Nome da categoria em vez de nome técnico
     const categoryName = getCurrentCategoryDisplayName();
     document.getElementById('modalPhotoTitle').textContent = categoryName;
-    
+
     // 2. CONTADOR (manter como está)
     document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
-    
+
     // 3. FOOTER - Preço e qualidade em vez de dados técnicos
     await updateModalPriceInfo();
 }
@@ -369,7 +387,7 @@ async function updateModalCommercialInfo(photo, photoIndex, totalPhotos) {
 // Obter nome da categoria atual para exibição
 function getCurrentCategoryDisplayName() {
     const currentPath = navigationState.currentPath;
-    
+
     if (currentPath && currentPath.length > 0) {
         // Se há subcategoria, mostrar: "Categoria Principal > Subcategoria"
         if (currentPath.length > 1) {
@@ -381,7 +399,7 @@ function getCurrentCategoryDisplayName() {
             return currentPath[0].name;
         }
     }
-    
+
     // Fallback se não houver path
     return 'Premium Cowhide Selection';
 }
@@ -391,7 +409,7 @@ async function updateModalPriceInfo() {
     try {
         const currentFolderId = navigationState.currentFolderId;
         const priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
-        
+
         if (priceInfo && priceInfo.hasPrice) {
             // Badge dourado igual aos thumbnails
             document.getElementById('modalPhotoSize').innerHTML = `
@@ -733,3 +751,103 @@ async function loadCategoryPrice(folderId) {
         };
     }
 }
+
+// ===== FUNÇÃO AUXILIAR PARA PEGAR NOME DA CATEGORIA =====
+function getCurrentCategoryName() {
+    // Pegar o último item do path
+    if (navigationState.currentPath && navigationState.currentPath.length > 0) {
+        return navigationState.currentPath[navigationState.currentPath.length - 1];
+    }
+    return 'Products';
+}
+
+// ===== FUNÇÃO PARA ADD TO CART DA THUMBNAIL =====
+async function addToCartFromThumbnail(driveFileId, photoIndex) {
+    try {
+        // Pegar a foto
+        const photo = navigationState.currentPhotos[photoIndex];
+        if (!photo) {
+            console.error('Photo not found');
+            return;
+        }
+
+        // Verificar se já está no carrinho
+        const isInCart = window.CartSystem && CartSystem.isInCart(driveFileId);
+
+        if (isInCart) {
+            // Remover do carrinho
+            await CartSystem.removeItem(driveFileId);
+            showNotification('Item removed from cart', 'info');
+            // Atualizar botão para ADD
+            const button = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
+            if (button) {
+                button.classList.remove('in-cart');
+                button.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
+                button.title = 'Add to cart';
+            }
+        } else {
+            // Adicionar ao carrinho
+            // Buscar preço da categoria
+            const currentFolderId = navigationState.currentFolderId;
+            let priceInfo = { hasPrice: false, price: 0, formattedPrice: 'No price' };
+
+            if (currentFolderId && window.loadCategoryPrice) {
+                try {
+                    priceInfo = await window.loadCategoryPrice(currentFolderId);
+                    console.log('✅ Preço encontrado para thumbnail:', priceInfo);
+                } catch (error) {
+                    console.warn('❌ Erro ao buscar preço para thumbnail:', error);
+                }
+            }
+            await CartSystem.addItem(driveFileId, {
+                fileName: photo.name,
+                thumbnailUrl: photo.thumbnailLink || photo.webViewLink,
+                fullImageUrl: photo.webViewLink,
+                category: navigationState.currentPath[0]?.name || 'Category',
+                categoryName: navigationState.currentPath[navigationState.currentPath.length - 1] || 'Products',
+                categoryPath: navigationState.currentPath.join(' > '),
+                price: priceInfo.price,
+                formattedPrice: priceInfo.formattedPrice,
+                hasPrice: priceInfo.hasPrice
+            });
+            showNotification('Item added to cart!', 'success');
+            // Atualizar botão para REMOVE  
+            const button = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
+            if (button) {
+                button.classList.add('in-cart');
+                button.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+                button.title = 'Remove from cart';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error updating cart', 'error');
+    }
+}
+
+// ===== SISTEMA DE SINCRONIZAÇÃO GLOBAL =====
+window.syncCartUIFromRemove = function (driveFileId) {
+    // Só atualizar se o botão existir na tela atual
+    const thumbButton = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
+    if (thumbButton) {
+        thumbButton.classList.remove('in-cart');
+        thumbButton.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
+        thumbButton.title = 'Add to cart';
+        console.log(`✅ Thumbnail ${driveFileId} sincronizado após remoção`);
+    }
+}
+
+// Sincronizar quando ADICIONA pelo modal
+window.syncCartUIFromAdd = function (driveFileId) {
+    // Só atualizar se o botão existir na tela atual
+    const thumbButton = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
+    if (thumbButton) {
+        thumbButton.classList.add('in-cart');
+        thumbButton.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+        thumbButton.title = 'Remove from cart';
+        console.log(`✅ Thumbnail ${driveFileId} sincronizado após adição via modal`);
+    }
+}
+
+// Tornar a função global
+window.addToCartFromThumbnail = addToCartFromThumbnail;

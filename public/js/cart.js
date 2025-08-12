@@ -246,7 +246,10 @@ window.CartSystem = {
             // Feedback visual
             this.showNotification(`Item removed from cart`, 'info');
             this.updateToggleButton();
-
+            // Sincronizar com thumbnails
+            if (window.syncCartUIFromRemove) {
+                window.syncCartUIFromRemove(driveFileId);
+            }
             console.log(`✅ Item ${driveFileId} removido do carrinho`);
 
             return result;
@@ -804,6 +807,12 @@ window.toggleCartItem = async function () {
             console.log('🟡 Dados que serão enviados para addItem:', itemData); // ← NOVO LOG
 
             await CartSystem.addItem(currentPhoto, itemData);
+
+            // Sincronizar thumbnails quando adiciona pelo modal
+            if (window.syncCartUIFromAdd) {
+                window.syncCartUIFromAdd(currentPhoto);
+            }
+
         }
     } catch (error) {
         console.error('❌ Erro no toggle do carrinho:', error);

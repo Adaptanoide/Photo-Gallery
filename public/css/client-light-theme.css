@@ -1,0 +1,450 @@
+/* public/css/client-light-theme.css */
+/* ===== TEMA LIGHT EXCLUSIVO PARA CLIENTES ===== */
+/* Este arquivo sobrescreve as cores dark para light mantendo o dourado */
+
+/* Aplicar apenas quando estiver na página do cliente */
+body.client-page {
+    /* === SOBRESCREVER CORES PARA TEMA LIGHT === */
+    
+    /* Fundos - Invertemos completamente */
+    --luxury-dark: #ffffff;              /* Era #2c2c34, agora branco puro */
+    --luxury-medium: #f8f9fa;            /* Era #3a3a42, agora cinza muito claro */
+    --luxury-light: #2c2c34;             /* Era #f8f9fa, agora escuro para contraste */
+    
+    /* Dourado - MANTÉM IGUAL */
+    --gold-primary: #d4af37;             /* Mantém dourado */
+    --gold-hover: #b8941f;               /* Mantém dourado escuro */
+    --gold-light: rgba(212, 175, 55, 0.08); /* Mais sutil no fundo claro */
+    
+    /* Textos - Invertemos para escuro */
+    --text-primary: #1a1a1a;             /* Era branco, agora quase preto */
+    --text-secondary: #4a5568;           /* Era claro, agora cinza médio */
+    --text-muted: #718096;               /* Era cinza claro, agora cinza mais escuro */
+    
+    /* Bordas e fundos */
+    --border-subtle: #e2e8f0;            /* Era escuro, agora cinza bem claro */
+    --hover-bg: #f7fafc;                 /* Era escuro, agora quase branco */
+    
+    /* Sombras mais suaves para tema light */
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-gold: 0 4px 16px rgba(212, 175, 55, 0.25);
+    
+    /* Background geral */
+    background: #ffffff;
+    background-image: none;
+}
+
+/* Remover textura escura do fundo */
+body.client-page::before {
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.015) 0%, transparent 50%);
+}
+
+/* ===== AJUSTES ESPECÍFICOS PARA COMPONENTES ===== */
+
+/* Header do Cliente - Fundo branco elegante */
+.client-page .client-luxury-header {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Logo no tema light */
+.client-page .client-header-logo {
+    color: #1a1a1a;
+}
+
+.client-page .client-header-logo i {
+    color: var(--gold-primary);
+    filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.2));
+}
+
+/* Botão de logout elegante */
+.client-page .client-logout-btn {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+}
+
+.client-page .client-logout-btn:hover {
+    background: var(--gold-primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+/* Cards e containers */
+.client-page .client-header,
+.client-page .category-card,
+.client-page .folder-card,
+.client-page .photos-gallery,
+.client-page .breadcrumb,
+.client-page .loading-section,
+.client-page .error-content,
+.client-page .navigation-loading {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.client-page .category-card:hover,
+.client-page .folder-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--gold-primary);
+}
+
+/* Breadcrumb no tema light */
+.client-page .breadcrumb {
+    background: #f8f9fa;
+}
+
+.client-page .breadcrumb-item {
+    color: var(--gold-primary);
+}
+
+.client-page .breadcrumb-item:hover:not(.current) {
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.client-page .breadcrumb-item.current {
+    background: rgba(212, 175, 55, 0.15);
+    color: #1a1a1a;
+}
+
+/* Back navigation */
+.client-page .back-navigation .btn {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+}
+
+.client-page .back-navigation .btn:hover {
+    background: var(--gold-primary);
+    color: white;
+    border-color: var(--gold-primary);
+}
+
+/* Photo thumbnails */
+.client-page .photo-thumbnail {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+}
+
+.client-page .photo-thumbnail:hover {
+    border-color: var(--gold-primary);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+/* Cart items */
+.client-page .cart-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.client-page .cart-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* ===== MODAL FULLSCREEN - Mantém escuro para destaque ===== */
+.client-page .photo-modal {
+    background: rgba(0, 0, 0, 0.95); /* Mantém escuro para destacar a foto */
+}
+
+.client-page .modal-header,
+.client-page .modal-footer {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    color: #1a1a1a;
+}
+
+.client-page .modal-header h4,
+.client-page .modal-controls span {
+    color: #1a1a1a;
+}
+
+.client-page .btn-close {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+}
+
+.client-page .btn-close:hover {
+    background: var(--gold-primary);
+    color: white;
+}
+
+/* Navigation buttons no modal */
+.client-page .nav-btn {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--gold-primary);
+    color: var(--gold-primary);
+}
+
+.client-page .nav-btn:hover:not(:disabled) {
+    background: var(--gold-primary);
+    color: white;
+}
+
+/* ===== CART SIDEBAR - Tema Light ===== */
+.client-page .cart-container {
+    background: #ffffff;
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.client-page .cart-header {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    color: white;
+}
+
+.client-page .cart-header h3 {
+    color: white;
+}
+
+.client-page .cart-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid white;
+    color: white;
+}
+
+.client-page .cart-close-btn:hover {
+    background: white;
+    color: var(--gold-primary);
+}
+
+.client-page .cart-content {
+    background: #ffffff;
+}
+
+.client-page .cart-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ===== LOADING STATES ===== */
+.client-page .loading-spinner i,
+.client-page .loading-dots .dot {
+    color: var(--gold-primary);
+}
+
+.client-page .cart-loading i,
+.client-page .photos-loading i {
+    color: var(--gold-primary);
+}
+
+/* ===== SELECTION MODAL - Light ===== */
+.client-page .selection-modal-content {
+    background: #ffffff;
+}
+
+.client-page .selection-modal-header {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    color: white;
+}
+
+.client-page .success-icon {
+    color: white;
+}
+
+.client-page .selection-modal-body {
+    background: #ffffff;
+}
+
+.client-page .selection-info,
+.client-page .next-steps {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+}
+
+/* ===== FLOATING CART BUTTON ===== */
+.client-page .cart-floating-btn {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    color: white;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.client-page .cart-floating-btn:hover {
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.client-page .cart-badge {
+    background: #ef4444;
+    color: white;
+    border: 2px solid white;
+}
+
+/* ===== ZOOM CONTROLS ===== */
+.client-page .zoom-controls-simple {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid #e2e8f0;
+}
+
+.client-page .zoom-btn-simple {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+}
+
+.client-page .zoom-btn-simple:hover:not(:disabled) {
+    background: var(--gold-primary);
+    color: white;
+}
+
+/* ===== AJUSTES DE CONTRASTE ===== */
+
+/* Garantir boa legibilidade */
+.client-page .category-card h3,
+.client-page .folder-card h4,
+.client-page .gallery-header h3 {
+    color: #1a1a1a;
+}
+
+.client-page .category-card p,
+.client-page .folder-description {
+    color: #4a5568;
+}
+
+.client-page .folder-stats span {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--gold-primary);
+}
+
+/* Photo price badges */
+.client-page .photo-price {
+    background: var(--gold-primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.client-page .photo-price.no-price {
+    background: #718096;
+    color: white;
+}
+
+/* ===== FORMULÁRIOS E INPUTS ===== */
+.client-page input,
+.client-page select,
+.client-page textarea {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #1a1a1a;
+}
+
+.client-page input:focus,
+.client-page select:focus,
+.client-page textarea:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+/* ===== SCROLLBAR CUSTOMIZADA ===== */
+.client-page ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.client-page ::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.client-page ::-webkit-scrollbar-thumb {
+    background: var(--gold-primary);
+    border-radius: 5px;
+}
+
+.client-page ::-webkit-scrollbar-thumb:hover {
+    background: var(--gold-hover);
+}
+
+/* ===== ANIMAÇÕES SUAVES ===== */
+.client-page * {
+    transition: background-color 0.3s ease, 
+                border-color 0.3s ease, 
+                box-shadow 0.3s ease;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .client-page {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .client-page .client-luxury-header,
+    .client-page .cart-floating-btn,
+    .client-page .client-logout-btn {
+        display: none !important;
+    }
+}
+
+/* ===== LOGO NO HEADER DO CLIENTE ===== */
+.client-page .header-logo-img {
+    height: 35px;
+    width: 35px;
+    object-fit: contain;
+    margin-right: 8px;
+}
+
+/* Esconder o ícone de sol se ainda existir */
+.client-page .client-header-logo i.fa-sun {
+    display: none !important;
+}
+
+/* ===== BOTÃO ADD TO CART NAS THUMBNAILS ===== */
+.thumbnail-cart-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: #28a745; /* VERDE para ADD */
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    
+    /* Escondido por padrão */
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/* Mostrar no hover da thumbnail */
+.photo-thumbnail:hover .thumbnail-cart-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Hover do botão ADD */
+.thumbnail-cart-btn:hover {
+    background: #218838;
+    transform: scale(1.05);
+}
+
+/* Estado "Remove" - Vermelho suave */
+.thumbnail-cart-btn.in-cart {
+    background: #dc3545; /* VERMELHO para REMOVE */
+    opacity: 0.9;
+    transform: translateY(0);
+}
+
+.thumbnail-cart-btn.in-cart:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+/* Mobile - sempre visível */
+@media (max-width: 768px) {
+    .thumbnail-cart-btn {
+        opacity: 0.95;
+        transform: translateY(0);
+    }
+}

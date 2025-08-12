@@ -157,7 +157,7 @@ async function handleAdminLogin(e) {
     const password = document.getElementById('adminPass').value;
 
     if (!username || !password) {
-        showNotification('Por favor, preencha todos os campos', 'error');
+        showNotification('Please fill in all fields', 'error');
         return;
     }
 
@@ -189,7 +189,7 @@ async function handleAdminLogin(e) {
             AppState.userType = 'admin';
             AppState.currentUser = data.user;
 
-            showNotification('Login realizado com sucesso!', 'success');
+            showNotification('Login successful!', 'success');
             closeModal('adminModal');
 
             setTimeout(() => {
@@ -202,7 +202,7 @@ async function handleAdminLogin(e) {
 
     } catch (error) {
         console.error('Erro no login:', error);
-        showNotification('Erro de conexão. Tente novamente.', 'error');
+        showNotification('Connection error. Please try again.', 'error');
     } finally {
         showLoading(false);
     }
@@ -334,7 +334,6 @@ async function checkSystemStatus() {
     console.log('✅ Verificação de status concluída');
 }
 
-// Sistema de notificações
 function showNotification(message, type = 'info') {
     // Remover notificação existente
     const existing = document.querySelector('.notification');
@@ -352,39 +351,17 @@ function showNotification(message, type = 'info') {
         </div>
     `;
 
-    // Adicionar estilos inline (temporário)
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 10000;
-        animation: slideInRight 0.3s ease;
-        max-width: 400px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    `;
-
-    // Cores por tipo
-    const colors = {
-        success: '#28a745',
-        error: '#dc3545',
-        warning: '#ffc107',
-        info: '#17a2b8'
-    };
-
-    notification.style.backgroundColor = colors[type] || colors.info;
-
+    // Adicionar ao body
     document.body.appendChild(notification);
+
+    // Animação de entrada (de cima para baixo)
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
 
     // Remover após 4 segundos
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
+        notification.classList.remove('show');
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
@@ -412,7 +389,7 @@ function logout() {
     AppState.accessCode = null;
     AppState.currentUser = null;
 
-    showNotification('Logout realizado com sucesso', 'success');
+    showNotification('Logout successful', 'success');
 
     setTimeout(() => {
         window.location.href = '/';

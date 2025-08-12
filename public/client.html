@@ -1,24 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client - Sunshine Cowhides</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/images/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/images/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/images/favicon/site.webmanifest" />
+
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/client.css">
     <link rel="stylesheet" href="/css/ui-system.css">
+    <link rel="stylesheet" href="css/client-light-theme.css">
+    <link rel="stylesheet" href="css/toast-notifications.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
 </head>
+
 <body class="client-page">
     <header class="client-luxury-header">
         <div class="container">
             <div class="client-header-logo">
-                <i class="fas fa-sun"></i>
+                <img src="/images/logo-small.png" alt="Sunshine Cowhides" class="header-logo-img">
                 <span>Sunshine Cowhides - Gallery</span>
             </div>
             <nav class="client-header-nav">
                 <button onclick="logout()" class="client-logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> 
+                    <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </button>
             </nav>
@@ -103,12 +117,12 @@
                                 <span id="photosCount">0 photos</span>
                             </div>
                         </div>
-                        
+
                         <!-- Grid de fotos -->
                         <div id="photosGrid" class="photos-grid">
                             <!-- Fotos serão carregadas aqui -->
                         </div>
-                        
+
                         <!-- Loading de fotos -->
                         <div id="photosLoading" class="photos-loading" style="display: none;">
                             <i class="fas fa-spinner fa-spin"></i>
@@ -140,24 +154,24 @@
                     </button>
                 </div>
             </div>
-            
+
             <div class="modal-body">
                 <button onclick="previousPhoto()" class="nav-btn nav-prev" id="prevBtn">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                
+
                 <div class="photo-container">
                     <img id="modalPhoto" src="" alt="Photo in fullscreen" />
                     <div id="photoLoadingSpinner" class="photo-loading-spinner" style="display: none;">
                         <i class="fas fa-spinner fa-spin fa-2x"></i>
                     </div>
                 </div>
-                
+
                 <button onclick="nextPhoto()" class="nav-btn nav-next" id="nextBtn">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
-            
+
             <div class="modal-footer">
                 <div class="photo-info">
                     <span id="modalPhotoSize">Size: -</span>
@@ -184,7 +198,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
+
             <!-- Conteúdo do Carrinho -->
             <div class="cart-content">
                 <!-- Loading do carrinho -->
@@ -192,20 +206,20 @@
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading cart...</p>
                 </div>
-                
+
                 <!-- Carrinho vazio -->
                 <div id="cartEmpty" class="cart-empty" style="display: none;">
                     <i class="fas fa-shopping-cart fa-3x"></i>
                     <h4>Empty cart</h4>
                     <p>Explore our products and add your favorite leathers!</p>
                 </div>
-                
+
                 <!-- Lista de itens -->
                 <div id="cartItems" class="cart-items" style="display: none;">
                     <!-- Itens serão carregados dinamicamente -->
                 </div>
             </div>
-            
+
             <!-- Footer do Carrinho - SEM TIMER GLOBAL -->
             <div id="cartFooter" class="cart-footer" style="display: none;">
                 <div class="cart-summary">
@@ -243,7 +257,7 @@
                 <i class="fas fa-check-circle success-icon"></i>
                 <h2>Selection Completed Successfully!</h2>
             </div>
-            
+
             <div class="selection-modal-body">
                 <div class="selection-info">
                     <div class="info-item">
@@ -251,7 +265,7 @@
                         <span id="modalItemCount" class="info-value">-</span>
                     </div>
                 </div>
-                
+
                 <div class="next-steps">
                     <h3><i class="fas fa-handshake"></i> Next Steps</h3>
                     <ul>
@@ -260,14 +274,14 @@
                         <li>💰 We'll arrange pricing and payment methods</li>
                         <li>📦 We'll organize shipping after confirmation</li>
                     </ul>
-                    
+
                     <div class="contact-info">
                         <p><strong>Thank you for your preference!</strong></p>
                         <p>Please wait for our contact to finalize your purchase.</p>
                     </div>
                 </div>
             </div>
-            
+
             <div class="selection-modal-footer">
                 <button onclick="goToHome()" class="btn btn-primary btn-full">
                     <i class="fas fa-home"></i> Back to Home
@@ -277,4 +291,5 @@
     </div>
 
 </body>
+
 </html>
