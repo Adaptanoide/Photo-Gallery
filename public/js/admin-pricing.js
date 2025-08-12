@@ -107,6 +107,14 @@ class AdminPricing {
             }
         });
 
+        // Listener para atualizar preview ao digitar preço
+        const newPriceInput = document.getElementById('newPrice');
+        if (newPriceInput) {
+            newPriceInput.addEventListener('input', () => {
+                this.updatePricePreview();
+            });
+        }
+
         // NEW: Debug log
         console.log('🔵 Event listeners configured for modal');
     }
@@ -336,6 +344,46 @@ class AdminPricing {
             console.error('❌ Error opening price modal:', error);
             this.showNotification('Error loading category', 'error');
         }
+
+        // Carregar dados adicionais para o novo modal
+        setTimeout(async () => {
+            this.updatePricePreview();
+
+            // Verificar se tem regras ativas - CORRIGIDO!
+            try {
+                // Verificar volume rules
+                const volumeResponse = await fetch('/api/pricing/quantity-discounts', {
+                    headers: this.getAuthHeaders()
+                });
+                const volumeData = await volumeResponse.json();
+                const hasVolumeRules = volumeData.success && volumeData.rules && volumeData.rules.length > 0;
+
+                // Verificar client rules
+                const hasClientRules = (this.currentCategory.discountRules || []).length > 0;
+
+                // Marcar checkboxes se tem regras
+                const volumeCheckbox = document.getElementById('enableVolumeDiscounts');
+                const clientCheckbox = document.getElementById('enableClientExceptions');
+
+                if (volumeCheckbox) {
+                    volumeCheckbox.checked = hasVolumeRules;
+                    this.toggleVolumeDiscounts();
+                }
+
+                if (clientCheckbox) {
+                    clientCheckbox.checked = hasClientRules;
+                    this.toggleClientExceptions();
+                }
+
+                // Popular dropdown do client calculator
+                if (clientCheckbox && clientCheckbox.checked) {
+                    this.populateClientCalculatorDropdown();
+                }
+
+            } catch (error) {
+                console.error('Error checking rules:', error);
+            }
+        }, 100);
     }
 
     updatePriceModal(mode) {
@@ -349,7 +397,7 @@ class AdminPricing {
         const currentPrice = document.getElementById('modalCurrentPrice');
 
         if (modalTitle) {
-            modalTitle.textContent = mode === 'edit' ? 'Edit Price & QB Item' : 'Set Price & QB Item';
+            modalTitle.textContent = mode === 'edit' ? 'Edit Price' : 'Set Price';
         }
 
         if (categoryName) {
@@ -368,23 +416,15 @@ class AdminPricing {
             const priceText = this.currentCategory.basePrice > 0 ?
                 `Current price: $${this.currentCategory.basePrice.toFixed(2)}` :
                 'No price set';
-            const qbText = this.currentCategory.qbItem ?
-                ` | QB Item: ${this.currentCategory.qbItem}` :
-                ' | QB Item: Not set';
-            currentPrice.textContent = priceText + qbText;
+            currentPrice.textContent = priceText;
         }
 
         // Pre-fill form if editing
         const newPriceInput = document.getElementById('newPrice');
-        const qbItemInput = document.getElementById('qbItemInput');
         const reasonInput = document.getElementById('priceReason');
 
         if (newPriceInput) {
             newPriceInput.value = mode === 'edit' ? this.currentCategory.basePrice.toFixed(2) : '';
-        }
-
-        if (qbItemInput) {
-            qbItemInput.value = this.currentCategory.qbItem || '';
         }
 
         if (reasonInput) {
@@ -420,6 +460,661 @@ class AdminPricing {
         console.log('🔵 Modal closed');
     }
 
+    // ===== NOVAS FUNÇÕES PARA O MODAL REDESENHADO =====
+
+    toggleVolumeDiscounts() {
+        const checkbox = document.getElementById('enableVolumeDiscounts');
+        const content = document.getElementById('volumeDiscountsContent');
+
+        if (checkbox && content) {
+            content.style.display = checkbox.checked ? 'block' : 'none';
+
+            if (checkbox.checked) {
+                // Desativar Client-Specific se Volume está ativo
+                const clientCheckbox = document.getElementById('enableClientExceptions');
+                if (clientCheckbox && clientCheckbox.checked) {
+                    clientCheckbox.checked = false;
+                    this.toggleClientExceptions();
+                }
+
+                // Carregar regras de volume
+                this.loadVolumeRules();
+                // Atualizar calculator
+                this.updatePricePreview();
+            }
+        }
+    }
+
+    toggleClientExceptions() {
+        const checkbox = document.getElementById('enableClientExceptions');
+        const content = document.getElementById('clientExceptionsContent');
+
+        if (checkbox && content) {
+            content.style.display = checkbox.checked ? 'block' : 'none';
+
+            if (checkbox.checked) {
+                // Desativar Volume se Client está ativo
+                const volumeCheckbox = document.getElementById('enableVolumeDiscounts');
+                if (volumeCheckbox && volumeCheckbox.checked) {
+                    volumeCheckbox.checked = false;
+                    this.toggleVolumeDiscounts();
+                }
+
+                // Carregar regras de cliente
+                this.loadClientRules();
+                // Popular dropdown do calculator
+                this.populateClientCalculatorDropdown();
+                // Atualizar calculator
+                this.updatePricePreview();
+            }
+        }
+    }
+
+    async loadVolumeRules() {
+        try {
+            const response = await fetch('/api/pricing/quantity-discounts', {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                this.displayVolumeRules(data.rules || []);
+            }
+        } catch (error) {
+            console.error('Error loading volume rules:', error);
+        }
+    }
+
+    displayVolumeRules(rules) {
+        const container = document.getElementById('volumeRulesList');
+        if (!container) return;
+
+        if (rules.length === 0) {
+            container.innerHTML = '<p class="text-muted">No volume discounts configured</p>';
+            return;
+        }
+
+        container.innerHTML = rules.map(rule => `
+            <div class="rule-item">
+                <span>${rule.minQuantity}${rule.maxQuantity ? `-${rule.maxQuantity}` : '+'} photos: ${rule.discountPercent}% off</span>
+                <button class="btn-icon" onclick="adminPricing.deleteVolumeRule('${rule._id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async loadClientRules() {
+        if (!this.currentCategory) return;
+
+        const container = document.getElementById('clientRulesList');
+        if (!container) return;
+
+        // Mostrar loading enquanto carrega
+        container.innerHTML = '<p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading rules...</p>';
+
+        try {
+            // BUSCAR DADOS FRESCOS DO SERVIDOR
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}`, {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.category) {
+                // Atualizar categoria local com dados frescos
+                this.currentCategory.discountRules = data.category.discountRules || [];
+                const rules = this.currentCategory.discountRules.filter(rule => rule.isActive);
+
+                if (rules.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No client exceptions configured</p>';
+                    return;
+                }
+
+                container.innerHTML = rules.map(rule => `
+                    <div class="rule-item">
+                        <span>${rule.clientName}: ${rule.customPrice ? `$${rule.customPrice.toFixed(2)} fixed` : `${rule.discountPercent}% off`}</span>
+                        <button class="btn-icon" onclick="adminPricing.deleteClientRule('${rule.clientCode}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p class="text-muted">No client exceptions configured</p>';
+            }
+        } catch (error) {
+            console.error('Error loading client rules:', error);
+            container.innerHTML = '<p class="text-muted">Error loading rules</p>';
+        }
+
+        // Atualizar dropdown do calculator também
+        this.populateClientCalculatorDropdown();
+    }
+
+    async updatePricePreview() {
+        const basePrice = parseFloat(document.getElementById('newPrice')?.value) || 0;
+
+        // Atualizar VOLUME calculator
+        const volumeCalc1 = document.getElementById('volumeCalc1');
+        const volumeCalc15 = document.getElementById('volumeCalc15');
+        const volumeCalc50 = document.getElementById('volumeCalc50');
+
+        // Atualizar CLIENT calculator
+        const clientCalc1 = document.getElementById('clientCalc1');
+        const clientCalc15 = document.getElementById('clientCalc15');
+        const clientCalc50 = document.getElementById('clientCalc50');
+
+        if (basePrice === 0) {
+            // Zerar todos se não tem preço
+            if (volumeCalc1) volumeCalc1.textContent = '$0.00';
+            if (volumeCalc15) volumeCalc15.textContent = '$0.00';
+            if (volumeCalc50) volumeCalc50.textContent = '$0.00';
+
+            if (clientCalc1) clientCalc1.textContent = '$0.00';
+            if (clientCalc15) clientCalc15.textContent = '$0.00';
+            if (clientCalc50) clientCalc50.textContent = '$0.00';
+            return;
+        }
+
+        try {
+            // VOLUME CALCULATOR
+            const response = await fetch('/api/pricing/quantity-discounts', {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+            const volumeRules = data.success ? (data.rules || []) : [];
+
+            // Calcular preços com volume discount
+            const discount15 = this.calculateVolumeDiscount(15, volumeRules);
+            const discount50 = this.calculateVolumeDiscount(50, volumeRules);
+
+            const price15 = basePrice * (1 - discount15 / 100);
+            const price50 = basePrice * (1 - discount50 / 100);
+
+            // Atualizar Volume Calculator
+            if (volumeCalc1) {
+                volumeCalc1.innerHTML = `$${basePrice.toFixed(2)}`;
+            }
+
+            if (volumeCalc15) {
+                volumeCalc15.innerHTML = discount15 > 0 ?
+                    `$${price15.toFixed(2)} <span class="discount-badge">${discount15}% off</span>` :
+                    `$${price15.toFixed(2)}`;
+            }
+
+            if (volumeCalc50) {
+                volumeCalc50.innerHTML = discount50 > 0 ?
+                    `$${price50.toFixed(2)} <span class="discount-badge">${discount50}% off</span>` :
+                    `$${price50.toFixed(2)}`;
+            }
+
+            // CLIENT CALCULATOR - atualizar baseado no cliente selecionado
+            this.updateClientCalculator();
+
+        } catch (error) {
+            console.error('Error updating price preview:', error);
+        }
+    }
+
+    async updateClientCalculator() {
+        const basePrice = parseFloat(document.getElementById('newPrice')?.value) || 0;
+        const selectedClient = document.getElementById('calcClientSelect')?.value;
+
+        const clientCalc1 = document.getElementById('clientCalc1');
+        const clientCalc15 = document.getElementById('clientCalc15');
+        const clientCalc50 = document.getElementById('clientCalc50');
+
+        if (!clientCalc1) return; // Modal não está aberto
+
+        if (!selectedClient || basePrice === 0) {
+            // Sem cliente selecionado ou sem preço
+            clientCalc1.textContent = '$0.00';
+            clientCalc15.textContent = '$0.00';
+            clientCalc50.textContent = '$0.00';
+            return;
+        }
+
+        // Encontrar regra do cliente
+        const clientRule = (this.currentCategory?.discountRules || [])
+            .find(rule => rule.clientCode === selectedClient);
+
+        if (clientRule) {
+            let finalPrice;
+
+            if (clientRule.customPrice) {
+                // Preço fixo para este cliente
+                finalPrice = clientRule.customPrice;
+                clientCalc1.innerHTML = `$${finalPrice.toFixed(2)} <span class="fixed-badge">Fixed</span>`;
+                clientCalc15.innerHTML = `$${finalPrice.toFixed(2)} <span class="fixed-badge">Fixed</span>`;
+                clientCalc50.innerHTML = `$${finalPrice.toFixed(2)} <span class="fixed-badge">Fixed</span>`;
+            } else if (clientRule.discountPercent) {
+                // Desconto percentual
+                finalPrice = basePrice * (1 - clientRule.discountPercent / 100);
+                const badge = `<span class="discount-badge">${clientRule.discountPercent}% off</span>`;
+                clientCalc1.innerHTML = `$${finalPrice.toFixed(2)} ${badge}`;
+                clientCalc15.innerHTML = `$${finalPrice.toFixed(2)} ${badge}`;
+                clientCalc50.innerHTML = `$${finalPrice.toFixed(2)} ${badge}`;
+            }
+        } else {
+            // Cliente sem regra especial - usa preço base
+            clientCalc1.textContent = `$${basePrice.toFixed(2)}`;
+            clientCalc15.textContent = `$${basePrice.toFixed(2)}`;
+            clientCalc50.textContent = `$${basePrice.toFixed(2)}`;
+        }
+    }
+
+    populateClientCalculatorDropdown() {
+        const dropdown = document.getElementById('calcClientSelect');
+        if (!dropdown) return;
+
+        // Limpar dropdown
+        dropdown.innerHTML = '<option value="">Select a client...</option>';
+
+        // Pegar regras de cliente da categoria atual
+        const clientRules = this.currentCategory?.discountRules || [];
+
+        if (clientRules.length === 0) {
+            dropdown.innerHTML = '<option value="">No clients configured</option>';
+            return;
+        }
+
+        // Adicionar cada cliente configurado
+        clientRules.forEach(rule => {
+            if (rule.isActive) {
+                const option = document.createElement('option');
+                option.value = rule.clientCode;
+                option.textContent = `${rule.clientName} (${rule.clientCode})`;
+                dropdown.appendChild(option);
+            }
+        });
+
+        // Se só tem um cliente, selecionar automaticamente
+        if (clientRules.filter(r => r.isActive).length === 1) {
+            dropdown.selectedIndex = 1;
+            this.updateClientCalculator();
+        }
+    }
+
+    // Nova função para calcular desconto de volume
+    calculateVolumeDiscount(quantity, rules) {
+        if (!rules || rules.length === 0) return 0;
+
+        // Ordenar regras por minQuantity (maior primeiro)
+        const sortedRules = [...rules].sort((a, b) => b.minQuantity - a.minQuantity);
+
+        // Encontrar regra aplicável
+        for (const rule of sortedRules) {
+            if (quantity >= rule.minQuantity) {
+                // Verificar se tem máximo
+                if (!rule.maxQuantity || quantity <= rule.maxQuantity) {
+                    return rule.discountPercent || 0;
+                }
+            }
+        }
+
+        return 0; // Nenhum desconto aplicável
+    }
+
+    async saveAllPricing() {
+        try {
+            if (!this.currentCategory) {
+                this.showNotification('No category selected', 'error');
+                return;
+            }
+
+            const basePrice = parseFloat(document.getElementById('newPrice')?.value) || 0;
+
+            // Validar
+            if (basePrice < 0) {
+                this.showNotification('Price must be positive', 'error');
+                return;
+            }
+
+            // Salvar preço base
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/price`, {
+                method: 'PUT',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    price: basePrice,
+                    reason: 'Updated via new pricing interface'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Pricing saved successfully!', 'success');
+                this.closePriceModal();
+                await this.loadCategories(); // Recarregar tabela
+            } else {
+                throw new Error(data.message);
+            }
+
+        } catch (error) {
+            console.error('Error saving pricing:', error);
+            this.showNotification('Error saving pricing', 'error');
+        }
+    }
+
+    // ===== FUNÇÕES PARA VOLUME RULES =====
+
+    openVolumeRulesManager() {
+        const modal = document.getElementById('volumeRulesModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            this.loadVolumeRulesForModal();
+        }
+    }
+
+    closeVolumeRulesModal() {
+        const modal = document.getElementById('volumeRulesModal');
+        if (modal) {
+            modal.style.display = 'none';
+
+            // Reabrir o modal de preços se estava aberto
+            const priceModal = document.getElementById('priceModal');
+            if (priceModal && this.currentCategory) {
+                priceModal.style.display = 'flex';
+            }
+        }
+        console.log('✅ Volume rules modal closed properly');
+    }
+
+    closeClientRuleModal() {
+        const modal = document.getElementById('clientRuleModal');
+        if (modal) {
+            modal.style.display = 'none';
+
+            // Reabrir o modal de preços se estava aberto
+            const priceModal = document.getElementById('priceModal');
+            if (priceModal && this.currentCategory) {
+                priceModal.style.display = 'flex';
+            }
+        }
+        console.log('✅ Client rule modal closed properly');
+    }
+
+    async loadVolumeRulesForModal() {
+        try {
+            const response = await fetch('/api/pricing/quantity-discounts', {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+            const container = document.getElementById('volumeRulesListModal');
+
+            if (!container) return;
+
+            if (!data.success || data.rules.length === 0) {
+                container.innerHTML = '<p class="text-muted">No volume rules configured yet</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <h5>Existing Rules</h5>
+                <div class="rules-list">
+                    ${data.rules.map(rule => `
+                        <div class="rule-item">
+                            <span>${rule.minQuantity}${rule.maxQuantity ? `-${rule.maxQuantity}` : '+'} photos: ${rule.discountPercent}% off</span>
+                            <button class="btn-icon" onclick="adminPricing.deleteVolumeRule('${rule._id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error loading volume rules:', error);
+        }
+    }
+
+    async addVolumeRule() {
+        try {
+            const minQty = parseInt(document.getElementById('volumeMinQty').value);
+            const maxQty = document.getElementById('volumeMaxQty').value ?
+                parseInt(document.getElementById('volumeMaxQty').value) : null;
+            const discount = parseFloat(document.getElementById('volumeDiscount').value);
+
+            // Validar
+            if (!minQty || minQty < 1) {
+                this.showNotification('Minimum quantity must be at least 1', 'error');
+                return;
+            }
+
+            if (discount < 0 || discount > 100) {
+                this.showNotification('Discount must be between 0 and 100', 'error');
+                return;
+            }
+
+            const description = maxQty ?
+                `${minQty}-${maxQty} photos: ${discount}% off` :
+                `${minQty}+ photos: ${discount}% off`;
+
+            const response = await fetch('/api/pricing/quantity-discounts', {
+                method: 'POST',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    minQuantity: minQty,
+                    maxQuantity: maxQty,
+                    discountPercent: discount,
+                    description: description,
+                    createdBy: 'admin'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Volume rule added successfully!', 'success');
+
+                // Limpar form
+                document.getElementById('volumeMinQty').value = '';
+                document.getElementById('volumeMaxQty').value = '';
+                document.getElementById('volumeDiscount').value = '';
+
+                // Recarregar listas
+                this.loadVolumeRulesForModal();
+                this.loadVolumeRules();
+            } else {
+                throw new Error(data.message);
+            }
+
+        } catch (error) {
+            console.error('Error adding volume rule:', error);
+            this.showNotification(error.message || 'Error adding rule', 'error');
+        }
+    }
+
+    async deleteVolumeRule(ruleId) {
+        // Usar confirm bonito do UISystem
+        const confirmed = await UISystem.confirm(
+            'Delete this volume discount rule?',
+            'This action cannot be undone.'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/api/pricing/quantity-discounts/${ruleId}`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Rule deleted successfully!', 'success');
+                this.loadVolumeRulesForModal();
+                this.loadVolumeRules();
+            }
+        } catch (error) {
+            console.error('Error deleting rule:', error);
+            this.showNotification('Error deleting rule', 'error');
+        }
+    }
+
+    // ===== FUNÇÕES PARA CLIENT EXCEPTIONS =====
+
+    async showAddClientRule() {
+        const modal = document.getElementById('clientRuleModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            await this.loadAvailableClients();
+        }
+    }
+
+    async loadAvailableClients() {
+        try {
+            const response = await fetch('/api/admin/access-codes', {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+            const select = document.getElementById('clientRuleSelect');
+
+            if (!select) return;
+
+            // Filtrar apenas clientes ativos
+            const clients = (data.codes || []).filter(code => code.isActive);
+
+            if (clients.length === 0) {
+                select.innerHTML = '<option value="">No active clients available</option>';
+                return;
+            }
+
+            select.innerHTML = `
+                <option value="">Choose a client...</option>
+                ${clients.map(client => `
+                    <option value="${client.code}">${client.clientName || 'No name'} (${client.code})</option>
+                `).join('')}
+            `;
+
+            console.log(`✅ ${clients.length} active clients loaded`);
+        } catch (error) {
+            console.error('Error loading clients:', error);
+        }
+    }
+
+    toggleClientPriceType() {
+        const discountGroup = document.getElementById('clientDiscountGroup');
+        const fixedGroup = document.getElementById('clientFixedGroup');
+        const selectedType = document.querySelector('input[name="clientPriceType"]:checked').value;
+
+        if (discountGroup && fixedGroup) {
+            discountGroup.style.display = selectedType === 'discount' ? 'block' : 'none';
+            fixedGroup.style.display = selectedType === 'fixed' ? 'block' : 'none';
+        }
+    }
+
+    async saveClientRule() {
+        try {
+            if (!this.currentCategory) {
+                this.showNotification('No category selected', 'error');
+                return;
+            }
+
+            const clientCode = document.getElementById('clientRuleSelect').value;
+            const priceType = document.querySelector('input[name="clientPriceType"]:checked').value;
+            const discountPercent = priceType === 'discount' ?
+                parseFloat(document.getElementById('clientDiscountPercent').value) : 0;
+            const customPrice = priceType === 'fixed' ?
+                parseFloat(document.getElementById('clientFixedPrice').value) : 0;
+
+            if (!clientCode) {
+                this.showNotification('Please select a client', 'error');
+                return;
+            }
+
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/discount-rules`, {
+                method: 'POST',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    clientCode: clientCode,
+                    clientName: document.querySelector(`#clientRuleSelect option[value="${clientCode}"]`).text,
+                    discountPercent: discountPercent,
+                    customPrice: customPrice
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Client rule added successfully!', 'success');
+
+                // Atualizar a categoria atual
+                this.currentCategory.discountRules = this.currentCategory.discountRules || [];
+                this.currentCategory.discountRules.push({
+                    clientCode: clientCode,
+                    clientName: document.querySelector(`#clientRuleSelect option[value="${clientCode}"]`).text.split(' (')[0],
+                    discountPercent: discountPercent,
+                    customPrice: customPrice,
+                    isActive: true
+                });
+
+                document.getElementById('clientRuleModal').style.display = 'none';
+
+                // Recarregar
+                await this.loadClientRules();
+            } else {
+                throw new Error(data.message);
+            }
+
+        } catch (error) {
+            console.error('Error saving client rule:', error);
+            this.showNotification(error.message || 'Error saving rule', 'error');
+        }
+    }
+
+    async deleteClientRule(clientCode) {
+        if (!this.currentCategory) return;
+
+        // Usar confirm bonito do UISystem
+        const confirmed = await UISystem.confirm(
+            'Remove this client exception?',
+            `This will remove the custom pricing for client ${clientCode}.`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/discount-rules/${clientCode}`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Client rule removed successfully!', 'success');
+
+                // Remover da categoria atual
+                if (this.currentCategory.discountRules) {
+                    this.currentCategory.discountRules = this.currentCategory.discountRules.filter(
+                        rule => rule.clientCode !== clientCode
+                    );
+                }
+
+                // Atualizar a lista
+                await this.loadClientRules();
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting client rule:', error);
+            this.showNotification('Error removing rule', 'error');
+        }
+    }
+
     async handlePriceSubmit(e) {
         e.preventDefault();
 
@@ -427,7 +1122,6 @@ class AdminPricing {
 
         try {
             const newPrice = parseFloat(document.getElementById('newPrice').value);
-            const qbItem = document.getElementById('qbItemInput') ? document.getElementById('qbItemInput').value.trim() : '';
             const reasonSelect = document.getElementById('priceReasonSelect').value;
             const customReason = document.getElementById('priceReason').value.trim();
             const reason = reasonSelect === 'Other' ? customReason : reasonSelect;
@@ -448,7 +1142,7 @@ class AdminPricing {
                 body: JSON.stringify({
                     price: newPrice,
                     qbItem: qbItem,
-                    reason: reason || (qbItem ? `QB Item updated: ${qbItem}` : '')
+                    reason: reason || 'Price updated'
                 })
             });
 
@@ -642,14 +1336,17 @@ class AdminPricing {
     }
 
     showNotification(message, type = 'info') {
-        // Integrate with existing notification system
-        if (window.showNotification) {
-            window.showNotification(message, type);
+        // Usar o sistema de toasts estilizado
+        if (window.UISystem && window.UISystem.showToast) {
+            // CORREÇÃO: Ordem correta dos parâmetros (type, message)
+            window.UISystem.showToast(type, message);
+        } else if (window.showToast) {
+            window.showToast(type, message);
         } else {
+            // Fallback
             console.log(`[${type.toUpperCase()}] ${message}`);
         }
     }
-
     showError(message) {
         this.showNotification(message, 'error');
     }
@@ -1112,23 +1809,20 @@ class AdminPricing {
         const toggleClient = document.getElementById('toggleClient');
         const toggleQuantity = document.getElementById('toggleQuantity');
 
-        // Reset all
-        if (toggleBase) toggleBase.checked = false;
-        if (toggleClient) toggleClient.checked = false;
-        if (toggleQuantity) toggleQuantity.checked = false;
+        // Base SEMPRE ativo e desabilitado (não pode desmarcar)
+        if (toggleBase) {
+            toggleBase.checked = true;
+            toggleBase.disabled = true;
+        }
 
-        // Ativar o correto
-        switch (mode) {
-            case 'client':
-                if (toggleClient) toggleClient.checked = true;
-                break;
-            case 'quantity':
-                if (toggleQuantity) toggleQuantity.checked = true;
-                break;
-            case 'base':
-            default:
-                if (toggleBase) toggleBase.checked = true;
-                break;
+        // Client e Quantity são opcionais e independentes
+        // Não resetar - deixar como o usuário configurou
+        // Se estiver criando nova regra, pode ativar baseado no mode
+        if (mode === 'client' && toggleClient && !toggleClient.checked) {
+            toggleClient.checked = true;
+        }
+        if (mode === 'quantity' && toggleQuantity && !toggleQuantity.checked) {
+            toggleQuantity.checked = true;
         }
     }
 
@@ -1147,6 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (section && section.style.display !== 'none' && !adminPricing) {
                     // Pricing section was activated
                     adminPricing = new AdminPricing();
+                    window.adminPricing = adminPricing;
                 }
             }
         });
@@ -1159,6 +1854,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // If already visible, initialize immediately
         if (pricingSection.style.display !== 'none') {
             adminPricing = new AdminPricing();
+            window.adminPricing = adminPricing;
         }
     }
 });
@@ -1350,7 +2046,7 @@ async function loadAvailableClients() {
     try {
         console.log('👥 Loading active clients...');
 
-        const response = await fetch('/api/pricing/clients/active', {
+        const response = await fetch('/api/admin/access-codes', {
             headers: adminPricing.getAuthHeaders()
         });
 

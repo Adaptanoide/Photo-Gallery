@@ -4,7 +4,7 @@ class AdminSelections {
     constructor() {
         this.currentPage = 1;
         this.currentFilters = {
-            status: 'pending'
+            status: 'all'
         };
         this.isLoading = false;
         this.stats = {
@@ -277,9 +277,8 @@ class AdminSelections {
 
         // VIEW para TODOS os status (sempre primeiro)
         buttons += `
-            <button class="btn-action btn-view" onclick="adminSelections.viewSelection('${selection.selectionId}')">
+            <button class="special-btn-icon" onclick="adminSelections.viewSelection('${selection.selectionId}')" title="View Selection">
                 <i class="fas fa-eye"></i>
-                View
             </button>
         `;
 

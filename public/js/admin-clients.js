@@ -151,7 +151,7 @@ class AdminClients {
                             <th>Usage</th>
                             <th>Expires</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th style="text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="clientsTableBody">
@@ -620,22 +620,19 @@ class AdminClients {
                 </td>
                 <td class="client-actions-cell" onclick="event.stopPropagation();">
                     <div class="action-buttons">
-                        <button class="btn-action btn-view" onclick="adminClients.viewClient('${client._id || client.code}')">
+                        <button class="special-btn-icon" onclick="adminClients.viewClient('${client._id || client.code}')" title="View">
                             <i class="fas fa-eye"></i>
-                            <span>View</span>
                         </button>
-                        <button class="btn-action btn-edit" onclick="adminClients.editClient('${client._id || client.code}')">
+                        <button class="special-btn-icon edit" onclick="adminClients.editClient('${client._id || client.code}')" title="Edit">
                             <i class="fas fa-edit"></i>
-                            <span>Edit</span>
                         </button>
-                        <button class="btn-action btn-toggle ${client.isActive ? '' : 'activate'}" 
-                                onclick="adminClients.toggleClientStatus('${client._id || client.code}')">
+                        <button class="special-btn-icon ${client.isActive ? 'deactivate' : 'activate'}" 
+                                onclick="adminClients.toggleClientStatus('${client._id || client.code}')" 
+                                title="${client.isActive ? 'Deactivate' : 'Activate'}">
                             <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
-                            <span>${client.isActive ? 'Deactivate' : 'Activate'}</span>
                         </button>
-                        <button class="btn-action btn-delete" onclick="adminClients.deleteClient('${client._id || client.code}')">
+                        <button class="special-btn-icon delete" onclick="adminClients.deleteClient('${client._id || client.code}')" title="Delete">
                             <i class="fas fa-trash"></i>
-                            <span>Delete</span>
                         </button>
                     </div>
                 </td>

@@ -60,32 +60,49 @@ class UISystem {
     // CONFIRM PADRONIZADO
     static confirm(message, details = '') {
         return new Promise((resolve) => {
-            const modal = this.showModal({
-                icon: '⚠️',
-                title: 'Confirmation Required',
-                content: `
-                    <p class="confirm-message">${message}</p>
-                    ${details ? `<p class="confirm-details">${details}</p>` : ''}
-                `,
-                footer: `
-                    <button class="btn-secondary" onclick="this.closest('.ui-modal-backdrop').remove()">
-                        Cancel
-                    </button>
-                    <button class="btn-primary" id="confirmBtn">
-                        Confirm
-                    </button>
-                `
-            });
+            const modalId = 'confirm-' + Date.now();
+            const modal = document.createElement('div');
+            modal.className = 'ui-modal-backdrop';
+            modal.id = modalId;
+            modal.innerHTML = `
+                <div class="ui-modal">
+                    <div class="ui-modal-header">
+                        <span class="modal-icon">⚠️</span>
+                        <h3>Confirmation Required</h3>
+                        <button class="modal-close" onclick="UISystem.confirmResolve(false, '${modalId}')">✕</button>
+                    </div>
+                    <div class="ui-modal-body">
+                        <p class="confirm-message">${message}</p>
+                        ${details ? `<p class="confirm-details">${details}</p>` : ''}
+                    </div>
+                    <div class="ui-modal-footer">
+                        <button class="btn-secondary" onclick="UISystem.confirmResolve(false, '${modalId}')">
+                            Cancel
+                        </button>
+                        <button class="btn-primary" onclick="UISystem.confirmResolve(true, '${modalId}')">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            `;
 
-            modal.querySelector('#confirmBtn').onclick = () => {
-                modal.remove();
-                resolve(true);
-            };
+            document.body.appendChild(modal);
 
-            modal.querySelector('.btn-secondary').onclick = () => {
-                resolve(false);
-            };
+            // Guardar o resolve para usar depois
+            window[`confirmResolve_${modalId}`] = resolve;
         });
+    }
+
+    // Função auxiliar para resolver o confirm
+    static confirmResolve(value, modalId) {
+        const modal = document.getElementById(modalId);
+        const resolve = window[`confirmResolve_${modalId}`];
+
+        if (modal) modal.remove();
+        if (resolve) {
+            resolve(value);
+            delete window[`confirmResolve_${modalId}`];
+        }
     }
 
     // NOVO SISTEMA DE STATUS INLINE (não trava a tela!)

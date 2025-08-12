@@ -145,7 +145,7 @@
 }
 
 .clients-table th {
-    background: rgba(212, 175, 55, 0.05);
+    /* background: rgba(212, 175, 55, 0.05); */
     padding: 1rem 1.5rem;
     text-align: left;
     font-weight: 600;
@@ -153,7 +153,7 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+    /* border-bottom: 2px solid rgba(212, 175, 55, 0.2); */
 }
 
 .clients-table td {
@@ -1164,4 +1164,20 @@
 .luxury-confirm-btn.btn-deactivate:hover {
     background: linear-gradient(135deg, #d97706, #b45309);
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Padronizar header como Special Selections */
+.clients-table thead {
+    background: rgba(44, 44, 52, 0.8); /* Fundo ESCURO, não dourado */
+}
+
+.clients-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #dbb934; /* Texto dourado */
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Linha sutil */
 }

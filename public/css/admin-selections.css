@@ -267,11 +267,11 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid var(--border-subtle);
+    /* border-bottom: 2px solid var(--border-subtle); */
     position: relative;
 }
 
-.selections-table th::after {
+/* .selections-table th::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -279,7 +279,7 @@
     width: 100%;
     height: 2px;
     background: linear-gradient(90deg, var(--gold-primary), transparent);
-}
+} */
 
 .selections-table td {
     padding: 1.25rem 1.5rem;
@@ -709,4 +709,20 @@
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
+}
+
+/* Padronizar header como Special Selections */
+.selections-table thead {
+    background: rgba(44, 44, 52, 0.8); /* Fundo ESCURO */
+}
+
+.selections-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #dbb934; /* Texto dourado */
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Linha SUTIL, não grossa */
 }

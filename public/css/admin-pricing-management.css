@@ -1519,3 +1519,158 @@
         justify-content: space-between;
     }
 }
+
+/* ===== NOVO LAYOUT DO MODAL DE PREÇOS ===== */
+.pricing-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.section-title {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.section-title input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.section-title label {
+    cursor: pointer;
+    margin: 0;
+}
+
+.section-content {
+    padding: 1rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.rules-list {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.rule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.rule-item:last-child {
+    margin-bottom: 0;
+}
+
+.preview-section {
+    background: rgba(212, 175, 55, 0.05);
+    border-color: rgba(212, 175, 55, 0.2);
+}
+
+.price-preview {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.preview-item strong {
+    color: var(--gold-primary);
+    font-size: 1.1rem;
+}
+
+/* Price Calculator Badges */
+.discount-badge {
+    display: inline-block;
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.price-amount {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Price Calculator Boxes */
+.price-calculator-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.price-calculator-box h6 {
+    color: var(--primary-color);
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.calculator-controls {
+    margin-bottom: 1rem;
+}
+
+.calculator-controls .form-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.calculator-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.calc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calc-item span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.calc-item strong {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 1rem;
+}

@@ -454,14 +454,14 @@
                     </div>
                 </div>
 
-                <!-- ===== MODAL DE EDIÇÃO DE PREÇO ===== -->
+                <!-- ===== MODAL DE PREÇOS REDESENHADO ===== -->
                 <div id="priceModal" class="price-modal" style="display: none;">
                     <div class="price-modal-overlay"></div>
-                    <div class="price-modal-content">
+                    <div class="price-modal-content" style="max-width: 900px;">
                         <div class="price-modal-header">
                             <h3 class="modal-title">
                                 <i class="fas fa-dollar-sign"></i>
-                                <span id="priceModalTitle">Set Price</span>
+                                <span id="priceModalTitle">Edit Price</span>
                             </h3>
                             <button class="modal-close" onclick="closePriceModal()">
                                 <i class="fas fa-times"></i>
@@ -469,164 +469,103 @@
                         </div>
 
                         <div class="price-modal-body">
+                            <!-- Info da Categoria -->
                             <div class="category-info">
                                 <h4 id="modalCategoryName">Category Name</h4>
-                                <p id="modalCategoryPath">Google Drive Path</p>
                                 <div class="category-stats">
                                     <span id="modalPhotoCount">0 photos</span>
                                     <span id="modalCurrentPrice">Current price: $0.00</span>
                                 </div>
                             </div>
 
-                            <!-- NOVO: Sistema de Abas -->
-                            <div class="price-tabs">
-                                <!-- Pricing Mode Toggles -->
-                                <div class="pricing-mode-toggles">
-                                    <h5><i class="fas fa-cog"></i> Pricing Mode</h5>
-                                    <div class="toggles-container">
-                                        <div class="toggle-item">
-                                            <label class="toggle-label">Base Price</label>
-                                            <div class="toggle-switch">
-                                                <input type="checkbox" id="toggleBase" data-mode="base" checked>
-                                                <span class="toggle-slider"></span>
-                                            </div>
+                            <!-- SEÇÃO 1: Base Price -->
+                            <div class="pricing-section">
+                                <h5 class="section-title">💰 Base Pricing</h5>
+                                <div class="section-content">
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 1;">
+                                            <label class="form-label">Base Price ($)</label>
+                                            <input type="number" id="newPrice" class="form-input" min="0" step="0.01"
+                                                placeholder="0.00" required
+                                                onchange="adminPricing.updatePricePreview()">
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                                        <div class="toggle-item">
-                                            <label class="toggle-label">Client-Specific</label>
-                                            <div class="toggle-switch">
-                                                <input type="checkbox" id="toggleClient" data-mode="client">
-                                                <span class="toggle-slider"></span>
+                            <!-- SEÇÃO 2: Volume Discounts -->
+                            <div class="pricing-section">
+                                <h5 class="section-title">
+                                    <input type="checkbox" id="enableVolumeDiscounts"
+                                        onchange="adminPricing.toggleVolumeDiscounts()">
+                                    <label for="enableVolumeDiscounts">📊 Volume Discounts (All Regular Clients)</label>
+                                </h5>
+                                <div class="section-content" id="volumeDiscountsContent" style="display: none;">
+                                    <div id="volumeRulesList" class="rules-list">
+                                        <!-- Será preenchido via JS -->
+                                    </div>
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                        onclick="adminPricing.openVolumeRulesManager()">
+                                        <i class="fas fa-cog"></i> Manage Volume Rules
+                                    </button>
+                                    <!-- Volume Price Calculator -->
+                                    <div class="price-calculator-box">
+                                        <h6>📊 Volume Discount Preview:</h6>
+                                        <div class="calculator-items">
+                                            <div class="calc-item">
+                                                <span>1 photo:</span>
+                                                <strong id="volumeCalc1">$0.00</strong>
                                             </div>
-                                        </div>
-
-                                        <div class="toggle-item">
-                                            <label class="toggle-label">Quantity-Based</label>
-                                            <div class="toggle-switch">
-                                                <input type="checkbox" id="toggleQuantity" data-mode="quantity">
-                                                <span class="toggle-slider"></span>
+                                            <div class="calc-item">
+                                                <span>15 photos:</span>
+                                                <strong id="volumeCalc15">$0.00</strong>
+                                            </div>
+                                            <div class="calc-item">
+                                                <span>50 photos:</span>
+                                                <strong id="volumeCalc50">$0.00</strong>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="price-tabs-content">
-                                    <!-- ABA 1: Preço Base (formulário atual) -->
-                                    <div class="price-tab-panel active" id="tab-base-price">
-                                        <form id="priceForm" class="price-form">
-                                            <div class="form-group">
-                                                <label class="form-label">New Price ($)</label>
-                                                <input type="number" id="newPrice" class="form-input" min="0"
-                                                    step="0.01" placeholder="0.00" required>
-                                            </div>
-
-                                            <div class="form-group">
-                                                <label class="form-label">QB Item Code</label>
-                                                <input type="text" id="qbItemInput" class="form-input"
-                                                    placeholder="e.g. COW-BRN-M-001" maxlength="50">
-                                                <small class="form-help"
-                                                    style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
-                                                    QuickBooks item identifier for accounting integration
-                                                </small>
-                                            </div>
-
-                                            <div class="form-group">
-                                                <label class="form-label">Reason for Change (Optional)</label>
-                                                <select id="priceReasonSelect" class="form-input"
-                                                    onchange="adminPricing.handleReasonChange(this.value)">
-                                                    <option value="">Select a reason...</option>
-                                                    <option value="Market Adjustment">Market Adjustment</option>
-                                                    <option value="Cost Increase">Cost Increase</option>
-                                                    <option value="Promotion/Sale">Promotion/Sale</option>
-                                                    <option value="Premium Quality">Premium Quality</option>
-                                                    <option value="Client Negotiation">Client Negotiation</option>
-                                                    <option value="Competitor Pricing">Competitor Pricing</option>
-                                                    <option value="Seasonal Adjustment">Seasonal Adjustment</option>
-                                                    <option value="Inventory Management">Inventory Management</option>
-                                                    <option value="Currency Fluctuation">Currency Fluctuation</option>
-                                                    <option value="Other">Other (specify below)</option>
-                                                </select>
-                                            </div>
-
-                                            <div class="form-group" id="customReasonGroup" style="display: none;">
-                                                <label class="form-label">Custom Reason</label>
-                                                <textarea id="priceReason" class="form-textarea" rows="2"
-                                                    placeholder="Specify your custom reason..."></textarea>
-                                            </div>
-                                        </form>
+                            <!-- SEÇÃO 3: Client Exceptions -->
+                            <div class="pricing-section">
+                                <h5 class="section-title">
+                                    <input type="checkbox" id="enableClientExceptions"
+                                        onchange="adminPricing.toggleClientExceptions()">
+                                    <label for="enableClientExceptions">👤 Client-Specific Pricing</label>
+                                </h5>
+                                <div class="section-content" id="clientExceptionsContent" style="display: none;">
+                                    <div id="clientRulesList" class="rules-list">
+                                        <!-- Será preenchido via JS -->
                                     </div>
-
-                                    <!-- ABA 2: Preços por Cliente -->
-                                    <div class="price-tab-panel" id="tab-client-prices">
-                                        <div class="client-prices-section">
-                                            <h5>Custom Prices by Client</h5>
-                                            <p class="text-muted">Configure special prices for specific clients</p>
-
-                                            <!-- Lista de regras existentes -->
-                                            <div id="clientRulesList" class="client-rules-list">
-                                                <!-- Será populado via JavaScript -->
-                                            </div>
-
-                                            <!-- Formulário para nova regra -->
-                                            <div class="add-client-rule">
-                                                <h6>Add New Rule</h6>
-                                                <form id="clientRuleForm" class="client-rule-form">
-                                                    <div class="form-row">
-                                                        <div class="form-group">
-                                                            <label class="form-label">Client</label>
-                                                            <select id="clientSelect" class="form-input" required>
-                                                                <option value="">Select a client...</option>
-                                                            </select>
-                                                        </div>
-                                                        <div class="form-group">
-                                                            <label class="form-label">Discount Type</label>
-                                                            <select id="discountType" class="form-input" required>
-                                                                <option value="">Select...</option>
-                                                                <option value="percentage">Percentage Discount</option>
-                                                                <option value="custom">Custom Price</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="form-row">
-                                                        <div class="form-group" id="percentageGroup"
-                                                            style="display: none;">
-                                                            <label class="form-label">Discount (%)</label>
-                                                            <input type="number" id="discountPercent" class="form-input"
-                                                                min="0" max="100" step="1" placeholder="10">
-                                                        </div>
-                                                        <div class="form-group" id="customPriceGroup"
-                                                            style="display: none;">
-                                                            <label class="form-label">Custom Price ($)</label>
-                                                            <input type="number" id="customPrice" class="form-input"
-                                                                min="0" step="0.01" placeholder="0.00">
-                                                        </div>
-                                                    </div>
-
-                                                    <button type="submit" class="btn btn-primary">
-                                                        <i class="fas fa-plus"></i>
-                                                        Add Rule
-                                                    </button>
-                                                </form>
-                                            </div>
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                        onclick="adminPricing.showAddClientRule()">
+                                        <i class="fas fa-plus"></i> Add Client Exception
+                                    </button>
+                                    <!-- Client Price Calculator -->
+                                    <div class="price-calculator-box">
+                                        <h6>📊 Client-Specific Preview:</h6>
+                                        <div class="calculator-controls">
+                                            <select id="calcClientSelect" class="form-input"
+                                                onchange="adminPricing.updateClientCalculator()">
+                                                <option value="">Select a client...</option>
+                                            </select>
                                         </div>
-                                    </div>
-
-                                    <!-- ABA 3: Descontos por Quantidade -->
-                                    <div class="price-tab-panel" id="tab-quantity-discounts">
-                                        <div class="quantity-discounts-section">
-                                            <h5>Quantity Discounts</h5>
-                                            <p class="text-muted">Configure automatic discounts based on photo quantity
-                                            </p>
-
-                                            <div class="quantity-rules">
-                                                <!-- Será populado via JavaScript -->
+                                        <div class="calculator-items">
+                                            <div class="calc-item">
+                                                <span>1 photo:</span>
+                                                <strong id="clientCalc1">$0.00</strong>
                                             </div>
-
-                                            <button class="btn btn-secondary">
-                                                <i class="fas fa-plus"></i>
-                                                New Quantity Rule
-                                            </button>
+                                            <div class="calc-item">
+                                                <span>15 photos:</span>
+                                                <strong id="clientCalc15">$0.00</strong>
+                                            </div>
+                                            <div class="calc-item">
+                                                <span>50 photos:</span>
+                                                <strong id="clientCalc50">$0.00</strong>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -635,12 +574,136 @@
 
                         <div class="price-modal-footer">
                             <button type="button" class="btn btn-secondary" onclick="closePriceModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveAllPricing()">
+                                <i class="fas fa-save"></i> Save All Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ===== MODAL PARA GERENCIAR VOLUME DISCOUNTS ===== -->
+                <div id="volumeRulesModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay" onclick="this.parentElement.style.display='none'"></div>
+                    <div class="price-modal-content" style="max-width: 600px;">
+                        <div class="price-modal-header">
+                            <h3 class="modal-title">
+                                <i class="fas fa-percentage"></i>
+                                <span>Manage Volume Discounts</span>
+                            </h3>
+                            <button class="modal-close" onclick="adminPricing.closeVolumeRulesModal()">
                                 <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="price-modal-body">
+                            <div class="info-box"
+                                style="background: rgba(212, 175, 55, 0.1); padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                                <p style="margin: 0; color: var(--text-secondary);">
+                                    <i class="fas fa-info-circle"></i>
+                                    Volume discounts apply automatically to ALL regular clients based on quantity
+                                    purchased.
+                                </p>
+                            </div>
+
+                            <!-- Lista de regras existentes -->
+                            <div id="volumeRulesListModal" style="margin-bottom: 1rem;">
+                                <!-- Será preenchido via JS -->
+                            </div>
+
+                            <!-- Formulário para nova regra -->
+                            <div class="add-rule-form"
+                                style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 4px;">
+                                <h5>Add New Volume Rule</h5>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>From (photos)</label>
+                                        <input type="number" id="volumeMinQty" min="1" class="form-input"
+                                            placeholder="10">
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>To (photos)</label>
+                                        <input type="number" id="volumeMaxQty" min="1" class="form-input"
+                                            placeholder="20">
+                                        <small>Leave empty for unlimited</small>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>Discount (%)</label>
+                                        <input type="number" id="volumeDiscount" min="0" max="100" class="form-input"
+                                            placeholder="10">
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="adminPricing.addVolumeRule()">
+                                    <i class="fas fa-plus"></i> Add Rule
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODAL PARA ADICIONAR CLIENT EXCEPTION ===== -->
+                <div id="clientRuleModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay" onclick="this.parentElement.style.display='none'"></div>
+                    <div class="price-modal-content" style="max-width: 500px;">
+                        <div class="price-modal-header">
+                            <h3 class="modal-title">
+                                <i class="fas fa-user-tag"></i>
+                                <span>Add Client Exception</span>
+                            </h3>
+                            <button class="modal-close" onclick="adminPricing.closeClientRuleModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="price-modal-body">
+                            <div class="form-group">
+                                <label>Select Client</label>
+                                <select id="clientRuleSelect" class="form-input">
+                                    <option value="">Choose a client...</option>
+                                    <!-- Será preenchido via JS -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Pricing Type</label>
+                                <div style="display: flex; gap: 1rem;">
+                                    <label style="flex: 1;">
+                                        <input type="radio" name="clientPriceType" value="discount" checked
+                                            onchange="adminPricing.toggleClientPriceType()">
+                                        Extra Discount (%)
+                                    </label>
+                                    <label style="flex: 1;">
+                                        <input type="radio" name="clientPriceType" value="fixed"
+                                            onchange="adminPricing.toggleClientPriceType()">
+                                        Fixed Price ($)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="clientDiscountGroup" class="form-group">
+                                <label>Extra Discount (%)</label>
+                                <input type="number" id="clientDiscountPercent" min="0" max="100" class="form-input"
+                                    placeholder="5">
+                                <small>This adds to any volume discounts</small>
+                            </div>
+
+                            <div id="clientFixedGroup" class="form-group" style="display: none;">
+                                <label>Fixed Price per Photo ($)</label>
+                                <input type="number" id="clientFixedPrice" min="0" step="0.01" class="form-input"
+                                    placeholder="30.00">
+                                <small>This overrides all other pricing</small>
+                            </div>
+                        </div>
+
+                        <div class="price-modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                onclick="this.closest('.price-modal').style.display='none'">
                                 Cancel
                             </button>
-                            <button type="submit" form="priceForm" class="btn btn-primary" id="btnSavePrice">
-                                <i class="fas fa-save"></i>
-                                Save Price
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveClientRule()">
+                                <i class="fas fa-save"></i> Save Rule
                             </button>
                         </div>
                     </div>
@@ -749,10 +812,6 @@
 
                     <!-- Tabela de Seleções -->
                     <div class="selections-table-container">
-                        <div class="table-header">
-                            <h3 class="table-title">Client Selections</h3>
-                        </div>
-
                         <table class="selections-table">
                             <thead>
                                 <tr>
