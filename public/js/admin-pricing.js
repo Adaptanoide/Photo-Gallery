@@ -18,6 +18,13 @@ class AdminPricing {
             sortBy: 'name'
         };
 
+        // Estado de sincronização (NOVA ADIÇÃO)
+        this.syncState = {
+            isRunning: false,
+            startTime: null,
+            intervalId: null
+        };
+
         this.init();
     }
 
@@ -27,6 +34,7 @@ class AdminPricing {
         this.setupElements();
         this.setupEventListeners();
         this.checkSyncStatus();
+        this.initAutoSync();
         console.log('✅ Price Management initialized');
     }
 
@@ -38,9 +46,10 @@ class AdminPricing {
             return;
         }
 
-        // Main elements
-        this.syncStatusCard = document.getElementById('syncStatusCard');
-        this.pricingStats = document.getElementById('pricingStats');
+        // Main elements - ATUALIZADO PARA NOVO HTML
+        this.syncStatusBanner = document.getElementById('syncStatusBanner');
+        this.syncStatusText = document.getElementById('syncStatusText');
+        this.syncLastUpdate = document.getElementById('syncLastUpdate');
         this.pricingTable = document.getElementById('pricingTableBody');
         this.pricingPagination = document.getElementById('pricingPagination');
 
@@ -49,21 +58,23 @@ class AdminPricing {
         this.priceForm = document.getElementById('priceForm');
 
         // DEBUG LOG
-        console.log('🔵 Modal found:', this.priceModal);
+        console.log('🔵 Elements found:', {
+            banner: this.syncStatusBanner,
+            table: this.pricingTable,
+            modal: this.priceModal
+        });
 
         // Loading
         this.loading = document.getElementById('loading');
     }
 
     setupEventListeners() {
-        // Main buttons
+        // Main buttons - ATUALIZADO PARA NOVOS BOTÕES
         const btnSyncDrive = document.getElementById('btnSyncDrive');
-        const btnForcSync = document.getElementById('btnForcSync');
-        const btnPricingReport = document.getElementById('btnPricingReport');
+        const btnBulkEdit = document.getElementById('btnBulkEdit');
 
-        if (btnSyncDrive) btnSyncDrive.addEventListener('click', () => this.syncDrive(false));
-        if (btnForcSync) btnForcSync.addEventListener('click', () => this.syncDrive(true));
-        if (btnPricingReport) btnPricingReport.addEventListener('click', () => this.generateReport());
+        if (btnSyncDrive) btnSyncDrive.addEventListener('click', () => this.syncDrive(true)); // sempre force sync
+        if (btnBulkEdit) btnBulkEdit.addEventListener('click', () => this.openBulkEditModal());
 
         // Filters
         const searchInput = document.getElementById('searchCategories');
@@ -116,7 +127,7 @@ class AdminPricing {
         }
 
         // NEW: Debug log
-        console.log('🔵 Event listeners configured for modal');
+        console.log('🔵 Event listeners configured');
     }
 
     // ===== GOOGLE DRIVE SYNCHRONIZATION =====
@@ -140,13 +151,15 @@ class AdminPricing {
 
         } catch (error) {
             console.error('❌ Error checking sync status:', error);
-            this.showSyncStatus('Error checking status', 'danger');
+            this.showSyncStatus('Error checking status', 'warning');
         }
     }
 
     async syncDrive(forceRefresh = false) {
         try {
-            this.setLoading(true);
+            // this.setLoading(true); // Comentado - agora usa loading localizado
+            this.showSyncLoading(true);
+            this.updateSyncProgress('Connecting to Google Drive...', 10);
             this.showSyncStatus('Synchronizing with Google Drive...', 'warning');
 
             const response = await fetch('/api/pricing/sync', {
@@ -158,7 +171,9 @@ class AdminPricing {
                 body: JSON.stringify({ forceRefresh })
             });
 
+            this.updateSyncProgress('Processing response...', 50);
             const data = await response.json();
+            this.updateSyncProgress('Updating database...', 70);
 
             if (data.success) {
                 const { created, updated, deactivated, errors } = data.summary;
@@ -172,7 +187,12 @@ class AdminPricing {
                     this.loadCategories()
                 ]);
 
+                this.updateSyncProgress('Synchronization complete!', 100);
                 this.showNotification('Synchronization completed successfully!', 'success');
+                // Esconder loading após 2 segundos
+                setTimeout(() => {
+                    this.showSyncLoading(false);
+                }, 2000);
 
             } else {
                 throw new Error(data.message || 'Synchronization error');
@@ -182,37 +202,76 @@ class AdminPricing {
             console.error('❌ Synchronization error:', error);
             this.showSyncStatus(`Sync error: ${error.message}`, 'danger');
             this.showNotification('Synchronization error', 'error');
+            this.updateSyncProgress('Synchronization failed!', 0);
+            // Esconder loading após 3 segundos em caso de erro
+            setTimeout(() => {
+                this.showSyncLoading(false);
+            }, 3000);
         } finally {
-            this.setLoading(false);
+            // this.setLoading(false); // Comentado - agora usa loading localizado
+            // Loading já é escondido no setTimeout acima
         }
     }
 
+    // Mostrar/ocultar loading de sincronização localizado
+    showSyncLoading(show = true) {
+        const loadingEl = document.getElementById('pricingSyncLoading');
+        if (loadingEl) {
+            loadingEl.style.display = show ? 'block' : 'none';
+            if (show) {
+                loadingEl.classList.add('active');
+            } else {
+                loadingEl.classList.remove('active');
+            }
+        }
+    }
+
+    // Atualizar progresso da sincronização
+    updateSyncProgress(message, percentage = 0) {
+        const progressBar = document.getElementById('syncProgressBar');
+        const progressText = document.getElementById('syncProgressText');
+
+        if (progressBar) progressBar.style.width = `${percentage}%`;
+        if (progressText) progressText.textContent = message;
+    }
+
+    // Inicializar sincronização automática
+    initAutoSync() {
+        console.log('🔄 Auto-sync initialized (manual only for now)');
+        // Por enquanto só manual, depois implementamos o automático
+    }
+
     updateSyncStatus(syncStatus) {
-        if (!this.syncStatusCard) return;
+        if (!this.syncStatusBanner) return;
 
         const { needingSyncCount, lastSyncDate, isOutdated, hoursOld } = syncStatus;
 
         if (isOutdated) {
-            const message = `${needingSyncCount} categories need synchronization. Last sync: ${hoursOld}h ago`;
-            this.showSyncStatus(message, 'warning');
+            this.syncStatusBanner.className = 'sync-status-banner warning';
+            this.syncStatusText.textContent = `${needingSyncCount} categories need synchronization`;
+            this.syncLastUpdate.textContent = `Last sync: ${hoursOld}h ago`;
         } else {
-            const message = lastSyncDate ?
-                `System synchronized. Last update: ${this.formatDate(lastSyncDate)}` :
-                'System awaiting first synchronization';
-            this.showSyncStatus(message, lastSyncDate ? 'success' : 'warning');
+            this.syncStatusBanner.className = 'sync-status-banner';
+            this.syncStatusText.textContent = 'System synchronized';
+            this.syncLastUpdate.textContent = lastSyncDate ?
+                `Last update: ${this.formatDate(lastSyncDate)}` :
+                'Last update: Never';
         }
+
+        this.syncStatusBanner.style.display = 'block';
     }
 
     showSyncStatus(message, type = 'warning') {
-        if (!this.syncStatusCard) return;
+        if (!this.syncStatusBanner) return;
 
-        const messageEl = document.getElementById('syncStatusMessage');
-        if (messageEl) {
-            messageEl.textContent = message;
+        this.syncStatusText.textContent = message;
+        this.syncStatusBanner.className = `sync-status-banner ${type === 'warning' ? 'warning' : ''}`;
+        this.syncStatusBanner.style.display = 'block';
+
+        // Se for sucesso, atualizar também o Last Update
+        if (type === 'success') {
+            this.syncLastUpdate.textContent = `Last update: ${this.formatDate(new Date())}`;
         }
-
-        this.syncStatusCard.className = `sync-status-card ${type}`;
-        this.syncStatusCard.style.display = 'block';
     }
 
     // ===== CATEGORY LOADING =====
@@ -289,12 +348,14 @@ class AdminPricing {
                 <td class="pricing-actions-cell" onclick="event.stopPropagation();">
                     <div class="pricing-action-buttons">
                         <button class="btn-pricing-action btn-edit-price" 
-                                onclick="adminPricing.openPriceModal('${category._id}', 'edit')">
-                            <i class="fas fa-edit"></i> Edit
+                                onclick="adminPricing.openPriceModal('${category._id}', 'edit')"
+                                title="Edit">
+                            <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn-pricing-action btn-view-details" 
-                                onclick="adminPricing.viewCategoryDetails('${category._id}')">
-                            <i class="fas fa-info-circle"></i> Details
+                                onclick="adminPricing.viewCategoryDetails('${category._id}')"
+                                title="View Details">
+                            <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </td>
@@ -1237,7 +1298,7 @@ class AdminPricing {
 
     // ===== STATISTICS =====
     updateStats(statistics) {
-        if (!this.pricingStats || !statistics) return;
+        if (!statistics) return;
 
         const elements = {
             totalCategoriesCount: statistics.totalCategories,
@@ -1253,7 +1314,8 @@ class AdminPricing {
             }
         });
 
-        this.pricingStats.style.display = 'block';
+        // Não precisa mais mostrar/esconder pricingStats pois agora é sempre visível
+        console.log('📊 Stats updated:', statistics);
     }
 
     // ===== REPORTS =====
@@ -1280,6 +1342,16 @@ class AdminPricing {
         } finally {
             this.setLoading(false);
         }
+    }
+
+    // ===== BULK EDIT =====
+    openBulkEditModal() {
+        console.log('🔧 Bulk Edit clicked');
+        this.showNotification('Bulk edit feature coming soon!', 'info');
+        // TODO: Implementar bulk edit para múltiplas categorias
+        // - Selecionar múltiplas categorias
+        // - Aplicar preço em massa
+        // - Aplicar descontos em massa
     }
 
     downloadReport(reportData) {

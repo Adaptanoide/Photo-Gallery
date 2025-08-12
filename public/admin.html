@@ -280,41 +280,62 @@
                 </div>
 
                 <div id="section-pricing" class="content-section" style="display: none;">
-                    <!-- Cabeçalho da Seção de Preços -->
-                    <div class="pricing-section-header">
-                        <h2 class="pricing-title">
-                            <i class="fas fa-dollar-sign"></i>
-                            Price Management
-                        </h2>
-                        <div class="pricing-actions">
-                            <button id="btnSyncDrive" class="btn btn-secondary">
-                                <i class="fas fa-sync-alt"></i>
-                                Sync Google Drive
-                            </button>
-                            <button id="btnPricingReport" class="btn btn-primary">
-                                <i class="fas fa-chart-line"></i>
-                                Report
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Status da Sincronização -->
-                    <div id="syncStatusCard" class="sync-status-card" style="display: none;">
-                        <div class="sync-status-content">
-                            <div class="sync-status-info">
-                                <h4><i class="fas fa-info-circle"></i> Sync Status</h4>
-                                <p id="syncStatusMessage">Checking status...</p>
-                            </div>
-                            <div class="sync-status-actions">
-                                <button id="btnForcSync" class="btn btn-warning">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    Force Sync
+                    <!-- Container Card para o Header (IGUAL AO SELECTION) -->
+                    <div class="section-header-card">
+                        <div class="selections-section-header">
+                            <h2 class="selections-title">
+                                <i class="fas fa-dollar-sign"></i>
+                                Price Management
+                            </h2>
+                            <div class="selections-actions">
+                                <button id="btnBulkEdit" class="btn btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                    Bulk Edit
+                                </button>
+                                <button id="btnSyncDrive" class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i>
+                                    Sync with Drive
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Filtros -->
+                    <!-- Banner de Sync (mantém como está) -->
+                    <div id="syncStatusBanner" class="sync-status-banner" style="display: none;">
+                        <div class="sync-status-content">
+                            <i class="fas fa-info-circle"></i>
+                            <span id="syncStatusText">System synchronized</span>
+                            <small id="syncLastUpdate">Last update: Never</small>
+                        </div>
+                    </div>
+
+                    <!-- Loading de Sincronização Localizado -->
+                    <div id="pricingSyncLoading" class="pricing-sync-loading" style="display: none;">
+                        <div class="sync-loading-overlay"></div>
+                        <div class="sync-loading-content">
+                            <div class="sync-loading-spinner">
+                                <i class="fas fa-sync-alt fa-spin"></i>
+                            </div>
+                            <h3 class="sync-loading-title">Google Drive Synchronization in Progress</h3>
+                            <p class="sync-loading-message">
+                                We're updating categories and photo counts from Google Drive.<br>
+                                This ensures accurate pricing and inventory management.<br>
+                                <strong>This may take a few minutes. You can switch tabs and return later.</strong>
+                            </p>
+                            <div class="sync-loading-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="syncProgressBar"></div>
+                                </div>
+                                <span class="progress-text" id="syncProgressText">Initializing...</span>
+                            </div>
+                            <small class="sync-loading-info">
+                                <i class="fas fa-info-circle"></i>
+                                Automatic sync runs every 2 hours between 7 AM - 6 PM EST
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Filtros (mantém como está) -->
                     <div class="pricing-filters">
                         <div class="filters-row">
                             <div class="filter-group">
@@ -346,8 +367,8 @@
                         </div>
                     </div>
 
-                    <!-- Estatísticas Rápidas -->
-                    <div id="pricingStats" class="pricing-stats" style="display: none;">
+                    <!-- STATS CARDS CORRETOS AQUI! -->
+                    <div id="pricingStats" class="pricing-stats" style="display: block;">
                         <div class="stats-grid">
                             <div class="stat-card">
                                 <div class="stat-header">
@@ -403,21 +424,8 @@
                         </div>
                     </div>
 
-                    <!-- Lista de Categorias com Preços -->
+                    <!-- Tabela (sem botões extras) -->
                     <div class="pricing-table-container">
-                        <div class="table-header">
-                            <h3 class="table-title">Categories and Prices</h3>
-                            <div class="table-actions">
-                                <button id="btnBulkPricing" class="btn btn-secondary">
-                                    <i class="fas fa-edit"></i>
-                                    Bulk Edit
-                                </button>
-                                <button id="btnExportPricing" class="btn btn-primary">
-                                    <i class="fas fa-download"></i>
-                                    Export
-                                </button>
-                            </div>
-                        </div>
 
                         <table class="pricing-table">
                             <thead>
@@ -431,7 +439,7 @@
                             </thead>
                             <tbody id="pricingTableBody">
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="5" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i>
                                         Loading categories...
                                     </td>
@@ -725,19 +733,18 @@
                         </div>
                     </div>
 
-                    <!-- Cards de Estatísticas -->
-                    <div class="selections-stats">
+                    <!-- Estatísticas Rápidas -->
+                    <div id="pricingStats" class="pricing-stats" style="display: block;">
                         <div class="stats-grid">
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Total Selections</div>
-                                        <div class="stat-value" id="totalSelections">-</div>
-                                        <div class="stat-description" id="totalSelectionsDescription">All time
-                                            selections</div>
+                                        <div class="stat-title">Total Categories</div>
+                                        <div class="stat-value" id="totalCategoriesCount">-</div>
+                                        <div class="stat-description">Folders with photos</div>
                                     </div>
                                     <div class="stat-icon primary">
-                                        <i class="fas fa-shopping-cart"></i>
+                                        <i class="fas fa-folder"></i>
                                     </div>
                                 </div>
                             </div>
@@ -745,27 +752,12 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Pending Approvals</div>
-                                        <div class="stat-value" id="pendingSelections">-</div>
-                                        <div class="stat-description" id="pendingSelectionsDescription">Awaiting
-                                            approval</div>
-                                    </div>
-                                    <div class="stat-icon warning">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">This Month</div>
-                                        <div class="stat-value" id="thisMonthSelections">-</div>
-                                        <div class="stat-description" id="thisMonthSelectionsDescription">This month
-                                        </div>
+                                        <div class="stat-title">With Price Set</div>
+                                        <div class="stat-value" id="categoriesWithPriceCount">-</div>
+                                        <div class="stat-description">Priced categories</div>
                                     </div>
                                     <div class="stat-icon success">
-                                        <i class="fas fa-calendar-alt"></i>
+                                        <i class="fas fa-dollar-sign"></i>
                                     </div>
                                 </div>
                             </div>
@@ -773,13 +765,25 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Average Value</div>
-                                        <div class="stat-value" id="averageSelectionValue">-</div>
-                                        <div class="stat-description" id="averageSelectionValueDescription">Per
-                                            selection</div>
+                                        <div class="stat-title">Without Price</div>
+                                        <div class="stat-value" id="categoriesWithoutPriceCount">-</div>
+                                        <div class="stat-description">Need pricing</div>
+                                    </div>
+                                    <div class="stat-icon warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Total Photos</div>
+                                        <div class="stat-value" id="totalPhotosCount">-</div>
+                                        <div class="stat-description">In all categories</div>
                                     </div>
                                     <div class="stat-icon secondary">
-                                        <i class="fas fa-dollar-sign"></i>
+                                        <i class="fas fa-images"></i>
                                     </div>
                                 </div>
                             </div>

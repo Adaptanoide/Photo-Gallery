@@ -318,15 +318,9 @@
 }
 
 .photo-count-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    color: var(--luxury-dark);
-    font-weight: 700;
+    color: var(--text-primary);
+    font-weight: 600;
     font-size: 0.9rem;
-    padding: 0.25rem 0.6rem;
-    border-radius: 15px;
-    min-width: 35px;
-    text-align: center;
 }
 
 .photo-label {
@@ -352,23 +346,14 @@
 }
 
 .price-value {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: white;
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
+    color: var(--text-primary);
     font-weight: 600;
-    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
 }
 
 .no-price-text {
-    color: var(--warning);
+    color: var(--text-secondary);
     font-style: italic;
-    font-size: 0.8rem;
-    background: rgba(245, 158, 11, 0.1);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    font-size: 0.9rem;
 }
 
 /* Estilos dos botões de ação atualizados */
@@ -376,105 +361,6 @@
     text-align: right;
     white-space: nowrap;
     width: 180px;
-}
-
-.pricing-action-buttons {
-    display: flex;
-    gap: 0.4rem;
-    justify-content: flex-end;
-}
-
-.btn-pricing-action {
-    padding: 0.4rem 0.8rem;
-    border: none;
-    border-radius: var(--border-radius);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    min-width: 70px;
-    justify-content: center;
-}
-
-.btn-edit-price {
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    color: var(--luxury-dark);
-}
-
-.btn-edit-price:hover {
-    background: linear-gradient(135deg, var(--gold-hover), #a67c00);
-    transform: translateY(-1px);
-}
-
-.btn-view-details {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-}
-
-.btn-view-details:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    transform: translateY(-1px);
-}
-
-/* ===== AÇÕES DA TABELA LUXUOSAS ===== */
-
-.pricing-actions-cell {
-    text-align: right;
-    white-space: nowrap;
-}
-
-.pricing-action-buttons {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-}
-
-.btn-pricing-action {
-    padding: 0.4rem 0.8rem;
-    border: none;
-    border-radius: var(--border-radius);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    min-width: 70px;
-    justify-content: center;
-}
-
-.btn-set-price {
-    background: linear-gradient(135deg, var(--success), #16a34a);
-    color: var(--luxury-dark);
-}
-
-.btn-set-price:hover {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    transform: translateY(-1px);
-}
-
-.btn-edit-price {
-    background: linear-gradient(135deg, var(--warning), #d97706);
-    color: var(--luxury-dark);
-}
-
-.btn-edit-price:hover {
-    background: linear-gradient(135deg, #d97706, #b45309);
-    transform: translateY(-1px);
-}
-
-.btn-view-details {
-    background: linear-gradient(135deg, #64748b, #475569);
-    color: var(--text-primary);
-}
-
-.btn-view-details:hover {
-    background: linear-gradient(135deg, #475569, #334155);
-    transform: translateY(-1px);
 }
 
 /* ===== MODAL DE PREÇO LUXUOSO ===== */
@@ -1673,4 +1559,256 @@
     color: var(--primary-color);
     font-weight: 600;
     font-size: 1rem;
+}
+
+/* ===== PADRONIZAÇÃO COM OUTRAS ABAS ===== */
+
+/* Card Container para o Header (igual ao Selection) */
+.section-header-card {
+    background: linear-gradient(135deg, var(--luxury-medium), rgba(58, 58, 66, 0.8));
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--border-radius-large);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Header dentro do card */
+#section-pricing .selections-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+#section-pricing .selections-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#section-pricing .selections-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Banner de sync discreto */
+.sync-status-banner {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    animation: slideInDown 0.3s ease;
+}
+
+.sync-status-banner.warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.sync-status-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sync-status-content i {
+    color: var(--success);
+}
+
+.sync-status-banner.warning .sync-status-content i {
+    color: var(--warning);
+}
+
+.sync-status-content span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.sync-status-content small {
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+/* Remover estilos antigos conflitantes */
+.pricing-section-header,
+.sync-status-card {
+    display: none !important;
+}
+
+/* Badge de preço SEM FUNDOS COLORIDOS */
+.price-cell.no-price .no-price-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.price-cell.has-price .price-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ===== BOTÕES DE AÇÃO PADRONIZADOS (IGUAL SPECIAL SELECTIONS) ===== */
+.pricing-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.btn-pricing-action {
+    width: 36px;
+    height: 36px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(44, 44, 52, 0.8);
+    transition: 0.3s;
+    position: relative;
+}
+
+.btn-pricing-action:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--gold-primary);
+    color: var(--gold-primary);
+}
+
+.btn-pricing-action i {
+    font-size: 0.875rem;
+    pointer-events: none;
+}
+
+/* Header da tabela igual ao Special Selections */
+.pricing-table thead {
+    background: rgba(44, 44, 52, 0.8);
+}
+
+.pricing-table th {
+    background: transparent;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gold-primary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ===== LOADING DE SINCRONIZAÇÃO LOCALIZADO ===== */
+.pricing-sync-loading {
+    position: relative;
+    z-index: 100;
+}
+
+.sync-loading-overlay {
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    background: rgba(30, 30, 35, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 101;
+}
+
+.sync-loading-content {
+    position: relative;
+    z-index: 102;
+    background: linear-gradient(135deg, var(--luxury-medium), rgba(58, 58, 66, 0.95));
+    border: 2px solid var(--gold-primary);
+    border-radius: var(--border-radius-large);
+    padding: 3rem;
+    margin: 2rem auto;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(212, 175, 55, 0.3);
+    animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 20px 60px rgba(212, 175, 55, 0.3); }
+    50% { box-shadow: 0 20px 80px rgba(212, 175, 55, 0.5); }
+}
+
+.sync-loading-spinner {
+    font-size: 3rem;
+    color: var(--gold-primary);
+    margin-bottom: 1.5rem;
+}
+
+.sync-loading-spinner i {
+    animation: spin 1s linear infinite;
+}
+
+.sync-loading-title {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.sync-loading-message {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.sync-loading-message strong {
+    color: var(--gold-primary);
+}
+
+.sync-loading-progress {
+    margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+    background: rgba(0, 0, 0, 0.3);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-primary), var(--gold-hover));
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.progress-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.sync-loading-info {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* Quando loading ativo, desabilita interação com o resto */
+.pricing-sync-loading.active ~ * {
+    pointer-events: none;
+    opacity: 0.3;
+    filter: blur(2px);
 }
