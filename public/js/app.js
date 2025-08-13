@@ -1,5 +1,19 @@
 //public/js/app.js
 
+// REGISTRAR SERVICE WORKER v3 - Cache inteligente
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('✅ Service Worker v4 registrado - Cache melhorado!');
+                console.log('📦 Cache de thumbnails ativado (24h)');
+            })
+            .catch(err => {
+                console.log('⚠️ Service Worker não registrou:', err);
+            });
+    });
+}
+
 // Estado da aplicação
 const AppState = {
     isLoggedIn: false,

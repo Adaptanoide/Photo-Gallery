@@ -233,6 +233,7 @@ function showSubfolders(folders) {
 
 // Navegar para subpasta
 async function navigateToSubfolder(folderId, folderName) {
+    // CÓDIGO ORIGINAL CONTINUA
     navigationState.currentPath.push({ id: folderId, name: folderName });
     navigationState.currentFolderId = folderId;
 

@@ -4,8 +4,8 @@
 class VirtualGallery {
     constructor() {
         // CONFIGURAÇÕES CRÍTICAS PARA FOTOS PESADAS
-        this.BATCH_SIZE = 12;            // Apenas 12 fotos por vez (fotos de 8-40MB!)
-        this.LOAD_THRESHOLD = 500;       // Pixels antes do fim para carregar mais
+        this.BATCH_SIZE = 10;       
+        this.LOAD_THRESHOLD = 500;
         this.allPhotos = [];            
         this.loadedCount = 0;           
         this.isLoading = false;         
