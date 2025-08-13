@@ -266,7 +266,7 @@ async function loadPhotos(folderId) {
     }
 }
 
-// Mostrar galeria de fotos
+// Mostrar galeria de fotos - COM VIRTUAL SCROLLING
 function showPhotosGallery(photos, folderName, categoryPrice) {
     hideAllContainers();
     hideLoading(); // NOVO: esconder loading
@@ -281,7 +281,6 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     } else {
         galleryTitle.textContent = folderName;
     }
-    document.getElementById('photosCount').textContent = `${photos.length} photo(s)`;
 
     // Gerar grid de fotos
     const gridEl = document.getElementById('photosGrid');
@@ -291,49 +290,71 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         return;
     }
 
-    gridEl.innerHTML = photos.map((photo, index) => {
-        // Usar thumbnail de melhor qualidade do Google Drive
-        const thumbnailUrl = photo.thumbnailLink ?
-            photo.thumbnailLink.replace('=s220', '=s400') : // Melhor qualidade
-            photo.thumbnailMedium ||
-            photo.thumbnailSmall ||
-            '';
+    // NOVO: Decidir se usa Virtual Scrolling ou modo tradicional
+    const USE_VIRTUAL_SCROLLING = photos.length > 30; // Ativar se mais de 30 fotos
 
-        // Verificar se está no carrinho
-        const isInCart = window.CartSystem && CartSystem.isInCart(photo.id);
+    if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
+        // MODO VIRTUAL SCROLLING - Para muitas fotos
+        console.log(`🚀 Usando Virtual Scrolling para ${photos.length} fotos`);
+        document.getElementById('photosCount').innerHTML = `Loading <strong>${photos.length}</strong> photos...`;
 
-        return `
-            <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
-                <img src="${thumbnailUrl}" 
-                    alt="${photo.name}" 
-                    loading="lazy"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                
-                <!-- Badge de preço no canto superior direito -->
-                <div class="photo-price ${categoryPrice?.hasPrice ? '' : 'no-price'}">
-                    ${categoryPrice?.formattedPrice || 'Check price'}
-                </div>
+        // Limpar galeria anterior se existir
+        if (window.virtualGallery.destroy) {
+            window.virtualGallery.destroy();
+        }
 
-                <!-- NOVO: Botão Add to Cart -->
-                <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
-                        onclick="event.stopPropagation(); addToCartFromThumbnail('${photo.id}', ${index})"
-                        title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
-                    <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
-                    <span>${isInCart ? 'Remove' : 'Add'}</span>
-                </button>
-                
-                <div class="photo-placeholder" style="display: none;">
-                    <i class="fas fa-image"></i>
-                    <small>Image not available</small>
+        // Inicializar Virtual Gallery
+        window.virtualGallery.init(photos, gridEl, categoryPrice);
+
+    } else {
+        // MODO TRADICIONAL - Para poucas fotos (mantém código original)
+        console.log(`📋 Modo tradicional para ${photos.length} fotos`);
+        document.getElementById('photosCount').textContent = `${photos.length} photo(s)`;
+
+        gridEl.innerHTML = photos.map((photo, index) => {
+            // Usar thumbnail de melhor qualidade do Google Drive
+            const thumbnailUrl = photo.thumbnailLink ?
+                photo.thumbnailLink.replace('=s220', '=s400') : // Melhor qualidade
+                photo.thumbnailMedium ||
+                photo.thumbnailSmall ||
+                '';
+
+            // Verificar se está no carrinho
+            const isInCart = window.CartSystem && CartSystem.isInCart(photo.id);
+
+            return `
+                <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
+                    <img src="${thumbnailUrl}" 
+                        alt="${photo.name}" 
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    
+                    <!-- Badge de preço no canto superior direito -->
+                    <div class="photo-price ${categoryPrice?.hasPrice ? '' : 'no-price'}">
+                        ${categoryPrice?.formattedPrice || 'Check price'}
+                    </div>
+
+                    <!-- NOVO: Botão Add to Cart -->
+                    <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
+                            onclick="event.stopPropagation(); addToCartFromThumbnail('${photo.id}', ${index})"
+                            title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
+                        <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
+                        <span>${isInCart ? 'Remove' : 'Add'}</span>
+                    </button>
+                    
+                    <div class="photo-placeholder" style="display: none;">
+                        <i class="fas fa-image"></i>
+                        <small>Image not available</small>
+                    </div>
+                    
+                    <div class="photo-overlay">
+                        <div><strong>${photo.name}</strong></div>
+                        <small>${formatFileSize(photo.size)}</small>
+                    </div>
                 </div>
-                
-                <div class="photo-overlay">
-                    <div><strong>${photo.name}</strong></div>
-                    <small>${formatFileSize(photo.size)}</small>
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
 }
 
 // ===== MODAL DE FOTOS =====
