@@ -387,3 +387,85 @@ body.home-page .company-logo:hover {
     width: auto;
     margin-right: 10px;
 }
+
+body.home-page #accessModal .modal-message {
+    padding: 1.5rem 0;
+}
+
+body.home-page #accessModal .modal-message p {
+    margin-bottom: 1rem;
+    color: #4a5568;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+body.home-page #accessModal .modal-message .help-text {
+    color: #718096;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+body.home-page #accessModal h2 i {
+    color: var(--gold-primary);
+    margin-right: 0.5rem;
+}
+/* ===== ACCESS VERIFICATION MODAL ===== */
+body.home-page #accessModal .modal-content {
+    max-width: 450px;
+    text-align: left; /* Mudado de center para left */
+    position: relative;
+    padding: 2.5rem 2rem 2rem; /* Mais espaço no topo para o X */
+}
+
+body.home-page #accessModal .close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: normal;
+    color: #718096;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    line-height: 1;
+    opacity: 1;
+}
+
+body.home-page #accessModal .close:hover {
+    color: var(--gold-primary);
+}
+
+body.home-page #accessModal h2 {
+    text-align: left; /* Título à esquerda */
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+body.home-page #accessModal h2 i {
+    color: var(--gold-primary);
+    margin-right: 0.5rem;
+}
+
+body.home-page #accessModal .modal-message {
+    padding: 1rem 0;
+    text-align: left; /* Mensagens à esquerda */
+}
+
+body.home-page #accessModal .modal-message p {
+    margin-bottom: 1rem;
+    color: #4a5568;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: left; /* Parágrafo à esquerda */
+}
+
+body.home-page #accessModal .modal-message .help-text {
+    color: #718096;
+    font-style: italic;
+    font-size: 0.9rem;
+    text-align: left; /* Help text à esquerda */
+}
+
+body.home-page #accessModal .btn-primary {
+    width: 100%;
+    margin-top: 1rem;
+}

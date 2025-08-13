@@ -143,6 +143,14 @@ function showClientLogin() {
     document.getElementById('clientCode').focus();
 }
 
+// Mostrar modal de verificação de acesso
+function showAccessModal() {
+    const modal = document.getElementById('accessModal');
+    if (modal) {
+        modal.style.display = 'block';
+    }
+}
+
 // Fechar modal específico
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -270,7 +278,7 @@ async function handleDirectClientLogin(e) {
             }, 1000);
 
         } else {
-            showNotification(data.message || 'Invalid or expired access code', 'error');
+            showAccessModal();
         }
 
     } catch (error) {
