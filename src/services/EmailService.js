@@ -137,8 +137,8 @@ class EmailService {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
                 totalItems: selectionData.totalItems,
-                totalValue: selectionData.totalValue ? `R$ ${selectionData.totalValue.toFixed(2)}` : 'A calcular',
-                folderName: selectionData.googleDriveInfo?.clientFolderName || 'Pasta não informada',
+                totalValue: selectionData.totalValue ? `R$ ${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
+                folderName: selectionData.googleDriveInfo?.clientFolderName || 'Folder not specified',
                 selectionId: selectionData.selectionId,
                 createdAt: new Date().toLocaleString('pt-BR')
             };
@@ -182,13 +182,13 @@ class EmailService {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
                 totalItems: selectionData.totalItems,
-                totalValue: selectionData.totalValue ? `R$ ${selectionData.totalValue.toFixed(2)}` : 'A calcular',
+                totalValue: selectionData.totalValue ? `R$ ${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
                 selectionId: selectionData.selectionId,
                 adminUser: adminUser,
                 confirmedAt: new Date().toLocaleString('pt-BR')
             };
 
-            const subject = `[Sunshine Cowhides] Seleção Confirmada - ${selectionData.clientName}`;
+            const subject = `[Sunshine Cowhides] Selection Confirmed - ${selectionData.clientName}`;
             const html = this.generateSelectionConfirmedHtml(templateData);
 
             return await this.sendEmail({
@@ -228,7 +228,7 @@ class EmailService {
                 cancelledAt: new Date().toLocaleString('pt-BR')
             };
 
-            const subject = `[Sunshine Cowhides] Seleção Cancelada - ${selectionData.clientName}`;
+            const subject = `[Sunshine Cowhides] Selection Cancelled - ${selectionData.clientName}`;
             const html = this.generateSelectionCancelledHtml(templateData);
 
             return await this.sendEmail({
@@ -248,12 +248,12 @@ class EmailService {
      */
     async testConfiguration(testEmail) {
         try {
-            const testSubject = '[Sunshine Cowhides] Teste de Configuração';
+            const testSubject = '[Sunshine Cowhides] Configuration Test';
             const testHtml = `
-                <h2>✅ Teste de Email</h2>
-                <p>Se você recebeu este email, a configuração SMTP está funcionando corretamente!</p>
-                <p><strong>Data/Hora:</strong> ${new Date().toLocaleString('pt-BR')}</p>
-                <p><strong>Sistema:</strong> Sunshine Cowhides</p>
+                <h2>✅ Email Test</h2>
+                <p>If you received this email, the SMTP configuration is working correctly!</p>
+                <p><strong>Date/Time:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+                <p><strong>System:</strong> Sunshine Cowhides</p>
             `;
 
             const result = await this.sendEmail({
@@ -311,31 +311,31 @@ class EmailService {
             </head>
             <body>
                 <div class="header">
-                    <h1>🎉 Nova Seleção de Cliente!</h1>
+                    <h1>🎉 New Customer Selection!</h1>
                 </div>
                 
                 <div class="content">
-                    <p>Olá!</p>
+                    <p>Hello!</p>
                     
-                    <p>Uma nova seleção foi criada e precisa da sua atenção:</p>
+                    <p>A new selection has been created and needs your attention:</p>
                     
                     <div class="info-box">
-                        <h3>📋 Detalhes da Seleção</h3>
-                        <p><strong>Cliente:</strong> ${data.clientName} (${data.clientCode})</p>
-                        <p><strong>ID da Seleção:</strong> ${data.selectionId}</p>
-                        <p><strong>Itens Selecionados:</strong> ${data.totalItems} fotos</p>
-                        <p><strong>Valor Total:</strong> ${data.totalValue}</p>
-                        <p><strong>Pasta no Drive:</strong> ${data.folderName}</p>
-                        <p><strong>Data/Hora:</strong> ${data.createdAt}</p>
+                        <h3>📋 Selection Details</h3>
+                        <p><strong>Customer:</strong> ${data.clientName} (${data.clientCode})</p>
+                        <p><strong>Selection ID:</strong> ${data.selectionId}</p>
+                        <p><strong>Selected Items:</strong> ${data.totalItems} photos</p>
+                        <p><strong>Total Value:</strong> ${data.totalValue}</p>
+                        <p><strong>Drive Folder:</strong> ${data.folderName}</p>
+                        <p><strong>Date/Time:</strong> ${data.createdAt}</p>
                     </div>
                     
-                    <p>🔗 <strong>Acesse o painel administrativo</strong> para processar esta seleção e entrar em contato com o cliente.</p>
+                    <p>🔗 <strong>Access the admin panel</strong> to process this selection and contact the customer.</p>
                     
-                    <p>Atenciosamente,<br>Sistema Sunshine Cowhides</p>
+                    <p>Best regards,<br>Sunshine Cowhides System</p>
                 </div>
                 
                 <div class="footer">
-                    Este email foi enviado automaticamente pelo sistema Sunshine Cowhides
+                    This email was automatically sent by Sunshine Cowhides system
                 </div>
             </body>
             </html>
@@ -360,18 +360,18 @@ class EmailService {
             </head>
             <body>
                 <div class="header">
-                    <h1>✅ Seleção Confirmada!</h1>
+                    <h1>✅ Selection Confirmed!</h1>
                 </div>
                 
                 <div class="content">
                     <div class="info-box">
-                        <h3>📋 Seleção Confirmada</h3>
-                        <p><strong>Cliente:</strong> ${data.clientName} (${data.clientCode})</p>
+                        <h3>📋 Confirmed Selection</h3>
+                        <p><strong>Customer:</strong> ${data.clientName} (${data.clientCode})</p>
                         <p><strong>ID:</strong> ${data.selectionId}</p>
-                        <p><strong>Itens:</strong> ${data.totalItems} fotos</p>
-                        <p><strong>Valor:</strong> ${data.totalValue}</p>
-                        <p><strong>Processado por:</strong> ${data.adminUser}</p>
-                        <p><strong>Data:</strong> ${data.confirmedAt}</p>
+                        <p><strong>Items:</strong> ${data.totalItems} photos</p>
+                        <p><strong>Value:</strong> ${data.totalValue}</p>
+                        <p><strong>Processed by:</strong> ${data.adminUser}</p>
+                        <p><strong>Date:</strong> ${data.confirmedAt}</p>
                     </div>
                 </div>
             </body>
@@ -397,18 +397,18 @@ class EmailService {
             </head>
             <body>
                 <div class="header">
-                    <h1>❌ Seleção Cancelada</h1>
+                    <h1>❌ Selection Cancelled</h1>
                 </div>
                 
                 <div class="content">
                     <div class="info-box">
-                        <h3>📋 Seleção Cancelada</h3>
-                        <p><strong>Cliente:</strong> ${data.clientName} (${data.clientCode})</p>
+                        <h3>📋 Cancelled Selection</h3>
+                        <p><strong>Customer:</strong> ${data.clientName} (${data.clientCode})</p>
                         <p><strong>ID:</strong> ${data.selectionId}</p>
-                        <p><strong>Itens:</strong> ${data.totalItems} fotos</p>
-                        <p><strong>Motivo:</strong> ${data.reason}</p>
-                        <p><strong>Cancelado por:</strong> ${data.adminUser}</p>
-                        <p><strong>Data:</strong> ${data.cancelledAt}</p>
+                        <p><strong>Items:</strong> ${data.totalItems} photos</p>
+                        <p><strong>Reason:</strong> ${data.reason}</p>
+                        <p><strong>Cancelled by:</strong> ${data.adminUser}</p>
+                        <p><strong>Date:</strong> ${data.cancelledAt}</p>
                     </div>
                 </div>
             </body>

@@ -115,23 +115,23 @@ const emailConfigSchema = new mongoose.Schema({
         newSelection: {
             subject: {
                 type: String,
-                default: '[Sunshine Cowhides] Nova Seleção de Cliente'
+                default: '[Sunshine Cowhides] New Customer Selection'
             },
             body: {
                 type: String,
-                default: `Olá!
+                default: `Hello!
 
-Uma nova seleção foi criada por um cliente:
+A new selection has been created by a customer:
 
-Cliente: {{clientName}} ({{clientCode}})
-Itens: {{totalItems}} fotos
-Valor: {{totalValue}}
-Pasta: {{folderName}}
+Customer: {{clientName}} ({{clientCode}})
+Items: {{totalItems}} photos
+Value: {{totalValue}}
+Folder: {{folderName}}
 
-Acesse o painel administrativo para processar esta seleção.
+Please access the admin panel to process this selection.
 
-Atenciosamente,
-Sistema Sunshine Cowhides`
+Best regards,
+Sunshine Cowhides System`
             }
         }
     },
