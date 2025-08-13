@@ -60,7 +60,7 @@ function setupEventListeners() {
     }
 
     if (elements.clientLoginForm) {
-        elements.clientLoginForm.addEventListener('submit', handleClientLogin);
+        // elements.clientLoginForm.addEventListener('submit', handleClientLogin); // COMENTADO - função não existe
     }
 
     // Input de código do cliente - verificar se existe

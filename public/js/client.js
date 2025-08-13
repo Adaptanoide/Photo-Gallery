@@ -291,7 +291,7 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     }
 
     // NOVO: Decidir se usa Virtual Scrolling ou modo tradicional
-    const USE_VIRTUAL_SCROLLING = photos.length > 30; // Ativar se mais de 30 fotos
+    const USE_VIRTUAL_SCROLLING = photos.length > 30;
 
     if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
         // MODO VIRTUAL SCROLLING - Para muitas fotos
@@ -314,7 +314,7 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         gridEl.innerHTML = photos.map((photo, index) => {
             // Usar thumbnail de melhor qualidade do Google Drive
             const thumbnailUrl = photo.thumbnailLink ?
-                photo.thumbnailLink.replace('=s220', '=s400') : // Melhor qualidade
+                photo.thumbnailLink.replace('=s220', '=s220') : // Manter original
                 photo.thumbnailMedium ||
                 photo.thumbnailSmall ||
                 '';
