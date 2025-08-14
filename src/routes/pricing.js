@@ -264,6 +264,228 @@ router.get('/category-price', async (req, res) => {
     }
 });
 
+
+// ============================================
+// NOVO ENDPOINT - FILTROS DE CATEGORIAS
+// Adicionado em 13/08/2025 - Sistema de filtros
+// ============================================
+router.get('/categories/filtered', async (req, res) => {
+    console.log('🔍 ==== INICIANDO FILTROS DE CATEGORIAS ====');
+    console.log('📋 Parâmetros recebidos:', req.query);
+
+    try {
+        const {
+            type,        // Ex: "Brindle", "Salt & Pepper"
+            priceMin,    // Ex: 0, 51, 101
+            priceMax,    // Ex: 50, 100, 150
+            photoMin,    // Ex: 1, 11, 51
+            photoMax     // Ex: 10, 50, 100
+        } = req.query;
+
+        // Buscar apenas categorias ativas e com fotos
+        console.log('📂 Buscando categorias no banco...');
+        let categories = await PhotoCategory.find({
+            isActive: true,
+            photoCount: { $gt: 0 } // Apenas categorias com fotos
+        }).lean(); // .lean() para melhor performance
+
+        const totalInicial = categories.length;
+        console.log(`✅ Encontradas ${totalInicial} categorias ativas com fotos`);
+
+        // ====================================
+        // FILTRO 1: Por tipo/padrão
+        // ====================================
+        if (type && type !== 'all') {
+            console.log(`🏷️ Aplicando filtro de tipo: "${type}"`);
+            const antes = categories.length;
+
+            categories = categories.filter(cat => {
+                const fullPath = (cat.googleDrivePath || '').toLowerCase();
+                const name = (cat.displayName || '').toLowerCase();
+                const searchTerm = type.toLowerCase();
+
+                return fullPath.includes(searchTerm) || name.includes(searchTerm);
+            });
+
+            console.log(`   → Resultado: ${antes} → ${categories.length} categorias`);
+        }
+
+        // ====================================
+        // FILTRO 2: Por faixa de preço
+        // ====================================
+        if (priceMin !== undefined || priceMax !== undefined) {
+            console.log(`💰 Aplicando filtro de preço: R$ ${priceMin || '0'} - R$ ${priceMax || '∞'}`);
+            const antes = categories.length;
+
+            categories = categories.filter(cat => {
+                const price = cat.price || 0;
+
+                // Converter para números
+                const min = priceMin ? Number(priceMin) : null;
+                const max = priceMax ? Number(priceMax) : null;
+
+                // Se tem min e max
+                if (min !== null && max !== null) {
+                    return price >= min && price <= max;
+                }
+                // Se só tem min (para "Above R$ X")
+                else if (min !== null) {
+                    return price >= min;
+                }
+                // Se só tem max
+                else if (max !== null) {
+                    return price <= max;
+                }
+                return true;
+            });
+
+            console.log(`   → Resultado: ${antes} → ${categories.length} categorias`);
+        }
+
+        // ====================================
+        // FILTRO 3: Por quantidade de fotos
+        // ====================================
+        if (photoMin !== undefined || photoMax !== undefined) {
+            console.log(`📸 Aplicando filtro de fotos: ${photoMin || '0'} - ${photoMax || '∞'} fotos`);
+            const antes = categories.length;
+
+            categories = categories.filter(cat => {
+                const count = cat.photoCount || 0;
+
+                // Converter para números
+                const min = photoMin ? Number(photoMin) : null;
+                const max = photoMax ? Number(photoMax) : null;
+
+                // Se tem min e max
+                if (min !== null && max !== null) {
+                    return count >= min && count <= max;
+                }
+                // Se só tem min (para "100+")
+                else if (min !== null) {
+                    return count >= min;
+                }
+                // Se só tem max
+                else if (max !== null) {
+                    return count <= max;
+                }
+                return true;
+            });
+
+            console.log(`   → Resultado: ${antes} → ${categories.length} categorias`);
+        }
+
+        // ====================================
+        // ORDENAR RESULTADOS
+        // ====================================
+        categories.sort((a, b) => {
+            // Primeiro por preço (maior primeiro)
+            if (a.price !== b.price) {
+                return (b.price || 0) - (a.price || 0);
+            }
+            // Depois por quantidade de fotos
+            return (b.photoCount || 0) - (a.photoCount || 0);
+        });
+
+        console.log('📊 ==== RESUMO DOS FILTROS ====');
+        console.log(`   Total inicial: ${totalInicial} categorias`);
+        console.log(`   Total filtrado: ${categories.length} categorias`);
+        if (totalInicial > 0) {
+            console.log(`   Redução: ${((1 - categories.length / totalInicial) * 100).toFixed(1)}%`);
+        }
+
+        // Preparar resposta
+        const response = {
+            success: true,
+            total: categories.length,
+            filters: {
+                type: type || 'all',
+                priceRange: priceMin || priceMax ? `R$ ${priceMin || 0} - R$ ${priceMax || '∞'}` : 'all',
+                photoRange: photoMin || photoMax ? `${photoMin || 0} - ${photoMax || '∞'} photos` : 'all'
+            },
+            categories: categories.map(cat => ({
+                id: cat._id,
+                name: cat.displayName,
+                fullPath: cat.googleDrivePath,
+                photoCount: cat.photoCount || 0,
+                price: cat.price || 0,
+                formattedPrice: cat.price ? `R$ ${(cat.price || 0).toFixed(2)}` : 'R$ 0.00',
+                driveId: cat.googleDriveId
+            }))
+        };
+
+        console.log('✅ Enviando resposta com sucesso!');
+        res.json(response);
+
+    } catch (error) {
+        console.error('❌ ERRO ao filtrar categorias:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error filtering categories',
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// ENDPOINT PARA OBTER TIPOS DISPONÍVEIS
+// Para popular o filtro de tipos dinamicamente
+// ============================================
+router.get('/categories/filter-types', async (req, res) => {
+    console.log('📋 Buscando tipos de filtros disponíveis...');
+
+    try {
+        // Tipos comuns que aparecem nas categorias
+        const commonTypes = [
+            { value: 'brindle', label: 'Brindle', keywords: ['brindle'] },
+            { value: 'salt-pepper', label: 'Salt & Pepper', keywords: ['salt & pepper', 'salt and pepper'] },
+            { value: 'black-white', label: 'Black & White', keywords: ['black & white', 'black and white'] },
+            { value: 'brown-white', label: 'Brown & White', keywords: ['brown & white', 'brown and white'] },
+            { value: 'tricolor', label: 'Tricolor', keywords: ['tricolor'] },
+            { value: 'exotic', label: 'Exotic', keywords: ['exotic', 'palomino', 'metallica'] },
+            { value: 'grey', label: 'Grey', keywords: ['grey', 'gray'] },
+            { value: 'hereford', label: 'Hereford', keywords: ['hereford'] }
+        ];
+
+        // Buscar categorias para contar quantas tem cada tipo
+        const categories = await PhotoCategory.find({
+            isActive: true,
+            photoCount: { $gt: 0 }
+        }).lean();
+
+        // Contar ocorrências de cada tipo
+        const typesWithCount = commonTypes.map(type => {
+            const count = categories.filter(cat => {
+                const fullPath = (cat.fullPath || '').toLowerCase();
+                const name = (cat.name || '').toLowerCase();
+
+                return type.keywords.some(keyword =>
+                    fullPath.includes(keyword) || name.includes(keyword)
+                );
+            }).length;
+
+            return {
+                ...type,
+                count
+            };
+        }).filter(type => type.count > 0); // Só retornar tipos que existem
+
+        console.log(`✅ Encontrados ${typesWithCount.length} tipos de categorias`);
+
+        res.json({
+            success: true,
+            types: typesWithCount
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar tipos de filtros:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting filter types',
+            error: error.message
+        });
+    }
+});
+
 // Todas as rotas de preços precisam de autenticação admin
 router.use(authenticateToken);
 
