@@ -381,10 +381,20 @@ body.client-page::before {
 
 /* ===== LOGO NO HEADER DO CLIENTE ===== */
 .client-page .header-logo-img {
-    height: 35px;
-    width: 35px;
+    height: 40px;  /* Voltar para 40px */
+    width: auto;
     object-fit: contain;
-    margin-right: 8px;
+    margin-right: 10px;
+}
+
+.client-header-logo {
+    display: flex;
+    align-items: center;
+    height: 60px; /* Fixar altura do container */
+}
+
+.client-luxury-header {
+    padding: 10px 0; /* Reduzir padding vertical */
 }
 
 /* Esconder o ícone de sol se ainda existir */

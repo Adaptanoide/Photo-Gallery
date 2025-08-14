@@ -32,6 +32,12 @@
                 <span>Sunshine Cowhides - Gallery</span>
             </div>
             <nav class="client-header-nav">
+                <!-- BOTÃO DO CARRINHO -->
+                <button onclick="openCartSidebar()" class="client-cart-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="headerCartBadge" class="header-cart-badge">0</span>
+                </button>
+
                 <button onclick="logout()" class="client-logout-btn">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -188,6 +194,91 @@
         </div>
     </div>
 
+    <!-- Sidebar de Filtros -->
+    <div id="filterSidebar" class="filter-sidebar">
+        <div class="filter-container">
+            <!-- Header dos Filtros -->
+            <div class="filter-header">
+                <h3>
+                    <i class="fas fa-filter"></i>
+                    <span>Filters</span>
+                </h3>
+            </div>
+
+            <!-- Conteúdo dos Filtros -->
+            <div class="filter-content">
+                <!-- Filtro por Tipo/Padrão -->
+                <div class="filter-section">
+                    <h4>Type/Pattern</h4>
+                    <div class="filter-options" id="typeFilters">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="brindle">
+                            <span>Brindle</span>
+                            <small class="count">(0)</small>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="salt-pepper">
+                            <span>Salt & Pepper</span>
+                            <small class="count">(0)</small>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="black-white">
+                            <span>Black & White</span>
+                            <small class="count">(0)</small>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="tricolor">
+                            <span>Tricolor</span>
+                            <small class="count">(0)</small>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="exotic">
+                            <span>Exotic</span>
+                            <small class="count">(0)</small>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Filtro por Quantidade de Fotos -->
+                <div class="filter-section">
+                    <h4>Photos in Category</h4>
+                    <div class="filter-options" id="photoFilters">
+                        <label class="filter-radio">
+                            <input type="radio" name="photos" value="all" checked>
+                            <span>All</span>
+                        </label>
+                        <label class="filter-radio">
+                            <input type="radio" name="photos" value="1-10">
+                            <span>1-10 photos</span>
+                        </label>
+                        <label class="filter-radio">
+                            <input type="radio" name="photos" value="11-50">
+                            <span>11-50 photos</span>
+                        </label>
+                        <label class="filter-radio">
+                            <input type="radio" name="photos" value="51-100">
+                            <span>51-100 photos</span>
+                        </label>
+                        <label class="filter-radio">
+                            <input type="radio" name="photos" value="100+">
+                            <span>100+ photos</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer dos Filtros -->
+            <div class="filter-footer">
+                <button onclick="clearFilters()" class="btn-clear-filters">
+                    <i class="fas fa-eraser"></i> Clear All
+                </button>
+                <button onclick="applyFilters()" class="btn-apply-filters">
+                    <i class="fas fa-check"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar do Carrinho -->
     <div id="cartSidebar" class="cart-sidebar">
         <div class="cart-overlay" onclick="closeCartSidebar()"></div>
@@ -244,12 +335,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Botão flutuante do carrinho -->
-    <button id="cartFloatingBtn" class="cart-floating-btn" onclick="openCartSidebar()">
-        <i class="fas fa-shopping-cart"></i>
-        <span id="cartBadge" class="cart-badge">0</span>
-    </button>
 
     <!-- Scripts modularizados -->
     <script src="js/app.js"></script>

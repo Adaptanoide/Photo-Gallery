@@ -100,7 +100,7 @@ window.CartSystem = {
             footer: document.getElementById('cartFooter'),
 
             // Contadores
-            badge: document.getElementById('cartBadge'),
+            badge: document.getElementById('headerCartBadge'),
             itemCount: document.getElementById('cartItemCount'),
             timer: document.getElementById('cartTimer'),
 
@@ -114,7 +114,7 @@ window.CartSystem = {
         };
 
         // Verificar se elementos críticos existem
-        const criticalElements = ['sidebar', 'badge', 'floatingBtn'];
+        const criticalElements = ['sidebar', 'badge'];
         for (const elementName of criticalElements) {
             if (!this.elements[elementName]) {
                 console.warn(`⚠️ Elemento crítico não encontrado: ${elementName}`);

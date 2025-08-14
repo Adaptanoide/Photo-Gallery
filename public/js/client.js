@@ -92,6 +92,9 @@ async function loadClientData() {
         updateClientInterface(data);
         showCategories();
 
+        // Carregar contagens dos filtros
+        await loadFilterCounts();
+
         // Mostrar conteúdo
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
@@ -876,3 +879,222 @@ window.syncCartUIFromAdd = function (driveFileId) {
 
 // Tornar a função global
 window.addToCartFromThumbnail = addToCartFromThumbnail;
+
+// ===== SISTEMA DE FILTROS =====
+
+// Toggle da sidebar de filtros
+function toggleFilters() {
+    const sidebar = document.getElementById('filterSidebar');
+    const overlay = document.querySelector('.filter-overlay');
+
+    if (sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+        if (overlay) overlay.style.display = 'none';
+    } else {
+        sidebar.classList.add('active');
+        if (overlay) overlay.style.display = 'block';
+    }
+}
+
+// Limpar todos os filtros
+function clearFilters() {
+    // Desmarcar checkboxes
+    document.querySelectorAll('#typeFilters input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+
+    // Reset radio buttons
+    document.querySelector('#photoFilters input[value="all"]').checked = true;
+
+    console.log('✅ Filtros limpos');
+}
+
+// Aplicar filtros
+async function applyFilters() {
+    // Coletar filtros selecionados
+    const selectedTypes = [];
+    document.querySelectorAll('#typeFilters input[type="checkbox"]:checked').forEach(cb => {
+        selectedTypes.push(cb.value);
+    });
+
+    const photoRange = document.querySelector('#photoFilters input[type="radio"]:checked').value;
+
+    console.log('🔍 Aplicando filtros:', {
+        types: selectedTypes,
+        photos: photoRange
+    });
+
+    try {
+        // Mostrar loading
+        showNavigationLoading();
+
+        // Construir query string
+        const params = new URLSearchParams();
+
+        // SUBSTITUA TODO O BLOCO DE FILTROS POR:
+        // Adicionar tipos selecionados - backend aceita apenas um por vez
+        if (selectedTypes.length > 0) {
+            // Por enquanto, enviar apenas o primeiro tipo selecionado
+            params.append('type', selectedTypes[0]);
+        }
+
+        // Adicionar filtro de quantidade
+        if (photoRange !== 'all') {
+            params.append('photoCount', photoRange);
+        }
+
+        // Fazer chamada à API
+        const response = await fetch(`/api/pricing/categories/filtered?${params.toString()}`);
+        const data = await response.json();
+
+        console.log('📊 Categorias filtradas:', data);
+
+        // Atualizar a interface com as categorias filtradas
+        displayFilteredCategories(data.categories);
+
+        // Fechar sidebar
+        // toggleFilters(); // Comentado pois sidebar é fixa agora
+
+    } catch (error) {
+        console.error('❌ Erro ao aplicar filtros:', error);
+        alert('Erro ao aplicar filtros. Tente novamente.');
+    } finally {
+        hideNavigationLoading();
+    }
+}
+
+// Exibir categorias filtradas
+function displayFilteredCategories(categories) {
+    const container = document.getElementById('categoriesContainer');
+
+    if (!container) {
+        console.error('Container de categorias não encontrado');
+        return;
+    }
+
+    // Limpar container
+    container.innerHTML = '';
+
+    if (categories.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-search"></i>
+                <h3>No categories found</h3>
+                <p>Try adjusting your filters</p>
+                <button onclick="clearFilters()" class="btn btn-primary">Clear Filters</button>
+            </div>
+        `;
+        return;
+    }
+
+    // Renderizar categorias filtradas
+    categories.forEach(category => {
+        const categoryCard = document.createElement('div');
+        categoryCard.className = 'category-card';
+        categoryCard.onclick = () => navigateToCategory(category.driveId || category.id, category.name);
+
+        categoryCard.innerHTML = `
+            <div class="category-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="category-content">
+            <h3 class="category-title">${category.name || category.displayName}</h3>
+                <p class="category-description">
+                    Category with full navigation access enabled
+                </p>
+                <div class="category-info">
+                    <span class="info-badge">
+                        <i class="fas fa-images"></i> ${category.photoCount} photos
+                    </span>
+                    ${category.type ? `
+                        <span class="info-badge">
+                            <i class="fas fa-tag"></i> ${category.type}
+                        </span>
+                    ` : ''}
+                </div>
+                <div class="category-action">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Click to explore subcategories and products</span>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(categoryCard);
+    });
+}
+
+// Função para mostrar/esconder loading
+function showNavigationLoading() {
+    const loading = document.getElementById('navigationLoading');
+    if (loading) loading.style.display = 'flex';
+}
+
+function hideNavigationLoading() {
+    const loading = document.getElementById('navigationLoading');
+    if (loading) loading.style.display = 'none';
+}
+
+// Carregar contagens dos filtros
+async function loadFilterCounts() {
+    try {
+        // Buscar todas as categorias sem filtro
+        const response = await fetch('/api/pricing/categories/filtered');
+        const data = await response.json();
+
+        if (!data.categories) return;
+
+        // Contar por tipo - BASEADO NO NOME/PATH
+        const typeCounts = {
+            'brindle': 0,
+            'salt-pepper': 0,
+            'black-white': 0,
+            'tricolor': 0,
+            'exotic': 0
+        };
+
+        data.categories.forEach(cat => {
+            const fullText = ((cat.name || '') + ' ' + (cat.fullPath || '')).toLowerCase();
+
+            // Verificar cada tipo
+            if (fullText.includes('brindle')) {
+                typeCounts['brindle']++;
+            }
+            if (fullText.includes('salt') && fullText.includes('pepper')) {
+                typeCounts['salt-pepper']++;
+            }
+            if (fullText.includes('black') && fullText.includes('white')) {
+                typeCounts['black-white']++;
+            }
+            if (fullText.includes('tricolor')) {
+                typeCounts['tricolor']++;
+            }
+            if (fullText.includes('exotic')) {
+                typeCounts['exotic']++;
+            }
+        });
+
+        // Atualizar os contadores na interface
+        Object.keys(typeCounts).forEach(type => {
+            const checkbox = document.querySelector(`#typeFilters input[value="${type}"]`);
+            if (checkbox) {
+                const label = checkbox.closest('label');
+                const countSpan = label.querySelector('.count');
+                if (countSpan) {
+                    countSpan.textContent = `(${typeCounts[type]})`;
+                }
+            }
+        });
+
+        console.log('📊 Contagens carregadas:', typeCounts);
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar contagens:', error);
+    }
+}
+
+// Tornar funções globais
+window.toggleFilters = toggleFilters;
+window.clearFilters = clearFilters;
+window.applyFilters = applyFilters;
+
+console.log('✅ Sistema de filtros carregado');
