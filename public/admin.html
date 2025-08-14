@@ -742,17 +742,17 @@
                     </div>
 
                     <!-- Estatísticas Rápidas -->
-                    <div id="pricingStats" class="pricing-stats" style="display: block;">
+                    <div id="selectionStats" class="selection-stats" style="display: block;">
                         <div class="stats-grid">
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Total Categories</div>
-                                        <div class="stat-value" id="totalCategoriesCount">-</div>
-                                        <div class="stat-description">Folders with photos</div>
+                                        <div class="stat-title">Total Selections</div>
+                                        <div class="stat-value" id="totalSelections">-</div>
+                                        <div class="stat-description" id="totalSelectionsDescription">All time</div>
                                     </div>
                                     <div class="stat-icon primary">
-                                        <i class="fas fa-folder"></i>
+                                        <i class="fas fa-shopping-cart"></i>
                                     </div>
                                 </div>
                             </div>
@@ -760,25 +760,13 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">With Price Set</div>
-                                        <div class="stat-value" id="categoriesWithPriceCount">-</div>
-                                        <div class="stat-description">Priced categories</div>
-                                    </div>
-                                    <div class="stat-icon success">
-                                        <i class="fas fa-dollar-sign"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">Without Price</div>
-                                        <div class="stat-value" id="categoriesWithoutPriceCount">-</div>
-                                        <div class="stat-description">Need pricing</div>
+                                        <div class="stat-title">Pending</div>
+                                        <div class="stat-value" id="pendingSelections">-</div>
+                                        <div class="stat-description" id="pendingSelectionsDescription">Awaiting
+                                            approval</div>
                                     </div>
                                     <div class="stat-icon warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <i class="fas fa-clock"></i>
                                     </div>
                                 </div>
                             </div>
@@ -786,18 +774,33 @@
                             <div class="stat-card">
                                 <div class="stat-header">
                                     <div>
-                                        <div class="stat-title">Total Photos</div>
-                                        <div class="stat-value" id="totalPhotosCount">-</div>
-                                        <div class="stat-description">In all categories</div>
+                                        <div class="stat-title">This Month</div>
+                                        <div class="stat-value" id="thisMonthSelections">-</div>
+                                        <div class="stat-description" id="thisMonthSelectionsDescription">Current month
+                                        </div>
+                                    </div>
+                                    <div class="stat-icon success">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Average Value</div>
+                                        <div class="stat-value" id="averageSelectionValue">-</div>
+                                        <div class="stat-description" id="averageSelectionValueDescription">Per
+                                            selection</div>
                                     </div>
                                     <div class="stat-icon secondary">
-                                        <i class="fas fa-images"></i>
+                                        <i class="fas fa-dollar-sign"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Filtros -->
                     <div class="selections-filters">
                         <div class="filters-row">

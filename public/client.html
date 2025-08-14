@@ -194,8 +194,16 @@
         <div class="cart-container">
             <!-- Header do Carrinho -->
             <div class="cart-header">
-                <h3><i class="fas fa-shopping-cart"></i> My Cart</h3>
-                <button onclick="closeCartSidebar()" class="cart-close-btn">
+                <h3>
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>My Cart</span>
+                </h3>
+                <!-- Botão Order Summary ANTES do X -->
+                <button class="cart-summary-btn" onclick="openOrderSummary()" title="View Order Summary">
+                    <i class="fas fa-receipt"></i>
+                </button>
+                <!-- Botão X ORIGINAL -->
+                <button class="cart-close" onclick="closeCartSidebar()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -271,10 +279,10 @@
                 <div class="next-steps">
                     <h3><i class="fas fa-handshake"></i> Next Steps</h3>
                     <ul>
-                        <li>✅ Your photos have been successfully reserved</li>
-                        <li>📞 Our team will contact you shortly</li>
-                        <li>💰 We'll arrange pricing and payment methods</li>
-                        <li>📦 We'll organize shipping after confirmation</li>
+                        <li><i class="fas fa-check-circle"></i> Your photos have been successfully reserved</li>
+                        <li><i class="fas fa-phone-alt"></i> Our team will contact you shortly</li>
+                        <li><i class="fas fa-dollar-sign"></i> We'll arrange pricing and payment methods</li>
+                        <li><i class="fas fa-shipping-fast"></i> We'll organize shipping after confirmation</li>
                     </ul>
 
                     <div class="contact-info">
@@ -287,6 +295,38 @@
             <div class="selection-modal-footer">
                 <button onclick="goToHome()" class="btn btn-primary btn-full">
                     <i class="fas fa-home"></i> Back to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Summary Modal -->
+    <div id="orderSummaryModal" class="order-summary-modal" style="display: none;">
+        <div class="order-summary-overlay" onclick="closeOrderSummary()"></div>
+        <div class="order-summary-content">
+            <div class="order-summary-header">
+                <h2>
+                    <i class="fas fa-receipt"></i>
+                    Order Summary
+                </h2>
+                <button class="order-summary-close" onclick="closeOrderSummary()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="order-summary-body" id="orderSummaryBody">
+                <!-- Conteúdo será preenchido via JavaScript -->
+            </div>
+
+            <div class="order-summary-footer">
+                <button class="btn-summary-action" onclick="downloadOrderPDF()">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <button class="btn-summary-action" onclick="printOrderSummary()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="btn-summary-close" onclick="closeOrderSummary()">
+                    <i class="fas fa-times"></i> Close
                 </button>
             </div>
         </div>

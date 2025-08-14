@@ -503,28 +503,34 @@ window.CartSystem = {
             let totalHTML = `<div class="items-text">${totalText}</div>`;
 
             if (cartTotal.total > 0) {
-                // Se há desconto, mostrar breakdown
+                // Se há desconto, mostrar de forma simples
                 if (cartTotal.hasDiscount) {
                     totalHTML += `
-                        <div class="cart-breakdown">
-                            <div class="cart-subtotal">
-                                <span>Subtotal:</span>
-                                <span>${cartTotal.formattedSubtotal}</span>
-                            </div>
-                            <div class="cart-discount">
-                                <span>Discount ${cartTotal.discountPercent}%:</span>
-                                <span>${cartTotal.formattedDiscountAmount}</span>
-                            </div>
-                            <div class="cart-total-final">
-                                <span><strong>Total:</strong></span>
-                                <span><strong>${cartTotal.formattedTotal}</strong></span>
-                            </div>
-                            <div class="discount-note">${cartTotal.discountDescription}</div>
+                    <div class="cart-totals-simple">
+                        <div class="subtotal-line">
+                            <span>Subtotal:</span>
+                            <span>${cartTotal.formattedSubtotal}</span>
                         </div>
-                    `;
+                        <div class="total-line">
+                            <span><strong>Total:</strong></span>
+                            <span class="total-with-discount">
+                                <strong>${cartTotal.formattedTotal}</strong>
+                                <small class="discount-badge">${cartTotal.discountPercent}% off</small>
+                            </span>
+                        </div>
+                        <div class="discount-info">${cartTotal.discountDescription}</div>
+                    </div>
+                `;
                 } else {
                     // Sem desconto, mostrar total simples
-                    totalHTML += `<div class="cart-total-value">${cartTotal.formattedTotal}</div>`;
+                    totalHTML += `
+                    <div class="cart-totals-simple">
+                        <div class="total-line">
+                            <span><strong>Total:</strong></span>
+                            <span><strong>${cartTotal.formattedTotal}</strong></span>
+                        </div>
+                    </div>
+                `;
                 }
 
                 // Aviso sobre itens sem preço
@@ -548,8 +554,70 @@ window.CartSystem = {
             return;
         }
 
-        const itemsHTML = this.state.items.map(item => this.renderCartItem(item)).join('');
-        this.elements.items.innerHTML = itemsHTML;
+        // Agrupar itens por categoria
+        const categories = {};
+        this.state.items.forEach(item => {
+            // Usar o último nível do pathLevels se existir, senão usar category
+            const cat = (item.pathLevels && item.pathLevels.length > 0)
+                ? item.pathLevels[item.pathLevels.length - 1]
+                : item.category || 'Uncategorized';
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(item);
+        });
+
+        // Renderizar com separadores e collapse
+        let html = '';
+        Object.keys(categories).sort().forEach(category => {
+            const items = categories[category];
+
+            // Calcular subtotal da categoria
+            const subtotal = items.reduce((sum, item) => {
+                return sum + (item.price || 0);
+            }, 0);
+
+            // ID único para a categoria (remover espaços e caracteres especiais)
+            const categoryId = category.replace(/[^a-zA-Z0-9]/g, '_');
+
+            // Adicionar cabeçalho clicável da categoria
+            html += `<div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')" style="cursor: pointer;">
+            <div class="category-left">
+                <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
+                <span class="category-label" title="${items[0].fullPath || category}">${category}</span>
+                <span class="category-count">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
+            </div>
+            <div class="category-right">
+                ${subtotal > 0 ? `<span class="category-subtotal">$${subtotal.toFixed(2)}</span>` : ''}
+            </div>
+        </div>`;
+
+            // Container dos itens (colapsável)
+            html += `<div class="category-items" id="items-${categoryId}">`;
+
+            // Adicionar itens da categoria
+            items.forEach(item => {
+                html += this.renderCartItem(item);
+            });
+
+            html += `</div>`;
+        });
+
+        this.elements.items.innerHTML = html;
+    },
+
+    // NOVA FUNÇÃO - Adicionar após renderCartItems
+    toggleCategory(categoryId) {
+        const toggle = document.getElementById(`toggle-${categoryId}`);
+        const items = document.getElementById(`items-${categoryId}`);
+
+        if (toggle && items) {
+            if (items.style.display === 'none') {
+                items.style.display = 'block';
+                toggle.className = 'fas fa-chevron-down category-toggle';
+            } else {
+                items.style.display = 'none';
+                toggle.className = 'fas fa-chevron-right category-toggle';
+            }
+        }
     },
 
     /**
@@ -595,8 +663,6 @@ window.CartSystem = {
             </div>
         `;
     },
-
-    // ===== SISTEMA DE TIMERS =====
 
     /**
      * Iniciar timers de todos os itens
@@ -792,12 +858,15 @@ window.toggleCartItem = async function () {
                 console.log('🟡 Não vai buscar preço:', {
                     currentFolderId,
                     loadCategoryPrice: !!window.loadCategoryPrice
-                }); // ← NOVO LOG
+                });
             }
 
             const itemData = {
                 fileName: photoData?.name || 'Unnamed product',
-                category: window.navigationState?.currentPath?.[0]?.name || 'Category',
+                // Pegar o ÚLTIMO nível do path (onde a foto realmente está)
+                category: window.navigationState?.currentPath?.length > 1
+                    ? window.navigationState.currentPath[window.navigationState.currentPath.length - 1].name
+                    : window.navigationState?.currentPath?.[0]?.name || 'Category',
                 thumbnailUrl: photoData?.thumbnailMedium || photoData?.thumbnailLink,
                 price: priceInfo.price,
                 formattedPrice: priceInfo.formattedPrice,
@@ -999,5 +1068,160 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ===== ORDER SUMMARY FUNCTIONS =====
+
+function openOrderSummary() {
+    const modal = document.getElementById('orderSummaryModal');
+    const body = document.getElementById('orderSummaryBody');
+
+    // Gerar conteúdo
+    const summaryHTML = generateOrderSummary();
+    body.innerHTML = summaryHTML;
+
+    // Mostrar modal
+    modal.style.display = 'flex';
+}
+
+function closeOrderSummary() {
+    const modal = document.getElementById('orderSummaryModal');
+    modal.style.display = 'none';
+}
+
+function generateOrderSummary() {
+    const items = CartSystem.state.items;
+
+    if (items.length === 0) {
+        return '<p>Your cart is empty</p>';
+    }
+
+    // Agrupar por categoria
+    const categories = {};
+    items.forEach(item => {
+        const cat = item.category || 'Uncategorized';
+        if (!categories[cat]) {
+            categories[cat] = [];
+        }
+        categories[cat].push(item);
+    });
+
+    let html = '';
+
+    // Data e cliente
+    const clientSession = CartSystem.getClientSession();
+    html += `
+        <div class="summary-section">
+            <div class="summary-info">
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                <p><strong>Client:</strong> ${clientSession?.user?.name || 'Client'}</p>
+                <p><strong>Code:</strong> ${clientSession?.accessCode || 'N/A'}</p>
+            </div>
+        </div>
+    `;
+
+    // Items por categoria
+    html += '<div class="summary-section">';
+    html += '<div class="summary-section-title">Items by Category</div>';
+
+    let grandTotal = 0;
+    let itemsWithPrice = 0;
+
+    Object.keys(categories).forEach(category => {
+        const categoryItems = categories[category];
+        let categoryTotal = 0;
+
+        html += '<div class="summary-category">';
+        html += `<div class="summary-category-name">${category}</div>`;
+
+        categoryItems.forEach(item => {
+            html += `
+                <div class="summary-item">
+                    <span>${item.fileName}</span>
+                    <span>${item.formattedPrice || 'No price'}</span>
+                </div>
+            `;
+            if (item.hasPrice && item.price > 0) {
+                categoryTotal += item.price;
+                itemsWithPrice++;
+            }
+        });
+
+        html += `
+            <div class="summary-item" style="font-weight: 500; border-top: 1px solid #e0e0e0; margin-top: 5px;">
+                <span>Subtotal:</span>
+                <span>R$ ${categoryTotal.toFixed(2)}</span>
+            </div>
+        `;
+        html += '</div>';
+
+        grandTotal += categoryTotal;
+    });
+
+    html += '</div>';
+
+    // Totais
+    html += '<div class="summary-totals">';
+
+    // Calcular desconto
+    let discount = 0;
+    let discountPercent = 0;
+
+    if (itemsWithPrice >= 2 && itemsWithPrice <= 5) {
+        discountPercent = 10;
+    } else if (itemsWithPrice >= 6 && itemsWithPrice <= 10) {
+        discountPercent = 15;
+    } else if (itemsWithPrice > 10) {
+        discountPercent = 20;
+    }
+
+    discount = grandTotal * (discountPercent / 100);
+
+    html += `
+    <div class="summary-total-line">
+        <span>Total items:</span>
+        <span>${items.length}</span>
+    </div>
+        <div class="summary-total-line">
+            <span>Subtotal:</span>
+            <span>R$ ${grandTotal.toFixed(2)}</span>
+        </div>
+    `;
+    if (discountPercent > 0) {
+        html += `
+            <div class="summary-total-line" style="color: var(--success-color);">
+                <span>Discount (${discountPercent}%):</span>
+                <span>- R$ ${discount.toFixed(2)}</span>
+            </div>
+        `;
+    }
+
+    const finalTotal = grandTotal - discount;
+
+    html += `
+        <div class="summary-total-line final">
+            <span>TOTAL:</span>
+            <span>R$ ${finalTotal.toFixed(2)}</span>
+        </div>
+    `;
+
+    html += '</div>';
+
+    return html;
+}
+
+function downloadOrderPDF() {
+    // Por enquanto, só um alert
+    alert('PDF download will be implemented soon!');
+}
+
+function printOrderSummary() {
+    window.print();
+}
+
+// Tornar funções globais
+window.openOrderSummary = openOrderSummary;
+window.closeOrderSummary = closeOrderSummary;
+window.downloadOrderPDF = downloadOrderPDF;
+window.printOrderSummary = printOrderSummary;
 
 console.log('📦 cart.js carregado - aguardando inicialização...');

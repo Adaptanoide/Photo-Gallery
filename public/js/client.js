@@ -825,7 +825,10 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
                 fileName: photo.name,
                 thumbnailUrl: photo.thumbnailLink || photo.webViewLink,
                 fullImageUrl: photo.webViewLink,
-                category: navigationState.currentPath[0]?.name || 'Category',
+                // Pegar o ÚLTIMO nível do path (onde a foto realmente está)
+                category: navigationState.currentPath?.length > 1
+                    ? navigationState.currentPath[navigationState.currentPath.length - 1].name
+                    : navigationState.currentPath[0]?.name || 'Category',
                 categoryName: navigationState.currentPath[navigationState.currentPath.length - 1] || 'Products',
                 categoryPath: navigationState.currentPath.join(' > '),
                 price: priceInfo.price,
