@@ -50,6 +50,7 @@ app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
 app.use('/api/special-selections', specialSelectionsRoutes); // NOVO
+app.use('/api/images', require('./routes/images')); // SISTEMA DE CACHE DE IMAGENS
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {

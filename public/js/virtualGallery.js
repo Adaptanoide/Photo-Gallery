@@ -4,13 +4,13 @@
 class VirtualGallery {
     constructor() {
         // CONFIGURAÇÕES CRÍTICAS PARA FOTOS PESADAS
-        this.BATCH_SIZE = 10;       
+        this.BATCH_SIZE = 10;
         this.LOAD_THRESHOLD = 500;
-        this.allPhotos = [];            
-        this.loadedCount = 0;           
-        this.isLoading = false;         
-        this.container = null;          
-        this.categoryPrice = null;      
+        this.allPhotos = [];
+        this.loadedCount = 0;
+        this.isLoading = false;
+        this.container = null;
+        this.categoryPrice = null;
         this.hasMorePhotos = true;
         this.scrollHandler = null;
     }
@@ -19,23 +19,23 @@ class VirtualGallery {
     init(photos, container, categoryPrice) {
         console.log(`🚀 Virtual Gallery: Gerenciando ${photos.length} fotos`);
         console.log(`📸 Carregando apenas ${this.BATCH_SIZE} fotos inicialmente`);
-        
+
         this.allPhotos = photos;
         this.container = container;
         this.categoryPrice = categoryPrice;
         this.loadedCount = 0;
         this.hasMorePhotos = true;
-        
+
         // Limpar container
         this.container.innerHTML = '';
         this.container.classList.add('virtual-scrolling-active');
-        
+
         // Carregar primeiro lote
         this.loadNextBatch();
-        
+
         // Configurar scroll listener
         this.setupScrollListener();
-        
+
         // Mostrar indicador se tem mais fotos
         if (photos.length > this.BATCH_SIZE) {
             this.showLoadingIndicator();
@@ -49,27 +49,27 @@ class VirtualGallery {
         }
 
         this.isLoading = true;
-        
+
         const start = this.loadedCount;
         const end = Math.min(start + this.BATCH_SIZE, this.allPhotos.length);
-        
+
         if (start >= this.allPhotos.length) {
             this.hasMorePhotos = false;
             this.hideLoadingIndicator();
             return;
         }
-        
+
         console.log(`⏳ Carregando fotos ${start + 1} a ${end} de ${this.allPhotos.length}`);
-        
+
         const batch = this.allPhotos.slice(start, end);
-        
+
         // Renderizar com pequeno delay para não travar
         setTimeout(() => {
             this.renderPhotos(batch, start);
             this.loadedCount = end;
             this.updateStatus();
             this.isLoading = false;
-            
+
             // Verificar se ainda tem fotos
             if (end >= this.allPhotos.length) {
                 this.hasMorePhotos = false;
@@ -82,31 +82,28 @@ class VirtualGallery {
     // Renderizar fotos no DOM
     renderPhotos(photos, startIndex) {
         const fragment = document.createDocumentFragment();
-        
+
         photos.forEach((photo, index) => {
             const photoIndex = startIndex + index;
             const div = document.createElement('div');
             div.className = 'photo-thumbnail';
             div.setAttribute('data-photo-index', photoIndex);
-            
+
             // IMPORTANTE: Manter compatibilidade com openPhotoModal
             div.onclick = () => {
                 if (typeof openPhotoModal === 'function') {
                     openPhotoModal(photoIndex);
                 }
             };
-            
+
             // Verificar se está no carrinho
-            const isInCart = window.CartSystem && 
-                            typeof CartSystem.isInCart === 'function' && 
-                            CartSystem.isInCart(photo.id);
-            
-            // USAR THUMBNAIL PEQUENO (200px ao invés de 400px)
-            const thumbnailUrl = photo.thumbnailLink ? 
-                photo.thumbnailLink.replace('=s220', '=s200') : 
-                photo.thumbnailMedium || 
-                photo.thumbnailSmall || '';
-            
+            const isInCart = window.CartSystem &&
+                typeof CartSystem.isInCart === 'function' &&
+                CartSystem.isInCart(photo.id);
+
+            // Usar sistema centralizado de cache
+            const thumbnailUrl = ImageUtils.getThumbnailUrl(photo);
+
             // HTML da foto
             div.innerHTML = `
                 <img src="${thumbnailUrl}" 
@@ -139,10 +136,10 @@ class VirtualGallery {
                     <small>${this.formatFileSize(photo.size)}</small>
                 </div>
             `;
-            
+
             fragment.appendChild(div);
         });
-        
+
         this.container.appendChild(fragment);
     }
 
@@ -152,7 +149,7 @@ class VirtualGallery {
         if (this.scrollHandler) {
             window.removeEventListener('scroll', this.scrollHandler);
         }
-        
+
         // Criar função de scroll com throttle
         let scrollTimeout;
         this.scrollHandler = () => {
@@ -161,7 +158,7 @@ class VirtualGallery {
                 this.checkScroll();
             }, 150);
         };
-        
+
         // Adicionar listener
         window.addEventListener('scroll', this.scrollHandler);
     }
@@ -171,10 +168,10 @@ class VirtualGallery {
         if (this.isLoading || !this.hasMorePhotos) {
             return;
         }
-        
+
         const scrollBottom = window.innerHeight + window.scrollY;
         const pageBottom = document.documentElement.offsetHeight - this.LOAD_THRESHOLD;
-        
+
         if (scrollBottom >= pageBottom) {
             console.log('📜 Usuário chegou perto do fim, carregando mais fotos...');
             this.loadNextBatch();
@@ -199,7 +196,7 @@ class VirtualGallery {
                 font-size: 16px;
                 color: #666;
             `;
-            
+
             // Adicionar após o container de fotos
             if (this.container && this.container.parentElement) {
                 this.container.parentElement.appendChild(indicator);
@@ -222,7 +219,7 @@ class VirtualGallery {
         if (statusEl) {
             const total = this.allPhotos.length;
             const loaded = this.loadedCount;
-            
+
             if (loaded < total) {
                 statusEl.innerHTML = `
                     <strong>${loaded}</strong> of <strong>${total}</strong> photos loaded

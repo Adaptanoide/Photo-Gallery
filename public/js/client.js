@@ -463,12 +463,8 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         document.getElementById('photosCount').textContent = `${photos.length} photo(s)`;
 
         gridEl.innerHTML = photos.map((photo, index) => {
-            // Usar thumbnail de melhor qualidade do Google Drive
-            const thumbnailUrl = photo.thumbnailLink ?
-                photo.thumbnailLink.replace('=s220', '=s220') : // Manter original
-                photo.thumbnailMedium ||
-                photo.thumbnailSmall ||
-                '';
+            // Usar sistema centralizado de cache
+            const thumbnailUrl = ImageUtils.getThumbnailUrl(photo);
 
             // Verificar se está no carrinho
             const isInCart = window.CartSystem && CartSystem.isInCart(photo.id);
@@ -614,32 +610,32 @@ async function loadPhotoInModal(photoId) {
         spinner.style.display = 'block';
         img.style.display = 'none';
 
-        // Buscar foto em alta resolução
-        const response = await fetch(`/api/drive/photo/${photoId}?size=large`);
-        const data = await response.json();
+        // USAR NOSSA ROTA DE CACHE!
+        const imageUrl = `/api/images/full/${photoId}`;
 
-        if (data.success && data.photo.imageUrl) {
-            img.src = data.photo.imageUrl;
-            img.onload = () => {
-                spinner.style.display = 'none';
-                img.style.display = 'block';
-            };
-        } else {
-            throw new Error('Error loading photo');
-        }
+        img.src = imageUrl;
+        img.onload = () => {
+            spinner.style.display = 'none';
+            img.style.display = 'block';
+        };
+
+        img.onerror = () => {
+            console.error('Erro carregando imagem:', photoId);
+            spinner.style.display = 'none';
+            img.style.display = 'block';
+            // Fallback
+            const currentPhoto = navigationState.currentPhotos[navigationState.currentPhotoIndex];
+            if (currentPhoto) {
+                img.src = ImageUtils.getFullImageUrl(currentPhoto);
+            } else {
+                img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Error loading photo</text></svg>';
+            }
+        };
 
     } catch (error) {
         console.error('Error loading photo:', error);
         spinner.style.display = 'none';
         img.style.display = 'block';
-
-        // Tentar usar a foto atual como fallback
-        const currentPhoto = navigationState.currentPhotos[navigationState.currentPhotoIndex];
-        if (currentPhoto && currentPhoto.thumbnailLink) {
-            img.src = currentPhoto.thumbnailLink.replace('=s220', '=s1200');
-        } else {
-            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Error loading photo</text></svg>';
-        }
     }
 }
 
@@ -1088,7 +1084,7 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
             await CartSystem.addItem(driveFileId, {
                 fileName: photo.name,
                 thumbnailUrl: photo.thumbnailLink || photo.webViewLink,
-                fullImageUrl: photo.webViewLink,
+                fullImageUrl: ImageUtils.getFullImageUrl(photo),
                 // Pegar o ÚLTIMO nível do path (onde a foto realmente está)
                 category: navigationState.currentPath?.length > 1
                     ? navigationState.currentPath[navigationState.currentPath.length - 1].name

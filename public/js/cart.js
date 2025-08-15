@@ -867,8 +867,7 @@ window.toggleCartItem = async function () {
                 category: window.navigationState?.currentPath?.length > 1
                     ? window.navigationState.currentPath[window.navigationState.currentPath.length - 1].name
                     : window.navigationState?.currentPath?.[0]?.name || 'Category',
-                thumbnailUrl: photoData?.thumbnailMedium || photoData?.thumbnailLink,
-                price: priceInfo.price,
+                thumbnailUrl: ImageUtils.getThumbnailUrl(photoData), price: priceInfo.price,
                 formattedPrice: priceInfo.formattedPrice,
                 hasPrice: priceInfo.hasPrice
             };
