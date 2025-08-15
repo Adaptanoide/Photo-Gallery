@@ -299,12 +299,30 @@ router.get('/categories/filtered', async (req, res) => {
             console.log(`🏷️ Aplicando filtro de tipo: "${type}"`);
             const antes = categories.length;
 
+            // NOVO: Mapeamento de termos para busca flexível
+            const typeSearchTerms = {
+                'salt-pepper': ['salt & pepper', 'salt and pepper', 'salt&pepper'],
+                'black-white': ['black & white', 'black and white', 'black&white'],
+                'brown-white': ['brown & white', 'brown and white', 'brown&white'],
+                'tricolor': ['tricolor', 'tri-color', 'three color'],
+                'brindle': ['brindle'],
+                'exotic': ['exotic', 'palomino', 'metallica'],
+                'grey': ['grey', 'gray'],
+                'hereford': ['hereford']
+            };
+
+            // Obter termos de busca ou usar o termo original
+            const searchTerms = typeSearchTerms[type] || [type];
+
             categories = categories.filter(cat => {
                 const fullPath = (cat.googleDrivePath || '').toLowerCase();
                 const name = (cat.displayName || '').toLowerCase();
-                const searchTerm = type.toLowerCase();
 
-                return fullPath.includes(searchTerm) || name.includes(searchTerm);
+                // Verificar se QUALQUER termo de busca está presente
+                return searchTerms.some(term => {
+                    const searchTerm = term.toLowerCase();
+                    return fullPath.includes(searchTerm) || name.includes(searchTerm);
+                });
             });
 
             console.log(`   → Resultado: ${antes} → ${categories.length} categorias`);
@@ -407,8 +425,8 @@ router.get('/categories/filtered', async (req, res) => {
                 name: cat.displayName,
                 fullPath: cat.googleDrivePath,
                 photoCount: cat.photoCount || 0,
-                price: cat.price || 0,
-                formattedPrice: cat.price ? `R$ ${(cat.price || 0).toFixed(2)}` : 'R$ 0.00',
+                price: cat.basePrice || 0,
+                formattedPrice: cat.basePrice ? `R$ ${(cat.basePrice || 0).toFixed(2)}` : 'R$ 0.00',
                 driveId: cat.googleDriveId
             }))
         };

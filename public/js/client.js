@@ -20,6 +20,148 @@ window.navigationState = {
 // Alias local para compatibilidade
 let navigationState = window.navigationState;
 
+// ===== SISTEMA DE CACHE PARA NAVEGAÇÃO VIA FILTROS =====
+// Cache global de todas as categorias e seus caminhos
+let globalCategoriesCache = new Map();
+
+// Mapa das categorias principais (será preenchido automaticamente)
+let mainCategoriesMap = {};
+
+// Mapa COMPLETO das subcategorias intermediárias com IDs REAIS
+const INTERMEDIATE_FOLDERS_MAP = {
+    // Brazil Top Selected Categories > Subcategorias
+    'Extra Large': '1Os3jXBBMFuZipaIE90DdjNuI1hAhNphF',
+    'Medium Large': '1BjqQeS0xe0EhN8353AzaMYiAhlV88HnG',
+    'Small': '12uruRqw07061R2fB4O1p2iU5CcpTstBz',
+
+    // Rodeo Rugs > Subcategorias (Nível 1)
+    '3\'x5 Rodeo Rug': '1uoRcbcydmoMq61hXvze9mpzFBdkQte8I',
+    'Round Rug': '1NE2vm1xP5wHd8hThwq0FLBS6bPsFr5FT',
+
+    // Rodeo Rugs > Round Rug > Subcategorias (Nível 2)
+    'Round Rug::Brazil': '1m24Q5CIsfVFusowI7yzdgnMsN09mXf7V',
+    'Round Rug::Colombia': '1YPtRsCQv8-kJOWvuSh3Orjzw7XziPXuo',
+
+    // Rodeo Rugs > 3'x5 Rodeo Rug > Subcategorias (Nível 2)
+    '3\'x5 Rodeo Rug::Colombia': '1QzKybg7Nf7RTTKDjWYxLQr43VIlEkCyN',
+
+    // Colombian Cowhides > Subcategorias
+    '0. Small': '1a0jS1p-J5SjthVviDg9t7SAxCk09D6Rm',
+    '1. Medium': '1b-PBngUoUmO7dn1ng1kzo0YV2m4VT6yE',
+    '2. Large': '1AMkKBIhxWZ2JVOBE4a2OZEC19wDCKRfH',
+    '3. X-Large': '1_OGzVEd5zl2ezU9lmQAikL0H1pm_x04o',
+    '4. Value Tricolor Dark Tones & Creamish White S-M': '1RNb17klfL5jElVAEEMxz9OenMebsNVEn',
+    '5. Value Tricolor Dark Tones & Creamish White L-XL': '1v55KZfYe5f6Hzj1bD4TZU3V-TulADmEn',
+
+    // Rodeo Rugs > Round Rug > Colombia > Pastas finais
+    '40" Round Rug Single Star': '110NT-Xq_QiuSwuUXkWZD4sPrlUJWE2i-',
+    '60\'\' Round Rug Multi Star': '1DFxLI3utsLLlc9Wlki1yw_iAEAxMESYi',
+
+    // Contextos alternativos para Brazil e Colombia quando aparecem sozinhos
+    'Brazil': '1m24Q5CIsfVFusowI7yzdgnMsN09mXf7V', // Default para Round Rug > Brazil
+    'Colombia': '1YPtRsCQv8-kJOWvuSh3Orjzw7XziPXuo' // Default para Round Rug > Colombia
+};
+
+// ===== FUNÇÃO PARA ESCAPAR STRINGS PARA USO SEGURO =====
+function escapeForJS(str) {
+    if (!str) return '';
+    return str
+        .replace(/\\/g, '\\\\')     // Escapar barras invertidas
+        .replace(/"/g, '\\"')        // Escapar aspas duplas  
+        .replace(/'/g, "\\'")        // Escapar apóstrofes
+        .replace(/\n/g, '\\n')       // Escapar quebras de linha
+        .replace(/\r/g, '\\r');      // Escapar retorno de carro
+}
+
+// ===== FUNÇÕES DE DETECÇÃO PARA FILTROS =====
+
+// Detectar tipo/pattern
+function detectType(name) {
+    const types = [];
+    const lowerName = name.toLowerCase();
+
+    if (lowerName.includes('brindle')) types.push('brindle');
+    if (lowerName.includes('salt') && lowerName.includes('pepper')) types.push('salt-pepper');
+    if (lowerName.includes('black') && lowerName.includes('white')) types.push('black-white');
+    if (lowerName.includes('tricolor')) types.push('tricolor');
+    if (lowerName.includes('exotic') || lowerName.includes('palomino') ||
+        lowerName.includes('hereford') || lowerName.includes('champagne')) types.push('exotic');
+
+    return types;
+}
+
+// Detectar tom
+function detectTone(name) {
+    const lowerName = name.toLowerCase();
+
+    if (lowerName.includes('light') || lowerName.includes('champagne') ||
+        lowerName.includes('buttercream') || lowerName.includes('white')) return 'light';
+    if (lowerName.includes('dark') || lowerName.includes('black')) return 'dark';
+    if (lowerName.includes('medium tone') || lowerName.includes('medium & dark')) return 'medium';
+    if (lowerName.includes('natural') || lowerName.includes('assorted') ||
+        lowerName.includes('mix')) return 'natural';
+
+    return 'natural'; // default
+}
+
+// Detectar tamanho
+function detectSize(name) {
+    const lowerName = name.toLowerCase();
+
+    // Checar XS primeiro (mais específico)
+    if (lowerName.includes('super promo xs') || lowerName.includes('extra small')) return 'xs';
+
+    // Checar XL (antes de L)
+    if (lowerName.includes('extra large') || lowerName.includes(' xl')) return 'xl';
+
+    // Checar ML (antes de M e L)
+    if (lowerName.includes('medium large') || lowerName.includes(' ml')) return 'ml';
+
+    // Checar Large
+    if (lowerName.includes('→ large') || lowerName.includes(' l ') ||
+        lowerName.includes('2. large')) return 'large';
+
+    // Checar Medium
+    if (lowerName.includes('→ medium') || lowerName.includes(' m ') ||
+        lowerName.includes('1. medium')) return 'medium';
+
+    // Checar Small
+    if (lowerName.includes('→ small') || lowerName.includes('super promo small') ||
+        lowerName.includes('0. small')) return 'small';
+
+    return null; // sem tamanho detectado
+}
+
+// Detectar faixa de preço
+function detectPriceRange(price) {
+    if (!price || price === 0) return null;
+
+    if (price < 50) return '0-50';
+    if (price <= 100) return '50-100';
+    if (price <= 150) return '100-150';
+    if (price <= 200) return '150-200';
+    return '200-999';
+}
+
+// Função para construir o cache inicial
+function initializeCategoriesCache() {
+    console.log('🔄 Iniciando cache de categorias...');
+
+    // Verificar se navigationState existe
+    if (!window.navigationState || !window.navigationState.allowedCategories) {
+        console.error('❌ navigationState não está disponível!');
+        return;
+    }
+
+    // Preencher com as categorias principais que já conhecemos
+    window.navigationState.allowedCategories.forEach(cat => {
+        mainCategoriesMap[cat.name] = cat.id;
+        console.log(`📁 Mapeado: ${cat.name} → ${cat.id}`);
+    });
+
+    console.log('✅ Total de categorias mapeadas:', Object.keys(mainCategoriesMap).length);
+}
+
 // ===== INICIALIZAÇÃO =====
 
 // Carregar dados do cliente quando a página carregar
@@ -126,10 +268,9 @@ function updateClientInterface(data) {
 
 // ===== NAVEGAÇÃO DE CATEGORIAS =====
 
-// Mostrar categorias principais
 function showCategories() {
     hideAllContainers();
-    hideLoading(); // NOVO: esconder loading
+    hideLoading();
     document.getElementById('categoriesContainer').style.display = 'grid';
 
     const containerEl = document.getElementById('categoriesContainer');
@@ -142,7 +283,7 @@ function showCategories() {
 
     // Gerar cards de categorias
     containerEl.innerHTML = allowedCategories.map(category => `
-        <div class="category-card" onclick="navigateToCategory('${category.id}', '${category.name}')">
+        <div class="category-card" onclick="navigateToCategory('${category.id}', '${escapeForJS(category.name)}')">
             <h3>
                 <i class="fas fa-folder"></i> 
                 ${category.name}
@@ -154,9 +295,15 @@ function showCategories() {
         </div>
     `).join('');
 
-    // Esconder breadcrumb na tela inicial
-    document.getElementById('breadcrumbContainer').style.display = 'none';
+    // MODIFICAR ESTAS LINHAS - Manter breadcrumb SEMPRE visível!
+    document.getElementById('breadcrumbContainer').style.display = 'block';  // MUDOU!
     document.getElementById('backNavigation').style.display = 'none';
+
+    // Limpar o path do breadcrumb quando estiver na home
+    const breadcrumbPath = document.getElementById('breadcrumbPath');
+    if (breadcrumbPath) {
+        breadcrumbPath.innerHTML = ''; // Limpar, deixando só o botão Home
+    }
 }
 
 // Navegar para uma categoria específica
@@ -219,7 +366,7 @@ function showSubfolders(folders) {
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
 
         return `
-            <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${folder.name}')">
+            <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${escapeForJS(folder.name)}')">
                 <h4>
                     <i class="fas fa-${hasPhotos ? 'images' : 'folder'}"></i>
                     ${folder.name}
@@ -555,11 +702,27 @@ function updateBreadcrumb() {
 
     const breadcrumbHtml = navigationState.currentPath.map((item, index) => {
         const isLast = index === navigationState.currentPath.length - 1;
+
+        // Limpar nome se necessário
+        let displayName = item.name;
+        if (displayName.includes('→')) {
+            const parts = displayName.split('→');
+            displayName = parts[parts.length - 1].trim();
+        }
+
+        // Se não tem ID (veio do filtro e não é o último), mostrar apenas como texto
+        if (!item.id && !isLast) {
+            return `
+                <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+                <span class="breadcrumb-item disabled">${displayName}</span>
+            `;
+        }
+
         return `
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
             ${isLast ?
-                `<span class="breadcrumb-item current">${item.name}</span>` :
-                `<button class="breadcrumb-item" onclick="navigateToBreadcrumb(${index})">${item.name}</button>`
+                `<span class="breadcrumb-item current">${displayName}</span>` :
+                `<button class="breadcrumb-item" onclick="navigateToBreadcrumb(${index})">${displayName}</button>`
             }
         `;
     }).join('');
@@ -582,6 +745,86 @@ function navigateToRoot() {
     navigationState.currentPath = [];
     navigationState.currentFolderId = null;
     showCategories();
+}
+
+// ===== NOVA FUNÇÃO PARA CONSTRUIR BREADCRUMB NAVEGÁVEL =====
+// Construir breadcrumb navegável com IDs reais e suporte a contextos
+function buildNavigablePath(fullPath, targetId) {
+    console.log('🔍 Construindo caminho navegável para:', fullPath);
+
+    const parts = fullPath.split('→').map(p => p.trim());
+
+    // Remover "Sunshine Cowhides Actual Pictures"
+    if (parts[0] === 'Sunshine Cowhides Actual Pictures') {
+        parts.shift();
+    }
+
+    const path = [];
+    let previousPart = null;
+
+    // Para cada parte, tentar encontrar o ID real
+    parts.forEach((part, index) => {
+        const isLast = index === parts.length - 1;
+        let itemId = null;
+        let isNavigable = false;
+
+        if (isLast) {
+            // Último item - sempre tem o ID real
+            itemId = targetId;
+            isNavigable = true;
+        } else if (index === 0) {
+            // Primeira parte - categoria principal
+            itemId = mainCategoriesMap[part];
+            isNavigable = !!itemId;
+
+            if (itemId) {
+                console.log(`✅ Categoria principal: ${part}`);
+            } else {
+                console.log(`⚠️ Categoria principal não mapeada: ${part}`);
+            }
+        } else {
+            // Partes intermediárias - tentar múltiplas estratégias
+
+            // Estratégia 1: Busca direta
+            itemId = INTERMEDIATE_FOLDERS_MAP[part];
+
+            // Estratégia 2: Busca com contexto do pai direto
+            if (!itemId && previousPart) {
+                const contextKey = `${previousPart}::${part}`;
+                itemId = INTERMEDIATE_FOLDERS_MAP[contextKey];
+                if (itemId) {
+                    console.log(`✅ Encontrado com contexto: ${contextKey}`);
+                }
+            }
+
+            // Estratégia 3: Busca com contexto da raiz
+            if (!itemId && parts[0]) {
+                const rootContextKey = `${parts[0]}::${part}`;
+                itemId = INTERMEDIATE_FOLDERS_MAP[rootContextKey];
+                if (itemId) {
+                    console.log(`✅ Encontrado com contexto raiz: ${rootContextKey}`);
+                }
+            }
+
+            isNavigable = !!itemId;
+
+            if (!itemId) {
+                console.log(`⚠️ Pasta não mapeada: ${part} (nível ${index})`);
+            }
+        }
+
+        path.push({
+            id: itemId,
+            name: part,
+            isLast: isLast,
+            isNavigable: isNavigable
+        });
+
+        previousPart = part;
+    });
+
+    console.log('📍 Caminho final:', path.map(p => p.name + (p.isNavigable ? '✓' : '✗')).join(' → '));
+    return path;
 }
 
 // Navegar de volta
@@ -704,12 +947,30 @@ function isZoomAvailable() {
 }
 
 // Log de inicialização do zoom
-document.addEventListener('DOMContentLoaded', () => {
-    if (isZoomAvailable()) {
-        console.log('✅ Zoom system available');
-    } else {
-        console.warn('⚠️ Zoom system not loaded');
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('✅ Sistema de filtros carregado');
+
+    // Esperar mais tempo e verificar se está carregado
+    const checkAndInitialize = setInterval(() => {
+        if (window.navigationState &&
+            window.navigationState.allowedCategories &&
+            window.navigationState.allowedCategories.length > 0) {
+
+            // Encontrou! Inicializar e parar de verificar
+            clearInterval(checkAndInitialize);
+            initializeCategoriesCache();
+            console.log('📊 Cache inicializado com sucesso!');
+            console.log('📁 Categorias mapeadas:', mainCategoriesMap);
+        } else {
+            console.log('⏳ Aguardando navigationState carregar...');
+        }
+    }, 500);
+
+    // Timeout de segurança - parar após 10 segundos
+    setTimeout(() => clearInterval(checkAndInitialize), 10000);
+
+    // Carregar contagens dos filtros
+    loadFilterCounts();
 });
 
 // Cache de preços por categoria
@@ -909,58 +1170,169 @@ function clearFilters() {
     console.log('✅ Filtros limpos');
 }
 
-// Aplicar filtros
-async function applyFilters() {
+// Aplicar filtros automaticamente
+async function autoApplyFilters() {
+    console.log('🔍 Aplicando filtros automaticamente...');
+
     // Coletar filtros selecionados
-    const selectedTypes = [];
+    const selectedFilters = {
+        types: [],
+        tones: [],
+        sizes: [],
+        prices: []
+    };
+
+    // Types
     document.querySelectorAll('#typeFilters input[type="checkbox"]:checked').forEach(cb => {
-        selectedTypes.push(cb.value);
+        selectedFilters.types.push(cb.value);
     });
 
-    const photoRange = document.querySelector('#photoFilters input[type="radio"]:checked').value;
-
-    console.log('🔍 Aplicando filtros:', {
-        types: selectedTypes,
-        photos: photoRange
+    // Tones
+    document.querySelectorAll('#toneFilters input[type="checkbox"]:checked').forEach(cb => {
+        selectedFilters.tones.push(cb.value);
     });
 
+    // Sizes
+    document.querySelectorAll('#sizeFilters input[type="checkbox"]:checked').forEach(cb => {
+        selectedFilters.sizes.push(cb.value);
+    });
+
+    // Prices
+    document.querySelectorAll('#priceFilters input[type="checkbox"]:checked').forEach(cb => {
+        selectedFilters.prices.push(cb.value);
+    });
+
+    // Se nenhum filtro selecionado, mostrar todas
+    const hasFilters = selectedFilters.types.length > 0 ||
+        selectedFilters.tones.length > 0 ||
+        selectedFilters.sizes.length > 0 ||
+        selectedFilters.prices.length > 0;
+
+    if (!hasFilters) {
+        showCategories();
+        return;
+    }
+
+    // Buscar categorias com preços
     try {
-        // Mostrar loading
-        showNavigationLoading();
-
-        // Construir query string
-        const params = new URLSearchParams();
-
-        // SUBSTITUA TODO O BLOCO DE FILTROS POR:
-        // Adicionar tipos selecionados - backend aceita apenas um por vez
-        if (selectedTypes.length > 0) {
-            // Por enquanto, enviar apenas o primeiro tipo selecionado
-            params.append('type', selectedTypes[0]);
-        }
-
-        // Adicionar filtro de quantidade
-        if (photoRange !== 'all') {
-            params.append('photoCount', photoRange);
-        }
-
-        // Fazer chamada à API
-        const response = await fetch(`/api/pricing/categories/filtered?${params.toString()}`);
+        const response = await fetch('/api/pricing/categories/filtered');
         const data = await response.json();
 
-        console.log('📊 Categorias filtradas:', data);
+        if (!data.categories) {
+            console.error('Erro ao buscar categorias');
+            return;
+        }
 
-        // Atualizar a interface com as categorias filtradas
-        displayFilteredCategories(data.categories);
+        // Filtrar categorias
+        let filteredCategories = data.categories.filter(cat => {
+            // Type filter
+            if (selectedFilters.types.length > 0) {
+                const catTypes = detectType(cat.name);
+                const hasType = selectedFilters.types.some(type => catTypes.includes(type));
+                if (!hasType) return false;
+            }
 
-        // Fechar sidebar
-        // toggleFilters(); // Comentado pois sidebar é fixa agora
+            // Tone filter
+            if (selectedFilters.tones.length > 0) {
+                const catTone = detectTone(cat.name);
+                if (!selectedFilters.tones.includes(catTone)) return false;
+            }
+
+            // Size filter
+            if (selectedFilters.sizes.length > 0) {
+                const catSize = detectSize(cat.name);
+                if (!catSize || !selectedFilters.sizes.includes(catSize)) return false;
+            }
+
+            // Price filter
+            if (selectedFilters.prices.length > 0) {
+                const priceRange = detectPriceRange(cat.price);
+                if (!priceRange || !selectedFilters.prices.includes(priceRange)) return false;
+            }
+
+            return true;
+        });
+
+        console.log(`📊 ${filteredCategories.length} categorias após filtros`);
+
+        // Mostrar categorias filtradas
+        displayFilteredCategories(filteredCategories);
 
     } catch (error) {
-        console.error('❌ Erro ao aplicar filtros:', error);
-        alert('Erro ao aplicar filtros. Tente novamente.');
-    } finally {
-        hideNavigationLoading();
+        console.error('Erro ao aplicar filtros:', error);
     }
+}
+
+// Alias para compatibilidade
+function applyFilters() {
+    autoApplyFilters();
+}
+
+// Limpar todos os filtros
+function clearAllFilters() {
+    // Desmarcar todos os checkboxes
+    document.querySelectorAll('.filter-checkbox input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+
+    // Mostrar todas as categorias
+    showCategories();
+
+    console.log('🧹 Filtros limpos');
+}
+
+// Para compatibilidade
+function clearFilters() {
+    clearAllFilters();
+}
+
+// ===== FUNÇÕES AUXILIARES PARA LIMPAR TÍTULOS =====
+
+// Extrair informações limpas da categoria
+function extractCategoryInfo(fullName) {
+    // Dividir o caminho completo
+    const parts = fullName.split('→').map(p => p.trim());
+
+    // Remover "Sunshine Cowhides Actual Pictures" sempre
+    if (parts[0] === 'Sunshine Cowhides Actual Pictures') {
+        parts.shift();
+    }
+
+    // Pegar o nome final (onde estão as fotos)
+    const finalName = parts[parts.length - 1];
+
+    // Identificar a origem/coleção
+    let collection = '';
+    if (parts.length > 0) {
+        const firstPart = parts[0];
+
+        if (firstPart.includes('Brazil Best Sellers')) {
+            collection = 'BEST SELLERS';
+        } else if (firstPart.includes('Brazil Top Selected')) {
+            collection = 'PREMIUM SELECTION';
+            // Se tem tamanho no caminho, adicionar
+            if (parts.length > 1) {
+                const sizePart = parts[1];
+                if (sizePart === 'Small' || sizePart === 'Medium Large' || sizePart === 'Extra Large') {
+                    collection += ' • ' + sizePart.toUpperCase();
+                }
+            }
+        } else if (firstPart.includes('Colombian')) {
+            collection = 'COLOMBIAN';
+        } else if (firstPart.includes('Rodeo')) {
+            collection = 'RODEO RUGS';
+        } else if (firstPart.includes('Sheepskins')) {
+            collection = 'SHEEPSKINS';
+        } else if (firstPart.includes('Calfskins')) {
+            collection = 'CALFSKINS';
+        }
+    }
+
+    return {
+        displayName: finalName,
+        collection: collection,
+        fullName: fullName
+    };
 }
 
 // Exibir categorias filtradas
@@ -972,6 +1344,19 @@ function displayFilteredCategories(categories) {
         return;
     }
 
+    // IMPORTANTE: Manter breadcrumb e botão Home visíveis!
+    document.getElementById('breadcrumbContainer').style.display = 'block';
+    document.getElementById('backNavigation').style.display = 'none';
+
+    // Atualizar breadcrumb para mostrar que está filtrado
+    const breadcrumbPath = document.getElementById('breadcrumbPath');
+    if (breadcrumbPath) {
+        breadcrumbPath.innerHTML = `
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-item current">Filtered Results (${categories.length})</span>
+        `;
+    }
+
     // Limpar container
     container.innerHTML = '';
 
@@ -981,48 +1366,56 @@ function displayFilteredCategories(categories) {
                 <i class="fas fa-search"></i>
                 <h3>No categories found</h3>
                 <p>Try adjusting your filters</p>
-                <button onclick="clearFilters()" class="btn btn-primary">Clear Filters</button>
+                <button onclick="clearFilters(); applyFilters();" class="btn btn-primary">Clear Filters</button>
             </div>
         `;
         return;
     }
 
-    // Renderizar categorias filtradas
+    // Renderizar categorias com títulos limpos
     categories.forEach(category => {
+        // Extrair informações limpas
+        const info = extractCategoryInfo(category.name || category.displayName);
+
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
-        categoryCard.onclick = () => navigateToCategory(category.driveId || category.id, category.name);
+        categoryCard.onclick = () => {
+            // Construir o caminho navegável antes de navegar
+            const navPath = buildNavigablePath(category.name, category.driveId || category.id);
+
+            // Setar o caminho completo
+            navigationState.currentPath = navPath;
+            navigationState.currentFolderId = category.driveId || category.id;
+
+            // Atualizar breadcrumb e carregar conteúdo
+            updateBreadcrumb();
+            loadFolderContents(category.driveId || category.id);
+        };
 
         categoryCard.innerHTML = `
-            <div class="category-icon">
+            <div class="category-collection">${info.collection}</div>
+            <h3>
                 <i class="fas fa-folder"></i>
+                ${info.displayName}
+            </h3>
+            <p>Category with full navigation access enabled</p>
+            <div class="category-meta">
+                <span class="photo-count">
+                    <i class="fas fa-images"></i> ${category.photoCount} photos
+                </span>
             </div>
-            <div class="category-content">
-            <h3 class="category-title">${category.name || category.displayName}</h3>
-                <p class="category-description">
-                    Category with full navigation access enabled
-                </p>
-                <div class="category-info">
-                    <span class="info-badge">
-                        <i class="fas fa-images"></i> ${category.photoCount} photos
-                    </span>
-                    ${category.type ? `
-                        <span class="info-badge">
-                            <i class="fas fa-tag"></i> ${category.type}
-                        </span>
-                    ` : ''}
-                </div>
-                <div class="category-action">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Click to explore subcategories and products</span>
-                </div>
+            <div class="category-action">
+                <i class="fas fa-arrow-right"></i>
+                <span>Click to explore products</span>
             </div>
         `;
 
         container.appendChild(categoryCard);
     });
-}
 
+    // Mostrar container
+    container.style.display = 'grid';
+}
 // Função para mostrar/esconder loading
 function showNavigationLoading() {
     const loading = document.getElementById('navigationLoading');
@@ -1090,6 +1483,71 @@ async function loadFilterCounts() {
     } catch (error) {
         console.error('❌ Erro ao carregar contagens:', error);
     }
+
+    // Comentado - data não existe neste contexto
+    // updateFilterCounts(data.categories);
+}
+
+// Atualizar contadores dos filtros
+function updateFilterCounts(categories) {
+    const counts = {
+        // Types
+        'brindle': 0,
+        'salt-pepper': 0,
+        'black-white': 0,
+        'tricolor': 0,
+        'exotic': 0,
+        // Tones
+        'light': 0,
+        'medium': 0,
+        'dark': 0,
+        'natural': 0,
+        // Sizes
+        'xs': 0,
+        'small': 0,
+        'medium-size': 0,
+        'ml': 0,
+        'large': 0,
+        'xl': 0,
+        // Prices
+        'price-0-50': 0,
+        'price-50-100': 0,
+        'price-100-150': 0,
+        'price-150-200': 0,
+        'price-200-999': 0
+    };
+
+    categories.forEach(cat => {
+        // Count types
+        const types = detectType(cat.name);
+        types.forEach(type => {
+            if (counts.hasOwnProperty(type)) counts[type]++;
+        });
+
+        // Count tone
+        const tone = detectTone(cat.name);
+        if (counts.hasOwnProperty(tone)) counts[tone]++;
+
+        // Count size
+        const size = detectSize(cat.name);
+        if (size === 'medium') counts['medium-size']++;
+        else if (size && counts.hasOwnProperty(size)) counts[size]++;
+
+        // Count price
+        const priceRange = detectPriceRange(cat.price);
+        if (priceRange) {
+            const priceKey = 'price-' + priceRange;
+            if (counts.hasOwnProperty(priceKey)) counts[priceKey]++;
+        }
+    });
+
+    // Atualizar elementos HTML
+    Object.keys(counts).forEach(key => {
+        const elem = document.getElementById('count-' + key);
+        if (elem) {
+            elem.textContent = `(${counts[key]})`;
+        }
+    });
 }
 
 // Tornar funções globais
@@ -1098,3 +1556,31 @@ window.clearFilters = clearFilters;
 window.applyFilters = applyFilters;
 
 console.log('✅ Sistema de filtros carregado');
+
+// Mostrar todas as categorias sem filtros
+async function showAllCategories() {
+    try {
+        // Limpar filtros
+        clearFilters();
+
+        // Mostrar loading
+        showNavigationLoading();
+
+        // Buscar todas as categorias
+        const response = await fetch('/api/pricing/categories/filtered');
+        const data = await response.json();
+
+        // Exibir todas
+        displayFilteredCategories(data.categories || []);
+
+        console.log('📋 Mostrando todas as categorias:', data.total);
+
+    } catch (error) {
+        console.error('❌ Erro ao mostrar todas categorias:', error);
+    } finally {
+        hideNavigationLoading();
+    }
+}
+
+// Tornar global
+window.showAllCategories = showAllCategories;
