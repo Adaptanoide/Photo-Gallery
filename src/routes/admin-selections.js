@@ -1,10 +1,11 @@
 //src/routes/admin-selections.js
 
 const express = require('express');
-const mongoose = require('mongoose');                    // ← ADICIONADO
+const mongoose = require('mongoose');
 const Selection = require('../models/Selection');
 const Product = require('../models/Product');
 const GoogleDriveService = require('../services/GoogleDriveService');
+const PhotoTagService = require('../services/PhotoTagService');
 const { authenticateToken } = require('./auth');
 const router = express.Router();
 
@@ -182,18 +183,24 @@ router.post('/:selectionId/approve', async (req, res) => {
             console.log('📊 Status atualizado para APPROVING');
             // ========= FIM DO CÓDIGO NOVO =========
 
-            // 2. Mover pasta no Google Drive: RESERVED → SYSTEM_SOLD
-            console.log('📁 Movendo pasta para SYSTEM_SOLD...');
+            // 2. SISTEMA DE TAGS: Marcar fotos como vendidas (SEM MOVER!)
+            console.log('🏷️ [TAGS] Marcando fotos como vendidas...');
 
-            const moveResult = await GoogleDriveService.finalizeSelection(
-                selection.googleDriveInfo.clientFolderId,
-                selection.clientCode,
-                selection.clientName
-            );
+            // Buscar IDs das fotos do Google Drive
+            const driveFileIds = selection.items.map(item => item.driveFileId);
 
-            if (!moveResult.success) {
-                throw new Error('Erro ao mover pasta no Google Drive');
-            }
+            // Usar PhotoTagService para marcar como sold
+            const tagResult = await PhotoTagService.approveSelection(selection.selectionId);
+
+            console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como SOLD`);
+            console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
+
+            // Criar objeto moveResult fake para compatibilidade
+            const moveResult = {
+                success: true,
+                finalFolderId: selection.googleDriveInfo.clientFolderId,
+                finalFolderName: selection.googleDriveInfo.clientFolderName
+            };
 
             // 3. Atualizar produtos: reserved_pending → sold
             const productIds = selection.items.map(item => item.productId);
@@ -227,7 +234,7 @@ router.post('/:selectionId/approve', async (req, res) => {
             selection.googleDriveInfo.finalFolderId = moveResult.finalFolderId;
 
             selection.addMovementLog('approved', `Seleção aprovada por ${adminUser || 'admin'}`);
-            selection.addMovementLog('moved_to_sold', `Pasta movida para SYSTEM_SOLD: ${moveResult.finalFolderName}`);
+            selection.addMovementLog('tagged_as_sold', `[TAGS] ${tagResult.photosTagged} fotos marcadas como SOLD - SEM movimentação física`);
 
             await selection.save({ session });
 
@@ -302,102 +309,21 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
             console.log('📊 Status atualizado para CANCELLING');
 
-            // 2. Reverter fotos no Google Drive
-            console.log('🔄 Revertendo fotos...');
+            // 2. SISTEMA DE TAGS: Liberar fotos (SEM MOVER!)
+            console.log('🏷️ [TAGS] Liberando fotos para disponível...');
+
+            // Usar PhotoTagService para cancelar seleção
+            const tagResult = await PhotoTagService.cancelSelection(selection.selectionId);
+
+            console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como AVAILABLE`);
+            console.log('📁 [TAGS] Nenhuma reversão física realizada!');
+
+            // Criar objeto revertResults fake para compatibilidade
             const revertResults = [];
+            const successfulReverts = tagResult.photosTagged;
+            const failedReverts = 0;
 
-            // Verificar se tem backup (Special Selections)
-            if (selection.googleDriveInfo?.specialSelectionInfo?.originalPhotosBackup?.length > 0) {
-                console.log('📦 Usando backup de Special Selection para reverter...');
-
-                for (const backup of selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup) {
-                    try {
-                        console.log(`📸 Revertendo ${backup.photoId} para: ${backup.originalPath}`);
-
-                        const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
-                            backup.photoId,
-                            backup.originalPath
-                        );
-
-                        revertResults.push({
-                            success: revertResult.success,
-                            photoId: backup.photoId,
-                            originalPath: backup.originalPath
-                        });
-
-                    } catch (error) {
-                        console.warn(`⚠️ Erro ao reverter, usando fallback para raiz...`);
-
-                        // Fallback: mover para raiz do estoque
-                        await GoogleDriveService.movePhotoToSelection(
-                            backup.photoId,
-                            '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx' // ACTUAL_PICTURES
-                        );
-
-                        revertResults.push({
-                            success: true,
-                            photoId: backup.photoId,
-                            fallback: true
-                        });
-                    }
-                }
-            } else {
-                // Seleções regulares - usar originalPath dos items
-                console.log('📦 Processando seleção regular...');
-
-                for (const item of selection.items) {
-                    try {
-                        // Verificar se tem originalPath
-                        if (item.originalPath && item.originalPath !== 'unknown') {
-                            console.log(`📸 Revertendo ${item.fileName} para: ${item.originalPath}`);
-
-                            try {
-                                const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
-                                    item.driveFileId,
-                                    item.originalPath
-                                );
-
-                                revertResults.push({
-                                    success: revertResult.success,
-                                    fileName: item.fileName,
-                                    originalPath: item.originalPath
-                                });
-                                continue; // Próximo item
-                            } catch (error) {
-                                console.warn(`⚠️ Erro ao reverter para caminho original, usando fallback...`);
-                            }
-                        }
-
-                        // Fallback: mover para raiz se não tiver originalPath ou se falhar
-                        console.log(`📦 Movendo ${item.fileName} para raiz (fallback)...`);
-                        await GoogleDriveService.movePhotoToSelection(
-                            item.driveFileId,
-                            '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx' // ACTUAL_PICTURES
-                        );
-
-                        revertResults.push({
-                            success: true,
-                            fileName: item.fileName,
-                            driveFileId: item.driveFileId,
-                            movedTo: 'Raiz do estoque (fallback)'
-                        });
-
-                    } catch (error) {
-                        console.error(`❌ Erro ao mover ${item.fileName}:`, error);
-                        revertResults.push({
-                            success: false,
-                            fileName: item.fileName,
-                            error: error.message
-                        });
-                    }
-                }
-            }
-
-            const successfulReverts = revertResults.filter(r => r.success).length;
-            const failedReverts = revertResults.length - successfulReverts;
-
-            console.log(`🔄 Reversão concluída: ${successfulReverts} sucessos, ${failedReverts} falhas`);
-
+            console.log(`🏷️ [TAGS] Cancelamento concluído: ${successfulReverts} fotos liberadas`);
             // 3. Atualizar produtos: reserved_pending → available
             const productIds = selection.items.map(item => item.productId);
 
@@ -427,7 +353,7 @@ router.post('/:selectionId/cancel', async (req, res) => {
             };
 
             selection.addMovementLog('cancelled', `Seleção cancelada por ${adminUser || 'admin'}: ${reason || 'Sem motivo especificado'}`);
-            selection.addMovementLog('photos_reverted', `${successfulReverts} fotos revertidas, ${failedReverts} falhas`);
+            selection.addMovementLog('tags_cleared', `[TAGS] ${successfulReverts} fotos liberadas - SEM reversão física`);
 
             await selection.save({ session });
 

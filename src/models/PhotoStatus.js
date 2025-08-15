@@ -15,7 +15,7 @@ const photoStatusSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    
+
     // ===== STATUS ATUAL =====
     currentStatus: {
         type: String,
@@ -41,19 +41,19 @@ const photoStatusSchema = new mongoose.Schema({
             default: 'stock',
             required: true
         },
-        
+
         // Caminho atual no Google Drive
         currentPath: {
             type: String,
             required: true
         },
-        
+
         // ID da pasta pai atual no Google Drive
         currentParentId: {
             type: String,
             required: true
         },
-        
+
         // Nome da categoria atual
         currentCategory: {
             type: String,
@@ -65,10 +65,10 @@ const photoStatusSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Selection'
         },
-        
+
         // Se está em carrinho, referência para ele
         cartSessionId: String,
-        
+
         // Data da última movimentação
         lastMovedAt: {
             type: Date,
@@ -84,33 +84,33 @@ const photoStatusSchema = new mongoose.Schema({
             default: false,
             index: true
         },
-        
+
         // Admin que bloqueou
         lockedBy: {
             type: String,
             default: null
         },
-        
+
         // Quando foi bloqueada
         lockedAt: {
             type: Date,
             default: null
         },
-        
+
         // Quando o lock expira (30 minutos)
         lockExpiresAt: {
             type: Date,
             default: null,
             index: true
         },
-        
+
         // Motivo do lock
         lockReason: {
             type: String,
             enum: ['editing', 'moving', 'processing', 'manual'],
             default: 'editing'
         },
-        
+
         // Dados extras do lock
         lockMetadata: {
             type: Object,
@@ -125,19 +125,19 @@ const photoStatusSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        
+
         // ID da pasta original no Google Drive
         originalParentId: {
             type: String,
             required: true
         },
-        
+
         // Categoria original
         originalCategory: {
             type: String,
             required: true
         },
-        
+
         // Preço original (se disponível)
         originalPrice: {
             type: Number,
@@ -152,26 +152,26 @@ const photoStatusSchema = new mongoose.Schema({
             type: Number,
             default: 0
         },
-        
+
         // Se tem preço definido
         hasPrice: {
             type: Boolean,
             default: false
         },
-        
+
         // Fonte do preço atual
         priceSource: {
             type: String,
             enum: ['category', 'custom', 'special_selection', 'discount'],
             default: 'category'
         },
-        
+
         // Preço formatado
         formattedPrice: {
             type: String,
             default: 'No price'
         },
-        
+
         // Data da última atualização do preço
         priceUpdatedAt: Date
     },
@@ -184,23 +184,23 @@ const photoStatusSchema = new mongoose.Schema({
             default: false,
             index: true
         },
-        
+
         // Cliente que reservou
         reservedBy: {
             clientCode: String,
             clientName: String,
             sessionId: String
         },
-        
+
         // Quando foi reservada
         reservedAt: Date,
-        
+
         // Quando a reserva expira
         reservationExpiresAt: {
             type: Date,
             index: true
         },
-        
+
         // Número de renovações da reserva
         renewalCount: {
             type: Number,
@@ -230,65 +230,65 @@ const photoStatusSchema = new mongoose.Schema({
             ],
             required: true
         },
-        
+
         // Status anterior
         previousStatus: String,
-        
+
         // Novo status
         newStatus: String,
-        
+
         // Detalhes da ação
         actionDetails: {
             type: String,
             required: true
         },
-        
+
         // Localização anterior
         previousLocation: {
             path: String,
             parentId: String,
             category: String
         },
-        
+
         // Nova localização
         newLocation: {
             path: String,
             parentId: String,
             category: String
         },
-        
+
         // Quem realizou a ação
         performedBy: {
             type: String,
             required: true
         },
-        
+
         // Tipo de usuário (admin, client, system)
         performedByType: {
             type: String,
             enum: ['admin', 'client', 'system'],
             default: 'system'
         },
-        
+
         // Data/hora da ação
         timestamp: {
             type: Date,
             default: Date.now,
             required: true
         },
-        
+
         // Dados extras da ação
         metadata: {
             type: Object,
             default: {}
         },
-        
+
         // Se a ação foi bem-sucedida
         success: {
             type: Boolean,
             default: true
         },
-        
+
         // Erro (se houver)
         error: String
     }],
@@ -301,29 +301,29 @@ const photoStatusSchema = new mongoose.Schema({
             enum: ['jpg', 'jpeg', 'png', 'webp'],
             default: 'jpg'
         },
-        
+
         // Tamanho do arquivo (em bytes)
         fileSize: Number,
-        
+
         // Dimensões da imagem
         dimensions: {
             width: Number,
             height: Number
         },
-        
+
         // URL do thumbnail (se disponível)
         thumbnailUrl: String,
-        
+
         // Tags/etiquetas
         tags: [String],
-        
+
         // Qualidade/categoria da foto
         quality: {
             type: String,
             enum: ['premium', 'standard', 'basic'],
             default: 'standard'
         },
-        
+
         // Popularidade (quantas vezes foi vista/reservada)
         popularity: {
             viewCount: {
@@ -336,9 +336,45 @@ const photoStatusSchema = new mongoose.Schema({
             },
             lastViewedAt: Date
         },
-        
+
         // Notas administrativas
         adminNotes: String
+    },
+
+    // ===== NOVO: SISTEMA DE TAGS VIRTUAL (MIGRAÇÃO) =====
+    virtualStatus: {
+        // Status virtual (não move arquivo!)
+        status: {
+            type: String,
+            enum: ['available', 'reserved', 'sold'],
+            default: 'available',
+            index: true
+        },
+
+        // Seleção atual (se houver)
+        currentSelection: {
+            type: String,
+            default: null,
+            index: true
+        },
+
+        // Cliente que reservou
+        clientCode: {
+            type: String,
+            default: null
+        },
+
+        // Tags para busca rápida
+        tags: [{
+            type: String,
+            index: true
+        }],
+
+        // Data da última mudança
+        lastStatusChange: {
+            type: Date,
+            default: Date.now
+        }
     },
 
     // ===== CONFIGURAÇÕES =====
@@ -348,16 +384,16 @@ const photoStatusSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         },
-        
+
         // Tempo de reserva customizado (em minutos)
         customReservationTime: Number,
-        
+
         // Se está destacada/em promoção
         isFeatured: {
             type: Boolean,
             default: false
         },
-        
+
         // Prioridade para ordenação
         sortPriority: {
             type: Number,
@@ -375,31 +411,36 @@ photoStatusSchema.index({ 'reservationInfo.isReserved': 1, 'reservationInfo.rese
 photoStatusSchema.index({ 'currentLocation.specialSelectionId': 1 });
 photoStatusSchema.index({ currentStatus: 1, createdAt: -1 });
 
+// ===== ÍNDICES PARA SISTEMA DE TAGS =====
+photoStatusSchema.index({ 'virtualStatus.status': 1, 'virtualStatus.clientCode': 1 });
+photoStatusSchema.index({ 'virtualStatus.tags': 1 });
+photoStatusSchema.index({ 'virtualStatus.currentSelection': 1 });
+
 // ===== MÉTODOS DO MODELO =====
 
 // ===== VERIFICAÇÕES DE STATUS =====
-photoStatusSchema.methods.isAvailable = function() {
+photoStatusSchema.methods.isAvailable = function () {
     return this.currentStatus === 'available' && !this.lockInfo.isLocked && !this.reservationInfo.isReserved;
 };
 
-photoStatusSchema.methods.isReserved = function() {
+photoStatusSchema.methods.isReserved = function () {
     return this.reservationInfo.isReserved && new Date() < this.reservationInfo.reservationExpiresAt;
 };
 
-photoStatusSchema.methods.isLocked = function() {
+photoStatusSchema.methods.isLocked = function () {
     return this.lockInfo.isLocked && new Date() < this.lockInfo.lockExpiresAt;
 };
 
-photoStatusSchema.methods.isMoved = function() {
+photoStatusSchema.methods.isMoved = function () {
     return this.currentStatus === 'moved';
 };
 
-photoStatusSchema.methods.isSold = function() {
+photoStatusSchema.methods.isSold = function () {
     return this.currentStatus === 'sold';
 };
 
 // ===== SISTEMA DE LOCK =====
-photoStatusSchema.methods.lock = function(adminUser, reason = 'editing', durationMinutes = 30, metadata = {}) {
+photoStatusSchema.methods.lock = function (adminUser, reason = 'editing', durationMinutes = 30, metadata = {}) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (durationMinutes * 60 * 1000));
 
@@ -412,18 +453,18 @@ photoStatusSchema.methods.lock = function(adminUser, reason = 'editing', duratio
         lockMetadata: metadata
     };
 
-    this.addToHistory('locked', `Foto bloqueada por ${adminUser} (${reason})`, adminUser, 'admin', { 
-        reason, 
+    this.addToHistory('locked', `Foto bloqueada por ${adminUser} (${reason})`, adminUser, 'admin', {
+        reason,
         durationMinutes,
-        expiresAt 
+        expiresAt
     });
 
     return this;
 };
 
-photoStatusSchema.methods.unlock = function(adminUser = null, forced = false) {
+photoStatusSchema.methods.unlock = function (adminUser = null, forced = false) {
     const wasLocked = this.lockInfo.isLocked;
-    
+
     this.lockInfo = {
         isLocked: false,
         lockedBy: null,
@@ -434,36 +475,36 @@ photoStatusSchema.methods.unlock = function(adminUser = null, forced = false) {
     };
 
     if (wasLocked) {
-        const details = forced ? 
-            `Lock removido forçadamente por ${adminUser}` : 
+        const details = forced ?
+            `Lock removido forçadamente por ${adminUser}` :
             `Lock removido por ${adminUser || 'sistema'}`;
-            
+
         this.addToHistory('unlocked', details, adminUser || 'system', adminUser ? 'admin' : 'system', { forced });
     }
 
     return this;
 };
 
-photoStatusSchema.methods.renewLock = function(adminUser, additionalMinutes = 30) {
+photoStatusSchema.methods.renewLock = function (adminUser, additionalMinutes = 30) {
     if (!this.lockInfo.isLocked) {
         throw new Error('Foto não está bloqueada');
     }
 
     const now = new Date();
     const newExpiresAt = new Date(this.lockInfo.lockExpiresAt.getTime() + (additionalMinutes * 60 * 1000));
-    
+
     this.lockInfo.lockExpiresAt = newExpiresAt;
 
-    this.addToHistory('locked', `Lock renovado por ${adminUser} (+${additionalMinutes}min)`, adminUser, 'admin', { 
+    this.addToHistory('locked', `Lock renovado por ${adminUser} (+${additionalMinutes}min)`, adminUser, 'admin', {
         additionalMinutes,
-        newExpiresAt 
+        newExpiresAt
     });
 
     return this;
 };
 
 // ===== SISTEMA DE RESERVA =====
-photoStatusSchema.methods.reserve = function(clientData, durationMinutes = 240) {
+photoStatusSchema.methods.reserve = function (clientData, durationMinutes = 240) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (durationMinutes * 60 * 1000));
 
@@ -482,15 +523,15 @@ photoStatusSchema.methods.reserve = function(clientData, durationMinutes = 240) 
     this.currentStatus = 'reserved';
     this.metadata.popularity.reservationCount += 1;
 
-    this.addToHistory('reserved', `Reservada por cliente ${clientData.clientName} (${clientData.clientCode})`, 
+    this.addToHistory('reserved', `Reservada por cliente ${clientData.clientName} (${clientData.clientCode})`,
         clientData.clientCode, 'client', { durationMinutes, expiresAt });
 
     return this;
 };
 
-photoStatusSchema.methods.unreserve = function(reason = 'manual') {
+photoStatusSchema.methods.unreserve = function (reason = 'manual') {
     const wasReserved = this.reservationInfo.isReserved;
-    
+
     this.reservationInfo = {
         isReserved: false,
         reservedBy: {},
@@ -509,7 +550,7 @@ photoStatusSchema.methods.unreserve = function(reason = 'manual') {
 };
 
 // ===== MOVIMENTAÇÃO =====
-photoStatusSchema.methods.moveTo = function(newLocation, performedBy, performedByType = 'admin') {
+photoStatusSchema.methods.moveTo = function (newLocation, performedBy, performedByType = 'admin') {
     const previousLocation = {
         path: this.currentLocation.currentPath,
         parentId: this.currentLocation.currentParentId,
@@ -542,16 +583,16 @@ photoStatusSchema.methods.moveTo = function(newLocation, performedBy, performedB
             this.currentStatus = 'available';
     }
 
-    this.addToHistory('moved', `Movida de ${previousLocation.category} para ${newLocation.currentCategory}`, 
+    this.addToHistory('moved', `Movida de ${previousLocation.category} para ${newLocation.currentCategory}`,
         performedBy, performedByType, { previousLocation, newLocation });
 
     return this;
 };
 
 // ===== PRICING =====
-photoStatusSchema.methods.updatePrice = function(newPrice, priceSource = 'custom', performedBy = 'system') {
+photoStatusSchema.methods.updatePrice = function (newPrice, priceSource = 'custom', performedBy = 'system') {
     const previousPrice = this.currentPricing.currentPrice;
-    
+
     this.currentPricing = {
         currentPrice: newPrice,
         hasPrice: newPrice > 0,
@@ -560,14 +601,14 @@ photoStatusSchema.methods.updatePrice = function(newPrice, priceSource = 'custom
         priceUpdatedAt: new Date()
     };
 
-    this.addToHistory('price_updated', `Preço atualizado de $${previousPrice} para $${newPrice}`, 
+    this.addToHistory('price_updated', `Preço atualizado de $${previousPrice} para $${newPrice}`,
         performedBy, 'admin', { previousPrice, newPrice, priceSource });
 
     return this;
 };
 
 // ===== HISTÓRICO =====
-photoStatusSchema.methods.addToHistory = function(action, details, performedBy, performedByType = 'system', metadata = {}) {
+photoStatusSchema.methods.addToHistory = function (action, details, performedBy, performedByType = 'system', metadata = {}) {
     this.statusHistory.push({
         action: action,
         previousStatus: action === 'created' ? null : this.currentStatus,
@@ -585,7 +626,7 @@ photoStatusSchema.methods.addToHistory = function(action, details, performedBy, 
 };
 
 // ===== MÉTODOS DE ANÁLISE =====
-photoStatusSchema.methods.getTimeline = function() {
+photoStatusSchema.methods.getTimeline = function () {
     return this.statusHistory.map(entry => ({
         date: entry.timestamp,
         action: entry.action,
@@ -595,7 +636,7 @@ photoStatusSchema.methods.getTimeline = function() {
     })).sort((a, b) => b.date - a.date);
 };
 
-photoStatusSchema.methods.getLocationHistory = function() {
+photoStatusSchema.methods.getLocationHistory = function () {
     return this.statusHistory
         .filter(entry => entry.action === 'moved')
         .map(entry => ({
@@ -609,7 +650,7 @@ photoStatusSchema.methods.getLocationHistory = function() {
 // ===== MÉTODOS ESTÁTICOS =====
 
 // Criar registro para nova foto
-photoStatusSchema.statics.createForPhoto = function(photoData) {
+photoStatusSchema.statics.createForPhoto = function (photoData) {
     return new this({
         photoId: photoData.photoId,
         fileName: photoData.fileName,
@@ -642,8 +683,8 @@ photoStatusSchema.statics.createForPhoto = function(photoData) {
 };
 
 // Buscar fotos disponíveis
-photoStatusSchema.statics.findAvailable = function(filters = {}) {
-    const query = { 
+photoStatusSchema.statics.findAvailable = function (filters = {}) {
+    const query = {
         currentStatus: 'available',
         'lockInfo.isLocked': false,
         'reservationInfo.isReserved': false
@@ -661,7 +702,7 @@ photoStatusSchema.statics.findAvailable = function(filters = {}) {
 };
 
 // Limpar locks e reservas expiradas
-photoStatusSchema.statics.cleanupExpired = async function() {
+photoStatusSchema.statics.cleanupExpired = async function () {
     const now = new Date();
     let cleanedCount = 0;
 
@@ -693,7 +734,7 @@ photoStatusSchema.statics.cleanupExpired = async function() {
 };
 
 // Estatísticas
-photoStatusSchema.statics.getStatistics = async function() {
+photoStatusSchema.statics.getStatistics = async function () {
     const stats = await this.aggregate([
         {
             $group: {
@@ -722,7 +763,7 @@ photoStatusSchema.statics.getStatistics = async function() {
 // ===== MIDDLEWARE =====
 
 // Pre-save: limpeza e validações
-photoStatusSchema.pre('save', function(next) {
+photoStatusSchema.pre('save', function (next) {
     // Limpar locks expirados automaticamente
     if (this.lockInfo.isLocked && this.lockInfo.lockExpiresAt && new Date() > this.lockInfo.lockExpiresAt) {
         this.unlock('system', false);
@@ -737,7 +778,7 @@ photoStatusSchema.pre('save', function(next) {
 });
 
 // Post-save: log
-photoStatusSchema.post('save', function() {
+photoStatusSchema.post('save', function () {
     const status = this.currentStatus.toUpperCase();
     const location = this.currentLocation.currentCategory;
     console.log(`📸 PhotoStatus ${this.fileName} - ${status} em ${location}`);

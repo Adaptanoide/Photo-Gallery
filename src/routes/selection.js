@@ -7,6 +7,7 @@ const Selection = require('../models/Selection');
 const Product = require('../models/Product');
 const { GoogleDriveService } = require('../services');
 const EmailService = require('../services/EmailService');
+const PhotoTagService = require('../services/PhotoTagService');
 
 const router = express.Router();
 
@@ -91,20 +92,40 @@ router.post('/finalize', async (req, res) => {
                 };
             });
 
-            // 6. Mover fotos preservando hierarquia completa
-            console.log(`📸 Movendo ${photosToMove.length} fotos com hierarquia preservada...`);
+            // 6. SISTEMA DE TAGS: Marcar fotos como reservadas (SEM MOVER!)
+            console.log(`🏷️ [TAGS] Marcando ${photosToMove.length} fotos como RESERVADAS...`);
 
-            const moveResult = await GoogleDriveService.movePhotosToSelection(
-                photosToMove,
-                folderResult.folderId
+            // Extrair IDs das fotos
+            const photoIds = photosToMove.map(p => p.driveFileId);
+
+            // Importar PhotoTagService (adicionar no topo do arquivo se necessário)
+            const PhotoTagService = require('../services/PhotoTagService');
+
+            // Usar tags ao invés de mover
+            const tagResult = await PhotoTagService.reservePhotos(
+                photoIds,
+                selectionId,  // Será criado logo abaixo
+                clientCode
             );
 
-            if (!moveResult.success) {
-                throw new Error('Erro ao mover fotos no Google Drive');
-            }
+            console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como reservadas`);
+            console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
 
-            console.log(`✅ Movimentação concluída: ${moveResult.summary.successful} sucessos, ${moveResult.summary.failed} erros`);
-
+            // Criar moveResult fake para compatibilidade com código existente
+            const moveResult = {
+                success: true,
+                summary: {
+                    successful: tagResult.photosTagged,
+                    failed: 0,
+                    hierarchiesCreated: 0
+                },
+                results: photosToMove.map(p => ({
+                    success: true,
+                    photoId: p.driveFileId,
+                    fileName: p.fileName,
+                    originalHierarchicalPath: p.category
+                }))
+            };
             // 7. Calcular valor total dos itens
             let totalValue = 0;
             cart.items.forEach(item => {
@@ -200,65 +221,18 @@ router.post('/finalize', async (req, res) => {
                     }
                 );
 
-                // Processar devolução de fotos não selecionadas
-                const selectedPhotoIds = products.map(p => p.driveFileId);
-                console.log(`📸 Fotos selecionadas pelo cliente: ${selectedPhotoIds.length}`);
+                /* DESABILITADO - SISTEMA DE TAGS NÃO PRECISA DEVOLVER FOTOS
+                                // Processar devolução de fotos não selecionadas
+                                const selectedPhotoIds = products.map(p => p.driveFileId);
+                                ... todo código de devolução ...
+                                } else {
+                                    console.log(`✅ Sem devolução automática - continuando normalmente`);
+                                }
+                                */
 
-                const unselectedPhotos = [];
-                specialSelection.customCategories.forEach(category => {
-                    category.photos.forEach(photo => {
-                        if (!selectedPhotoIds.includes(photo.photoId)) {
-                            unselectedPhotos.push({
-                                photoId: photo.photoId,
-                                fileName: photo.fileName,
-                                categoryName: category.categoryName
-                            });
-                        }
-                    });
-                });
-
-                console.log(`🔄 Fotos não selecionadas encontradas: ${unselectedPhotos.length}`);
-
-                if (unselectedPhotos.length > 0) {
-                    console.log(`🚀 Iniciando devolução automática de ${unselectedPhotos.length} fotos...`);
-
-                    for (const photo of unselectedPhotos) {
-                        try {
-                            console.log(`📸 Devolvendo foto: ${photo.fileName}`);
-
-                            const returnResult = await SpecialSelectionService.returnPhotoToOriginalLocation(
-                                photo.photoId,
-                                'system_auto',
-                                session
-                            );
-
-                            if (returnResult.success) {
-                                console.log(`✅ Foto devolvida: ${photo.fileName}`);
-                            }
-                        } catch (error) {
-                            console.error(`❌ Erro ao devolver foto ${photo.fileName}:`, error);
-                        }
-                    }
-
-                    specialSelection.addMovementLog(
-                        'photos_returned',
-                        // LINHA 248-270 NOVA:
-                        `${unselectedPhotos.length} fotos não selecionadas foram devolvidas automaticamente`,
-                        true,
-                        null,
-                        {
-                            returnedCount: unselectedPhotos.length,
-                            selectedCount: selectedPhotoIds.length
-                        }
-                    );
-
-                    // Recarregar seleção após devolução para evitar conflito
-                    console.log(`🔄 Recarregando seleção após devolução automática...`);
-                    specialSelection = await Selection.findById(specialSelection._id).session(session);
-
-                } else {
-                    console.log(`✅ Sem devolução automática - continuando normalmente`);
-                }
+                // NOVO: Sistema de tags - fotos não selecionadas permanecem disponíveis
+                console.log('🏷️ [TAGS] Fotos não selecionadas permanecem com status AVAILABLE');
+                console.log('🏷️ [TAGS] Nenhuma devolução física necessária!');
 
                 // SEMPRE atualizar status e salvar
                 specialSelection.status = 'pending';
@@ -360,7 +334,7 @@ router.post('/finalize', async (req, res) => {
 
                 selection = new Selection(selectionData);
                 selection.addMovementLog('created', `Seleção criada com ${cart.totalItems} itens`);
-                selection.addMovementLog('moved', `Fotos movidas para ${folderResult.folderName}`);
+                selection.addMovementLog('tagged', `[TAGS] Fotos marcadas como reservadas - SEM movimentação`);
 
                 await selection.save({ session });
 

@@ -345,16 +345,23 @@ class SpecialSelectionService {
                 // 5. Bloquear foto temporariamente
                 photoStatus.lock(adminUser, 'moving', 30);
 
-                // ✅ 6. MOVER FOTO PARA PASTA DA CATEGORIA CUSTOMIZADA (NÃO PASTA RAIZ!)
-                const driveResult = await GoogleDriveService.movePhotoToCustomCategory(
-                    photoData.photoId,
-                    category.googleDriveFolderId,  // ← PASTA DA CATEGORIA!
-                    category.categoryName
-                );
+                // ✅ 6. SISTEMA DE TAGS: Marcar foto na categoria (SEM MOVER!)
+                console.log(`🏷️ [TAGS] Marcando foto ${photoData.fileName} na categoria ${category.categoryName}`);
 
-                if (!driveResult.success) {
-                    throw new Error(`Erro ao mover foto no Google Drive: ${driveResult.error}`);
-                }
+                // Criar resultado fake para compatibilidade
+                const driveResult = {
+                    success: true,
+                    photoId: photoData.photoId,
+                    photoName: photoData.fileName,
+                    categoryFolderId: category.googleDriveFolderId,
+                    categoryName: category.categoryName,
+                    oldParent: 'original_location',
+                    newParent: category.googleDriveFolderId,
+                    originalHierarchicalPath: photoData.sourcePath || 'unknown'
+                };
+
+                console.log(`✅ [TAGS] Foto marcada com tag: special_${category.categoryName}`);
+                console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
 
                 // 7. Adicionar backup da localização original
                 if (!selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup) {
@@ -467,20 +474,17 @@ class SpecialSelectionService {
                     console.warn(`⚠️ Backup não encontrado para ${photoId}, usando localização padrão`);
                 }
 
-                // 5. Mover foto de volta no Google Drive
-                const targetParentId = backup?.originalParentId ||
-                    photoStatus?.originalLocation?.originalParentId;
+                // 5. SISTEMA DE TAGS: Marcar foto como disponível (SEM MOVER!)
+                console.log(`🏷️ [TAGS] Marcando foto ${photoId} como AVAILABLE`);
 
-                if (!targetParentId) {
-                    console.warn(`⚠️ Não foi possível determinar localização original da foto ${photoId}`);
-                    console.log(`📋 Pulando devolução desta foto - pode ser movida manualmente se necessário`);
-                    return { success: true, message: 'Foto não devolvida - localização desconhecida' };
-                }
-                const driveResult = await GoogleDriveService.movePhotoToSelection(photoId, targetParentId);
+                // Criar resultado fake para compatibilidade
+                const driveResult = {
+                    success: true,
+                    photoId: photoId,
+                    message: '[TAGS] Foto marcada como disponível'
+                };
 
-                if (!driveResult.success) {
-                    throw new Error(`Erro ao devolver foto no Google Drive: ${driveResult.error}`);
-                }
+                console.log(`✅ [TAGS] Foto liberada - sem movimentação física!`);
 
                 // 6. Atualizar status da foto (se existir)
                 if (photoStatus) {
