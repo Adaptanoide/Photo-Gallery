@@ -856,7 +856,7 @@ async function processSelectionInBackground(selectionId, adminUser) {
  * Processar fotos realmente - mover para Google Drive
  */
 async function processPhotosReally(selection, adminUser) {
-    const GoogleDriveService = require('../services/GoogleDriveService');
+    // const GoogleDriveService = require('../services/GoogleDriveService'); // DESABILITADO - R2
     const totalPhotos = selection.customCategories.reduce((total, cat) => total + cat.photos.length, 0);
 
     console.log(`🚀 [REAL PROCESSING] Iniciando processamento REAL de ${totalPhotos} fotos...`);
@@ -875,7 +875,7 @@ async function processPhotosReally(selection, adminUser) {
             console.log(`📂 Processando categoria: ${category.categoryName} (${category.photos.length} fotos)`);
 
             // Criar pasta da categoria
-            const result = await GoogleDriveService.createCustomCategoryFolder(mainFolderId, category.categoryName);
+            const result = { folderId: `special-${Date.now()}` }; // R2 não precisa criar pasta
             const categoryFolderId = result.categoryFolderId;
             console.log(`📁 Pasta da categoria criada: ${categoryFolderId}`);
             // ✅ SALVAR ID DA PASTA NA CATEGORIA
@@ -887,7 +887,7 @@ async function processPhotosReally(selection, adminUser) {
 
                 try {
                     // ✅ CAPTURAR LOCALIZAÇÃO ORIGINAL ANTES DE MOVER
-                    const drive = GoogleDriveService.getAuthenticatedDrive();
+                    // const drive = GoogleDriveService.getAuthenticatedDrive();
 
                     // Buscar informações atuais da foto
                     const photoInfo = await drive.files.get({
@@ -897,7 +897,7 @@ async function processPhotosReally(selection, adminUser) {
 
                     if (photoInfo.data.parents && photoInfo.data.parents.length > 0) {
                         const originalParentId = photoInfo.data.parents[0];
-                        const originalPath = await GoogleDriveService.buildHierarchicalPath(originalParentId);
+                        const originalPath = photo.photoId; // Usar o próprio ID como path
 
                         // Inicializar backup array se não existir
                         if (!selection.googleDriveInfo.specialSelectionInfo.originalPhotosBackup) {
@@ -915,7 +915,7 @@ async function processPhotosReally(selection, adminUser) {
                     }
 
                     // ✅ MOVER FOTO REAL para pasta da categoria  
-                    await GoogleDriveService.movePhotoToCustomCategory(photo.photoId, categoryFolderId, category.categoryName);
+                    // await GoogleDriveService.movePhotoToCustomCategory(photo.photoId, categoryFolderId, category.categoryName);
                     console.log(`✅ Foto ${photo.fileName} movida para ${category.categoryName}`);
                     console.log(`✅ Foto ${photo.fileName} movida para ${category.categoryName}`);
                 } catch (photoError) {

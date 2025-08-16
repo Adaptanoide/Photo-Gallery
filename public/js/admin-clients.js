@@ -556,7 +556,7 @@ class AdminClients {
 
     async loadAvailableCategories() {
         try {
-            const response = await fetch('/api/drive/folders');
+            const response = await fetch('/api/gallery/structure');
             const data = await response.json();
 
             if (data.success) {

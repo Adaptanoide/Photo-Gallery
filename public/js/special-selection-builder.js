@@ -138,7 +138,7 @@ class SpecialSelectionBuilder {
             console.log('📁 Carregando categorias do estoque...');
 
             // Usar endpoint correto para explorar estrutura do Google Drive
-            const response = await fetch('/api/drive/explore/1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx', {
+            const response = await fetch('/api/gallery/structure', {
                 headers: this.getAuthHeaders()
             });
 
@@ -183,7 +183,7 @@ class SpecialSelectionBuilder {
                 }
             }
 
-            const response = await fetch(`/api/drive/photos/${folderId}`, {
+            const response = await fetch(`/api/gallery/photos?prefix=${folderId}`, {
                 headers: this.getAuthHeaders()
             });
 
@@ -1055,7 +1055,7 @@ class SpecialSelectionBuilder {
             }
 
             // Usar mesma API que client.js
-            const response = await fetch(`/api/drive/explore/${folderId}?depth=1`, {
+            const response = await fetch(`/api/gallery/structure?prefix=${folderId}`, {
                 headers: this.getAuthHeaders()
             });
 

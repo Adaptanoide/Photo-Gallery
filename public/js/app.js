@@ -319,7 +319,7 @@ async function checkSystemStatus() {
 
     const statusChecks = [
         { name: 'api', endpoint: '/api/status', element: statusElements.apiStatus },
-        { name: 'drive', endpoint: '/api/drive/status', element: statusElements.driveStatus },
+        { name: 'storage', endpoint: '/api/gallery/structure', element: statusElements.driveStatus },
         { name: 'db', endpoint: '/api/admin/db-status', element: statusElements.dbStatus }
     ];
 

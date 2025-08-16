@@ -27,41 +27,6 @@ let globalCategoriesCache = new Map();
 // Mapa das categorias principais (será preenchido automaticamente)
 let mainCategoriesMap = {};
 
-// Mapa COMPLETO das subcategorias intermediárias com IDs REAIS
-const INTERMEDIATE_FOLDERS_MAP = {
-    // Brazil Top Selected Categories > Subcategorias
-    'Extra Large': '1Os3jXBBMFuZipaIE90DdjNuI1hAhNphF',
-    'Medium Large': '1BjqQeS0xe0EhN8353AzaMYiAhlV88HnG',
-    'Small': '12uruRqw07061R2fB4O1p2iU5CcpTstBz',
-
-    // Rodeo Rugs > Subcategorias (Nível 1)
-    '3\'x5 Rodeo Rug': '1uoRcbcydmoMq61hXvze9mpzFBdkQte8I',
-    'Round Rug': '1NE2vm1xP5wHd8hThwq0FLBS6bPsFr5FT',
-
-    // Rodeo Rugs > Round Rug > Subcategorias (Nível 2)
-    'Round Rug::Brazil': '1m24Q5CIsfVFusowI7yzdgnMsN09mXf7V',
-    'Round Rug::Colombia': '1YPtRsCQv8-kJOWvuSh3Orjzw7XziPXuo',
-
-    // Rodeo Rugs > 3'x5 Rodeo Rug > Subcategorias (Nível 2)
-    '3\'x5 Rodeo Rug::Colombia': '1QzKybg7Nf7RTTKDjWYxLQr43VIlEkCyN',
-
-    // Colombian Cowhides > Subcategorias
-    '0. Small': '1a0jS1p-J5SjthVviDg9t7SAxCk09D6Rm',
-    '1. Medium': '1b-PBngUoUmO7dn1ng1kzo0YV2m4VT6yE',
-    '2. Large': '1AMkKBIhxWZ2JVOBE4a2OZEC19wDCKRfH',
-    '3. X-Large': '1_OGzVEd5zl2ezU9lmQAikL0H1pm_x04o',
-    '4. Value Tricolor Dark Tones & Creamish White S-M': '1RNb17klfL5jElVAEEMxz9OenMebsNVEn',
-    '5. Value Tricolor Dark Tones & Creamish White L-XL': '1v55KZfYe5f6Hzj1bD4TZU3V-TulADmEn',
-
-    // Rodeo Rugs > Round Rug > Colombia > Pastas finais
-    '40" Round Rug Single Star': '110NT-Xq_QiuSwuUXkWZD4sPrlUJWE2i-',
-    '60\'\' Round Rug Multi Star': '1DFxLI3utsLLlc9Wlki1yw_iAEAxMESYi',
-
-    // Contextos alternativos para Brazil e Colombia quando aparecem sozinhos
-    'Brazil': '1m24Q5CIsfVFusowI7yzdgnMsN09mXf7V', // Default para Round Rug > Brazil
-    'Colombia': '1YPtRsCQv8-kJOWvuSh3Orjzw7XziPXuo' // Default para Round Rug > Colombia
-};
-
 // ===== FUNÇÃO PARA ESCAPAR STRINGS PARA USO SEGURO =====
 function escapeForJS(str) {
     if (!str) return '';
@@ -295,8 +260,8 @@ function showCategories() {
         </div>
     `).join('');
 
-    // MODIFICAR ESTAS LINHAS - Manter breadcrumb SEMPRE visível!
-    document.getElementById('breadcrumbContainer').style.display = 'block';  // MUDOU!
+    // Manter breadcrumb SEMPRE visível
+    document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'none';
 
     // Limpar o path do breadcrumb quando estiver na home
@@ -323,7 +288,7 @@ async function loadFolderContents(folderId) {
         showLoading();
 
         // Buscar estrutura da pasta usando o explorador melhorado
-        const response = await fetch(`/api/drive/explore/${folderId}?depth=1`);
+        const response = await fetch(`/api/gallery/structure?prefix=${folderId}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -353,7 +318,7 @@ async function loadFolderContents(folderId) {
 // Mostrar subpastas
 function showSubfolders(folders) {
     hideAllContainers();
-    hideLoading(); // NOVO: esconder loading
+    hideLoading();
     document.getElementById('foldersContainer').style.display = 'grid';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
@@ -383,7 +348,6 @@ function showSubfolders(folders) {
 
 // Navegar para subpasta
 async function navigateToSubfolder(folderId, folderName) {
-    // CÓDIGO ORIGINAL CONTINUA
     navigationState.currentPath.push({ id: folderId, name: folderName });
     navigationState.currentFolderId = folderId;
 
@@ -398,7 +362,7 @@ async function loadPhotos(folderId) {
     try {
         showPhotosLoading(true);
 
-        const response = await fetch(`/api/drive/photos/${folderId}?limit=500`);
+        const response = await fetch(`/api/gallery/photos?prefix=${folderId}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -420,7 +384,7 @@ async function loadPhotos(folderId) {
 // Mostrar galeria de fotos - COM VIRTUAL SCROLLING
 function showPhotosGallery(photos, folderName, categoryPrice) {
     hideAllContainers();
-    hideLoading(); // NOVO: esconder loading
+    hideLoading();
     document.getElementById('photosContainer').style.display = 'block';
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'block';
@@ -441,7 +405,7 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         return;
     }
 
-    // NOVO: Decidir se usa Virtual Scrolling ou modo tradicional
+    // Decidir se usa Virtual Scrolling ou modo tradicional
     const USE_VIRTUAL_SCROLLING = photos.length > 30;
 
     if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
@@ -458,7 +422,7 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         window.virtualGallery.init(photos, gridEl, categoryPrice);
 
     } else {
-        // MODO TRADICIONAL - Para poucas fotos (mantém código original)
+        // MODO TRADICIONAL - Para poucas fotos
         console.log(`📋 Modo tradicional para ${photos.length} fotos`);
         document.getElementById('photosCount').textContent = `${photos.length} photo(s)`;
 
@@ -473,15 +437,15 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
                 <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
                     <img src="${thumbnailUrl}" 
                         alt="${photo.name}" 
-                        loading="lazy"
-                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        onerror="this.onerror=null; this.src=this.src.replace('/_thumbnails/', '/');"
+                        loading="lazy">
                     
                     <!-- Badge de preço no canto superior direito -->
                     <div class="photo-price ${categoryPrice?.hasPrice ? '' : 'no-price'}">
                         ${categoryPrice?.formattedPrice || 'Check price'}
                     </div>
 
-                    <!-- NOVO: Botão Add to Cart -->
+                    <!-- Botão Add to Cart -->
                     <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
                             onclick="event.stopPropagation(); addToCartFromThumbnail('${photo.id}', ${index})"
                             title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
@@ -518,8 +482,10 @@ async function openPhotoModal(photoIndex) {
     const modal = document.getElementById('photoModal');
     modal.style.display = 'flex';
 
-    // NOVO: Inicializar sistema de zoom
-    initializePhotoZoom();
+    // Inicializar sistema de zoom
+    if (typeof initializePhotoZoom === 'function') {
+        initializePhotoZoom();
+    }
 
     // Atualizar informações comerciais elegantes
     await updateModalCommercialInfo(photo, photoIndex, photos.length);
@@ -611,7 +577,7 @@ async function loadPhotoInModal(photoId) {
         img.style.display = 'none';
 
         // USAR NOSSA ROTA DE CACHE!
-        const imageUrl = `/api/images/full/${photoId}`;
+        const imageUrl = `https://images.sunshinecowhides-gallery.com/${photoId}`;
 
         img.src = imageUrl;
         img.onload = () => {
@@ -642,10 +608,12 @@ async function loadPhotoInModal(photoId) {
 // Navegar para foto anterior
 function previousPhoto() {
     if (navigationState.currentPhotoIndex > 0) {
-        // NOVO: Notificar mudança de foto para resetar zoom
-        notifyPhotoChange();
+        // Notificar mudança de foto para resetar zoom
+        if (typeof notifyPhotoChange === 'function') {
+            notifyPhotoChange();
+        }
         openPhotoModal(navigationState.currentPhotoIndex - 1);
-        // NOVO: Notificar carrinho sobre mudança
+        // Notificar carrinho sobre mudança
         notifyCartOnPhotoChange();
     }
 }
@@ -653,18 +621,22 @@ function previousPhoto() {
 // Navegar para próxima foto
 function nextPhoto() {
     if (navigationState.currentPhotoIndex < navigationState.currentPhotos.length - 1) {
-        // NOVO: Notificar mudança de foto para resetar zoom
-        notifyPhotoChange();
+        // Notificar mudança de foto para resetar zoom
+        if (typeof notifyPhotoChange === 'function') {
+            notifyPhotoChange();
+        }
         openPhotoModal(navigationState.currentPhotoIndex + 1);
-        // NOVO: Notificar carrinho sobre mudança
+        // Notificar carrinho sobre mudança
         notifyCartOnPhotoChange();
     }
 }
 
 // Fechar modal de foto
 function closePhotoModal() {
-    // NOVO: Destruir zoom antes de fechar
-    destroyPhotoZoom();
+    // Destruir zoom antes de fechar
+    if (typeof destroyPhotoZoom === 'function') {
+        destroyPhotoZoom();
+    }
     document.getElementById('photoModal').style.display = 'none';
 }
 
@@ -678,7 +650,7 @@ function notifyCartOnPhotoChange() {
     }
 }
 
-// Selecionar foto para carrinho (AGORA FUNCIONAL)
+// Selecionar foto para carrinho
 function selectPhotoForCart() {
     // Esta função foi substituída por toggleCartItem() no cart.js
     // Manter para compatibilidade, mas redirecionar
@@ -743,7 +715,6 @@ function navigateToRoot() {
     showCategories();
 }
 
-// ===== NOVA FUNÇÃO PARA CONSTRUIR BREADCRUMB NAVEGÁVEL =====
 // Construir breadcrumb navegável com IDs reais e suporte a contextos
 function buildNavigablePath(fullPath, targetId) {
     console.log('🔍 Construindo caminho navegável para:', fullPath);
@@ -756,7 +727,6 @@ function buildNavigablePath(fullPath, targetId) {
     }
 
     const path = [];
-    let previousPart = null;
 
     // Para cada parte, tentar encontrar o ID real
     parts.forEach((part, index) => {
@@ -779,34 +749,9 @@ function buildNavigablePath(fullPath, targetId) {
                 console.log(`⚠️ Categoria principal não mapeada: ${part}`);
             }
         } else {
-            // Partes intermediárias - tentar múltiplas estratégias
-
-            // Estratégia 1: Busca direta
-            itemId = INTERMEDIATE_FOLDERS_MAP[part];
-
-            // Estratégia 2: Busca com contexto do pai direto
-            if (!itemId && previousPart) {
-                const contextKey = `${previousPart}::${part}`;
-                itemId = INTERMEDIATE_FOLDERS_MAP[contextKey];
-                if (itemId) {
-                    console.log(`✅ Encontrado com contexto: ${contextKey}`);
-                }
-            }
-
-            // Estratégia 3: Busca com contexto da raiz
-            if (!itemId && parts[0]) {
-                const rootContextKey = `${parts[0]}::${part}`;
-                itemId = INTERMEDIATE_FOLDERS_MAP[rootContextKey];
-                if (itemId) {
-                    console.log(`✅ Encontrado com contexto raiz: ${rootContextKey}`);
-                }
-            }
-
-            isNavigable = !!itemId;
-
-            if (!itemId) {
-                console.log(`⚠️ Pasta não mapeada: ${part} (nível ${index})`);
-            }
+            // Partes intermediárias - não temos mais o mapa
+            isNavigable = false;
+            console.log(`⚠️ Pasta não mapeada: ${part} (nível ${index})`);
         }
 
         path.push({
@@ -815,8 +760,6 @@ function buildNavigablePath(fullPath, targetId) {
             isLast: isLast,
             isNavigable: isNavigable
         });
-
-        previousPart = part;
     });
 
     console.log('📍 Caminho final:', path.map(p => p.name + (p.isNavigable ? '✓' : '✗')).join(' → '));
@@ -878,7 +821,7 @@ function hideAllContainers() {
     document.getElementById('foldersContainer').style.display = 'none';
     document.getElementById('photosContainer').style.display = 'none';
     document.getElementById('noContentMessage').style.display = 'none';
-    // NOVO: esconder loading também
+    // Esconder loading também
     const loadingEl = document.getElementById('navigationLoading');
     if (loadingEl) {
         loadingEl.style.display = 'none';
@@ -888,7 +831,7 @@ function hideAllContainers() {
 // Mostrar mensagem de conteúdo vazio
 function showNoContent(title, message) {
     hideAllContainers();
-    hideLoading(); // NOVO: esconder loading
+    hideLoading();
     document.getElementById('noContentMessage').style.display = 'block';
     document.getElementById('noContentMessage').innerHTML = `
         <i class="fas fa-folder-open fa-3x"></i>
@@ -929,7 +872,6 @@ function formatFileSize(bytes) {
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    // Pode alterar para 'en-US' se preferir formato americano
     return date.toLocaleDateString('en-US');
 }
 
@@ -979,7 +921,7 @@ async function loadCategoryPrice(folderId) {
             return window.categoryPrices.get(folderId);
         }
 
-        // NOVO: Buscar código do cliente da sessão
+        // Buscar código do cliente da sessão
         let clientCode = null;
         const savedSession = localStorage.getItem('sunshineSession');
         if (savedSession) {
@@ -989,8 +931,8 @@ async function loadCategoryPrice(folderId) {
 
         console.log(`🏷️ Loading price for category ${folderId}, client: ${clientCode || 'ANONYMOUS'}`);
 
-        // NOVO: Incluir clientCode na requisição
-        const url = `/api/pricing/category-price?googleDriveId=${folderId}${clientCode ? `&clientCode=${clientCode}` : ''}`;
+        // Incluir clientCode na requisição
+        const url = `/api/pricing/category-price?prefix=${folderId}${clientCode ? `&clientCode=${clientCode}` : ''}`;
         const response = await fetch(url);
         const data = await response.json();
 
@@ -1004,12 +946,12 @@ async function loadCategoryPrice(folderId) {
         if (data.success && data.category) {
             priceInfo = {
                 hasPrice: data.category.hasPrice,
-                price: data.category.finalPrice || 0,  // NOVO: usar finalPrice em vez de basePrice
+                price: data.category.finalPrice || 0,
                 formattedPrice: data.category.formattedPrice,
-                priceSource: data.category.priceSource || 'base'  // NOVO: fonte do preço
+                priceSource: data.category.priceSource || 'base'
             };
 
-            // NOVO: Log detalhado para debug
+            // Log detalhado para debug
             console.log(`✅ Price loaded:`, {
                 category: data.category.displayName,
                 client: clientCode,
@@ -1161,7 +1103,10 @@ function clearFilters() {
     });
 
     // Reset radio buttons
-    document.querySelector('#photoFilters input[value="all"]').checked = true;
+    const allRadio = document.querySelector('#photoFilters input[value="all"]');
+    if (allRadio) {
+        allRadio.checked = true;
+    }
 
     console.log('✅ Filtros limpos');
 }
@@ -1275,11 +1220,6 @@ function clearAllFilters() {
     showCategories();
 
     console.log('🧹 Filtros limpos');
-}
-
-// Para compatibilidade
-function clearFilters() {
-    clearAllFilters();
 }
 
 // ===== FUNÇÕES AUXILIARES PARA LIMPAR TÍTULOS =====
@@ -1412,6 +1352,7 @@ function displayFilteredCategories(categories) {
     // Mostrar container
     container.style.display = 'grid';
 }
+
 // Função para mostrar/esconder loading
 function showNavigationLoading() {
     const loading = document.getElementById('navigationLoading');
@@ -1479,9 +1420,6 @@ async function loadFilterCounts() {
     } catch (error) {
         console.error('❌ Erro ao carregar contagens:', error);
     }
-
-    // Comentado - data não existe neste contexto
-    // updateFilterCounts(data.categories);
 }
 
 // Atualizar contadores dos filtros

@@ -1,6 +1,5 @@
 //src/services/PricingService.js
 
-const { google } = require('googleapis');
 const PhotoCategory = require('../models/PhotoCategory');
 
 class PricingService {
@@ -8,103 +7,35 @@ class PricingService {
     // ===== CONFIGURAÇÕES =====
     static DRIVE_FOLDER_ROOT = process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
 
-    // ===== AUTENTICAÇÃO GOOGLE DRIVE =====
-    static getGoogleDriveAuth() {
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-                private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-            },
-            scopes: ['https://www.googleapis.com/auth/drive.readonly']
-        });
-
-        return google.drive({ version: 'v3', auth });
-    }
-
     // ===== MÉTODOS PRINCIPAIS =====
 
     /**
-     * Escanear Google Drive e identificar pastas com fotos
+     * Escanear R2 e identificar pastas com fotos
      * @param {boolean} forceRefresh - Forçar nova sincronização
      * @returns {object} Resultado da sincronização
      */
     static async scanAndSyncDrive(forceRefresh = false) {
         try {
-            console.log('🔍 Iniciando escaneamento do Google Drive...');
+            console.log('🔍 Iniciando escaneamento do R2...');
 
-            const drive = this.getGoogleDriveAuth();
+            // Usar StorageService para R2
+            const StorageService = require('./StorageService');
+            const result = await StorageService.getSubfolders('');
 
-            // Função recursiva para explorar estrutura
-            async function exploreFolder(folderId, path = [], level = 0) {
-                const folderInfo = await drive.files.get({
-                    fileId: folderId,
-                    fields: 'id, name, parents, modifiedTime'
-                });
+            console.log(`📂 Encontradas ${result.folders?.length || 0} pastas no R2`);
 
-                const currentPath = [...path, folderInfo.data.name];
-
-                // Listar conteúdo da pasta
-                const response = await drive.files.list({
-                    q: `'${folderId}' in parents and trashed = false`,
-                    fields: 'files(id, name, mimeType, modifiedTime)',
-                    orderBy: 'name',
-                    pageSize: 1000
-                });
-
-                const items = response.data.files;
-                const folders = items.filter(item => item.mimeType === 'application/vnd.google-apps.folder');
-                const files = items.filter(item => item.mimeType !== 'application/vnd.google-apps.folder');
-
-                // Filtrar apenas arquivos de imagem
-                const imageFiles = files.filter(file => {
-                    const isImage = file.mimeType && (
-                        file.mimeType.startsWith('image/') ||
-                        /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file.name)
-                    );
-                    return isImage;
-                });
-
-                const result = {
-                    id: folderId,
-                    name: folderInfo.data.name,
-                    path: currentPath,
-                    googleDrivePath: currentPath.join('/'),
-                    level: level,
-                    photoCount: imageFiles.length,
-                    hasPhotos: imageFiles.length > 0,
-                    modifiedTime: folderInfo.data.modifiedTime,
-                    subfolders: []
-                };
-
-                // Explorar subpastas recursivamente
-                for (const folder of folders) {
-                    const subfolder = await exploreFolder(folder.id, currentPath, level + 1);
-                    result.subfolders.push(subfolder);
-                }
-
-                return result;
-            }
-
-            // Iniciar exploração
-            const structure = await exploreFolder(this.DRIVE_FOLDER_ROOT);
-            // Extrair todas as pastas finais (com ou sem fotos)
-            const foldersWithPhotos = this.extractFoldersWithPhotos(structure);
-
-            console.log(`📂 Encontradas ${foldersWithPhotos.length} pastas finais (${foldersWithPhotos.filter(f => f.photoCount > 0).length} com fotos, ${foldersWithPhotos.filter(f => f.photoCount === 0).length} vazias)`);
-
-            // Sincronizar com banco de dados
-            const syncResults = await this.syncWithDatabase(foldersWithPhotos, forceRefresh);
-
+            // Por enquanto, retornar estrutura básica
+            // TODO: Implementar sincronização completa com R2
             return {
                 success: true,
-                structure,
-                foldersWithPhotos,
-                sync: syncResults,
-                timestamp: new Date()
+                structure: result,
+                foldersWithPhotos: [],
+                sync: { created: 0, updated: 0, skipped: 0 },
+                timestamp: new Date(),
+                message: 'R2 sync em desenvolvimento'
             };
-
         } catch (error) {
-            console.error('❌ Erro no escaneamento do Google Drive:', error);
+            console.error('❌ Erro no escaneamento do R2:', error);
             throw error;
         }
     }

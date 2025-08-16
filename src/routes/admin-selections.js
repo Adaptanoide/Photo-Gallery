@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Selection = require('../models/Selection');
 const Product = require('../models/Product');
-const GoogleDriveService = require('../services/GoogleDriveService');
+// const GoogleDriveService = require('../services/GoogleDriveService'); // DESABILITADO - R2
 const PhotoTagService = require('../services/PhotoTagService');
 const { authenticateToken } = require('./auth');
 const router = express.Router();
@@ -359,7 +359,7 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
             // 5. Tentar limpar pasta vazia no RESERVED
             try {
-                await GoogleDriveService.cleanupEmptyFolder(selection.googleDriveInfo.clientFolderId);
+                // await GoogleDriveService.cleanupEmptyFolder(selection.googleDriveInfo.clientFolderId);
             } catch (cleanupError) {
                 console.warn('⚠️ Erro ao limpar pasta vazia:', cleanupError.message);
             }
@@ -447,10 +447,8 @@ router.post('/:selectionId/force-cancel', async (req, res) => {
                     }
 
                     // Reverter foto usando GoogleDriveService (funciona com IDs antigos ou caminhos novos)
-                    const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
-                        item.driveFileId,
-                        originalPath
-                    );
+                    // const revertResult = await GoogleDriveService.revertPhotoToOriginalLocation(
+                    //     item.driveFileId,
 
                     revertResults.push({
                         success: revertResult.success,
@@ -513,7 +511,7 @@ router.post('/:selectionId/force-cancel', async (req, res) => {
 
             for (const folderId of foldersToClean) {
                 try {
-                    await GoogleDriveService.cleanupEmptyFolder(folderId);
+                    // await GoogleDriveService.cleanupEmptyFolder(folderId);
                 } catch (cleanupError) {
                     console.warn(`⚠️ Erro ao limpar pasta ${folderId}:`, cleanupError.message);
                 }

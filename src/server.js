@@ -11,12 +11,11 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const clientRoutes = require('./routes/client');
-const driveRoutes = require('./routes/drive');
 const cartRoutes = require('./routes/cart');
 const selectionRoutes = require('./routes/selection');
 const pricingRoutes = require('./routes/pricing');
 const specialSelectionsRoutes = require('./routes/special-selections'); // NOVO
-
+const storageRoutes = require('./routes/storage');
 const Cart = require('./models/Cart');
 const { CartService } = require('./services');
 
@@ -44,13 +43,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/selections', require('./routes/admin-selections'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
-app.use('/api/drive', driveRoutes);
+// app.use('/api/drive', driveRoutes); // ANTIGA - comentada
+app.use('/api/gallery', require('./routes/gallery')); // NOVA - R2
 app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
-app.use('/api/special-selections', specialSelectionsRoutes); // NOVO
-app.use('/api/images', require('./routes/images')); // SISTEMA DE CACHE DE IMAGENS
+app.use('/api/special-selections', specialSelectionsRoutes);
+app.use('/api/storage', storageRoutes);
+app.use('/api/images', require('./routes/images'));
 
 // Rota principal - Dashboard
 app.get('/', (req, res) => {
@@ -65,11 +66,6 @@ app.get('/admin', (req, res) => {
 // Rota cliente
 app.get('/client', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/client.html'));
-});
-
-// Rota temporária para explorar estrutura Google Drive
-app.get('/drive-explorer', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/drive-explorer.html'));
 });
 
 // NOVA: Rota para testar seleções especiais
@@ -97,7 +93,7 @@ app.get('/api/status', (req, res) => {
             'Normal Selections',
             'Special Selections', // NOVO
             'Cart System',
-            'Google Drive Integration',
+            'R2 Storage Integration',
             'Pricing Management',
             'Client Management'
         ],
@@ -117,7 +113,7 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use('*', (req, res) => {
-    res.status(404).json({ 
+    res.status(404).json({
         error: 'Rota não encontrada',
         availableRoutes: [
             '/',

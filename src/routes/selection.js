@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const Cart = require('../models/Cart');
 const Selection = require('../models/Selection');
 const Product = require('../models/Product');
-const { GoogleDriveService } = require('../services');
 const EmailService = require('../services/EmailService');
 const PhotoTagService = require('../services/PhotoTagService');
 
@@ -65,20 +64,17 @@ router.post('/finalize', async (req, res) => {
             let selection;
             let specialSelection = null;
 
-            // 4. Criar pasta do cliente no Google Drive (comum para ambos os tipos)
-            console.log(`📁 Criando pasta para cliente no Google Drive...`);
+            // 4. Criar referência da seleção (R2 não precisa criar pasta física)
+            console.log(`📁 Preparando seleção para cliente ${clientName}...`);
 
-            const folderResult = await GoogleDriveService.createClientSelectionFolder(
-                clientCode,
-                clientName,
-                cart.totalItems
-            );
+            // No R2 as "pastas" são virtuais, apenas salvamos a referência
+            const folderResult = {
+                success: true,
+                folderId: `selection-${clientCode}-${Date.now()}`,
+                folderName: `${clientName}_${new Date().toISOString().split('T')[0]}_${cart.totalItems}_items`
+            };
 
-            if (!folderResult.success) {
-                throw new Error('Erro ao criar pasta no Google Drive');
-            }
-
-            console.log(`✅ Pasta criada: ${folderResult.folderName}`);
+            console.log(`✅ Seleção preparada: ${folderResult.folderName}`);
 
             // 5. Preparar dados dos produtos para movimentação
             const photosToMove = products.map(product => {

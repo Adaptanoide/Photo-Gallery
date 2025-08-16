@@ -2,14 +2,16 @@
 
 const CartService = require('./CartService');
 const EmailService = require('./EmailService');
-const GoogleDriveService = require('./GoogleDriveService');
+const PhotoTagService = require('./PhotoTagService');
 const PricingService = require('./PricingService');
-const SpecialSelectionService = require('./SpecialSelectionService'); // NOVO
+const SpecialSelectionService = require('./SpecialSelectionService');
+const R2Service = require('./R2Service');
 
 module.exports = {
     CartService,
     EmailService,
-    GoogleDriveService,
-    PricingService,
-    SpecialSelectionService // NOVO
+    PricingService, 
+    SpecialSelectionService,
+    PhotoTagService,
+    R2Service
 };

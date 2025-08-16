@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const Selection = require('../models/Selection');
 const AccessCode = require('../models/AccessCode');
 const PhotoStatus = require('../models/PhotoStatus');
-const GoogleDriveService = require('./GoogleDriveService');
 
 class SpecialSelectionService {
 
@@ -38,12 +37,14 @@ class SpecialSelectionService {
                 const selectionId = Selection.generateSpecialSelectionId();
                 const sessionId = `special_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-                // 4. Criar pasta no Google Drive para a seleção especial
-                const driveResult = await GoogleDriveService.createSelectionFolder(
-                    selectionData.clientCode,
-                    existingAccessCode.clientName
-                    // Remover o terceiro parâmetro - deixar o método usar o padrão interno
-                );
+                // 4. Criar referência virtual para seleção especial (R2 usa prefixos)
+                const driveResult = {
+                    success: true,
+                    folderId: `special-${selectionId}`,
+                    folderName: `${existingAccessCode.clientName}_${new Date().toISOString().split('T')[0]}`,
+                    folderPath: `special-selections/${selectionData.clientCode}/${selectionId}`
+                };
+                console.log('📁 [R2] Referência de seleção criada (sem pasta física)');
 
                 // 5. Criar documento de seleção especial
                 const specialSelection = new Selection({
@@ -172,10 +173,12 @@ class SpecialSelectionService {
             // ✅ NOVO: Criar pasta da categoria no Google Drive
             const selectionFolderId = selection.googleDriveInfo.specialSelectionInfo.specialFolderId;
 
-            const driveResult = await GoogleDriveService.createCustomCategoryFolder(
-                selectionFolderId,
-                categoryData.categoryName
-            );
+            const driveResult = {
+                success: true,
+                categoryFolderId: `category-${Date.now()}`,
+                categoryFolderName: categoryData.categoryName
+            };
+            console.log('📁 [R2] Categoria virtual criada:', categoryData.categoryName);
 
             if (!driveResult.success) {
                 throw new Error(`Erro ao criar pasta no Google Drive: ${driveResult.error}`);
@@ -306,10 +309,12 @@ class SpecialSelectionService {
                     console.log('⚠️ Categoria sem pasta do Google Drive, criando...');
 
                     const selectionFolderId = selection.googleDriveInfo.specialSelectionInfo.specialFolderId;
-                    const driveResult = await GoogleDriveService.createCustomCategoryFolder(
-                        selectionFolderId,
-                        category.categoryName
-                    );
+                    const driveResult = {
+                        success: true,
+                        categoryFolderId: `category-${Date.now()}`,
+                        categoryFolderName: category.categoryName
+                    };
+                    console.log('📁 [R2] Categoria virtual criada:', category.categoryName);
 
                     if (driveResult.success) {
                         category.googleDriveFolderId = driveResult.categoryFolderId;

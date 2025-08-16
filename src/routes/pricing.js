@@ -126,9 +126,10 @@ router.get('/test/categories', async (req, res) => {
 // Buscar preço por Google Drive ID (para cliente) - VERSÃO CORRIGIDA
 router.get('/category-price', async (req, res) => {
     try {
-        const { googleDriveId, clientCode } = req.query;
+        const { googleDriveId, prefix, clientCode } = req.query;
 
         console.log(`🏷️ Buscando preço para categoria ${googleDriveId}, cliente: ${clientCode || 'ANÔNIMO'}`);
+        const categoryId = googleDriveId || prefix;
 
         // ===== NOVO: DETECTAR CLIENTE ESPECIAL =====
         let category = null;

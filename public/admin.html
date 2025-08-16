@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="css/admin-selections.css">
     <link rel="stylesheet" href="css/admin-special-selections.css">
     <link rel="stylesheet" href="/css/ui-system.css">
+    <link rel="stylesheet" href="css/admin-storage.css">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -90,6 +91,13 @@
                     <a href="#reports" class="nav-link" data-section="reports">
                         <i class="fas fa-chart-bar"></i>
                         <span class="nav-text">Reports</span>
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="#storage" class="nav-link" data-section="storage">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span class="nav-text">Storage Management</span>
                     </a>
                 </div>
 
@@ -857,6 +865,104 @@
                     <p>This section will be implemented in the next phase.</p>
                 </div>
 
+                <!-- Seção Storage Management -->
+                <div id="section-storage" class="content-section" style="display: none;">
+                    <!-- Container Card Principal (igual Special Selections) -->
+                    <div class="section-header-card">
+                        <div class="selections-section-header">
+                            <h2 class="selections-title">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                Storage Management
+                            </h2>
+                            <div class="selections-actions">
+                                <button class="btn btn-secondary" onclick="window.storageManager?.checkStatus()">
+                                    <i class="fas fa-sync-alt"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="selection-stats" style="display: block;">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Storage Mode</div>
+                                        <div class="stat-value" id="storageMode">Loading...</div>
+                                        <div class="stat-description">Current storage system</div>
+                                    </div>
+                                    <div class="stat-icon primary">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Storage URL</div>
+                                        <div class="stat-value" id="storageUrl">Checking...</div>
+                                        <div class="stat-description">Active endpoint</div>
+                                    </div>
+                                    <div class="stat-icon success">
+                                        <i class="fas fa-link"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Files in R2</div>
+                                        <div class="stat-value" id="fileCount">0</div>
+                                        <div class="stat-description">Total uploaded files</div>
+                                    </div>
+                                    <div class="stat-icon secondary">
+                                        <i class="fas fa-images"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Section (com card container) -->
+                    <div class="pricing-table-container" style="margin-top: 20px;">
+                        <div class="table-header">
+                            <h3 class="table-title">
+                                <i class="fas fa-upload"></i>
+                                Upload Photos
+                            </h3>
+                        </div>
+
+                        <div style="padding: 20px;">
+                            <div class="upload-zone" id="uploadZone">
+                                <h3>📤 Drag photos here or click to select</h3>
+                                <p>Accepted formats: JPG, PNG, WebP (max 10MB)</p>
+                                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                            </div>
+
+                            <div class="folder-input-group">
+                                <label>📁 Destination folder:</label>
+                                <input type="text" id="folderPath" class="filter-input" placeholder="e.g.: brazil/large"
+                                    style="max-width: 400px;">
+                            </div>
+
+                            <div class="files-preview" id="filesPreview"></div>
+
+                            <div class="upload-actions">
+                                <button class="btn btn-primary" id="uploadBtn" disabled>
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    Select files
+                                </button>
+                            </div>
+
+                            <div class="upload-results" id="uploadResults"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Seção Configurações (Hidden por padrão) -->
                 <div id="section-settings" class="content-section" style="display: none;">
                     <!-- Loading -->
@@ -1127,6 +1233,7 @@
     <script src="js/admin-selections.js"></script>
     <script src="js/admin-config.js"></script>
     <script src="js/admin-special-selections.js"></script>
+    <script src="js/admin-storage.js"></script>
     <script src="/js/ui-system.js"></script>
 
 </body>

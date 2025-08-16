@@ -1,50 +1,47 @@
-// public/js/image-utils.js
-
-/**
- * Sistema centralizado de URLs de imagens
- * SEMPRE usa o cache do Cloudflare quando possível
- */
+// image-utils.js - VERSÃO R2 com Thumbnails
 window.ImageUtils = {
-    /**
-     * Retorna URL da thumbnail com cache
-     */
+    
     getThumbnailUrl(photo) {
-        if (!photo) return '';
+        // Usar thumbnails do R2
+        // photo.id já tem o path completo do R2
+        const photoPath = photo.id || photo.r2Key || photo.fileName || photo.name;
         
-        // SEMPRE usa nossa rota se tiver ID
-        if (photo.id) {
-            console.log(`🎯 Cache: thumbnail ${photo.id}`);
-            return `/api/images/thumb/${photo.id}`;
+        // Se já tem barra, é path completo
+        if (photoPath && photoPath.includes('/')) {
+            return `https://images.sunshinecowhides-gallery.com/_thumbnails/${photoPath}`;
         }
         
-        // Fallback (não deveria acontecer)
-        console.warn('⚠️ Foto sem ID:', photo);
-        return photo.thumbnailLink || photo.thumbnailMedium || '';
+        // Senão, tentar construir (não deveria chegar aqui)
+        return `https://images.sunshinecowhides-gallery.com/_thumbnails/${photoPath}`;
     },
     
-    /**
-     * Retorna URL da imagem completa com cache
-     */
     getFullImageUrl(photo) {
-        if (!photo) return '';
+        // URL completa sem thumbnail
+        const photoPath = photo.id || photo.r2Key || photo.fileName || photo.name || photo.webViewLink;
         
-        // SEMPRE usa nossa rota se tiver ID
-        if (photo.id) {
-            console.log(`🎯 Cache: full image ${photo.id}`);
-            return `/api/images/full/${photo.id}`;
+        // Se já é URL completa, retornar
+        if (photoPath && photoPath.startsWith("http")) {
+            return photoPath;
+        }
+        
+        // Se tem barra, é path do R2
+        if (photoPath && photoPath.includes('/')) {
+            return `https://images.sunshinecowhides-gallery.com/${photoPath}`;
         }
         
         // Fallback
-        console.warn('⚠️ Foto sem ID:', photo);
-        return photo.webViewLink || photo.thumbnailLarge || '';
+        return `https://images.sunshinecowhides-gallery.com/${photoPath}`;
     },
     
-    /**
-     * Para zoom ou visualização grande
-     */
-    getZoomImageUrl(photo) {
-        return this.getFullImageUrl(photo);
+    preloadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
+        });
     }
 };
 
-console.log('✅ ImageUtils carregado - Todas imagens passarão pelo cache!');
+// Tornar global
+window.ImageUtils = ImageUtils;

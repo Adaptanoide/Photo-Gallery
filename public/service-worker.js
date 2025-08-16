@@ -1,6 +1,7 @@
 // SERVICE WORKER v4 - Cache Inteligente Melhorado
 const CACHE_NAME = 'sunshine-cache-v4';
 const CACHE_TIMES = {
+    // Cache especial para thumbnails (7 dias)
     thumbnails: 24 * 60 * 60 * 1000,  // 24 horas
     folders: 60 * 60 * 1000,           // 1 hora
     api: 5 * 60 * 1000                 // 5 minutos

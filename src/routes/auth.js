@@ -5,22 +5,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const Admin = require('../models/Admin');
 const AccessCode = require('../models/AccessCode');
-const { google } = require('googleapis');
 
 const router = express.Router();
-
-// Configuração Google Drive
-const getGoogleDriveAuth = () => {
-    const auth = new google.auth.GoogleAuth({
-        credentials: {
-            client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        },
-        scopes: ['https://www.googleapis.com/auth/drive.readonly']
-    });
-
-    return google.drive({ version: 'v3', auth });
-};
 
 // Login do administrador
 router.post('/admin/login', async (req, res) => {
@@ -148,10 +134,9 @@ router.post('/client/verify', async (req, res) => {
     }
 });
 
-// Buscar dados do cliente logado com categorias filtradas (CORRIGIDO)
+// Buscar dados do cliente logado - VERSÃO R2
 router.get('/client/data', async (req, res) => {
     try {
-        // Buscar código de acesso na sessão (simulado via query param para teste)
         const { code } = req.query;
 
         if (!code) {
@@ -175,193 +160,58 @@ router.get('/client/data', async (req, res) => {
             });
         }
 
-        // ===== NOVO: DETECTAR TIPO DE ACESSO =====
-        if (accessCode.accessType === 'special') {
-            console.log(`🔑 Código de acesso ESPECIAL ${accessCode.code} - seleção ${accessCode.specialSelection.selectionCode} - ${accessCode.clientName}`);
+        console.log(`🔑 Cliente ${accessCode.clientName} (${code}) conectado`);
 
-            try {
-                // Buscar seleção especial ativa
-                const Selection = require('../models/Selection');
-                const selection = await Selection.findById(accessCode.specialSelection.selectionId);
-
-                if (!selection) {
-                    console.error(`❌ Seleção especial não encontrada: ${accessCode.specialSelection.selectionId}`);
-                    return res.status(404).json({
-                        success: false,
-                        message: 'Special selection not found'
-                    });
-                }
-
-                if (!selection.specialSelectionConfig?.accessConfig?.isActive) {
-                    console.error(`❌ Seleção especial inativa: ${selection.selectionId}`);
-                    return res.status(403).json({
-                        success: false,
-                        message: 'Special selection is not active'
-                    });
-                }
-
-                // Converter customCategories para formato esperado pelo cliente
-                const specialCategories = selection.customCategories
-                    .filter(cat => cat.googleDriveFolderId) // Apenas categorias com pasta criada
-                    .map(cat => ({
-                        id: cat.googleDriveFolderId,           // ID da pasta no Google Drive
-                        name: cat.categoryDisplayName || cat.categoryName,
-                        modifiedTime: cat.createdAt || new Date().toISOString()
-                    }));
-
-                console.log(`✅ Categorias especiais encontradas (${specialCategories.length}):`);
-                specialCategories.forEach((cat, i) => {
-                    console.log(`   ${i + 1}. "${cat.name}" (ID: ${cat.id})`);
-                });
-
-                // Atualizar último uso
-                accessCode.lastUsed = new Date();
-                accessCode.usageCount += 1;
-                await accessCode.save();
-
-                // Resposta para cliente especial
-                return res.json({
-                    success: true,
-                    client: {
-                        name: accessCode.clientName,
-                        email: accessCode.clientEmail,
-                        code: accessCode.code
-                    },
-                    allowedCategories: specialCategories,      // ← Categorias customizadas navegáveis!
-                    accessType: 'special',
-                    specialSelectionInfo: {
-                        selectionName: selection.specialSelectionConfig.selectionName,
-                        description: selection.specialSelectionConfig.description,
-                        totalCategories: specialCategories.length
-                    },
-                    totalCategories: specialCategories.length,
-                    allowedCount: specialCategories.length,
-                    debug: {
-                        selectionId: selection.selectionId,
-                        isActive: selection.specialSelectionConfig.accessConfig.isActive,
-                        customCategoriesTotal: selection.customCategories.length,
-                        categoriesWithFolders: specialCategories.length
-                    }
-                });
-
-            } catch (error) {
-                console.error('❌ Erro ao processar acesso especial:', error);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error processing special selection access',
-                    error: process.env.NODE_ENV === 'development' ? error.message : undefined
-                });
-            }
-        }
-
-        // ===== ACESSO NORMAL: MANTER LÓGICA EXISTENTE =====
-        console.log(`🔑 Código de acesso NORMAL ${accessCode.code} - ${accessCode.allowedCategories.length} categorias - ${accessCode.clientName}`);
-
-        // Buscar categorias do Google Drive
-        let availableCategories = [];
+        // NOVO: Buscar categorias do R2
+        const StorageService = require('../services/StorageService');
+        let r2Categories = [];
 
         try {
-            const drive = getGoogleDriveAuth();
-            const parentFolderId = process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
-
-            const response = await drive.files.list({
-                q: `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
-                fields: 'files(id, name, modifiedTime)',
-                orderBy: 'name'
-            });
-
-            availableCategories = response.data.files;
-
-        } catch (driveError) {
-            console.error('Erro ao buscar categorias do Drive:', driveError);
+            const result = await StorageService.getSubfolders('');
+            r2Categories = result.folders || [];
+            console.log(`📂 ${r2Categories.length} categorias disponíveis no R2`);
+        } catch (error) {
+            console.error('❌ Erro ao buscar categorias do R2:', error);
         }
 
-        // FILTRO CORRIGIDO E NORMALIZADO DE CATEGORIAS
-        const allowedCategories = availableCategories.filter(category => {
-            return accessCode.allowedCategories.some(allowed => {
+        // Converter allowedCategories (strings) para objetos e filtrar
+        let allowedCategories = [];
 
-                // Função para normalizar strings (remove espaços extras, números, etc.)
-                const normalize = (str) => {
-                    return str
-                        .toLowerCase()
-                        .replace(/^\d+\.\s*/, '')  // Remove números no início (1., 2., etc.)
-                        .replace(/\s+/g, ' ')      // Normaliza múltiplos espaços para 1
-                        .trim();                   // Remove espaços das bordas
-                };
+        if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+            // Se tem categorias específicas, filtrar
+            allowedCategories = accessCode.allowedCategories
+                .map(cat => {
+                    // Se é string, converter para objeto
+                    if (typeof cat === 'string') {
+                        // Verificar se existe no R2
+                        const r2Cat = r2Categories.find(r2 =>
+                            r2.name.toLowerCase() === cat.toLowerCase()
+                        );
 
-                // Normalizar ambos os nomes
-                const categoryNormalized = normalize(category.name);
-                const allowedNormalized = normalize(allowed);
+                        if (r2Cat) {
+                            return {
+                                id: r2Cat.name,  // Usar nome como ID para R2
+                                name: r2Cat.name
+                            };
+                        }
+                    }
+                    return null;
+                })
+                .filter(cat => cat !== null);
+        } else {
+            // Se não tem restrições, mostrar todas do R2
+            allowedCategories = r2Categories.map(cat => ({
+                id: cat.name,
+                name: cat.name
+            }));
+        }
 
-                // Também testar versões originais sem normalização de números
-                const categorySimple = category.name.toLowerCase().replace(/\s+/g, ' ').trim();
-                const allowedSimple = allowed.toLowerCase().replace(/\s+/g, ' ').trim();
-
-                // Múltiplas formas de match
-                const matches = (
-                    // Match exato original
-                    category.name.toLowerCase() === allowed.toLowerCase() ||
-
-                    // Match com espaços normalizados
-                    categorySimple === allowedSimple ||
-
-                    // Match sem números e espaços normalizados
-                    categoryNormalized === allowedNormalized ||
-
-                    // Inclusão com espaços normalizados
-                    categorySimple.includes(allowedSimple) ||
-                    allowedSimple.includes(categorySimple) ||
-
-                    // Inclusão sem números
-                    categoryNormalized.includes(allowedNormalized) ||
-                    allowedNormalized.includes(categoryNormalized)
-                );
-
-                // Log detalhado para debug
-                if (matches) {
-                    console.log(`✅ MATCH ENCONTRADO:`);
-                    console.log(`   Categoria Drive: "${category.name}"`);
-                    console.log(`   Permitida AccessCode: "${allowed}"`);
-                    console.log(`   Drive normalizado: "${categoryNormalized}"`);
-                    console.log(`   Permitida normalizada: "${allowedNormalized}"`);
-                }
-
-                return matches;
-            });
-        });
-
-        // Log final detalhado
-        console.log(`🔍 RESULTADO DO FILTRO - Cliente: ${accessCode.clientName}`);
-        console.log(`   📂 Categorias permitidas no AccessCode (${accessCode.allowedCategories.length}):`);
-        accessCode.allowedCategories.forEach((cat, i) => console.log(`      ${i + 1}. "${cat}"`));
-        console.log(`   📂 Categorias disponíveis no Drive (${availableCategories.length}):`);
-        availableCategories.forEach((cat, i) => console.log(`      ${i + 1}. "${cat.name}"`));
-        console.log(`   ✅ Categorias filtradas (${allowedCategories.length}):`);
-        allowedCategories.forEach((cat, i) => console.log(`      ${i + 1}. "${cat.name}" (ID: ${cat.id})`));
+        console.log(`✅ ${allowedCategories.length} categorias permitidas para o cliente`);
 
         // Atualizar último uso
         accessCode.lastUsed = new Date();
         accessCode.usageCount += 1;
         await accessCode.save();
-
-        // ===== DEBUG INTENSIVO - ANTES DE ENVIAR RESPOSTA =====
-        console.log('🚨 ===== DEBUG FINAL ANTES DE ENVIAR RESPOSTA =====');
-        console.log('📤 Cliente:', accessCode.clientName, '(', accessCode.code, ')');
-        console.log('📂 AccessCode.allowedCategories:', JSON.stringify(accessCode.allowedCategories, null, 2));
-        console.log('📂 Google Drive total:', availableCategories.length, 'categorias');
-        console.log('📂 Filtro resultou em:', allowedCategories.length, 'categorias');
-        console.log('✅ Categorias que serão enviadas ao cliente:');
-        allowedCategories.forEach((cat, i) => {
-            console.log(`   ${i + 1}. "${cat.name}" (ID: ${cat.id})`);
-        });
-
-        if (allowedCategories.length === availableCategories.length) {
-            console.log('🚨 PROBLEMA: Cliente está recebendo TODAS as categorias (filtro não funcionou)');
-        } else {
-            console.log('✅ FILTRO FUNCIONOU: Cliente recebe apenas', allowedCategories.length, 'de', availableCategories.length);
-        }
-
-        console.log('🚨 ===== FIM DEBUG FINAL =====');
 
         res.json({
             success: true,
@@ -370,15 +220,9 @@ router.get('/client/data', async (req, res) => {
                 email: accessCode.clientEmail,
                 code: accessCode.code
             },
-            allowedCategories: allowedCategories,        // ← Categorias FILTRADAS
-            // REMOVIDO availableCategories para evitar confusão
-            totalCategories: availableCategories.length,
-            allowedCount: allowedCategories.length,
-            debug: {
-                originalAllowed: accessCode.allowedCategories,
-                filteredResult: allowedCategories.map(c => c.name),
-                filterWorked: allowedCategories.length < availableCategories.length
-            }
+            allowedCategories: allowedCategories,
+            totalCategories: r2Categories.length,
+            allowedCount: allowedCategories.length
         });
 
     } catch (error) {
@@ -546,127 +390,6 @@ router.post('/fix/accesscode/:code', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao corrigir AccessCode',
-            error: error.message
-        });
-    }
-});
-
-// DEBUG COMPLETO: Investigar problema das categorias
-router.get('/debug/categories/:code', async (req, res) => {
-    try {
-        const { code } = req.params;
-
-        // 1. Buscar dados do AccessCode
-        const accessCode = await AccessCode.findOne({ code });
-        if (!accessCode) {
-            return res.json({
-                success: false,
-                message: 'Código não encontrado',
-                code
-            });
-        }
-
-        // 2. Buscar categorias do Google Drive
-        let availableCategories = [];
-        let driveError = null;
-
-        try {
-            const drive = getGoogleDriveAuth();
-            const parentFolderId = process.env.DRIVE_FOLDER_AVAILABLE || '1Ky3wSKKg_mmQihdxmiYwMuqE3-SBTcbx';
-
-            const response = await drive.files.list({
-                q: `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
-                fields: 'files(id, name, modifiedTime)',
-                orderBy: 'name'
-            });
-
-            availableCategories = response.data.files;
-        } catch (error) {
-            driveError = error.message;
-        }
-
-        // 3. Testar TODOS os tipos de filtro possíveis
-        const filterTests = [];
-
-        for (const allowed of accessCode.allowedCategories) {
-            for (const category of availableCategories) {
-                // Diferentes tipos de match
-                const tests = {
-                    exactMatch: category.name.toLowerCase() === allowed.toLowerCase(),
-                    categoryContainsAllowed: category.name.toLowerCase().includes(allowed.toLowerCase()),
-                    allowedContainsCategory: allowed.toLowerCase().includes(category.name.toLowerCase()),
-                    noNumbersMatch: category.name.replace(/^\d+\.\s*/, '').toLowerCase() === allowed.replace(/^\d+\.\s*/, '').toLowerCase(),
-                    partialNoNumbers: category.name.replace(/^\d+\.\s*/, '').toLowerCase().includes(allowed.replace(/^\d+\.\s*/, '').toLowerCase()),
-                    reversePartialNoNumbers: allowed.replace(/^\d+\.\s*/, '').toLowerCase().includes(category.name.replace(/^\d+\.\s*/, '').toLowerCase()),
-                    normalizedSpaces: category.name.toLowerCase().replace(/\s+/g, ' ').trim() === allowed.toLowerCase().replace(/\s+/g, ' ').trim()
-                };
-
-                const anyMatch = Object.values(tests).some(t => t);
-
-                filterTests.push({
-                    allowed,
-                    categoryName: category.name,
-                    categoryId: category.id,
-                    tests,
-                    matches: anyMatch
-                });
-            }
-        }
-
-        // 4. Aplicar filtro atual
-        const filteredCategories = availableCategories.filter(category => {
-            return accessCode.allowedCategories.some(allowed => {
-                const normalize = (str) => {
-                    return str
-                        .toLowerCase()
-                        .replace(/^\d+\.\s*/, '')
-                        .replace(/\s+/g, ' ')
-                        .trim();
-                };
-
-                const categoryNormalized = normalize(category.name);
-                const allowedNormalized = normalize(allowed);
-                const categorySimple = category.name.toLowerCase().replace(/\s+/g, ' ').trim();
-                const allowedSimple = allowed.toLowerCase().replace(/\s+/g, ' ').trim();
-
-                return (
-                    category.name.toLowerCase() === allowed.toLowerCase() ||
-                    categorySimple === allowedSimple ||
-                    categoryNormalized === allowedNormalized ||
-                    categorySimple.includes(allowedSimple) ||
-                    allowedSimple.includes(categorySimple) ||
-                    categoryNormalized.includes(allowedNormalized) ||
-                    allowedNormalized.includes(categoryNormalized)
-                );
-            });
-        });
-
-        res.json({
-            success: true,
-            debug: {
-                accessCode: {
-                    code: accessCode.code,
-                    clientName: accessCode.clientName,
-                    allowedCategories: accessCode.allowedCategories,
-                    allowedCount: accessCode.allowedCategories.length
-                },
-                googleDrive: {
-                    error: driveError,
-                    availableCategories: availableCategories.map(c => ({ id: c.id, name: c.name })),
-                    availableCount: availableCategories.length
-                },
-                filtering: {
-                    filteredCategories: filteredCategories.map(c => ({ id: c.id, name: c.name })),
-                    filteredCount: filteredCategories.length,
-                    allFilterTests: filterTests
-                }
-            }
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro no debug',
             error: error.message
         });
     }
