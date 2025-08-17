@@ -1,16 +1,28 @@
 //public/js/app.js
 
-// REGISTRAR SERVICE WORKER v3 - Cache inteligente
+// DESREGISTRAR SERVICE WORKER - Migração para R2
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('✅ Service Worker v4 registrado - Cache melhorado!');
-                console.log('📦 Cache de thumbnails ativado (24h)');
-            })
-            .catch(err => {
-                console.log('⚠️ Service Worker não registrou:', err);
+        // Desregistrar todos os service workers existentes
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (let registration of registrations) {
+                registration.unregister().then(function (success) {
+                    if (success) {
+                        console.log('🗑️ Service Worker removido com sucesso');
+                    }
+                });
+            }
+        });
+
+        // Limpar todos os caches antigos
+        if ('caches' in window) {
+            caches.keys().then(function (names) {
+                names.forEach(function (name) {
+                    caches.delete(name);
+                    console.log('🧹 Cache limpo:', name);
+                });
             });
+        }
     });
 }
 
