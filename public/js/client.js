@@ -288,7 +288,7 @@ async function loadFolderContents(folderId) {
         showLoading();
 
         // Buscar estrutura da pasta usando o explorador melhorado
-        const response = await fetch(`/api/gallery/structure?prefix=${folderId}`);
+        const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -362,7 +362,7 @@ async function loadPhotos(folderId) {
     try {
         showPhotosLoading(true);
 
-        const response = await fetch(`/api/gallery/photos?prefix=${folderId}`);
+        const response = await fetch(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`);
         const data = await response.json();
 
         if (!data.success) {
