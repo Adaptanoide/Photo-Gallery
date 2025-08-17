@@ -122,6 +122,12 @@ class R2Service {
 
             console.log(`📸 [R2] ${photos.length} fotos encontradas em: ${normalizedPrefix || '/'}`);
 
+            // ===== ADICIONAR ESTAS 3 LINHAS AQUI =====
+            console.log(`🔍 [DEBUG] Buscando em prefix: "${normalizedPrefix}"`);
+            console.log(`🔍 [DEBUG] Bucket: ${process.env.R2_BUCKET_NAME}`);
+            console.log(`🔍 [DEBUG] Primeiras 3 fotos:`, photos.slice(0, 3).map(p => ({ key: p.r2Key, name: p.name })));
+            // ===== FIM DAS LINHAS =====
+            
             return {
                 success: true,
                 photos: photos,
@@ -202,7 +208,7 @@ class R2Service {
         // Adicionar _thumbnails no início do path
         const baseUrl = process.env.R2_PUBLIC_URL ||
             `https://${process.env.R2_BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.dev`;
-        
+
         return `${baseUrl}/_thumbnails/${key}`;
     }
 
