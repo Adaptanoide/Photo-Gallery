@@ -8,7 +8,7 @@ class CartService {
 
     // ===== CONFIGURAÇÕES =====
     static RESERVATION_DURATION = 300 * 60 * 1000; // 300 minutos (5 horas)
-    static MAX_ITEMS_PER_CART = 10; // Limite máximo de itens por carrinho
+    static MAX_ITEMS_PER_CART = 100; // Limite máximo de itens por carrinho
 
     // ===== MÉTODOS PRINCIPAIS =====
 
@@ -281,6 +281,7 @@ class CartService {
                     fileName: item.fileName,
                     category: item.category,
                     thumbnailUrl: item.thumbnailUrl,
+                    basePrice: item.basePrice,  // ← ADICIONE ESTA LINHA AQUI!
                     price: item.price,
                     formattedPrice: item.formattedPrice,
                     hasPrice: item.hasPrice,

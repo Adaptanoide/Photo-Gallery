@@ -5,6 +5,197 @@ const { CartService } = require('../services');
 
 const router = express.Router();
 
+/**
+ * NOVA FUNÇÃO - Calcular total SEMPRE por categoria
+ * Respeita hierarquia: Custom Client > Volume Discount > Base Price
+ */
+const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) => {
+    const PhotoCategory = require('../models/PhotoCategory');
+
+    console.log(`🎯 NOVO CÁLCULO - Cliente: ${cart.clientCode} (${cart.clientName})`);
+    console.log(`📦 Total de itens no carrinho: ${cart.totalItems}`);
+
+    // Agrupar itens por categoria
+    const itemsByCategory = {};
+    cart.items.forEach(item => {
+        const categoryKey = item.category || 'uncategorized';
+        if (!itemsByCategory[categoryKey]) {
+            itemsByCategory[categoryKey] = [];
+        }
+        itemsByCategory[categoryKey].push(item);
+    });
+
+    const totalCategories = Object.keys(itemsByCategory).length;
+    console.log(`📂 Carrinho tem ${totalCategories} categoria(s) diferentes`);
+
+    // Calcular total e detalhes
+    let grandTotal = 0;
+    let totalComDesconto = 0;
+    const detalhes = [];
+
+    // CALCULAR CADA CATEGORIA SEPARADAMENTE
+    for (const [categoryPath, items] of Object.entries(itemsByCategory)) {
+        const quantidade = items.length;
+        console.log(`\n🏷️ Categoria: ${categoryPath}`);
+        console.log(`   📊 Quantidade: ${quantidade} itens`);
+
+        // Buscar categoria no banco
+        let category = null;
+        try {
+            category = await PhotoCategory.findOne({
+                $or: [
+                    // 1. Busca EXATA por folderName (mais provável)
+                    { folderName: categoryPath },
+
+                    // 2. Busca por displayName que TERMINA exatamente com o nome
+                    { displayName: { $regex: ` → ${categoryPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
+
+                    // 3. Busca direta se for categoria raiz
+                    { displayName: categoryPath }
+                ]
+            });
+        } catch (err) {
+            console.log(`   ⚠️ Erro buscando categoria: ${err.message}`);
+        }
+
+        // ADICIONE ESTE BLOCO AQUI ↓
+        if (category) {
+            console.log(`   ✅ Categoria encontrada: ${category.displayName}`);
+            console.log(`      FolderName: ${category.folderName}`);
+            console.log(`      Busca por: "${categoryPath}"`);
+
+            // VALIDAÇÃO DE SEGURANÇA
+            if (category.folderName !== categoryPath &&
+                !category.displayName.endsWith(` → ${categoryPath}`) &&
+                category.displayName !== categoryPath) {
+                console.log(`   ⚠️ ALERTA: Match pode estar incorreto!`);
+            }
+        }
+
+        if (!category) {
+            console.log(`   ❌ Categoria não encontrada no banco`);
+            // Somar com preço individual dos itens
+            const catSubtotal = items.reduce((sum, item) => sum + (item.price || 0), 0);
+            grandTotal += catSubtotal;
+            totalComDesconto += catSubtotal;
+            continue;
+        }
+
+        console.log(`   ✅ Categoria encontrada: ${category.displayName}`);
+
+        // USAR MÉTODO UNIFICADO - TODA HIERARQUIA EM UM SÓ LUGAR
+        let precoUnitario = 0;
+        let fonte = '';
+        let detalheRegra = null;
+
+        try {
+            // Chama o método que já tem toda a lógica de hierarquia
+            const priceResult = await category.getPriceForClient(cart.clientCode, quantidade);
+
+            precoUnitario = priceResult.finalPrice;
+            fonte = priceResult.appliedRule;
+
+            // Preparar detalhes para exibição
+            if (fonte === 'custom-client') {
+                detalheRegra = {
+                    tipo: 'Custom Client',
+                    cliente: priceResult.ruleDetails?.clientName || cart.clientName,
+                    faixa: priceResult.ruleDetails?.appliedRange ?
+                        `${priceResult.ruleDetails.appliedRange.min}-${priceResult.ruleDetails.appliedRange.max || '+'} itens` :
+                        'Preço especial',
+                    preco: precoUnitario,
+                    exceeded: priceResult.ruleDetails?.exceeded || false
+                };
+                console.log(`   💎 Custom Client: ${detalheRegra.cliente}`);
+                console.log(`      Faixa: ${detalheRegra.faixa} = $${precoUnitario}/item`);
+                if (detalheRegra.exceeded) {
+                    console.log(`      ⚠️ Quantidade excede faixa - mantendo melhor preço`);
+                }
+            }
+            else if (fonte === 'volume-discount') {
+                detalheRegra = {
+                    tipo: 'Volume Discount',
+                    faixa: priceResult.ruleDetails?.appliedRange ?
+                        `${priceResult.ruleDetails.appliedRange.min}-${priceResult.ruleDetails.appliedRange.max || '+'} itens` :
+                        'Desconto por volume',
+                    preco: precoUnitario,
+                    exceeded: priceResult.ruleDetails?.exceeded || false
+                };
+                console.log(`   📦 Volume Discount (All Regular Clients)`);
+                console.log(`      Faixa: ${detalheRegra.faixa} = $${precoUnitario}/item`);
+                if (detalheRegra.exceeded) {
+                    console.log(`      ⚠️ Quantidade excede faixa - mantendo melhor preço`);
+                }
+            }
+            else if (fonte === 'custom-price' || fonte === 'custom-percent') {
+                detalheRegra = {
+                    tipo: 'Custom Client (Legacy)',
+                    cliente: cart.clientName,
+                    preco: precoUnitario
+                };
+                console.log(`   💎 Custom Client (Legacy): $${precoUnitario}/item`);
+            }
+            else {
+                detalheRegra = {
+                    tipo: 'Base Price',
+                    preco: precoUnitario
+                };
+                console.log(`   💰 Base Price: $${precoUnitario}/item`);
+            }
+
+        } catch (error) {
+            console.log(`   ⚠️ Erro ao calcular preço, usando base: ${error.message}`);
+            precoUnitario = category.basePrice || 0;
+            fonte = 'base-price';
+            detalheRegra = {
+                tipo: 'Base Price (Fallback)',
+                preco: precoUnitario
+            };
+        }
+
+        // Calcular subtotal desta categoria
+        const subtotalCategoria = quantidade * precoUnitario;
+        grandTotal += subtotalCategoria;
+        totalComDesconto += subtotalCategoria;
+
+        console.log(`   📊 Subtotal: ${quantidade} × $${precoUnitario} = $${subtotalCategoria}`);
+
+        // Guardar detalhes
+        detalhes.push({
+            categoria: categoryPath,
+            quantidade: quantidade,
+            precoUnitario: precoUnitario,
+            subtotal: subtotalCategoria,
+            fonte: fonte,
+            regra: detalheRegra
+        });
+    }
+
+    // Calcular desconto total
+    const descontoTotal = subtotal - totalComDesconto;
+    const percentualDesconto = subtotal > 0 ? Math.round((descontoTotal / subtotal) * 100) : 0;
+
+    console.log(`\n💵 TOTAIS:`);
+    console.log(`   Subtotal original: $${subtotal}`);
+    console.log(`   Total com desconto: $${totalComDesconto}`);
+    console.log(`   Economia: $${descontoTotal} (${percentualDesconto}%)`);
+
+    return {
+        rule: {
+            detalhes: detalhes,
+            totalCategories: totalCategories
+        },
+        discountPercent: percentualDesconto,
+        discountAmount: descontoTotal,
+        fixedPrice: null,
+        ruleType: 'per-category',
+        description: `Cálculo por categoria (${totalCategories} categoria${totalCategories > 1 ? 's' : ''})`,
+        source: 'category-based',
+        finalTotal: totalComDesconto,
+        detalhesCompletos: detalhes
+    };
+};
+
 // ===== MIDDLEWARE DE VALIDAÇÃO =====
 
 // Validar sessionId
@@ -27,7 +218,7 @@ const validateClientData = (req, res, next) => {
     const {
         sessionId, clientCode, clientName, driveFileId,
         fileName, category, thumbnailUrl,
-        price, formattedPrice, hasPrice
+        basePrice, price, formattedPrice, hasPrice  // ← ADICIONE basePrice
     } = req.body;
 
     if (!clientCode || typeof clientCode !== 'string' || clientCode.length !== 4) {
@@ -59,7 +250,7 @@ router.post('/add', validateSessionId, validateClientData, async (req, res) => {
         const {
             sessionId, clientCode, clientName, driveFileId,
             fileName, category, thumbnailUrl,
-            price, formattedPrice, hasPrice
+            basePrice, price, formattedPrice, hasPrice  // ← ADICIONE basePrice
         } = req.body;
 
         // Validar driveFileId
@@ -72,11 +263,11 @@ router.post('/add', validateSessionId, validateClientData, async (req, res) => {
 
         console.log(`🛒 Adicionando item ${driveFileId} ao carrinho ${sessionId}`);
 
-        // ✅ NOVO: Incluir dados de preço no itemData
         const itemData = {
             fileName: fileName || 'Produto sem nome',
             category: category || 'Categoria não informada',
             thumbnailUrl: thumbnailUrl || null,
+            basePrice: basePrice || 0,  // ← ADICIONE ESTA LINHA!
             price: price || 0,
             formattedPrice: formattedPrice || 'Sem preço',
             hasPrice: hasPrice || false
@@ -179,6 +370,20 @@ router.get('/:sessionId', validateSessionId, async (req, res) => {
             });
         }
 
+        // ADICIONAR CÁLCULO DE TOTAL AQUI
+        let subtotal = 0;
+        let itemsWithPrice = 0;
+
+        for (const item of cart.items) {
+            if (item.hasPrice && item.basePrice > 0) {
+                subtotal += item.basePrice;  // ← USA basePrice!
+                itemsWithPrice++;
+            }
+        }
+
+        // Calcular desconto usando a hierarquia
+        const discountInfo = await calculateDiscountWithHierarchy(cart, itemsWithPrice, subtotal);
+
         res.json({
             success: true,
             message: 'Carrinho carregado com sucesso',
@@ -195,10 +400,14 @@ router.get('/:sessionId', validateSessionId, async (req, res) => {
                     thumbnailUrl: item.thumbnailUrl,
                     addedAt: item.addedAt,
                     expiresAt: item.expiresAt,
-                    timeRemaining: cart.getTimeRemaining(item.driveFileId)
+                    timeRemaining: cart.getTimeRemaining(item.driveFileId),
+                    price: item.price,
+                    formattedPrice: item.formattedPrice,
+                    hasPrice: item.hasPrice
                 })),
                 lastActivity: cart.lastActivity,
-                isEmpty: cart.totalItems === 0
+                isEmpty: cart.totalItems === 0,
+                discountInfo: discountInfo // Adicionar info de desconto
             }
         });
 
@@ -395,27 +604,54 @@ router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) =>
         let itemsWithPrice = 0;
 
         for (const item of cart.items) {
-            if (item.hasPrice && item.price > 0) {
-                subtotal += item.price;
+            if (item.hasPrice && item.basePrice > 0) {
+                subtotal += item.basePrice;  // ← USA basePrice!
                 itemsWithPrice++;
             }
         }
 
         console.log(`📊 Subtotal calculado: R$ ${subtotal.toFixed(2)} (${itemsWithPrice} itens com preço)`);
 
-        // Buscar desconto por quantidade
-        const QuantityDiscount = require('../models/QuantityDiscount');
-        const discountInfo = await QuantityDiscount.calculateDiscount(cart.totalItems);
+        // CORREÇÃO: Usar a função de hierarquia
+        const discountInfo = await calculateDiscountWithHierarchy(cart, itemsWithPrice, subtotal);
 
-        console.log(`📦 Desconto por quantidade:`, discountInfo);
+        console.log(`📦 Desconto aplicado:`, discountInfo);
 
-        // Aplicar desconto sobre subtotal
+        // CORREÇÃO: Aplicar desconto baseado no TIPO da regra
         let discountAmount = 0;
         let total = subtotal;
+        let effectiveDiscountPercent = 0;
 
-        if (discountInfo.discountPercent > 0 && subtotal > 0) {
-            discountAmount = (subtotal * discountInfo.discountPercent) / 100;
-            total = subtotal - discountAmount;
+        // Se tem regra de desconto
+        if (discountInfo.rule) {
+            // TIPO 1: Preço fixo por item
+            if (discountInfo.ruleType === 'fixed' && discountInfo.fixedPrice > 0) {
+                // Calcular novo total com preço fixo
+                const newTotal = itemsWithPrice * discountInfo.fixedPrice;
+                discountAmount = subtotal - newTotal;
+                total = newTotal;
+
+                // Calcular percentual efetivo para exibição
+                if (subtotal > 0) {
+                    effectiveDiscountPercent = Math.round((discountAmount / subtotal) * 100);
+                }
+
+                console.log(`💵 Aplicando preço fixo: ${itemsWithPrice} itens x $${discountInfo.fixedPrice} = $${newTotal}`);
+            }
+            // TIPO 2: Usar o total já calculado (NÃO APLICAR DESCONTO NOVAMENTE!)
+            else if (discountInfo.finalTotal !== undefined && discountInfo.finalTotal !== null) {
+                total = discountInfo.finalTotal;
+                discountAmount = subtotal - total;
+                effectiveDiscountPercent = discountInfo.discountPercent || Math.round((discountAmount / subtotal) * 100);
+                console.log(`✅ Usando total já calculado: $${total} (economia: $${discountAmount})`);
+            }
+            // TIPO 3: Fallback se não tem finalTotal
+            else if (discountInfo.discountPercent > 0) {
+                discountAmount = (subtotal * discountInfo.discountPercent) / 100;
+                total = subtotal - discountAmount;
+                effectiveDiscountPercent = discountInfo.discountPercent;
+                console.log(`📊 Aplicando desconto percentual: ${discountInfo.discountPercent}%`);
+            }
         }
 
         const result = {
@@ -423,14 +659,15 @@ router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) =>
             totalItems: cart.totalItems,
             itemsWithPrice: itemsWithPrice,
             subtotal: subtotal,
-            discountPercent: discountInfo.discountPercent,
+            discountPercent: effectiveDiscountPercent,
             discountAmount: discountAmount,
             total: total,
-            hasDiscount: discountInfo.discountPercent > 0,
+            hasDiscount: discountAmount > 0,
             discountDescription: discountInfo.description,
             discountRule: discountInfo.rule,
+            discountSource: discountInfo.source, // Adicionar fonte do desconto
             formattedSubtotal: `R$ ${subtotal.toFixed(2)}`,
-            formattedDiscountAmount: discountAmount > 0 ? `- R$ ${discountAmount.toFixed(2)}` : 'R$ 0,00',
+            formattedDiscountAmount: discountAmount > 0 ? `R$ ${discountAmount.toFixed(2)}` : 'R$ 0,00',
             formattedTotal: `R$ ${total.toFixed(2)}`,
             calculations: {
                 itemBreakdown: cart.items.map(item => ({
@@ -444,9 +681,10 @@ router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) =>
 
         console.log(`✅ Total final calculado:`, {
             subtotal: result.formattedSubtotal,
-            desconto: `${discountInfo.discountPercent}%`,
+            desconto: `${effectiveDiscountPercent}%`,
             valorDesconto: result.formattedDiscountAmount,
-            total: result.formattedTotal
+            total: result.formattedTotal,
+            fonte: discountInfo.source
         });
 
         res.json({
@@ -477,4 +715,6 @@ router.use((error, req, res, next) => {
     });
 });
 
+module.exports = router;
+module.exports.calculateDiscountWithHierarchy = calculateDiscountWithHierarchy;
 module.exports = router;

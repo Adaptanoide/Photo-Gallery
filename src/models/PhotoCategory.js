@@ -95,6 +95,11 @@ const photoCategorySchema = new mongoose.Schema({
             min: 0,
             max: 100
         },
+        priceRanges: [{
+            min: { type: Number, required: true },
+            max: { type: Number, default: null },
+            price: { type: Number, required: true }
+        }],
         customPrice: {
             type: Number,
             min: 0
@@ -132,76 +137,111 @@ photoCategorySchema.index({ 'discountRules.clientCode': 1 });
 
 // ===== MÉTODOS DO SCHEMA =====
 
-// Método para obter preço baseado no modo ativo da categoria
+// Método principal UNIFICADO - Verifica hierarquia completa
 photoCategorySchema.methods.getPriceForClient = async function (clientCode, quantity = 1) {
-    console.log(`🎛️ Pricing Mode: ${this.pricingMode} for category: ${this.displayName}`);
+    console.log(`🎯 Calculando preço: ${this.displayName} | Cliente: ${clientCode} | Qtd: ${quantity}`);
 
-    switch (this.pricingMode) {
-        case 'client':
-            return this.getClientSpecificPrice(clientCode);
+    // HELPER: Encontrar melhor preço em faixas
+    const findBestPrice = (ranges, qty) => {
+        if (!ranges || ranges.length === 0) return null;
 
-        case 'quantity':
-            return await this.getQuantityBasedPrice(quantity);
+        let bestRange = null;
 
-        case 'base':
-        default:
-            return this.getBasePrice();
-    }
-};
+        // Procura faixa exata primeiro
+        for (const range of ranges) {
+            if (qty >= range.min && (!range.max || qty <= range.max)) {
+                return range; // Faixa exata encontrada
+            }
+        }
 
-// Preço específico por cliente
-photoCategorySchema.methods.getClientSpecificPrice = function (clientCode) {
+        // Se não achou exata, pega a maior faixa que o cliente qualifica
+        for (const range of ranges) {
+            if (qty >= range.min) {
+                if (!bestRange || range.min > bestRange.min) {
+                    bestRange = range; // Mantém o melhor preço alcançado
+                }
+            }
+        }
+
+        return bestRange;
+    };
+
+    // 1️⃣ PRIORIDADE MÁXIMA: Custom Client específico
     const clientRule = this.discountRules.find(rule =>
-        rule.clientCode === clientCode && rule.isActive
+        rule.clientCode === clientCode &&
+        rule.clientCode !== 'VOLUME' &&
+        rule.isActive
     );
 
     if (clientRule) {
+        const bestRange = findBestPrice(clientRule.priceRanges, quantity);
+
+        if (bestRange) {
+            console.log(`   💎 Custom Client: ${clientRule.clientName} - ${quantity} itens = $${bestRange.price}`);
+            return {
+                finalPrice: bestRange.price,
+                appliedRule: 'custom-client',
+                ruleDetails: {
+                    clientName: clientRule.clientName,
+                    appliedRange: bestRange,
+                    exceeded: quantity > (bestRange.max || Infinity)
+                },
+                basePrice: this.basePrice
+            };
+        }
+
+        // Fallback para customPrice ou discountPercent (compatibilidade)
         if (clientRule.customPrice && clientRule.customPrice > 0) {
             return {
                 finalPrice: clientRule.customPrice,
-                appliedRule: 'client-custom-price',
+                appliedRule: 'custom-price',
                 ruleDetails: clientRule,
                 basePrice: this.basePrice
             };
         }
 
-        if (clientRule.discountPercent > 0) {
-            const discount = (this.basePrice * clientRule.discountPercent) / 100;
-            const finalPrice = Math.max(0, this.basePrice - discount);
+        if (clientRule.discountPercent && clientRule.discountPercent > 0) {
+            const finalPrice = this.basePrice * (1 - clientRule.discountPercent / 100);
             return {
-                finalPrice,
-                appliedRule: 'client-discount',
+                finalPrice: Math.max(0, finalPrice),
+                appliedRule: 'custom-percent',
                 ruleDetails: clientRule,
                 basePrice: this.basePrice
             };
         }
     }
 
-    // Se modo é 'client' mas não há regra, retornar base price
-    return this.getBasePrice();
-};
+    // 2️⃣ SEGUNDA PRIORIDADE: Volume Discount (todos clientes regulares)
+    const volumeRule = this.discountRules.find(rule =>
+        rule.clientCode === 'VOLUME' &&
+        rule.isActive
+    );
 
-// Preço baseado em quantidade
-photoCategorySchema.methods.getQuantityBasedPrice = async function (quantity) {
-    try {
-        const QuantityDiscount = require('./QuantityDiscount');
-        const quantityDiscount = await QuantityDiscount.calculateDiscount(quantity);
+    if (volumeRule) {
+        const bestRange = findBestPrice(volumeRule.priceRanges, quantity);
 
-        if (quantityDiscount.discountPercent > 0) {
-            const discount = (this.basePrice * quantityDiscount.discountPercent) / 100;
-            const finalPrice = Math.max(0, this.basePrice - discount);
+        if (bestRange) {
+            console.log(`   📦 Volume Discount: ${quantity} itens = $${bestRange.price}`);
             return {
-                finalPrice,
-                appliedRule: 'quantity-discount',
-                ruleDetails: quantityDiscount,
+                finalPrice: bestRange.price,
+                appliedRule: 'volume-discount',
+                ruleDetails: {
+                    appliedRange: bestRange,
+                    exceeded: quantity > (bestRange.max || Infinity)
+                },
                 basePrice: this.basePrice
             };
         }
-    } catch (error) {
-        console.error('❌ Error calculating quantity discount:', error);
     }
 
-    return this.getBasePrice();
+    // 3️⃣ FALLBACK: Base Price
+    console.log(`   💰 Base Price: $${this.basePrice}`);
+    return {
+        finalPrice: this.basePrice,
+        appliedRule: 'base-price',
+        ruleDetails: null,
+        basePrice: this.basePrice
+    };
 };
 
 // Preço base padrão
@@ -225,6 +265,7 @@ photoCategorySchema.methods.addDiscountRule = function (clientCode, clientName, 
         clientName,
         discountPercent: options.discountPercent || 0,
         customPrice: options.customPrice || null,
+        priceRanges: options.priceRanges || [],  // ← ADICIONE ESTA LINHA!!!
         isActive: true
     };
 

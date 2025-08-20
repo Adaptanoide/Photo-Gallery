@@ -39,6 +39,7 @@ const cartSchema = new mongoose.Schema({
         thumbnailUrl: {
             type: String
         },
+        basePrice: { type: Number, default: 0 },
         price: { type: Number, default: 0 },
         formattedPrice: { type: String, default: 'Sem preço' },
         hasPrice: { type: Boolean, default: false },

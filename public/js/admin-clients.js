@@ -560,11 +560,17 @@ class AdminClients {
             const data = await response.json();
 
             if (data.success) {
-                this.availableCategories = data.folders.map(folder => ({
-                    id: folder.id,
-                    name: folder.name,
-                    modifiedTime: folder.modifiedTime
-                }));
+                // CORREÇÃO: Acessar structure.folders em vez de folders direto
+                const folders = data.structure?.folders || data.folders || [];
+
+                // Filtrar _thumbnails e mapear corretamente
+                this.availableCategories = folders
+                    .filter(folder => !folder.name.startsWith('_'))  // Remove _thumbnails
+                    .map(folder => ({
+                        id: folder.id,
+                        name: folder.name,
+                        modifiedTime: folder.modifiedTime
+                    }));
                 console.log(`✅ ${this.availableCategories.length} categories loaded`);
             } else {
                 throw new Error(data.message || 'Error loading categories');

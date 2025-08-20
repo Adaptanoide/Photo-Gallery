@@ -4,7 +4,7 @@
 class VirtualGallery {
     constructor() {
         // CONFIGURAÇÕES CRÍTICAS PARA FOTOS PESADAS
-        this.BATCH_SIZE = 10;
+        this.BATCH_SIZE = 20;
         this.LOAD_THRESHOLD = 500;
         this.allPhotos = [];
         this.loadedCount = 0;
@@ -221,10 +221,7 @@ class VirtualGallery {
             const loaded = this.loadedCount;
 
             if (loaded < total) {
-                statusEl.innerHTML = `
-                    <strong>${loaded}</strong> of <strong>${total}</strong> photos loaded
-                    <small style="color: #666; margin-left: 10px;">(scroll for more)</small>
-                `;
+                statusEl.innerHTML = `<strong>${loaded}</strong> of <strong>${total}</strong>`;
             } else {
                 statusEl.textContent = `${total} photo(s)`;
             }

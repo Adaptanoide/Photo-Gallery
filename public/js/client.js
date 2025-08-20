@@ -18,7 +18,19 @@ window.navigationState = {
 };
 
 // Alias local para compatibilidade
-let navigationState = window.navigationState;
+const navigationState = window.navigationState;
+
+// ===== FUNÇÃO HELPER PARA URLs SEGURAS =====
+// Helper para sempre encodar parâmetros de URL corretamente
+function safeURL(baseURL, params) {
+    const url = new URL(baseURL, window.location.origin);
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            url.searchParams.append(key, value);
+        }
+    });
+    return url.toString();
+}
 
 // ===== SISTEMA DE CACHE PARA NAVEGAÇÃO VIA FILTROS =====
 // Cache global de todas as categorias e seus caminhos
@@ -184,7 +196,7 @@ async function loadClientData() {
         }
 
         // Fazer requisição para buscar dados
-        const response = await fetch(`/api/auth/client/data?code=${session.accessCode}`);
+        const response = await fetch(`/api/auth/client/data?code=${encodeURIComponent(session.accessCode)}`);
         const data = await response.json();
 
         if (!response.ok || !data.success) {
@@ -219,21 +231,30 @@ async function loadClientData() {
     }
 }
 
-// Função para atualizar cabeçalho do cliente
 function updateClientInterface(data) {
     const { client, allowedCategories } = data;
 
-    // Atualizar cabeçalho
-    const welcomeEl = document.getElementById('clientWelcome');
-    const infoEl = document.getElementById('clientInfo');
+    // Atualizar welcome no header superior
+    const headerWelcome = document.getElementById('headerWelcome');
+    if (headerWelcome) {
+        headerWelcome.textContent = `Welcome, ${client.name}!`;
+    }
 
-    welcomeEl.textContent = `Welcome, ${client.name}!`;
-    infoEl.textContent = `Code: ${client.code} - ${allowedCategories.length} ${allowedCategories.length === 1 ? 'category' : 'categories'} available`;
+    // Remover elementos antigos se existirem
+    const oldWelcome = document.getElementById('clientWelcome');
+    if (oldWelcome) {
+        oldWelcome.style.display = 'none';
+    }
+    const oldInfo = document.getElementById('clientInfo');
+    if (oldInfo) {
+        oldInfo.style.display = 'none';
+    }
 }
 
 // ===== NAVEGAÇÃO DE CATEGORIAS =====
 
-function showCategories() {
+// ===== NAVEGAÇÃO DE CATEGORIAS =====
+async function showCategories() {
     hideAllContainers();
     hideLoading();
     document.getElementById('categoriesContainer').style.display = 'grid';
@@ -246,19 +267,87 @@ function showCategories() {
         return;
     }
 
-    // Gerar cards de categorias
-    containerEl.innerHTML = allowedCategories.map(category => `
-        <div class="category-card" onclick="navigateToCategory('${category.id}', '${escapeForJS(category.name)}')">
-            <h3>
-                <i class="fas fa-folder"></i> 
-                ${category.name}
-            </h3>
-            <p>Category with full navigation access enabled</p>
-            <div class="category-meta">
-                <i class="fas fa-info-circle"></i> Click to explore subcategories and products
+    // Buscar informações completas de cada categoria (preços, fotos, etc)
+    try {
+        // Buscar dados do backend
+        const response = await fetch('/api/pricing/categories/filtered');
+        const data = await response.json();
+
+        // Criar mapa de dados por nome
+        const categoryDataMap = {};
+        if (data.categories) {
+            data.categories.forEach(cat => {
+                // Pegar apenas o nome principal (primeira parte)
+                const mainName = cat.name.split(' → ')[0];
+                if (!categoryDataMap[mainName]) {
+                    categoryDataMap[mainName] = {
+                        totalPhotos: 0,
+                        minPrice: null,
+                        maxPrice: null,
+                        categories: []
+                    };
+                }
+                categoryDataMap[mainName].totalPhotos += cat.photoCount || 0;
+                categoryDataMap[mainName].categories.push(cat);
+
+                // Calcular range de preços
+                const price = cat.price || 0;
+                if (price > 0) {
+                    if (!categoryDataMap[mainName].minPrice || price < categoryDataMap[mainName].minPrice) {
+                        categoryDataMap[mainName].minPrice = price;
+                    }
+                    if (!categoryDataMap[mainName].maxPrice || price > categoryDataMap[mainName].maxPrice) {
+                        categoryDataMap[mainName].maxPrice = price;
+                    }
+                }
+            });
+        }
+
+        // Gerar cards melhorados
+        containerEl.innerHTML = allowedCategories.map(category => {
+            const stats = categoryDataMap[category.name] || {};
+            const priceRange = (stats.minPrice && stats.maxPrice)
+                ? (stats.minPrice === stats.maxPrice
+                    ? `R$ ${stats.minPrice.toFixed(2)}`
+                    : `R$ ${stats.minPrice.toFixed(2)} - R$ ${stats.maxPrice.toFixed(2)}`)
+                : 'Price on request';
+
+            const description = getMainCategoryDescription(category.name);
+
+            return `
+                <div class="category-card" onclick="navigateToCategory('${category.id}', '${escapeForJS(category.name)}')">
+                    <h3>${category.name}</h3>
+                    <p>${description}</p>
+                    <div class="folder-stats">
+                        ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} total photos</span>` : ''}
+                        ${stats.categories?.length > 0 ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>` : ''}
+                        ${priceRange !== 'Price on request' ? `<span><i class="fas fa-tag"></i> ${priceRange}</span>` : ''}
+                    </div>
+                    <div class="category-action">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Click to explore</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Erro ao buscar dados das categorias:', error);
+        // Fallback para cards simples se houver erro
+        containerEl.innerHTML = allowedCategories.map(category => `
+            <div class="category-card" onclick="navigateToCategory('${category.id}', '${escapeForJS(category.name)}')">
+                <h3>
+                    <i class="fas fa-th-large"></i> 
+                    ${category.name}
+                </h3>
+                <p>Category with full navigation access enabled</p>
+                <div class="category-action">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>Click to explore</span>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 
     // Manter breadcrumb SEMPRE visível
     document.getElementById('breadcrumbContainer').style.display = 'block';
@@ -267,7 +356,7 @@ function showCategories() {
     // Limpar o path do breadcrumb quando estiver na home
     const breadcrumbPath = document.getElementById('breadcrumbPath');
     if (breadcrumbPath) {
-        breadcrumbPath.innerHTML = ''; // Limpar, deixando só o botão Home
+        breadcrumbPath.innerHTML = '';
     }
 }
 
@@ -284,10 +373,11 @@ async function navigateToCategory(categoryId, categoryName) {
 
 // Carregar conteúdo de uma pasta
 async function loadFolderContents(folderId) {
+    console.log('🔍 DEBUG loadFolderContents - folderId:', folderId);
     try {
         showLoading();
 
-        // Buscar estrutura da pasta usando o explorador melhorado
+        // Buscar estrutura da pasta
         const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`);
         const data = await response.json();
 
@@ -297,18 +387,48 @@ async function loadFolderContents(folderId) {
 
         const folderData = data.structure;
 
-        // Verificar se há subpastas ou se há fotos diretas
+        // Se tem subpastas, buscar dados de preços também
         if (folderData.hasSubfolders && folderData.folders.length > 0) {
-            // Mostrar subpastas
+            try {
+                // Buscar dados completos com preços
+                const priceResponse = await fetch('/api/pricing/categories/filtered');
+                const priceData = await priceResponse.json();
+
+                // Criar mapa de preços por nome
+                const priceMap = {};
+                if (priceData.categories) {
+                    priceData.categories.forEach(cat => {
+                        // Pegar última parte do nome (após →)
+                        const parts = cat.name.split(' → ');
+                        const folderName = parts[parts.length - 1];
+                        priceMap[folderName] = {
+                            price: cat.price,
+                            formattedPrice: cat.formattedPrice,
+                            photoCount: cat.photoCount
+                        };
+                    });
+                }
+
+                // Adicionar dados de preço às pastas
+                folderData.folders.forEach(folder => {
+                    const priceInfo = priceMap[folder.name] || {};
+                    folder.price = priceInfo.price || 0;
+                    folder.formattedPrice = priceInfo.formattedPrice || '';
+                    folder.photoCount = priceInfo.photoCount || folder.imageCount || 0;
+                });
+            } catch (error) {
+                console.error('Erro ao buscar preços:', error);
+            }
+
+            // Mostrar subpastas com preços
             showSubfolders(folderData.folders);
+
         } else if (folderData.hasImages || folderData.totalImages > 0) {
-            // Mostrar fotos diretamente
+            console.log('🔍 DEBUG antes de loadPhotos - folderId:', folderId);
             await loadPhotos(folderId);
         } else {
-            // Pasta vazia
             showNoContent('Empty folder', 'This category has no content at the moment.');
         }
-
     } catch (error) {
         console.error('Error loading folder:', error);
         showNoContent('Error loading content', error.message);
@@ -321,25 +441,28 @@ function showSubfolders(folders) {
     hideLoading();
     document.getElementById('foldersContainer').style.display = 'grid';
     document.getElementById('breadcrumbContainer').style.display = 'block';
-    document.getElementById('backNavigation').style.display = 'block';
 
     const containerEl = document.getElementById('foldersContainer');
 
     containerEl.innerHTML = folders.map(folder => {
-        // Usar o nome da pasta como descrição do produto
         const description = generateProductDescription(folder.name);
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
+        const photoCount = folder.photoCount || folder.imageCount || folder.totalFiles || 0;
+        const price = folder.price || 0;
+        const formattedPrice = folder.formattedPrice || (price > 0 ? `R$ ${price.toFixed(2)}` : '');
 
         return `
             <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${escapeForJS(folder.name)}')">
-                <h4>
-                    <i class="fas fa-${hasPhotos ? 'images' : 'folder'}"></i>
-                    ${folder.name}
-                </h4>
+                <h4>${folder.name}</h4>
                 <div class="folder-description">${description}</div>
                 <div class="folder-stats">
-                    ${hasPhotos ? `<span><i class="fas fa-image"></i> ${folder.imageCount || folder.totalFiles} photo(s)</span>` : ''}
+                    ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
                     ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
+                    ${formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : ''}
+                </div>
+                <div class="category-action">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>Click to explore</span>
                 </div>
             </div>
         `;
@@ -385,16 +508,28 @@ async function loadPhotos(folderId) {
 function showPhotosGallery(photos, folderName, categoryPrice) {
     hideAllContainers();
     hideLoading();
+
+    // SEMPRE DESTRUIR Virtual Gallery anterior - ADICIONE ESTAS 4 LINHAS
+    if (window.virtualGallery && window.virtualGallery.destroy) {
+        console.log('🧹 LIMPANDO Virtual Gallery anterior SEMPRE');
+        window.virtualGallery.destroy();
+    }
+
     document.getElementById('photosContainer').style.display = 'block';
     document.getElementById('breadcrumbContainer').style.display = 'block';
-    document.getElementById('backNavigation').style.display = 'block';
 
-    // Atualizar título e contador
+    // Atualizar título e contador COM PREÇO
     const galleryTitle = document.getElementById('galleryTitle');
     if (categoryPrice && categoryPrice.hasPrice) {
-        galleryTitle.innerHTML = `${folderName} <span class="category-price">${categoryPrice.formattedPrice}</span>`;
+        galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${categoryPrice.formattedPrice}</span>`;
     } else {
-        galleryTitle.textContent = folderName;
+        galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
+    }
+
+
+    // Inicializar Price Progress Bar
+    if (window.PriceProgressBar) {
+        window.PriceProgressBar.init(navigationState.currentFolderId);  // ✅ CORRETO
     }
 
     // Gerar grid de fotos
@@ -409,18 +544,21 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     const USE_VIRTUAL_SCROLLING = photos.length > 30;
 
     if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
-        // MODO VIRTUAL SCROLLING - Para muitas fotos
         console.log(`🚀 Usando Virtual Scrolling para ${photos.length} fotos`);
+        console.log('📸 Primeira foto:', photos[0]?.name);  // ← ADICIONE
+        console.log('📸 Última foto:', photos[photos.length - 1]?.name);  // ← ADICIONE
+
         document.getElementById('photosCount').innerHTML = `Loading <strong>${photos.length}</strong> photos...`;
 
         // Limpar galeria anterior se existir
         if (window.virtualGallery.destroy) {
+            console.log('🧹 Destruindo Virtual Gallery antiga');  // ← ADICIONE
             window.virtualGallery.destroy();
         }
 
         // Inicializar Virtual Gallery
+        console.log('✨ Iniciando Virtual Gallery nova');  // ← ADICIONE
         window.virtualGallery.init(photos, gridEl, categoryPrice);
-
     } else {
         // MODO TRADICIONAL - Para poucas fotos
         console.log(`📋 Modo tradicional para ${photos.length} fotos`);
@@ -468,6 +606,188 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     }
 }
 
+// ===== PRICE PROGRESS BAR SYSTEM =====
+
+window.PriceProgressBar = {
+    currentRanges: null,
+    currentType: null,
+    barElement: null,
+
+    async init(categoryId) {
+        console.log('📊 Initializing Price Progress Bar for:', categoryId);
+
+        // Get client code
+        const savedSession = localStorage.getItem('sunshineSession');
+        const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
+
+        try {
+            const response = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(categoryId)}&clientCode=${encodeURIComponent(clientCode)}`);
+            const data = await response.json();
+
+            if (data.success && data.data.ranges.length > 0) {
+                this.currentRanges = data.data.ranges;
+                this.currentType = data.data.appliedType;
+                this.render(data.data);
+            } else {
+                this.hide();
+            }
+        } catch (error) {
+            console.error('Error loading price ranges:', error);
+            this.hide();
+        }
+    },
+
+    render(data) {
+        // Remove existing bar if any
+        if (this.barElement) {
+            this.barElement.remove();
+        }
+
+        // Create new bar
+        this.barElement = document.createElement('div');
+        this.barElement.className = 'price-progress-inline';
+        this.barElement.innerHTML = this.buildHTML(data);
+
+        // NÃO CRIAR WRAPPER! Adicionar direto depois do gallery-header
+        const galleryHeader = document.querySelector('.gallery-header');
+        if (galleryHeader) {
+            let priceContainer = document.getElementById('priceInfoContainer');
+            if (!priceContainer) {
+                priceContainer = document.createElement('div');
+                priceContainer.id = 'priceInfoContainer';
+                priceContainer.className = 'price-info-container';
+                // Inserir DEPOIS do gallery-header, NÃO criar wrapper
+                galleryHeader.insertAdjacentElement('afterend', priceContainer);
+            }
+            priceContainer.innerHTML = '';
+            priceContainer.appendChild(this.barElement);
+        }
+
+        // Update with current cart
+        this.updateProgress();
+    },
+
+    buildHTML(data) {
+        const isCustom = data.appliedType === 'custom';
+
+        // Para Custom Client - mostrar apenas badge inline
+        if (isCustom && data.ranges.length === 1) {
+            const range = data.ranges[0];
+            return `
+                <span class="price-info-badge">
+                    <i class="fas fa-star"></i>
+                    Special Price: $${range.price}
+                </span>
+            `;
+        }
+
+        // Para Volume Discount - mostrar faixas discretas
+        const rangesHTML = data.ranges.map((range, index) => `
+            <span class="price-range-item">
+                ${range.min}${range.max ? '-' + range.max : '+'}: 
+                <strong>$${range.price}</strong>
+            </span>
+        `).join(' | ');
+
+        return `
+            <div class="price-info-inline">
+                <span class="price-info-label">
+                    <i class="fas fa-tag"></i> Volume Pricing:
+                </span>
+                ${rangesHTML}
+                <span class="cart-progress" id="priceProgressStatus">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="progress-text">0 items</span>
+                </span>
+            </div>
+        `;
+    },
+
+    updateProgress() {
+        if (!this.barElement || !this.currentRanges) return;
+
+        // ADICIONAR ESTAS 3 LINHAS DE DEBUG
+        console.log('🔍 DEBUG: updateProgress chamado');
+        console.log('🔍 CartSystem.items:', window.CartSystem?.items);
+        console.log('🔍 Current Path:', navigationState.currentPath);
+
+        // Pegar todos os itens e filtrar por categoria
+        const categoryPath = navigationState.currentPath[navigationState.currentPath.length - 1]?.name || '';
+        const allItems = window.CartSystem && window.CartSystem.state && window.CartSystem.state.items ? window.CartSystem.state.items : [];
+
+        const cartItems = allItems.filter(item => {
+            return item.category && (
+                item.category === categoryPath ||
+                item.category.includes(categoryPath)
+            );
+        });
+
+        // DEBUG - REMOVER DEPOIS - AGORA NO LUGAR CERTO!
+        console.log('🔍 allItems:', allItems);
+        console.log('🔍 categoria atual:', categoryPath); // ERA currentCategory, AGORA É categoryPath
+        console.log('🔍 items filtrados:', cartItems); // AGORA cartItems JÁ EXISTE!
+
+        const quantity = cartItems.length;
+
+        // Find current range
+        let currentRange = null;
+        for (let i = 0; i < this.currentRanges.length; i++) {
+            const range = this.currentRanges[i];
+            if (quantity >= range.min && (!range.max || quantity <= range.max)) {
+                currentRange = range;
+                break;
+            }
+        }
+
+        // Se quantidade excede todas as faixas, usar última
+        if (!currentRange && quantity > 0) {
+            currentRange = this.currentRanges[this.currentRanges.length - 1];
+        }
+
+        // Atualizar texto do progresso
+        const progressEl = this.barElement.querySelector('.progress-text');
+        if (!progressEl) return; // Se não tem elemento, sair
+
+        if (quantity === 0) {
+            progressEl.textContent = '0 items';
+
+            // ADICIONE ESTAS LINHAS: Remover active de todos os tiers quando não tem items
+            this.barElement.querySelectorAll('.price-range-item').forEach((item) => {
+                item.classList.remove('active');
+            });
+        } else if (currentRange) {
+            const totalPrice = quantity * currentRange.price;
+            const firstPrice = this.currentRanges[0].price;
+            const savings = quantity * (firstPrice - currentRange.price);
+
+            progressEl.innerHTML = `${quantity} items = $${totalPrice}`;
+
+            if (savings > 0) {
+                progressEl.innerHTML += ` <span class="savings">(saved $${savings})</span>`;
+            }
+
+            // Atualizar range ativo
+            this.barElement.querySelectorAll('.price-range-item').forEach((item, index) => {
+                const range = this.currentRanges[index];
+                if (range && currentRange && range.min === currentRange.min) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+    },
+
+    hide() {
+        if (this.barElement) {
+            this.barElement.remove();
+            this.barElement = null;
+        }
+        this.currentRanges = null;
+        this.currentType = null;
+    }
+};
+
 // ===== MODAL DE FOTOS =====
 
 // Abrir foto em modal fullscreen
@@ -490,6 +810,11 @@ async function openPhotoModal(photoIndex) {
     // Atualizar informações comerciais elegantes
     await updateModalCommercialInfo(photo, photoIndex, photos.length);
 
+    // ⭐ ADICIONE ESTAS 3 LINHAS AQUI ⭐
+    // Forçar atualização do Volume Pricing do modal ao abrir
+    console.log('🔄 Atualizando Volume Pricing do modal ao abrir');
+    await updateModalPriceInfo();
+
     // Atualizar botões de navegação
     document.getElementById('prevBtn').disabled = photoIndex === 0;
     document.getElementById('nextBtn').disabled = photoIndex === photos.length - 1;
@@ -507,14 +832,14 @@ async function openPhotoModal(photoIndex) {
 
 // Atualizar informações comerciais do modal
 async function updateModalCommercialInfo(photo, photoIndex, totalPhotos) {
-    // 1. HEADER - Nome da categoria em vez de nome técnico
+    // 1. HEADER - Nome da categoria
     const categoryName = getCurrentCategoryDisplayName();
     document.getElementById('modalPhotoTitle').textContent = categoryName;
 
-    // 2. CONTADOR (manter como está)
+    // 2. CONTADOR - só contador por enquanto
     document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
 
-    // 3. FOOTER - Preço e qualidade em vez de dados técnicos
+    // 3. FOOTER - Chamar a função original
     await updateModalPriceInfo();
 }
 
@@ -538,32 +863,93 @@ function getCurrentCategoryDisplayName() {
     return 'Premium Cowhide Selection';
 }
 
-// Atualizar informações de preço no modal
 async function updateModalPriceInfo() {
     try {
         const currentFolderId = navigationState.currentFolderId;
         const priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
 
+        // BUSCAR OS RANGES DE VOLUME
+        const savedSession = localStorage.getItem('sunshineSession');
+        const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
+        const rangeResponse = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(currentFolderId)}&clientCode=${encodeURIComponent(clientCode)}`);
+        const rangeData = await rangeResponse.json();
+
+        console.log('🔍 RANGES DO MODAL:', rangeData);
+        console.log('🔍 TEM RANGES?:', rangeData?.data?.ranges);
+
+        // Pegar valores atuais
+        const photoIndex = navigationState.currentPhotoIndex;
+        const totalPhotos = navigationState.currentPhotos.length;
+
         if (priceInfo && priceInfo.hasPrice) {
-            // Badge dourado igual aos thumbnails
-            document.getElementById('modalPhotoSize').innerHTML = `
+            // PREÇO NO HEADER
+            document.getElementById('modalPhotoCounter').innerHTML = `
                 <span class="modal-price-badge">${priceInfo.formattedPrice}</span>
+                <span style="margin: 0 10px;">-</span>
+                ${photoIndex + 1} / ${totalPhotos}
             `;
-            document.getElementById('modalPhotoDate').textContent = ''; // Vazio - sem descrição
+
+            // LIMPAR campos antigos
+            document.getElementById('modalPhotoSize').innerHTML = '';
+            document.getElementById('modalPhotoDate').innerHTML = '';
+
+            // GRID DE VOLUME - USAR OS RANGES
+            const gridEl = document.getElementById('modalDiscountGrid');
+            if (gridEl && rangeData.success && rangeData.data && rangeData.data.ranges && rangeData.data.ranges.length > 0) {
+                // PEGAR CONTADOR DO CARRINHO ANTES DO LOOP
+                const cartCount = window.CartSystem && window.CartSystem.state ? window.CartSystem.state.totalItems : 0;
+
+                let volumeHTML = '<div class="modal-volume-pricing">';
+                volumeHTML += '<span class="volume-label">Volume Pricing:</span>';
+
+                // Criar os tiers usando RANGES com DESTAQUE VISUAL
+                rangeData.data.ranges.forEach((range, index) => {
+                    // VERIFICAR SE ESTE É O TIER ATUAL
+                    let isCurrentTier = false;
+                    if (cartCount > 0) {
+                        if (range.max) {
+                            isCurrentTier = cartCount >= range.min && cartCount <= range.max;
+                        } else {
+                            isCurrentTier = cartCount >= range.min;
+                        }
+                    }
+
+                    // ADICIONAR CLASSE 'active' SE FOR O TIER ATUAL
+                    const tierClass = isCurrentTier ? 'volume-tier active' : 'volume-tier';
+
+                    volumeHTML += `
+                        <span class="${tierClass}">
+                            ${range.min}${range.max ? `-${range.max}` : '+'}: 
+                            <span class="tier-price">$${range.price}</span>
+                        </span>
+                    `;
+                    if (index < rangeData.data.ranges.length - 1) {
+                        volumeHTML += '<span class="tier-separator">|</span>';
+                    }
+                });
+
+                // Adicionar contador de items
+                volumeHTML += `
+                    <span class="cart-count">
+                        <i class="fas fa-shopping-cart"></i> ${cartCount} items
+                    </span>
+                `;
+
+                volumeHTML += '</div>';
+                gridEl.innerHTML = volumeHTML;
+                gridEl.style.display = 'block';
+            } else if (gridEl) {
+                gridEl.style.display = 'none';
+            }
+
         } else {
-            // Sem preço - badge discreto
-            document.getElementById('modalPhotoSize').innerHTML = `
-                <span class="modal-price-badge no-price">Check price</span>
-            `;
-            document.getElementById('modalPhotoDate').textContent = ''; // Vazio - sem descrição
+            // Sem preço
+            document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
+            const gridEl = document.getElementById('modalDiscountGrid');
+            if (gridEl) gridEl.style.display = 'none';
         }
     } catch (error) {
-        console.error('Erro ao carregar preço do modal:', error);
-        // Fallback em caso de erro
-        document.getElementById('modalPhotoSize').innerHTML = `
-            <span class="modal-price-badge no-price">Contact us</span>
-        `;
-        document.getElementById('modalPhotoDate').textContent = ''; // Vazio - sem descrição
+        console.error('Erro:', error);
     }
 }
 
@@ -631,13 +1017,18 @@ function nextPhoto() {
     }
 }
 
-// Fechar modal de foto
 function closePhotoModal() {
     // Destruir zoom antes de fechar
     if (typeof destroyPhotoZoom === 'function') {
         destroyPhotoZoom();
     }
     document.getElementById('photoModal').style.display = 'none';
+
+    // NOVO: Atualizar Volume Pricing das thumbnails ao fechar modal
+    if (window.PriceProgressBar && typeof window.PriceProgressBar.updateProgress === 'function') {
+        console.log('🔄 Atualizando Volume Pricing das thumbnails após fechar modal');
+        window.PriceProgressBar.updateProgress();
+    }
 }
 
 // Notificar carrinho sobre mudança de foto
@@ -815,6 +1206,51 @@ function generateProductDescription(folderName) {
     return 'Selected high-quality leathers';
 }
 
+// Descrições específicas para categorias principais
+function getMainCategoryDescription(categoryName) {
+    const descriptions = {
+        'Brazil Best Sellers': 'Best value products with excellent cost-benefit ratio',
+        'Brazil Top Selected Categories': 'Premium selection of high-quality leathers',
+        'Calfskins': 'Small and delicate calf leathers',
+        'Colombian Cowhides': 'Exotic tricolor patterns and unique combinations',
+        'Rodeo Rugs': 'Handcrafted rugs with custom designs',
+        'Sheepskins': 'Soft and luxurious sheep fur'
+    };
+    return descriptions[categoryName] || 'Selected high-quality leathers';
+}
+
+// ===== FUNÇÃO UNIFICADA PARA CRIAR CARDS =====
+function createUnifiedCard(data) {
+    // Extrair informações
+    const name = data.name || data.displayName || 'Unknown';
+    const photoCount = data.photoCount || data.imageCount || data.totalFiles || 0;
+    const hasSubfolders = data.totalSubfolders > 0 || data.hasSubfolders;
+    const hasPhotos = photoCount > 0 || data.hasImages;
+    const price = data.price || data.basePrice || 0;
+    const formattedPrice = data.formattedPrice || (price > 0 ? `R$ ${price.toFixed(2)}` : '');
+
+    // Gerar descrição
+    const description = generateProductDescription(name);
+
+    // Determinar ícone principal
+    const mainIcon = hasSubfolders && !hasPhotos ? 'folder' : 'images';
+
+    // Criar HTML INTERNO do card (sem o wrapper)
+    return `
+        <h4>${name}</h4>
+        <p>${description}</p>
+        <div class="folder-stats">
+            ${hasPhotos ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
+            ${hasSubfolders ? `<span><i class="fas fa-th-large"></i> ${data.totalSubfolders} subfolders</span>` : ''}
+            ${formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : ''}
+        </div>
+        <div class="category-action">
+            <i class="fas fa-arrow-right"></i>
+            <span>Click to explore</span>
+        </div>
+    `;
+}
+
 // Ocultar todos os containers incluindo loading
 function hideAllContainers() {
     document.getElementById('categoriesContainer').style.display = 'none';
@@ -839,7 +1275,6 @@ function showNoContent(title, message) {
         <p>${message}</p>
     `;
     document.getElementById('breadcrumbContainer').style.display = 'block';
-    document.getElementById('backNavigation').style.display = 'block';
 }
 
 // Mostrar loading discreto de navegação
@@ -932,7 +1367,7 @@ async function loadCategoryPrice(folderId) {
         console.log(`🏷️ Loading price for category ${folderId}, client: ${clientCode || 'ANONYMOUS'}`);
 
         // Incluir clientCode na requisição
-        const url = `/api/pricing/category-price?prefix=${folderId}${clientCode ? `&clientCode=${clientCode}` : ''}`;
+        const url = `/api/pricing/category-price?prefix=${encodeURIComponent(folderId)}${clientCode ? `&clientCode=${clientCode}` : ''}`;
         const response = await fetch(url);
         const data = await response.json();
 
@@ -946,6 +1381,7 @@ async function loadCategoryPrice(folderId) {
         if (data.success && data.category) {
             priceInfo = {
                 hasPrice: data.category.hasPrice,
+                basePrice: data.category.basePrice || 0,  // ← ADICIONE ESTA LINHA!
                 price: data.category.finalPrice || 0,
                 formattedPrice: data.category.formattedPrice,
                 priceSource: data.category.priceSource || 'base'
@@ -1002,6 +1438,11 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
             // Remover do carrinho
             await CartSystem.removeItem(driveFileId);
             showNotification('Item removed from cart', 'info');
+
+            // ADICIONAR ESTAS 3 LINHAS
+            if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
+                window.PriceProgressBar.updateProgress();
+            }
             // Atualizar botão para ADD
             const button = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
             if (button) {
@@ -1013,31 +1454,44 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
             // Adicionar ao carrinho
             // Buscar preço da categoria
             const currentFolderId = navigationState.currentFolderId;
-            let priceInfo = { hasPrice: false, price: 0, formattedPrice: 'No price' };
+            let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
 
             if (currentFolderId && window.loadCategoryPrice) {
                 try {
                     priceInfo = await window.loadCategoryPrice(currentFolderId);
                     console.log('✅ Preço encontrado para thumbnail:', priceInfo);
+                    console.log('🔍 BASE PRICE DEBUG:');
+                    console.log('  - basePrice:', priceInfo.basePrice);
+                    console.log('  - price:', priceInfo.price);
+                    console.log('  - tem base?:', priceInfo.basePrice !== undefined);
                 } catch (error) {
                     console.warn('❌ Erro ao buscar preço para thumbnail:', error);
                 }
             }
+            console.log('🔍 ENVIANDO PARA CART:');
+            console.log('  - basePrice:', priceInfo.basePrice || 0);
+            console.log('  - price:', priceInfo.price);
+            console.log('  - formattedPrice:', priceInfo.formattedPrice);
             await CartSystem.addItem(driveFileId, {
                 fileName: photo.name,
                 thumbnailUrl: photo.thumbnailLink || photo.webViewLink,
                 fullImageUrl: ImageUtils.getFullImageUrl(photo),
-                // Pegar o ÚLTIMO nível do path (onde a foto realmente está)
                 category: navigationState.currentPath?.length > 1
                     ? navigationState.currentPath[navigationState.currentPath.length - 1].name
                     : navigationState.currentPath[0]?.name || 'Category',
                 categoryName: navigationState.currentPath[navigationState.currentPath.length - 1] || 'Products',
                 categoryPath: navigationState.currentPath.join(' > '),
+                basePrice: priceInfo.basePrice || 0,  // ← ADICIONE ESTA LINHA!
                 price: priceInfo.price,
                 formattedPrice: priceInfo.formattedPrice,
                 hasPrice: priceInfo.hasPrice
             });
             showNotification('Item added to cart!', 'success');
+
+            // ADICIONAR ESTAS 3 LINHAS AQUI
+            if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
+                window.PriceProgressBar.updateProgress();
+            }
             // Atualizar botão para REMOVE  
             const button = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
             if (button) {
@@ -1115,39 +1569,47 @@ function clearFilters() {
 async function autoApplyFilters() {
     console.log('🔍 Aplicando filtros automaticamente...');
 
-    // Coletar filtros selecionados
+    // LIMPAR FOTOS ANTIGAS E ESCONDER CONTAINER
+    const photosGrid = document.getElementById('photosGrid');
+    if (photosGrid) {
+        photosGrid.innerHTML = '';
+        console.log('🧹 Fotos antigas limpas');
+    }
+
+    const photosContainer = document.getElementById('photosContainer');
+    if (photosContainer) {
+        photosContainer.style.display = 'none';
+    }
+
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    if (categoriesContainer) {
+        categoriesContainer.style.display = 'flex';
+    }
+
+    const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+    if (breadcrumbContainer) {
+        breadcrumbContainer.style.display = 'none';
+    }
+
+    // Coletar filtros selecionados - APENAS TYPE E PRICE
     const selectedFilters = {
         types: [],
-        tones: [],
-        sizes: [],
         prices: []
     };
 
-    // Types
-    document.querySelectorAll('#typeFilters input[type="checkbox"]:checked').forEach(cb => {
-        selectedFilters.types.push(cb.value);
-    });
+    // Types - Radio button (seleção única)
+    const selectedType = document.querySelector('#typeFilters input[type="radio"]:checked');
+    if (selectedType) {
+        selectedFilters.types.push(selectedType.value);
+    }
 
-    // Tones
-    document.querySelectorAll('#toneFilters input[type="checkbox"]:checked').forEach(cb => {
-        selectedFilters.tones.push(cb.value);
-    });
-
-    // Sizes
-    document.querySelectorAll('#sizeFilters input[type="checkbox"]:checked').forEach(cb => {
-        selectedFilters.sizes.push(cb.value);
-    });
-
-    // Prices
+    // Prices - Checkboxes
     document.querySelectorAll('#priceFilters input[type="checkbox"]:checked').forEach(cb => {
         selectedFilters.prices.push(cb.value);
     });
 
     // Se nenhum filtro selecionado, mostrar todas
-    const hasFilters = selectedFilters.types.length > 0 ||
-        selectedFilters.tones.length > 0 ||
-        selectedFilters.sizes.length > 0 ||
-        selectedFilters.prices.length > 0;
+    const hasFilters = selectedFilters.types.length > 0 || selectedFilters.prices.length > 0;
 
     if (!hasFilters) {
         showCategories();
@@ -1164,25 +1626,13 @@ async function autoApplyFilters() {
             return;
         }
 
-        // Filtrar categorias
+        // Filtrar categorias - APENAS TYPE E PRICE
         let filteredCategories = data.categories.filter(cat => {
             // Type filter
             if (selectedFilters.types.length > 0) {
                 const catTypes = detectType(cat.name);
                 const hasType = selectedFilters.types.some(type => catTypes.includes(type));
                 if (!hasType) return false;
-            }
-
-            // Tone filter
-            if (selectedFilters.tones.length > 0) {
-                const catTone = detectTone(cat.name);
-                if (!selectedFilters.tones.includes(catTone)) return false;
-            }
-
-            // Size filter
-            if (selectedFilters.sizes.length > 0) {
-                const catSize = detectSize(cat.name);
-                if (!catSize || !selectedFilters.sizes.includes(catSize)) return false;
             }
 
             // Price filter
@@ -1214,6 +1664,11 @@ function clearAllFilters() {
     // Desmarcar todos os checkboxes
     document.querySelectorAll('.filter-checkbox input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
+    });
+
+    // Desmarcar todos os radio buttons
+    document.querySelectorAll('.filter-checkbox input[type="radio"]').forEach(rb => {
+        rb.checked = false;
     });
 
     // Mostrar todas as categorias
@@ -1328,23 +1783,15 @@ function displayFilteredCategories(categories) {
             loadFolderContents(category.driveId || category.id);
         };
 
-        categoryCard.innerHTML = `
-            <div class="category-collection">${info.collection}</div>
-            <h3>
-                <i class="fas fa-folder"></i>
-                ${info.displayName}
-            </h3>
-            <p>Category with full navigation access enabled</p>
-            <div class="category-meta">
-                <span class="photo-count">
-                    <i class="fas fa-images"></i> ${category.photoCount} photos
-                </span>
-            </div>
-            <div class="category-action">
-                <i class="fas fa-arrow-right"></i>
-                <span>Click to explore products</span>
-            </div>
-        `;
+        categoryCard.innerHTML = createUnifiedCard({
+            name: category.name || category.displayName,
+            displayName: info.displayName,
+            photoCount: category.photoCount || 0,
+            price: category.price || category.basePrice || 0,
+            formattedPrice: category.formattedPrice,
+            hasImages: true,
+            hasSubfolders: false
+        });
 
         container.appendChild(categoryCard);
     });
@@ -1373,7 +1820,7 @@ async function loadFilterCounts() {
 
         if (!data.categories) return;
 
-        // Contar por tipo - BASEADO NO NOME/PATH
+        // Contadores
         const typeCounts = {
             'brindle': 0,
             'salt-pepper': 0,
@@ -1382,28 +1829,35 @@ async function loadFilterCounts() {
             'exotic': 0
         };
 
+        const sizeCounts = {
+            'xs': 0,
+            'small': 0,
+            'medium': 0,
+            'ml': 0,
+            'large': 0,
+            'xl': 0
+        };
+
         data.categories.forEach(cat => {
             const fullText = ((cat.name || '') + ' ' + (cat.fullPath || '')).toLowerCase();
 
-            // Verificar cada tipo
-            if (fullText.includes('brindle')) {
-                typeCounts['brindle']++;
-            }
-            if (fullText.includes('salt') && fullText.includes('pepper')) {
-                typeCounts['salt-pepper']++;
-            }
-            if (fullText.includes('black') && fullText.includes('white')) {
-                typeCounts['black-white']++;
-            }
-            if (fullText.includes('tricolor')) {
-                typeCounts['tricolor']++;
-            }
-            if (fullText.includes('exotic')) {
-                typeCounts['exotic']++;
-            }
+            // CONTAR TIPOS
+            if (fullText.includes('brindle')) typeCounts['brindle']++;
+            if (fullText.includes('salt') && fullText.includes('pepper')) typeCounts['salt-pepper']++;
+            if (fullText.includes('black') && fullText.includes('white')) typeCounts['black-white']++;
+            if (fullText.includes('tricolor')) typeCounts['tricolor']++;
+            if (fullText.includes('exotic')) typeCounts['exotic']++;
+
+            // CONTAR TAMANHOS
+            if (fullText.includes('extra small') || fullText.includes('xs')) sizeCounts['xs']++;
+            if (fullText.includes('small') && !fullText.includes('extra')) sizeCounts['small']++;
+            if (fullText.includes('medium') && !fullText.includes('large')) sizeCounts['medium']++;
+            if (fullText.includes('medium large') || fullText.includes(' ml')) sizeCounts['ml']++;
+            if (fullText.includes('large') && !fullText.includes('extra') && !fullText.includes('medium')) sizeCounts['large']++;
+            if (fullText.includes('extra large') || fullText.includes(' xl')) sizeCounts['xl']++;
         });
 
-        // Atualizar os contadores na interface
+        // ATUALIZAR TIPOS
         Object.keys(typeCounts).forEach(type => {
             const checkbox = document.querySelector(`#typeFilters input[value="${type}"]`);
             if (checkbox) {
@@ -1415,7 +1869,19 @@ async function loadFilterCounts() {
             }
         });
 
-        console.log('📊 Contagens carregadas:', typeCounts);
+        // ATUALIZAR TAMANHOS  
+        Object.keys(sizeCounts).forEach(size => {
+            const checkbox = document.querySelector(`#sizeFilters input[value="${size}"]`);
+            if (checkbox) {
+                const label = checkbox.closest('label');
+                const countSpan = label.querySelector('.count');
+                if (countSpan) {
+                    countSpan.textContent = `(${sizeCounts[size]})`;
+                }
+            }
+        });
+
+        console.log('📊 Contagens carregadas:', { types: typeCounts, sizes: sizeCounts });
 
     } catch (error) {
         console.error('❌ Erro ao carregar contagens:', error);
@@ -1515,6 +1981,38 @@ async function showAllCategories() {
         hideNavigationLoading();
     }
 }
+
+// Permitir desmarcar radio buttons de Type/Pattern
+let lastSelectedType = null;
+
+function setupRadioToggle() {
+    const typeRadios = document.querySelectorAll('#typeFilters input[type="radio"]');
+
+    typeRadios.forEach(radio => {
+        radio.addEventListener('click', function (e) {
+            // Se clicou no mesmo que já estava marcado
+            if (this.value === lastSelectedType && this.checked) {
+                // Pequeno delay para o browser processar o click
+                setTimeout(() => {
+                    this.checked = false;
+                    lastSelectedType = null;
+                    console.log('🔄 Type/Pattern desmarcado');
+                    applyFilters(); // Reaplicar filtros
+                }, 50);
+            } else {
+                // Atualizar último selecionado
+                lastSelectedType = this.value;
+            }
+        });
+    });
+
+    console.log('✅ Radio toggle configurado');
+}
+
+// Chamar quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(setupRadioToggle, 500);
+});
 
 // Tornar global
 window.showAllCategories = showAllCategories;

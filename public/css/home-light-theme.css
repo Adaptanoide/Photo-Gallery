@@ -342,7 +342,6 @@ body.home-page .company-logo {
     height: 180px; /* AUMENTADO de 120px para 180px */
     object-fit: contain;
     filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.08));
-    animation: logoFloat 6s ease-in-out infinite;
     transition: transform 0.3s ease;
 }
 

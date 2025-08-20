@@ -332,9 +332,9 @@
                             <div class="sync-loading-spinner">
                                 <i class="fas fa-sync-alt fa-spin"></i>
                             </div>
-                            <h3 class="sync-loading-title">Google Drive Synchronization in Progress</h3>
+                            <h3 class="sync-loading-title">Updating Categories</h3>
                             <p class="sync-loading-message">
-                                We're updating categories and photo counts from Google Drive.<br>
+                                Please wait while we refresh the category list.
                                 This ensures accurate pricing and inventory management.<br>
                                 <strong>This may take a few minutes. You can switch tabs and return later.</strong>
                             </p>
@@ -363,8 +363,8 @@
                                 <label class="filter-label">Price Status</label>
                                 <select id="filterPriceStatus" class="filter-select">
                                     <option value="all">All</option>
-                                    <option value="with-price">With Price</option>
-                                    <option value="without-price">Without Price</option>
+                                    <option value="with">With Price</option>
+                                    <option value="without">Without Price</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -478,17 +478,51 @@
                     </div>
                 </div>
 
+                <!-- ===== MODAL PARA EDITAR QB ITEM ===== -->
+                <div id="qbItemModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay" onclick="adminPricing.closeQBItemModal()"></div>
+                    <div class="price-modal-content" style="max-width: 500px;">
+                        <div class="price-modal-header">
+                            <h3 class="modal-title">
+                                <i class="fas fa-qrcode"></i>
+                                <span>Edit QB Item Code</span>
+                            </h3>
+                            <button class="modal-close" onclick="adminPricing.closeQBItemModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="price-modal-body">
+                            <div class="form-group">
+                                <label class="form-label">QB Item Code</label>
+                                <input type="text" id="qbItemModalInput" class="form-input"
+                                    placeholder="Enter QB Item code (e.g., 5475BR)">
+                                <small class="text-muted">This code will be used for QuickBooks integration</small>
+                            </div>
+                        </div>
+
+                        <div class="price-modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="adminPricing.closeQBItemModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveQBItemFromModal()">
+                                <i class="fas fa-save"></i> Save QB Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ===== MODAL DE PREÇOS REDESENHADO ===== -->
                 <div id="priceModal" class="price-modal" style="display: none;">
-                    <div class="price-modal-overlay"></div>
+                    <div class="price-modal-overlay" onclick="adminPricing.closePriceModal()"></div>
                     <div class="price-modal-content" style="max-width: 900px;">
                         <div class="price-modal-header">
                             <h3 class="modal-title">
                                 <i class="fas fa-dollar-sign"></i>
                                 <span id="priceModalTitle">Edit Price</span>
                             </h3>
-                            <button class="modal-close" onclick="closePriceModal()">
-                                <i class="fas fa-times"></i>
+                            <button class="modal-close" onclick="adminPricing.closePriceModal()"> <i
+                                    class="fas fa-times"></i>
                             </button>
                         </div>
 
@@ -519,12 +553,11 @@
 
                             <!-- SEÇÃO 2: Volume Discounts -->
                             <div class="pricing-section">
-                                <h5 class="section-title">
-                                    <input type="checkbox" id="enableVolumeDiscounts"
-                                        onchange="adminPricing.toggleVolumeDiscounts()">
-                                    <label for="enableVolumeDiscounts">📊 Volume Discounts (All Regular Clients)</label>
+                                <h5 class="section-title"
+                                    onclick="adminPricing.toggleSection('volumeDiscountsContent')">
+                                    📊 Volume Discounts (All Regular Clients)
                                 </h5>
-                                <div class="section-content" id="volumeDiscountsContent" style="display: none;">
+                                <div class="section-content" id="volumeDiscountsContent" style="display: block;">
                                     <div id="volumeRulesList" class="rules-list">
                                         <!-- Será preenchido via JS -->
                                     </div>
@@ -532,73 +565,29 @@
                                         onclick="adminPricing.openVolumeRulesManager()">
                                         <i class="fas fa-cog"></i> Manage Volume Rules
                                     </button>
-                                    <!-- Volume Price Calculator -->
-                                    <div class="price-calculator-box">
-                                        <h6>📊 Volume Discount Preview:</h6>
-                                        <div class="calculator-items">
-                                            <div class="calc-item">
-                                                <span>1 photo:</span>
-                                                <strong id="volumeCalc1">$0.00</strong>
-                                            </div>
-                                            <div class="calc-item">
-                                                <span>15 photos:</span>
-                                                <strong id="volumeCalc15">$0.00</strong>
-                                            </div>
-                                            <div class="calc-item">
-                                                <span>50 photos:</span>
-                                                <strong id="volumeCalc50">$0.00</strong>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
-
                             <!-- SEÇÃO 3: Client Exceptions -->
                             <div class="pricing-section">
-                                <h5 class="section-title">
-                                    <input type="checkbox" id="enableClientExceptions"
-                                        onchange="adminPricing.toggleClientExceptions()">
-                                    <label for="enableClientExceptions">👤 Client-Specific Pricing</label>
+                                <h5 class="section-title"
+                                    onclick="adminPricing.toggleSection('clientExceptionsContent')">
+                                    👤 Custom Client Rates
                                 </h5>
-                                <div class="section-content" id="clientExceptionsContent" style="display: none;">
+                                <div class="section-content" id="clientExceptionsContent" style="display: block;">
                                     <div id="clientRulesList" class="rules-list">
                                         <!-- Será preenchido via JS -->
                                     </div>
                                     <button type="button" class="btn btn-secondary btn-sm"
-                                        onclick="adminPricing.showAddClientRule()">
-                                        <i class="fas fa-plus"></i> Add Client Exception
+                                        onclick="adminPricing.openClientRatesModal()">
+                                        <i class="fas fa-plus"></i> Configure Client Rates
                                     </button>
-                                    <!-- Client Price Calculator -->
-                                    <div class="price-calculator-box">
-                                        <h6>📊 Client-Specific Preview:</h6>
-                                        <div class="calculator-controls">
-                                            <select id="calcClientSelect" class="form-input"
-                                                onchange="adminPricing.updateClientCalculator()">
-                                                <option value="">Select a client...</option>
-                                            </select>
-                                        </div>
-                                        <div class="calculator-items">
-                                            <div class="calc-item">
-                                                <span>1 photo:</span>
-                                                <strong id="clientCalc1">$0.00</strong>
-                                            </div>
-                                            <div class="calc-item">
-                                                <span>15 photos:</span>
-                                                <strong id="clientCalc15">$0.00</strong>
-                                            </div>
-                                            <div class="calc-item">
-                                                <span>50 photos:</span>
-                                                <strong id="clientCalc50">$0.00</strong>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="price-modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closePriceModal()">
-                                <i class="fas fa-times"></i> Cancel
+                            <button type="button" class="btn btn-secondary" onclick="adminPricing.closePriceModal()"> <i
+                                    class="fas fa-times"></i> Cancel
                             </button>
                             <button type="button" class="btn btn-primary" onclick="adminPricing.saveAllPricing()">
                                 <i class="fas fa-save"></i> Save All Changes
@@ -614,7 +603,7 @@
                     <div class="price-modal-content" style="max-width: 600px;">
                         <div class="price-modal-header">
                             <h3 class="modal-title">
-                                <i class="fas fa-percentage"></i>
+                                <i class="fas fa-dollar-sign"></i>
                                 <span>Manage Volume Discounts</span>
                             </h3>
                             <button class="modal-close" onclick="adminPricing.closeVolumeRulesModal()">
@@ -654,15 +643,42 @@
                                         <small>Leave empty for unlimited</small>
                                     </div>
                                     <div class="form-group" style="flex: 1;">
-                                        <label>Discount (%)</label>
-                                        <input type="number" id="volumeDiscount" min="0" max="100" class="form-input"
-                                            placeholder="10">
+                                        <label>Fixed Price ($)</label>
+                                        <input type="number" id="volumePrice" min="0" step="0.01" class="form-input"
+                                            placeholder="89.00">
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-primary" onclick="adminPricing.addVolumeRule()">
-                                    <i class="fas fa-plus"></i> Add Rule
+                                <button type="button" class="btn btn-primary"
+                                    onclick="adminPricing.saveVolumeRuleFromModal()"> <i class="fas fa-plus"></i> Add
+                                    Rule
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de Confirmação de Delete -->
+                <div id="deleteConfirmModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay" onclick="adminPricing.cancelDelete()"></div>
+                    <div class="price-modal-content" style="max-width: 400px;">
+                        <div class="price-modal-header" style="background: rgba(244, 67, 54, 0.1);">
+                            <h3 class="modal-title">
+                                <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
+                                <span>Confirm Delete</span>
+                            </h3>
+                        </div>
+                        <div class="price-modal-body" style="text-align: center; padding: 2rem;">
+                            <p id="deleteConfirmMessage" style="margin: 0; font-size: 1.1rem;">
+                                Remove this quantity rule?
+                            </p>
+                        </div>
+                        <div class="price-modal-footer" style="justify-content: center; gap: 1rem;">
+                            <button type="button" class="btn btn-secondary" onclick="adminPricing.cancelDelete()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="adminPricing.confirmDelete()">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -674,7 +690,7 @@
                         <div class="price-modal-header">
                             <h3 class="modal-title">
                                 <i class="fas fa-user-tag"></i>
-                                <span>Add Client Exception</span>
+                                <span>Custom Client Rates</span>
                             </h3>
                             <button class="modal-close" onclick="adminPricing.closeClientRuleModal()">
                                 <i class="fas fa-times"></i>
@@ -684,50 +700,54 @@
                         <div class="price-modal-body">
                             <div class="form-group">
                                 <label>Select Client</label>
-                                <select id="clientRuleSelect" class="form-input">
+                                <select id="clientRuleSelect" class="form-input"
+                                    onchange="adminPricing.loadClientRatesForEdit()">
                                     <option value="">Choose a client...</option>
                                     <!-- Será preenchido via JS -->
                                 </select>
                             </div>
 
-                            <div class="form-group">
-                                <label>Pricing Type</label>
-                                <div style="display: flex; gap: 1rem;">
-                                    <label style="flex: 1;">
-                                        <input type="radio" name="clientPriceType" value="discount" checked
-                                            onchange="adminPricing.toggleClientPriceType()">
-                                        Extra Discount (%)
-                                    </label>
-                                    <label style="flex: 1;">
-                                        <input type="radio" name="clientPriceType" value="fixed"
-                                            onchange="adminPricing.toggleClientPriceType()">
-                                        Fixed Price ($)
-                                    </label>
+                            <!-- Lista de faixas existentes para este cliente -->
+                            <div id="clientRatesListModal" style="margin-bottom: 1rem;">
+                                <!-- Será preenchido quando selecionar cliente -->
+                            </div>
+
+                            <!-- Formulário para nova faixa -->
+                            <div class="add-rule-form"
+                                style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 4px; display: none;"
+                                id="clientRateForm">
+                                <h5>Add Rate Range</h5>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>From (photos)</label>
+                                        <input type="number" id="clientMinQty" min="1" class="form-input"
+                                            placeholder="1">
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>To (photos)</label>
+                                        <input type="number" id="clientMaxQty" min="1" class="form-input"
+                                            placeholder="10">
+                                        <small>Leave empty for unlimited</small>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>Fixed Price ($)</label>
+                                        <input type="number" id="clientPrice" min="0" step="0.01" class="form-input"
+                                            placeholder="85.00">
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div id="clientDiscountGroup" class="form-group">
-                                <label>Extra Discount (%)</label>
-                                <input type="number" id="clientDiscountPercent" min="0" max="100" class="form-input"
-                                    placeholder="5">
-                                <small>This adds to any volume discounts</small>
-                            </div>
-
-                            <div id="clientFixedGroup" class="form-group" style="display: none;">
-                                <label>Fixed Price per Photo ($)</label>
-                                <input type="number" id="clientFixedPrice" min="0" step="0.01" class="form-input"
-                                    placeholder="30.00">
-                                <small>This overrides all other pricing</small>
+                                <button type="button" class="btn btn-primary" onclick="adminPricing.saveClientRate()">
+                                    <i class="fas fa-plus"></i> Add Range
+                                </button>
                             </div>
                         </div>
 
                         <div class="price-modal-footer">
                             <button type="button" class="btn btn-secondary"
-                                onclick="this.closest('.price-modal').style.display='none'">
-                                Cancel
+                                onclick="adminPricing.closeClientRuleModal()">
+                                <i class="fas fa-times"></i> Cancel
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveClientRule()">
-                                <i class="fas fa-save"></i> Save Rule
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.closeClientRuleModal()">
+                                <i class="fas fa-check"></i> Done
                             </button>
                         </div>
                     </div>

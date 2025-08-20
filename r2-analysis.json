@@ -1,0 +1,442 @@
+{
+  "totalImages": 3004,
+  "totalFolders": 104,
+  "finalCategories": 87,
+  "categories": {
+    "Brazil Best Sellers/Best Value - Brindle Medium and Dark Tones Mix ML-XL": {
+      "level": 2,
+      "photoCount": 79,
+      "path": "Brazil Best Sellers/Best Value - Brindle Medium and Dark Tones Mix ML-XL"
+    },
+    "Brazil Best Sellers/Best Value -Salt & Pepper Mix - Black & White": {
+      "level": 2,
+      "photoCount": 93,
+      "path": "Brazil Best Sellers/Best Value -Salt & Pepper Mix - Black & White"
+    },
+    "Brazil Best Sellers/Best Value -Salt & Pepper Mix - Brown & White + Tricolor": {
+      "level": 2,
+      "photoCount": 211,
+      "path": "Brazil Best Sellers/Best Value -Salt & Pepper Mix - Brown & White + Tricolor"
+    },
+    "Brazil Best Sellers/Best Value -Salt & Pepper Mix - Chocolate & White": {
+      "level": 2,
+      "photoCount": 129,
+      "path": "Brazil Best Sellers/Best Value -Salt & Pepper Mix - Chocolate & White"
+    },
+    "Brazil Best Sellers/Dark Tones Mix ML-XL": {
+      "level": 2,
+      "photoCount": 218,
+      "path": "Brazil Best Sellers/Dark Tones Mix ML-XL"
+    },
+    "Brazil Best Sellers/Exotic Tones ML-XL": {
+      "level": 2,
+      "photoCount": 48,
+      "path": "Brazil Best Sellers/Exotic Tones ML-XL"
+    },
+    "Brazil Best Sellers/Light Tones Mix ML-XL": {
+      "level": 2,
+      "photoCount": 350,
+      "path": "Brazil Best Sellers/Light Tones Mix ML-XL"
+    },
+    "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones": {
+      "level": 2,
+      "photoCount": 215,
+      "path": "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones"
+    },
+    "Brazil Best Sellers/Super Promo XS - Assorted Tones": {
+      "level": 2,
+      "photoCount": 174,
+      "path": "Brazil Best Sellers/Super Promo XS - Assorted Tones"
+    },
+    "Brazil Best Sellers/Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - ML - XL": {
+      "level": 2,
+      "photoCount": 18,
+      "path": "Brazil Best Sellers/Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - ML - XL"
+    },
+    "Brazil Best Sellers/Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - SMALL": {
+      "level": 2,
+      "photoCount": 10,
+      "path": "Brazil Best Sellers/Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - SMALL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Black & White XL": {
+      "level": 3,
+      "photoCount": 9,
+      "path": "Brazil Top Selected Categories/Extra Large/Black & White XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Black and White Reddish XL": {
+      "level": 3,
+      "photoCount": 3,
+      "path": "Brazil Top Selected Categories/Extra Large/Black and White Reddish XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Brindle Grey XL": {
+      "level": 3,
+      "photoCount": 4,
+      "path": "Brazil Top Selected Categories/Extra Large/Brindle Grey XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Brindle Light Grey-Beige XL": {
+      "level": 3,
+      "photoCount": 7,
+      "path": "Brazil Top Selected Categories/Extra Large/Brindle Light Grey-Beige XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Brindle White Backbone XL": {
+      "level": 3,
+      "photoCount": 28,
+      "path": "Brazil Top Selected Categories/Extra Large/Brindle White Backbone XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Brindle White Belly XL": {
+      "level": 3,
+      "photoCount": 29,
+      "path": "Brazil Top Selected Categories/Extra Large/Brindle White Belly XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Brown & White XL": {
+      "level": 3,
+      "photoCount": 3,
+      "path": "Brazil Top Selected Categories/Extra Large/Brown & White XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Champagne XL": {
+      "level": 3,
+      "photoCount": 3,
+      "path": "Brazil Top Selected Categories/Extra Large/Champagne XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Grey Beige XL": {
+      "level": 3,
+      "photoCount": 21,
+      "path": "Brazil Top Selected Categories/Extra Large/Grey Beige XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Grey XL": {
+      "level": 3,
+      "photoCount": 24,
+      "path": "Brazil Top Selected Categories/Extra Large/Grey XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Hereford XL": {
+      "level": 3,
+      "photoCount": 33,
+      "path": "Brazil Top Selected Categories/Extra Large/Hereford XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Natural White XL": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Brazil Top Selected Categories/Extra Large/Natural White XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Palomino Exotic XL": {
+      "level": 3,
+      "photoCount": 11,
+      "path": "Brazil Top Selected Categories/Extra Large/Palomino Exotic XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Salt & Pepper - Tricolor, Brown and White XL": {
+      "level": 3,
+      "photoCount": 10,
+      "path": "Brazil Top Selected Categories/Extra Large/Salt & Pepper - Tricolor, Brown and White XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Salt & Pepper Black and White XL": {
+      "level": 3,
+      "photoCount": 34,
+      "path": "Brazil Top Selected Categories/Extra Large/Salt & Pepper Black and White XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Salt & Pepper Chocolate and White XL": {
+      "level": 3,
+      "photoCount": 12,
+      "path": "Brazil Top Selected Categories/Extra Large/Salt & Pepper Chocolate and White XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Taupe XL": {
+      "level": 3,
+      "photoCount": 5,
+      "path": "Brazil Top Selected Categories/Extra Large/Taupe XL"
+    },
+    "Brazil Top Selected Categories/Extra Large/Tricolor XL": {
+      "level": 3,
+      "photoCount": 3,
+      "path": "Brazil Top Selected Categories/Extra Large/Tricolor XL"
+    },
+    "Brazil Top Selected Categories/Medium Large/Black & White ML": {
+      "level": 3,
+      "photoCount": 2,
+      "path": "Brazil Top Selected Categories/Medium Large/Black & White ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Black & White Reddish ML": {
+      "level": 3,
+      "photoCount": 10,
+      "path": "Brazil Top Selected Categories/Medium Large/Black & White Reddish ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Brindle Grey ML": {
+      "level": 3,
+      "photoCount": 14,
+      "path": "Brazil Top Selected Categories/Medium Large/Brindle Grey ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Brindle Light Grey-Beige ML": {
+      "level": 3,
+      "photoCount": 15,
+      "path": "Brazil Top Selected Categories/Medium Large/Brindle Light Grey-Beige ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Brindle White Backbone ML": {
+      "level": 3,
+      "photoCount": 43,
+      "path": "Brazil Top Selected Categories/Medium Large/Brindle White Backbone ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Brindle White Belly ML": {
+      "level": 3,
+      "photoCount": 46,
+      "path": "Brazil Top Selected Categories/Medium Large/Brindle White Belly ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Brown & White ML": {
+      "level": 3,
+      "photoCount": 6,
+      "path": "Brazil Top Selected Categories/Medium Large/Brown & White ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Buttercream ML": {
+      "level": 3,
+      "photoCount": 7,
+      "path": "Brazil Top Selected Categories/Medium Large/Buttercream ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Champagne ML": {
+      "level": 3,
+      "photoCount": 9,
+      "path": "Brazil Top Selected Categories/Medium Large/Champagne ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Grey Beige ML": {
+      "level": 3,
+      "photoCount": 59,
+      "path": "Brazil Top Selected Categories/Medium Large/Grey Beige ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Grey ML": {
+      "level": 3,
+      "photoCount": 23,
+      "path": "Brazil Top Selected Categories/Medium Large/Grey ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Hereford ML": {
+      "level": 3,
+      "photoCount": 48,
+      "path": "Brazil Top Selected Categories/Medium Large/Hereford ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Natural White ML": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Brazil Top Selected Categories/Medium Large/Natural White ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Palomino Exotic ML": {
+      "level": 3,
+      "photoCount": 23,
+      "path": "Brazil Top Selected Categories/Medium Large/Palomino Exotic ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Palomino ML": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Brazil Top Selected Categories/Medium Large/Palomino ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Salt & Pepper - Tricolor, Brown and White ML": {
+      "level": 3,
+      "photoCount": 57,
+      "path": "Brazil Top Selected Categories/Medium Large/Salt & Pepper - Tricolor, Brown and White ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Salt & Pepper - Tricolor, Brown and White Medium": {
+      "level": 3,
+      "photoCount": 18,
+      "path": "Brazil Top Selected Categories/Medium Large/Salt & Pepper - Tricolor, Brown and White Medium"
+    },
+    "Brazil Top Selected Categories/Medium Large/Salt & Pepper Black and White ML": {
+      "level": 3,
+      "photoCount": 46,
+      "path": "Brazil Top Selected Categories/Medium Large/Salt & Pepper Black and White ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Salt & Pepper Chocolate and White ML": {
+      "level": 3,
+      "photoCount": 60,
+      "path": "Brazil Top Selected Categories/Medium Large/Salt & Pepper Chocolate and White ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Taupe ML": {
+      "level": 3,
+      "photoCount": 12,
+      "path": "Brazil Top Selected Categories/Medium Large/Taupe ML"
+    },
+    "Brazil Top Selected Categories/Medium Large/Tricolor ML": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Brazil Top Selected Categories/Medium Large/Tricolor ML"
+    },
+    "Brazil Top Selected Categories/Small/Black & White Reddish Small": {
+      "level": 3,
+      "photoCount": 19,
+      "path": "Brazil Top Selected Categories/Small/Black & White Reddish Small"
+    },
+    "Brazil Top Selected Categories/Small/Black & White Small": {
+      "level": 3,
+      "photoCount": 4,
+      "path": "Brazil Top Selected Categories/Small/Black & White Small"
+    },
+    "Brazil Top Selected Categories/Small/Brindle Light Grey-Beige Small": {
+      "level": 3,
+      "photoCount": 29,
+      "path": "Brazil Top Selected Categories/Small/Brindle Light Grey-Beige Small"
+    },
+    "Brazil Top Selected Categories/Small/Brindle Medium Tone Small": {
+      "level": 3,
+      "photoCount": 28,
+      "path": "Brazil Top Selected Categories/Small/Brindle Medium Tone Small"
+    },
+    "Brazil Top Selected Categories/Small/Brindle White Backbone Small": {
+      "level": 3,
+      "photoCount": 34,
+      "path": "Brazil Top Selected Categories/Small/Brindle White Backbone Small"
+    },
+    "Brazil Top Selected Categories/Small/Brindle White Belly Small": {
+      "level": 3,
+      "photoCount": 13,
+      "path": "Brazil Top Selected Categories/Small/Brindle White Belly Small"
+    },
+    "Brazil Top Selected Categories/Small/Brown & White Small": {
+      "level": 3,
+      "photoCount": 6,
+      "path": "Brazil Top Selected Categories/Small/Brown & White Small"
+    },
+    "Brazil Top Selected Categories/Small/Champagne Small": {
+      "level": 3,
+      "photoCount": 12,
+      "path": "Brazil Top Selected Categories/Small/Champagne Small"
+    },
+    "Brazil Top Selected Categories/Small/Grey Beige Small": {
+      "level": 3,
+      "photoCount": 11,
+      "path": "Brazil Top Selected Categories/Small/Grey Beige Small"
+    },
+    "Brazil Top Selected Categories/Small/Grey Small": {
+      "level": 3,
+      "photoCount": 29,
+      "path": "Brazil Top Selected Categories/Small/Grey Small"
+    },
+    "Brazil Top Selected Categories/Small/Hereford Small": {
+      "level": 3,
+      "photoCount": 14,
+      "path": "Brazil Top Selected Categories/Small/Hereford Small"
+    },
+    "Brazil Top Selected Categories/Small/Natural White Small": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Brazil Top Selected Categories/Small/Natural White Small"
+    },
+    "Brazil Top Selected Categories/Small/Palomino Exotic Small": {
+      "level": 3,
+      "photoCount": 4,
+      "path": "Brazil Top Selected Categories/Small/Palomino Exotic Small"
+    },
+    "Brazil Top Selected Categories/Small/Salt & Pepper - Tricolor, Brown and White Small": {
+      "level": 3,
+      "photoCount": 139,
+      "path": "Brazil Top Selected Categories/Small/Salt & Pepper - Tricolor, Brown and White Small"
+    },
+    "Brazil Top Selected Categories/Small/Salt & Pepper Black and White Small": {
+      "level": 3,
+      "photoCount": 59,
+      "path": "Brazil Top Selected Categories/Small/Salt & Pepper Black and White Small"
+    },
+    "Brazil Top Selected Categories/Small/Taupe Small": {
+      "level": 3,
+      "photoCount": 16,
+      "path": "Brazil Top Selected Categories/Small/Taupe Small"
+    },
+    "Brazil Top Selected Categories/Small/Tricolor Small": {
+      "level": 3,
+      "photoCount": 5,
+      "path": "Brazil Top Selected Categories/Small/Tricolor Small"
+    },
+    "Calfskins/Metallica Silver On Black": {
+      "level": 2,
+      "photoCount": 1,
+      "path": "Calfskins/Metallica Silver On Black"
+    },
+    "Colombian Cowhides/1. Medium/Brown & White M": {
+      "level": 3,
+      "photoCount": 2,
+      "path": "Colombian Cowhides/1. Medium/Brown & White M"
+    },
+    "Colombian Cowhides/1. Medium/Exotic M": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Colombian Cowhides/1. Medium/Exotic M"
+    },
+    "Colombian Cowhides/1. Medium/Tricolor Mix M": {
+      "level": 3,
+      "photoCount": 9,
+      "path": "Colombian Cowhides/1. Medium/Tricolor Mix M"
+    },
+    "Colombian Cowhides/2. Large/Black & White L": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Colombian Cowhides/2. Large/Black & White L"
+    },
+    "Colombian Cowhides/2. Large/Brindle Mix L": {
+      "level": 3,
+      "photoCount": 1,
+      "path": "Colombian Cowhides/2. Large/Brindle Mix L"
+    },
+    "Colombian Cowhides/2. Large/Tricolor Clouded L": {
+      "level": 3,
+      "photoCount": 12,
+      "path": "Colombian Cowhides/2. Large/Tricolor Clouded L"
+    },
+    "Colombian Cowhides/2. Large/Tricolor Mix L": {
+      "level": 3,
+      "photoCount": 28,
+      "path": "Colombian Cowhides/2. Large/Tricolor Mix L"
+    },
+    "Colombian Cowhides/2. Large/Tricolor Spotted L": {
+      "level": 3,
+      "photoCount": 10,
+      "path": "Colombian Cowhides/2. Large/Tricolor Spotted L"
+    },
+    "Colombian Cowhides/3. X-Large/Tricolor Clouded XL": {
+      "level": 3,
+      "photoCount": 8,
+      "path": "Colombian Cowhides/3. X-Large/Tricolor Clouded XL"
+    },
+    "Colombian Cowhides/3. X-Large/Tricolor Mix XL": {
+      "level": 3,
+      "photoCount": 18,
+      "path": "Colombian Cowhides/3. X-Large/Tricolor Mix XL"
+    },
+    "Colombian Cowhides/3. X-Large/Tricolor Spotted XL": {
+      "level": 3,
+      "photoCount": 8,
+      "path": "Colombian Cowhides/3. X-Large/Tricolor Spotted XL"
+    },
+    "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL": {
+      "level": 2,
+      "photoCount": 2,
+      "path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL"
+    },
+    "Rodeo Rugs/3'x5 Rodeo Rug/Colombia/3' x 5' Star & Longhorns": {
+      "level": 4,
+      "photoCount": 1,
+      "path": "Rodeo Rugs/3'x5 Rodeo Rug/Colombia/3' x 5' Star & Longhorns"
+    },
+    "Rodeo Rugs/3'x5 Rodeo Rug/Colombia/3' x 5' Star": {
+      "level": 4,
+      "photoCount": 35,
+      "path": "Rodeo Rugs/3'x5 Rodeo Rug/Colombia/3' x 5' Star"
+    },
+    "Rodeo Rugs/Round Rug/Brazil/60\" Round Rug": {
+      "level": 4,
+      "photoCount": 3,
+      "path": "Rodeo Rugs/Round Rug/Brazil/60\" Round Rug"
+    },
+    "Rodeo Rugs/Round Rug/Colombia/40\" Round Rug Single Star": {
+      "level": 4,
+      "photoCount": 70,
+      "path": "Rodeo Rugs/Round Rug/Colombia/40\" Round Rug Single Star"
+    },
+    "Rodeo Rugs/Round Rug/Colombia/60'' Round Rug Multi Star": {
+      "level": 4,
+      "photoCount": 23,
+      "path": "Rodeo Rugs/Round Rug/Colombia/60'' Round Rug Multi Star"
+    },
+    "Sheepskins/Himalayan Exotic Tones": {
+      "level": 2,
+      "photoCount": 13,
+      "path": "Sheepskins/Himalayan Exotic Tones"
+    },
+    "Sheepskins/Tibetan Exotic Tones": {
+      "level": 2,
+      "photoCount": 49,
+      "path": "Sheepskins/Tibetan Exotic Tones"
+    }
+  }
+}

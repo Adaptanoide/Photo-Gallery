@@ -128,7 +128,7 @@ router.get('/category-price', async (req, res) => {
     try {
         const { googleDriveId, prefix, clientCode } = req.query;
 
-        console.log(`🏷️ Buscando preço para categoria ${googleDriveId}, cliente: ${clientCode || 'ANÔNIMO'}`);
+        console.log(`🏷️ Buscando preço para categoria ${googleDriveId || prefix}, cliente: ${clientCode || 'ANÔNIMO'}`);
         const categoryId = googleDriveId || prefix;
 
         // ===== NOVO: DETECTAR CLIENTE ESPECIAL =====
@@ -181,8 +181,18 @@ router.get('/category-price', async (req, res) => {
 
         // Se não é cliente especial ou não encontrou categoria especial, buscar categoria normal
         if (!category) {
-            console.log(`🔍 Buscando categoria normal: ${googleDriveId}`);
-            category = await PhotoCategory.findByDriveId(googleDriveId);
+            console.log(`🔍 Buscando categoria normal: ${categoryId}`);
+            // Remover barra final se existir
+            const cleanPath = categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId;
+
+            // Buscar por folderName ou displayName
+            category = await PhotoCategory.findOne({
+                $or: [
+                    { folderName: cleanPath.split('/').pop() },  // Último segmento do path
+                    { displayName: { $regex: ` → ${cleanPath.split('/').pop().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
+                    { googleDrivePath: cleanPath }
+                ]
+            });
         }
 
         if (!category) {
@@ -266,6 +276,102 @@ router.get('/category-price', async (req, res) => {
 });
 
 
+// Buscar faixas de desconto aplicáveis para uma categoria
+router.get('/category-ranges', async (req, res) => {
+    try {
+        const { categoryId, clientCode } = req.query;
+
+        if (!categoryId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Category ID required'
+            });
+        }
+
+        // CORREÇÃO: Remover barra final e buscar por path parcial
+        const cleanId = categoryId.replace(/\/$/, '');
+
+        const category = await PhotoCategory.findOne({
+            $or: [
+                { googleDriveId: cleanId },
+                { googleDriveId: cleanId + '/' },
+                { googleDrivePath: { $regex: cleanId, $options: 'i' } },
+                { displayName: { $regex: cleanId, $options: 'i' } }
+            ]
+        });
+
+        if (!category) {
+            console.log('❌ Categoria não encontrada para:', categoryId);
+            return res.json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        console.log('✅ Categoria encontrada:', category.displayName);
+
+        // Resto do código continua igual...
+        const response = {
+            categoryName: category.displayName,
+            basePrice: category.basePrice,
+            appliedType: 'base',
+            ranges: [],
+            currentDiscount: null
+        };
+
+        // 1. Verificar Custom Client
+        const customRule = category.discountRules.find(r =>
+            r.clientCode === clientCode && r.isActive
+        );
+
+        if (customRule && customRule.priceRanges?.length > 0) {
+            response.appliedType = 'custom';
+            response.ranges = customRule.priceRanges.map(r => ({
+                min: r.min,
+                max: r.max,
+                price: r.price,
+                label: `${r.min}${r.max ? '-' + r.max : '+'}: $${r.price}`
+            }));
+            response.currentDiscount = {
+                type: 'Special Client',
+                clientName: customRule.clientName
+            };
+        }
+        // 2. Senão, verificar Volume
+        else {
+            const volumeRule = category.discountRules.find(r =>
+                r.clientCode === 'VOLUME' && r.isActive
+            );
+
+            if (volumeRule && volumeRule.priceRanges?.length > 0) {
+                response.appliedType = 'volume';
+                response.ranges = volumeRule.priceRanges.map(r => ({
+                    min: r.min,
+                    max: r.max,
+                    price: r.price,
+                    label: `${r.min}${r.max ? '-' + r.max : '+'}: $${r.price}`
+                }));
+                response.currentDiscount = {
+                    type: 'Volume Discount',
+                    description: 'Available for all clients'
+                };
+            }
+        }
+
+        res.json({
+            success: true,
+            data: response
+        });
+
+    } catch (error) {
+        console.error('Error getting category ranges:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error loading pricing ranges'
+        });
+    }
+});
+
 // ============================================
 // NOVO ENDPOINT - FILTROS DE CATEGORIAS
 // Adicionado em 13/08/2025 - Sistema de filtros
@@ -287,7 +393,6 @@ router.get('/categories/filtered', async (req, res) => {
         console.log('📂 Buscando categorias no banco...');
         let categories = await PhotoCategory.find({
             isActive: true,
-            photoCount: { $gt: 0 } // Apenas categorias com fotos
         }).lean(); // .lean() para melhor performance
 
         const totalInicial = categories.length;
@@ -467,8 +572,8 @@ router.get('/categories/filter-types', async (req, res) => {
 
         // Buscar categorias para contar quantas tem cada tipo
         const categories = await PhotoCategory.find({
-            isActive: true,
-            photoCount: { $gt: 0 }
+            isActive: true
+            // REMOVIDO O FILTRO photoCount - MOSTRAR TODAS!
         }).lean();
 
         // Contar ocorrências de cada tipo
@@ -508,32 +613,62 @@ router.get('/categories/filter-types', async (req, res) => {
 // Todas as rotas de preços precisam de autenticação admin
 router.use(authenticateToken);
 
-// ===== SINCRONIZAÇÃO COM GOOGLE DRIVE =====
 
 /**
  * POST /api/pricing/sync
- * Sincronizar estrutura do Google Drive com banco de dados
+ * Sincronizar estrutura do R2 com banco de dados
  */
 router.post('/sync', async (req, res) => {
     try {
         const { forceRefresh = false } = req.body;
 
-        console.log(`🔄 Iniciando sincronização ${forceRefresh ? 'forçada' : 'normal'}...`);
+        console.log(`🔄 Iniciando sincronização R2 ${forceRefresh ? 'forçada' : 'normal'}...`);
 
-        const result = await PricingService.scanAndSyncDrive(forceRefresh);
+        // USAR NOVO MÉTODO R2
+        const result = await PricingService.scanAndSyncR2(forceRefresh);
 
         res.json({
             success: true,
-            message: 'Sincronização concluída com sucesso',
+            message: 'Sincronização R2 concluída',
             data: result,
-            summary: result.sync.summary
+            summary: result
         });
 
     } catch (error) {
         console.error('❌ Erro na sincronização:', error);
         res.status(500).json({
             success: false,
-            message: 'Erro ao sincronizar com Google Drive',
+            message: 'Erro ao sincronizar com R2',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/sync/status
+ * Status sempre atualizado com R2
+ */
+router.get('/sync/status', async (req, res) => {
+    try {
+        // Com R2, sempre está sincronizado
+        const stats = await PricingService.getR2Statistics();
+
+        res.json({
+            success: true,
+            syncStatus: {
+                needingSyncCount: 0, // Sempre 0 com R2
+                lastSyncDate: stats.lastSyncDate,
+                isOutdated: false, // Nunca desatualizado
+                hoursOld: 0
+            },
+            statistics: stats
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao verificar status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao verificar status',
             error: error.message
         });
     }
@@ -589,17 +724,38 @@ router.get('/categories', async (req, res) => {
     try {
         const {
             search = '',
-            hasPrice = null,
+            priceStatus = 'all',  // MUDADO DE hasPrice PARA priceStatus
             page = 1,
             limit = 50
         } = req.query;
 
-        // Filtros
-        const filters = {};
-        if (search) filters.search = search;
-        if (hasPrice !== null) filters.hasPrice = hasPrice === 'true';
+        // Construir query baseada no status do preço
+        const query = { isActive: true };
 
-        const categories = await PricingService.getAdminCategoriesList(filters);
+        // Aplicar filtro de preço
+        if (priceStatus === 'with') {
+            query.basePrice = { $gt: 0 };
+        } else if (priceStatus === 'without') {
+            query.$or = [
+                { basePrice: 0 },
+                { basePrice: null },
+                { basePrice: { $exists: false } }
+            ];
+        }
+        // Se priceStatus === 'all', não adiciona filtro (mostra TODAS)
+
+        // Aplicar filtro de busca
+        if (search) {
+            query.$or = [
+                { displayName: { $regex: search, $options: 'i' } },
+                { folderName: { $regex: search, $options: 'i' } },
+                { qbItem: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const categories = await PhotoCategory.find(query)
+            .sort({ displayName: 1 })
+            .lean();
 
         // Paginação
         const startIndex = (page - 1) * limit;
@@ -608,7 +764,12 @@ router.get('/categories', async (req, res) => {
 
         res.json({
             success: true,
-            categories: paginatedCategories,
+            categories: paginatedCategories.map(category => ({
+                ...category,
+                formattedPrice: category.basePrice > 0 ?
+                    `$${category.basePrice.toFixed(2)}` : 'No price',
+                hasCustomRules: category.discountRules && category.discountRules.length > 0
+            })),
             pagination: {
                 total: categories.length,
                 page: parseInt(page),
@@ -821,7 +982,7 @@ router.post('/categories/bulk-price', async (req, res) => {
 router.post('/categories/:id/discount-rules', async (req, res) => {
     try {
         const { id } = req.params;
-        const { clientCode, clientName, discountPercent, customPrice } = req.body;
+        const { clientCode, clientName, discountPercent, customPrice, priceRanges } = req.body;
 
         // Validações
         if (!clientCode || clientCode.length !== 4) {
@@ -838,18 +999,31 @@ router.post('/categories/:id/discount-rules', async (req, res) => {
             });
         }
 
-        if (discountPercent && (discountPercent < 0 || discountPercent > 100)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Desconto deve ser entre 0 e 100%'
-            });
+        // NOVO: Processar priceRanges se existir
+        let processedRanges = null;
+        if (priceRanges && Array.isArray(priceRanges) && priceRanges.length > 0) {
+            processedRanges = priceRanges.map(range => ({
+                min: parseInt(range.min),
+                max: range.max ? parseInt(range.max) : null,
+                price: parseFloat(range.price)
+            }));
         }
 
-        if (customPrice && customPrice < 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Preço customizado não pode ser negativo'
-            });
+        // Validações antigas (mantidas para compatibilidade)
+        if (!processedRanges) {
+            if (discountPercent && (discountPercent < 0 || discountPercent > 100)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Desconto deve ser entre 0 e 100%'
+                });
+            }
+
+            if (customPrice && customPrice < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Preço customizado não pode ser negativo'
+                });
+            }
         }
 
         // Buscar categoria
@@ -862,11 +1036,19 @@ router.post('/categories/:id/discount-rules', async (req, res) => {
             });
         }
 
-        // Adicionar regra
-        const newRule = category.addDiscountRule(clientCode, clientName, {
+        // Preparar dados da regra
+        const ruleData = {
             discountPercent: discountPercent || 0,
             customPrice: customPrice || null
-        });
+        };
+
+        // NOVO: Adicionar priceRanges se existir
+        if (processedRanges) {
+            ruleData.priceRanges = processedRanges;
+        }
+
+        // Adicionar regra
+        const newRule = category.addDiscountRule(clientCode, clientName, ruleData);
 
         await category.save();
 
@@ -874,6 +1056,7 @@ router.post('/categories/:id/discount-rules', async (req, res) => {
             success: true,
             message: 'Regra de desconto adicionada com sucesso',
             rule: newRule,
+            discountRules: category.discountRules,
             category: category.getSummary()
         });
 
@@ -1213,7 +1396,7 @@ router.get('/quantity-discounts', async (req, res) => {
  */
 router.post('/quantity-discounts', async (req, res) => {
     try {
-        const { minQuantity, maxQuantity, discountPercent, description } = req.body;
+        const { minQuantity, maxQuantity, discountPercent, fixedPrice, ruleType, description, createdBy } = req.body;
 
         // Validações básicas
         if (!minQuantity || minQuantity < 1) {
@@ -1223,11 +1406,21 @@ router.post('/quantity-discounts', async (req, res) => {
             });
         }
 
-        if (!discountPercent || discountPercent < 0 || discountPercent > 100) {
-            return res.status(400).json({
-                success: false,
-                message: 'Desconto deve ser entre 0 e 100%'
-            });
+        // Validar baseado no tipo de regra
+        if (ruleType === 'fixed') {
+            if (!fixedPrice || fixedPrice < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Preço fixo deve ser maior que 0'
+                });
+            }
+        } else {
+            if (!discountPercent || discountPercent < 0 || discountPercent > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Desconto deve ser entre 0 e 100%'
+                });
+            }
         }
 
         if (!description || description.trim().length === 0) {
@@ -1237,45 +1430,46 @@ router.post('/quantity-discounts', async (req, res) => {
             });
         }
 
-        console.log(`📦 Criando regra de quantidade: ${minQuantity}-${maxQuantity || '∞'} = ${discountPercent}%`);
+        console.log(`📦 Criando regra de quantidade: ${minQuantity}-${maxQuantity || '∞'} = ${ruleType === 'fixed' ? '$' + fixedPrice : discountPercent + '%'}`);
 
         const QuantityDiscount = require('../models/QuantityDiscount');
 
         // Validar sobreposição
         const validation = await QuantityDiscount.validateNoOverlap(minQuantity, maxQuantity);
         if (!validation.isValid) {
-            return res.status(409).json({
+            return res.status(400).json({
                 success: false,
-                message: validation.message,
-                conflictingRule: validation.conflictingRule
+                message: validation.message
             });
         }
 
-        // Criar regra
+        // Criar nova regra
         const newRule = new QuantityDiscount({
             minQuantity,
             maxQuantity: maxQuantity || null,
-            discountPercent,
+            discountPercent: discountPercent || 0,
+            fixedPrice: fixedPrice || null,
+            ruleType: ruleType || 'percentage',
             description: description.trim(),
-            createdBy: req.user.username
+            createdBy: createdBy || 'admin',
+            isActive: true
         });
 
         await newRule.save();
 
         console.log(`✅ Regra de quantidade criada: ${newRule._id}`);
 
-        res.status(201).json({
+        res.json({
             success: true,
-            message: 'Regra de desconto criada com sucesso',
-            rule: newRule
+            rule: newRule,
+            message: 'Regra criada com sucesso'
         });
 
     } catch (error) {
         console.error('❌ Erro ao criar regra de quantidade:', error);
         res.status(500).json({
             success: false,
-            message: 'Erro ao criar regra de desconto',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: error.message || 'Erro ao criar regra'
         });
     }
 });
@@ -1422,6 +1616,206 @@ router.get('/quantity-discounts/calculate/:quantity', async (req, res) => {
             success: false,
             message: 'Erro ao calcular desconto',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// Adicionar estas rotas em src/routes/pricing.js
+// APÓS a linha 1000 (depois das rotas de quantity-discounts)
+
+/**
+ * POST /api/pricing/categories/:id/volume-rules
+ * Adicionar/Atualizar regras de volume para categoria
+ * Volume rules são salvas como clientCode='VOLUME'
+ */
+router.post('/categories/:id/volume-rules', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { priceRanges } = req.body;
+
+        console.log('📊 Salvando Volume Rules para categoria:', id);
+        console.log('Faixas recebidas:', priceRanges);
+
+        // Validar entrada
+        if (!priceRanges || !Array.isArray(priceRanges) || priceRanges.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Price ranges are required'
+            });
+        }
+
+        // Buscar categoria
+        const category = await PhotoCategory.findById(id);
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        // Processar e validar faixas
+        const processedRanges = [];
+        for (const range of priceRanges) {
+            if (!range.min || range.min < 1) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Minimum quantity must be at least 1'
+                });
+            }
+            if (!range.price || range.price < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Price must be positive'
+                });
+            }
+
+            processedRanges.push({
+                min: parseInt(range.min),
+                max: range.max ? parseInt(range.max) : null,
+                price: parseFloat(range.price)
+            });
+        }
+
+        // Ordenar faixas por min
+        processedRanges.sort((a, b) => a.min - b.min);
+
+        // Validar sobreposição
+        for (let i = 0; i < processedRanges.length - 1; i++) {
+            const current = processedRanges[i];
+            const next = processedRanges[i + 1];
+
+            if (current.max && current.max >= next.min) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Overlap detected: ${current.min}-${current.max} overlaps with ${next.min}-${next.max || '+'}`
+                });
+            }
+        }
+
+        // Remover regra VOLUME existente se houver
+        category.discountRules = category.discountRules.filter(
+            rule => rule.clientCode !== 'VOLUME'
+        );
+
+        // Adicionar nova regra VOLUME
+        category.discountRules.push({
+            clientCode: 'VOLUME',
+            clientName: 'All Regular Clients',
+            priceRanges: processedRanges,
+            isActive: true,
+            createdAt: new Date()
+        });
+
+        await category.save();
+
+        console.log(`✅ Volume rules saved: ${processedRanges.length} ranges`);
+
+        res.json({
+            success: true,
+            message: 'Volume rules saved successfully',
+            data: {
+                categoryId: id,
+                categoryName: category.displayName,
+                volumeRules: processedRanges
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error saving volume rules:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error saving volume rules',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/categories/:id/volume-rules
+ * Buscar regras de volume de uma categoria
+ */
+router.get('/categories/:id/volume-rules', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const category = await PhotoCategory.findById(id);
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        // Buscar regra VOLUME
+        const volumeRule = category.discountRules.find(
+            rule => rule.clientCode === 'VOLUME' && rule.isActive
+        );
+
+        res.json({
+            success: true,
+            data: {
+                categoryId: id,
+                categoryName: category.displayName,
+                basePrice: category.basePrice,
+                hasVolumeRules: !!volumeRule,
+                volumeRules: volumeRule ? volumeRule.priceRanges : []
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading volume rules:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error loading volume rules',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/pricing/categories/:id/volume-rules
+ * Remover regras de volume de uma categoria
+ */
+router.delete('/categories/:id/volume-rules', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const category = await PhotoCategory.findById(id);
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        // Remover regra VOLUMEme solicite o arquivo completo e voce 
+        const initialLength = category.discountRules.length;
+        category.discountRules = category.discountRules.filter(
+            rule => rule.clientCode !== 'VOLUME'
+        );
+
+        if (category.discountRules.length === initialLength) {
+            return res.json({
+                success: true,
+                message: 'No volume rules to remove'
+            });
+        }
+
+        await category.save();
+
+        console.log(`✅ Volume rules removed for category: ${category.displayName}`);
+
+        res.json({
+            success: true,
+            message: 'Volume rules removed successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Error removing volume rules:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error removing volume rules',
+            error: error.message
         });
     }
 });

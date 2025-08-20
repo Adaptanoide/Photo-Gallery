@@ -462,6 +462,11 @@
     border: 1px solid var(--border-subtle);
     position: relative;
     overflow: hidden;
+    /* NOVO - Flexbox para alinhar */
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    /* Altura mínima fixa */
 }
 
 .category-card::before,
@@ -552,12 +557,15 @@
 }
 
 .gallery-header {
+    position: relative;
+    /* MUDAR de sticky para relative */
+    padding: 15px 20px;
+    margin: -2rem -2rem 0 -2rem;
+    border-bottom: 1px solid #e0e0e0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-subtle);
+    background: white;
 }
 
 .gallery-header h3 {
@@ -663,7 +671,7 @@
     box-shadow: var(--shadow-gold);
     z-index: 10;
     transition: all 0.3s ease;
-    
+
     /* ESCONDIDO POR PADRÃO */
     opacity: 0;
     transform: translateY(-5px);
@@ -675,22 +683,21 @@
     color: var(--text-primary);
 }
 
-/* APARECER NO HOVER DA THUMBNAIL */
-.photo-thumbnail:hover .photo-price {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
+/* PREÇO SEMPRE ESCONDIDO - NÃO MOSTRAR NO HOVER */
+.photo-thumbnail .photo-price {
+    display: none !important;
 }
 
 /* RESPONSIVO - MOBILE TOUCH */
 @media (max-width: 768px) {
+
     /* No mobile, mostrar sempre para facilitar visualização */
     .photo-price {
         opacity: 0.9;
         transform: translateY(0);
         pointer-events: auto;
     }
-    
+
     /* Efeito de touch no mobile */
     .photo-thumbnail:active .photo-price {
         opacity: 1;
@@ -788,10 +795,10 @@
 }
 
 .btn-close {
-    background: rgba(212, 175, 55, 0.2);
+    background: var(--gold-primary);  /* MUDOU - era transparente */
     border: 1px solid var(--gold-primary);
     font-size: 1.2rem;
-    color: var(--gold-primary);
+    color: white;  /* MUDOU - era dourado */
     cursor: pointer;
     padding: 0.5rem;
     border-radius: var(--border-radius);
@@ -804,9 +811,9 @@
 }
 
 .btn-close:hover {
-    background: var(--gold-primary);
-    color: var(--luxury-dark);
-    transform: scale(1.1);
+    background: white;  /* INVERTEU */
+    color: var(--gold-primary);  /* INVERTEU */
+    border-color: var(--gold-primary);
 }
 
 /* MODAL BODY - IMAGEM FULLSCREEN */
@@ -870,7 +877,7 @@
     font-size: 1.2rem;
     color: var(--luxury-dark);
     cursor: pointer;
-    transition: var(--transition);
+    transition: background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
     z-index: 20;
     box-shadow: var(--shadow-gold);
     display: flex;
@@ -879,9 +886,11 @@
     font-weight: 600;
 }
 
+/* FORÇAR sem scale no hover */
 .nav-btn:hover:not(:disabled) {
-    background: var(--gold-primary);
-    transform: translateY(-50%) scale(1.1);
+    background: var(--gold-primary) !important;
+    transform: translateY(-50%) !important;
+    /* transition já definida no base, não precisa aqui */
     box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
 }
 
@@ -912,7 +921,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
+    padding: 5px 40px 10px 30px;
     background: rgba(44, 44, 52, 0.9);
     backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-subtle);
@@ -1028,7 +1037,8 @@
 
 /* ===== CART HEADER ===== */
 .cart-header {
-    position: relative;  /* ESSENCIAL PARA OS BOTÕES */
+    position: relative;
+    /* ESSENCIAL PARA OS BOTÕES */
     padding: 15px 20px;
     background: var(--gold-primary);
     color: white;
@@ -1240,7 +1250,7 @@
 /* Footer do carrinho */
 .cart-footer {
     flex-shrink: 0;
-    padding: 1.5rem;
+    padding: 1.0rem;
     border-top: 1px solid var(--border-subtle);
     background: var(--luxury-dark);
 }
@@ -1248,7 +1258,7 @@
 .cart-summary {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0rem;
 }
 
 .cart-total {
@@ -1427,9 +1437,9 @@
 }
 
 .zoom-btn-simple {
-    background: rgba(212, 175, 55, 0.2);
+    background: var(--gold-primary) !important;  /* DOURADO */
     border: 1px solid var(--gold-primary);
-    color: var(--gold-primary);
+    color: white !important;  /* ÍCONE BRANCO */
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -1443,9 +1453,10 @@
 }
 
 .zoom-btn-simple:hover:not(:disabled) {
-    background: var(--gold-primary);
-    color: var(--luxury-dark);
-    transform: scale(1.1);
+    background: white !important;  /* BRANCO no hover */
+    color: var(--gold-primary) !important;  /* ÍCONE DOURADO */
+    border-color: var(--gold-primary);
+    /* SEM transform scale */
 }
 
 .zoom-btn-simple:active:not(:disabled) {
@@ -2296,7 +2307,7 @@
     margin-top: 15px;
 }
 
-.cart-breakdown > div {
+.cart-breakdown>div {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
@@ -2329,7 +2340,7 @@
 
 /* Totais minimalistas */
 .cart-totals-simple {
-    padding: 15px 0;
+    padding: 2px 0;
     border-top: 1px solid rgba(212, 175, 55, 0.2);
 }
 
@@ -2429,19 +2440,30 @@
     border-radius: 8px;
     width: 90%;
     max-width: 800px;
-    max-height: 85vh;
+    height: 650px !important;
+    /* ALTURA FIXA */
+    min-height: 650px !important;
+    /* GARANTIR ALTURA MÍNIMA */
+    max-height: 650px !important;
+    /* GARANTIR ALTURA MÁXIMA */
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     z-index: 2;
+    overflow: hidden;
+    /* IMPORTANTE: sem overflow aqui */
 }
 
 .order-summary-header {
+    flex-shrink: 0;
+    /* NÃO ENCOLHER */
     padding: 20px;
     border-bottom: 2px solid var(--gold-primary);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 70px;
+    /* ALTURA FIXA DO HEADER */
 }
 
 .order-summary-header h2 {
@@ -2468,16 +2490,48 @@
 
 .order-summary-body {
     flex: 1;
-    overflow-y: auto;
+    /* OCUPAR ESPAÇO DISPONÍVEL */
+    overflow-y: auto !important;
+    /* SCROLL APENAS AQUI */
+    overflow-x: hidden;
     padding: 25px;
+    height: calc(650px - 70px - 65px);
+    /* TOTAL - HEADER - FOOTER */
+    max-height: calc(650px - 70px - 65px);
+    min-height: 0;
+    /* IMPORTANTE para flex funcionar */
+}
+
+/* SCROLLBAR CUSTOMIZADA PARA O BODY */
+.order-summary-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.order-summary-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.order-summary-body::-webkit-scrollbar-thumb {
+    background: var(--gold-primary);
+    border-radius: 4px;
+    opacity: 0.7;
+}
+
+.order-summary-body::-webkit-scrollbar-thumb:hover {
+    background: var(--gold-hover);
 }
 
 .order-summary-footer {
+    flex-shrink: 0;
+    /* NÃO ENCOLHER */
     padding: 15px 20px;
     border-top: 1px solid #e0e0e0;
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+    height: 65px;
+    /* ALTURA FIXA DO FOOTER */
 }
 
 .btn-summary-action,
@@ -2565,6 +2619,21 @@
     margin-top: 10px;
 }
 
+/* RESPONSIVO PARA MOBILE */
+@media (max-width: 768px) {
+    .order-summary-content {
+        width: 95%;
+        height: 90vh !important;
+        min-height: 90vh !important;
+        max-height: 90vh !important;
+    }
+
+    .order-summary-body {
+        height: calc(90vh - 70px - 65px);
+        max-height: calc(90vh - 70px - 65px);
+    }
+}
+
 /* ===== BOTÃO X DO CARRINHO ===== */
 .cart-close {
     position: absolute;
@@ -2591,6 +2660,7 @@
     color: white;
     transform: translateY(-50%) scale(1.05);
 }
+
 /* ===== FILTER SIDEBAR FIXO ===== */
 .filter-sidebar {
     position: fixed;
@@ -2637,12 +2707,14 @@
 
 /* BOTÃO CLEAR - BRANCO - TAMANHO AJUSTADO */
 .btn-clear-filters {
-    padding: 5px 12px;  /* Aumentado de 4px 10px */
+    padding: 5px 12px;
+    /* Aumentado de 4px 10px */
     background: #fff;
     border: none;
     border-radius: 3px;
     color: #333;
-    font-size: 12px;  /* Aumentado de 11px */
+    font-size: 12px;
+    /* Aumentado de 11px */
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
@@ -2651,7 +2723,7 @@
 .btn-clear-filters:hover {
     background: #f0f0f0;
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* CONTEÚDO DOS FILTROS */
@@ -2764,7 +2836,7 @@
     .filter-sidebar {
         display: none;
     }
-    
+
     .client-page main {
         margin-left: 0;
     }
@@ -2779,7 +2851,7 @@
     color: #888;
     margin-bottom: 8px;
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .category-card h3 {
@@ -2799,7 +2871,7 @@
 .category-action {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(0,0,0,0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
     color: #999;
     font-size: 13px;
     display: flex;
@@ -2808,12 +2880,12 @@
 }
 
 #breadcrumbContainer {
-    background: rgba(255,255,255,0.95);
+    background: rgba(255, 255, 255, 0.95);
     padding: 12px 0;
     position: sticky;
     top: 0;
     z-index: 10;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .breadcrumb-item.disabled {
@@ -2826,4 +2898,496 @@
 .breadcrumb-item.disabled:hover {
     background: none;
     color: #999;
+}
+
+/* ===== PRICE INFO SYSTEM - DISCRETO ===== */
+.price-progress-inline {
+    display: inline-block;
+    margin-left: 20px;
+    font-size: 14px;
+}
+
+.price-info-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 25px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.price-info-label {
+    font-size: 18px;
+    color: #666;
+    font-weight: 500;
+}
+
+.price-info-label i {
+    color: #f4a020;
+    margin-right: 5px;
+}
+
+.price-range-item {
+    font-size: 16px;
+    padding: 0 10px;
+    font-weight: 500;
+    color: #999;
+    transition: all 0.3s;
+}
+
+.price-range-item strong {
+    color: #f4a020;
+    font-size: 17px;
+}
+
+.price-range-item.active {
+    background: #fff3cd;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #333;
+}
+
+.cart-progress {
+    font-size: 16px;
+    font-weight: 500;
+    margin-left: auto;
+    padding-left: 15px;
+    border-left: 1px solid #dee2e6;
+    color: #666;
+}
+
+.cart-progress .savings {
+    color: #28a745;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* ===== STICKY HEADERS CORRIGIDOS - ORDEM CERTA ===== */
+
+/* 1. Header principal já está fixo em top: 0 (linha 16) com altura ~70px */
+
+/* 2. Breadcrumb - logo abaixo do header principal */
+#breadcrumbContainer {
+    position: sticky;
+    top: 70px;
+    /* Altura do header principal */
+    z-index: 100;
+    background: white;
+    padding: 12px 1px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 3. Container da galeria */
+.photos-gallery {
+    position: relative;
+    margin-top: 10px;
+    padding-top: 0;
+}
+
+/* 4. Header da galeria (título + contador) */
+.gallery-header {
+    position: sticky;
+    top: 115px;
+    /* 70px (header) + 45px (breadcrumb) */
+    background: white;
+    z-index: 50;
+    padding: 15px 20px;
+    margin: -2rem -2rem 0 -2rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-header h3 {
+    margin: 0;
+    flex: 1;
+    font-size: 20px;
+}
+
+.gallery-info {
+    font-size: 15px;
+    color: #666;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* 5. Container do Volume Pricing */
+.price-info-container {
+    position: relative;
+    /* MUDAR de sticky para relative */
+    background: #f8f9fa;
+    padding: 15px 20px;
+    margin: 0 -2rem 1rem -2rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 6. Grid de fotos */
+.photos-grid {
+    position: relative;
+    z-index: 1;
+    background: white;
+    padding-top: 20px;
+    margin: 0 -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+/* Ajuste do botão Back */
+#backNavigation {
+    padding: 15px 20px;
+    background: white;
+    margin-bottom: 10px;
+}
+
+/* Mobile responsivo */
+@media (max-width: 768px) {
+    #breadcrumbContainer {
+        top: 60px;
+        /* Header menor no mobile */
+    }
+
+    .gallery-header {
+        top: 100px;
+        padding: 10px 15px;
+    }
+
+    .price-info-container {
+        top: 145px;
+        padding: 10px 15px;
+    }
+}
+
+/* ===== FIX STICKY PARA TÍTULO E PREÇOS - VALORES FINAIS ===== */
+
+/* Container wrapper para manter tudo junto */
+.photos-gallery {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Título e contador - fazer sticky */
+.photos-gallery .gallery-header {
+    position: sticky !important;
+    top: 165px !important;
+    /* AUMENTADO para 165px */
+    z-index: 90 !important;
+    background: white !important;
+    margin: 1rem -2rem 0 -2rem;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Container de preços - fazer sticky */
+#priceInfoContainer {
+    position: sticky !important;
+    top: 220px !important;
+    /* AUMENTADO para 220px */
+    z-index: 85 !important;
+    background: #f8f9fa !important;
+    padding: 15px 5px;
+    margin: 0 -2rem 1rem -2rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Garantir que o grid de fotos não cubra */
+.photos-grid {
+    position: relative;
+    z-index: 1;
+    margin-top: 20px;
+}
+
+/* ===== REMOVER BOTÃO BACK - NAVEGAÇÃO VIA BREADCRUMB ===== */
+#backNavigation {
+    display: none !important;
+}
+
+/* ===== BADGE DE PREÇO NO TÍTULO ===== */
+.category-price-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+    vertical-align: middle;
+}
+
+.category-price-badge.no-price {
+    background: var(--text-muted);
+    box-shadow: none;
+}
+
+/* ===== LINK REVIEW SUMMARY DISCRETO ===== */
+.review-summary-link {
+    text-align: center;
+    margin: 3px 0 10px 0;
+}
+
+.review-summary-link a {
+    color: var(--gold-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    opacity: 0.9;
+}
+
+.review-summary-link a:hover {
+    text-decoration: underline;
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.review-summary-link i {
+    font-size: 0.85rem;
+}
+
+/* Cards principais da HOME */
+#categoriesContainer .category-card {
+    min-height: 220px;
+    padding: 2.5rem;
+    display: flex;
+    /* ADICIONE ESTA LINHA */
+    flex-direction: column;
+    /* ADICIONE ESTA LINHA */
+}
+
+#categoriesContainer .category-card h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+}
+
+/* NOVO - Fixar altura das descrições */
+#categoriesContainer .category-card p {
+    min-height: 48px;
+    max-height: 48px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+#categoriesContainer .folder-stats {
+    margin-top: auto;
+    /* MUDE de 1.5rem para auto */
+    padding-top: 1rem;
+    border-top: 1px solid rgba(212, 165, 116, 0.2);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+#categoriesContainer .folder-stats span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Destaque para quantidade de fotos */
+#categoriesContainer .folder-stats span:has(.fa-images) {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+/* ===== PREÇOS EM VERDE ===== */
+
+/* Preços em VERDE com texto BRANCO */
+.category-card .folder-stats span:has(.fa-tag),
+.folder-card .folder-stats span:has(.fa-tag) {
+    background: #27ae60;
+    color: white !important;
+    padding: 4px 10px;
+    /* AINDA MENOR */
+    border-radius: 12px;
+    /* AINDA MENOR */
+    font-weight: 600;
+    font-size: 0.9rem;
+    /* AINDA MENOR - era 1rem */
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+/* Ícone do preço em branco */
+.category-card .folder-stats .fa-tag,
+.folder-card .folder-stats .fa-tag {
+    color: white !important;
+    font-size: 0.9rem;
+    /* MENOR - ícone menor */
+}
+
+/* Preços nos cards principais */
+#categoriesContainer .folder-stats span:has(.fa-tag) {
+    font-size: 0.95rem !important;
+    /* AINDA MENOR - era 1.1rem */
+    padding: 5px 12px;
+    /* AINDA MENOR */
+}
+
+/* FORÇAR SEM ANIMAÇÃO NO NAV-BTN */
+.nav-btn {
+    will-change: auto !important;
+    transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease !important;
+    /* NÃO incluir transform */
+}
+
+.nav-btn:hover:not(:disabled) {
+    transform: translateY(-50%) !important;
+    /* SEM scale, SEM movimento extra */
+}
+
+/* ===== FORÇAR REMOVER SALTO DOS NAV BUTTONS ===== */
+.client-page .nav-btn,
+.nav-btn {
+    transform: translateY(-50%) !important;
+    transition: background-color 0.3s ease, opacity 0.3s ease !important;
+    will-change: auto !important;
+}
+
+.client-page .nav-btn:hover:not(:disabled),
+.nav-btn:hover:not(:disabled) {
+    transform: translateY(-50%) !important;
+    background: var(--gold-primary) !important;
+    color: white !important;
+    /* SEM scale, SEM translateY extra */
+}
+
+/* Desabilitar qualquer transform no hover */
+.modal-body .nav-btn:hover {
+    transform: translateY(-50%) !important;
+}
+
+/* ===== MODAL DISCOUNT GRID ===== */
+.modal-discount-grid {
+    margin-top: 10px;
+    padding: 15px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--gold-primary);
+}
+
+.discount-grid-header {
+    font-weight: 600;
+    color: var(--gold-primary);
+    margin-bottom: 10px;
+}
+
+.discount-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.volume-tier {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.modal-volume-pricing .volume-tier.active {
+    background: #fff3cd;  /* Mesmo amarelo clarinho das thumbnails */
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #333;  /* Texto escuro para boa legibilidade */
+}
+
+.modal-volume-pricing .volume-tier.active .tier-price {
+    color: #f4a020;  /* Laranja dourado como nas thumbnails */
+    font-weight: 700;
+}
+
+.final-price-row {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 2px solid var(--gold-primary);
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--gold-primary);
+}
+
+/* ===== PREÇO NO MODAL HEADER - VERDE ===== */
+#modalPhotoCounter .modal-price-badge {
+    background: #27ae60;  /* Verde */
+    color: white !important;  /* Texto branco */
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    margin-right: 5px;
+}
+
+/* Se quiser adicionar ícone de tag */
+#modalPhotoCounter .modal-price-badge::before {
+    content: '\f02b';  /* Ícone de tag do Font Awesome */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    margin-right: 5px;
+    font-size: 0.8rem;
+}
+
+/* ===== VOLUME PRICING NO MODAL - IGUAL THUMBNAILS ===== */
+.modal-discount-grid {
+    display: block;
+    width: 100%;
+    padding: 10px 40px;
+    background: transparent;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    text-align: center;
+}
+
+.modal-volume-pricing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.95rem;
+}
+
+.modal-volume-pricing .volume-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.modal-volume-pricing .volume-tier {
+    color: #333;
+}
+
+.modal-volume-pricing .tier-price {
+    color: var(--gold-primary);
+    font-weight: 600;
+}
+
+.modal-volume-pricing .tier-separator {
+    color: #ccc;
+    margin: 0 5px;
+}
+
+.modal-volume-pricing .cart-count {
+    margin-left: 15px;
+    color: #666;
+}
+
+.modal-volume-pricing .cart-count i {
+    color: var(--gold-primary);
+    margin-right: 5px;
 }
