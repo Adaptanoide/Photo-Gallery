@@ -67,15 +67,12 @@ router.post('/finalize', async (req, res) => {
             // 4. Criar referência da seleção (R2 não precisa criar pasta física)
             console.log(`📁 Preparando seleção para cliente ${clientName}...`);
 
-            // Criar objeto folderResult para compatibilidade
+            // No R2 as "pastas" são virtuais, apenas salvamos a referência
             const folderResult = {
                 success: true,
                 folderId: `selection-${clientCode}-${Date.now()}`,
-                folderName: `${clientName}_${new Date().toISOString().split('T')[0]}_${cart.totalItems}_items`,
-                path: 'VIRTUAL_PATH'
+                folderName: `${clientName}_${new Date().toISOString().split('T')[0]}_${cart.totalItems}_items`
             };
-
-            console.log(`✅ Seleção preparada: ${folderResult.folderName}`);
 
             console.log(`✅ Seleção preparada: ${folderResult.folderName}`);
 

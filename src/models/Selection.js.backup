@@ -240,7 +240,7 @@ const selectionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'finalized', 'cancelled', 'cancelling', 'approving', 'deleting', 'reverted'],
+        enum: ['pending', 'confirmed', 'finalized', 'cancelled', 'cancelling', 'approving', 'deleting'],
         default: 'pending',
         index: true
     },

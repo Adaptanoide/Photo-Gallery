@@ -7,7 +7,7 @@ const Product = require('../models/Product');
 class PhotoTagService {
 
     // ===== CONFIGURAÇÕES =====
-    static USE_VIRTUAL_SYSTEM = false; // Começa DESLIGADO para não quebrar nada
+    static USE_VIRTUAL_SYSTEM = true; // Começa DESLIGADO para não quebrar nada
 
     // Métodos virão aqui...
     // ===== MÉTODOS PRINCIPAIS =====

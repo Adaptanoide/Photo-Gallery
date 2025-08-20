@@ -255,7 +255,8 @@ class AdminSelections {
             'pending': '<i class="fas fa-clock"></i>',
             'confirmed': '<i class="fas fa-check-circle"></i>',
             'cancelled': '<i class="fas fa-times-circle"></i>',
-            'finalized': '<i class="fas fa-star"></i>'
+            'finalized': '<i class="fas fa-star"></i>',
+            'reverted': '<i class="fas fa-undo"></i>'  // ADICIONE ESTA LINHA
         };
         return icons[status] || '<i class="fas fa-question"></i>';
     }
@@ -266,7 +267,8 @@ class AdminSelections {
             'pending': 'Pending',
             'confirmed': 'Confirmed',
             'cancelled': 'Cancelled',
-            'finalized': 'SOLD'
+            'finalized': 'SOLD',
+            'reverted': 'REVERTED'  // ADICIONE ESTA LINHA
         };
         return statusMap[status] || status;
     }
@@ -292,6 +294,16 @@ class AdminSelections {
                 <button class="btn-action btn-cancel" onclick="adminSelections.cancelSelection('${selection.selectionId}')">
                     <i class="fas fa-times"></i>
                     Cancel
+                </button>
+            `;
+        }
+
+        // FINALIZED (SOLD) - adiciona botão Revert
+        if (selection.status === 'finalized') {
+            buttons += `
+                <button class="btn-action btn-warning" onclick="adminSelections.revertSold('${selection.selectionId}')">
+                    <i class="fas fa-undo"></i>
+                    Revert to Available
                 </button>
             `;
         }
@@ -775,6 +787,37 @@ class AdminSelections {
             // Fallback to alert
             const typeLabel = type.toUpperCase();
             alert(`[${typeLabel}] ${message}`);
+        }
+    }
+
+    // ===== REVERT SOLD TO AVAILABLE =====
+    async revertSold(selectionId) {
+        const confirmed = await UISystem.confirm(
+            'Revert Sold Items?',
+            'This will make all photos available again. Are you sure?'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/api/selections/${selectionId}/revert-sold`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    adminUser: 'admin',
+                    reason: 'Manual revert'
+                })
+            });
+
+            if (response.ok) {
+                UISystem.showToast('success', 'Photos reverted to available!');
+                setTimeout(() => this.loadSelections(), 2000);
+            } else {
+                throw new Error('Failed to revert');
+            }
+        } catch (error) {
+            console.error('Error reverting:', error);
+            UISystem.showToast('error', 'Error reverting selection');
         }
     }
 
