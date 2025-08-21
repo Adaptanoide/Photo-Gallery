@@ -457,9 +457,9 @@
 
 .category-info {
     background: rgba(58, 58, 66, 0.3);
-    padding: 1.5rem;
+    padding: 0.5rem;
     border-radius: var(--border-radius);
-    margin-bottom: 2rem;
+    margin-bottom: 0rem;
     border-left: 4px solid var(--gold-primary);
     backdrop-filter: blur(10px);
 }

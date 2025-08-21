@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const StorageService = require('../services/StorageService');
+const PhotoStatus = require('../models/PhotoStatus');
 
 // MAPEAMENTO: Google Drive ID → R2 Path
 const ID_TO_PATH_MAP = {
@@ -21,13 +22,13 @@ function convertToR2Path(idOrPath) {
     if (idOrPath && idOrPath.includes('/')) {
         return idOrPath;
     }
-    
+
     // Se é um ID do Google Drive, converter
     if (ID_TO_PATH_MAP[idOrPath]) {
         console.log(`🔄 Convertendo: ${idOrPath} → ${ID_TO_PATH_MAP[idOrPath]}`);
         return ID_TO_PATH_MAP[idOrPath];
     }
-    
+
     // Se não encontrou, retornar como está
     return idOrPath;
 }
@@ -35,26 +36,26 @@ function convertToR2Path(idOrPath) {
 router.get('/structure', async (req, res) => {
     try {
         let prefix = req.query.prefix || '';
-        
+
         // CONVERTER ID para PATH se necessário
         prefix = convertToR2Path(prefix);
-        
+
         console.log(`📂 Buscando estrutura de: ${prefix || '/'}`);
-        
+
         const result = await StorageService.getSubfolders(prefix);
-        
+
         // DEBUG: Ver o que retornou
         console.log('📊 RESULTADO DO R2:', {
             folders: result.folders?.length || 0,
             folderNames: result.folders?.map(f => f.name) || []
         });
-        
+
         // SE não tem pastas, tentar buscar fotos diretamente
         if (!result.folders || result.folders.length === 0) {
             console.log('🔄 Sem subpastas, buscando fotos...');
             const photosResult = await StorageService.getPhotos(prefix);
             console.log(`📸 Encontradas ${photosResult.photos?.length || 0} fotos`);
-            
+
             // Se tem fotos, retornar como hasImages
             if (photosResult.photos && photosResult.photos.length > 0) {
                 return res.json({
@@ -69,7 +70,7 @@ router.get('/structure', async (req, res) => {
                 });
             }
         }
-        
+
         // Adicionar estrutura compatível
         const structure = {
             hasSubfolders: result.folders && result.folders.length > 0,
@@ -77,18 +78,18 @@ router.get('/structure', async (req, res) => {
             hasImages: false,
             totalImages: 0
         };
-        
+
         res.json({
             success: true,
             structure: structure,
             prefix: prefix
         });
-        
+
     } catch (error) {
         console.error('❌ Erro ao buscar estrutura:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -97,16 +98,30 @@ router.get('/structure', async (req, res) => {
 router.get('/photos', async (req, res) => {
     try {
         let prefix = req.query.prefix || '';
-        
+
         // CONVERTER ID para PATH se necessário
         prefix = convertToR2Path(prefix);
-        
+
         console.log(`📸 Buscando fotos de: ${prefix}`);
-        
+
         const result = await StorageService.getPhotos(prefix);
-        
+
+        // NOVO: Filtrar fotos reservadas/vendidas
+        const reservedPhotos = await PhotoStatus.find({
+            'virtualStatus.status': { $in: ['reserved', 'sold'] }
+        }).select('fileName');
+
+        const reservedFileNames = new Set(reservedPhotos.map(p => p.fileName));
+        console.log(`🔒 Ocultando ${reservedFileNames.size} fotos reservadas/vendidas`);
+
+        // Filtrar apenas disponíveis
+        const availablePhotos = result.photos.filter(photo => {
+            const fileName = photo.fileName || photo.name.split('/').pop();
+            return !reservedFileNames.has(fileName);
+        });
+
         // Processar fotos
-        const photos = result.photos.map(photo => ({
+        const photos = availablePhotos.map(photo => ({
             id: photo.r2Key || photo.id,
             name: photo.name,
             fileName: photo.fileName,
@@ -115,7 +130,7 @@ router.get('/photos', async (req, res) => {
             size: photo.size,
             mimeType: photo.mimeType
         }));
-        
+
         res.json({
             success: true,
             photos: photos,
@@ -124,12 +139,12 @@ router.get('/photos', async (req, res) => {
             },
             totalPhotos: photos.length
         });
-        
+
     } catch (error) {
         console.error('❌ Erro ao buscar fotos:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });

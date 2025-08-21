@@ -276,10 +276,12 @@ class AdminSelections {
     // ===== GET ACTION BUTTONS =====
     getActionButtons(selection) {
         let buttons = '';
-
+        
         // VIEW para TODOS os status (sempre primeiro)
         buttons += `
-            <button class="special-btn-icon" onclick="adminSelections.viewSelection('${selection.selectionId}')" title="View Selection">
+            <button class="special-btn-icon btn-view" 
+                    onclick="adminSelections.viewSelection('${selection.selectionId}')" 
+                    data-tooltip="View Details">
                 <i class="fas fa-eye"></i>
             </button>
         `;
@@ -287,23 +289,26 @@ class AdminSelections {
         // PENDING - adiciona Mark as Sold e Cancel
         if (selection.status === 'pending') {
             buttons += `
-                <button class="btn-action btn-approve" onclick="adminSelections.approveSelection('${selection.selectionId}')">
+                <button class="special-btn-icon btn-approve" 
+                        onclick="adminSelections.approveSelection('${selection.selectionId}')"
+                        data-tooltip="Mark as Sold">
                     <i class="fas fa-check-circle"></i>
-                    Mark as Sold
                 </button>
-                <button class="btn-action btn-cancel" onclick="adminSelections.cancelSelection('${selection.selectionId}')">
-                    <i class="fas fa-times"></i>
-                    Cancel
+                <button class="special-btn-icon btn-cancel" 
+                        onclick="adminSelections.cancelSelection('${selection.selectionId}')"
+                        data-tooltip="Cancel Selection">
+                    <i class="fas fa-times-circle"></i>
                 </button>
             `;
         }
 
         // FINALIZED (SOLD) - adiciona botão Revert
-        if (selection.status === 'finalized') {
+        else if (selection.status === 'finalized') {
             buttons += `
-                <button class="btn-action btn-warning" onclick="adminSelections.revertSold('${selection.selectionId}')">
+                <button class="special-btn-icon btn-revert" 
+                        onclick="adminSelections.revertSold('${selection.selectionId}')"
+                        data-tooltip="Revert to Available">
                     <i class="fas fa-undo"></i>
-                    Revert to Available
                 </button>
             `;
         }
@@ -311,15 +316,13 @@ class AdminSelections {
         // CONFIRMED - adiciona Force Cancel (para limpeza)
         else if (selection.status === 'confirmed') {
             buttons += `
-                <button class="btn-action btn-force-cancel" onclick="adminSelections.forceCancelSelection('${selection.selectionId}')" title="Force cancellation for cleanup">
+                <button class="special-btn-icon btn-force" 
+                        onclick="adminSelections.forceCancelSelection('${selection.selectionId}')" 
+                        data-tooltip="⚠️ Force Cancel">
                     <i class="fas fa-exclamation-triangle"></i>
-                    Force Cancel
                 </button>
             `;
         }
-
-        // FINALIZED/SOLD - não adiciona mais nada (só View)
-        // CANCELLED - não adiciona mais nada (só View)
 
         return buttons;
     }
@@ -364,7 +367,7 @@ class AdminSelections {
 
         modalTitle.innerHTML = `
             <i class="fas fa-shopping-cart"></i>
-            Selection Details - ${selectionId}
+            Selection Details
         `;
 
         if (loading) {
@@ -417,80 +420,116 @@ class AdminSelections {
 
     // ===== RENDER SELECTION DETAILS =====
     renderSelectionDetails(selection) {
+        if (!selection) return '<p>No data available</p>';
+
+        // Agrupar items por categoria
+        const itemsByCategory = {};
+        selection.items.forEach(item => {
+            if (!itemsByCategory[item.category]) {
+                itemsByCategory[item.category] = [];
+            }
+            itemsByCategory[item.category].push(item);
+        });
+
+        // Formatar data
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
         return `
-            <div class="selection-summary">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Client</label>
-                        <div style="padding: 0.75rem; background: var(--luxury-dark); border-radius: var(--border-radius); color: var(--text-primary);">
-                            ${selection.clientName} (Code: ${selection.clientCode})
-                        </div>
+            <div class="selection-details-container">
+                <!-- Header Info -->
+                <div class="selection-info-grid">
+                    <div class="info-item">
+                        <label>Date:</label>
+                        <span>${formatDate(selection.createdAt)}</span>
                     </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <div style="padding: 0.75rem;">
-                            <span class="status-badge status-${selection.status}">
-                                ${this.getStatusIcon(selection.status)}
-                                ${this.getStatusText(selection.status)}
-                            </span>
-                        </div>
+                    <div class="info-item">
+                        <label>Client:</label>
+                        <span>${selection.clientName}</span>
                     </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Total Items</label>
-                        <div style="padding: 0.75rem; background: var(--luxury-dark); border-radius: var(--border-radius); color: var(--text-primary);">
-                            ${selection.totalItems} photos
-                        </div>
+                    <div class="info-item">
+                        <label>Code:</label>
+                        <span>${selection.clientCode}</span>
                     </div>
-                    <div class="form-group">
-                        <label>Total Value</label>
-                        <div style="padding: 0.75rem; background: var(--luxury-dark); border-radius: var(--border-radius); color: var(--success); font-weight: 600;">
-                            ${this.formatCurrency(selection.totalValue)}
-                        </div>
+                    <div class="info-item">
+                        <label>Status:</label>
+                        <span class="status-badge status-${selection.status}">
+                            ${this.getStatusIcon(selection.status)}
+                            ${this.getStatusText(selection.status)}
+                        </span>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Created</label>
-                        <div style="padding: 0.75rem; background: var(--luxury-dark); border-radius: var(--border-radius); color: var(--text-primary);">
-                            ${this.formatDate(selection.createdAt)}
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Selection ID</label>
-                        <div style="padding: 0.75rem; background: var(--luxury-dark); border-radius: var(--border-radius); color: var(--gold-primary); font-family: monospace;">
-                            ${selection.selectionId}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            ${selection.items && selection.items.length > 0 ? `
-                <div class="selection-items" style="margin-top: 2rem;">
-                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Selected Items</h4>
-                    <div style="max-height: 300px; overflow-y: auto; background: var(--luxury-dark); border-radius: var(--border-radius); padding: 1rem;">
-                        ${selection.items.map((item, index) => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-subtle);">
-                                <div>
-                                    <strong style="color: var(--text-primary);">${item.fileName}</strong>
-                                    <br>
-                                    <small style="color: var(--text-muted);">${item.category}</small>
+                <!-- Items by Category -->
+                <div class="items-section">
+                    <h4 class="section-title">Items by Category</h4>
+                    <div class="categories-list">
+                        ${Object.entries(itemsByCategory).map(([category, items]) => `
+                            <div class="category-group">
+                                <div class="category-header" onclick="this.parentElement.classList.toggle('expanded')">
+                                    <div class="category-title">
+                                        <i class="fas fa-chevron-right toggle-icon"></i>
+                                        <span class="category-name">${category}</span>
+                                        <span class="category-info">${items.length} items | ${this.formatCurrency(items.reduce((sum, item) => sum + item.price, 0))}</span>
+                                    </div>
                                 </div>
-                                <div style="color: var(--success); font-weight: 600;">
-                                    ${this.formatCurrency(item.price)}
+                                <div class="category-items">
+                                    ${items.map(item => `
+                                        <div class="item-row">
+                                            <span class="item-name">${item.fileName}</span>
+                                            <span class="item-price">${this.formatCurrency(item.price)}</span>
+                                        </div>
+                                    `).join('')}
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                 </div>
-            ` : ''}
+
+                <!-- Summary -->
+                <div class="selection-summary-footer">
+                    <div class="summary-row">
+                        <span>Total items:</span>
+                        <span>${selection.totalItems || selection.items.length}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span>${this.formatCurrency(selection.totalValue)}</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>TOTAL:</span>
+                        <span class="total-value">${this.formatCurrency(selection.totalValue)}</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="modal-actions">
+                    <button class="btn-modal-action btn-download" onclick="adminSelections.downloadSelectionPDF('${selection.selectionId}')">
+                        <i class="fas fa-download"></i>
+                        Download PDF
+                    </button>
+                    <button class="btn-modal-action btn-print" onclick="adminSelections.printSelection('${selection.selectionId}')">
+                        <i class="fas fa-print"></i>
+                        Print
+                    </button>
+                    <button class="btn-modal-action btn-close" onclick="adminSelections.hideSelectionModal()">
+                        <i class="fas fa-times"></i>
+                        Close
+                    </button>
+                </div>
+            </div>
         `;
     }
 
-    // ===== HIDE SELECTION MODAL =====
+    // Adicione também a função hideSelectionModal se não existir:
     hideSelectionModal() {
         const modal = document.getElementById('selectionDetailsModal');
         if (modal) {

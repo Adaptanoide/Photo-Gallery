@@ -137,6 +137,62 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// ===== GET SINGLE SELECTION DETAILS =====
+// Adicione DEPOIS de router.get('/stats', ...) e ANTES de router.post('/:selectionId/approve', ...)
+
+router.get('/:selectionId', async (req, res) => {
+    try {
+        const { selectionId } = req.params;
+        
+        // Buscar a seleção com todos os dados populados
+        const selection = await Selection.findOne({ selectionId })
+            .populate('items.productId');
+        
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Selection not found'
+            });
+        }
+
+        // Formatar os dados para o frontend
+        const formattedSelection = {
+            selectionId: selection.selectionId,
+            clientCode: selection.clientCode,
+            clientName: selection.clientName,
+            status: selection.status,
+            selectionType: selection.selectionType || 'regular',
+            createdAt: selection.createdAt,
+            updatedAt: selection.updatedAt,
+            expiresAt: selection.expiresAt,
+            items: selection.items.map(item => ({
+                productId: item.productId?._id,
+                fileName: item.fileName,
+                category: item.category,
+                price: item.price || 0,
+                thumbnailUrl: item.thumbnailUrl,
+                originalPath: item.originalPath
+            })),
+            totalItems: selection.totalItems || selection.items.length,
+            totalValue: selection.totalValue || selection.items.reduce((sum, item) => sum + (item.price || 0), 0),
+            movementLog: selection.movementLog || []
+        };
+
+        res.json({
+            success: true,
+            selection: formattedSelection
+        });
+
+    } catch (error) {
+        console.error('Error fetching selection details:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching selection details',
+            error: error.message
+        });
+    }
+});
+
 /**
  * POST /api/selections/:selectionId/approve
  * Aprovar seleção - mover para SYSTEM_SOLD e marcar produtos como 'sold'
@@ -190,7 +246,7 @@ router.post('/:selectionId/approve', async (req, res) => {
             const driveFileIds = selection.items.map(item => item.driveFileId);
 
             // Usar PhotoTagService para marcar como sold
-            const tagResult = await PhotoTagService.approveSelection('TEMP_1755710291299');
+            const tagResult = await PhotoTagService.approveSelection(selection.selectionId);
 
             console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como SOLD`);
             console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
@@ -312,7 +368,7 @@ router.post('/:selectionId/cancel', async (req, res) => {
             console.log('🏷️ [TAGS] Liberando fotos para disponível...');
 
             // Usar PhotoTagService para cancelar seleção
-            const tagResult = await PhotoTagService.cancelSelection('TEMP_1755711675758');
+            const tagResult = await PhotoTagService.cancelSelection(selection.selectionId);
 
             console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como AVAILABLE`);
             console.log('📁 [TAGS] Nenhuma reversão física realizada!');
