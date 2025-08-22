@@ -1691,6 +1691,70 @@ class SpecialSelectionBuilder {
         }, 100);
     }
 
+    // Toggle Rate Rules Section
+    toggleRateRules(show) {
+        const section = document.getElementById('rateRulesSection');
+        const priceInput = document.getElementById('luxuryPriceInput');
+
+        if (show) {
+            section.style.display = 'block';
+            // Preencher primeiro rate com o preço base
+            const firstPriceInput = section.querySelector('.rate-price');
+            if (firstPriceInput && priceInput.value) {
+                firstPriceInput.value = priceInput.value;
+            }
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    // Add new rate rule
+    addRateRule() {
+        const rulesList = document.getElementById('rateRulesList');
+        const lastRule = rulesList.lastElementChild;
+        const lastTo = lastRule ? parseInt(lastRule.querySelector('.rate-to').value) : 0;
+
+        const newRule = document.createElement('div');
+        newRule.className = 'rate-rule-item';
+        newRule.innerHTML = `
+            <span>From</span>
+            <input type="number" class="rate-from" value="${lastTo + 1}" min="1" readonly>
+            <span>to</span>
+            <input type="number" class="rate-to" value="${lastTo + 10}" min="${lastTo + 2}">
+            <span>→ $</span>
+            <input type="number" class="rate-price" step="0.01" placeholder="0.00">
+            <span class="rate-remove" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </span>
+        `;
+
+        rulesList.appendChild(newRule);
+    }
+
+    // Get rate rules from modal
+    getRateRules() {
+        const pricingType = document.querySelector('input[name="pricingType"]:checked').value;
+
+        if (pricingType === 'fixed') {
+            return null; // Sem rate rules
+        }
+
+        const rules = [];
+        const ruleItems = document.querySelectorAll('.rate-rule-item');
+
+        ruleItems.forEach(item => {
+            const from = parseInt(item.querySelector('.rate-from').value);
+            const to = parseInt(item.querySelector('.rate-to').value) || null;
+            const price = parseFloat(item.querySelector('.rate-price').value);
+
+            if (price > 0) {
+                rules.push({ from, to, price });
+            }
+        });
+
+        return rules.length > 0 ? rules : null;
+    }
+
     confirmAddCategoryLuxury() {
         const categoryName = document.getElementById('luxuryNameInput').value.trim();
         if (!categoryName) {
@@ -1704,8 +1768,11 @@ class SpecialSelectionBuilder {
             id: `custom_${Date.now()}`,
             name: categoryName,
             customPrice: customPrice,
+            rateRules: this.getRateRules(), // ← ADICIONAR ESTA LINHA
             photos: []
         };
+
+        console.log('📤 Categoria criada no frontend:', JSON.stringify(newCategory, null, 2));
 
         // Adicionar foto(s) pendente(s)
         if (this.pendingPhotosForNewCategory) {
@@ -2409,6 +2476,7 @@ class SpecialSelectionBuilder {
                 customCategories: this.customCategories.map(category => ({
                     name: category.name,
                     customPrice: category.customPrice || 0,
+                    rateRules: category.rateRules || [],
                     photos: category.photos.map(photo => ({
                         id: photo.id,
                         name: photo.name,

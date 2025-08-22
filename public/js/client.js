@@ -17,6 +17,12 @@ window.navigationState = {
     currentPhotoIndex: 0
 };
 
+// Guardar rate rules de Special Selection
+let specialSelectionRateRules = null;
+let specialSelectionBasePrice = null;
+// Guardar se é Special Selection
+let isSpecialSelection = false;
+
 // Alias local para compatibilidade
 const navigationState = window.navigationState;
 
@@ -265,6 +271,20 @@ async function showCategories() {
         const session = JSON.parse(savedSession);
         if (session.user?.accessType === 'special') {
             console.log('⭐ Special Selection ativa - mostrando categorias virtuais');
+            // Marcar globalmente como Special Selection
+            isSpecialSelection = true;
+
+            // Esconder sidebar para Special Selection
+            const sidebar = document.getElementById('filterSidebar');
+            if (sidebar) {
+                sidebar.style.display = 'none';
+                // Ajustar largura do container principal
+                const mainContainer = document.querySelector('.main-container');
+                if (mainContainer) {
+                    mainContainer.style.marginLeft = '0';
+                    mainContainer.style.width = '100%';
+                }
+            }
 
             try {
                 // Buscar categorias especiais do backend
@@ -590,6 +610,45 @@ async function loadPhotos(folderId) {
         const categoryPrice = await loadCategoryPrice(folderId);
         showPhotosGallery(data.photos, data.folder.name, categoryPrice);
 
+        // Inicializar Price Progress Bar AQUI - onde data existe!
+        if (window.PriceProgressBar) {
+            // Marcar como Special Selection
+            isSpecialSelection = (data.clientType === 'special');
+            console.log('🎯 MARCADO como Special Selection:', isSpecialSelection);
+
+            // CONTROLAR SIDEBAR - SEMPRE, NÃO SÓ COM RATE RULES!
+            const sidebar = document.getElementById('filterSidebar');
+            if (sidebar) {
+                if (isSpecialSelection) {
+                    sidebar.style.display = 'none';
+                    // Ajustar largura do container principal
+                    const mainContainer = document.querySelector('.main-container');
+                    if (mainContainer) {
+                        mainContainer.style.marginLeft = '0';
+                        mainContainer.style.width = '100%';
+                    }
+                } else {
+                    sidebar.style.display = 'block';
+                    // Restaurar largura original
+                    const mainContainer = document.querySelector('.main-container');
+                    if (mainContainer) {
+                        mainContainer.style.marginLeft = '220px';
+                        mainContainer.style.width = 'calc(100% - 220px)';
+                    }
+                }
+            }
+
+            // Se for Special Selection com rate rules, usar eles
+            if (data.clientType === 'special' && data.rateRules) {
+                // Guardar rate rules globalmente para usar no fullscreen
+                specialSelectionRateRules = data.rateRules;
+                specialSelectionBasePrice = data.baseCategoryPrice;
+                window.PriceProgressBar.renderSpecialSelection(data.rateRules, data.baseCategoryPrice);
+            } else {
+                window.PriceProgressBar.init(navigationState.currentFolderId);
+            }
+        }
+
         // 🌟 NOVO: Guardar o nome da categoria para Special Selection
         navigationState.currentCategoryName = data.folder.name;
 
@@ -633,12 +692,6 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     } else {
         // Sem preço
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
-    }
-
-
-    // Inicializar Price Progress Bar
-    if (window.PriceProgressBar) {
-        window.PriceProgressBar.init(navigationState.currentFolderId);  // ✅ CORRETO
     }
 
     // Gerar grid de fotos
@@ -748,6 +801,27 @@ window.PriceProgressBar = {
             console.error('Error loading price ranges:', error);
             this.hide();
         }
+    },
+
+    renderSpecialSelection(rateRules, basePrice) {
+        console.log('📊 Renderizando Rate Rules de Special Selection:', rateRules);
+
+        // Formatar rate rules como ranges
+        const formattedRanges = rateRules.map(rule => ({
+            min: rule.from,
+            max: rule.to,
+            price: rule.price
+        }));
+
+        this.currentRanges = formattedRanges;
+        this.currentType = 'special-volume';
+
+        // Renderizar usando o mesmo visual
+        this.render({
+            ranges: formattedRanges,
+            appliedType: 'volume',
+            basePrice: basePrice
+        });
     },
 
     render(data) {
@@ -978,6 +1052,11 @@ function getCurrentCategoryDisplayName() {
 
 async function updateModalPriceInfo(photo) {
     try {
+        // Se não recebeu photo, pegar a foto atual do modal
+        if (!photo && navigationState.currentPhotos && navigationState.currentPhotoIndex >= 0) {
+            photo = navigationState.currentPhotos[navigationState.currentPhotoIndex];
+        }
+
         let priceInfo = null;
         let currentFolderId = navigationState.currentFolderId;
 
@@ -997,8 +1076,25 @@ async function updateModalPriceInfo(photo) {
         // BUSCAR OS RANGES DE VOLUME
         const savedSession = localStorage.getItem('sunshineSession');
         const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
-        const rangeResponse = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(currentFolderId)}&clientCode=${encodeURIComponent(clientCode)}`);
-        const rangeData = await rangeResponse.json();
+        let rangeData;
+
+        // Se for Special Selection, usar rate rules salvos
+        if (specialSelectionRateRules) {
+            rangeData = {
+                success: true,
+                data: {
+                    ranges: specialSelectionRateRules.map(rule => ({
+                        min: rule.from,
+                        max: rule.to,
+                        price: rule.price
+                    }))
+                }
+            };
+        } else {
+            // Senão, buscar normalmente
+            const rangeResponse = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(currentFolderId)}&clientCode=${encodeURIComponent(clientCode)}`);
+            rangeData = await rangeResponse.json();
+        }
 
         console.log('🔍 RANGES DO MODAL:', rangeData);
         console.log('🔍 TEM RANGES?:', rangeData?.data?.ranges);
@@ -1019,6 +1115,9 @@ async function updateModalPriceInfo(photo) {
             document.getElementById('modalPhotoSize').innerHTML = '';
             document.getElementById('modalPhotoDate').innerHTML = '';
 
+            // DEBUG - REMOVER DEPOIS
+            console.log('🔍 DEBUG Modal - rangeData:', rangeData);
+            console.log('🔍 DEBUG Modal - specialSelectionRateRules:', specialSelectionRateRules);
             // GRID DE VOLUME - USAR OS RANGES
             const gridEl = document.getElementById('modalDiscountGrid');
             if (gridEl && rangeData.success && rangeData.data && rangeData.data.ranges && rangeData.data.ranges.length > 0) {

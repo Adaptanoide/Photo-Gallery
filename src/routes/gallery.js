@@ -236,7 +236,10 @@ router.get('/photos', verifyClientToken, async (req, res) => {
                             name: category.categoryDisplayName || category.categoryName
                         },
                         totalPhotos: photos.length,
-                        clientType: 'special'
+                        clientType: 'special',
+                        // ADICIONAR RATE RULES SE EXISTIR
+                        rateRules: category.rateRules && category.rateRules.length > 0 ? category.rateRules : null,
+                        baseCategoryPrice: category.baseCategoryPrice || category.customPrice || 99
                     });
                 }
             }

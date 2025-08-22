@@ -126,6 +126,23 @@ const selectionSchema = new mongoose.Schema({
             type: Number,
             default: 0
         },
+        // ADICIONAR AQUI O RATE RULES:
+        rateRules: [{
+            from: {
+                type: Number,
+                required: true,
+                min: 1
+            },
+            to: {
+                type: Number,
+                default: null  // null = unlimited (21+)
+            },
+            price: {
+                type: Number,
+                required: true,
+                min: 0
+            }
+        }],
         // ✅ NOVOS CAMPOS PARA GOOGLE DRIVE
         googleDriveFolderId: {
             type: String,

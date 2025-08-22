@@ -108,7 +108,7 @@ router.post('/', async (req, res) => {
         const existingActive = await Selection.findOne({
             clientCode: clientCode,
             selectionType: 'special',
-            status: { $nin: ['finalized', 'cancelled'] }  // NÃO finalizadas ou canceladas
+            status: { $nin: ['finalized', 'cancelled', 'reverted'] }  // NÃO finalizadas, canceladas ou revertidas
         });
 
         if (existingActive) {
@@ -783,11 +783,13 @@ router.post('/:selectionId/process-async', async (req, res) => {
 
         // 1.5. SALVAR DADOS RECEBIDOS NO BANCO (MAPEANDO CAMPOS)
         const { customCategories } = req.body;
+        console.log('📦 Categorias recebidas do frontend:', JSON.stringify(customCategories, null, 2));
         if (customCategories && customCategories.length > 0) {
             // Mapear campos do frontend para o schema MongoDB
             const mappedCategories = customCategories.map(cat => ({
                 categoryName: cat.name,
                 baseCategoryPrice: cat.customPrice || 0,
+                rateRules: cat.rateRules || [],  // ← ADICIONAR ESTA LINHA
                 photos: cat.photos.map(photo => ({
                     photoId: photo.id,
                     fileName: photo.name,
@@ -798,6 +800,8 @@ router.post('/:selectionId/process-async', async (req, res) => {
                     }
                 }))
             }));
+
+            console.log('🔄 Mapeado para MongoDB:', JSON.stringify(mappedCategories, null, 2));
 
             selection.customCategories = mappedCategories;
             await selection.save();
