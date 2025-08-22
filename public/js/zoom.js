@@ -169,6 +169,10 @@ class PhotoZoomSimplified {
         if (newZoom === this.state.zoom) return;
 
         this.state.zoom = newZoom;
+        // Carregar original em zoom 1.8+ (2 cliques)
+        if (newZoom >= 1.8 && !this.originalLoading && !this.originalLoaded) {
+            this.loadOriginalImage();
+        }
         this.state.isZoomed = newZoom > 1;
 
         // SEMPRE centralizar - remove problema de pan
@@ -182,6 +186,9 @@ class PhotoZoomSimplified {
 
     resetZoom() {
         this.state.zoom = 1;
+        // Resetar flags da original
+        this.originalLoaded = false;
+        this.originalLoading = false;
         this.state.panX = 0;
         this.state.panY = 0;
         this.state.isZoomed = false;
@@ -352,6 +359,57 @@ class PhotoZoomSimplified {
         }
         console.log('🔍 Zoom simplificado destruído');
     }
+    
+    // ADICIONE AQUI A NOVA FUNÇÃO! ←←←←←
+    loadOriginalImage() {
+        // Evitar carregar múltiplas vezes
+        if (this.originalLoading || this.originalLoaded) return;
+
+        this.originalLoading = true;
+        console.log('🔍 Zoom 1.8+ detectado! Carregando original...');
+
+        const img = this.elements.image;
+        if (!img) return;
+
+        // Pegar o ID da foto atual
+        const photos = window.navigationState?.currentPhotos || [];
+        const currentIndex = window.navigationState?.currentPhotoIndex || 0;
+        const photo = photos[currentIndex];
+
+        if (!photo || !photo.id) {
+            console.warn('Foto não encontrada para carregar original');
+            this.originalLoading = false;
+            return;
+        }
+
+        // URL da original
+        const originalUrl = `https://images.sunshinecowhides-gallery.com/${photo.id}`;
+
+        // Carregar em background
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            // Substituir suavemente
+            img.style.transition = 'opacity 0.3s';
+            img.style.opacity = '0.8';
+
+            setTimeout(() => {
+                img.src = originalUrl;
+                img.style.opacity = '1';
+                this.originalLoaded = true;
+                this.originalLoading = false;
+                console.log('✅ Original carregada! Qualidade máxima ativa.');
+            }, 300);
+        };
+
+        tempImg.onerror = () => {
+            console.error('❌ Erro ao carregar original');
+            this.originalLoading = false;
+        };
+
+        // Iniciar carregamento
+        tempImg.src = originalUrl;
+    }
+
 }
 
 // ===== SUBSTITUIR INSTÂNCIA GLOBAL =====
