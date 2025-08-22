@@ -1184,20 +1184,21 @@ async function loadPhotoInModal(photoId) {
         const img = document.getElementById('modalPhoto');
         if (!img) return;
 
-        // CORREÇÃO: usar window.currentCategoryPhotos ou a variável correta
-        const photos = window.currentCategoryPhotos || window.allPhotos || [];
+        // CORREÇÃO: usar navigationState.currentPhotos
+        const photos = navigationState.currentPhotos || [];
         const photo = photos.find(p => p.id === photoId);
 
         if (!photo) {
-            // Fallback: carregar direto se não encontrar
-            console.warn('Foto não encontrada, usando ID direto');
-            img.src = ImageUtils.getFullImageUrl({ id: photoId });
+            console.warn('Foto não encontrada na lista');
+            // Tentar carregar mesmo assim
+            const fallbackPhoto = { id: photoId, r2Key: photoId };
+            img.src = ImageUtils.getFullImageUrl(fallbackPhoto);
             return;
         }
 
         // TESTE: Carregamento progressivo para Sheepskins
         if (photo.r2Key && photo.r2Key.includes('Sheepskins')) {
-            console.log('⚡ Carregamento progressivo ativado');
+            console.log('⚡ Carregamento progressivo ativado para Sheepskins');
 
             // 1. Thumbnail primeiro
             img.src = ImageUtils.getThumbnailUrl(photo);
@@ -1214,10 +1215,12 @@ async function loadPhotoInModal(photoId) {
                 const displayImg = new Image();
                 displayImg.src = displayUrl;
                 img.dataset.hdSrc = displayUrl;
+                console.log('📦 Display preparado para zoom');
             };
             previewImg.src = previewUrl;
         } else {
-            // Categorias não otimizadas
+            // Outras categorias - modo normal
+            console.log('📷 Carregamento normal (não-Sheepskins)');
             img.src = ImageUtils.getFullImageUrl(photo);
         }
 
@@ -1232,10 +1235,10 @@ async function loadPhotoInModal(photoId) {
 
     } catch (error) {
         console.error('Erro ao carregar foto:', error);
-        // Fallback seguro
+        // Fallback de emergência
         const img = document.getElementById('modalPhoto');
-        if (img) {
-            img.src = ImageUtils.getFullImageUrl({ id: photoId });
+        if (img && photoId) {
+            img.src = `https://images.sunshinecowhides-gallery.com/${photoId}`;
         }
     }
 }
