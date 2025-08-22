@@ -1180,28 +1180,19 @@ async function updateModalPriceInfo(photo) {
 
 // Carregar foto em alta resolução no modal
 async function loadPhotoInModal(photoId) {
-    const img = document.getElementById('modalPhoto');
-    const spinner = document.getElementById('photoLoadingSpinner');
-
-    if (!img) return;
-
     try {
-        // Mostrar spinner se existir
-        if (spinner) {
-            spinner.style.display = 'block';
-            img.style.display = 'none';
-        }
+        const img = document.getElementById('modalPhoto');
+        if (!img) return;
 
-        // Buscar foto na lista atual
+        // CORREÇÃO: usar navigationState.currentPhotos
         const photos = navigationState.currentPhotos || [];
         const photo = photos.find(p => p.id === photoId);
 
         if (!photo) {
             console.warn('Foto não encontrada na lista');
-            // Fallback direto
-            img.src = `https://images.sunshinecowhides-gallery.com/${photoId}`;
-            if (spinner) spinner.style.display = 'none';
-            img.style.display = 'block';
+            // Tentar carregar mesmo assim
+            const fallbackPhoto = { id: photoId, r2Key: photoId };
+            img.src = ImageUtils.getFullImageUrl(fallbackPhoto);
             return;
         }
 
@@ -1226,25 +1217,14 @@ async function loadPhotoInModal(photoId) {
                 img.dataset.hdSrc = displayUrl;
                 console.log('📦 Display preparado para zoom');
             };
-            previewImg.onerror = function () {
-                console.warn('Preview falhou, usando original');
-                img.src = ImageUtils.getFullImageUrl(photo);
-            };
             previewImg.src = previewUrl;
-
         } else {
             // Outras categorias - modo normal
             console.log('📷 Carregamento normal (não-Sheepskins)');
             img.src = ImageUtils.getFullImageUrl(photo);
         }
 
-        // Handlers comuns
         img.onload = function () {
-            if (spinner) {
-                spinner.style.display = 'none';
-            }
-            img.style.display = 'block';
-
             if (window.ZoomManager) {
                 window.ZoomManager.initialize(img);
                 if (img.dataset.hdSrc) {
@@ -1253,19 +1233,11 @@ async function loadPhotoInModal(photoId) {
             }
         };
 
-        img.onerror = function () {
-            console.error('Erro carregando imagem:', photoId);
-            if (spinner) spinner.style.display = 'none';
-            img.style.display = 'block';
-            // Fallback
-            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Error loading photo</text></svg>';
-        };
-
     } catch (error) {
         console.error('Erro ao carregar foto:', error);
-        if (spinner) spinner.style.display = 'none';
-        if (img) {
-            img.style.display = 'block';
+        // Fallback de emergência
+        const img = document.getElementById('modalPhoto');
+        if (img && photoId) {
             img.src = `https://images.sunshinecowhides-gallery.com/${photoId}`;
         }
     }
