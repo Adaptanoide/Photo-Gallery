@@ -1184,14 +1184,22 @@ async function loadPhotoInModal(photoId) {
         const img = document.getElementById('modalPhoto');
         if (!img) return;
 
-        const photo = currentPhotos.find(p => p.id === photoId);
-        if (!photo) return;
+        // CORREÇÃO: usar window.currentCategoryPhotos ou a variável correta
+        const photos = window.currentCategoryPhotos || window.allPhotos || [];
+        const photo = photos.find(p => p.id === photoId);
+
+        if (!photo) {
+            // Fallback: carregar direto se não encontrar
+            console.warn('Foto não encontrada, usando ID direto');
+            img.src = ImageUtils.getFullImageUrl({ id: photoId });
+            return;
+        }
 
         // TESTE: Carregamento progressivo para Sheepskins
         if (photo.r2Key && photo.r2Key.includes('Sheepskins')) {
             console.log('⚡ Carregamento progressivo ativado');
 
-            // 1. Thumbnail primeiro (instantâneo)
+            // 1. Thumbnail primeiro
             img.src = ImageUtils.getThumbnailUrl(photo);
 
             // 2. Preview em background
@@ -1201,16 +1209,15 @@ async function loadPhotoInModal(photoId) {
                 img.src = previewUrl;
                 console.log('✅ Preview carregado');
 
-                // 3. Display em background para zoom
+                // 3. Display para zoom
                 const displayUrl = ImageUtils.getDisplayUrl(photo);
                 const displayImg = new Image();
                 displayImg.src = displayUrl;
                 img.dataset.hdSrc = displayUrl;
-                console.log('📦 Display pré-carregando...');
             };
             previewImg.src = previewUrl;
         } else {
-            // Categorias não otimizadas ainda
+            // Categorias não otimizadas
             img.src = ImageUtils.getFullImageUrl(photo);
         }
 
@@ -1225,10 +1232,10 @@ async function loadPhotoInModal(photoId) {
 
     } catch (error) {
         console.error('Erro ao carregar foto:', error);
-        // Fallback para original em caso de erro
+        // Fallback seguro
         const img = document.getElementById('modalPhoto');
-        if (img && currentPhoto) {
-            img.src = ImageUtils.getFullImageUrl(currentPhoto);
+        if (img) {
+            img.src = ImageUtils.getFullImageUrl({ id: photoId });
         }
     }
 }
