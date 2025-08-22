@@ -795,10 +795,12 @@
 }
 
 .btn-close {
-    background: var(--gold-primary);  /* MUDOU - era transparente */
+    background: var(--gold-primary);
+    /* MUDOU - era transparente */
     border: 1px solid var(--gold-primary);
     font-size: 1.2rem;
-    color: white;  /* MUDOU - era dourado */
+    color: white;
+    /* MUDOU - era dourado */
     cursor: pointer;
     padding: 0.5rem;
     border-radius: var(--border-radius);
@@ -811,8 +813,10 @@
 }
 
 .btn-close:hover {
-    background: white;  /* INVERTEU */
-    color: var(--gold-primary);  /* INVERTEU */
+    background: white;
+    /* INVERTEU */
+    color: var(--gold-primary);
+    /* INVERTEU */
     border-color: var(--gold-primary);
 }
 
@@ -862,6 +866,28 @@
 
 .modal-body img:active {
     cursor: grabbing;
+}
+
+/* ===== FIX CARREGAMENTO PROGRESSIVO ===== */
+#modalPhoto {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    transition: opacity 0.3s ease;
+}
+
+/* Efeito suave de loading */
+#modalPhoto.loading {
+    opacity: 0.8;
+}
+
+/* Garantir que thumbnail não fique pequena */
+#modalPhoto[src*="thumbnail"] {
+    min-width: 100%;
+    min-height: auto;
 }
 
 /* Navigation Buttons Luxuosos */
@@ -1437,9 +1463,11 @@
 }
 
 .zoom-btn-simple {
-    background: var(--gold-primary) !important;  /* DOURADO */
+    background: var(--gold-primary) !important;
+    /* DOURADO */
     border: 1px solid var(--gold-primary);
-    color: white !important;  /* ÍCONE BRANCO */
+    color: white !important;
+    /* ÍCONE BRANCO */
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -1453,8 +1481,10 @@
 }
 
 .zoom-btn-simple:hover:not(:disabled) {
-    background: white !important;  /* BRANCO no hover */
-    color: var(--gold-primary) !important;  /* ÍCONE DOURADO */
+    background: white !important;
+    /* BRANCO no hover */
+    color: var(--gold-primary) !important;
+    /* ÍCONE DOURADO */
     border-color: var(--gold-primary);
     /* SEM transform scale */
 }
@@ -3300,15 +3330,18 @@
 }
 
 .modal-volume-pricing .volume-tier.active {
-    background: #fff3cd;  /* Mesmo amarelo clarinho das thumbnails */
+    background: #fff3cd;
+    /* Mesmo amarelo clarinho das thumbnails */
     padding: 4px 10px;
     border-radius: 4px;
     font-weight: 600;
-    color: #333;  /* Texto escuro para boa legibilidade */
+    color: #333;
+    /* Texto escuro para boa legibilidade */
 }
 
 .modal-volume-pricing .volume-tier.active .tier-price {
-    color: #f4a020;  /* Laranja dourado como nas thumbnails */
+    color: #f4a020;
+    /* Laranja dourado como nas thumbnails */
     font-weight: 700;
 }
 
@@ -3325,8 +3358,10 @@
 
 /* ===== PREÇO NO MODAL HEADER - VERDE ===== */
 #modalPhotoCounter .modal-price-badge {
-    background: #27ae60;  /* Verde */
-    color: white !important;  /* Texto branco */
+    background: #27ae60;
+    /* Verde */
+    color: white !important;
+    /* Texto branco */
     padding: 6px 12px;
     border-radius: 12px;
     font-weight: 600;
@@ -3338,7 +3373,8 @@
 
 /* Se quiser adicionar ícone de tag */
 #modalPhotoCounter .modal-price-badge::before {
-    content: '\f02b';  /* Ícone de tag do Font Awesome */
+    content: '\f02b';
+    /* Ícone de tag do Font Awesome */
     font-family: "Font Awesome 6 Free";
     font-weight: 900;
     margin-right: 5px;

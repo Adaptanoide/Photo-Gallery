@@ -104,14 +104,14 @@ async function processPhoto(photoPath, relativePath, completed) {
 
     try {
         console.log(`\n📸 [${stats.processed + 1}/${stats.total}] Processando: ${relativePath}`);
-        
+
         // Verificar se preview já existe
         const previewKey = `_preview/${relativePath}`;
         const displayKey = `_display/${relativePath}`;
-        
+
         let previewExists = await existsInR2(previewKey);
         let displayExists = await existsInR2(displayKey);
-        
+
         if (previewExists && displayExists) {
             console.log(`✅ Já existe no R2, pulando...`);
             stats.skipped++;
@@ -121,21 +121,21 @@ async function processPhoto(photoPath, relativePath, completed) {
 
         // Ler imagem original
         const imageBuffer = await fs.promises.readFile(photoPath);
-        
+
         // Criar e fazer upload do preview se não existir
         if (!previewExists) {
-            console.log(`  📐 Criando preview (400KB)...`);
+            console.log(`  📐 Criando preview (800KB)...`);
             const previewBuffer = await sharp(imageBuffer)
-                .webp({ 
-                    quality: 85,
+                .webp({
+                    quality: 90,  // AUMENTADO de 85 para 90
                     effort: 4
                 })
-                .resize(1400, 1400, { 
+                .resize(1400, 1400, {
                     fit: 'inside',
                     withoutEnlargement: true
                 })
                 .toBuffer();
-            
+
             const uploaded = await uploadToR2(previewBuffer, previewKey);
             if (uploaded) {
                 console.log(`  ✅ Preview uploaded: ${(previewBuffer.length / 1024).toFixed(0)}KB`);
@@ -144,18 +144,18 @@ async function processPhoto(photoPath, relativePath, completed) {
 
         // Criar e fazer upload do display se não existir
         if (!displayExists) {
-            console.log(`  📐 Criando display (1MB)...`);
+            console.log(`  📐 Criando display (2MB)...`);
             const displayBuffer = await sharp(imageBuffer)
-                .webp({ 
-                    quality: 92,
+                .webp({
+                    quality: 95,  // AUMENTADO de 92 para 95
                     effort: 4
                 })
-                .resize(2000, 2000, { 
+                .resize(2400, 2400, {  // AUMENTADO de 2000 para 2400
                     fit: 'inside',
                     withoutEnlargement: true
                 })
                 .toBuffer();
-            
+
             const uploaded = await uploadToR2(displayBuffer, displayKey);
             if (uploaded) {
                 console.log(`  ✅ Display uploaded: ${(displayBuffer.length / 1024).toFixed(0)}KB`);
@@ -164,14 +164,14 @@ async function processPhoto(photoPath, relativePath, completed) {
 
         stats.processed++;
         completed.add(relativePath);
-        
+
         // Salvar progresso a cada 10 fotos
         if (stats.processed % 10 === 0) {
             saveProgress(completed);
             const elapsed = (Date.now() - stats.startTime) / 1000 / 60;
             const rate = stats.processed / elapsed;
             const remaining = (stats.total - stats.processed) / rate;
-            console.log(`\n📊 Progresso: ${stats.processed}/${stats.total} (${(stats.processed/stats.total*100).toFixed(1)}%)`);
+            console.log(`\n📊 Progresso: ${stats.processed}/${stats.total} (${(stats.processed / stats.total * 100).toFixed(1)}%)`);
             console.log(`⏱️  Tempo restante estimado: ${remaining.toFixed(0)} minutos`);
         }
 
@@ -184,12 +184,12 @@ async function processPhoto(photoPath, relativePath, completed) {
 // Encontrar todas as fotos recursivamente
 function findAllPhotos(dir, baseDir = dir) {
     let photos = [];
-    
+
     const items = fs.readdirSync(dir);
     for (const item of items) {
         const fullPath = path.join(dir, item);
         const stat = fs.statSync(fullPath);
-        
+
         if (stat.isDirectory()) {
             photos = photos.concat(findAllPhotos(fullPath, baseDir));
         } else if (item.endsWith('.webp') || item.endsWith('.jpg')) {
@@ -197,7 +197,7 @@ function findAllPhotos(dir, baseDir = dir) {
             photos.push({ fullPath, relativePath });
         }
     }
-    
+
     return photos;
 }
 
@@ -205,7 +205,7 @@ function findAllPhotos(dir, baseDir = dir) {
 async function processBatch(photos, completed) {
     for (let i = 0; i < photos.length; i += BATCH_SIZE) {
         const batch = photos.slice(i, i + BATCH_SIZE);
-        await Promise.all(batch.map(photo => 
+        await Promise.all(batch.map(photo =>
             processPhoto(photo.fullPath, photo.relativePath, completed)
         ));
     }
@@ -215,7 +215,7 @@ async function processBatch(photos, completed) {
 async function main() {
     console.log('🚀 PROCESSADOR DE FOTOS SUNSHINE - R2 OPTIMIZATION');
     console.log('===================================================\n');
-    
+
     // Verificar se diretório existe
     if (!fs.existsSync(LOCAL_PHOTOS_DIR)) {
         console.error(`❌ Diretório ${LOCAL_PHOTOS_DIR} não encontrado!`);
@@ -225,16 +225,16 @@ async function main() {
 
     // Carregar progresso anterior
     const completed = loadProgress();
-    
+
     // Encontrar todas as fotos
     console.log('🔍 Procurando fotos...');
     const photos = findAllPhotos(LOCAL_PHOTOS_DIR);
     stats.total = photos.length;
-    
+
     console.log(`📊 Encontradas ${stats.total} fotos para processar`);
     console.log(`⏭️  ${completed.size} já processadas anteriormente`);
     console.log(`📁 Categorias que serão puladas: ${CATEGORIES_TO_SKIP.join(', ')}\n`);
-    
+
     if (stats.total === 0) {
         console.log('Nenhuma foto para processar!');
         return;
@@ -243,7 +243,7 @@ async function main() {
     // Processar
     console.log('🎬 Iniciando processamento...\n');
     await processBatch(photos, completed);
-    
+
     // Estatísticas finais
     const elapsed = (Date.now() - stats.startTime) / 1000 / 60;
     console.log('\n\n✅ PROCESSAMENTO COMPLETO!');
@@ -253,7 +253,7 @@ async function main() {
     console.log(`⏭️  Puladas: ${stats.skipped}`);
     console.log(`❌ Erros: ${stats.errors}`);
     console.log(`⏱️  Tempo total: ${elapsed.toFixed(1)} minutos`);
-    
+
     // Limpar arquivo de progresso se completou
     if (stats.processed + stats.skipped === stats.total) {
         fs.unlinkSync(PROGRESS_FILE);
