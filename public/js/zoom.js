@@ -29,7 +29,8 @@ class PhotoZoomSimplified {
             lastTouchDistance: 0,
             isZoomed: false,
             imageOriginalSize: { width: 0, height: 0 },
-            containerSize: { width: 0, height: 0 }
+            containerSize: { width: 0, height: 0 },
+            isLoadingOriginal: false  // ← ADICIONE ESTA LINHA
         };
 
         this.elements = {};
@@ -149,7 +150,11 @@ class PhotoZoomSimplified {
         // Atualizar tamanhos quando imagem carregar
         this.elements.image.addEventListener('load', () => {
             this.updateImageInfo();
-            this.resetZoom(); // Sempre iniciar resetado
+            // Só resetar se NÃO estiver carregando original
+            if (!this.state.isLoadingOriginal) {
+                this.resetZoom(); // Resetar apenas para fotos novas
+            }
+            this.state.isLoadingOriginal = false; // Limpar flag
         });
     }
 
@@ -359,13 +364,14 @@ class PhotoZoomSimplified {
         }
         console.log('🔍 Zoom simplificado destruído');
     }
-    
+
     // ADICIONE AQUI A NOVA FUNÇÃO! ←←←←←
     loadOriginalImage() {
         // Evitar carregar múltiplas vezes
         if (this.originalLoading || this.originalLoaded) return;
 
         this.originalLoading = true;
+        this.state.isLoadingOriginal = true; // ← ADICIONE ESTA LINHA
         console.log('🔍 Zoom 1.8+ detectado! Carregando original...');
 
         const img = this.elements.image;
@@ -420,7 +426,7 @@ function initializePhotoZoom() {
         photoZoomInstance = new PhotoZoomSimplified({
             minZoom: 0.8,
             maxZoom: 3,
-            zoomStep: 0.5,
+            zoomStep: 0.4,  // ← MUDAR PARA 0.4 (igual ao constructor)
             enableWheel: false,      // DESABILITADO
             enableTouch: true,
             enableButtons: true,
