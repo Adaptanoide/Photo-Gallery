@@ -1206,7 +1206,7 @@ async function loadPhotoInModal(photoId) {
         }
 
         // TESTE: Carregamento progressivo para Sheepskins
-        if ((photo.r2Key && photo.r2Key.includes('Sheepskins')) || (photo.id && photo.id.includes('Sheepskins'))) {
+        if (photo.id && (photo.id.includes('.webp') || photo.id.includes('.jpg'))) {
             console.log('⚡ Carregamento progressivo ativado para Sheepskins');
 
             // 1. Thumbnail primeiro

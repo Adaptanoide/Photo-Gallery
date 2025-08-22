@@ -52,9 +52,8 @@ window.ImageUtils.getPreviewUrl = function (photo) {
     const r2Key = photo.r2Key || photo.id;
     if (!r2Key) return this.getThumbnailUrl(photo);
 
-    // TESTE: só para Sheepskins por enquanto
-    if (r2Key.includes('Sheepskins')) {
-        console.log('🚀 Usando preview otimizado para Sheepskins');
+    if (r2Key && r2Key.includes('.webp')) {
+        console.log('🚀 Usando preview otimizado');
         return `${this.CDN_BASE}/_preview/${r2Key}`;
     }
 
@@ -66,9 +65,8 @@ window.ImageUtils.getDisplayUrl = function (photo) {
     const r2Key = photo.r2Key || photo.id;
     if (!r2Key) return this.getFullImageUrl(photo);
 
-    // TESTE: só para Sheepskins por enquanto
-    if (r2Key.includes('Sheepskins')) {
-        console.log('🎯 Usando display otimizado para Sheepskins');
+    if (r2Key && r2Key.includes('.webp')) {
+        console.log('🎯 Usando display otimizado');
         return `${this.CDN_BASE}/_display/${r2Key}`;
     }
 
