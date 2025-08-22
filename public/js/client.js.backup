@@ -1180,56 +1180,39 @@ async function updateModalPriceInfo(photo) {
 
 // Carregar foto em alta resolução no modal
 async function loadPhotoInModal(photoId) {
+    const img = document.getElementById('modalPhoto');
+    const spinner = document.getElementById('photoLoadingSpinner');
+
     try {
-        const img = document.getElementById('modalPhoto');
-        if (!img) return;
+        spinner.style.display = 'block';
+        img.style.display = 'none';
 
-        const photo = currentPhotos.find(p => p.id === photoId);
-        if (!photo) return;
+        // USAR NOSSA ROTA DE CACHE!
+        const imageUrl = `https://images.sunshinecowhides-gallery.com/${photoId}`;
 
-        // TESTE: Carregamento progressivo para Sheepskins
-        if (photo.r2Key && photo.r2Key.includes('Sheepskins')) {
-            console.log('⚡ Carregamento progressivo ativado');
+        img.src = imageUrl;
+        img.onload = () => {
+            spinner.style.display = 'none';
+            img.style.display = 'block';
+        };
 
-            // 1. Thumbnail primeiro (instantâneo)
-            img.src = ImageUtils.getThumbnailUrl(photo);
-
-            // 2. Preview em background
-            const previewUrl = ImageUtils.getPreviewUrl(photo);
-            const previewImg = new Image();
-            previewImg.onload = function () {
-                img.src = previewUrl;
-                console.log('✅ Preview carregado');
-
-                // 3. Display em background para zoom
-                const displayUrl = ImageUtils.getDisplayUrl(photo);
-                const displayImg = new Image();
-                displayImg.src = displayUrl;
-                img.dataset.hdSrc = displayUrl;
-                console.log('📦 Display pré-carregando...');
-            };
-            previewImg.src = previewUrl;
-        } else {
-            // Categorias não otimizadas ainda
-            img.src = ImageUtils.getFullImageUrl(photo);
-        }
-
-        img.onload = function () {
-            if (window.ZoomManager) {
-                window.ZoomManager.initialize(img);
-                if (img.dataset.hdSrc) {
-                    window.ZoomManager.hdSource = img.dataset.hdSrc;
-                }
+        img.onerror = () => {
+            console.error('Erro carregando imagem:', photoId);
+            spinner.style.display = 'none';
+            img.style.display = 'block';
+            // Fallback
+            const currentPhoto = navigationState.currentPhotos[navigationState.currentPhotoIndex];
+            if (currentPhoto) {
+                img.src = ImageUtils.getFullImageUrl(currentPhoto);
+            } else {
+                img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f8f9fa"/><text x="50%" y="50%" font-family="Arial" font-size="16" fill="%23666" text-anchor="middle" dy=".3em">Error loading photo</text></svg>';
             }
         };
 
     } catch (error) {
-        console.error('Erro ao carregar foto:', error);
-        // Fallback para original em caso de erro
-        const img = document.getElementById('modalPhoto');
-        if (img && currentPhoto) {
-            img.src = ImageUtils.getFullImageUrl(currentPhoto);
-        }
+        console.error('Error loading photo:', error);
+        spinner.style.display = 'none';
+        img.style.display = 'block';
     }
 }
 
