@@ -18,6 +18,7 @@ class SpecialSelectionBuilder {
         this.selectedStockPhotos = new Set(); // ← NOVA LINHA
         this.isProcessingClick = false; // ← ADICIONAR ESTA LINHA
         this.draggedPhoto = null; // ← NOVA LINHA
+        this.draggedPhotos = []; // Para múltiplas fotos
         this.isLoading = false;
 
         // Estado da navegação (similar ao client.js)
@@ -81,6 +82,8 @@ class SpecialSelectionBuilder {
         this.btnRefreshStock?.addEventListener('click', () => this.refreshStock());
         this.btnPreviewSelection?.addEventListener('click', () => this.previewSelection());
         this.btnBuilderHelp?.addEventListener('click', () => this.showHelpModal());
+        this.btnSelectAll = document.getElementById('btnSelectAll');
+        this.btnSelectAll?.addEventListener('click', () => this.selectAllVisiblePhotos());
 
         // Event listeners para seleção múltipla
         this.btnMoveSelected?.addEventListener('click', () => this.showMoveSelectedModal());
@@ -183,7 +186,7 @@ class SpecialSelectionBuilder {
                 }
             }
 
-            const response = await fetch(`/api/gallery/photos?prefix=${folderId}`, {
+            const response = await fetch(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`, {
                 headers: this.getAuthHeaders()
             });
 
@@ -477,6 +480,9 @@ class SpecialSelectionBuilder {
 
             console.log(`📊 No photos selected - controls disabled`);
         }
+
+        // Atualizar botão Select All
+        this.updateSelectAllButton();
     }
 
     clearAllSelections() {
@@ -494,6 +500,70 @@ class SpecialSelectionBuilder {
         this.updateSelectionCounter();
 
         console.log('🧹 Seleção limpa');
+    }
+
+    selectAllVisiblePhotos() {
+        // Verificar se estamos vendo fotos (não categorias)
+        if (this.stockPhotosElement.style.display === 'none') {
+            console.warn('📋 Não há fotos visíveis para selecionar');
+            return;
+        }
+
+        // Pegar todas as fotos visíveis que NÃO foram movidas
+        const visiblePhotos = this.stockPhotosElement.querySelectorAll('.photo-card:not(.photo-moved)');
+
+        // Se já tem todas selecionadas, desselecionar todas
+        if (this.selectedStockPhotos.size === visiblePhotos.length) {
+            // Desselecionar todas
+            this.clearAllSelections();
+            console.log('📋 Todas as fotos desmarcadas');
+        } else {
+            // Selecionar todas
+            visiblePhotos.forEach(photoCard => {
+                const photoId = photoCard.dataset.photoId;
+                if (photoId && !this.selectedStockPhotos.has(photoId)) {
+                    this.selectedStockPhotos.add(photoId);
+
+                    // Marcar checkbox
+                    const checkbox = document.getElementById(`photo_${photoId}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+
+                    // Adicionar classe visual
+                    photoCard.classList.add('selected-checkbox');
+                }
+            });
+
+            console.log(`📋 ${visiblePhotos.length} fotos selecionadas`);
+        }
+
+        // Atualizar contador
+        this.updateSelectionCounter();
+
+        // Atualizar texto do botão
+        this.updateSelectAllButton();
+    }
+
+    updateSelectAllButton() {
+        const btnSelectAll = document.getElementById('btnSelectAll');
+        if (!btnSelectAll) return;
+
+        const visiblePhotos = this.stockPhotosElement.querySelectorAll('.photo-card:not(.photo-moved)');
+
+        if (this.selectedStockPhotos.size === visiblePhotos.length && visiblePhotos.length > 0) {
+            // Todas selecionadas - mudar visual
+            btnSelectAll.innerHTML = 'None';
+            btnSelectAll.title = 'Deselect All';
+            btnSelectAll.classList.remove('btn-outline');
+            btnSelectAll.classList.add('btn-primary');
+        } else {
+            // Não todas selecionadas
+            btnSelectAll.innerHTML = 'All';
+            btnSelectAll.title = 'Select All Photos';
+            btnSelectAll.classList.remove('btn-primary');
+            btnSelectAll.classList.add('btn-outline');
+        }
     }
 
     showMoveSelectedModal() {
@@ -1002,20 +1072,6 @@ class SpecialSelectionBuilder {
         console.log(`🎉 Movimentação em massa concluída: ${totalPhotos} fotos para ${categoryName}`);
     }
 
-    // Função auxiliar para selecionar todas as fotos visíveis
-    selectAllVisiblePhotos() {
-        const visiblePhotos = document.querySelectorAll('#stockPhotos .photo-card:not(.photo-selected)');
-
-        visiblePhotos.forEach(photoCard => {
-            const photoId = photoCard.dataset.photoId;
-            if (photoId) {
-                this.togglePhotoSelection(photoId);
-            }
-        });
-
-        console.log(`📋 Selecionadas todas as fotos visíveis`);
-    }
-
     // ===== NAVEGAÇÃO HIERÁRQUICA (ADAPTADO DO CLIENT.JS) =====
     async navigateToCategory(folderId, categoryName) {
         console.log(`📂 Navegando para categoria: ${categoryName} (${folderId})`);
@@ -1055,7 +1111,7 @@ class SpecialSelectionBuilder {
             }
 
             // Usar mesma API que client.js
-            const response = await fetch(`/api/gallery/structure?prefix=${folderId}`, {
+            const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`, {
                 headers: this.getAuthHeaders()
             });
 
@@ -1100,19 +1156,17 @@ class SpecialSelectionBuilder {
 
     showSubfolders(folders) {
         console.log(`📁 Mostrando ${folders.length} subpastas`);
-
         const html = folders.map(folder => `
-        <div class="category-item" data-folder-id="${folder.id}" data-category-name="${folder.name}">
-            <div class="category-icon">
-                <i class="fas fa-${folder.hasImages ? 'images' : 'folder'}"></i>
+            <div class="category-item" data-folder-id="${folder.id}" data-category-name="${folder.name}">
+                <div class="category-icon">
+                    <i class="fas fa-${folder.hasImages ? 'images' : 'folder'}"></i>
+                </div>
+                <div class="category-name">${folder.name}</div>
+                <div class="category-stats">
+                    ${(folder.imageCount > 0 && !folder.totalSubfolders) ? `${folder.imageCount} photos` : ''}
+                </div>
             </div>
-            <div class="category-name">${folder.name}</div>
-            <div class="category-stats">
-                ${(folder.imageCount > 0 && !folder.totalSubfolders) ? `${folder.imageCount} photos` : ''}
-            </div>
-        </div>
-    `).join('');
-
+        `).join('');
         this.stockCategoriesElement.innerHTML = html;
 
         // Event listeners para navegação mais profunda
@@ -1226,23 +1280,65 @@ class SpecialSelectionBuilder {
         photoCards.forEach(card => {
             // Drag start
             card.addEventListener('dragstart', async (e) => {
-                this.draggedPhoto = {
-                    id: card.dataset.photoId,
-                    name: card.dataset.photoName,
-                    url: card.dataset.photoUrl,
-                    thumbnailLink: card.querySelector('.photo-image').src,
-                    originalPrice: await this.getCurrentCategoryBasePrice(),
-                    sourceCategory: this.getCurrentCategoryName(),
-                    sourcePath: this.getCurrentCategoryPath()
-                };
-                card.classList.add('dragging');
-                console.log('🎯 Drag iniciado:', this.draggedPhoto.name);
+                // Verificar se há seleção múltipla
+                if (this.selectedStockPhotos.size > 0 && this.selectedStockPhotos.has(card.dataset.photoId)) {
+                    // ARRASTAR TODAS AS SELECIONADAS
+                    this.draggedPhotos = [];
+
+                    for (const photoId of this.selectedStockPhotos) {
+                        const photoCard = document.querySelector(`[data-photo-id="${photoId}"]`);
+                        if (photoCard) {
+                            this.draggedPhotos.push({
+                                id: photoId,
+                                name: photoCard.dataset.photoName,
+                                url: photoCard.dataset.photoUrl,
+                                thumbnailLink: photoCard.querySelector('.photo-image').src,
+                                originalPrice: await this.getCurrentCategoryBasePrice(),
+                                sourceCategory: this.getCurrentCategoryName(),
+                                sourcePath: this.getCurrentCategoryPath()
+                            });
+                            photoCard.classList.add('dragging');
+                        }
+                    }
+
+                    // Mostrar contador
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('text/plain', `Moving ${this.draggedPhotos.length} photos`);
+                    console.log(`🎯 Arrastando ${this.draggedPhotos.length} fotos selecionadas`);
+
+                } else {
+                    // ARRASTAR SÓ UMA (comportamento original)
+                    this.draggedPhotos = [{
+                        id: card.dataset.photoId,
+                        name: card.dataset.photoName,
+                        url: card.dataset.photoUrl,
+                        thumbnailLink: card.querySelector('.photo-image').src,
+                        originalPrice: await this.getCurrentCategoryBasePrice(),
+                        sourceCategory: this.getCurrentCategoryName(),
+                        sourcePath: this.getCurrentCategoryPath()
+                    }];
+                    card.classList.add('dragging');
+                    console.log('🎯 Arrastando 1 foto individual');
+                }
+
+                // Manter compatibilidade
+                this.draggedPhoto = this.draggedPhotos[0];
             });
 
             // Drag end
             card.addEventListener('dragend', (e) => {
-                card.classList.remove('dragging');
+                // Remover classe de todas as fotos arrastadas
+                if (this.draggedPhotos && this.draggedPhotos.length > 0) {
+                    this.draggedPhotos.forEach(photo => {
+                        const photoCard = document.querySelector(`[data-photo-id="${photo.id}"]`);
+                        if (photoCard) {
+                            photoCard.classList.remove('dragging');
+                        }
+                    });
+                }
+
                 this.draggedPhoto = null;
+                this.draggedPhotos = [];
                 console.log('🎯 Drag finalizado');
             });
 
@@ -1384,34 +1480,84 @@ class SpecialSelectionBuilder {
     }
 
     handlePhotoDrop(e, categoryIndex) {
-        if (!this.draggedPhoto) {
+        if (!this.draggedPhotos || this.draggedPhotos.length === 0) {
             console.warn('⚠️ Nenhuma foto sendo arrastada');
             return;
         }
 
-        console.log(`📸 Drop da foto ${this.draggedPhoto.name} na categoria ${categoryIndex}`);
+        console.log(`📸 Drop de ${this.draggedPhotos.length} fotos na categoria ${categoryIndex}`);
 
         if (categoryIndex === 'new-category') {
-            // Criar nova categoria
-            this.createCategoryWithPhoto(this.draggedPhoto);
+            // SEMPRE USAR O MODAL LUXURY
+            if (this.draggedPhotos.length === 1) {
+                // Uma foto - comportamento existente
+                this.createCategoryWithPhoto(this.draggedPhotos[0]);
+            } else {
+                // MÚLTIPLAS FOTOS - USAR MODAL LUXURY TAMBÉM!
+                this.pendingPhotosForNewCategory = this.draggedPhotos; // Guardar todas as fotos
+
+                // Abrir modal luxury
+                const modal = document.getElementById('addCategoryModalLuxury');
+                modal.classList.add('active');
+
+                // Atualizar título do modal para mostrar quantidade
+                const modalTitle = modal.querySelector('.special-modal-title');
+                if (modalTitle) {
+                    modalTitle.innerHTML = `<i class="fas fa-plus"></i> Add New Category (${this.draggedPhotos.length} photos)`;
+                }
+
+                // Pré-preencher preço base se disponível
+                const priceInput = document.getElementById('luxuryPriceInput');
+                if (priceInput && this.draggedPhotos[0].originalPrice) {
+                    priceInput.value = this.draggedPhotos[0].originalPrice || '99.00';
+                }
+
+                // Focar no nome
+                setTimeout(() => {
+                    const nameInput = document.getElementById('luxuryNameInput');
+                    if (nameInput) {
+                        nameInput.focus();
+                        nameInput.select();
+                    }
+                }, 100);
+            }
         } else {
-            // Adicionar à categoria existente
-            this.addPhotoToCategory(this.draggedPhoto, categoryIndex);
+            // Adicionar múltiplas fotos à categoria existente
+            this.draggedPhotos.forEach(photo => {
+                const existingPhoto = this.customCategories[categoryIndex].photos.find(p => p.id === photo.id);
+                if (!existingPhoto) {
+                    this.customCategories[categoryIndex].photos.push(photo);
+                    this.selectedPhotos.push(photo);
+                }
+            });
+
+            // Limpar checkboxes após mover
+            this.clearAllSelections();
+
+            this.renderCustomCategories();
+            this.renderStockPhotos();
+            this.updateCounts();
         }
 
         this.draggedPhoto = null;
+        this.draggedPhotos = [];
     }
 
     // ===== GERENCIAMENTO DE CATEGORIAS CUSTOMIZADAS =====
     createCategoryWithPhoto(photo) {
-        // Armazenar foto para usar após confirmação  
-        this.pendingPhotoForNewCategory = photo;
+        // Armazenar foto(s) para usar após confirmação
+        if (Array.isArray(photo)) {
+            this.pendingPhotosForNewCategory = photo; // Array de fotos
+        } else {
+            this.pendingPhotoForNewCategory = photo; // Foto única (compatibilidade)
+        }
 
         // Abrir modal luxury
         document.getElementById('addCategoryModalLuxury').classList.add('active');
 
-        // Pré-preencher preço da foto
-        document.getElementById('luxuryPriceInput').value = photo.originalPrice || '0.00';
+        // Pré-preencher preço
+        const priceToUse = Array.isArray(photo) ? photo[0].originalPrice : photo.originalPrice;
+        document.getElementById('luxuryPriceInput').value = priceToUse || '99.00';
 
         // Focar no input de nome
         setTimeout(() => {
@@ -1554,7 +1700,6 @@ class SpecialSelectionBuilder {
 
         const customPrice = parseFloat(document.getElementById('luxuryPriceInput').value) || null;
 
-        // ✅ USAR MESMA LÓGICA da função original
         const newCategory = {
             id: `custom_${Date.now()}`,
             name: categoryName,
@@ -1562,31 +1707,73 @@ class SpecialSelectionBuilder {
             photos: []
         };
 
-        // ✅ NOVO: Se há foto pendente (drag & drop), adicionar à categoria
-        if (this.pendingPhotoForNewCategory) {
+        // Adicionar foto(s) pendente(s)
+        if (this.pendingPhotosForNewCategory) {
+            // Múltiplas fotos
+            newCategory.photos = this.pendingPhotosForNewCategory;
+            this.selectedPhotos.push(...this.pendingPhotosForNewCategory);
+            this.pendingPhotosForNewCategory = null;
+            // Limpar seleção de checkboxes
+            this.clearAllSelections();
+
+            // Limpar seleção
+            this.clearAllSelections();
+
+        } else if (this.pendingPhotoForNewCategory) {
+            // Uma foto (compatibilidade)
             newCategory.photos.push(this.pendingPhotoForNewCategory);
             this.selectedPhotos.push(this.pendingPhotoForNewCategory);
-
-            // Limpar foto pendente
             this.pendingPhotoForNewCategory = null;
         }
 
         this.customCategories.push(newCategory);
         this.renderCustomCategories();
-
-        // Se havia foto, re-renderizar lado esquerdo também
-        if (newCategory.photos.length > 0) {
-            this.renderStockPhotos();
-        }
-
+        this.renderStockPhotos();
         this.updateCounts();
 
         console.log('✅ Nova categoria luxury criada:', newCategory);
 
-        // Fechar modal e limpar campos
+        // Fechar modal e resetar
         document.getElementById('addCategoryModalLuxury').classList.remove('active');
         document.getElementById('luxuryNameInput').value = 'Custom Category';
-        document.getElementById('luxuryPriceInput').value = '0.00';
+        document.getElementById('luxuryPriceInput').value = '99.00';
+
+        // Resetar título do modal
+        const modalTitle = document.querySelector('#addCategoryModalLuxury .special-modal-title');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="fas fa-plus"></i> Add New Category';
+        }
+    }
+
+    cancelLuxuryModal() {
+        // Limpar classe dragging de TODAS as fotos
+        document.querySelectorAll('.photo-card.dragging').forEach(card => {
+            card.classList.remove('dragging');
+        });
+
+        // ADICIONAR: Limpar checkboxes também
+        this.clearAllSelections();
+
+        // Limpar dados pendentes
+        this.draggedPhoto = null;
+        this.draggedPhotos = [];
+        this.pendingPhotoForNewCategory = null;
+        this.pendingPhotosForNewCategory = null;
+
+        // Fechar modal
+        document.getElementById('addCategoryModalLuxury').classList.remove('active');
+
+        // Resetar campos
+        document.getElementById('luxuryNameInput').value = 'Custom Category';
+        document.getElementById('luxuryPriceInput').value = '99.00';
+
+        // Resetar título se tiver sido modificado
+        const modalTitle = document.querySelector('#addCategoryModalLuxury .special-modal-title');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="fas fa-plus"></i> Add New Category';
+        }
+
+        console.log('❌ Modal cancelado - fotos destorcidas');
     }
 
     editCustomCategory(categoryIndex) {
@@ -1683,7 +1870,7 @@ class SpecialSelectionBuilder {
 
             // Se não tem no header, buscar diretamente da API
             if (this.navigationState.currentFolderId) {
-                const response = await fetch(`/api/pricing/category-price?googleDriveId=${this.navigationState.currentFolderId}`);
+                const response = await fetch(`/api/pricing/category-price?googleDriveId=${encodeURIComponent(this.navigationState.currentFolderId)}`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1778,7 +1965,9 @@ class SpecialSelectionBuilder {
 
         // Carregar imagem (ID CORRIGIDO)
         const img = document.getElementById('modalPhoto');
-        img.src = photo.thumbnailLarge || photo.thumbnailLink?.replace('=s220', '=s1200') || photo.webViewLink;
+        // Usar imagem original do R2, não thumbnail!
+        const originalUrl = photo.url || photo.webViewLink;
+        img.src = originalUrl?.replace('/_thumbnails/', '/').replace('/thumbnails/', '/') || photo.webViewLink;
         img.alt = photo.name;
 
         // ✅ NOVO: Configurar loading para quando imagem carregar
@@ -2344,15 +2533,43 @@ class SpecialSelectionBuilder {
         console.log('🚀 Cache do estoque limpo - próxima navegação será atualizada');
     }
 
-    cancelBuilder() {
+    async cancelBuilder() {
         if (this.selectedPhotos.length > 0) {
             if (!confirm('You have unsaved changes. Are you sure you want to cancel?')) {
                 return;
             }
         }
 
-        console.log('❌ Cancelando builder...');
-        // TEMP: window.location.href = "/admin#special-selections";
+        console.log('❌ Cancelando e deletando seleção completamente...');
+
+        // Pegar o ID da seleção atual
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectionId = urlParams.get('selection');
+
+        if (selectionId) {
+            try {
+                // Token do admin
+                const adminToken = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+
+                // Deletar COMPLETAMENTE a seleção
+                const response = await fetch(`/api/special-selections/${selectionId}?returnPhotos=false`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                console.log('🗑️ Resposta da deleção:', data);
+
+            } catch (error) {
+                console.error('❌ Erro ao deletar:', error);
+            }
+        }
+
+        // Voltar para o admin
+        window.location.href = "/admin.html#special-selections";
     }
 
     // ===== UTILITÁRIOS =====
@@ -2425,6 +2642,16 @@ class SpecialSelectionBuilder {
 
     refreshStock() {
         console.log('🔄 Atualizando estoque...');
+
+        // LIMPAR CACHE ANTES DE RECARREGAR
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('photos_') || key.startsWith('folder_structure_')) {
+                localStorage.removeItem(key);
+            }
+        });
+        console.log('🧹 Cache limpo');
+
+        // Agora sim recarregar
         this.loadStockCategories();
     }
 
@@ -2643,7 +2870,7 @@ class SpecialSelectionBuilder {
                         <p class="luxury-message">${message.replace(/\n/g, '<br>')}</p>
                     </div>
                     <div class="luxury-modal-footer">
-                        <button class="luxury-btn" onclick="document.getElementById('luxurySuccessModal').remove(); sessionStorage.setItem('autoFilter', 'processing'); window.location.href='/admin#special-selections';">
+                        <button class="luxury-btn" onclick="document.getElementById('luxurySuccessModal').remove(); window.location.href='/admin.html#special-selections';">
                             <i class="fas fa-check"></i>
                             Continue
                         </button>
@@ -2682,4 +2909,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('🏗️ special-selection-builder.js carregado');
-

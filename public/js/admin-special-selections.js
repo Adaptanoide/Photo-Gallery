@@ -134,9 +134,14 @@ class AdminSpecialSelections {
         }
     }
 
-    async loadSpecialSelections() {
+    async loadSpecialSelections(filters = null) {
         try {
             console.log('📋 Carregando seleções especiais...');
+
+            // Se passaram filtros novos, atualiza this.filters
+            if (filters !== null) {
+                this.filters = filters;
+            }
 
             const params = new URLSearchParams({
                 page: this.currentPage,
@@ -164,6 +169,7 @@ class AdminSpecialSelections {
                 this.currentPage = data.pagination?.page || 1;
                 this.totalPages = data.pagination?.pages || 1;
                 console.log(`✅ ${this.specialSelections.length} seleções especiais carregadas`);
+                this.updateTable();  // ← ADICIONAR ESTA LINHA!
             } else {
                 throw new Error(data.message || 'Erro ao carregar seleções especiais');
             }
@@ -259,11 +265,13 @@ class AdminSpecialSelections {
                         <label class="special-filter-label">Status</label>
                         <select id="filterSpecialStatus" class="special-filter-select">
                             <option value="all">All Status</option>
-                            <option value="processing">⚙️ Processing</option>
-                            <option value="pending_approval">⏳ Pending Approval</option>
-                            <option value="active">✅ Active</option>
+                            <option value="draft">📝 Draft</option>
+                            <option value="pending_approval">🕐 Pending Approval</option>
                             <option value="inactive">⏸️ Inactive</option>
+                            <option value="active">✅ Active</option>
+                            <option value="finalized">✅ Finalized</option>
                             <option value="cancelled">❌ Cancelled</option>
+                            <option value="reverted">↩️ Reverted</option>
                         </select>
                     </div>
                     <div class="special-filter-group">
@@ -419,94 +427,122 @@ class AdminSpecialSelections {
     }
 
     getActionButtons(selection) {
-        // Se está processando, mostrar locked
+        // Usar o status processado (que distingue draft de pending_approval, etc)
         const realStatus = this.getProcessingStatus(selection);
-        if (realStatus === 'processing') {
-            return `
-                <div style="text-align: center;">
-                    <span style="color: #dbb934; font-size: 20px;">🔒</span>
-                    <br>
-                    <small style="color: #999;">Locked</small>
-                </div>
-            `;
-        }
-        // Se está deletando, mostrar locked
-        if (selection.status === 'deleting') {
-            return `
-                <div style="text-align: center;">
-                    <span style="color: #dc3545; font-size: 20px;">🔒</span>
-                    <br>
-                    <small style="color: #999;">Locked</small>
-                </div>
-            `;
-        }
-        // SOLD/FINALIZED - só View
-        if (selection.status === 'finalized') {
-            return `
-                <button class="special-btn-icon special-tooltip" 
-                        data-tooltip="View Details" 
-                        data-action="view" 
-                        data-id="${selection.selectionId}">
-                    <i class="fas fa-eye"></i>
-                </button>
-            `;
-        }
-        // PENDING APPROVAL - só View
-        if (selection.status === 'pending') {
-            return `
-                <button class="special-btn-icon special-tooltip" 
-                        data-tooltip="View Details" 
-                        data-action="view" 
-                        data-id="${selection.selectionId}">
-                    <i class="fas fa-eye"></i>
-                </button>
-        `;
-        }
 
-        // INACTIVE - Activate e Delete
-        if (selection.status === 'confirmed' && !selection.isActive) {
-            return `
-                <button class="special-btn-icon activate special-tooltip" 
-                        data-tooltip="Activate" 
-                        data-action="activate" 
-                        data-id="${selection.selectionId}">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="special-btn-icon delete special-tooltip" 
-                        data-tooltip="Delete" 
-                        data-action="delete" 
-                        data-id="${selection.selectionId}">
-                    <i class="fas fa-trash"></i>
-                </button>
-        `;
-        }
+        switch (realStatus) {
+            // DRAFT - Edit + Delete
+            case 'draft':
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="Continue Editing" 
+                            data-action="edit" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="special-btn-icon delete special-tooltip" 
+                            data-tooltip="Delete" 
+                            data-action="delete" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
 
-        // ACTIVE - só Deactivate  
-        if (selection.status === 'confirmed' && selection.isActive) {
-            return `
-                <button class="special-btn-icon special-tooltip" 
-                        data-tooltip="Deactivate" 
-                        data-action="deactivate" 
-                        data-id="${selection.selectionId}">
-                    <i class="fas fa-pause"></i>
-                </button>
-        `;
-        }
+            // PENDING APPROVAL - View only
+            case 'pending_approval':
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="View Details (Awaiting Approval)" 
+                            data-action="view" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                `;
 
-        // CANCELLED - só View
-        if (selection.status === 'cancelled') {
-            return `
-            <button class="special-btn-icon special-tooltip" 
-                    data-tooltip="View Details" 
-                    data-action="view" 
-                    data-id="${selection.selectionId}">
-                <i class="fas fa-eye"></i>
-            </button>
-        `;
-        }
+            // ACTIVE - Deactivate + Delete
+            case 'active':
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="Deactivate" 
+                            data-action="deactivate" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button class="special-btn-icon delete special-tooltip" 
+                            data-tooltip="Delete" 
+                            data-action="delete" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
 
-        // PROCESSING - nenhum botão
-        return '<span class="text-muted">Processing...</span>';
+            // INACTIVE - Activate + Delete
+            case 'inactive':
+                return `
+                    <button class="special-btn-icon activate special-tooltip" 
+                            data-tooltip="Activate" 
+                            data-action="activate" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="special-btn-icon delete special-tooltip" 
+                            data-tooltip="Delete" 
+                            data-action="delete" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+
+            // FINALIZED - View only
+            case 'finalized':
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="View Details (Sale Completed)" 
+                            data-action="view" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                `;
+
+            // CANCELLED - View + Delete
+            case 'cancelled':
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="View Details (Cancelled)" 
+                            data-action="view" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="special-btn-icon delete special-tooltip" 
+                            data-tooltip="Delete" 
+                            data-action="delete" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+
+            // REVERTED - View only  
+            case 'reverted':
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="View Details (Sale Reverted)" 
+                            data-action="view" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                `;
+
+            // DEFAULT - View only (segurança)
+            default:
+                return `
+                    <button class="special-btn-icon special-tooltip" 
+                            data-tooltip="View Details" 
+                            data-action="view" 
+                            data-id="${selection.selectionId}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                `;
+        }
     }
 
     renderClientOptions() {
@@ -743,8 +779,14 @@ class AdminSpecialSelections {
     closeModal() {
         console.log('🔒 Fechando modal...');
         const modal = document.getElementById('specialSelectionModal');
-        modal?.classList.remove('active');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';  // <-- ADICIONE ESTA LINHA!
+        }
         document.body.style.overflow = '';
+
+        // Resetar formulário também
+        this.resetForm();
     }
 
     resetForm() {
@@ -1079,9 +1121,6 @@ class AdminSpecialSelections {
     applyFilters() {
         const statusFilter = document.getElementById('filterSpecialStatus')?.value || 'all';
 
-        // ✅ ADICIONAR:
-
-        // Mapear filtros visuais para lógica do backend
         let backendFilters = {
             clientCode: document.getElementById('filterSpecialClient')?.value || '',
             search: document.getElementById('filterSpecialSearch')?.value || ''
@@ -1089,8 +1128,13 @@ class AdminSpecialSelections {
 
         // Converter status visual para filtros backend
         switch (statusFilter) {
-            case 'processing':
+            case 'draft':
                 backendFilters.status = 'pending';
+                backendFilters.hasItems = false;
+                break;
+            case 'pending_approval':
+                backendFilters.status = 'pending';
+                backendFilters.hasItems = true;
                 break;
             case 'active':
                 backendFilters.status = 'confirmed';
@@ -1100,27 +1144,25 @@ class AdminSpecialSelections {
                 backendFilters.status = 'confirmed';
                 backendFilters.isActive = false;
                 break;
+            case 'finalized':
+                backendFilters.status = 'finalized';
+                break;
             case 'cancelled':
                 backendFilters.status = 'cancelled';
                 break;
-            case 'pending_approval':
-                backendFilters.status = 'pending';
-                // Flag especial para diferenciar de processing
-                backendFilters.pendingApproval = true;
+            case 'reverted':
+                backendFilters.status = 'reverted';
                 break;
+            case 'all':
             default:
-                backendFilters.status = 'all';
-                backendFilters.isActive = 'all';
+                // Não filtrar por status
+                break;
         }
 
-        // ✅ ADICIONAR AQUI:
+        // ADICIONE ESTE LOG:
+        console.log('🔍 Filtros sendo enviados:', statusFilter, backendFilters);
 
-
-        this.filters = backendFilters;
-
-
-        this.currentPage = 1;
-        this.loadSpecialSelections().then(() => this.updateTable());
+        this.loadSpecialSelections(backendFilters);
     }
 
     goToPage(page) {
@@ -1278,32 +1320,29 @@ class AdminSpecialSelections {
             }
         }
 
-        return hasProcessing;
+        //return hasProcessing;
     }
 
 
     // ===== FUNÇÃO HELPER PARA DETERMINAR STATUS REAL =====
     getProcessingStatus(selection) {
-        // ADICIONAR ESTAS LINHAS NO INÍCIO:
-        if (selection.status === 'deleting') {
-            return 'deleting';
-        }
-        // Para special selections
         if (selection.selectionType === 'special') {
-            // PENDING com items VAZIO = está processando
-            if (selection.status === 'pending' && (!selection.items || selection.items.length === 0)) {
-                return 'processing';
+
+            // Distinguir entre DRAFT e PENDING APPROVAL
+            if (selection.status === 'pending') {
+                // Se tem items, cliente já finalizou = PENDING APPROVAL
+                if (selection.items && selection.items.length > 0) {
+                    return 'pending_approval';
+                }
+                // Sem items = ainda está sendo configurada = DRAFT
+                return 'draft';
             }
-            // PENDING com items PREENCHIDO = aguardando aprovação
-            if (selection.status === 'pending' && selection.items && selection.items.length > 0) {
-                return 'pending_approval';
-            }
-            // CONFIRMED = ver se está ativo ou não
+
+            // CONFIRMED = verificar se está ativo
             if (selection.status === 'confirmed') {
                 return selection.isActive ? 'active' : 'inactive';
             }
         }
-        // Outros status
         return selection.status;
     }
 
@@ -1312,13 +1351,14 @@ class AdminSpecialSelections {
         const realStatus = this.getProcessingStatus(selection);
 
         switch (realStatus) {
-            case 'processing': return 'processing';
-            case 'deleting': return 'deleting';
+            case 'draft': return 'draft';
+            case 'pending_approval': return 'pending-approval';
             case 'active': return 'active';
             case 'inactive': return 'inactive';
-            case 'pending_approval': return 'pending-approval';
             case 'finalized': return 'finalized';
             case 'cancelled': return 'cancelled';
+            case 'reverted': return 'reverted';
+            case 'deleting': return 'deleting';
             default: return 'unknown';
         }
     }
@@ -1327,13 +1367,14 @@ class AdminSpecialSelections {
         const realStatus = this.getProcessingStatus(selection);
 
         switch (realStatus) {
-            case 'processing': return '<i class="fas fa-spinner fa-spin"></i>';
-            case 'deleting': return '<i class="fas fa-spinner fa-spin"></i>';
-            case 'active': return '<i class="fas fa-check-circle"></i>';
-            case 'inactive': return '<i class="fas fa-pause-circle"></i>';
+            case 'draft': return '<i class="fas fa-pencil-alt"></i>';
             case 'pending_approval': return '<i class="fas fa-clock"></i>';
+            case 'active': return '<i class="fas fa-toggle-on"></i>';
+            case 'inactive': return '<i class="fas fa-toggle-off"></i>';
             case 'finalized': return '<i class="fas fa-check-double"></i>';
             case 'cancelled': return '<i class="fas fa-times-circle"></i>';
+            case 'reverted': return '<i class="fas fa-undo"></i>';
+            case 'deleting': return '<i class="fas fa-spinner fa-spin"></i>';
             default: return '<i class="fas fa-question-circle"></i>';
         }
     }
@@ -1341,18 +1382,23 @@ class AdminSpecialSelections {
     getStatusLabel(selection) {
         const realStatus = this.getProcessingStatus(selection);
 
-        switch (realStatus) {
-            case 'processing': return 'Processing...';
-            case 'deleting': return 'Deleting...';
-            case 'active': return 'Active';
-            case 'inactive': return 'Inactive';
-            case 'pending_approval': return 'Pending Approval';
-            case 'finalized': return 'FINALIZED';
-            case 'cancelled': return 'Cancelled';
-            default: return 'Unknown';
-        }
-    }
+        // Definir label e tooltip para cada status
+        const statusInfo = {
+            'draft': { label: 'DRAFT', tooltip: 'Still being configured' },
+            'pending_approval': { label: 'PENDING APPROVAL', tooltip: 'Waiting admin approval' },
+            'active': { label: 'ACTIVE', tooltip: 'Client can access now' },
+            'inactive': { label: 'INACTIVE', tooltip: 'Paused - ready to activate' },
+            'finalized': { label: 'FINALIZED', tooltip: 'Sale completed successfully' },
+            'cancelled': { label: 'CANCELLED', tooltip: 'Rejected by admin' },
+            'reverted': { label: 'REVERTED', tooltip: 'Approved sale was reversed' },
+            'deleting': { label: 'DELETING...', tooltip: 'Being deleted' }
+        };
 
+        const info = statusInfo[realStatus] || { label: 'UNKNOWN', tooltip: 'Unknown status' };
+
+        // Retornar com data-tooltip para CSS tooltip
+        return `<span title="${info.tooltip}">${info.label}</span>`;
+    }
 }
 
 // ===== INICIALIZAÇÃO GLOBAL =====

@@ -252,14 +252,79 @@ function updateClientInterface(data) {
 }
 
 // ===== NAVEGAÇÃO DE CATEGORIAS =====
-
-// ===== NAVEGAÇÃO DE CATEGORIAS =====
 async function showCategories() {
     hideAllContainers();
     hideLoading();
     document.getElementById('categoriesContainer').style.display = 'grid';
 
     const containerEl = document.getElementById('categoriesContainer');
+
+    // ========== VERIFICAR SPECIAL SELECTION ==========
+    const savedSession = localStorage.getItem('sunshineSession');
+    if (savedSession) {
+        const session = JSON.parse(savedSession);
+        if (session.user?.accessType === 'special') {
+            console.log('⭐ Special Selection ativa - mostrando categorias virtuais');
+
+            try {
+                // Buscar categorias especiais do backend
+                const response = await fetch('/api/pricing/categories/filtered', {
+                    headers: {
+                        'Authorization': `Bearer ${session.token}`
+                    }
+                });
+                const data = await response.json();
+
+                if (data.isSpecialSelection) {
+                    // Se tem apenas 1 categoria "Special Selection", ir direto para fotos
+                    if (data.categories.length === 1 && data.categories[0].id === 'special_selection') {
+                        console.log('📸 Indo direto para fotos da Special Selection');
+
+                        // Mostrar mensagem temporária
+                        containerEl.innerHTML = `
+                            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                                <h2>Loading Special Selection...</h2>
+                                <div class="spinner"></div>
+                            </div>
+                        `;
+
+                        // Ir direto para fotos após 1 segundo
+                        setTimeout(() => {
+                            loadPhotos('special_selection');
+                        }, 1000);
+
+                        return; // Sair da função
+                    }
+
+                    // Se tem múltiplas categorias virtuais, mostrar como cards
+                    containerEl.innerHTML = data.categories.map(category => `
+                        <div class="category-card special-category" onclick="loadPhotos('${category.id}')">
+                            <h3>
+                                <i class="fas fa-star"></i> 
+                                ${category.name}
+                            </h3>
+                            <p>Special Selection Category</p>
+                            <div class="folder-stats">
+                                <span><i class="fas fa-images"></i> ${category.photoCount} photos</span>
+                                ${category.formattedPrice ? `<span><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
+                            </div>
+                            <div class="category-action">
+                                <i class="fas fa-arrow-right"></i>
+                                <span>View Selection</span>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    return; // Sair da função
+                }
+            } catch (error) {
+                console.error('Erro ao buscar Special Selection:', error);
+            }
+        }
+    }
+    // ========== FIM DA VERIFICAÇÃO SPECIAL ==========
+
+    // CÓDIGO ORIGINAL PARA CLIENTES NORMAIS
     const { allowedCategories } = navigationState;
 
     if (allowedCategories.length === 0) {
@@ -355,9 +420,6 @@ async function showCategories() {
 
     // Limpar o path do breadcrumb quando estiver na home
     const breadcrumbPath = document.getElementById('breadcrumbPath');
-    if (breadcrumbPath) {
-        breadcrumbPath.innerHTML = '';
-    }
 }
 
 // Navegar para uma categoria específica
@@ -377,8 +439,23 @@ async function loadFolderContents(folderId) {
     try {
         showLoading();
 
+        // ========== NOVO: PEGAR TOKEN ==========
+        const savedSession = localStorage.getItem('sunshineSession');
+        const headers = {};
+
+        if (savedSession) {
+            const session = JSON.parse(savedSession);
+            if (session.token) {
+                headers['Authorization'] = `Bearer ${session.token}`;
+                console.log('🔐 Enviando token JWT na requisição (structure)');
+            }
+        }
+        // ========== FIM DO NOVO CÓDIGO ==========
+
         // Buscar estrutura da pasta
-        const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`);
+        const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`, {
+            headers: headers  // <-- ADICIONADO
+        });
         const data = await response.json();
 
         if (!data.success) {
@@ -391,7 +468,9 @@ async function loadFolderContents(folderId) {
         if (folderData.hasSubfolders && folderData.folders.length > 0) {
             try {
                 // Buscar dados completos com preços
-                const priceResponse = await fetch('/api/pricing/categories/filtered');
+                const priceResponse = await fetch('/api/pricing/categories/filtered', {
+                    headers: headers  // <-- ADICIONADO TAMBÉM AQUI
+                });
                 const priceData = await priceResponse.json();
 
                 // Criar mapa de preços por nome
@@ -485,7 +564,22 @@ async function loadPhotos(folderId) {
     try {
         showPhotosLoading(true);
 
-        const response = await fetch(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`);
+        // ========== NOVO: PEGAR TOKEN ==========
+        const savedSession = localStorage.getItem('sunshineSession');
+        const headers = {};
+
+        if (savedSession) {
+            const session = JSON.parse(savedSession);
+            if (session.token) {
+                headers['Authorization'] = `Bearer ${session.token}`;
+                console.log('🔐 Enviando token JWT na requisição');
+            }
+        }
+        // ========== FIM DO NOVO CÓDIGO ==========
+
+        const response = await fetch(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`, {
+            headers: headers  // <-- ADICIONAR
+        });
         const data = await response.json();
 
         if (!data.success) {
@@ -495,6 +589,9 @@ async function loadPhotos(folderId) {
         navigationState.currentPhotos = data.photos;
         const categoryPrice = await loadCategoryPrice(folderId);
         showPhotosGallery(data.photos, data.folder.name, categoryPrice);
+
+        // 🌟 NOVO: Guardar o nome da categoria para Special Selection
+        navigationState.currentCategoryName = data.folder.name;
 
     } catch (error) {
         console.error('Error loading photos:', error);
@@ -506,6 +603,10 @@ async function loadPhotos(folderId) {
 
 // Mostrar galeria de fotos - COM VIRTUAL SCROLLING
 function showPhotosGallery(photos, folderName, categoryPrice) {
+
+    // 🌟 NOVO: Guardar o nome da categoria (importante para Special Selection)
+    navigationState.currentCategoryName = folderName;
+
     hideAllContainers();
     hideLoading();
 
@@ -520,9 +621,17 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
 
     // Atualizar título e contador COM PREÇO
     const galleryTitle = document.getElementById('galleryTitle');
-    if (categoryPrice && categoryPrice.hasPrice) {
+    // 🌟 NOVO: Verificar primeiro se tem customPrice nas fotos (Special Selection)
+    const customPrice = photos[0]?.customPrice;
+
+    if (customPrice) {
+        // Special Selection - usar o preço customizado
+        galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">R$ ${parseFloat(customPrice).toFixed(2)}</span>`;
+    } else if (categoryPrice && categoryPrice.hasPrice) {
+        // Sistema normal - usar preço da categoria
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${categoryPrice.formattedPrice}</span>`;
     } else {
+        // Sem preço
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
     }
 
@@ -564,6 +673,11 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         console.log(`📋 Modo tradicional para ${photos.length} fotos`);
         document.getElementById('photosCount').textContent = `${photos.length} photo(s)`;
 
+        // DEBUG - VER SE TEM CUSTOM PRICE
+        console.log('🔍 PHOTOS RECEBIDAS:', photos);
+        console.log('🔍 PRIMEIRA FOTO:', photos[0]);
+        console.log('🔍 TEM customPrice?', photos[0]?.customPrice);
+
         gridEl.innerHTML = photos.map((photo, index) => {
             // Usar sistema centralizado de cache
             const thumbnailUrl = ImageUtils.getThumbnailUrl(photo);
@@ -579,10 +693,9 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
                         loading="lazy">
                     
                     <!-- Badge de preço no canto superior direito -->
-                    <div class="photo-price ${categoryPrice?.hasPrice ? '' : 'no-price'}">
-                        ${categoryPrice?.formattedPrice || 'Check price'}
+                    <div class="photo-price ${photo.customPrice || categoryPrice?.hasPrice ? '' : 'no-price'}">
+                        ${photo.customPrice ? `R$ ${parseFloat(photo.customPrice).toFixed(2)}` : (categoryPrice?.formattedPrice || 'Price on request')}
                     </div>
-
                     <!-- Botão Add to Cart -->
                     <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
                             onclick="event.stopPropagation(); addToCartFromThumbnail('${photo.id}', ${index})"
@@ -813,7 +926,7 @@ async function openPhotoModal(photoIndex) {
     // ⭐ ADICIONE ESTAS 3 LINHAS AQUI ⭐
     // Forçar atualização do Volume Pricing do modal ao abrir
     console.log('🔄 Atualizando Volume Pricing do modal ao abrir');
-    await updateModalPriceInfo();
+    await updateModalPriceInfo(photo);
 
     // Atualizar botões de navegação
     document.getElementById('prevBtn').disabled = photoIndex === 0;
@@ -840,7 +953,7 @@ async function updateModalCommercialInfo(photo, photoIndex, totalPhotos) {
     document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
 
     // 3. FOOTER - Chamar a função original
-    await updateModalPriceInfo();
+    await updateModalPriceInfo(photo);
 }
 
 // Obter nome da categoria atual para exibição
@@ -863,11 +976,24 @@ function getCurrentCategoryDisplayName() {
     return 'Premium Cowhide Selection';
 }
 
-async function updateModalPriceInfo() {
+async function updateModalPriceInfo(photo) {
     try {
-        const currentFolderId = navigationState.currentFolderId;
-        const priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
+        let priceInfo = null;
+        let currentFolderId = navigationState.currentFolderId;
 
+        // 🌟 NOVO: SE TEM CUSTOM PRICE (Special Selection), USAR ELE!
+        if (photo && photo.customPrice) {
+            priceInfo = {
+                hasPrice: true,
+                formattedPrice: `R$ ${parseFloat(photo.customPrice).toFixed(2)}`
+            };
+            console.log('💰 Usando customPrice da Special Selection:', photo.customPrice);
+        } else {
+            // 📌 MANTÉM TUDO COMO ESTAVA - Sistema normal
+            priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
+        }
+
+        // 📌 TODO O RESTO CONTINUA IDÊNTICO!
         // BUSCAR OS RANGES DE VOLUME
         const savedSession = localStorage.getItem('sunshineSession');
         const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
@@ -1452,36 +1578,51 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
             }
         } else {
             // Adicionar ao carrinho
-            // Buscar preço da categoria
-            const currentFolderId = navigationState.currentFolderId;
             let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
 
-            if (currentFolderId && window.loadCategoryPrice) {
-                try {
-                    priceInfo = await window.loadCategoryPrice(currentFolderId);
-                    console.log('✅ Preço encontrado para thumbnail:', priceInfo);
-                    console.log('🔍 BASE PRICE DEBUG:');
-                    console.log('  - basePrice:', priceInfo.basePrice);
-                    console.log('  - price:', priceInfo.price);
-                    console.log('  - tem base?:', priceInfo.basePrice !== undefined);
-                } catch (error) {
-                    console.warn('❌ Erro ao buscar preço para thumbnail:', error);
+            // 🌟 NOVO: PRIMEIRO VERIFICAR SE A FOTO TEM customPrice (Special Selection)
+            if (photo.customPrice) {
+                priceInfo = {
+                    hasPrice: true,
+                    basePrice: parseFloat(photo.customPrice),
+                    price: parseFloat(photo.customPrice),
+                    formattedPrice: `R$ ${parseFloat(photo.customPrice).toFixed(2)}`
+                };
+                console.log('💰 Usando customPrice da foto Special Selection:', photo.customPrice);
+            }
+            // SE NÃO TEM customPrice, buscar da API (sistema normal)
+            else {
+                const currentFolderId = navigationState.currentFolderId;
+                if (currentFolderId && window.loadCategoryPrice) {
+                    try {
+                        priceInfo = await window.loadCategoryPrice(currentFolderId);
+                        console.log('✅ Preço encontrado para thumbnail:', priceInfo);
+                        console.log('🔍 BASE PRICE DEBUG:');
+                        console.log('  - basePrice:', priceInfo.basePrice);
+                        console.log('  - price:', priceInfo.price);
+                        console.log('  - tem base?:', priceInfo.basePrice !== undefined);
+                    } catch (error) {
+                        console.warn('❌ Erro ao buscar preço para thumbnail:', error);
+                    }
                 }
             }
+
             console.log('🔍 ENVIANDO PARA CART:');
             console.log('  - basePrice:', priceInfo.basePrice || 0);
             console.log('  - price:', priceInfo.price);
             console.log('  - formattedPrice:', priceInfo.formattedPrice);
+
             await CartSystem.addItem(driveFileId, {
                 fileName: photo.name,
                 thumbnailUrl: photo.thumbnailLink || photo.webViewLink,
                 fullImageUrl: ImageUtils.getFullImageUrl(photo),
-                category: navigationState.currentPath?.length > 1
+                // 🌟 Usar o nome guardado (Special Selection) ou path normal
+                category: navigationState.currentCategoryName || (navigationState.currentPath?.length > 1
                     ? navigationState.currentPath[navigationState.currentPath.length - 1].name
-                    : navigationState.currentPath[0]?.name || 'Category',
+                    : navigationState.currentPath[0]?.name) || 'Category',
                 categoryName: navigationState.currentPath[navigationState.currentPath.length - 1] || 'Products',
                 categoryPath: navigationState.currentPath.join(' > '),
-                basePrice: priceInfo.basePrice || 0,  // ← ADICIONE ESTA LINHA!
+                basePrice: priceInfo.basePrice || 0,
                 price: priceInfo.price,
                 formattedPrice: priceInfo.formattedPrice,
                 hasPrice: priceInfo.hasPrice

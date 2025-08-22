@@ -734,7 +734,9 @@ class SpecialSelectionService {
 
                 // 5. Desativar seleção especial
                 selection.specialSelectionConfig.accessConfig.isActive = false;
-                selection.status = 'cancelled';
+                // NÃO MUDAR STATUS! Apenas desativar
+                selection.isActive = false;
+                // selection.status = 'cancelled'; // REMOVER ESTA LINHA!
 
                 // 6. Adicionar logs
                 selection.addMovementLog(
@@ -781,10 +783,14 @@ class SpecialSelectionService {
      */
     static async listSpecialSelections(filters = {}, options = {}) {
         try {
+            // ADICIONE ESTE LOG:
+            console.log('🔍 Filtros recebidos no backend:', filters);
+
             const {
                 status = null,
                 clientCode = null,
                 isActive = null,
+                hasItems = null,  // ← ADICIONAR ESTA LINHA!
                 page = 1,
                 limit = 20,
                 sortBy = 'createdAt',
@@ -811,11 +817,28 @@ class SpecialSelectionService {
                 }
             }
 
+            // Filtrar por hasItems (para distinguir draft de pending_approval)
+            if (hasItems !== null && hasItems !== undefined) {
+                if (hasItems === true || hasItems === 'true') {
+                    // Pending Approval - tem items
+                    query['items.0'] = { $exists: true };
+                } else if (hasItems === false || hasItems === 'false') {
+                    // Draft - sem items
+                    query.$or = [
+                        { items: { $size: 0 } },
+                        { items: { $exists: false } }
+                    ];
+                }
+            }
+
             // ✅ ADICIONAR ESTAS 3 LINHAS AQUI:
 
             const sortOptions = {};
             sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
+
+            // ADICIONE ESTE LOG ANTES DA QUERY:
+            console.log('🔍 Query MongoDB final:', JSON.stringify(query, null, 2));
 
             const selections = await Selection.find(query)
                 .sort(sortOptions)
@@ -979,6 +1002,93 @@ class SpecialSelectionService {
             throw error;
         }
     }
+
+    /**
+     * NOVO: Marcar foto para Special Selection usando TAGS (sem mover arquivo!)
+     */
+    static async tagPhotoForSpecialSelection(photoId, clientCode, selectionId, categoryName = 'default', customPrice = 0) {
+        try {
+            console.log(`🏷️ [SPECIAL TAG] Marcando foto ${photoId} para cliente ${clientCode}`);
+
+            // 1. Buscar ou criar PhotoStatus
+            let photoStatus = await PhotoStatus.findOne({ photoId });
+
+            if (!photoStatus) {
+                // Criar registro se não existir
+                photoStatus = new PhotoStatus({
+                    photoId: photoId,
+                    fileName: photoId,
+                    currentStatus: 'available',
+                    originalLocation: {
+                        originalPath: 'Stock',
+                        originalParentId: 'root',
+                        originalCategory: 'Stock',
+                        originalPrice: customPrice
+                    },
+                    currentLocation: {
+                        locationType: 'stock',
+                        currentPath: 'Stock',
+                        currentParentId: 'root',
+                        currentCategory: 'Stock'
+                    }
+                });
+            }
+
+            // 2. VERIFICAR CONFLITOS
+            if (photoStatus.virtualStatus.status === 'reserved') {
+                throw new Error(`Foto já reservada por cliente ${photoStatus.virtualStatus.clientCode}`);
+            }
+
+            if (photoStatus.virtualStatus.status &&
+                photoStatus.virtualStatus.status.startsWith('special_') &&
+                photoStatus.virtualStatus.clientCode !== clientCode) {
+                throw new Error(`Foto já em outra Special Selection (${photoStatus.virtualStatus.clientCode})`);
+            }
+
+            // 3. MARCAR COM TAGS
+            photoStatus.virtualStatus = {
+                status: 'reserved',  // ✅ Status válido!
+                currentSelection: selectionId,
+                clientCode: clientCode,
+                tags: [
+                    `special_selection`,  // Tag genérica
+                    `special_${clientCode}`,  // Tag específica do cliente
+                    `selection_${selectionId}`,
+                    `category_${categoryName.toLowerCase().replace(/\s+/g, '_')}`,
+                    `price_${customPrice}`
+                ],
+                lastStatusChange: new Date()
+            };
+
+            // 4. Adicionar ao histórico
+            photoStatus.addToHistory(
+                'selection_moved',
+                `Foto adicionada à Special Selection do cliente ${clientCode}`,
+                'admin',
+                'admin',
+                { clientCode, selectionId, categoryName, customPrice }
+            );
+
+            // 5. Salvar
+            await photoStatus.save();
+
+            console.log(`✅ [SPECIAL TAG] Foto ${photoId} marcada com sucesso!`);
+            console.log(`   Status: ${photoStatus.virtualStatus.status}`);
+            console.log(`   Tags: ${photoStatus.virtualStatus.tags.join(', ')}`);
+
+            return {
+                success: true,
+                photoId,
+                status: photoStatus.virtualStatus.status,
+                tags: photoStatus.virtualStatus.tags
+            };
+
+        } catch (error) {
+            console.error(`❌ [SPECIAL TAG] Erro:`, error.message);
+            throw error;
+        }
+    }
+
 }
 
 module.exports = SpecialSelectionService;

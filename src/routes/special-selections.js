@@ -27,6 +27,7 @@ router.get('/', async (req, res) => {
             status,
             clientCode,
             isActive,
+            hasItems,
             page = 1,
             limit = 20,
             sortBy = 'createdAt',
@@ -40,6 +41,11 @@ router.get('/', async (req, res) => {
         if (clientCode) filters.clientCode = clientCode;
         if (isActive !== undefined && isActive !== 'all') {
             filters.isActive = isActive === 'true' || isActive === true;
+        }
+
+        // Passar hasItems para o serviço processar
+        if (hasItems !== undefined) {
+            filters.hasItems = hasItems;
         }
 
         const options = {
@@ -197,36 +203,62 @@ router.get('/:selectionId', async (req, res) => {
 router.delete('/:selectionId', async (req, res) => {
     try {
         const { selectionId } = req.params;
-        const { returnPhotos = true } = req.query;
         const adminUser = req.user?.username || 'admin';
 
         console.log(`🗑️ Deletando seleção especial ${selectionId}...`);
 
-        // NOVO: Marcar como deleting antes de processar
-        const Selection = require('../models/Selection');
-        const selection = await Selection.findOne({ selectionId });
+        // 1. Buscar a seleção
+        const selection = await Selection.findOne({
+            selectionId: selectionId,
+            selectionType: 'special'
+        });
 
-        if (selection) {
-            selection.status = 'deleting';
-            selection.processStatus = {
-                active: true,
-                type: 'deleting',
-                message: 'Deleting special selection...',
-                startedAt: new Date()
-            };
-            await selection.save();
-            console.log('📊 Status atualizado para DELETING');
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Seleção não encontrada'
+            });
         }
 
-        const result = await SpecialSelectionService.deactivateSpecialSelection(
-            selectionId,
-            adminUser,
-            returnPhotos === 'true'
+        // 2. Remover tags das fotos (liberar)
+        let photosLiberadas = 0;
+        if (selection.customCategories) {
+            for (const category of selection.customCategories) {
+                for (const photo of category.photos) {
+                    await PhotoStatus.findOneAndUpdate(
+                        { photoId: photo.photoId },
+                        {
+                            $pull: { 'virtualStatus.tags': `special_${selection.clientCode}` },
+                            $unset: { 'virtualStatus.currentSelection': '' }
+                        }
+                    );
+                    photosLiberadas++;
+                }
+            }
+        }
+        console.log(`✅ ${photosLiberadas} fotos liberadas`);
+
+        // 3. Resetar cliente para acesso normal
+        await AccessCode.findOneAndUpdate(
+            { code: selection.clientCode },
+            {
+                accessType: 'normal',
+                specialSelection: null
+            }
         );
+        console.log(`✅ Cliente ${selection.clientCode} voltou para acesso normal`);
+
+        // 4. DELETAR permanentemente do banco
+        await Selection.deleteOne({ selectionId: selectionId });
+        console.log(`✅ Seleção ${selectionId} deletada permanentemente`);
 
         res.json({
             success: true,
-            data: result,
+            data: {
+                selectionId: selectionId,
+                photosLiberadas: photosLiberadas,
+                clientCode: selection.clientCode
+            },
             message: 'Seleção especial deletada com sucesso'
         });
 
@@ -769,7 +801,12 @@ router.post('/:selectionId/process-async', async (req, res) => {
 
             selection.customCategories = mappedCategories;
             await selection.save();
-            console.log(`💾 Dados salvos no banco: ${mappedCategories.length} categorias com ${mappedCategories.reduce((total, cat) => total + cat.photos.length, 0)} fotos`);
+            console.log(`💾 Dados salvos no banco: ${mappedCategories.length} categorias...`);
+
+            // ADICIONAR ESTAS 3 LINHAS AQUI:
+            selection.status = 'confirmed';
+            selection.isActive = false;
+            await selection.save();
         }
 
         // 2. RETORNAR IMEDIATAMENTE
@@ -780,11 +817,11 @@ router.post('/:selectionId/process-async', async (req, res) => {
             selectionId: selectionId
         });
 
-        // 3. PROCESSAR EM BACKGROUND (sem await!)
-        processSelectionInBackground(selectionId, adminUser)
-            .catch(error => {
-                console.error(`❌ Erro no processamento background: ${selectionId}`, error);
-            });
+        // COMENTAR TUDO ISSO:
+        // processSelectionInBackground(selectionId, adminUser)
+        //     .catch(error => {
+        //         console.error(`❌ Erro no processamento background: ${selectionId}`, error);
+        //     });
 
     } catch (error) {
         console.error('❌ Erro ao iniciar processamento assíncrono:', error);

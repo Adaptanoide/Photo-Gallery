@@ -272,6 +272,7 @@ async function handleDirectClientLogin(e) {
                 userType: 'client',
                 user: data.client,
                 accessCode: code,
+                token: data.token,  // <-- ADICIONAR ESTA LINHA
                 allowedCategories: data.allowedCategories,
                 expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 horas
             };

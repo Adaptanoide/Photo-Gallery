@@ -966,9 +966,10 @@ window.toggleCartItem = async function () {
             const itemData = {
                 fileName: photoData?.name || 'Unnamed product',
                 // Pegar o ÚLTIMO nível do path (onde a foto realmente está)
-                category: window.navigationState?.currentPath?.length > 1
+                // 🌟 Usar o nome guardado (Special Selection) ou path normal
+                category: window.navigationState?.currentCategoryName || (window.navigationState?.currentPath?.length > 1
                     ? window.navigationState.currentPath[window.navigationState.currentPath.length - 1].name
-                    : window.navigationState?.currentPath?.[0]?.name || 'Category',
+                    : window.navigationState?.currentPath?.[0]?.name) || 'Category',
                 thumbnailUrl: ImageUtils.getThumbnailUrl(photoData),
                 basePrice: priceInfo.basePrice || 0,  // ← ADICIONE ESTA LINHA!
                 price: priceInfo.price,

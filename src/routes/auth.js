@@ -113,13 +113,32 @@ router.post('/client/verify', async (req, res) => {
         accessCode.lastUsed = new Date();
         await accessCode.save();
 
+        // ========== NOVO: CRIAR TOKEN JWT PARA CLIENTE ==========
+        const token = jwt.sign(
+            {
+                clientCode: accessCode.code,
+                clientName: accessCode.clientName,
+                accessType: accessCode.accessType || 'normal',
+                specialSelectionId: accessCode.specialSelection?.selectionId || null,
+                type: 'client' // Para diferenciar de admin
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '4h' } // Cliente tem 4 horas de sessão
+        );
+
+        console.log(`🔐 Token criado para cliente ${accessCode.clientName} (${accessCode.code})`);
+        console.log(`   AccessType: ${accessCode.accessType || 'normal'}`);
+        // ========== FIM DO NOVO CÓDIGO ==========
+
         res.json({
             success: true,
             message: 'Código verificado com sucesso',
+            token: token,  // <-- ADICIONAR ESTA LINHA
             client: {
                 name: accessCode.clientName,
                 email: accessCode.clientEmail,
-                code: accessCode.code
+                code: accessCode.code,
+                accessType: accessCode.accessType || 'normal'  // <-- ADICIONAR
             },
             allowedCategories: accessCode.allowedCategories,
             expiresAt: accessCode.expiresAt

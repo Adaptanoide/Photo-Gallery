@@ -305,8 +305,20 @@
     border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
+.special-status-badge.reverted {
+    background: #6c757d;
+    color: white;
+    font-weight: bold;
+}
+
 .special-status-badge i {
     font-size: 0.7rem;
+}
+
+.special-status-badge.pending-approval {
+    background: #ff9800;
+    color: white;
+    font-weight: bold;
 }
 
 /* ===== ACTIONS E BOTÕES ===== */
@@ -2545,7 +2557,7 @@
 
 /* ===== DROP ZONE - ÁREA SUTIL SEM BORDA ===== */
 .drop-zone {
-    border: none !important;
+    border: 2px dashed rgba(212, 175, 55, 0.3) !important;
     background: none !important;
     padding: 1rem 0.5rem !important;
     margin: 0.5rem 0;
@@ -2560,13 +2572,13 @@
 }
 
 .drop-zone-icon {
-    color: var(--text-muted);
+    color: white;
     font-size: 1.2rem;
     opacity: 0.7;
 }
 
 .drop-zone-text {
-    color: var(--text-muted);
+    color: white;
     font-size: 0.9rem;
     opacity: 0.8;
     font-weight: 500;
