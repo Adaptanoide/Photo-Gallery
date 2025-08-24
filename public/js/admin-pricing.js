@@ -21,6 +21,9 @@ class AdminPricing {
             sortBy: 'name'
         };
 
+        this.hasUnsavedChanges = false;
+        this.originalVolumeRules = [];
+
         this.init();
     }
 
@@ -382,24 +385,111 @@ class AdminPricing {
                 const priceInput = document.getElementById('newPrice');
                 if (priceInput) priceInput.focus();
             }, 100);
+
+            // ADICIONAR ESTA LINHA:
+            this.setupBasePriceListener();
         }
     }
 
+    // Listener para mudanças no base price
+    setupBasePriceListener() {
+        const basePriceInput = document.getElementById('newPrice');
+        if (!basePriceInput) return;
+
+        // Adicionar listener para atualizar primeira regra de volume
+        basePriceInput.addEventListener('input', (e) => {
+            const newBasePrice = parseFloat(e.target.value) || 0;
+
+            // Atualizar primeira regra de volume automaticamente
+            const firstVolumePrice = document.querySelector('[data-first-rule="true"]');
+            if (firstVolumePrice) {
+                const oldValue = parseFloat(firstVolumePrice.value);
+                firstVolumePrice.value = newBasePrice;
+
+                // Visual feedback
+                firstVolumePrice.style.transition = 'background-color 0.3s';
+                firstVolumePrice.style.backgroundColor = 'rgba(212, 175, 55, 0.2)';
+                setTimeout(() => {
+                    firstVolumePrice.style.backgroundColor = '';
+                }, 300);
+
+                // Remover aviso de erro se existir
+                const warning = firstVolumePrice.parentElement.querySelector('.text-danger');
+                if (warning) warning.remove();
+                firstVolumePrice.classList.remove('is-invalid');
+
+                console.log(`✅ First volume rule auto-updated: $${oldValue} → $${newBasePrice}`);
+            }
+
+            // Atualizar display do current price em tempo real
+            const currentPriceDisplay = document.getElementById('modalCurrentPrice');
+            if (currentPriceDisplay) {
+                if (newBasePrice > 0) {
+                    currentPriceDisplay.innerHTML = `<i class="fas fa-dollar-sign"></i> Current: <strong>$${newBasePrice.toFixed(2)}</strong>`;
+                    currentPriceDisplay.parentElement.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                } else {
+                    currentPriceDisplay.innerHTML = '<i class="fas fa-exclamation-circle"></i> <span style="color: #ff6b6b;">No price set</span>';
+                    currentPriceDisplay.parentElement.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
+                }
+            }
+
+            // Marcar como alterado apenas se mudou do valor original
+            if (this.currentCategory && newBasePrice !== this.currentCategory.basePrice) {
+                this.markAsChanged();
+            }
+        });
+    }
+
     closePriceModal() {
-        // Fechar APENAS o priceModal (não todos os modais)
+        // Verificar mudanças não salvas
+        if (this.hasUnsavedChanges) {
+            // Mostrar modal customizado ao invés de alert
+            const modal = document.getElementById('unsavedChangesModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                return; // Não fecha ainda
+            }
+        }
+
+        // Se não tem mudanças, fecha direto
+        this.executeClose();
+    }
+
+    // Nova função para confirmar fechamento
+    confirmClose() {
+        const confirmModal = document.getElementById('unsavedChangesModal');
+        if (confirmModal) {
+            confirmModal.style.display = 'none';
+        }
+        this.executeClose();
+    }
+
+    // Nova função para cancelar fechamento
+    cancelClose() {
+        const confirmModal = document.getElementById('unsavedChangesModal');
+        if (confirmModal) {
+            confirmModal.style.display = 'none';
+        }
+    }
+
+    // Nova função que realmente fecha
+    executeClose() {
         const modal = document.getElementById('priceModal');
         if (modal) {
             modal.style.display = 'none';
             modal.classList.remove('active');
         }
 
+        // Resetar estados
         this.currentCategory = null;
+        this.hasUnsavedChanges = false;
     }
 
     async saveAllPricing() {
         if (!this.currentCategory) return;
 
         try {
+            // 1. Pegar valores do formulário
             const newPrice = parseFloat(document.getElementById('newPrice').value) || 0;
             const reason = 'Price update via modal';
             const qbItem = document.getElementById('qbItem')?.value || this.currentCategory.qbItem || '';
@@ -409,8 +499,23 @@ class AdminPricing {
                 return;
             }
 
+            // 2. Auto-ajustar primeira regra se necessário (apenas se existirem volume rules)
+            const volumeRulesExist = document.querySelectorAll('.volume-rule-row').length > 0;
+            if (volumeRulesExist) {
+                const firstPriceInput = document.querySelector('[data-first-rule="true"]');
+                if (firstPriceInput) {
+                    const firstPrice = parseFloat(firstPriceInput.value);
+                    if (firstPrice !== newPrice) {
+                        // Auto-corrigir ao invés de dar erro
+                        firstPriceInput.value = newPrice;
+                        console.log(`✅ First volume rule auto-adjusted to $${newPrice}`);
+                    }
+                }
+            }
+
             this.setLoading(true);
 
+            // 3. Salvar base price
             const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/price`, {
                 method: 'PUT',
                 headers: {
@@ -427,13 +532,77 @@ class AdminPricing {
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification('Price saved successfully!', 'success');
+                // 4. Coletar volume rules
+                const volumeRules = [];
+                const ruleRows = document.querySelectorAll('.volume-rule-row');
 
-                // USAR O MÉTODO closePriceModal QUE JÁ FAZ TUDO
+                ruleRows.forEach(row => {
+                    const from = parseInt(row.querySelector('.volume-from').value);
+                    const to = row.querySelector('.volume-to').value;
+                    const price = parseFloat(row.querySelector('.volume-price').value);
+
+                    if (from && price) {
+                        volumeRules.push({
+                            min: from,
+                            max: to ? parseInt(to) : null,
+                            price: price
+                        });
+                    }
+                });
+
+                // 5. Salvar ou deletar volume rules baseado na quantidade
+                if (volumeRules.length > 0) {
+                    // TEM REGRAS - SALVAR
+                    console.log(`💾 Saving ${volumeRules.length} volume rules...`);
+                    const volumeResponse = await fetch(`/api/pricing/categories/${this.currentCategory._id}/volume-rules`, {
+                        method: 'POST',
+                        headers: {
+                            ...this.getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ priceRanges: volumeRules })
+                    });
+
+                    const volumeResult = await volumeResponse.json();
+                    if (!volumeResult.success) {
+                        this.showNotification('Price saved but volume rules failed', 'warning');
+                    } else {
+                        console.log(`✅ ${volumeRules.length} volume rules saved`);
+                    }
+                } else {
+                    // NÃO TEM REGRAS - DELETAR DO BANCO
+                    console.log('🗑️ No volume rules found, deleting from database...');
+                    try {
+                        const deleteResponse = await fetch(`/api/pricing/categories/${this.currentCategory._id}/volume-rules`, {
+                            method: 'DELETE',
+                            headers: this.getAuthHeaders()
+                        });
+
+                        const deleteResult = await deleteResponse.json();
+                        if (deleteResult.success) {
+                            console.log('✅ All volume rules deleted from database');
+                        } else {
+                            console.log('⚠️ Failed to delete volume rules:', deleteResult.message);
+                        }
+                    } catch (deleteError) {
+                        console.error('❌ Error deleting volume rules:', deleteError);
+                        // Não bloquear o fluxo, apenas avisar
+                        console.log('⚠️ Volume rules may not have been deleted');
+                    }
+                }
+
+                // 6. Resetar flag e atualizar botão
+                this.hasUnsavedChanges = false;
+                const saveButton = document.querySelector('[onclick*="saveAllPricing"]');
+                if (saveButton) {
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save All Changes';
+                    saveButton.classList.remove('btn-warning');
+                }
+
+                this.showNotification('All settings saved successfully!', 'success');
                 this.closePriceModal();
-
-                // Recarregar categorias
                 await this.loadCategories();
+
             } else {
                 throw new Error(data.message || 'Error saving price');
             }
@@ -923,23 +1092,237 @@ class AdminPricing {
         const container = document.getElementById('volumeRulesList');
         if (!container) return;
 
+        // Salvar regras originais para comparação
+        this.originalVolumeRules = JSON.parse(JSON.stringify(rules || []));
+
+        let html = '<div class="volume-rules-container">';
+
+        // Container sempre existe
         if (!rules || rules.length === 0) {
-            container.innerHTML = '<p class="text-muted">No volume rules configured</p>';
+            // Container vazio com mensagem
+            html += '<p class="text-muted empty-message">No volume rules configured</p>';
+        } else {
+            // Tem regras - renderizar normalmente
+            rules.forEach((rule, index) => {
+                html += this.createVolumeRuleRow(rule.min, rule.max, rule.price, index, index === 0);
+            });
+        }
+
+        html += '</div>';
+
+        // Botão para adicionar nova regra
+        html += `
+            <button type="button" class="btn-add-rule" onclick="adminPricing.addVolumeRuleLine()">
+                <i class="fas fa-plus"></i> Add Volume Rule
+            </button>
+        `;
+
+        container.innerHTML = html;
+
+        // Esconder o botão antigo "Manage Volume Rules"
+        const oldButton = container.parentElement.querySelector('button[onclick*="openVolumeRulesManager"]');
+        if (oldButton) oldButton.style.display = 'none';
+
+        // Adicionar listeners para rastrear mudanças
+        this.attachVolumeRuleListeners();
+
+        // Validar primeira regra
+        this.validateFirstVolumeRule();
+    }
+
+    createVolumeRuleRow(min, max, price, index, isFirst) {
+        return `
+            <div class="volume-rule-row" data-index="${index}">
+                <span class="rule-label">From</span>
+                <input type="number" 
+                    class="form-control volume-from" 
+                    value="${min}" 
+                    ${isFirst ? 'readonly' : 'onchange="adminPricing.updateNextRuleFrom(this)"'}>
+                
+                <span class="rule-label">to</span>
+                <input type="number" 
+                    class="form-control volume-to" 
+                    value="${max || ''}" 
+                    placeholder="∞"
+                    onchange="adminPricing.markAsChanged()">
+                
+                <span class="rule-arrow">→ $</span>
+                <input type="number" 
+                    class="form-control volume-price" 
+                    value="${price}" 
+                    step="0.01"
+                    ${isFirst ? 'data-first-rule="true"' : ''}
+                    onchange="adminPricing.markAsChanged()">
+                
+                <button type="button" class="btn-icon btn-delete-rule" onclick="adminPricing.removeVolumeRule(this)" title="Remove rule">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    addVolumeRuleLine() {
+        let container = document.querySelector('.volume-rules-container');
+
+        // Se não existe container, não fazer nada
+        if (!container) {
+            console.error('Volume rules container not found!');
             return;
         }
 
-        container.innerHTML = rules.map(rule => `
-        <div class="rule-item">
-            <span class="rule-range">
-                ${rule.min}${rule.max ? '-' + rule.max : '+'} photos: 
-                <strong>$${rule.price}</strong>
-            </span>
-            <button class="btn-icon" onclick="adminPricing.deleteVolumeRule('${rule.min}')">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `).join('');
+        // Remover mensagem de vazio se existir
+        const emptyMessage = container.querySelector('.empty-message');
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
+
+        const rules = container.querySelectorAll('.volume-rule-row');
+        const lastRule = rules[rules.length - 1];
+
+        let fromValue = 1;
+        let priceValue = '';
+        let isFirstRule = false;
+
+        if (!lastRule) {
+            // PRIMEIRA REGRA - usar base price
+            isFirstRule = true;
+            fromValue = 1;
+            priceValue = this.currentCategory?.basePrice || document.getElementById('newPrice')?.value || 99;
+            console.log(`📝 Creating first rule with base price: $${priceValue}`);
+        } else {
+            // Regras subsequentes
+            const lastTo = lastRule.querySelector('.volume-to').value;
+            fromValue = lastTo ? parseInt(lastTo) + 1 :
+                parseInt(lastRule.querySelector('.volume-from').value) + 1;
+            priceValue = ''; // Deixar vazio para o usuário preencher
+        }
+
+        const newIndex = rules.length;
+        const newRuleHtml = this.createVolumeRuleRow(fromValue, '', priceValue, newIndex, isFirstRule);
+
+        // Criar elemento temporário para inserir
+        const temp = document.createElement('div');
+        temp.innerHTML = newRuleHtml;
+        container.appendChild(temp.firstElementChild);
+
+        this.markAsChanged();
+        this.attachVolumeRuleListeners();
+
+        // Se é a primeira regra, aplicar validação
+        if (isFirstRule) {
+            this.validateFirstVolumeRule();
+
+            // Adicionar listener para atualização automática com base price
+            const basePriceInput = document.getElementById('newPrice');
+            const firstPriceInput = container.querySelector('[data-first-rule="true"]');
+
+            if (basePriceInput && firstPriceInput) {
+                // Garantir que primeira regra acompanha base price
+                const updateFirstRule = () => {
+                    const newBase = parseFloat(basePriceInput.value) || 0;
+                    firstPriceInput.value = newBase;
+                    console.log(`✅ First rule auto-synced with base price: $${newBase}`);
+                };
+
+                // Já está sendo feito em setupBasePriceListener, mas garantir aqui também
+                if (!firstPriceInput.hasAttribute('data-synced')) {
+                    firstPriceInput.setAttribute('data-synced', 'true');
+                }
+            }
+        }
     }
+
+    removeVolumeRule(button) {
+        const row = button.closest('.volume-rule-row');
+        const container = document.querySelector('.volume-rules-container');
+        const totalRows = container.querySelectorAll('.volume-rule-row').length;
+
+        // Remover a regra
+        row.remove();
+
+        // Se era a última regra, mostrar mensagem de vazio
+        if (totalRows === 1) {
+            container.innerHTML = '<p class="text-muted empty-message">No volume rules configured</p>';
+        } else {
+            // Reajustar números "from" das regras seguintes
+            this.recalculateVolumeRanges();
+        }
+
+        this.markAsChanged();
+    }
+
+    updateNextRuleFrom(input) {
+        const row = input.closest('.volume-rule-row');
+        const nextRow = row.nextElementSibling;
+
+        if (nextRow && nextRow.classList.contains('volume-rule-row')) {
+            const toValue = row.querySelector('.volume-to').value;
+            if (toValue) {
+                const nextFrom = nextRow.querySelector('.volume-from');
+                nextFrom.value = parseInt(toValue) + 1;
+            }
+        }
+
+        this.markAsChanged();
+    }
+
+    recalculateVolumeRanges() {
+        const rows = document.querySelectorAll('.volume-rule-row');
+        rows.forEach((row, index) => {
+            if (index > 0) {
+                const prevRow = rows[index - 1];
+                const prevTo = prevRow.querySelector('.volume-to').value;
+                if (prevTo) {
+                    row.querySelector('.volume-from').value = parseInt(prevTo) + 1;
+                }
+            }
+        });
+    }
+
+    markAsChanged() {
+        this.hasUnsavedChanges = true;
+
+        // Adicionar indicador visual
+        const saveButton = document.querySelector('.modal-footer .btn-primary');
+        if (saveButton && !saveButton.textContent.includes('*')) {
+            saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes*';
+            saveButton.classList.add('btn-warning');
+        }
+    }
+
+    attachVolumeRuleListeners() {
+        // Adicionar listener para rastrear mudanças
+        const inputs = document.querySelectorAll('.volume-rule-row input');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => this.markAsChanged());
+        });
+    }
+
+    validateFirstVolumeRule() {
+        const firstPriceInput = document.querySelector('[data-first-rule="true"]');
+        if (!firstPriceInput) return;
+
+        const basePrice = this.currentCategory?.basePrice || 99;
+
+        firstPriceInput.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            const warningElement = e.target.parentElement.querySelector('.text-danger');
+
+            if (value !== basePrice) {
+                e.target.classList.add('is-invalid');
+                if (!warningElement) {
+                    const warning = document.createElement('small');
+                    warning.className = 'text-danger';
+                    warning.textContent = `Must be $${basePrice} (base price)`;
+                    e.target.parentElement.appendChild(warning);
+                }
+            } else {
+                e.target.classList.remove('is-invalid');
+                if (warningElement) warningElement.remove();
+            }
+        });
+    }
+
 
     async deleteVolumeRule(minToDelete) {
         if (!confirm('Remove this volume rule?')) return;
@@ -1124,39 +1507,104 @@ class AdminPricing {
     }
 
     openClientRatesModal() {
-        const modal = document.getElementById('clientRuleModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            this.loadAvailableClients();
+        // Abrir primeiro modal (seleção)
+        const selectModal = document.getElementById('clientSelectModal');
+        if (selectModal) {
+            selectModal.style.display = 'flex';
+            this.loadClientsForSelection();
+        }
+    }
+
+    // Carregar clientes no dropdown de seleção
+    async loadClientsForSelection() {
+        try {
+            const response = await fetch('/api/pricing/clients/active', {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+            if (data.success && data.clients.length > 0) {
+                const dropdown = document.getElementById('clientSelectDropdown');
+                if (dropdown) {
+                    dropdown.innerHTML = '<option value="">Select...</option>' +
+                        data.clients.map(client =>
+                            `<option value="${client.code}">${client.name}</option>`
+                        ).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading clients:', error);
+        }
+    }
+
+    // Proceder para configurar rates
+    proceedToConfigureRates() {
+        const dropdown = document.getElementById('clientSelectDropdown');
+        const clientCode = dropdown.value;
+        const clientName = dropdown.options[dropdown.selectedIndex].text;
+
+        if (!clientCode) {
+            this.showNotification('Please select a client', 'error');
+            return;
+        }
+
+        // Guardar cliente selecionado
+        this.selectedClient = { code: clientCode, name: clientName };
+
+        // Fechar modal de seleção
+        document.getElementById('clientSelectModal').style.display = 'none';
+
+        // Abrir modal de configuração
+        const configModal = document.getElementById('clientRuleModal');
+        if (configModal) {
+            // Atualizar nome do cliente
+            document.getElementById('selectedClientName').textContent = clientName;
+
+            // Mostrar formulário
+            document.getElementById('clientRateForm').style.display = 'block';
+
+            // Carregar rates existentes
+            this.loadClientRatesForClient(clientCode);
+
+            // Limpar lista temporária
+            this.tempClientRates = [];
+
+            // Mostrar modal
+            configModal.style.display = 'flex';
+        }
+    }
+
+    // Carregar rates do cliente específico
+    async loadClientRatesForClient(clientCode) {
+        const container = document.getElementById('clientRatesListModal');
+
+        // Por enquanto vazio
+        container.innerHTML = '<p class="text-muted">No rates configured yet</p>';
+
+        // Limpar lista temporária
+        if (!this.tempClientRates) {
+            this.tempClientRates = [];
         }
     }
 
     closeClientRuleModal() {
-        console.log('=== FECHANDO MODAL ===');
+        // Limpar dados temporários
+        this.tempClientRates = [];
+        this.selectedClient = null;
 
+        // Fechar modal
         const modal = document.getElementById('clientRuleModal');
         if (modal) {
             modal.style.display = 'none';
         }
 
-        const clientCode = document.getElementById('clientRuleSelect').value;
-        console.log('ClientCode ao fechar:', clientCode);
-        console.log('ClientRates:', this.clientRates);
-
-        // Se tem ranges não salvos, salvar
-        if (clientCode && this.clientRates[this.currentCategory._id]?.[clientCode]?.ranges.length > 0) {
-            console.log('SALVANDO RANGES NO BACKEND!');
-            const ranges = this.clientRates[this.currentCategory._id][clientCode].ranges;
-            console.log('Ranges a salvar:', ranges);
-            this.addClientRule(ranges);
-        } else {
-            console.log('NADA PARA SALVAR');
-        }
-
-        // Limpar seleção
-        document.getElementById('clientRuleSelect').value = '';
+        // Resetar formulário
         document.getElementById('clientRateForm').style.display = 'none';
+        document.getElementById('clientMinQty').value = '';
+        document.getElementById('clientMaxQty').value = '';
+        document.getElementById('clientPrice').value = '';
     }
+
     loadClientRatesForEdit() {
         const select = document.getElementById('clientRuleSelect');
         const form = document.getElementById('clientRateForm');
@@ -1179,60 +1627,108 @@ class AdminPricing {
     }
 
     async saveClientRate() {
-        const clientCode = document.getElementById('clientRuleSelect').value;
-        const clientName = document.getElementById('clientRuleSelect').selectedOptions[0]?.text;
         const minQty = document.getElementById('clientMinQty').value;
         const maxQty = document.getElementById('clientMaxQty').value;
         const price = document.getElementById('clientPrice').value;
 
-        // DEBUG
-        console.log('=== DEBUG SAVELIENTRATE ===');
-        console.log('clientCode:', clientCode);
-        console.log('clientName:', clientName);
-        console.log('minQty:', minQty);
-        console.log('maxQty:', maxQty);
-        console.log('price:', price);
-        console.log('currentCategory:', this.currentCategory);
-        console.log('==========================');
-
-        if (!clientCode || !minQty || !price) {
-            this.showNotification('Please fill all required fields', 'error');
+        if (!minQty || !price) {
+            this.showNotification('Please fill required fields', 'error');
             return;
         }
 
-        if (!this.currentCategory) {
-            this.showNotification('No category selected!', 'error');
-            return;
-        }
-
-        // Criar estrutura se não existir
-        if (!this.clientRates[this.currentCategory._id]) {
-            this.clientRates[this.currentCategory._id] = {};
-        }
-        if (!this.clientRates[this.currentCategory._id][clientCode]) {
-            this.clientRates[this.currentCategory._id][clientCode] = {
-                clientName: clientName,
-                ranges: []
-            };
-        }
-
-        // Adicionar nova faixa
-        this.clientRates[this.currentCategory._id][clientCode].ranges.push({
+        // Adicionar à lista temporária
+        const newRate = {
             min: parseInt(minQty),
             max: maxQty ? parseInt(maxQty) : null,
             price: parseFloat(price)
-        });
+        };
 
-        // Atualizar visualização no modal
-        this.loadClientRanges(clientCode);
+        if (!this.tempClientRates) {
+            this.tempClientRates = [];
+        }
+        this.tempClientRates.push(newRate);
 
-        // Limpar campos
+        // Mostrar na lista imediatamente
+        this.displayTempRates();
+
+        // Limpar formulário
         document.getElementById('clientMinQty').value = '';
         document.getElementById('clientMaxQty').value = '';
         document.getElementById('clientPrice').value = '';
 
-        console.log('Faixa adicionada localmente:', this.clientRates);
-        this.showNotification('Range added! Click Done to save all.', 'info');
+        this.showNotification('Rate added! Click Done to save all.', 'info');
+    }
+
+    // Mostrar rates temporárias
+    displayTempRates() {
+        const container = document.getElementById('clientRatesListModal');
+
+        if (!this.tempClientRates || this.tempClientRates.length === 0) {
+            container.innerHTML = '<p class="text-muted">No rates configured yet</p>';
+            return;
+        }
+
+        container.innerHTML = '<h5 style="margin-bottom: 10px;">Configured Rates:</h5>' +
+            this.tempClientRates.map((rate, index) => {
+                const rangeText = rate.max ? `${rate.min}-${rate.max}` : `${rate.min}+`;
+                return `
+                <div class="rate-item" style="display: flex; justify-content: space-between; padding: 8px; background: rgba(255,255,255,0.02); margin-bottom: 8px; border-radius: 4px; align-items: center;">
+                    <span>${rangeText} photos: <strong style="color: #d4af37;">$${rate.price.toFixed(2)}</strong></span>
+                    <button class="btn-icon" onclick="adminPricing.removeTempRate(${index})" style="background: transparent; border: none; color: #999; cursor: pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            }).join('');
+    }
+
+    // Remover rate temporária
+    removeTempRate(index) {
+        this.tempClientRates.splice(index, 1);
+        this.displayTempRates();
+    }
+
+    // Salvar todas as rates do cliente
+    async saveAllClientRates() {
+        if (!this.selectedClient || !this.tempClientRates || this.tempClientRates.length === 0) {
+            this.showNotification('No rates to save', 'warning');
+            this.closeClientRuleModal();
+            return;
+        }
+
+        try {
+            // Salvar no backend
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/discount-rules`, {
+                method: 'POST',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    clientCode: this.selectedClient.code,
+                    clientName: this.selectedClient.name,
+                    priceRanges: this.tempClientRates,
+                    isActive: true
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showNotification(`Client rates saved for ${this.selectedClient.name}!`, 'success');
+
+                // Recarregar client rules
+                await this.loadClientRules();
+
+                // Fechar modal
+                this.closeClientRuleModal();
+            } else {
+                this.showNotification(result.message || 'Error saving rates', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving client rates:', error);
+            this.showNotification('Error saving rates', 'error');
+        }
     }
 
     async loadAvailableClients() {

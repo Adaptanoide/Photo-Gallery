@@ -528,11 +528,17 @@
 
                         <div class="price-modal-body">
                             <!-- Info da Categoria -->
-                            <div class="category-info">
-                                <h4 id="modalCategoryName">Category Name</h4>
+                            <div class="price-modal-header-info">
+                                <h3 id="modalCategoryName">Category Name</h3>
                                 <div class="category-stats">
-                                    <span id="modalPhotoCount">0 photos</span>
-                                    <span id="modalCurrentPrice">Current price: $0.00</span>
+                                    <div class="stat-item">
+                                        <i class="fas fa-images"></i>
+                                        <span id="modalPhotoCount">0 photos</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        <span id="modalCurrentPrice">Current: $0.00</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -544,8 +550,7 @@
                                         <div class="form-group" style="flex: 1;">
                                             <label class="form-label">Base Price ($)</label>
                                             <input type="number" id="newPrice" class="form-input" min="0" step="0.01"
-                                                placeholder="0.00" required
-                                                onchange="adminPricing.updatePricePreview()">
+                                                placeholder="0.00" required>
                                         </div>
                                     </div>
                                 </div>
@@ -684,6 +689,38 @@
                 </div>
 
                 <!-- ===== MODAL PARA ADICIONAR CLIENT EXCEPTION ===== -->
+
+                <!-- Modal APENAS para selecionar cliente -->
+                <div id="clientSelectModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay" onclick="this.parentElement.style.display='none'"></div>
+                    <div class="price-modal-content" style="max-width: 400px;">
+                        <div class="price-modal-header">
+                            <h3 class="modal-title">
+                                <i class="fas fa-users"></i>
+                                <span>Select Client</span>
+                            </h3>
+                            <button class="modal-close" onclick="this.parentElement.style.display='none'">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="price-modal-body">
+                            <div class="form-group">
+                                <label>Choose a client to configure rates:</label>
+                                <select id="clientSelectDropdown" class="form-input">
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="price-modal-footer">
+                            <button class="btn btn-secondary"
+                                onclick="this.closest('.price-modal').style.display='none'">Cancel</button>
+                            <button class="btn btn-primary" onclick="adminPricing.proceedToConfigureRates()">
+                                <i class="fas fa-cog"></i> Configure Rates
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="clientRuleModal" class="price-modal" style="display: none;">
                     <div class="price-modal-overlay" onclick="this.parentElement.style.display='none'"></div>
                     <div class="price-modal-content" style="max-width: 500px;">
@@ -698,13 +735,12 @@
                         </div>
 
                         <div class="price-modal-body">
-                            <div class="form-group">
-                                <label>Select Client</label>
-                                <select id="clientRuleSelect" class="form-input"
-                                    onchange="adminPricing.loadClientRatesForEdit()">
-                                    <option value="">Choose a client...</option>
-                                    <!-- Será preenchido via JS -->
-                                </select>
+                            <!-- Mostrar cliente selecionado -->
+                            <div class="selected-client-info"
+                                style="background: rgba(212, 175, 55, 0.1); padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+                                <strong>Configuring rates for:</strong>
+                                <span id="selectedClientName" style="color: #d4af37; font-size: 1.1em;">CLIENT
+                                    NAME</span>
                             </div>
 
                             <!-- Lista de faixas existentes para este cliente -->
@@ -746,7 +782,7 @@
                                 onclick="adminPricing.closeClientRuleModal()">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="adminPricing.closeClientRuleModal()">
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveAllClientRates()">
                                 <i class="fas fa-check"></i> Done
                             </button>
                         </div>
@@ -1237,6 +1273,26 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Confirmação para Mudanças Não Salvas -->
+    <div id="unsavedChangesModal" class="confirmation-modal" style="display: none;">
+        <div class="confirmation-overlay"></div>
+        <div class="confirmation-content">
+            <div class="confirmation-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>Unsaved Changes</h3>
+            <p>You have unsaved changes. Are you sure you want to close without saving?</p>
+            <div class="confirmation-buttons">
+                <button class="btn-cancel" onclick="adminPricing.cancelClose()">
+                    <i class="fas fa-arrow-left"></i> Go Back
+                </button>
+                <button class="btn-confirm" onclick="adminPricing.confirmClose()">
+                    <i class="fas fa-times"></i> Close Without Saving
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Loading Global -->

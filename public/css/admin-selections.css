@@ -1149,7 +1149,8 @@
 .category-info {
     color: #ffffff;
     font-size: 0.875rem;
-    margin-left: 1rem;
+    margin-left: 0rem;
+    margin-bottom: 17px;
 }
 
 .category-items {

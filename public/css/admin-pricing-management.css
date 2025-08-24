@@ -1449,7 +1449,7 @@
     border-radius: 4px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    max-height: 150px;
+    max-height: 270px;
     overflow-y: auto;
 }
 
@@ -1811,4 +1811,376 @@
     pointer-events: none;
     opacity: 0.3;
     filter: blur(2px);
+}
+
+/* ========================================
+   VOLUME RULES - NOVO DESIGN
+   ======================================== */
+
+.volume-rules-container {
+    margin: 15px 0;
+}
+
+.volume-rule-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.volume-rule-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(212, 175, 55, 0.2);
+}
+
+.volume-rule-row .rule-label {
+    color: #999;
+    font-size: 0.9em;
+    min-width: 35px;
+}
+
+.volume-rule-row .rule-arrow {
+    color: #d4af37;
+    font-weight: 500;
+    margin: 0 5px;
+}
+
+.volume-rule-row .form-control {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.volume-rule-row .volume-from {
+    width: 70px;
+}
+
+.volume-rule-row .volume-to {
+    width: 70px;
+}
+
+.volume-rule-row .volume-price {
+    width: 90px;
+}
+
+.volume-rule-row .form-control:focus {
+    border-color: #d4af37;
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
+}
+
+.volume-rule-row .form-control[readonly] {
+    background: rgba(255, 255, 255, 0.02);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Delete button styling */
+.btn-delete-rule {
+    background: transparent;
+    border: none;
+    color: #999;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.btn-delete-rule:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.btn-placeholder {
+    width: 32px;
+}
+
+/* Add button styling - Dourado Sunshine */
+.btn-add-rule {
+    background: linear-gradient(135deg, #d4af37, #b8941f);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    font-size: 0.9em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-add-rule:hover {
+    background: linear-gradient(135deg, #e6c757, #d4af37);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.btn-add-rule i {
+    font-size: 0.85em;
+}
+
+/* Invalid input styling */
+.volume-rule-row .form-control.is-invalid {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+.volume-rule-row .text-danger {
+    font-size: 0.8em;
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
+/* ========================================
+   PRICE MODAL HEADER - MELHORIAS
+   ======================================== */
+
+/* Container do título da categoria */
+.price-modal-header-info {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border-left: 4px solid #d4af37;
+}
+
+.price-modal-header-info h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.price-modal-header-info .category-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.price-modal-header-info .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    font-size: 0.9em;
+}
+
+.price-modal-header-info .stat-item i {
+    color: #d4af37;
+    font-size: 0.9em;
+}
+
+/* Espaçamento entre seções */
+.price-modal-body .section-container {
+    margin-bottom: 30px;
+}
+
+.price-modal-body .section-title {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ========================================
+   MODAL DE CONFIRMAÇÃO CUSTOMIZADO
+   ======================================== */
+
+.confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirmation-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+}
+
+.confirmation-content {
+    position: relative;
+    background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.confirmation-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 50%;
+    color: #d4af37;
+    font-size: 24px;
+}
+
+.confirmation-content h3 {
+    margin: 0 0 15px 0;
+    color: #fff;
+    text-align: center;
+    font-size: 1.4em;
+}
+
+.confirmation-content p {
+    color: #aaa;
+    text-align: center;
+    margin: 0 0 25px 0;
+    line-height: 1.5;
+}
+
+.confirmation-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.confirmation-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: #fff;
+}
+
+.btn-confirm:hover {
+    background: linear-gradient(135deg, #e74c5c, #dc3545);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Ajustes finais do header */
+.price-modal-header-info strong {
+    color: #d4af37;
+    font-weight: 600;
+}
+
+/* Seções dentro do modal com melhor espaçamento */
+.price-modal-body > div {
+    margin-bottom: 25px;
+}
+
+.price-modal-body > div:last-child {
+    margin-bottom: 0;
+}
+
+/* Títulos das seções */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.section-title:hover {
+    color: #d4af37;
+}
+
+.section-title::before {
+    content: '▼';
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
+}
+
+.section-title.collapsed::before {
+    transform: rotate(-90deg);
+}
+
+/* Base Price Input */
+#newPrice {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+}
+
+#newPrice:focus {
+    border-color: #d4af37;
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+/* QB Item Input */
+#qbItem {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+#qbItem:focus {
+    border-color: rgba(212, 175, 55, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+    outline: none;
 }
