@@ -212,6 +212,16 @@ window.CartSystem = {
             // Atualizar estado local
             await this.loadCart();
 
+            // Atualizar badge de preço
+            if (window.updateCategoryPriceBadge) {
+                setTimeout(() => window.updateCategoryPriceBadge(), 100);
+            }
+
+            // Atualizar modal também
+            if (window.updateModalPriceBadge) {
+                setTimeout(() => window.updateModalPriceBadge(), 150);
+            }
+
             // Feedback visual
             this.showNotification(`Item added to cart!`, 'success');
             this.updateToggleButton();
@@ -254,6 +264,16 @@ window.CartSystem = {
 
             // Atualizar estado local
             await this.loadCart();
+
+            // Atualizar badge de preço
+            if (window.updateCategoryPriceBadge) {
+                setTimeout(() => window.updateCategoryPriceBadge(), 100);
+            }
+
+            // Atualizar modal também
+            if (window.updateModalPriceBadge) {
+                setTimeout(() => window.updateModalPriceBadge(), 150);
+            }
 
             // Feedback visual
             this.showNotification(`Item removed from cart`, 'info');
@@ -301,6 +321,16 @@ window.CartSystem = {
                 this.startTimers();
 
                 console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
+
+                // Atualizar o badge de preço se tiver items
+                if (this.state.totalItems > 0 && window.updateCategoryPriceBadge) {
+                    setTimeout(() => window.updateCategoryPriceBadge(), 100);
+                }
+
+                // Atualizar modal também se tiver items
+                if (this.state.totalItems > 0 && window.updateModalPriceBadge) {
+                    setTimeout(() => window.updateModalPriceBadge(), 150);
+                }
             } else {
                 // Carrinho vazio ou erro - resetar estado
                 this.state.items = [];
@@ -419,8 +449,8 @@ window.CartSystem = {
     },
 
     /**
-         * Calcular total do carrinho COM desconto por quantidade - VERSÃO NOVA
-         */
+    * Calcular total do carrinho COM desconto por quantidade - VERSÃO NOVA
+    */
     async calculateCartTotal() {
         try {
             // Usar nova API que calcula com desconto por quantidade
@@ -489,6 +519,53 @@ window.CartSystem = {
     },
 
     /**
+     * Calcular desconto para uma categoria específica
+     */
+    async calculateCategoryDiscount(categoryName, itemCount, categoryTotal) {
+        try {
+            // Para simplificar, vamos usar a informação do cálculo total
+            // que já tem os descontos corretos do backend
+            const response = await fetch(`${this.config.apiBaseUrl}/${this.state.sessionId}/calculate-total`);
+            const result = await response.json();
+
+            if (result.success && result.data.detalhesCompletos) {
+                // Buscar o detalhe desta categoria específica
+                const categoryDetail = result.data.detalhesCompletos.find(d =>
+                    d.categoria === categoryName ||
+                    d.categoria === categoryName + '/' ||
+                    d.categoria.includes(categoryName)
+                );
+
+                if (categoryDetail) {
+                    return {
+                        precoUnitario: categoryDetail.precoUnitario,
+                        subtotal: categoryDetail.subtotal,
+                        fonte: categoryDetail.fonte,
+                        regra: categoryDetail.regra
+                    };
+                }
+            }
+
+            // Fallback
+            return {
+                precoUnitario: categoryTotal / itemCount,
+                subtotal: categoryTotal,
+                fonte: 'base-price',
+                regra: null
+            };
+
+        } catch (error) {
+            console.error('Erro ao calcular desconto da categoria:', error);
+            return {
+                precoUnitario: categoryTotal / itemCount,
+                subtotal: categoryTotal,
+                fonte: 'base-price',
+                regra: null
+            };
+        }
+    },
+
+    /**
          * Atualizar conteúdo da sidebar - VERSÃO COM DESCONTO POR QUANTIDADE
          */
     async updateSidebarContent() {
@@ -515,8 +592,8 @@ window.CartSystem = {
         // Salvar estados antes de renderizar
         const collapseStates = this.saveCollapseStates();
 
-        // Renderizar itens
-        this.renderCartItems();
+        // Renderizar itens (agora é assíncrono)
+        await this.renderCartItems();
 
         // Restaurar estados depois
         setTimeout(() => {
@@ -545,9 +622,7 @@ window.CartSystem = {
                 // Se há desconto, mostrar valor economizado
                 if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
                     // Determinar o texto baseado na fonte do desconto
-                    const discountLabel = cartTotal.discountSource === 'custom-client'
-                        ? 'Volume Discount:'
-                        : 'Volume Savings:';
+                    const discountLabel = 'Quantity Discount:';
 
                     totalHTML += `
                     <div class="discount-line" style="color: #28a745;">
@@ -599,9 +674,9 @@ window.CartSystem = {
     },
 
     /**
-     * Renderizar lista de itens do carrinho
-     */
-    renderCartItems() {
+         * Renderizar lista de itens do carrinho
+         */
+    async renderCartItems() {
         if (!this.elements.items) return;
 
         if (this.state.items.length === 0) {
@@ -609,80 +684,179 @@ window.CartSystem = {
             return;
         }
 
+        // Buscar informações de desconto do backend PRIMEIRO
+        let discountDetails = {};
+        try {
+            const response = await fetch(`${this.config.apiBaseUrl}/${this.state.sessionId}/calculate-total`);
+            const result = await response.json();
+
+            console.log('🔴 RESPOSTA COMPLETA DO BACKEND:', result);
+
+            // DEBUG: Ver EXATAMENTE onde estão os dados
+            console.log('🔍 result.data existe?', !!result.data);
+            console.log('🔍 result.data.detalhesCompletos existe?', !!(result.data && result.data.detalhesCompletos));
+            console.log('🔍 result.data.discountRule existe?', !!(result.data && result.data.discountRule));
+            console.log('🔍 result.data.discountRule.detalhes existe?', !!(result.data && result.data.discountRule && result.data.discountRule.detalhes));
+
+            // FORÇAR busca em TODOS os lugares
+            let detalhesArray = null;
+
+            if (result.data && result.data.discountRule && result.data.discountRule.detalhes) {
+                detalhesArray = result.data.discountRule.detalhes;
+                console.log('✅ ACHEI EM: data.discountRule.detalhes');
+            } else if (result.data && result.data.detalhesCompletos) {
+                detalhesArray = result.data.detalhesCompletos;
+                console.log('✅ ACHEI EM: data.detalhesCompletos');
+            } else if (result.detalhesCompletos) {
+                detalhesArray = result.detalhesCompletos;
+                console.log('✅ ACHEI EM: detalhesCompletos direto');
+            } else {
+                console.log('❌ NÃO ACHEI detalhes em lugar nenhum!');
+                console.log('📋 result completo:', JSON.stringify(result, null, 2));
+            }
+
+            if (detalhesArray) {
+                console.log('📦 DETALHES ENCONTRADOS:', detalhesArray);
+
+                detalhesArray.forEach(detail => {
+                    let catName = detail.categoria;
+                    if (catName.endsWith('/')) {
+                        catName = catName.slice(0, -1);
+                    }
+                    const lastSlash = catName.lastIndexOf('/');
+                    if (lastSlash !== -1) {
+                        catName = catName.substring(lastSlash + 1);
+                    }
+                    discountDetails[catName] = detail;
+                });
+
+                console.log('💰 MAPA CRIADO:', discountDetails);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar detalhes de desconto:', error);
+        }
+
         // Agrupar itens por categoria
         const categories = {};
         this.state.items.forEach(item => {
-            // Usar o último nível do pathLevels se existir, senão usar category
-            const cat = (item.pathLevels && item.pathLevels.length > 0)
+            // Pegar categoria completa primeiro
+            let cat = (item.pathLevels && item.pathLevels.length > 0)
                 ? item.pathLevels[item.pathLevels.length - 1]
                 : item.category || 'Uncategorized';
+
+            // PROCESSAR DO MESMO JEITO QUE FIZEMOS COM OS DETALHES
+            // Remover barra final se existir
+            if (cat.endsWith('/')) {
+                cat = cat.slice(0, -1);
+            }
+            // Pegar apenas o último segmento
+            const lastSlash = cat.lastIndexOf('/');
+            if (lastSlash !== -1) {
+                cat = cat.substring(lastSlash + 1);
+            }
+
             if (!categories[cat]) categories[cat] = [];
             categories[cat].push(item);
         });
 
         // Renderizar com separadores e collapse
         let html = '';
+
+        // Para cada categoria
         Object.keys(categories).sort().forEach(category => {
             const items = categories[category];
             const itemCount = items.length;
 
-            // Calcular subtotal da categoria
-            const subtotal = items.reduce((sum, item) => {
-                return sum + (item.price || 0);
-            }, 0);
+            // Buscar informação de desconto para esta categoria
+            const discountInfo = discountDetails[category];
 
-            // NOVO: Calcular desconto baseado na quantidade desta categoria
+            let categoryTotal = 0;
+            let precoUnitario = 0;
             let categoryDiscount = '';
-            let finalPrice = subtotal;
 
-            // Se tem 10-20 items, aplicar $89 por item
-            if (itemCount >= 10 && itemCount <= 20) {
-                const discountedTotal = itemCount * 89; // $89 por item
-                const savings = subtotal - discountedTotal;
-                if (savings > 0) {
-                    finalPrice = discountedTotal;
-                    categoryDiscount = `
-                        <div style="font-size: 0.85em; color: #28a745; margin-top: 4px;">
-                            <i class="fas fa-tag" style="font-size: 0.8em;"></i> 
-                            Volume: ${itemCount} units = $89 each
-                        </div>`;
+            if (discountInfo) {
+                // USAR VALORES DO BACKEND
+                categoryTotal = discountInfo.subtotal;
+                precoUnitario = discountInfo.precoUnitario;
+
+                console.log(`📦 Categoria "${category}": ${itemCount} items x $${precoUnitario} = $${categoryTotal}`);
+
+                // Montar texto de desconto baseado na fonte
+                const basePrice = items[0].basePrice || 99;
+
+                // REGRA CLARA: Só mostrar desconto se preço atual for MENOR que base
+                if (discountInfo && precoUnitario < basePrice) {
+                    const savings = (basePrice * itemCount) - categoryTotal;
+
+                    if (discountInfo.fonte === 'custom-client') {
+                        categoryDiscount = `
+                            <div style="font-size: 0.85em; color: #28a745; margin-top: 4px;">
+                                <i class="fas fa-star" style="font-size: 0.8em; color: #ffc107;"></i> 
+                                Custom Price: ${itemCount} units = $${precoUnitario} each
+                                <span style="color: #28a745;"> (saved $${Math.round(savings)})</span>
+                            </div>`;
+                    } else if (discountInfo.fonte === 'volume-discount') {
+                        categoryDiscount = `
+                            <div style="font-size: 0.85em; color: #28a745; margin-top: 4px;">
+                                <i class="fas fa-tag" style="font-size: 0.8em;"></i> 
+                                Volume Discount: ${itemCount} units = $${precoUnitario} each
+                                <span style="color: #28a745;"> (saved $${Math.round(savings)})</span>
+                            </div>`;
+                    }
                 }
+                // Se preço = base, não mostra nada (categoryDiscount fica vazio)
+            } else {
+                // FALLBACK: Calcular localmente se não encontrou desconto
+                categoryTotal = items.reduce((sum, item) => {
+                    return sum + (item.price || item.basePrice || 0);
+                }, 0);
+                precoUnitario = itemCount > 0 ? Math.round(categoryTotal / itemCount) : 0;
+                console.log(`⚠️ Categoria "${category}": Usando cálculo local (fallback)`);
             }
 
-            // ID único para a categoria (remover espaços e caracteres especiais)
+            // ID único para a categoria (remover caracteres especiais)
             const categoryId = category.replace(/[^a-zA-Z0-9]/g, '_');
 
-            // Adicionar cabeçalho clicável da categoria
-            html += `<div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')" style="cursor: pointer;">
-                <div class="category-left">
-                    <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
-                    <span class="category-label" title="${items[0].fullPath || category}">${category}</span>
-                    <span class="category-count">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
-                </div>
-                <div class="category-right">
-                    ${subtotal > 0 ? `<span class="category-subtotal">$${finalPrice.toFixed(2)}</span>` : ''}
-                </div>
-            </div>`;
-
-            // NOVO: Adicionar info de desconto se houver
-            if (categoryDiscount) {
-                html += `<div style="padding: 0 15px 8px 40px;">${categoryDiscount}</div>`;
-            } else if (CartSystem.state.clientCode === '8041' && itemCount >= 11) {
-                // Para cliente TESTE com 11+ itens
-                html += `<div style="padding: 0 15px 8px 40px;">
-                    <div style="font-size: 0.85em; color: #28a745; margin-top: 4px;">
-                        <i class="fas fa-star" style="font-size: 0.8em; color: #ffc107;"></i> 
-                            Volume Price: ${itemCount} units = $45 each
+            // Cabeçalho clicável da categoria
+            html += `
+                <div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')" style="cursor: pointer;">
+                    <div class="category-left">
+                        <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
+                        <span class="category-label" title="${items[0].fullPath || category}">${category}</span>
+                        <span class="category-count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</span>
+                    </div>
+                    <div class="category-right">
+                        <span class="category-subtotal">$${categoryTotal.toFixed(2)}</span>
                     </div>
                 </div>`;
+
+            // Adicionar info de desconto se houver
+            if (categoryDiscount) {
+                html += `<div style="padding: 0 15px 8px 40px;">${categoryDiscount}</div>`;
             }
 
             // Container dos itens (colapsável)
             html += `<div class="category-items" id="items-${categoryId}">`;
 
-            // Adicionar itens da categoria
+            // Adicionar cada item da categoria
             items.forEach(item => {
-                html += this.renderCartItem(item);
+                // Criar cópia do item com preço correto
+                const modifiedItem = { ...item };
+
+                // SE TEM DESCONTO, APLICAR O PREÇO UNITÁRIO COM DESCONTO
+                if (discountInfo && precoUnitario > 0) {
+                    modifiedItem.formattedPrice = `$${precoUnitario.toFixed(2)}`;
+                    modifiedItem.price = precoUnitario;
+                    modifiedItem.hasPrice = true;
+
+                    // Guardar preço original se for diferente
+                    if (item.price && item.price !== precoUnitario) {
+                        modifiedItem.originalPrice = item.price;
+                    }
+                }
+
+                // Renderizar o item
+                html += this.renderCartItem(modifiedItem);
             });
 
             html += `</div>`;
@@ -1225,6 +1399,27 @@ async function generateOrderSummary() {
 
     // Agrupar por categoria
     const categories = {};
+    let discountDetails = {};
+    try {
+        const response = await fetch(`${CartSystem.config.apiBaseUrl}/${CartSystem.state.sessionId}/calculate-total`);
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.discountRule && result.data.discountRule.detalhes) {
+            result.data.discountRule.detalhes.forEach(detail => {
+                let catName = detail.categoria;
+                if (catName.endsWith('/')) {
+                    catName = catName.slice(0, -1);
+                }
+                const lastSlash = catName.lastIndexOf('/');
+                if (lastSlash !== -1) {
+                    catName = catName.substring(lastSlash + 1);
+                }
+                discountDetails[catName] = detail;
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar descontos para summary:', error);
+    }
     items.forEach(item => {
         const cat = item.category || 'Uncategorized';
         if (!categories[cat]) {
@@ -1262,34 +1457,91 @@ async function generateOrderSummary() {
         let categoryTotal = 0;
         let categoryItemsWithPrice = 0;
 
-        // Calcular total da categoria
-        categoryItems.forEach(item => {
-            if (item.hasPrice && item.price > 0) {
-                categoryTotal += item.price;
-                categoryItemsWithPrice++;
-            }
-        });
+        // PROCESSAR NOME DA CATEGORIA DO MESMO JEITO
+        let categorySearchName = category;
+        if (categorySearchName.endsWith('/')) {
+            categorySearchName = categorySearchName.slice(0, -1);
+        }
+        const lastSlash = categorySearchName.lastIndexOf('/');
+        if (lastSlash !== -1) {
+            categorySearchName = categorySearchName.substring(lastSlash + 1);
+        }
+
+        // AGORA BUSCAR COM O NOME PROCESSADO
+        const discountInfo = discountDetails[categorySearchName];
+
+
+        // Calcular total da categoria COM DESCONTO
+        if (discountInfo && discountInfo.precoUnitario) {
+            // Usar preço com desconto
+            categoryTotal = discountInfo.precoUnitario * categoryItems.length;
+            categoryItemsWithPrice = categoryItems.length;
+        } else {
+            // Usar preço normal
+            categoryItems.forEach(item => {
+                if (item.hasPrice && item.price > 0) {
+                    categoryTotal += item.price;
+                    categoryItemsWithPrice++;
+                }
+            });
+        }
 
         grandTotal += categoryTotal;
         totalItems += categoryItems.length;
-
         // Header da categoria (clicável)
         html += `
-            <div class="summary-category">
-                <div class="summary-category-header" style="cursor: pointer; padding: 8px 0; background: #f8f9fa; margin: 5px 0; padding: 8px;">
-                    <i class="fas fa-chevron-down category-toggle-icon" style="margin-right: 8px; font-size: 12px;"></i>
-                    <strong>${category}</strong>
-                    <span style="float: right; color: #666;">
-                        ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'} 
-                        | R$ ${categoryTotal.toFixed(2)}
-                    </span>
-                </div>
-                <div class="summary-category-items" style="display: ${index === 0 ? 'block' : 'none'};">
-        `;
+                <div class="summary-category">
+                    <div class="summary-category-header" style="cursor: pointer; padding: 8px 0; background: #f8f9fa; margin: 5px 0; padding: 8px;">
+                        <i class="fas fa-chevron-down category-toggle-icon" style="margin-right: 8px; font-size: 12px;"></i>
+                        <strong>${category}</strong>
+                        <span style="float: right; color: #666;">
+                            ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'} 
+                            | R$ ${categoryTotal.toFixed(2)}
+                        </span>
+                    </div>
+                    <div class="summary-category-items" style="display: ${index === 0 ? 'block' : 'none'};">
+            `;
+
+        // ADICIONAR LINHA DE DESCONTO SE HOUVER
+        if (discountInfo && discountInfo.precoUnitario) {
+            // Pegar o base price REAL da categoria (não fixo!)
+            const basePrice = categoryItems[0].basePrice || 99; // 99 só como fallback
+
+            // Só mostrar se preço atual for menor que base
+            if (discountInfo.precoUnitario < basePrice) {
+                const savings = (basePrice * categoryItems.length) - (discountInfo.precoUnitario * categoryItems.length);
+
+                // Determinar ícone e texto baseado no tipo
+                const icon = discountInfo.fonte === 'custom-client'
+                    ? '<i class="fas fa-star" style="color: #ffc107;"></i>'
+                    : '<i class="fas fa-tag" style="color: #28a745;"></i>';
+
+                const label = discountInfo.fonte === 'custom-client'
+                    ? 'Custom Price'
+                    : 'Volume Discount';
+
+                html += `
+                    <div style="padding: 8px 20px; color: #28a745; font-size: 0.9em;">
+                        ${icon}
+                        ${label}: ${categoryItems.length} units = $${discountInfo.precoUnitario} each
+                        <span style="color: #28a745;">(saved $${Math.round(savings)})</span>
+                    </div>
+                `;
+            }
+        }
 
         // Items da categoria
         categoryItems.forEach(item => {
-            const price = item.hasPrice && item.price > 0 ? item.formattedPrice : 'No price';
+            // NOVO: Usar preço com desconto se existir
+            let price = 'No price';
+            if (discountInfo && discountInfo.precoUnitario) {
+                // Usar o preço com desconto
+                price = `$${discountInfo.precoUnitario.toFixed(2)}`;
+            } else if (item.hasPrice && item.price > 0) {
+                // Usar o preço normal
+                price = item.formattedPrice;
+            }
+
             html += `
                 <div class="summary-item" style="padding: 4px 8px; margin-left: 20px;">
                     <span style="color: #666;">${item.fileName}</span>

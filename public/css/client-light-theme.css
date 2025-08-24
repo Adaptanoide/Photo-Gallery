@@ -241,6 +241,7 @@ body.client-page::before {
 .client-page .selection-modal-header {
     background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
     color: white;
+    padding: 12px;
 }
 
 .client-page .success-icon {

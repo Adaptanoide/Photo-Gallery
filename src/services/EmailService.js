@@ -303,15 +303,15 @@ class EmailService {
                 <meta charset="UTF-8">
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+                    .header { background: #D4AF37; color: white; padding: 20px; text-align: center; }
                     .content { padding: 20px; }
-                    .info-box { background: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin: 15px 0; }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 15px; margin: 15px 0; }
                     .footer { background: #6c757d; color: white; padding: 15px; text-align: center; font-size: 12px; }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>🎉 New Customer Selection!</h1>
+                    <h1> New Customer Selection!</h1>
                 </div>
                 
                 <div class="content">
@@ -322,10 +322,8 @@ class EmailService {
                     <div class="info-box">
                         <h3>📋 Selection Details</h3>
                         <p><strong>Customer:</strong> ${data.clientName} (${data.clientCode})</p>
-                        <p><strong>Selection ID:</strong> ${data.selectionId}</p>
                         <p><strong>Selected Items:</strong> ${data.totalItems} photos</p>
                         <p><strong>Total Value:</strong> ${data.totalValue}</p>
-                        <p><strong>Drive Folder:</strong> ${data.folderName}</p>
                         <p><strong>Date/Time:</strong> ${data.createdAt}</p>
                     </div>
                     
@@ -336,6 +334,19 @@ class EmailService {
                 
                 <div class="footer">
                     This email was automatically sent by Sunshine Cowhides system
+                </div>
+
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="https://sunshinecowhides-gallery.com/" 
+                    style="background-color: #D4AF37; 
+                            color: white; 
+                            padding: 15px 35px; 
+                            text-decoration: none; 
+                            border-radius: 5px; 
+                            display: inline-block;
+                            font-weight: bold;">
+                        Visit Our Gallery
+                    </a>
                 </div>
             </body>
             </html>

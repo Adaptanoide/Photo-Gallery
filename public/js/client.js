@@ -1015,6 +1015,11 @@ async function openPhotoModal(photoIndex) {
             window.CartSystem.updateToggleButton();
         }, 100);
     }
+
+    // NOVO: Atualizar preço do modal se tiver desconto
+    if (window.updateModalPriceBadge) {
+        setTimeout(() => window.updateModalPriceBadge(), 200);
+    }
 }
 
 // Atualizar informações comerciais do modal
@@ -1121,8 +1126,38 @@ async function updateModalPriceInfo(photo) {
             // GRID DE VOLUME - USAR OS RANGES
             const gridEl = document.getElementById('modalDiscountGrid');
             if (gridEl && rangeData.success && rangeData.data && rangeData.data.ranges && rangeData.data.ranges.length > 0) {
-                // PEGAR CONTADOR DO CARRINHO ANTES DO LOOP
-                const cartCount = window.CartSystem && window.CartSystem.state ? window.CartSystem.state.totalItems : 0;
+                // PEGAR CONTADOR DO CARRINHO APENAS DA CATEGORIA ATUAL
+                let cartCount = 0;
+                if (window.CartSystem && window.CartSystem.state && window.CartSystem.state.items) {
+                    // Para Special Selection, contar tudo mesmo
+                    if (specialSelectionRateRules) {
+                        cartCount = window.CartSystem.state.totalItems;
+                    } else {
+                        // Para categoria normal, contar só desta categoria
+                        let currentCategoryName = null;
+                        if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
+                            const lastPath = window.navigationState.currentPath[window.navigationState.currentPath.length - 1];
+                            currentCategoryName = lastPath.name;
+                        }
+
+                        if (currentCategoryName) {
+                            cartCount = window.CartSystem.state.items.filter(item => {
+                                let itemCategory = item.category;
+                                if (itemCategory && itemCategory.includes('/')) {
+                                    const parts = itemCategory.split('/');
+                                    itemCategory = parts[parts.length - 1] || parts[parts.length - 2];
+                                }
+                                return itemCategory === currentCategoryName;
+                            }).length;
+                            console.log(`📦 Modal: ${cartCount} items de "${currentCategoryName}" no carrinho`);
+                        } else {
+                            // Fallback para total se não identificar categoria
+                            cartCount = window.CartSystem.state.totalItems;
+                        }
+                    }
+                } else {
+                    cartCount = 0;
+                }
 
                 let volumeHTML = '<div class="modal-volume-pricing">';
                 volumeHTML += '<span class="volume-label">Volume Pricing:</span>';
@@ -2307,7 +2342,150 @@ function setupRadioToggle() {
 // Chamar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(setupRadioToggle, 500);
+
+    // Atualizar preço do badge após carregar tudo
+    setTimeout(() => {
+        if (window.updateCategoryPriceBadge) {
+            window.updateCategoryPriceBadge();
+        }
+    }, 1000);
 });
 
 // Tornar global
 window.showAllCategories = showAllCategories;
+
+// Tornar global
+window.showAllCategories = showAllCategories;
+
+// Função para atualizar o preço do badge baseado no desconto do carrinho
+async function updateCategoryPriceBadge() {
+    try {
+        const priceElement = document.querySelector('.category-price-badge');
+        if (!priceElement) return;
+
+        // Se não tem carrinho ou está vazio, não fazer nada
+        if (!window.CartSystem || !window.CartSystem.state.items || window.CartSystem.state.items.length === 0) {
+            return;
+        }
+
+        // Identificar qual categoria está sendo visualizada
+        let currentCategoryName = null;
+        if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
+            // Pegar o último item do path (categoria atual)
+            const lastPath = window.navigationState.currentPath[window.navigationState.currentPath.length - 1];
+            currentCategoryName = lastPath.name;
+        }
+
+        if (!currentCategoryName) {
+            console.log('❌ Não foi possível identificar a categoria atual');
+            return;
+        }
+
+        // Buscar preço com desconto do backend
+        const response = await fetch(`/api/cart/${window.CartSystem.state.sessionId}/calculate-total`);
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.discountRule && result.data.discountRule.detalhes && result.data.discountRule.detalhes.length > 0) {
+            // Procurar o detalhe da categoria ATUAL
+            let matchedDetail = null;
+
+            for (const detail of result.data.discountRule.detalhes) {
+                // Processar nome da categoria do detalhe
+                let categoryFromDetail = detail.categoria;
+                if (categoryFromDetail.endsWith('/')) {
+                    categoryFromDetail = categoryFromDetail.slice(0, -1);
+                }
+                const lastSlash = categoryFromDetail.lastIndexOf('/');
+                if (lastSlash !== -1) {
+                    categoryFromDetail = categoryFromDetail.substring(lastSlash + 1);
+                }
+
+                // Comparar com a categoria atual
+                if (categoryFromDetail === currentCategoryName) {
+                    matchedDetail = detail;
+                    break;
+                }
+            }
+
+            if (matchedDetail && matchedDetail.precoUnitario) {
+                // Atualizar o texto do badge
+                priceElement.innerHTML = `$${matchedDetail.precoUnitario.toFixed(2)}`;
+                priceElement.classList.remove('no-price');
+                console.log(`✅ Badge de preço atualizado para $${matchedDetail.precoUnitario} (categoria: ${currentCategoryName})`);
+            } else {
+                console.log(`⚠️ Categoria "${currentCategoryName}" não tem items no carrinho`);
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar badge de preço:', error);
+    }
+}
+
+// Exportar para uso global
+window.updateCategoryPriceBadge = updateCategoryPriceBadge;
+
+// Função para atualizar o preço no modal fullscreen
+async function updateModalPriceBadge() {
+    try {
+        const modalPriceElement = document.querySelector('.modal-price-badge');
+        if (!modalPriceElement) return;
+
+        // Se não tem carrinho ou está vazio, não fazer nada
+        if (!window.CartSystem || !window.CartSystem.state.items || window.CartSystem.state.items.length === 0) {
+            return;
+        }
+
+        // Identificar qual categoria está sendo visualizada no modal
+        let currentCategoryName = null;
+        if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
+            // Pegar o último item do path (categoria atual)
+            const lastPath = window.navigationState.currentPath[window.navigationState.currentPath.length - 1];
+            currentCategoryName = lastPath.name;
+        }
+
+        if (!currentCategoryName) {
+            console.log('❌ Modal: Não foi possível identificar a categoria atual');
+            return;
+        }
+
+        // Buscar preço com desconto do backend
+        const response = await fetch(`/api/cart/${window.CartSystem.state.sessionId}/calculate-total`);
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.discountRule && result.data.discountRule.detalhes && result.data.discountRule.detalhes.length > 0) {
+            // Procurar o detalhe da categoria ATUAL
+            let matchedDetail = null;
+
+            for (const detail of result.data.discountRule.detalhes) {
+                // Processar nome da categoria do detalhe
+                let categoryFromDetail = detail.categoria;
+                if (categoryFromDetail.endsWith('/')) {
+                    categoryFromDetail = categoryFromDetail.slice(0, -1);
+                }
+                const lastSlash = categoryFromDetail.lastIndexOf('/');
+                if (lastSlash !== -1) {
+                    categoryFromDetail = categoryFromDetail.substring(lastSlash + 1);
+                }
+
+                // Comparar com a categoria atual
+                if (categoryFromDetail === currentCategoryName) {
+                    matchedDetail = detail;
+                    break;
+                }
+            }
+
+            if (matchedDetail && matchedDetail.precoUnitario) {
+                // Atualizar o texto do badge do modal
+                modalPriceElement.innerHTML = `$${matchedDetail.precoUnitario.toFixed(2)}`;
+                console.log(`✅ Badge do modal atualizado para $${matchedDetail.precoUnitario} (categoria: ${currentCategoryName})`);
+            } else {
+                console.log(`⚠️ Modal: Categoria "${currentCategoryName}" não tem items no carrinho`);
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar badge do modal:', error);
+    }
+}
+
+// Exportar para uso global
+window.updateModalPriceBadge = updateModalPriceBadge;

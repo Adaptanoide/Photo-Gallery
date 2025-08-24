@@ -12,8 +12,11 @@ const router = express.Router();
 const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) => {
     const PhotoCategory = require('../models/PhotoCategory');
 
+    console.log(`\n🎯 ===========================================`);
     console.log(`🎯 NOVO CÁLCULO - Cliente: ${cart.clientCode} (${cart.clientName})`);
     console.log(`📦 Total de itens no carrinho: ${cart.totalItems}`);
+    console.log(`💰 Subtotal inicial: $${subtotal}`);
+    console.log(`===========================================\n`);
 
     // Agrupar itens por categoria
     const itemsByCategory = {};
@@ -39,49 +42,64 @@ const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) =>
         console.log(`\n🏷️ Categoria: ${categoryPath}`);
         console.log(`   📊 Quantidade: ${quantidade} itens`);
 
-        // Buscar categoria no banco
+        // ✅ CORREÇÃO: Remover barra final e extrair apenas o nome da última pasta
+        let categorySearchName = categoryPath;
+
+        // Remover barra final se existir
+        if (categorySearchName.endsWith('/')) {
+            categorySearchName = categorySearchName.slice(0, -1);
+            console.log(`   🔧 Removida barra final: "${categorySearchName}"`);
+        }
+
+        // Extrair apenas o nome da última pasta (depois da última /)
+        const lastSlashIndex = categorySearchName.lastIndexOf('/');
+        if (lastSlashIndex !== -1) {
+            categorySearchName = categorySearchName.substring(lastSlashIndex + 1);
+            console.log(`   🔧 Extraído nome final: "${categorySearchName}"`);
+        }
+
+        // Buscar categoria no banco - ÚNICA BUSCA CORRETA
         let category = null;
         try {
+            console.log(`   🔎 Buscando categoria: "${categorySearchName}"`);
+
             category = await PhotoCategory.findOne({
                 $or: [
-                    // 1. Busca EXATA por folderName (mais provável)
-                    { folderName: categoryPath },
+                    // 1. Busca EXATA por folderName
+                    { folderName: categorySearchName },
 
-                    // 2. Busca por displayName que TERMINA exatamente com o nome
-                    { displayName: { $regex: ` → ${categoryPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
+                    // 2. Busca por displayName que TERMINA com o nome
+                    { displayName: { $regex: ` → ${categorySearchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
 
-                    // 3. Busca direta se for categoria raiz
-                    { displayName: categoryPath }
+                    // 3. Busca direta
+                    { displayName: categorySearchName }
                 ]
             });
         } catch (err) {
             console.log(`   ⚠️ Erro buscando categoria: ${err.message}`);
         }
 
-        // ADICIONE ESTE BLOCO AQUI ↓
         if (category) {
             console.log(`   ✅ Categoria encontrada: ${category.displayName}`);
             console.log(`      FolderName: ${category.folderName}`);
-            console.log(`      Busca por: "${categoryPath}"`);
-
-            // VALIDAÇÃO DE SEGURANÇA
-            if (category.folderName !== categoryPath &&
-                !category.displayName.endsWith(` → ${categoryPath}`) &&
-                category.displayName !== categoryPath) {
-                console.log(`   ⚠️ ALERTA: Match pode estar incorreto!`);
-            }
+            console.log(`      BasePrice: $${category.basePrice}`);
+            console.log(`      Busca realizada por: "${categorySearchName}"`);
         }
 
         if (!category) {
             console.log(`   ❌ Categoria não encontrada no banco`);
+            console.log(`   📍 Usando preços individuais dos items`);
             // Somar com preço individual dos itens
-            const catSubtotal = items.reduce((sum, item) => sum + (item.price || 0), 0);
+            const catSubtotal = items.reduce((sum, item) => {
+                const itemPrice = item.price || item.basePrice || 0;
+                console.log(`      - ${item.fileName}: $${itemPrice}`);
+                return sum + itemPrice;
+            }, 0);
             grandTotal += catSubtotal;
             totalComDesconto += catSubtotal;
+            console.log(`   💵 Subtotal da categoria: $${catSubtotal}`);
             continue;
         }
-
-        console.log(`   ✅ Categoria encontrada: ${category.displayName}`);
 
         // USAR MÉTODO UNIFICADO - TODA HIERARQUIA EM UM SÓ LUGAR
         let precoUnitario = 0;
@@ -89,8 +107,15 @@ const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) =>
         let detalheRegra = null;
 
         try {
+            console.log(`   📞 Chamando getPriceForClient("${cart.clientCode}", ${quantidade})`);
+
             // Chama o método que já tem toda a lógica de hierarquia
             const priceResult = await category.getPriceForClient(cart.clientCode, quantidade);
+
+            console.log(`   💰 Resultado do getPriceForClient:`);
+            console.log(`      - finalPrice: $${priceResult.finalPrice}`);
+            console.log(`      - appliedRule: ${priceResult.appliedRule}`);
+            console.log(`      - basePrice: $${priceResult.basePrice}`);
 
             precoUnitario = priceResult.finalPrice;
             fonte = priceResult.appliedRule;
@@ -158,7 +183,7 @@ const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) =>
         grandTotal += subtotalCategoria;
         totalComDesconto += subtotalCategoria;
 
-        console.log(`   📊 Subtotal: ${quantidade} × $${precoUnitario} = $${subtotalCategoria}`);
+        console.log(`   📊 Cálculo: ${quantidade} × $${precoUnitario} = $${subtotalCategoria}`);
 
         // Guardar detalhes
         detalhes.push({
@@ -175,10 +200,13 @@ const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) =>
     const descontoTotal = subtotal - totalComDesconto;
     const percentualDesconto = subtotal > 0 ? Math.round((descontoTotal / subtotal) * 100) : 0;
 
-    console.log(`\n💵 TOTAIS:`);
+    console.log(`\n💵 ===========================================`);
+    console.log(`💵 TOTAIS FINAIS:`);
     console.log(`   Subtotal original: $${subtotal}`);
     console.log(`   Total com desconto: $${totalComDesconto}`);
     console.log(`   Economia: $${descontoTotal} (${percentualDesconto}%)`);
+    console.log(`   ✅ RETORNANDO TOTAL: $${totalComDesconto}`);
+    console.log(`===========================================\n`);
 
     return {
         rule: {
@@ -375,8 +403,10 @@ router.get('/:sessionId', validateSessionId, async (req, res) => {
         let itemsWithPrice = 0;
 
         for (const item of cart.items) {
-            if (item.hasPrice && item.basePrice > 0) {
-                subtotal += item.basePrice;  // ← USA basePrice!
+            if (item.hasPrice) {
+                // Usa price (com desconto) se existir, senão usa basePrice
+                const itemPrice = item.price > 0 ? item.price : item.basePrice;
+                subtotal += itemPrice;
                 itemsWithPrice++;
             }
         }
@@ -599,13 +629,15 @@ router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) =>
             });
         }
 
-        // Calcular subtotal (soma dos preços individuais)
+        // Calcular subtotal (SEMPRE com basePrice para mostrar valor sem desconto)
         let subtotal = 0;
         let itemsWithPrice = 0;
 
         for (const item of cart.items) {
-            if (item.hasPrice && item.basePrice > 0) {
-                subtotal += item.basePrice;  // ← USA basePrice!
+            if (item.hasPrice) {
+                // SEMPRE usar basePrice para subtotal (preço sem desconto)
+                const itemPrice = item.basePrice || 99; // 99 como fallback padrão
+                subtotal += itemPrice;
                 itemsWithPrice++;
             }
         }
