@@ -19,7 +19,7 @@ window.CartSystem = {
 
     // Configurações
     config: {
-        autoSyncInterval: 30000, // 30 segundos
+        autoSyncInterval: 90000, // 90 segundos (reduzir carga)
         timerUpdateInterval: 1000, // 1 segundo
         apiBaseUrl: '/api/cart'
     },
@@ -320,7 +320,7 @@ window.CartSystem = {
                 this.updateUI();
                 this.startTimers();
 
-                console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
+                //console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
 
                 // Atualizar o badge de preço se tiver items
                 if (this.state.totalItems > 0 && window.updateCategoryPriceBadge) {
@@ -1123,6 +1123,29 @@ window.CartSystem = {
  */
 window.toggleCartItem = async function () {
     console.log('🟡 toggleCartItem() executado'); // ← NOVO LOG
+
+    // ============ FEEDBACK VISUAL INSTANTÂNEO ============
+    // Pegar o botão que foi clicado (modal ou thumbnail)
+    const clickedButton = event?.target?.closest('button') ||
+        document.querySelector('.modal-cart-btn:hover') ||
+        document.querySelector('.thumbnail-cart-btn:hover');
+
+    if (clickedButton) {
+        // Salvar estado original para reverter se der erro
+        const originalHTML = clickedButton.innerHTML;
+        const originalClass = clickedButton.classList.contains('in-cart');
+
+        // Mudar INSTANTANEAMENTE (otimista)
+        if (originalClass) {
+            clickedButton.classList.remove('in-cart');
+            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Removing...</span>';
+        } else {
+            clickedButton.classList.add('in-cart');
+            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
+        }
+        clickedButton.disabled = true;
+    }
+    // ============ FIM DO FEEDBACK INSTANTÂNEO ============
 
     const currentPhoto = CartSystem.getCurrentModalPhoto();
     if (!currentPhoto) {
