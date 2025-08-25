@@ -284,7 +284,7 @@ function updateClientInterface(data) {
 // ===== NAVEGAÇÃO DE CATEGORIAS =====
 async function showCategories() {
     hideAllContainers();
-    hideLoading();
+    //hideLoading();
     document.getElementById('categoriesContainer').style.display = 'grid';
 
     const containerEl = document.getElementById('categoriesContainer');
@@ -2098,9 +2098,24 @@ async function autoApplyFilters() {
     }
 }
 
-// Alias para compatibilidade
-function applyFilters() {
-    autoApplyFilters();
+async function applyFilters() {
+    // MOSTRAR LOADING IMEDIATAMENTE
+    showLoading();
+
+    // Pequeno delay para o loading aparecer na tela
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    try {
+        // Aplicar filtros
+        await autoApplyFilters();
+
+        // Pequeno delay para garantir renderização
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+    } finally {
+        // SEMPRE esconder loading no final
+        hideLoading();
+    }
 }
 
 // Limpar todos os filtros
@@ -2434,6 +2449,8 @@ function setupRadioToggle() {
 
     typeRadios.forEach(radio => {
         radio.addEventListener('click', function (e) {
+            // MOSTRAR LOADING IMEDIATAMENTE
+            showLoading();
             // Se clicou no mesmo que já estava marcado
             if (this.value === lastSelectedType && this.checked) {
                 // Pequeno delay para o browser processar o click
