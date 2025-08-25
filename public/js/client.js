@@ -1655,9 +1655,15 @@ function showNoContent(title, message) {
     document.getElementById('breadcrumbContainer').style.display = 'block';
 }
 
-// Mostrar loading discreto de navegação
 function showLoading() {
     hideAllContainers();
+
+    // GARANTIR que categorias fiquem escondidas
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    if (categoriesContainer) {
+        categoriesContainer.style.display = 'none';
+    }
+
     const loadingEl = document.getElementById('navigationLoading');
     if (loadingEl) {
         loadingEl.style.display = 'flex';
@@ -2099,6 +2105,12 @@ async function autoApplyFilters() {
 }
 
 async function applyFilters() {
+    // ESCONDER CATEGORIAS IMEDIATAMENTE (NOVO!)
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    if (categoriesContainer) {
+        categoriesContainer.style.display = 'none';
+    }
+
     // MOSTRAR LOADING IMEDIATAMENTE
     showLoading();
 
