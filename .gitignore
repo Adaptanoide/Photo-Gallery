@@ -5,3 +5,8 @@ credentials.json
 *.log
 dist/
 build/
+drive-r2-analysis.json
+sync-workspace/
+*.webp
+*.jpg
+*.png
