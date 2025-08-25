@@ -33,7 +33,7 @@ function shouldShowPrices() {
         const session = JSON.parse(savedSession);
         // Verificar tanto em user quanto em client
         const showPrices = session.user?.showPrices ?? session.client?.showPrices ?? true;
-        console.log('🏷️ Show Prices:', showPrices);
+        //console.log('🏷️ Show Prices:', showPrices);
         return showPrices;
     }
     return true; // default
@@ -1815,7 +1815,7 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
         if (isInCart) {
             // Remover do carrinho
             await CartSystem.removeItem(driveFileId);
-            showNotification('Item removed from cart', 'info');
+            //showNotification('Item removed from cart', 'info');
 
             // ADICIONAR ESTAS 3 LINHAS
             if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
@@ -1848,21 +1848,21 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
                 if (currentFolderId && window.loadCategoryPrice) {
                     try {
                         priceInfo = await window.loadCategoryPrice(currentFolderId);
-                        console.log('✅ Preço encontrado para thumbnail:', priceInfo);
-                        console.log('🔍 BASE PRICE DEBUG:');
-                        console.log('  - basePrice:', priceInfo.basePrice);
-                        console.log('  - price:', priceInfo.price);
-                        console.log('  - tem base?:', priceInfo.basePrice !== undefined);
+                        //console.log('✅ Preço encontrado para thumbnail:', priceInfo);
+                        //console.log('🔍 BASE PRICE DEBUG:');
+                        //console.log('  - basePrice:', priceInfo.basePrice);
+                        //console.log('  - price:', priceInfo.price);
+                        //console.log('  - tem base?:', priceInfo.basePrice !== undefined);
                     } catch (error) {
                         console.warn('❌ Erro ao buscar preço para thumbnail:', error);
                     }
                 }
             }
 
-            console.log('🔍 ENVIANDO PARA CART:');
-            console.log('  - basePrice:', priceInfo.basePrice || 0);
-            console.log('  - price:', priceInfo.price);
-            console.log('  - formattedPrice:', priceInfo.formattedPrice);
+            //console.log('🔍 ENVIANDO PARA CART:');
+            //console.log('  - basePrice:', priceInfo.basePrice || 0);
+            //console.log('  - price:', priceInfo.price);
+            //console.log('  - formattedPrice:', priceInfo.formattedPrice);
 
             await CartSystem.addItem(driveFileId, {
                 fileName: photo.name,
@@ -1879,7 +1879,7 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
                 formattedPrice: priceInfo.formattedPrice,
                 hasPrice: priceInfo.hasPrice
             });
-            showNotification('Item added to cart!', 'success');
+            //showNotification('Item added to cart!', 'success');
 
             // ADICIONAR ESTAS 3 LINHAS AQUI
             if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {

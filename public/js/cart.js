@@ -183,12 +183,12 @@ window.CartSystem = {
                 ...itemData
             };
 
-            console.log('🔍 REQUEST DATA SENDO ENVIADO:', {
-                basePrice: requestData.basePrice,
-                price: requestData.price,
-                hasBasePrice: requestData.basePrice !== undefined,
-                todasAsChaves: Object.keys(requestData)
-            });
+            // console.log('🔍 REQUEST DATA SENDO ENVIADO:', {
+            //     basePrice: requestData.basePrice,
+            //     price: requestData.price,
+            //     hasBasePrice: requestData.basePrice !== undefined,
+            //     todasAsChaves: Object.keys(requestData)
+            // });
 
             const response = await fetch(`${this.config.apiBaseUrl}/add`, {
                 method: 'POST',
@@ -200,10 +200,10 @@ window.CartSystem = {
 
             const result = await response.json();
 
-            console.log('🔍 RESPOSTA DO SERVIDOR:', {
-                success: result.success,
-                itemAdicionado: result.data?.item
-            });
+            //console.log('🔍 RESPOSTA DO SERVIDOR:', {
+            //    success: result.success,
+            //    itemAdicionado: result.data?.item
+            //});
 
             if (!response.ok) {
                 throw new Error(result.message || 'Error adding item');
@@ -223,7 +223,7 @@ window.CartSystem = {
             }
 
             // Feedback visual
-            this.showNotification(`Item added to cart!`, 'success');
+            //this.showNotification(`Item added to cart!`, 'success');
             this.updateToggleButton();
 
             console.log(`✅ Item ${driveFileId} adicionado ao carrinho`);
@@ -276,7 +276,7 @@ window.CartSystem = {
             }
 
             // Feedback visual
-            this.showNotification(`Item removed from cart`, 'info');
+            //this.showNotification(`Item removed from cart`, 'info');
             // ADICIONAR ESTAS 3 LINHAS
             if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
                 window.PriceProgressBar.updateProgress();
@@ -309,12 +309,12 @@ window.CartSystem = {
 
             if (response.ok && result.success !== false) {
                 this.state.items = result.items || [];
-                console.log('🔍 ITEMS CARREGADOS DO SERVIDOR:', this.state.items.map(item => ({
-                    fileName: item.fileName,
-                    basePrice: item.basePrice,
-                    price: item.price,
-                    hasBasePrice: item.basePrice !== undefined
-                })));
+                //console.log('🔍 ITEMS CARREGADOS DO SERVIDOR:', this.state.items.map(item => ({
+                //    fileName: item.fileName,
+                //    basePrice: item.basePrice,
+                //    price: item.price,
+                //    hasBasePrice: item.basePrice !== undefined
+                //})));
                 this.state.totalItems = result.totalItems || 0;
 
                 this.updateUI();
@@ -463,13 +463,13 @@ window.CartSystem = {
 
             const totals = result.data;
 
-            console.log(`💰 Total calculado pelo backend:`, {
-                itens: totals.totalItems,
-                subtotal: totals.formattedSubtotal,
-                desconto: `${totals.discountPercent}%`,
-                valorDesconto: totals.formattedDiscountAmount,
-                total: totals.formattedTotal
-            });
+            //console.log(`💰 Total calculado pelo backend:`, {
+            // itens: totals.totalItems,
+            //subtotal: totals.formattedSubtotal,
+            //desconto: `${totals.discountPercent}%`,
+            //valorDesconto: totals.formattedDiscountAmount,
+            //total: totals.formattedTotal
+            //});
 
             return {
                 totalItems: totals.totalItems,
@@ -709,33 +709,33 @@ window.CartSystem = {
             const response = await fetch(`${this.config.apiBaseUrl}/${this.state.sessionId}/calculate-total`);
             const result = await response.json();
 
-            console.log('🔴 RESPOSTA COMPLETA DO BACKEND:', result);
+            //console.log('🔴 RESPOSTA COMPLETA DO BACKEND:', result);
 
             // DEBUG: Ver EXATAMENTE onde estão os dados
-            console.log('🔍 result.data existe?', !!result.data);
-            console.log('🔍 result.data.detalhesCompletos existe?', !!(result.data && result.data.detalhesCompletos));
-            console.log('🔍 result.data.discountRule existe?', !!(result.data && result.data.discountRule));
-            console.log('🔍 result.data.discountRule.detalhes existe?', !!(result.data && result.data.discountRule && result.data.discountRule.detalhes));
+            //console.log('🔍 result.data existe?', !!result.data);
+            //console.log('🔍 result.data.detalhesCompletos existe?', !!(result.data && result.data.detalhesCompletos));
+            //console.log('🔍 result.data.discountRule existe?', !!(result.data && result.data.discountRule));
+            //console.log('🔍 result.data.discountRule.detalhes existe?', !!(result.data && result.data.discountRule && result.data.discountRule.detalhes));
 
             // FORÇAR busca em TODOS os lugares
             let detalhesArray = null;
 
             if (result.data && result.data.discountRule && result.data.discountRule.detalhes) {
                 detalhesArray = result.data.discountRule.detalhes;
-                console.log('✅ ACHEI EM: data.discountRule.detalhes');
+                // console.log('✅ ACHEI EM: data.discountRule.detalhes');
             } else if (result.data && result.data.detalhesCompletos) {
                 detalhesArray = result.data.detalhesCompletos;
-                console.log('✅ ACHEI EM: data.detalhesCompletos');
+                // console.log('✅ ACHEI EM: data.detalhesCompletos');
             } else if (result.detalhesCompletos) {
                 detalhesArray = result.detalhesCompletos;
-                console.log('✅ ACHEI EM: detalhesCompletos direto');
+                // console.log('✅ ACHEI EM: detalhesCompletos direto');
             } else {
-                console.log('❌ NÃO ACHEI detalhes em lugar nenhum!');
-                console.log('📋 result completo:', JSON.stringify(result, null, 2));
+                // console.log('❌ NÃO ACHEI detalhes em lugar nenhum!');
+                // console.log('📋 result completo:', JSON.stringify(result, null, 2));
             }
 
             if (detalhesArray) {
-                console.log('📦 DETALHES ENCONTRADOS:', detalhesArray);
+                //console.log('📦 DETALHES ENCONTRADOS:', detalhesArray);
 
                 detalhesArray.forEach(detail => {
                     let catName = detail.categoria;
@@ -749,7 +749,7 @@ window.CartSystem = {
                     discountDetails[catName] = detail;
                 });
 
-                console.log('💰 MAPA CRIADO:', discountDetails);
+                //console.log('💰 MAPA CRIADO:', discountDetails);
             }
         } catch (error) {
             console.error('Erro ao buscar detalhes de desconto:', error);
@@ -798,7 +798,7 @@ window.CartSystem = {
                 categoryTotal = discountInfo.subtotal;
                 precoUnitario = discountInfo.precoUnitario;
 
-                console.log(`📦 Categoria "${category}": ${itemCount} items x $${precoUnitario} = $${categoryTotal}`);
+                //console.log(`📦 Categoria "${category}": ${itemCount} items x $${precoUnitario} = $${categoryTotal}`);
 
                 // Montar texto de desconto baseado na fonte
                 const basePrice = items[0].basePrice || 99;
