@@ -3139,7 +3139,7 @@
 /* ===== BADGE DE PREÇO NO TÍTULO ===== */
 .category-price-badge {
     display: inline-block;
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    background: #22c55e;
     color: white;
     padding: 0.4rem 1rem;
     border-radius: 20px;
@@ -3153,6 +3153,28 @@
 .category-price-badge.no-price {
     background: var(--text-muted);
     box-shadow: none;
+}
+
+.category-price-badge.contact-price {
+    background: #22c55e;
+    color: white;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+/* Contact for Price - Estilo Verde Global */
+span.contact-price {
+    background: #22c55e;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+span.contact-price i {
+    color: white !important;
+    margin-right: 5px;
 }
 
 /* ===== LINK REVIEW SUMMARY DISCRETO ===== */
@@ -3225,7 +3247,7 @@
 
 /* Destaque para quantidade de fotos */
 #categoriesContainer .folder-stats span:has(.fa-images) {
-    color: var(--text-light);
+    color: white;
     font-weight: 500;
 }
 

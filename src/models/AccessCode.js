@@ -57,6 +57,13 @@ const accessCodeSchema = new mongoose.Schema({
         index: true
     },
 
+    // ===== CONTROLE GLOBAL DE EXIBIÇÃO DE PREÇOS =====
+    showPrices: {
+        type: Boolean,
+        default: true,
+        index: true
+    },
+
     // ===== CONFIGURAÇÃO PARA ACESSO NORMAL (EXISTENTE) =====
     allowedCategories: [{
         type: String,

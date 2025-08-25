@@ -133,12 +133,13 @@ router.post('/client/verify', async (req, res) => {
         res.json({
             success: true,
             message: 'Código verificado com sucesso',
-            token: token,  // <-- ADICIONAR ESTA LINHA
+            token: token,
             client: {
                 name: accessCode.clientName,
                 email: accessCode.clientEmail,
                 code: accessCode.code,
-                accessType: accessCode.accessType || 'normal'  // <-- ADICIONAR
+                accessType: accessCode.accessType || 'normal',
+                showPrices: accessCode.showPrices !== false
             },
             allowedCategories: accessCode.allowedCategories,
             expiresAt: accessCode.expiresAt
@@ -237,7 +238,8 @@ router.get('/client/data', async (req, res) => {
             client: {
                 name: accessCode.clientName,
                 email: accessCode.clientEmail,
-                code: accessCode.code
+                code: accessCode.code,
+                showPrices: accessCode.showPrices !== false
             },
             allowedCategories: allowedCategories,
             totalCategories: r2Categories.length,

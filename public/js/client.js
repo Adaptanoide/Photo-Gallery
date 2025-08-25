@@ -26,6 +26,21 @@ let isSpecialSelection = false;
 // Alias local para compatibilidade
 const navigationState = window.navigationState;
 
+// ===== HELPER PARA VERIFICAR SE DEVE MOSTRAR PREÇOS =====
+function shouldShowPrices() {
+    const savedSession = localStorage.getItem('sunshineSession');
+    if (savedSession) {
+        const session = JSON.parse(savedSession);
+        // Verificar tanto em user quanto em client
+        const showPrices = session.user?.showPrices ?? session.client?.showPrices ?? true;
+        console.log('🏷️ Show Prices:', showPrices);
+        return showPrices;
+    }
+    return true; // default
+}
+// Tornar global
+window.shouldShowPrices = shouldShowPrices;
+
 // ===== FUNÇÃO HELPER PARA URLs SEGURAS =====
 // Helper para sempre encodar parâmetros de URL corretamente
 function safeURL(baseURL, params) {
@@ -240,6 +255,15 @@ async function loadClientData() {
 function updateClientInterface(data) {
     const { client, allowedCategories } = data;
 
+    // Salvar showPrices na sessão
+    const savedSession = localStorage.getItem('sunshineSession');
+    if (savedSession) {
+        const session = JSON.parse(savedSession);
+        session.client = { ...session.client, showPrices: client.showPrices };
+        localStorage.setItem('sunshineSession', JSON.stringify(session));
+        console.log('💾 ShowPrices salvo na sessão:', client.showPrices);
+    }
+
     // Atualizar welcome no header superior
     const headerWelcome = document.getElementById('headerWelcome');
     if (headerWelcome) {
@@ -391,11 +415,13 @@ async function showCategories() {
         // Gerar cards melhorados
         containerEl.innerHTML = allowedCategories.map(category => {
             const stats = categoryDataMap[category.name] || {};
-            const priceRange = (stats.minPrice && stats.maxPrice)
-                ? (stats.minPrice === stats.maxPrice
-                    ? `R$ ${stats.minPrice.toFixed(2)}`
-                    : `R$ ${stats.minPrice.toFixed(2)} - R$ ${stats.maxPrice.toFixed(2)}`)
-                : 'Price on request';
+            const priceRange = shouldShowPrices()
+                ? ((stats.minPrice && stats.maxPrice)
+                    ? (stats.minPrice === stats.maxPrice
+                        ? `R$ ${stats.minPrice.toFixed(2)}`
+                        : `R$ ${stats.minPrice.toFixed(2)} - R$ ${stats.maxPrice.toFixed(2)}`)
+                    : 'Price on request')
+                : 'Contact for Price';  // Quando showPrices = false
 
             const description = getMainCategoryDescription(category.name);
 
@@ -406,7 +432,7 @@ async function showCategories() {
                     <div class="folder-stats">
                         ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} total photos</span>` : ''}
                         ${stats.categories?.length > 0 ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>` : ''}
-                        ${priceRange !== 'Price on request' ? `<span><i class="fas fa-tag"></i> ${priceRange}</span>` : ''}
+                        ${shouldShowPrices() && priceRange !== 'Price on request' ? `<span><i class="fas fa-tag"></i> ${priceRange}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                     </div>
                     <div class="category-action">
                         <i class="fas fa-arrow-right"></i>
@@ -548,7 +574,9 @@ function showSubfolders(folders) {
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
         const photoCount = folder.photoCount || folder.imageCount || folder.totalFiles || 0;
         const price = folder.price || 0;
-        const formattedPrice = folder.formattedPrice || (price > 0 ? `R$ ${price.toFixed(2)}` : '');
+        const formattedPrice = shouldShowPrices()
+            ? (folder.formattedPrice || (price > 0 ? `R$ ${price.toFixed(2)}` : ''))
+            : '';  // Não mostrar preço se showPrices = false
 
         return `
             <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${escapeForJS(folder.name)}')">
@@ -557,7 +585,7 @@ function showSubfolders(folders) {
                 <div class="folder-stats">
                     ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
                     ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
-                    ${formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : ''}
+                    ${shouldShowPrices() && formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                 </div>
                 <div class="category-action">
                     <i class="fas fa-arrow-right"></i>
@@ -683,7 +711,12 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     // 🌟 NOVO: Verificar primeiro se tem customPrice nas fotos (Special Selection)
     const customPrice = photos[0]?.customPrice;
 
-    if (customPrice) {
+    // Verificar se deve mostrar preços
+    console.log('🔍 DEBUG Gallery Title - shouldShowPrices:', shouldShowPrices());
+    if (!shouldShowPrices()) {
+        // Não mostrar preços - Contact for Price
+        galleryTitle.innerHTML = `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
+    } else if (customPrice) {
         // Special Selection - usar o preço customizado
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">R$ ${parseFloat(customPrice).toFixed(2)}</span>`;
     } else if (categoryPrice && categoryPrice.hasPrice) {
@@ -825,6 +858,12 @@ window.PriceProgressBar = {
     },
 
     render(data) {
+        // Se não deve mostrar preços, não renderizar
+        if (!shouldShowPrices()) {
+            this.hide();
+            return;
+        }
+
         // Remove existing bar if any
         if (this.barElement) {
             this.barElement.remove();
@@ -1057,6 +1096,30 @@ function getCurrentCategoryDisplayName() {
 
 async function updateModalPriceInfo(photo) {
     try {
+
+        // Verificar se deve mostrar preços
+        if (!shouldShowPrices()) {
+            // Mostrar "Contact for Price" no badge
+            const photoIndex = navigationState.currentPhotoIndex;
+            const totalPhotos = navigationState.currentPhotos.length;
+
+            document.getElementById('modalPhotoCounter').innerHTML = `
+                <span class="modal-price-badge contact-price">Contact for Price</span>
+                <span style="margin: 0 10px;">-</span>
+                ${photoIndex + 1} / ${totalPhotos}
+            `;
+
+            // Esconder grid de volume
+            const gridEl = document.getElementById('modalDiscountGrid');
+            if (gridEl) gridEl.style.display = 'none';
+
+            // Limpar outros campos
+            document.getElementById('modalPhotoSize').innerHTML = '';
+            document.getElementById('modalPhotoDate').innerHTML = '';
+
+            return; // Sair da função
+        }
+
         // Se não recebeu photo, pegar a foto atual do modal
         if (!photo && navigationState.currentPhotos && navigationState.currentPhotoIndex >= 0) {
             photo = navigationState.currentPhotos[navigationState.currentPhotoIndex];
@@ -1557,7 +1620,7 @@ function createUnifiedCard(data) {
         <div class="folder-stats">
             ${hasPhotos ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
             ${hasSubfolders ? `<span><i class="fas fa-th-large"></i> ${data.totalSubfolders} subfolders</span>` : ''}
-            ${formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : ''}
+            ${shouldShowPrices() && formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
         </div>
         <div class="category-action">
             <i class="fas fa-arrow-right"></i>
@@ -2360,6 +2423,12 @@ window.showAllCategories = showAllCategories;
 // Função para atualizar o preço do badge baseado no desconto do carrinho
 async function updateCategoryPriceBadge() {
     try {
+
+        // Verificar se deve mostrar preços
+        if (!shouldShowPrices()) {
+            return; // Sair sem fazer nada
+        }
+
         const priceElement = document.querySelector('.category-price-badge');
         if (!priceElement) return;
 
@@ -2427,6 +2496,12 @@ window.updateCategoryPriceBadge = updateCategoryPriceBadge;
 // Função para atualizar o preço no modal fullscreen
 async function updateModalPriceBadge() {
     try {
+
+        // Verificar se deve mostrar preços
+        if (!shouldShowPrices()) {
+            return; // Sair sem fazer nada
+        }
+
         const modalPriceElement = document.querySelector('.modal-price-badge');
         if (!modalPriceElement) return;
 

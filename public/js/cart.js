@@ -612,33 +612,47 @@ window.CartSystem = {
             let totalHTML = `<div class="items-text">${totalText}</div>`;
 
             if (cartTotal.total > 0) {
-                totalHTML += `
-                <div class="cart-totals-simple">
-                    <div class="subtotal-line">
-                        <span>Subtotal:</span>
-                        <span>${cartTotal.formattedSubtotal}</span>
-                    </div>`;
-
-                // Se há desconto, mostrar valor economizado
-                if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
-                    // Determinar o texto baseado na fonte do desconto
-                    const discountLabel = 'Quantity Discount:';
-
+                // Verificar se deve mostrar preços
+                if (!window.shouldShowPrices || !window.shouldShowPrices()) {
                     totalHTML += `
-                    <div class="discount-line" style="color: #28a745;">
-                        <span>${discountLabel}</span>
-                        <span>-${cartTotal.formattedDiscountAmount}</span>
+                    <div class="cart-totals-simple">
+                        <div class="total-line">
+                            <span><strong>Total Items:</strong></span>
+                            <span><strong>${this.state.totalItems}</strong></span>
+                        </div>
+                        <div class="contact-price" style="margin-top: 10px; padding: 10px; text-align: center;">
+                            <i class="fas fa-phone"></i> Contact for Price
+                        </div>
                     </div>`;
+                } else {
+                    totalHTML += `
+                    <div class="cart-totals-simple">
+                        <div class="subtotal-line">
+                            <span>Subtotal:</span>
+                            <span>${cartTotal.formattedSubtotal}</span>
+                        </div>`;
+
+                    // Se há desconto, mostrar valor economizado
+                    if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
+                        // Determinar o texto baseado na fonte do desconto
+                        const discountLabel = 'Quantity Discount:';
+
+                        totalHTML += `
+                        <div class="discount-line" style="color: #28a745;">
+                            <span>${discountLabel}</span>
+                            <span>-${cartTotal.formattedDiscountAmount}</span>
+                        </div>`;
+                    }
+
+                    // Total final sempre
+                    totalHTML += `
+                        <div class="total-line" style="border-top: 1px solid #dee2e6; margin-top: 8px; padding-top: 8px;">
+                            <span><strong>Total:</strong></span>
+                            <span><strong>${cartTotal.formattedTotal}</strong></span>
+                        </div>`;
+
+                    totalHTML += `</div>`;
                 }
-
-                // Total final sempre
-                totalHTML += `
-                    <div class="total-line" style="border-top: 1px solid #dee2e6; margin-top: 8px; padding-top: 8px;">
-                        <span><strong>Total:</strong></span>
-                        <span><strong>${cartTotal.formattedTotal}</strong></span>
-                    </div>`;
-
-                totalHTML += `</div>`;
             }
 
             this.elements.itemCount.innerHTML = totalHTML;
@@ -788,7 +802,10 @@ window.CartSystem = {
                 if (discountInfo && precoUnitario < basePrice) {
                     const savings = (basePrice * itemCount) - categoryTotal;
 
-                    if (discountInfo.fonte === 'custom-client') {
+                    // Verificar se deve mostrar preços
+                    if (!window.shouldShowPrices || !window.shouldShowPrices()) {
+                        categoryDiscount = ''; // Não mostrar desconto
+                    } else if (discountInfo.fonte === 'custom-client') {
                         categoryDiscount = `
                             <div style="font-size: 0.85em; color: #28a745; margin-top: 4px;">
                                 <i class="fas fa-star" style="font-size: 0.8em; color: #ffc107;"></i> 
@@ -826,7 +843,10 @@ window.CartSystem = {
                         <span class="category-count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</span>
                     </div>
                     <div class="category-right">
-                        <span class="category-subtotal">$${categoryTotal.toFixed(2)}</span>
+                        ${(window.shouldShowPrices && window.shouldShowPrices()) ?
+                    `<span class="category-subtotal">$${categoryTotal.toFixed(2)}</span>` :
+                    ''
+                }
                     </div>
                 </div>`;
 
@@ -905,12 +925,15 @@ window.CartSystem = {
                 <div class="cart-item-info">
                     <div class="cart-item-title">${item.fileName}</div>
                     <div class="cart-item-category">${item.category}</div>
-                    <div class="cart-item-price">
-                        ${item.hasPrice ?
-                `<span class="price-value">${item.formattedPrice}</span>` :
-                `<span class="price-consult">Check price</span>`
+                    ${(window.shouldShowPrices && window.shouldShowPrices()) ?
+                `<div class="cart-item-price">
+                            ${item.hasPrice ?
+                    `<span class="price-value">${item.formattedPrice}</span>` :
+                    `<span class="price-consult">Check price</span>`
+                }
+                        </div>` :
+                ''  // Não mostrar NADA quando showPrices = false
             }
-                    </div>
                     <div class="cart-item-timer ${timerClass}">
                         <i class="fas fa-clock"></i>
                         <span id="timer-${item.driveFileId}">${timeText}</span>

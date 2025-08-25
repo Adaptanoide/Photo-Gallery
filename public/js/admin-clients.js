@@ -273,6 +273,19 @@ class AdminClients {
                                         <input type="number" id="expireDays" class="form-input-clients" 
                                             value="30" min="1" max="365">
                                     </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">Show Prices to Client</label>
+                                        <div class="toggle-item">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="showPrices">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span id="showPricesLabel" style="margin-left: 10px; color: var(--text-muted);">Enabled</span>
+                                        </div>
+                                        <small style="color: var(--text-muted); margin-top: 5px; display: block;">
+                                            When disabled, client will see "Contact for Price"
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
 
@@ -505,6 +518,17 @@ class AdminClients {
         // Form inputs
         document.getElementById('clientName').addEventListener('input', () => this.generateCodePreview());
 
+        // Toggle Show Prices listener
+        const showPricesToggle = document.getElementById('showPrices');
+        if (showPricesToggle) {
+            showPricesToggle.addEventListener('change', function () {
+                const label = document.getElementById('showPricesLabel');
+                if (label) {
+                    label.textContent = this.checked ? 'Enabled' : 'Disabled';
+                }
+            });
+        }
+
         // Close modal by clicking outside
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
@@ -710,6 +734,8 @@ class AdminClients {
         document.getElementById('state').value = '';
         document.getElementById('zipCode').value = '';
         document.getElementById('expireDays').value = '30';
+        document.getElementById('showPrices').checked = true;
+        document.getElementById('showPricesLabel').textContent = 'Enabled';
 
         // Update titles
         document.getElementById('modalTitle').textContent = 'New Access Code';
@@ -799,8 +825,16 @@ class AdminClients {
             zipCode: document.getElementById('zipCode').value.trim(),
             allowedCategories: this.selectedCategories,
             expiresInDays: parseInt(document.getElementById('expireDays').value),
-            isActive: true  // Sempre ativo no formulário, usamos botões para alterar
+            showPrices: document.getElementById('showPrices').checked,
+            isActive: true
         };
+
+        // DEBUG - Ver o que está sendo enviado
+        console.log('🔍 DEBUG FormData sendo enviado:', {
+            showPrices: formData.showPrices,
+            clientName: formData.clientName,
+            todo: formData
+        });
 
         // ENHANCED VALIDATIONS
         const validationErrors = this.validateFormData(formData);
@@ -1274,6 +1308,10 @@ class AdminClients {
         // Fill form - Settings
         document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
         document.getElementById('codePreview').textContent = client.code;
+
+        // Fill Show Prices toggle
+        document.getElementById('showPrices').checked = client.showPrices !== false;
+        document.getElementById('showPricesLabel').textContent = client.showPrices !== false ? 'Enabled' : 'Disabled';
 
         // Update titles
         document.getElementById('modalTitle').textContent = 'Edit Access Code';

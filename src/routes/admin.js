@@ -151,6 +151,7 @@ router.post('/access-codes', async (req, res) => {
             state,
             zipCode,
             allowedCategories,
+            showPrices: req.body.showPrices !== false,
             expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
             createdBy: req.user.username
         });
@@ -222,6 +223,7 @@ router.put('/access-codes/:id', async (req, res) => {
                 allowedCategories,
                 expiresAt,
                 isActive: isActive !== false, // Default true
+                showPrices: req.body.showPrices !== false,
                 updatedAt: new Date()
             },
             { new: true, runValidators: true }

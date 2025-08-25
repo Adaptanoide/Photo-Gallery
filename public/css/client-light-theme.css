@@ -308,8 +308,8 @@ body.client-page::before {
 }
 
 .client-page .folder-stats span {
-    background: rgba(212, 175, 55, 0.1);
-    color: var(--gold-primary);
+    background: #22c55e;
+    color:white;
 }
 
 /* Photo price badges */
