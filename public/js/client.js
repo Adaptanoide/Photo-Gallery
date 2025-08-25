@@ -6,6 +6,30 @@
  * Extraído de client.html para modularização
  */
 
+// ===== INTERCEPTAR CLIQUES NOS FILTROS IMEDIATAMENTE =====
+document.addEventListener('click', function (e) {
+    // Se clicou em qualquer input dentro do filterSidebar
+    if (e.target && (e.target.type === 'checkbox' || e.target.type === 'radio')) {
+        const sidebar = document.getElementById('filterSidebar');
+        if (sidebar && sidebar.contains(e.target)) {
+            console.log('🚨 Filtro clicado - escondendo categorias IMEDIATAMENTE');
+
+            // ESCONDER TUDO INSTANTANEAMENTE
+            const categoriesContainer = document.getElementById('categoriesContainer');
+            if (categoriesContainer) {
+                categoriesContainer.style.visibility = 'hidden'; // Mais rápido que display
+                categoriesContainer.style.opacity = '0';
+            }
+
+            // Mostrar loading
+            const loadingEl = document.getElementById('navigationLoading');
+            if (loadingEl) {
+                loadingEl.style.display = 'flex';
+            }
+        }
+    }
+}, true); // TRUE = captura ANTES de qualquer outro evento
+
 // ===== ESTADO DA NAVEGAÇÃO =====
 // Estado da navegação e fotos (EXPOSTO GLOBALMENTE)
 window.navigationState = {
@@ -281,10 +305,18 @@ function updateClientInterface(data) {
     }
 }
 
-// ===== NAVEGAÇÃO DE CATEGORIAS =====
 async function showCategories() {
     hideAllContainers();
-    //hideLoading();
+    // hideLoading(); // Já está comentado
+
+    // RESTAURAR VISIBILIDADE DAS CATEGORIAS
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    if (categoriesContainer) {
+        categoriesContainer.style.display = 'grid';
+        categoriesContainer.style.visibility = 'visible'; // RESTAURAR
+        categoriesContainer.style.opacity = '1'; // RESTAURAR
+    }
+
     document.getElementById('categoriesContainer').style.display = 'grid';
 
     const containerEl = document.getElementById('categoriesContainer');
@@ -1670,11 +1702,18 @@ function showLoading() {
     }
 }
 
-// Esconder loading de navegação
+// Esconder loading de navegaçãoc
 function hideLoading() {
     const loadingEl = document.getElementById('navigationLoading');
     if (loadingEl) {
         loadingEl.style.display = 'none';
+    }
+
+    // RESTAURAR CATEGORIAS quando loading sumir
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    if (categoriesContainer) {
+        categoriesContainer.style.visibility = 'visible';
+        categoriesContainer.style.opacity = '1';
     }
 }
 
