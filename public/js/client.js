@@ -1802,7 +1802,32 @@ function getCurrentCategoryName() {
 // ===== FUNÇÃO PARA ADD TO CART DA THUMBNAIL =====
 async function addToCartFromThumbnail(driveFileId, photoIndex) {
     try {
-        // Pegar a foto
+        // ============ FEEDBACK VISUAL INSTANTÂNEO THUMBNAIL ============
+        // Encontrar o botão pelo driveFileId
+        const thumbButton = document.querySelector(`.thumbnail-cart-btn[onclick*="${driveFileId}"]`) ||
+            document.querySelector(`.thumbnail-cart-btn[data-drive-file-id="${driveFileId}"]`);
+
+        if (thumbButton) {
+            const isInCart = thumbButton.classList.contains('in-cart');
+
+            // Muda INSTANTANEAMENTE com spinner
+            if (isInCart) {
+                thumbButton.classList.remove('in-cart');
+                thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Removing...</span>';
+            } else {
+                thumbButton.classList.add('in-cart');
+                thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
+            }
+            thumbButton.disabled = true;
+
+            // Re-habilita após 2 segundos
+            setTimeout(() => {
+                if (thumbButton) thumbButton.disabled = false;
+            }, 2000);
+        }
+        // ============ FIM DO FEEDBACK INSTANTÂNEO ============
+
+        // Pegar a foto (CÓDIGO ORIGINAL CONTINUA AQUI)
         const photo = navigationState.currentPhotos[photoIndex];
         if (!photo) {
             console.error('Photo not found');
