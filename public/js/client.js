@@ -1812,10 +1812,12 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
 
             // Muda INSTANTANEAMENTE com spinner
             if (isInCart) {
-                thumbButton.classList.remove('in-cart');
+                // REMOVENDO - deve ficar VERMELHO
+                thumbButton.classList.add('in-cart');  // MUDOU! Era remove
                 thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Removing...</span>';
             } else {
-                thumbButton.classList.add('in-cart');
+                // ADICIONANDO - deve ficar VERDE
+                thumbButton.classList.remove('in-cart');  // MUDOU! Era add
                 thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
             }
             thumbButton.disabled = true;
@@ -1914,13 +1916,37 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
             const button = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
             if (button) {
                 button.classList.add('in-cart');
-                button.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+                button.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
                 button.title = 'Remove from cart';
             }
         }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error updating cart', 'error');
+        console.error('Error in thumbnail:', error);
+
+        // REVERTER O BOTÃO PARA ESTADO ORIGINAL
+        const thumbButton = document.querySelector(`.thumbnail-cart-btn[onclick*="${driveFileId}"]`);
+        if (thumbButton) {
+            thumbButton.disabled = false;
+
+            // Verificar estado real no carrinho
+            const isCurrentlyInCart = CartSystem.isInCart(driveFileId);
+
+            // Restaurar estado correto
+            if (isCurrentlyInCart) {
+                thumbButton.classList.add('in-cart');
+                thumbButton.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
+            } else {
+                thumbButton.classList.remove('in-cart');
+                thumbButton.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
+            }
+        }
+
+        // Mostrar mensagem apropriada
+        if (error.message?.includes('reserved') || error.message?.includes('reserv')) {
+            showNotification('This item has been reserved by another customer', 'warning');
+        } else {
+            showNotification(error.message || 'Error updating cart', 'error');
+        }
     }
 }
 
@@ -1942,7 +1968,7 @@ window.syncCartUIFromAdd = function (driveFileId) {
     const thumbButton = document.querySelector(`button[onclick*="'${driveFileId}'"]`);
     if (thumbButton) {
         thumbButton.classList.add('in-cart');
-        thumbButton.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+        thumbButton.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
         thumbButton.title = 'Remove from cart';
         console.log(`✅ Thumbnail ${driveFileId} sincronizado após adição via modal`);
     }

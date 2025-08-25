@@ -71,7 +71,7 @@ class CartService {
 
                 // Verificar se produto está disponível
                 if (product.status !== 'available') {
-                    throw new Error('Produto já foi reservado ou vendido por outro cliente');
+                    throw new Error('This item has been reserved by another customer');
                 }
 
                 // 2. Buscar carrinho (ativo ou inativo)
@@ -125,7 +125,7 @@ class CartService {
                 ).session(session);
 
                 if (updateResult.matchedCount === 0) {
-                    throw new Error('Produto foi reservado por outro cliente');
+                    throw new Error('This item has been reserved by another customer');
                 }
 
                 // 7. Adicionar item ao carrinho

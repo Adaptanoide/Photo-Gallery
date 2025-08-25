@@ -232,8 +232,9 @@ window.CartSystem = {
 
         } catch (error) {
             console.error('❌ Erro ao adicionar item:', error);
-            this.showNotification(error.message, 'error');
-            throw error;
+            // Usar amarelo para itens reservados
+            const notificationType = error.message?.includes('reserved') ? 'warning' : 'error';
+            this.showNotification(error.message, notificationType); throw error;
         } finally {
             this.setLoading(false);
         }
@@ -292,8 +293,9 @@ window.CartSystem = {
 
         } catch (error) {
             console.error('❌ Erro ao remover item:', error);
-            this.showNotification(error.message, 'error');
-            throw error;
+            // Usar amarelo para itens reservados
+            const notificationType = error.message?.includes('reserved') ? 'warning' : 'error';
+            this.showNotification(error.message, notificationType); throw error;
         } finally {
             this.setLoading(false);
         }
