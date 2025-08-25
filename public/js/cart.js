@@ -224,7 +224,7 @@ window.CartSystem = {
 
             // Feedback visual
             //this.showNotification(`Item added to cart!`, 'success');
-            this.updateToggleButton();
+            setTimeout(() => this.updateToggleButton(), 300); // Delay para sincronizar
 
             console.log(`✅ Item ${driveFileId} adicionado ao carrinho`);
 
@@ -281,7 +281,7 @@ window.CartSystem = {
             if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
                 window.PriceProgressBar.updateProgress();
             }
-            this.updateToggleButton();
+            setTimeout(() => this.updateToggleButton(), 300); // Delay para sincronizar
             // Sincronizar com thumbnails
             if (window.syncCartUIFromRemove) {
                 window.syncCartUIFromRemove(driveFileId);
@@ -429,22 +429,32 @@ window.CartSystem = {
      * Atualizar botão toggle no modal
      */
     updateToggleButton() {
-        if (!this.elements.toggleBtn || !this.elements.toggleBtnText) return;
-
-        // Verificar se modal está aberto e qual foto está sendo exibida
+        // Pegar foto atual
         const currentPhoto = this.getCurrentModalPhoto();
         if (!currentPhoto) return;
 
         const inCart = this.isInCart(currentPhoto);
 
-        // Atualizar visual do botão
-        this.elements.toggleBtn.classList.toggle('in-cart', inCart);
-        this.elements.toggleBtnText.textContent = inCart ? 'Remove from Cart' : 'Add to Cart';
+        // Atualizar botão do CARRINHO (se existir)
+        if (this.elements.toggleBtn && this.elements.toggleBtnText) {
+            this.elements.toggleBtn.classList.toggle('in-cart', inCart);
+            this.elements.toggleBtnText.textContent = inCart ? 'Remove from Cart' : 'Add to Cart';
+            const icon = this.elements.toggleBtn.querySelector('i');
+            if (icon) {
+                icon.className = inCart ? 'fas fa-trash-alt' : 'fas fa-shopping-cart';
+            }
+        }
 
-        // Atualizar ícone
-        const icon = this.elements.toggleBtn.querySelector('i');
-        if (icon) {
-            icon.className = inCart ? 'fas fa-trash-alt' : 'fas fa-shopping-cart';
+        // NOVO: Atualizar botão do MODAL também!
+        const modalBtn = document.getElementById('cartToggleBtn'); if (modalBtn) {
+            modalBtn.disabled = false;
+            modalBtn.classList.toggle('in-cart', inCart);
+            // GARANTIR QUE TENHA TEXTO!
+            if (inCart) {
+                modalBtn.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
+            } else {
+                modalBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
+            }
         }
     },
 
@@ -1125,27 +1135,49 @@ window.toggleCartItem = async function () {
     console.log('🟡 toggleCartItem() executado'); // ← NOVO LOG
 
     // ============ FEEDBACK VISUAL INSTANTÂNEO ============
-    // Pegar o botão que foi clicado (modal ou thumbnail)
     const clickedButton = event?.target?.closest('button') ||
         document.querySelector('.modal-cart-btn:hover') ||
         document.querySelector('.thumbnail-cart-btn:hover');
 
     if (clickedButton) {
-        // Salvar estado original para reverter se der erro
         const originalHTML = clickedButton.innerHTML;
         const originalClass = clickedButton.classList.contains('in-cart');
 
-        // Mudar INSTANTANEAMENTE (otimista)
+        // CORRIGIDO - ícones certos!
         if (originalClass) {
-            clickedButton.classList.remove('in-cart');
-            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Removing...</span>';
+            // Se está no carrinho (Remove) - mostra APENAS spinner
+            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> </span>';
         } else {
-            clickedButton.classList.add('in-cart');
-            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
+            // Se NÃO está no carrinho (Add) - mostra APENAS spinner
+            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> </span>';
         }
         clickedButton.disabled = true;
     }
     // ============ FIM DO FEEDBACK INSTANTÂNEO ============
+
+    // GARANTIR RESTAURAÇÃO após 1.5s - FORÇANDO DIRETAMENTE
+    setTimeout(() => {
+        const modalBtn = document.getElementById('cartToggleBtn');  // ID CORRETO!
+        if (modalBtn) {
+            const currentPhoto = CartSystem.getCurrentModalPhoto();
+            if (currentPhoto) {
+                const isInCart = CartSystem.isInCart(currentPhoto);
+
+                modalBtn.disabled = false;
+
+                // FORÇAR O TEXTO E CLASSE
+                if (isInCart) {
+                    modalBtn.classList.add('in-cart');
+                    modalBtn.classList.remove('adding');
+                    modalBtn.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
+                } else {
+                    modalBtn.classList.remove('in-cart');
+                    modalBtn.classList.remove('adding');
+                    modalBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
+                }
+            }
+        }
+    }, 1500);
 
     const currentPhoto = CartSystem.getCurrentModalPhoto();
     if (!currentPhoto) {
@@ -1212,6 +1244,30 @@ window.toggleCartItem = async function () {
             }
 
         }
+
+        // COMENTAR TUDO ISSO - está causando o "piscar"
+        /*
+        // GARANTIR RESTAURAÇÃO após 1.5s
+        setTimeout(() => {
+            // Usar CartSystem ao invés de this
+            if (CartSystem && CartSystem.updateToggleButton) {
+                CartSystem.updateToggleButton();
+            }
+
+            // Forçar também diretamente para garantir
+            const modalBtn = document.querySelector('.modal-cart-btn');
+            if (modalBtn) {
+                const currentPhoto = CartSystem.getCurrentModalPhoto();
+                const isInCart = CartSystem.isInCart(currentPhoto);
+
+                modalBtn.disabled = false;
+                modalBtn.innerHTML = isInCart ?
+                    '<i class="fas fa-trash"></i><span>Remove</span>' :
+                    '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
+            }
+        }, 1500);
+        */
+
     } catch (error) {
         console.error('❌ Erro no toggle do carrinho:', error);
     }
