@@ -609,7 +609,12 @@ window.CartSystem = {
                     `${this.state.totalItems} items`;
 
             // Nova interface com subtotal e total
-            let totalHTML = `<div class="items-text">${totalText}</div>`;
+            let totalHTML = '';
+
+            // Só mostrar "X items" se showPrices = true
+            if (window.shouldShowPrices && window.shouldShowPrices()) {
+                totalHTML = `<div>${totalText}</div>`;
+            }
 
             if (cartTotal.total > 0) {
                 // Verificar se deve mostrar preços
@@ -1414,6 +1419,10 @@ function toggleSummaryCategory(header) {
 }
 
 async function generateOrderSummary() {
+
+    // Verificar se deve mostrar preços
+    const showPrices = window.shouldShowPrices && window.shouldShowPrices();
+
     const items = CartSystem.state.items;
 
     if (items.length === 0) {
@@ -1519,7 +1528,7 @@ async function generateOrderSummary() {
                         <strong>${category}</strong>
                         <span style="float: right; color: #666;">
                             ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'} 
-                            | R$ ${categoryTotal.toFixed(2)}
+                            ${showPrices ? `| R$ ${categoryTotal.toFixed(2)}` : ''}
                         </span>
                     </div>
                     <div class="summary-category-items" style="display: ${index === 0 ? 'block' : 'none'};">
@@ -1568,7 +1577,7 @@ async function generateOrderSummary() {
             html += `
                 <div class="summary-item" style="padding: 4px 8px; margin-left: 20px;">
                     <span style="color: #666;">${item.fileName}</span>
-                    <span style="float: right;">${price}</span>
+                    ${showPrices ? `<span style="float: right;">${price}</span>` : ''}
                 </div>
             `;
         });
@@ -1587,55 +1596,59 @@ async function generateOrderSummary() {
     // Totais
     html += '<div class="summary-totals" style="border-top: 2px solid #dee2e6; margin-top: 15px; padding-top: 15px;">';
 
-    html += `
-        <div class="summary-total-line">
-            <span>Total items:</span>
-            <span>${totalItems}</span>
-        </div>
-        <div class="summary-total-line">
-            <span>Subtotal:</span>
-            <span>${cartTotal.formattedSubtotal}</span>
-        </div>
-    `;
+    // Verificar se deve mostrar preços
+    if (!showPrices) {
+        // Não mostrar preços - apenas quantidade e Contact for Price
+        html += `
+            <div class="summary-total-line">
+                <span><strong>Total Items:</strong></span>
+                <span><strong>${totalItems}</strong></span>
+            </div>
+            <div class="contact-price" style="margin-top: 15px; padding: 15px; text-align: center;">
+                <i class="fas fa-phone"></i> Contact for Price
+            </div>
+        `;
+    } else {
+        // Mostrar preços normalmente - SEU CÓDIGO ORIGINAL
+        // Mostrar desconto correto baseado na fonte
+        if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
+            let discountLabel = 'Discount:';
+            let discountColor = '#28a745';
 
-    // Mostrar desconto correto baseado na fonte
-    if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
-        let discountLabel = 'Discount:';
-        let discountColor = '#28a745';
+            // Determinar tipo de desconto
+            if (cartTotal.discountSource === 'custom-client') {
+                discountLabel = 'Volume Discount:';
+                discountColor = '#ffc107';
+            } else if (cartTotal.discountSource === 'volume-global') {
+                discountLabel = 'Volume Discount:';
+            }
 
-        // Determinar tipo de desconto
-        if (cartTotal.discountSource === 'custom-client') {
-            discountLabel = 'Volume Discount:';
-            discountColor = '#ffc107';
-        } else if (cartTotal.discountSource === 'volume-global') {
-            discountLabel = 'Volume Discount:';
+            html += `
+                <div class="summary-total-line" style="color: ${discountColor};">
+                    <span>${discountLabel}</span>
+                    <span>-${cartTotal.formattedDiscountAmount}</span>
+                </div>
+            `;
         }
 
         html += `
-            <div class="summary-total-line" style="color: ${discountColor};">
-                <span>${discountLabel}</span>
-                <span>-${cartTotal.formattedDiscountAmount}</span>
+            <div class="summary-total-line final" style="font-size: 1.2em; font-weight: bold; border-top: 2px solid #333; margin-top: 10px; padding-top: 10px;">
+                <span>TOTAL:</span>
+                <span>${cartTotal.formattedTotal}</span>
             </div>
         `;
-    }
 
-    html += `
-        <div class="summary-total-line final" style="font-size: 1.2em; font-weight: bold; border-top: 2px solid #333; margin-top: 10px; padding-top: 10px;">
-            <span>TOTAL:</span>
-            <span>${cartTotal.formattedTotal}</span>
-        </div>
-    `;
-
-    // Adicionar nota sobre o tipo de cliente
-    if (isSpecialClient) {
-        html += `
-            <div style="text-align: center; margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px;">
-                <small style="color: #856404;">
-                    <i class="fas fa-star" style="color: #ffc107;"></i> 
-                    Volume Pricing Applied
-                </small>
-            </div>
-        `;
+        // Adicionar nota sobre o tipo de cliente
+        if (isSpecialClient) {
+            html += `
+                <div style="text-align: center; margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                    <small style="color: #856404;">
+                        <i class="fas fa-star" style="color: #ffc107;"></i> 
+                        Volume Pricing Applied
+                    </small>
+                </div>
+            `;
+        }
     }
 
     html += '</div>';
