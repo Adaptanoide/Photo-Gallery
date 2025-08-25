@@ -10,3 +10,11 @@ sync-workspace/
 *.webp
 *.jpg
 *.png
+sync-data/
+sync-workspace/
+drive-r2-analysis.json
+r2-analysis.json
+fix-*.js
+backup-old-scripts/
+*.log
+sync.log
