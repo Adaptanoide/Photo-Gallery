@@ -9,11 +9,13 @@ window.ImageUtils = {
 
         // Se já tem barra, é path completo
         if (photoPath && photoPath.includes('/')) {
-            return `https://images.sunshinecowhides-gallery.com/_thumbnails/${photoPath}`;
+            const encodedPath = photoPath.split('/').map(part => encodeURIComponent(part)).join('/');
+            return `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
         }
 
         // Senão, tentar construir (não deveria chegar aqui)
-        return `https://images.sunshinecowhides-gallery.com/_thumbnails/${photoPath}`;
+        const encodedPath = photoPath.split('/').map(part => encodeURIComponent(part)).join('/');
+        return `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
     },
 
     getFullImageUrl(photo) {
@@ -27,11 +29,13 @@ window.ImageUtils = {
 
         // Se tem barra, é path do R2
         if (photoPath && photoPath.includes('/')) {
-            return `https://images.sunshinecowhides-gallery.com/${photoPath}`;
+            const encodedPath = photoPath.split('/').map(part => encodeURIComponent(part)).join('/');
+            return `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
         }
 
         // Fallback
-        return `https://images.sunshinecowhides-gallery.com/${photoPath}`;
+        const encodedPath = photoPath.split('/').map(part => encodeURIComponent(part)).join('/');
+        return `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
     },
 
     preloadImage(url) {

@@ -101,11 +101,14 @@ let mainCategoriesMap = {};
 function escapeForJS(str) {
     if (!str) return '';
     return str
-        .replace(/\\/g, '\\\\')     // Escapar barras invertidas
-        .replace(/"/g, '\\"')        // Escapar aspas duplas  
-        .replace(/'/g, "\\'")        // Escapar apóstrofes
-        .replace(/\n/g, '\\n')       // Escapar quebras de linha
-        .replace(/\r/g, '\\r');      // Escapar retorno de carro
+        .replace(/\\/g, '\\\\')  // Escape backslashes primeiro
+        .replace(/'/g, "\\'")     // Escape apóstrofos
+        .replace(/"/g, '\\"')     // Escape aspas
+        .replace(/&/g, '&amp;')   // Escape &
+        .replace(/</g, '&lt;')    // Escape 
+        .replace(/>/g, '&gt;')    // Escape >
+        .replace(/\n/g, '\\n')    // Escape quebras de linha
+        .replace(/\r/g, '\\r');   // Escape retorno
 }
 
 // ===== FUNÇÕES DE DETECÇÃO PARA FILTROS =====
@@ -627,7 +630,7 @@ function showSubfolders(folders) {
             : '';  // Não mostrar preço se showPrices = false
 
         return `
-            <div class="folder-card" onclick="navigateToSubfolder('${folder.id}', '${escapeForJS(folder.name)}')">
+            <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
                 <h4>${folder.name}</h4>
                 <div class="folder-description">${description}</div>
                 <div class="folder-stats">
@@ -642,6 +645,20 @@ function showSubfolders(folders) {
             </div>
         `;
     }).join('');
+
+    // ADICIONE ESTE BLOCO AQUI:
+    // Adicionar event listeners para os folder cards
+    setTimeout(() => {
+        containerEl.querySelectorAll('.folder-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const folderId = this.dataset.folderId;
+                const folderName = this.dataset.folderName;
+                if (folderId && folderName) {
+                    navigateToSubfolder(folderId, folderName);
+                }
+            });
+        });
+    }, 0);
 }
 
 // Navegar para subpasta
