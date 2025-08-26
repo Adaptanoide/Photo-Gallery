@@ -352,18 +352,6 @@ class AdminSpecialSelections {
                                     <div class="special-form-help">Internal notes about this selection</div>
                                 </div>
                             </div>
-
-                            <div class="special-form-row single">
-                                <div class="special-form-group">
-                                    <div class="special-checkbox-group">
-                                        <div class="special-switch active" id="showPricesSwitch">
-                                            <input type="hidden" id="showPrices" value="true">
-                                        </div>
-                                        <label class="special-switch-label">Show Prices to Client</label>
-                                    </div>
-                                    <div class="special-form-help">Whether the client can see product prices</div>
-                                </div>
-                            </div>
                         </form>
                     </div>
                     <div class="special-modal-footer">
@@ -662,10 +650,10 @@ class AdminSpecialSelections {
         });
 
         // Switch toggles
-        const showPricesSwitch = document.getElementById('showPricesSwitch');
+        //const showPricesSwitch = document.getElementById('showPricesSwitch');
         const allowDiscountSwitch = document.getElementById('allowDiscountSwitch');
 
-        showPricesSwitch?.addEventListener('click', () => this.toggleSwitch('showPrices'));
+        //showPricesSwitch?.addEventListener('click', () => this.toggleSwitch('showPrices'));
         // Save button
         document.getElementById('btnSaveSpecialSelection')?.addEventListener('click', () => this.saveSpecialSelection());
     }
@@ -793,10 +781,10 @@ class AdminSpecialSelections {
         const form = document.getElementById('specialSelectionForm');
         form?.reset();
 
-        document.getElementById('showPrices').value = 'true';
+        //document.getElementById('showPrices').value = 'true';
 
         // Reset switches
-        document.getElementById('showPricesSwitch')?.classList.add('active');
+        //document.getElementById('showPricesSwitch')?.classList.add('active');
 
         // Atualizar opções de clientes
         const clientSelect = document.getElementById('clientCode');
@@ -904,7 +892,7 @@ class AdminSpecialSelections {
             clientCode: document.getElementById('clientCode')?.value || '',
             selectionName: document.getElementById('selectionName')?.value || '',
             description: document.getElementById('selectionDescription')?.value || '',
-            showPrices: document.getElementById('showPrices')?.value === 'true',
+            showPrices: true,  // Sempre true, controlado no client management
             allowGlobalDiscount: document.getElementById('allowGlobalDiscount')?.value === 'true',
             globalDiscountPercent: parseFloat(document.getElementById('globalDiscountPercent')?.value) || 0,
             expiresAt: document.getElementById('expiresAt')?.value || null

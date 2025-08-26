@@ -137,7 +137,7 @@ class EmailService {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
                 totalItems: selectionData.totalItems,
-                totalValue: selectionData.totalValue ? `R$ ${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
+                totalValue: selectionData.totalValue ? `$${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
                 folderName: selectionData.googleDriveInfo?.clientFolderName || 'Folder not specified',
                 selectionId: selectionData.selectionId,
                 createdAt: new Date().toLocaleString('pt-BR')
@@ -182,7 +182,7 @@ class EmailService {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
                 totalItems: selectionData.totalItems,
-                totalValue: selectionData.totalValue ? `R$ ${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
+                totalValue: selectionData.totalValue ? `$${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
                 selectionId: selectionData.selectionId,
                 adminUser: adminUser,
                 confirmedAt: new Date().toLocaleString('pt-BR')

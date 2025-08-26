@@ -401,7 +401,7 @@ async function showCategories() {
                             <p>Special Selection Category</p>
                             <div class="folder-stats">
                                 <span><i class="fas fa-images"></i> ${category.photoCount} photos</span>
-                                ${category.formattedPrice ? `<span><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
+                                ${shouldShowPrices() && category.formattedPrice ? `<span><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : (!shouldShowPrices() && category.formattedPrice ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                             </div>
                             <div class="category-action">
                                 <i class="fas fa-arrow-right"></i>
@@ -469,8 +469,8 @@ async function showCategories() {
             const priceRange = shouldShowPrices()
                 ? ((stats.minPrice && stats.maxPrice)
                     ? (stats.minPrice === stats.maxPrice
-                        ? `R$ ${stats.minPrice.toFixed(2)}`
-                        : `R$ ${stats.minPrice.toFixed(2)} - R$ ${stats.maxPrice.toFixed(2)}`)
+                        ? `$${stats.minPrice.toFixed(2)}`
+                        : `$${stats.minPrice.toFixed(2)} - $${stats.maxPrice.toFixed(2)}`)
                     : 'Price on request')
                 : 'Contact for Price';  // Quando showPrices = false
 
@@ -626,7 +626,7 @@ function showSubfolders(folders) {
         const photoCount = folder.photoCount || folder.imageCount || folder.totalFiles || 0;
         const price = folder.price || 0;
         const formattedPrice = shouldShowPrices()
-            ? (folder.formattedPrice || (price > 0 ? `R$ ${price.toFixed(2)}` : ''))
+            ? (folder.formattedPrice || (price > 0 ? `$${price.toFixed(2)}` : ''))
             : '';  // Não mostrar preço se showPrices = false
 
         return `
@@ -676,6 +676,10 @@ async function navigateToSubfolder(folderId, folderName) {
 async function loadPhotos(folderId) {
     try {
         showPhotosLoading(true);
+
+        // LIMPAR rate rules ao mudar de categoria
+        specialSelectionRateRules = null;
+        specialSelectionBasePrice = null;
 
         // ========== NOVO: PEGAR TOKEN ==========
         const savedSession = localStorage.getItem('sunshineSession');
@@ -732,13 +736,21 @@ async function loadPhotos(folderId) {
             }
 
             // Se for Special Selection com rate rules, usar eles
-            if (data.clientType === 'special' && data.rateRules) {
+            if (data.clientType === 'special' && data.rateRules && data.rateRules.length > 0) {
                 // Guardar rate rules globalmente para usar no fullscreen
                 specialSelectionRateRules = data.rateRules;
                 specialSelectionBasePrice = data.baseCategoryPrice;
                 window.PriceProgressBar.renderSpecialSelection(data.rateRules, data.baseCategoryPrice);
             } else {
-                window.PriceProgressBar.init(navigationState.currentFolderId);
+                // IMPORTANTE: Limpar se não tem rate rules
+                specialSelectionRateRules = null;
+                specialSelectionBasePrice = null;
+                if (data.clientType === 'special') {
+                    // Special Selection sem rate rules - esconder progress bar
+                    window.PriceProgressBar.hide();
+                } else {
+                    window.PriceProgressBar.init(navigationState.currentFolderId);
+                }
             }
         }
 
@@ -783,7 +795,9 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
     } else if (customPrice) {
         // Special Selection - usar o preço customizado
-        galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">R$ ${parseFloat(customPrice).toFixed(2)}</span>`;
+        galleryTitle.innerHTML = shouldShowPrices()
+            ? `${folderName} <span class="category-price-badge">$${parseFloat(customPrice).toFixed(2)}</span>`
+            : `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
     } else if (categoryPrice && categoryPrice.hasPrice) {
         // Sistema normal - usar preço da categoria
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${categoryPrice.formattedPrice}</span>`;
@@ -845,7 +859,7 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
                     
                     <!-- Badge de preço no canto superior direito -->
                     <div class="photo-price ${photo.customPrice || categoryPrice?.hasPrice ? '' : 'no-price'}">
-                        ${photo.customPrice ? `R$ ${parseFloat(photo.customPrice).toFixed(2)}` : (categoryPrice?.formattedPrice || 'Price on request')}
+                        ${photo.customPrice ? `$${parseFloat(photo.customPrice).toFixed(2)}` : (categoryPrice?.formattedPrice || 'Price on request')}
                     </div>
                     <!-- Botão Add to Cart -->
                     <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
@@ -1197,7 +1211,7 @@ async function updateModalPriceInfo(photo) {
         if (photo && photo.customPrice) {
             priceInfo = {
                 hasPrice: true,
-                formattedPrice: `R$ ${parseFloat(photo.customPrice).toFixed(2)}`
+                formattedPrice: `$${parseFloat(photo.customPrice).toFixed(2)}`
             };
             console.log('💰 Usando customPrice da Special Selection:', photo.customPrice);
         } else {
@@ -1670,7 +1684,7 @@ function createUnifiedCard(data) {
     const hasSubfolders = data.totalSubfolders > 0 || data.hasSubfolders;
     const hasPhotos = photoCount > 0 || data.hasImages;
     const price = data.price || data.basePrice || 0;
-    const formattedPrice = data.formattedPrice || (price > 0 ? `R$ ${price.toFixed(2)}` : '');
+    const formattedPrice = data.formattedPrice || (price > 0 ? `$${price.toFixed(2)}` : '');
 
     // Gerar descrição
     const description = generateProductDescription(name);
@@ -1943,7 +1957,7 @@ async function addToCartFromThumbnail(driveFileId, photoIndex) {
                     hasPrice: true,
                     basePrice: parseFloat(photo.customPrice),
                     price: parseFloat(photo.customPrice),
-                    formattedPrice: `R$ ${parseFloat(photo.customPrice).toFixed(2)}`
+                    formattedPrice: `$${parseFloat(photo.customPrice).toFixed(2)}`
                 };
                 console.log('💰 Usando customPrice da foto Special Selection:', photo.customPrice);
             }

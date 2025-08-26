@@ -22,7 +22,7 @@ const s3Client = new S3Client({
 // Configurações
 const LOCAL_PHOTOS_DIR = './all_photos';
 const BUCKET_NAME = 'sunshine-photos';
-const CATEGORIES_TO_SKIP = ['Sheepskins']; // Já processada
+const CATEGORIES_TO_SKIP = ['Sheepskins', 'Rodeo Rugs'];
 const BATCH_SIZE = 10;
 
 // Contadores globais

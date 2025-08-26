@@ -399,7 +399,7 @@ photoCategorySchema.pre('save', function (next) {
 
 // Post-save: log
 photoCategorySchema.post('save', function () {
-    console.log(`💰 Categoria de preço salva: ${this.displayName} - ${this.photoCount} fotos - R$ ${this.basePrice}`);
+    console.log(`💰 Categoria de preço salva: ${this.displayName} - ${this.photoCount} fotos - $${this.basePrice}`);
 });
 
 module.exports = mongoose.model('PhotoCategory', photoCategorySchema);

@@ -897,6 +897,7 @@ class AdminClients {
             allowedCategories: this.selectedCategories,
             expiresInDays: parseInt(document.getElementById('expireDays').value),
             showPrices: document.getElementById('showPrices').checked,
+            accessType: this.currentClient?.accessType || 'normal',
             isActive: true
         };
 
@@ -1049,8 +1050,15 @@ class AdminClients {
             errors.push('Invalid email address');
         }
 
-        // Validate categories
-        if (!formData.allowedCategories || formData.allowedCategories.length === 0) {
+        // Debug
+        console.log('🔍 DEBUG validateEditForm:');
+        console.log('  formData.accessType:', formData.accessType);
+        console.log('  formData.allowedCategories:', formData.allowedCategories);
+
+        // Só validar categorias se NÃO for Special Selection
+        const isSpecialSelection = formData.accessType === 'special';
+
+        if (!isSpecialSelection && (!formData.allowedCategories || formData.allowedCategories.length === 0)) {
             errors.push('Select at least one category');
         }
 

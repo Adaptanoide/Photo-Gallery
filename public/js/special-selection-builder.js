@@ -1930,7 +1930,7 @@ class SpecialSelectionBuilder {
             // Tentar pegar do header primeiro (elemento correto)
             const headerPriceElement = document.getElementById('headerBasePrice');
             if (headerPriceElement && headerPriceElement.textContent && headerPriceElement.textContent !== 'Loading...') {
-                const priceText = headerPriceElement.textContent.replace(/[R$\s]/g, '');
+                const priceText = headerPriceElement.textContent.replace(/[$\s]/g, '');
                 const price = parseFloat(priceText);
                 if (!isNaN(price)) return price.toFixed(2);
             }

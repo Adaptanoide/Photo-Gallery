@@ -166,7 +166,7 @@ router.get('/category-price', async (req, res) => {
                                 selectionId: selection.selectionId
                             };
 
-                            console.log(`✅ Categoria especial encontrada: ${category.displayName} - Preço: R$ ${category.basePrice}`);
+                            console.log(`✅ Categoria especial encontrada: ${category.displayName} - Preço: $${category.basePrice}`);
                         } else {
                             console.log(`❌ Categoria customizada não encontrada: ${googleDriveId}`);
                         }
@@ -416,7 +416,7 @@ router.get('/categories/filtered', async (req, res) => {
                                     fullPath: `special/${cat.categoryId}`,
                                     photoCount: cat.photos ? cat.photos.length : 0,
                                     price: cat.baseCategoryPrice || 0,
-                                    formattedPrice: `R$ ${(cat.baseCategoryPrice || 0).toFixed(2)}`,
+                                    formattedPrice: `$${(cat.baseCategoryPrice || 0).toFixed(2)}`,
                                     driveId: cat.categoryId
                                 }));
 
@@ -446,7 +446,7 @@ router.get('/categories/filtered', async (req, res) => {
                             fullPath: 'special',
                             photoCount: 3,
                             price: 100,
-                            formattedPrice: 'R$ 100.00',
+                            formattedPrice: '$100.00',
                             driveId: 'special'
                         }],
                         isSpecialSelection: true,
@@ -518,7 +518,7 @@ router.get('/categories/filtered', async (req, res) => {
         // FILTRO 2: Por faixa de preço
         // ====================================
         if (priceMin !== undefined || priceMax !== undefined) {
-            console.log(`💰 Aplicando filtro de preço: R$ ${priceMin || '0'} - R$ ${priceMax || '∞'}`);
+            console.log(`💰 Aplicando filtro de preço: $${priceMin || '0'} - $${priceMax || '∞'}`);
             const antes = categories.length;
 
             categories = categories.filter(cat => {
@@ -532,7 +532,7 @@ router.get('/categories/filtered', async (req, res) => {
                 if (min !== null && max !== null) {
                     return price >= min && price <= max;
                 }
-                // Se só tem min (para "Above R$ X")
+                // Se só tem min (para "Above $X")
                 else if (min !== null) {
                     return price >= min;
                 }
@@ -603,7 +603,7 @@ router.get('/categories/filtered', async (req, res) => {
             total: categories.length,
             filters: {
                 type: type || 'all',
-                priceRange: priceMin || priceMax ? `R$ ${priceMin || 0} - R$ ${priceMax || '∞'}` : 'all',
+                priceRange: priceMin || priceMax ? `$${priceMin || 0} - $${priceMax || '∞'}` : 'all',
                 photoRange: photoMin || photoMax ? `${photoMin || 0} - ${photoMax || '∞'} photos` : 'all'
             },
             categories: categories.map(cat => ({
@@ -612,7 +612,7 @@ router.get('/categories/filtered', async (req, res) => {
                 fullPath: cat.googleDrivePath,
                 photoCount: cat.photoCount || 0,
                 price: cat.basePrice || 0,
-                formattedPrice: cat.basePrice ? `R$ ${(cat.basePrice || 0).toFixed(2)}` : 'R$ 0.00',
+                formattedPrice: cat.basePrice ? `$${(cat.basePrice || 0).toFixed(2)}` : '$0.00',
                 driveId: cat.googleDriveId
             }))
         };

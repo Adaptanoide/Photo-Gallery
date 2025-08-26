@@ -8,15 +8,24 @@ const router = express.Router();
 /**
  * NOVA FUNÇÃO - Calcular total SEMPRE por categoria
  * Respeita hierarquia: Custom Client > Volume Discount > Base Price
+ * Suporta Special Selections com rate rules próprios
  */
 const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) => {
     const PhotoCategory = require('../models/PhotoCategory');
+    const AccessCode = require('../models/AccessCode');
+    const Selection = require('../models/Selection');
 
     console.log(`\n🎯 ===========================================`);
     console.log(`🎯 NOVO CÁLCULO - Cliente: ${cart.clientCode} (${cart.clientName})`);
     console.log(`📦 Total de itens no carrinho: ${cart.totalItems}`);
     console.log(`💰 Subtotal inicial: $${subtotal}`);
     console.log(`===========================================\n`);
+
+    // Verificar se é Special Selection
+    const accessCode = await AccessCode.findOne({
+        code: cart.clientCode
+    });
+    const isSpecialSelection = accessCode?.accessType === 'special';
 
     // Agrupar itens por categoria
     const itemsByCategory = {};
@@ -36,164 +45,229 @@ const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) =>
     let totalComDesconto = 0;
     const detalhes = [];
 
-    // CALCULAR CADA CATEGORIA SEPARADAMENTE
-    for (const [categoryPath, items] of Object.entries(itemsByCategory)) {
-        const quantidade = items.length;
-        console.log(`\n🏷️ Categoria: ${categoryPath}`);
-        console.log(`   📊 Quantidade: ${quantidade} itens`);
+    // SPECIAL SELECTION - Lógica própria
+    if (isSpecialSelection && accessCode.specialSelection?.selectionId) {
+        console.log(`⭐ Cliente com SPECIAL SELECTION detectado`);
 
-        // ✅ CORREÇÃO: Remover barra final e extrair apenas o nome da última pasta
-        let categorySearchName = categoryPath;
+        const selection = await Selection.findById(accessCode.specialSelection.selectionId);
 
-        // Remover barra final se existir
-        if (categorySearchName.endsWith('/')) {
-            categorySearchName = categorySearchName.slice(0, -1);
-            console.log(`   🔧 Removida barra final: "${categorySearchName}"`);
-        }
+        for (const [categoryPath, items] of Object.entries(itemsByCategory)) {
+            const quantidade = items.length;
+            console.log(`\n🏷️ Categoria Special: ${categoryPath}`);
+            console.log(`   📊 Quantidade: ${quantidade} itens`);
 
-        // Extrair apenas o nome da última pasta (depois da última /)
-        const lastSlashIndex = categorySearchName.lastIndexOf('/');
-        if (lastSlashIndex !== -1) {
-            categorySearchName = categorySearchName.substring(lastSlashIndex + 1);
-            console.log(`   🔧 Extraído nome final: "${categorySearchName}"`);
-        }
+            // Encontrar categoria correspondente na Special Selection
+            const specialCategory = selection?.customCategories?.find(cat =>
+                cat.categoryName === categoryPath ||
+                cat.categoryDisplayName === categoryPath ||
+                cat.photos.some(p => items.some(item => item.fileName === p.fileName))
+            );
 
-        // Buscar categoria no banco - ÚNICA BUSCA CORRETA
-        let category = null;
-        try {
-            console.log(`   🔎 Buscando categoria: "${categorySearchName}"`);
+            let precoUnitario = items[0].price || items[0].basePrice || 0;
+            let fonte = 'special-custom';
+            let detalheRegra = null;
 
-            category = await PhotoCategory.findOne({
-                $or: [
-                    // 1. Busca EXATA por folderName
-                    { folderName: categorySearchName },
+            // Se tem rate rules, aplicar
+            if (specialCategory?.rateRules?.length > 0) {
+                console.log(`   📋 Aplicando Rate Rules da Special Selection`);
 
-                    // 2. Busca por displayName que TERMINA com o nome
-                    { displayName: { $regex: ` → ${categorySearchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
+                for (const rule of specialCategory.rateRules) {
+                    if (quantidade >= rule.from && (!rule.to || quantidade <= rule.to)) {
+                        precoUnitario = rule.price;
+                        fonte = 'special-rate-rule';
+                        detalheRegra = {
+                            tipo: 'Special Selection Rate',
+                            faixa: `${rule.from}-${rule.to || '+'} itens`,
+                            preco: precoUnitario
+                        };
+                        console.log(`   ✓ Rate Rule: ${rule.from}-${rule.to || '+'} = $${rule.price}/item`);
+                        break;
+                    }
+                }
+            } else {
+                detalheRegra = {
+                    tipo: 'Special Selection Custom Price',
+                    preco: precoUnitario
+                };
+            }
 
-                    // 3. Busca direta
-                    { displayName: categorySearchName }
-                ]
+            const subtotalCategoria = quantidade * precoUnitario;
+            grandTotal += subtotalCategoria;
+            totalComDesconto += subtotalCategoria;
+
+            console.log(`   📊 Cálculo: ${quantidade} × $${precoUnitario} = $${subtotalCategoria}`);
+
+            detalhes.push({
+                categoria: categoryPath,
+                quantidade: quantidade,
+                precoUnitario: precoUnitario,
+                subtotal: subtotalCategoria,
+                fonte: fonte,
+                regra: detalheRegra
             });
-        } catch (err) {
-            console.log(`   ⚠️ Erro buscando categoria: ${err.message}`);
         }
+    }
+    // CLIENTE NORMAL - Lógica original mantida
+    else {
+        // CALCULAR CADA CATEGORIA SEPARADAMENTE
+        for (const [categoryPath, items] of Object.entries(itemsByCategory)) {
+            const quantidade = items.length;
+            console.log(`\n🏷️ Categoria: ${categoryPath}`);
+            console.log(`   📊 Quantidade: ${quantidade} itens`);
 
-        if (category) {
-            console.log(`   ✅ Categoria encontrada: ${category.displayName}`);
-            console.log(`      FolderName: ${category.folderName}`);
-            console.log(`      BasePrice: $${category.basePrice}`);
-            console.log(`      Busca realizada por: "${categorySearchName}"`);
-        }
+            // ✅ CORREÇÃO: Remover barra final e extrair apenas o nome da última pasta
+            let categorySearchName = categoryPath;
 
-        if (!category) {
-            console.log(`   ❌ Categoria não encontrada no banco`);
-            console.log(`   📍 Usando preços individuais dos items`);
-            // Somar com preço individual dos itens
-            const catSubtotal = items.reduce((sum, item) => {
-                const itemPrice = item.price || item.basePrice || 0;
-                console.log(`      - ${item.fileName}: $${itemPrice}`);
-                return sum + itemPrice;
-            }, 0);
-            grandTotal += catSubtotal;
-            totalComDesconto += catSubtotal;
-            console.log(`   💵 Subtotal da categoria: $${catSubtotal}`);
-            continue;
-        }
-
-        // USAR MÉTODO UNIFICADO - TODA HIERARQUIA EM UM SÓ LUGAR
-        let precoUnitario = 0;
-        let fonte = '';
-        let detalheRegra = null;
-
-        try {
-            console.log(`   📞 Chamando getPriceForClient("${cart.clientCode}", ${quantidade})`);
-
-            // Chama o método que já tem toda a lógica de hierarquia
-            const priceResult = await category.getPriceForClient(cart.clientCode, quantidade);
-
-            console.log(`   💰 Resultado do getPriceForClient:`);
-            console.log(`      - finalPrice: $${priceResult.finalPrice}`);
-            console.log(`      - appliedRule: ${priceResult.appliedRule}`);
-            console.log(`      - basePrice: $${priceResult.basePrice}`);
-
-            precoUnitario = priceResult.finalPrice;
-            fonte = priceResult.appliedRule;
-
-            // Preparar detalhes para exibição
-            if (fonte === 'custom-client') {
-                detalheRegra = {
-                    tipo: 'Custom Client',
-                    cliente: priceResult.ruleDetails?.clientName || cart.clientName,
-                    faixa: priceResult.ruleDetails?.appliedRange ?
-                        `${priceResult.ruleDetails.appliedRange.min}-${priceResult.ruleDetails.appliedRange.max || '+'} itens` :
-                        'Preço especial',
-                    preco: precoUnitario,
-                    exceeded: priceResult.ruleDetails?.exceeded || false
-                };
-                console.log(`   💎 Custom Client: ${detalheRegra.cliente}`);
-                console.log(`      Faixa: ${detalheRegra.faixa} = $${precoUnitario}/item`);
-                if (detalheRegra.exceeded) {
-                    console.log(`      ⚠️ Quantidade excede faixa - mantendo melhor preço`);
-                }
+            // Remover barra final se existir
+            if (categorySearchName.endsWith('/')) {
+                categorySearchName = categorySearchName.slice(0, -1);
+                console.log(`   🔧 Removida barra final: "${categorySearchName}"`);
             }
-            else if (fonte === 'volume-discount') {
-                detalheRegra = {
-                    tipo: 'Volume Discount',
-                    faixa: priceResult.ruleDetails?.appliedRange ?
-                        `${priceResult.ruleDetails.appliedRange.min}-${priceResult.ruleDetails.appliedRange.max || '+'} itens` :
-                        'Desconto por volume',
-                    preco: precoUnitario,
-                    exceeded: priceResult.ruleDetails?.exceeded || false
-                };
-                console.log(`   📦 Volume Discount (All Regular Clients)`);
-                console.log(`      Faixa: ${detalheRegra.faixa} = $${precoUnitario}/item`);
-                if (detalheRegra.exceeded) {
-                    console.log(`      ⚠️ Quantidade excede faixa - mantendo melhor preço`);
-                }
+
+            // Extrair apenas o nome da última pasta (depois da última /)
+            const lastSlashIndex = categorySearchName.lastIndexOf('/');
+            if (lastSlashIndex !== -1) {
+                categorySearchName = categorySearchName.substring(lastSlashIndex + 1);
+                console.log(`   🔧 Extraído nome final: "${categorySearchName}"`);
             }
-            else if (fonte === 'custom-price' || fonte === 'custom-percent') {
+
+            // Buscar categoria no banco - ÚNICA BUSCA CORRETA
+            let category = null;
+            try {
+                console.log(`   🔎 Buscando categoria: "${categorySearchName}"`);
+
+                category = await PhotoCategory.findOne({
+                    $or: [
+                        // 1. Busca EXATA por folderName
+                        { folderName: categorySearchName },
+
+                        // 2. Busca por displayName que TERMINA com o nome
+                        { displayName: { $regex: ` → ${categorySearchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
+
+                        // 3. Busca direta
+                        { displayName: categorySearchName }
+                    ]
+                });
+            } catch (err) {
+                console.log(`   ⚠️ Erro buscando categoria: ${err.message}`);
+            }
+
+            if (category) {
+                console.log(`   ✅ Categoria encontrada: ${category.displayName}`);
+                console.log(`      FolderName: ${category.folderName}`);
+                console.log(`      BasePrice: $${category.basePrice}`);
+                console.log(`      Busca realizada por: "${categorySearchName}"`);
+            }
+
+            if (!category) {
+                console.log(`   ❌ Categoria não encontrada no banco`);
+                console.log(`   📍 Usando preços individuais dos items`);
+                // Somar com preço individual dos itens
+                const catSubtotal = items.reduce((sum, item) => {
+                    const itemPrice = item.price || item.basePrice || 0;
+                    console.log(`      - ${item.fileName}: $${itemPrice}`);
+                    return sum + itemPrice;
+                }, 0);
+                grandTotal += catSubtotal;
+                totalComDesconto += catSubtotal;
+                console.log(`   💵 Subtotal da categoria: $${catSubtotal}`);
+                continue;
+            }
+
+            // USAR MÉTODO UNIFICADO - TODA HIERARQUIA EM UM SÓ LUGAR
+            let precoUnitario = 0;
+            let fonte = '';
+            let detalheRegra = null;
+
+            try {
+                console.log(`   📞 Chamando getPriceForClient("${cart.clientCode}", ${quantidade})`);
+
+                // Chama o método que já tem toda a lógica de hierarquia
+                const priceResult = await category.getPriceForClient(cart.clientCode, quantidade);
+
+                console.log(`   💰 Resultado do getPriceForClient:`);
+                console.log(`      - finalPrice: $${priceResult.finalPrice}`);
+                console.log(`      - appliedRule: ${priceResult.appliedRule}`);
+                console.log(`      - basePrice: $${priceResult.basePrice}`);
+
+                precoUnitario = priceResult.finalPrice;
+                fonte = priceResult.appliedRule;
+
+                // Preparar detalhes para exibição
+                if (fonte === 'custom-client') {
+                    detalheRegra = {
+                        tipo: 'Custom Client',
+                        cliente: priceResult.ruleDetails?.clientName || cart.clientName,
+                        faixa: priceResult.ruleDetails?.appliedRange ?
+                            `${priceResult.ruleDetails.appliedRange.min}-${priceResult.ruleDetails.appliedRange.max || '+'} itens` :
+                            'Preço especial',
+                        preco: precoUnitario,
+                        exceeded: priceResult.ruleDetails?.exceeded || false
+                    };
+                    console.log(`   💎 Custom Client: ${detalheRegra.cliente}`);
+                    console.log(`      Faixa: ${detalheRegra.faixa} = $${precoUnitario}/item`);
+                    if (detalheRegra.exceeded) {
+                        console.log(`      ⚠️ Quantidade excede faixa - mantendo melhor preço`);
+                    }
+                }
+                else if (fonte === 'volume-discount') {
+                    detalheRegra = {
+                        tipo: 'Volume Discount',
+                        faixa: priceResult.ruleDetails?.appliedRange ?
+                            `${priceResult.ruleDetails.appliedRange.min}-${priceResult.ruleDetails.appliedRange.max || '+'} itens` :
+                            'Desconto por volume',
+                        preco: precoUnitario,
+                        exceeded: priceResult.ruleDetails?.exceeded || false
+                    };
+                    console.log(`   📦 Volume Discount (All Regular Clients)`);
+                    console.log(`      Faixa: ${detalheRegra.faixa} = $${precoUnitario}/item`);
+                    if (detalheRegra.exceeded) {
+                        console.log(`      ⚠️ Quantidade excede faixa - mantendo melhor preço`);
+                    }
+                }
+                else if (fonte === 'custom-price' || fonte === 'custom-percent') {
+                    detalheRegra = {
+                        tipo: 'Custom Client (Legacy)',
+                        cliente: cart.clientName,
+                        preco: precoUnitario
+                    };
+                    console.log(`   💎 Custom Client (Legacy): $${precoUnitario}/item`);
+                }
+                else {
+                    detalheRegra = {
+                        tipo: 'Base Price',
+                        preco: precoUnitario
+                    };
+                    console.log(`   💰 Base Price: $${precoUnitario}/item`);
+                }
+
+            } catch (error) {
+                console.log(`   ⚠️ Erro ao calcular preço, usando base: ${error.message}`);
+                precoUnitario = category.basePrice || 0;
+                fonte = 'base-price';
                 detalheRegra = {
-                    tipo: 'Custom Client (Legacy)',
-                    cliente: cart.clientName,
+                    tipo: 'Base Price (Fallback)',
                     preco: precoUnitario
                 };
-                console.log(`   💎 Custom Client (Legacy): $${precoUnitario}/item`);
-            }
-            else {
-                detalheRegra = {
-                    tipo: 'Base Price',
-                    preco: precoUnitario
-                };
-                console.log(`   💰 Base Price: $${precoUnitario}/item`);
             }
 
-        } catch (error) {
-            console.log(`   ⚠️ Erro ao calcular preço, usando base: ${error.message}`);
-            precoUnitario = category.basePrice || 0;
-            fonte = 'base-price';
-            detalheRegra = {
-                tipo: 'Base Price (Fallback)',
-                preco: precoUnitario
-            };
+            // Calcular subtotal desta categoria
+            const subtotalCategoria = quantidade * precoUnitario;
+            grandTotal += subtotalCategoria;
+            totalComDesconto += subtotalCategoria;
+
+            console.log(`   📊 Cálculo: ${quantidade} × $${precoUnitario} = $${subtotalCategoria}`);
+
+            // Guardar detalhes
+            detalhes.push({
+                categoria: categoryPath,
+                quantidade: quantidade,
+                precoUnitario: precoUnitario,
+                subtotal: subtotalCategoria,
+                fonte: fonte,
+                regra: detalheRegra
+            });
         }
-
-        // Calcular subtotal desta categoria
-        const subtotalCategoria = quantidade * precoUnitario;
-        grandTotal += subtotalCategoria;
-        totalComDesconto += subtotalCategoria;
-
-        console.log(`   📊 Cálculo: ${quantidade} × $${precoUnitario} = $${subtotalCategoria}`);
-
-        // Guardar detalhes
-        detalhes.push({
-            categoria: categoryPath,
-            quantidade: quantidade,
-            precoUnitario: precoUnitario,
-            subtotal: subtotalCategoria,
-            fonte: fonte,
-            regra: detalheRegra
-        });
     }
 
     // Calcular desconto total
@@ -216,9 +290,11 @@ const calculateDiscountWithHierarchy = async (cart, itemsWithPrice, subtotal) =>
         discountPercent: percentualDesconto,
         discountAmount: descontoTotal,
         fixedPrice: null,
-        ruleType: 'per-category',
-        description: `Cálculo por categoria (${totalCategories} categoria${totalCategories > 1 ? 's' : ''})`,
-        source: 'category-based',
+        ruleType: isSpecialSelection ? 'special-selection' : 'per-category',
+        description: isSpecialSelection ?
+            `Special Selection Pricing` :
+            `Cálculo por categoria (${totalCategories} categoria${totalCategories > 1 ? 's' : ''})`,
+        source: isSpecialSelection ? 'special-selection' : 'category-based',
         finalTotal: totalComDesconto,
         detalhesCompletos: detalhes
     };
@@ -642,7 +718,7 @@ router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) =>
             }
         }
 
-        console.log(`📊 Subtotal calculado: R$ ${subtotal.toFixed(2)} (${itemsWithPrice} itens com preço)`);
+        console.log(`📊 Subtotal calculado: $${subtotal.toFixed(2)} (${itemsWithPrice} itens com preço)`);
 
         // CORREÇÃO: Usar a função de hierarquia
         const discountInfo = await calculateDiscountWithHierarchy(cart, itemsWithPrice, subtotal);
@@ -698,9 +774,9 @@ router.get('/:sessionId/calculate-total', validateSessionId, async (req, res) =>
             discountDescription: discountInfo.description,
             discountRule: discountInfo.rule,
             discountSource: discountInfo.source, // Adicionar fonte do desconto
-            formattedSubtotal: `R$ ${subtotal.toFixed(2)}`,
-            formattedDiscountAmount: discountAmount > 0 ? `R$ ${discountAmount.toFixed(2)}` : 'R$ 0,00',
-            formattedTotal: `R$ ${total.toFixed(2)}`,
+            formattedSubtotal: `$${subtotal.toFixed(2)}`,
+            formattedDiscountAmount: discountAmount > 0 ? `$${discountAmount.toFixed(2)}` : '$0,00',
+            formattedTotal: `$${total.toFixed(2)}`,
             calculations: {
                 itemBreakdown: cart.items.map(item => ({
                     fileName: item.fileName,

@@ -551,9 +551,9 @@ window.CartSystem = {
                 total: total,
                 hasDiscount: false,
                 discountDescription: 'Calculation error',
-                formattedSubtotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
-                formattedDiscountAmount: 'R$ 0,00',
-                formattedTotal: total > 0 ? `R$ ${total.toFixed(2)}` : 'R$ 0,00',
+                formattedSubtotal: total > 0 ? `$${total.toFixed(2)}` : '$0,00',
+                formattedDiscountAmount: '$0,00',
+                formattedTotal: total > 0 ? `$${total.toFixed(2)}` : '$0,00',
                 hasIncompletePrice: itemsWithPrice < this.state.items.length
             };
         }
@@ -1637,7 +1637,7 @@ async function generateOrderSummary() {
                         <strong>${category}</strong>
                         <span style="float: right; color: #666;">
                             ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'} 
-                            ${showPrices ? `| R$ ${categoryTotal.toFixed(2)}` : ''}
+                            ${showPrices ? `| $${categoryTotal.toFixed(2)}` : ''}
                         </span>
                     </div>
                     <div class="summary-category-items" style="display: ${index === 0 ? 'block' : 'none'};">

@@ -114,7 +114,7 @@ router.post('/access-codes', async (req, res) => {
             expiresInDays = 30
         } = req.body;
 
-        if (!clientName || !allowedCategories || allowedCategories.length === 0) {
+        if (!clientName || (!accessType !== 'special' && (!allowedCategories || allowedCategories.length === 0))) {
             return res.status(400).json({
                 success: false,
                 message: 'Nome do cliente e categorias são obrigatórios'
@@ -197,7 +197,9 @@ router.put('/access-codes/:id', async (req, res) => {
         console.log(`✏️ Atualizando código: ${id}`);
 
         // Validações
-        if (!clientName || !allowedCategories || allowedCategories.length === 0) {
+        // Buscar o cliente existente para verificar o accessType
+        const existingClient = await AccessCode.findById(id);
+        if (!clientName || (existingClient?.accessType !== 'special' && (!allowedCategories || allowedCategories.length === 0))) {
             return res.status(400).json({
                 success: false,
                 message: 'Nome do cliente e categorias são obrigatórios'
