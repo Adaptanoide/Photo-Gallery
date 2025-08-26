@@ -288,10 +288,27 @@ class AdminDashboard {
         }
     }
 
-    // ===== DASHBOARD DATA =====
     async loadDashboardData() {
-        console.log('📊 Carregando dados do dashboard...');
+        // FLAG TEMPORÁRIA - mude para false quando quiser ver o dashboard real
+        const IN_DEVELOPMENT = true;
 
+        if (IN_DEVELOPMENT) {
+            // Pega a div do dashboard e substitui temporariamente o conteúdo
+            const dashboardSection = document.getElementById('section-dashboard');
+            if (dashboardSection) {
+                // Guarda o HTML original (opcional, caso queira restaurar via console)
+                dashboardSection.dataset.originalHtml = dashboardSection.innerHTML;
+
+                // Mostra a mensagem de desenvolvimento
+                dashboardSection.innerHTML = `
+                <h2>Dashboard - In Development</h2>
+                <p>This section will be implemented in the next phase.</p>
+            `;
+            }
+            return; // Para aqui, não executa o resto
+        }
+
+        // TODO O SEU CÓDIGO ORIGINAL CONTINUA AQUI (não mude nada)
         try {
             this.showLoading();
 
@@ -310,7 +327,7 @@ class AdminDashboard {
             this.updatePopularProductsTable(popularProducts);
 
             // Atualizar badges na sidebar
-            this.updateSidebarBadges(stats);
+            //this.updateSidebarBadges(stats);
 
             console.log('✅ Dados do dashboard carregados');
 
@@ -551,7 +568,7 @@ class AdminDashboard {
             console.log('🔄 Atualizando estatísticas...');
             const stats = await this.fetchStats();
             this.updateStatsCards(stats);
-            this.updateSidebarBadges(stats);
+            //this.updateSidebarBadges(stats);
         }
     }
 

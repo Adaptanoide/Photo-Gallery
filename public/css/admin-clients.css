@@ -1181,3 +1181,104 @@
     letter-spacing: 0.5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Linha sutil */
 }
+
+/* Modal de Confirmação Customizado */
+.confirm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+}
+/* Classe para mostrar o modal */
+.confirm-modal-overlay.active {
+    display: flex !important;
+}
+
+/* Estilos do container do modal */
+.confirm-modal-container {
+    background: #2a2a3e;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: confirmModalSlide 0.3s ease;
+}
+
+@keyframes confirmModalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.confirm-modal-icon {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.confirm-modal-icon i {
+    font-size: 3rem;
+    color: #f39c12;
+}
+
+.confirm-modal-title {
+    color: #fff;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.confirm-modal-message {
+    color: #b8b8c8;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+.confirm-modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.confirm-btn {
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.confirm-btn-cancel {
+    background: #3a3a4e;
+    color: #fff;
+}
+
+.confirm-btn-cancel:hover {
+    background: #ff000056;
+}
+
+.confirm-btn-ok {
+    background: var(--gold-primary);
+    color: #fff;
+}
+
+.confirm-btn-ok:hover {
+    background: #ffc400;
+}

@@ -12,11 +12,15 @@ class AdminClients {
         this.selectedCategories = [];
         this.isLoading = false;
         this.currentClient = null;
+
+        // ADICIONE ESTAS DUAS LINHAS NOVAS:
+        this.hasUnsavedChanges = false;
+        this.originalFormData = null;
+
         this.filters = {
             search: '',
             status: 'all'
         };
-
         this.init();
     }
 
@@ -27,6 +31,52 @@ class AdminClients {
         this.setupEventListeners();
         this.loadInitialData();
         console.log('✅ Client Management initialized');
+    }
+
+    // Função para mostrar modal de confirmação customizado
+    showConfirmModal(message, onConfirm, onCancel) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const messageEl = modal.querySelector('.confirm-modal-message');
+            const btnOk = document.getElementById('confirmOk');
+            const btnCancel = document.getElementById('confirmCancel');
+
+            // Define a mensagem
+            messageEl.innerHTML = message || 'Do you really want to close without saving?<br>Click OK to discard changes or Cancel to continue editing.';
+
+            // Mostra o modal
+            modal.classList.add('active');
+
+            // Handler para OK
+            const handleOk = () => {
+                modal.classList.remove('active');
+                btnOk.removeEventListener('click', handleOk);
+                btnCancel.removeEventListener('click', handleCancel);
+                if (onConfirm) onConfirm();
+                resolve(true);
+            };
+
+            // Handler para Cancel
+            const handleCancel = () => {
+                modal.classList.remove('active');
+                btnOk.removeEventListener('click', handleOk);
+                btnCancel.removeEventListener('click', handleCancel);
+                if (onCancel) onCancel();
+                resolve(false);
+            };
+
+            btnOk.addEventListener('click', handleOk);
+            btnCancel.addEventListener('click', handleCancel);
+
+            // ESC para cancelar
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    handleCancel();
+                    document.removeEventListener('keydown', handleEsc);
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
+        });
     }
 
     setupElements() {
@@ -532,7 +582,7 @@ class AdminClients {
         // Close modal by clicking outside
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
-                this.closeModal();
+                this.closeModal(); // Agora vai verificar mudanças
             }
         });
 
@@ -752,10 +802,27 @@ class AdminClients {
         document.getElementById('clientName').focus();
     }
 
-    closeModal() {
+    async closeModal() {
+        // NOVA PROTEÇÃO com modal customizado
+        if (this.hasUnsavedChanges) {
+            const shouldClose = await this.showConfirmModal(
+                'Do you really want to close without saving?<br>' +
+                'Click <strong>OK</strong> to discard changes or <strong>Cancel</strong> to continue editing.'
+            );
+
+            if (!shouldClose) {
+                return; // Não fecha o modal
+            }
+        }
+
+        // Código original para fechar
         this.modal.classList.remove('active');
         this.currentClient = null;
         this.selectedCategories = [];
+
+        // Limpa flags de controle
+        this.hasUnsavedChanges = false;
+        this.originalFormData = null;
     }
 
     generateCodePreview() {
@@ -806,8 +873,12 @@ class AdminClients {
         } else {
             this.selectedCategories = this.selectedCategories.filter(cat => cat !== categoryName);
         }
-
         console.log('📝 Selected categories:', this.selectedCategories);
+
+        // ADICIONE ESTAS DUAS LINHAS NOVAS:
+        if (this.originalFormData) {
+            this.hasUnsavedChanges = this.checkForChanges();
+        }
     }
 
     async handleFormSubmit(e) {
@@ -859,6 +930,8 @@ class AdminClients {
             }
 
             this.closeModal();
+            this.hasUnsavedChanges = false; // ADICIONE ESTA LINHA
+            this.originalFormData = null;    // ADICIONE ESTA LINHA
             await this.refreshData();
 
         } catch (error) {
@@ -1322,6 +1395,88 @@ class AdminClients {
 
         // Show modal
         this.modal.classList.add('active');
+
+        // ADICIONE ESTE BLOCO NOVO NO FINAL DA FUNÇÃO:
+        // Salva estado original e configura detecção de mudanças
+        setTimeout(() => {
+            this.saveOriginalFormState();
+            this.setupChangeDetection();
+        }, 100);
+    }
+
+    // ===== NOVAS FUNÇÕES DE PROTEÇÃO DE DADOS =====
+    saveOriginalFormState() {
+        this.originalFormData = {
+            clientName: document.getElementById('clientName').value,
+            clientEmail: document.getElementById('clientEmail').value,
+            clientPhone: document.getElementById('clientPhone').value,
+            companyName: document.getElementById('companyName').value,
+            addressLine1: document.getElementById('addressLine1').value,
+            addressLine2: document.getElementById('addressLine2').value,
+            city: document.getElementById('city').value,
+            state: document.getElementById('state').value,
+            zipCode: document.getElementById('zipCode').value,
+            expireDays: document.getElementById('expireDays').value,
+            showPrices: document.getElementById('showPrices').checked,
+            selectedCategories: [...this.selectedCategories]
+        };
+        this.hasUnsavedChanges = false;
+    }
+
+    setupChangeDetection() {
+        // Remove listeners antigos se existirem
+        const inputs = document.querySelectorAll('#clientForm input, #clientForm select');
+
+        inputs.forEach(input => {
+            // Remove listener antigo
+            input.removeEventListener('input', this.detectChange);
+            input.removeEventListener('change', this.detectChange);
+
+            // Adiciona novo listener
+            const detectChange = () => {
+                this.hasUnsavedChanges = this.checkForChanges();
+            };
+
+            if (input.type === 'checkbox') {
+                input.addEventListener('change', detectChange);
+            } else {
+                input.addEventListener('input', detectChange);
+            }
+        });
+    }
+
+    checkForChanges() {
+        if (!this.originalFormData) return false;
+
+        const currentData = {
+            clientName: document.getElementById('clientName').value,
+            clientEmail: document.getElementById('clientEmail').value,
+            clientPhone: document.getElementById('clientPhone').value,
+            companyName: document.getElementById('companyName').value,
+            addressLine1: document.getElementById('addressLine1').value,
+            addressLine2: document.getElementById('addressLine2').value,
+            city: document.getElementById('city').value,
+            state: document.getElementById('state').value,
+            zipCode: document.getElementById('zipCode').value,
+            expireDays: document.getElementById('expireDays').value,
+            showPrices: document.getElementById('showPrices').checked,
+            selectedCategories: [...this.selectedCategories]
+        };
+
+        // Compara cada campo
+        for (let key in currentData) {
+            if (key === 'selectedCategories') {
+                if (JSON.stringify(currentData[key]) !== JSON.stringify(this.originalFormData[key])) {
+                    return true;
+                }
+            } else {
+                if (currentData[key] !== this.originalFormData[key]) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     async toggleClientStatus(clientId) {
