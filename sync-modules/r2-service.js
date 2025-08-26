@@ -48,10 +48,10 @@ class R2Service {
             if (response.Contents) {
                 for (const obj of response.Contents) {
                     // Ignorar versões alternativas
-                    if (!obj.Key.startsWith('_thumbnails/') && 
-                        !obj.Key.startsWith('_preview/') && 
+                    if (!obj.Key.startsWith('_thumbnails/') &&
+                        !obj.Key.startsWith('_preview/') &&
                         !obj.Key.startsWith('_display/')) {
-                        
+
                         const photoNumber = this.extractPhotoNumber(obj.Key);
                         if (photoNumber) {
                             photos.push({
@@ -90,6 +90,9 @@ class R2Service {
     // Upload de arquivo único
     async uploadFile(filePath, r2Key, contentType = 'image/webp') {
         try {
+
+            await this.createKeepStructure(r2Key);
+
             // Verificar se já existe
             if (await this.exists(r2Key)) {
                 return { success: true, skipped: true, key: r2Key };
@@ -114,29 +117,71 @@ class R2Service {
         }
     }
 
+    // Garantir que existe .keep para um prefixo
+    async ensureKeepFile(prefix) {
+        if (!prefix || prefix === '.' || prefix.includes('.webp')) return;
+
+        const keepKey = `${prefix}/.keep`;
+
+        try {
+            // Verificar se já existe
+            await this.client.send(new HeadObjectCommand({
+                Bucket: this.bucketName,
+                Key: keepKey
+            }));
+        } catch (error) {
+            // Não existe, criar
+            try {
+                await this.client.send(new PutObjectCommand({
+                    Bucket: this.bucketName,
+                    Key: keepKey,
+                    Body: Buffer.from(`Keep file for ${prefix}`),
+                    ContentType: 'text/plain'
+                }));
+                console.log(`    📌 .keep criado: ${keepKey}`);
+            } catch (uploadError) {
+                // Silenciar erro, não é crítico
+            }
+        }
+    }
+
+    // Criar .keep files para toda a estrutura de uma foto
+    async createKeepStructure(r2Key) {
+        const parts = r2Key.split('/');
+        parts.pop(); // Remove o nome do arquivo
+
+        // Criar .keep para cada nível
+        for (let i = 1; i <= parts.length; i++) {
+            const prefix = parts.slice(0, i).join('/');
+            if (prefix) {
+                await this.ensureKeepFile(prefix);
+            }
+        }
+    }
+
     // Upload das 4 versões de uma foto
     async uploadPhotoVersions(basePath, photoPath, photoName) {
         const results = [];
         const baseNameWebP = photoName.replace(/\.(jpg|jpeg|png)$/i, '.webp');
-        
+
         // Estrutura das 4 versões
         const versions = [
-            { 
+            {
                 localPath: path.join(basePath, photoPath, baseNameWebP),
                 r2Key: path.join(photoPath, baseNameWebP).replace(/\\/g, '/'),
                 type: 'original'
             },
-            { 
+            {
                 localPath: path.join(basePath, '_display', photoPath, baseNameWebP),
                 r2Key: path.join('_display', photoPath, baseNameWebP).replace(/\\/g, '/'),
                 type: 'display'
             },
-            { 
+            {
                 localPath: path.join(basePath, '_preview', photoPath, baseNameWebP),
                 r2Key: path.join('_preview', photoPath, baseNameWebP).replace(/\\/g, '/'),
                 type: 'preview'
             },
-            { 
+            {
                 localPath: path.join(basePath, '_thumbnails', photoPath, baseNameWebP),
                 r2Key: path.join('_thumbnails', photoPath, baseNameWebP).replace(/\\/g, '/'),
                 type: 'thumbnail'
@@ -167,31 +212,31 @@ class R2Service {
     // Upload em lote
     async uploadBatch(photos, basePath, batchSize = 5) {
         const results = [];
-        
+
         for (let i = 0; i < photos.length; i += batchSize) {
             const batch = photos.slice(i, i + batchSize);
-            console.log(`  📦 Enviando lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(photos.length/batchSize)}`);
-            
+            console.log(`  📦 Enviando lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(photos.length / batchSize)}`);
+
             for (const photo of batch) {
                 const photoResults = await this.uploadPhotoVersions(
                     basePath,
                     photo.path,
                     photo.fileName
                 );
-                
+
                 results.push({
                     photo: photo.number,
                     versions: photoResults
                 });
             }
-            
+
             // Mostrar progresso
-            const successful = results.filter(r => 
+            const successful = results.filter(r =>
                 r.versions.every(v => v.success)
             ).length;
             console.log(`     ✓ ${successful}/${results.length} fotos completas (4 versões cada)`);
         }
-        
+
         return results;
     }
 
@@ -200,7 +245,7 @@ class R2Service {
         const photos = await this.listAllPhotos();
         const byCategory = {};
         let totalSize = 0;
-        
+
         photos.forEach(photo => {
             if (!byCategory[photo.category]) {
                 byCategory[photo.category] = { count: 0, size: 0 };
@@ -209,7 +254,7 @@ class R2Service {
             byCategory[photo.category].size += photo.size;
             totalSize += photo.size;
         });
-        
+
         return {
             total: photos.length,
             totalSize: (totalSize / 1024 / 1024 / 1024).toFixed(2) + ' GB',
