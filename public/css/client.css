@@ -3173,7 +3173,7 @@ span.contact-price {
 }
 
 span.contact-price i {
-    color: white !important;
+    color: rgb(0, 0, 0) !important;
     margin-right: 5px;
 }
 
@@ -3247,7 +3247,7 @@ span.contact-price i {
 
 /* Destaque para quantidade de fotos */
 #categoriesContainer .folder-stats span:has(.fa-images) {
-    color: white;
+    color: rgb(0, 0, 0);
     font-weight: 500;
 }
 

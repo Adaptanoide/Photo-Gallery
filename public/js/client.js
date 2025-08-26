@@ -62,6 +62,19 @@ function shouldShowPrices() {
     }
     return true; // default
 }
+
+// Controlar visibilidade do filtro de preços
+function updatePriceFilterVisibility() {
+    const priceFilterSection = document.querySelector('#priceFilters')?.closest('.filter-section');
+    if (priceFilterSection) {
+        if (shouldShowPrices()) {
+            priceFilterSection.style.display = 'block';
+        } else {
+            priceFilterSection.style.display = 'none';
+        }
+    }
+}
+
 // Tornar global
 window.shouldShowPrices = shouldShowPrices;
 
@@ -254,6 +267,7 @@ async function loadClientData() {
 
         // Atualizar interface com dados recebidos
         updateClientInterface(data);
+        updatePriceFilterVisibility();
         showCategories();
 
         // Carregar contagens dos filtros
@@ -307,6 +321,8 @@ function updateClientInterface(data) {
 
 async function showCategories() {
     hideAllContainers();
+    updateBreadcrumb();
+    updatePriceFilterVisibility();
     // hideLoading(); // Já está comentado
 
     // RESTAURAR VISIBILIDADE DAS CATEGORIAS
@@ -2040,18 +2056,24 @@ function toggleFilters() {
 
 // Limpar todos os filtros
 function clearFilters() {
+    // Resetar estado de navegação
+    navigationState.currentPath = [];
+    navigationState.currentFolderId = null;
+
     // Desmarcar checkboxes
     document.querySelectorAll('#typeFilters input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
     });
-
     // Reset radio buttons
     const allRadio = document.querySelector('#photoFilters input[value="all"]');
     if (allRadio) {
         allRadio.checked = true;
     }
 
-    console.log('✅ Filtros limpos');
+    // Atualizar breadcrumb para limpar visualmente
+    updateBreadcrumb();
+
+    console.log('✅ Filtros limpos e navegação resetada');
 }
 
 // Aplicar filtros automaticamente

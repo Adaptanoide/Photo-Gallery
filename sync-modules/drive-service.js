@@ -49,7 +49,7 @@ class DriveService {
             for (const file of response.data.files) {
                 if (file.mimeType === 'application/vnd.google-apps.folder') {
                     // Processar subpasta recursivamente
-                    const subPath = folderPath ? `${folderPath}/${file.name}` : file.name;
+                    const subPath = folderPath ? `${folderPath}/${file.name.trim()}` : file.name.trim();
                     const subPhotos = await this.listAllPhotos(file.id, subPath);
                     photos.push(...subPhotos);
                 } else if (file.mimeType && file.mimeType.startsWith('image/')) {
@@ -84,7 +84,7 @@ class DriveService {
             }
 
             const filePath = path.join(folderPath, photo.fileName);
-            
+
             // Se já existe, pular
             if (fs.existsSync(filePath)) {
                 return { success: true, skipped: true, path: filePath };
@@ -102,9 +102,9 @@ class DriveService {
 
             return new Promise((resolve, reject) => {
                 writer.on('finish', () => {
-                    resolve({ 
-                        success: true, 
-                        skipped: false, 
+                    resolve({
+                        success: true,
+                        skipped: false,
                         path: filePath,
                         localPath: path.join(photo.path, photo.fileName)
                     });
@@ -122,23 +122,23 @@ class DriveService {
     // Baixar múltiplas fotos em lote
     async downloadBatch(photos, targetDir, batchSize = 10) {
         const results = [];
-        
+
         for (let i = 0; i < photos.length; i += batchSize) {
             const batch = photos.slice(i, i + batchSize);
-            console.log(`  📦 Baixando lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(photos.length/batchSize)}`);
-            
+            console.log(`  📦 Baixando lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(photos.length / batchSize)}`);
+
             const batchResults = await Promise.all(
                 batch.map(photo => this.downloadPhoto(photo, targetDir))
             );
-            
+
             results.push(...batchResults);
-            
+
             // Mostrar progresso
             const downloaded = results.filter(r => r.success && !r.skipped).length;
             const skipped = results.filter(r => r.success && r.skipped).length;
             console.log(`     ✓ ${downloaded} baixadas, ${skipped} já existentes`);
         }
-        
+
         return results;
     }
 
@@ -146,14 +146,14 @@ class DriveService {
     async getStats() {
         const photos = await this.listAllPhotos();
         const byCategory = {};
-        
+
         photos.forEach(photo => {
             if (!byCategory[photo.category]) {
                 byCategory[photo.category] = 0;
             }
             byCategory[photo.category]++;
         });
-        
+
         return {
             total: photos.length,
             byCategory

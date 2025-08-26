@@ -44,18 +44,38 @@ class R2Service {
             const response = await client.send(command);
 
             // CommonPrefixes contém as "pastas"
-            const folders = (response.CommonPrefixes || []).map(prefix => {
+            const folders = await Promise.all((response.CommonPrefixes || []).map(async prefix => {
                 const folderPath = prefix.Prefix;
                 const folderName = folderPath.replace(normalizedPrefix, '').replace('/', '');
+
+                // Contar fotos dentro desta pasta
+                const photosCommand = new ListObjectsV2Command({
+                    Bucket: process.env.R2_BUCKET_NAME,
+                    Prefix: folderPath,
+                    MaxKeys: 1000
+                });
+
+                const photosResponse = await client.send(photosCommand);
+
+                // Filtrar apenas fotos originais (não thumbnails, preview, display)
+                const photoCount = photosResponse.Contents ?
+                    photosResponse.Contents.filter(obj =>
+                        !obj.Key.includes('/_thumbnails/') &&
+                        !obj.Key.includes('/_preview/') &&
+                        !obj.Key.includes('/_display/') &&
+                        obj.Key.endsWith('.webp')
+                    ).length : 0;
 
                 return {
                     id: folderPath,           // Usar path como ID
                     name: folderName,
                     path: folderPath,
                     type: 'folder',
-                    hasSubfolders: true       // Assumir que pode ter subpastas
+                    hasSubfolders: true,      // Assumir que pode ter subpastas
+                    imageCount: photoCount,   // NOVO - contagem de fotos
+                    hasImages: photoCount > 0 // NOVO - tem fotos?
                 };
-            });
+            }));
 
             console.log(`📁 [R2] ${folders.length} pastas encontradas em: ${normalizedPrefix || '/'}`);
 
@@ -127,7 +147,7 @@ class R2Service {
             console.log(`🔍 [DEBUG] Bucket: ${process.env.R2_BUCKET_NAME}`);
             console.log(`🔍 [DEBUG] Primeiras 3 fotos:`, photos.slice(0, 3).map(p => ({ key: p.r2Key, name: p.name })));
             // ===== FIM DAS LINHAS =====
-            
+
             return {
                 success: true,
                 photos: photos,

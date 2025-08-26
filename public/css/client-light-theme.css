@@ -308,8 +308,9 @@ body.client-page::before {
 }
 
 .client-page .folder-stats span {
-    background: #999ea5;
-    color:white;
+    background: #ffffff;
+    color:rgb(0, 0, 0);
+    font-size: 16px;
 }
 
 /* Photo price badges */
