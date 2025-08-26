@@ -1765,7 +1765,7 @@ class SpecialSelectionBuilder {
         const customPrice = parseFloat(document.getElementById('luxuryPriceInput').value) || null;
 
         const newCategory = {
-            id: `custom_${Date.now()}`,
+            categoryId: `cat_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
             name: categoryName,
             customPrice: customPrice,
             rateRules: this.getRateRules(), // ← ADICIONAR ESTA LINHA
@@ -2474,6 +2474,7 @@ class SpecialSelectionBuilder {
             const selectionData = {
                 selectionId: selectionId,
                 customCategories: this.customCategories.map(category => ({
+                    categoryId: category.categoryId,  // ← ADICIONAR ESTA LINHA AQUI
                     name: category.name,
                     customPrice: category.customPrice || 0,
                     rateRules: category.rateRules || [],

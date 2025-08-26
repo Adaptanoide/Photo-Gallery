@@ -209,24 +209,19 @@ router.get('/photos', verifyClientToken, async (req, res) => {
                 if (category) {
                     console.log(`📂 Categoria encontrada: ${category.categoryName} com ${category.photos.length} fotos`);
 
-                    // Buscar apenas as fotos DESTA categoria
-                    const photoIds = category.photos.map(p => p.photoId);
-                    const specialPhotos = await PhotoStatus.find({
-                        photoId: { $in: photoIds }
-                    });
+                    // Usar fotos direto da categoria (NÃO buscar no PhotoStatus)
+                    console.log(`📊 ${category.photos.length} fotos encontradas direto da categoria`);
 
-                    console.log(`📊 ${specialPhotos.length} fotos encontradas para esta categoria`);
-
-                    // Formatar para o frontend
-                    const photos = specialPhotos.map(photo => ({
+                    // Formatar direto das fotos da categoria
+                    const photos = category.photos.map(photo => ({
                         id: photo.photoId,
                         name: photo.fileName,
                         fileName: photo.fileName,
-                        webViewLink: `https://images.sunshinecowhides-gallery.com/${photo.photoId}`,  // ✅ AQUI
-                        thumbnailLink: `https://images.sunshinecowhides-gallery.com/_thumbnails/${photo.photoId}`,  // ✅ AQUI
+                        webViewLink: `https://images.sunshinecowhides-gallery.com/${photo.photoId}`,
+                        thumbnailLink: `https://images.sunshinecowhides-gallery.com/_thumbnails/${photo.photoId}`,
                         size: 0,
-                        mimeType: 'image/jpeg',
-                        customPrice: category.customPrice || category.baseCategoryPrice || 99
+                        mimeType: 'image/webp',
+                        customPrice: photo.customPrice || category.baseCategoryPrice || 99
                     }));
 
                     return res.json({

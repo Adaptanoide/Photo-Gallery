@@ -226,16 +226,23 @@ router.delete('/:selectionId', async (req, res) => {
             for (const category of selection.customCategories) {
                 for (const photo of category.photos) {
                     await PhotoStatus.findOneAndUpdate(
-                        { photoId: photo.photoId },
+                        { fileName: photo.fileName },  // Usar fileName aqui também
                         {
+                            $set: {
+                                'virtualStatus.status': 'available'  // MUDAR PARA AVAILABLE!
+                            },
                             $pull: { 'virtualStatus.tags': `special_${selection.clientCode}` },
-                            $unset: { 'virtualStatus.currentSelection': '' }
+                            $unset: {
+                                'virtualStatus.currentSelection': '',
+                                'virtualStatus.clientCode': ''  // Limpar clientCode também
+                            }
                         }
                     );
                     photosLiberadas++;
                 }
             }
         }
+
         console.log(`✅ ${photosLiberadas} fotos liberadas`);
 
         // 3. Resetar cliente para acesso normal
@@ -787,9 +794,10 @@ router.post('/:selectionId/process-async', async (req, res) => {
         if (customCategories && customCategories.length > 0) {
             // Mapear campos do frontend para o schema MongoDB
             const mappedCategories = customCategories.map(cat => ({
+                categoryId: cat.categoryId,  // ← ADICIONAR ESTA LINHA AQUI
                 categoryName: cat.name,
                 baseCategoryPrice: cat.customPrice || 0,
-                rateRules: cat.rateRules || [],  // ← ADICIONAR ESTA LINHA
+                rateRules: cat.rateRules || [],
                 photos: cat.photos.map(photo => ({
                     photoId: photo.id,
                     fileName: photo.name,
@@ -811,6 +819,75 @@ router.post('/:selectionId/process-async', async (req, res) => {
             selection.status = 'confirmed';
             selection.isActive = false;
             await selection.save();
+
+            // START - PHOTO BLOCKING WITH CONFLICT DETECTION
+            console.log('🔒 Starting photo reservation process...');
+            let successfulReservations = 0;
+            let conflictedPhotos = [];
+            let reservationErrors = 0;
+
+            for (const category of mappedCategories) {
+                for (const photo of category.photos) {
+                    try {
+                        // FIRST: Check if already reserved
+                        const existingPhoto = await PhotoStatus.findOne({
+                            fileName: photo.fileName
+                        });
+
+                        if (existingPhoto && existingPhoto.virtualStatus?.status === 'reserved') {
+                            // Photo is already reserved!
+                            const conflictClient = existingPhoto.virtualStatus.clientCode;
+
+                            if (conflictClient && conflictClient !== selection.clientCode) {
+                                console.log(`  ⚠️ CONFLICT: ${photo.fileName} already reserved for client ${conflictClient}`);
+                                conflictedPhotos.push({
+                                    fileName: photo.fileName,
+                                    clientCode: conflictClient
+                                });
+                                continue; // Skip this photo, don't mark as reserved
+                            }
+                        }
+
+                        // NO CONFLICT: Mark as reserved
+                        const result = await PhotoStatus.findOneAndUpdate(
+                            { fileName: photo.fileName },
+                            {
+                                $set: {
+                                    photoId: photo.photoId,
+                                    fileName: photo.fileName,
+                                    currentStatus: 'available',
+                                    'virtualStatus.status': 'reserved',
+                                    'virtualStatus.clientCode': selection.clientCode,
+                                    'virtualStatus.currentSelection': selectionId,
+                                    'virtualStatus.tags': [
+                                        `special_${selection.clientCode}`,
+                                        `selection_${selectionId}`,
+                                        `category_${category.categoryId}`
+                                    ],
+                                    'virtualStatus.lastStatusChange': new Date()
+                                }
+                            },
+                            { upsert: true, new: true }
+                        );
+
+                        if (result) {
+                            successfulReservations++;
+                            console.log(`  ✓ Photo ${photo.fileName} marked as reserved`);
+                        }
+                    } catch (error) {
+                        reservationErrors++;
+                        console.error(`  ✗ Error marking photo ${photo.fileName}:`, error.message);
+                    }
+                }
+            }
+
+            console.log(`✅ Reservation complete: ${successfulReservations} photos reserved, ${conflictedPhotos.length} conflicts, ${reservationErrors} errors`);
+
+            // Alert if conflicts occurred
+            if (conflictedPhotos.length > 0) {
+                console.warn(`⚠️ WARNING: ${conflictedPhotos.length} photos not added due to conflicts`);
+            }
+            // END - PHOTO BLOCKING
         }
 
         // 2. RETORNAR IMEDIATAMENTE
