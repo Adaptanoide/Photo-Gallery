@@ -7,8 +7,7 @@ const Product = require('../models/Product');
 class CartService {
 
     // ===== CONFIGURAÇÕES =====
-    static RESERVATION_DURATION = 300 * 60 * 1000; // 300 minutos (5 horas)
-    static MAX_ITEMS_PER_CART = 100; // Limite máximo de itens por carrinho
+    static RESERVATION_DURATION = 24 * 60 * 60 * 1000; // 24 horas em ms    static MAX_ITEMS_PER_CART = 100; // Limite máximo de itens por carrinho
 
     // ===== MÉTODOS PRINCIPAIS =====
 

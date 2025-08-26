@@ -8,6 +8,35 @@
 
 // ===== ESTADO GLOBAL DO CARRINHO =====
 window.CartSystem = {
+    // Função para formatar tempo de forma legível
+    formatTimeReadable(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        // Para 24 horas ou mais, mostra formato especial
+        if (hours >= 24) {
+            const days = Math.floor(hours / 24);
+            const remainingHours = hours % 24;
+            if (days === 1 && remainingHours === 0 && minutes === 0) {
+                return `24 horas`;
+            }
+            return `${days}d ${remainingHours}h ${minutes}m ${secs}s`;
+        }
+
+        // Para menos de 24 horas, SEMPRE mostra segundos
+        if (hours > 0) {
+            return `${hours}h ${minutes}m ${secs}s`;
+        }
+
+        // Para menos de 1 hora
+        if (minutes > 0) {
+            return `${minutes}m ${secs}s`;
+        }
+
+        // Apenas segundos
+        return `${secs}s`;
+    },
     // Estado do carrinho
     state: {
         sessionId: null,
@@ -923,14 +952,15 @@ window.CartSystem = {
      */
     renderCartItem(item) {
         const timeRemaining = item.timeRemaining || 0;
-        const minutes = Math.floor(timeRemaining / 60);
-        const seconds = timeRemaining % 60;
-        const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        const timeText = this.formatTimeReadable(timeRemaining);
+        // FIM DA NOVA FORMATAÇÃO
 
         let timerClass = '';
         if (timeRemaining < 300) timerClass = 'critical'; // < 5min
         else if (timeRemaining < 600) timerClass = 'warning'; // < 10min
 
+        // TODO O RESTO CONTINUA IGUAL
         return `
             <div class="cart-item" data-drive-file-id="${item.driveFileId}">
                 <div class="cart-item-image">
@@ -953,7 +983,7 @@ window.CartSystem = {
             }
                     <div class="cart-item-timer ${timerClass}">
                         <i class="fas fa-clock"></i>
-                        <span id="timer-${item.driveFileId}">${timeText}</span>
+                        <span id="timer-${item.fileName || item.driveFileId.split('/').pop()}">${timeText}</span>
                     </div>
                 </div>
                 <div class="cart-item-actions">
@@ -1001,11 +1031,9 @@ window.CartSystem = {
             timeRemaining--;
 
             // Atualizar elemento visual
-            const element = document.getElementById(`timer-${driveFileId}`);
+            const element = document.getElementById(`timer-${driveFileId.split('/').pop()}`);
             if (element) {
-                const minutes = Math.floor(timeRemaining / 60);
-                const seconds = timeRemaining % 60;
-                element.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                element.textContent = this.formatTimeReadable(timeRemaining);
 
                 // Atualizar classes de urgência
                 const timerElement = element.closest('.cart-item-timer');
