@@ -110,11 +110,12 @@ router.post('/access-codes', async (req, res) => {
             city,
             state,
             zipCode,
+            accessType,  // <- ADICIONE ESTA LINHA
             allowedCategories,
             expiresInDays = 30
         } = req.body;
 
-        if (!clientName || (!accessType !== 'special' && (!allowedCategories || allowedCategories.length === 0))) {
+        if (!clientName || (accessType !== 'special' && (!allowedCategories || allowedCategories.length === 0))) {
             return res.status(400).json({
                 success: false,
                 message: 'Nome do cliente e categorias são obrigatórios'

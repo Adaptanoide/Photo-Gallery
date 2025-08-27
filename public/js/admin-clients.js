@@ -930,9 +930,9 @@ class AdminClients {
                 this.showSuccess('Code created successfully!');
             }
 
+            this.hasUnsavedChanges = false; // Reset ANTES de fechar
+            this.originalFormData = null;    // Reset ANTES de fechar
             this.closeModal();
-            this.hasUnsavedChanges = false; // ADICIONE ESTA LINHA
-            this.originalFormData = null;    // ADICIONE ESTA LINHA
             await this.refreshData();
 
         } catch (error) {

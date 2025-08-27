@@ -17,4 +17,4 @@ r2-analysis.json
 fix-*.js
 backup-old-scripts/
 *.log
-sync.log
+sync.log/scripts

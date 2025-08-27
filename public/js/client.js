@@ -349,15 +349,13 @@ async function showCategories() {
             // Marcar globalmente como Special Selection
             isSpecialSelection = true;
 
-            // Esconder sidebar para Special Selection
+            // Manter sidebar visível mas vazio para Special Selection
             const sidebar = document.getElementById('filterSidebar');
             if (sidebar) {
-                sidebar.style.display = 'none';
-                // Ajustar largura do container principal
-                const mainContainer = document.querySelector('.main-container');
-                if (mainContainer) {
-                    mainContainer.style.marginLeft = '0';
-                    mainContainer.style.width = '100%';
+                sidebar.style.display = 'block';
+                const filterContainer = sidebar.querySelector('.filter-container');
+                if (filterContainer) {
+                    filterContainer.style.display = 'none';
                 }
             }
 
@@ -713,24 +711,22 @@ async function loadPhotos(folderId) {
             isSpecialSelection = (data.clientType === 'special');
             console.log('🎯 MARCADO como Special Selection:', isSpecialSelection);
 
-            // CONTROLAR SIDEBAR - SEMPRE, NÃO SÓ COM RATE RULES!
+            // CONTROLAR SIDEBAR - SEMPRE VISÍVEL, MAS VAZIO EM SPECIAL SELECTIONS
             const sidebar = document.getElementById('filterSidebar');
             if (sidebar) {
                 if (isSpecialSelection) {
-                    sidebar.style.display = 'none';
-                    // Ajustar largura do container principal
-                    const mainContainer = document.querySelector('.main-container');
-                    if (mainContainer) {
-                        mainContainer.style.marginLeft = '0';
-                        mainContainer.style.width = '100%';
+                    // Manter sidebar visível mas limpar conteúdo
+                    sidebar.style.display = 'block';
+                    const filterContainer = sidebar.querySelector('.filter-container');
+                    if (filterContainer) {
+                        filterContainer.style.display = 'none';
                     }
                 } else {
+                    // Mostrar sidebar com conteúdo normal
                     sidebar.style.display = 'block';
-                    // Restaurar largura original
-                    const mainContainer = document.querySelector('.main-container');
-                    if (mainContainer) {
-                        mainContainer.style.marginLeft = '220px';
-                        mainContainer.style.width = 'calc(100% - 220px)';
+                    const filterContainer = sidebar.querySelector('.filter-container');
+                    if (filterContainer) {
+                        filterContainer.style.display = 'block';
                     }
                 }
             }

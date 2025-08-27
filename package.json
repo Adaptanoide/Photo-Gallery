@@ -5,7 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "cde:structure": "node scripts/cde-01-analyze-structure.js",
+    "cde:retirados": "node scripts/cde-02-analyze-retirados.js",
+    "cde:find": "node scripts/cde-03-find-nofoto.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
