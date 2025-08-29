@@ -822,6 +822,22 @@ window.CartSystem = {
         // Renderizar com separadores e collapse
         let html = '';
 
+        html = `
+            <div style="
+                background: #28a745;
+                color: white;
+                padding: 12px;
+                border-radius: 8px;
+                margin: 0 15px 15px 15px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 15px;
+            ">
+                Special pricing available for 12+ photos
+            </div>
+        `;
+
+
         // Para cada categoria
         Object.keys(categories).sort().forEach(category => {
             const items = categories[category];
@@ -920,6 +936,8 @@ window.CartSystem = {
                         modifiedItem.originalPrice = item.price;
                     }
                 }
+
+                
 
                 // Renderizar o item
                 html += this.renderCartItem(modifiedItem);
