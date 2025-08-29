@@ -1122,8 +1122,8 @@ async function openPhotoModal(photoIndex) {
             document.querySelector(`[data-photo-id="${photoNumber}.webp"]`) ||
             document.querySelector(`[data-photo-id*="${photoNumber}"]`);
 
-
         const isReserved = photoElement && photoElement.getAttribute('data-status') === 'reserved';
+        const isSold = photoElement && photoElement.getAttribute('data-status') === 'sold';
 
         // Remover overlay anterior se existir
         const oldOverlay = document.getElementById('modalUnavailableOverlay');
@@ -1151,6 +1151,8 @@ async function openPhotoModal(photoIndex) {
                     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
                 `;
                 overlay.innerHTML = '<i class="fas fa-lock"></i> UNAVAILABLE';
+                const cartBtn = document.getElementById('cartToggleBtn');
+                if (cartBtn) cartBtn.style.display = 'none';
                 modalContent.appendChild(overlay);
 
                 // Deixar a imagem um pouco fosca
@@ -1159,11 +1161,45 @@ async function openPhotoModal(photoIndex) {
                     modalPhoto.style.filter = 'brightness(0.5)';
                 }
             }
+        } else if (isSold) {
+            // Criar overlay SOLD OUT
+            const modalContent = document.querySelector('.modal-content');
+            if (modalContent) {
+                const overlay = document.createElement('div');
+                overlay.id = 'modalUnavailableOverlay';
+                overlay.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(220, 53, 69, 0.95);
+                    color: #fff;
+                    padding: 20px 40px;
+                    font-size: 24px;
+                    font-weight: bold;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    pointer-events: none;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                `;
+                overlay.innerHTML = '<i class="fas fa-ban"></i> SOLD OUT';
+                const cartBtn = document.getElementById('cartToggleBtn');
+                if (cartBtn) cartBtn.style.display = 'none';
+                modalContent.appendChild(overlay);
+
+                // Deixar a imagem fosca
+                const modalPhoto = document.getElementById('modalPhoto');
+                if (modalPhoto) {
+                    modalPhoto.style.filter = 'brightness(0.5)';
+                }
+            }
         } else {
-            // Restaurar brilho normal se não estiver reservada
+            // Restaurar brilho normal se não estiver reservada nem vendida
             const modalPhoto = document.getElementById('modalPhoto');
             if (modalPhoto) {
                 modalPhoto.style.filter = 'none';
+                const cartBtn = document.getElementById('cartToggleBtn');
+                if (cartBtn) cartBtn.style.display = '';
             }
         }
     }, 500); // Aumentei o tempo para garantir que o DOM esteja pronto
@@ -1520,6 +1556,7 @@ function previousPhoto() {
     if (oldOverlay) oldOverlay.remove();
     const modalPhoto = document.getElementById('modalPhoto');
     if (modalPhoto) modalPhoto.style.filter = 'none';
+
     if (navigationState.currentPhotoIndex > 0) {
         // Notificar mudança de foto para resetar zoom
         if (typeof notifyPhotoChange === 'function') {
@@ -1538,6 +1575,7 @@ function nextPhoto() {
     if (oldOverlay) oldOverlay.remove();
     const modalPhoto = document.getElementById('modalPhoto');
     if (modalPhoto) modalPhoto.style.filter = 'none';
+
     if (navigationState.currentPhotoIndex < navigationState.currentPhotos.length - 1) {
         // Notificar mudança de foto para resetar zoom
         if (typeof notifyPhotoChange === 'function') {
@@ -2822,6 +2860,13 @@ function startStatusPolling() {
             const data = await response.json();
 
             if (data.success && data.changes) {
+
+                // Criar/atualizar mapa global de status
+                if (!window.photoStatusMap) {
+                    window.photoStatusMap = {};
+                }
+
+
                 data.changes.forEach(photo => {
 
                     // Pegar o código do cliente atual
