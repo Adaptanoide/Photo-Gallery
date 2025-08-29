@@ -39,12 +39,8 @@ class CDESync {
                 FROM tbinventario 
                 WHERE ATIPOETIQUETA != '0' 
                 AND ATIPOETIQUETA != ''
-                AND (
-                    DATE(AFECHA) >= DATE(?) 
-                    OR AESTADOP IN ('RESERVED', 'STANDBY')
-                )
-                ORDER BY AFECHA DESC`,
-                [this.lastSync]
+                AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
+                ORDER BY AFECHA DESC`
             );
 
             // Verificar também fotos bloqueadas conhecidas
