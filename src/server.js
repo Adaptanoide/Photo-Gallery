@@ -132,7 +132,7 @@ CDESync.syncAllStates(); // Executar uma vez ao iniciar
 setInterval(() => {
     console.log('[Server] Executando sincronização CDE...');
     CDESync.syncAllStates();
-}, 600000); // 10 minutos
+}, 60000); // 10 minutos
 
 // Iniciar servidor
 app.listen(PORT, () => {

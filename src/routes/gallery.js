@@ -273,7 +273,7 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         // Filtrar fotos reservadas/vendidas/special
         const unavailablePhotos = await PhotoStatus.find({
             $or: [
-                { 'virtualStatus.status': { $in: ['reserved', 'sold'] } },
+                { 'virtualStatus.status': 'sold' },  // REMOVIDO 'reserved' daqui
                 { 'virtualStatus.status': { $regex: /^special_/ } },
                 { 'currentStatus': 'sold' },
                 { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }

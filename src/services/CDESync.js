@@ -4,6 +4,7 @@
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
 const PhotoStatus = require('../models/PhotoStatus');
+const CDEBlockedPhoto = require('../models/CDEBlockedPhoto');
 
 class CDESync {
     constructor() {
@@ -15,6 +16,7 @@ class CDESync {
             database: process.env.CDE_DATABASE
         };
         this.lastSync = new Date();
+        this.lastBlockedCheck = new Date();
     }
 
     async syncAllStates() {
@@ -45,11 +47,17 @@ class CDESync {
                 [this.lastSync]
             );
 
-            console.log(`[CDE Sync] Encontrados ${produtos.length} produtos desde ${this.lastSync.toISOString()}`);
+            // Verificar também fotos bloqueadas conhecidas
+            const blockedResults = await this.checkBlockedPhotos(mysqlConnection);
+
+            // Combinar resultados
+            const todosProdu7tos = [...produtos, ...blockedResults];
+
+            console.log(`[CDE Sync] Encontrados ${produtos.length} mudanças recentes + ${blockedResults.length} bloqueadas verificadas`);
 
             let updatedCount = 0;
 
-            for (const item of produtos) {
+            for (const item of todosProdu7tos) {
                 // Usar ATIPOETIQUETA como número da foto
                 let photoNumber = item.ATIPOETIQUETA;
 
@@ -68,6 +76,24 @@ class CDESync {
                     newStatus = 'unavailable';
                 } else if (item.AESTADOP === 'INGRESADO') {
                     newStatus = 'available';
+                }
+
+                // Gerenciar lista de bloqueados
+                if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY') {
+                    // Adicionar à lista se não existe
+                    await CDEBlockedPhoto.findOneAndUpdate(
+                        { photoNumber: photoNumber },
+                        {
+                            photoNumber: photoNumber,
+                            idhCode: item.AIDH,
+                            cdeStatus: item.AESTADOP,
+                            lastChecked: new Date()
+                        },
+                        { upsert: true }
+                    );
+                } else if (item.AESTADOP === 'INGRESADO' || item.AESTADOP === 'RETIRADO') {
+                    // Remover da lista se voltou para INGRESADO ou foi RETIRADO (vendido)
+                    await CDEBlockedPhoto.deleteOne({ photoNumber: photoNumber });
                 }
 
                 // Tentar com diferentes formatos (com e sem zeros)
@@ -137,6 +163,40 @@ class CDESync {
             return { success: false, error: error.message };
         } finally {
             if (mysqlConnection) await mysqlConnection.end();
+        }
+    }
+
+    async checkBlockedPhotos(mysqlConnection) {
+        try {
+            // Buscar todos os produtos bloqueados conhecidos
+            const blockedPhotos = await CDEBlockedPhoto.find({});
+
+            if (blockedPhotos.length === 0) {
+                return [];
+            }
+
+            const photoNumbers = blockedPhotos.map(p => p.photoNumber);
+            console.log(`[CDE Sync] Verificando ${photoNumbers.length} fotos bloqueadas conhecidas`);
+
+            // Query apenas essas fotos específicas
+            const placeholders = photoNumbers.map(() => '?').join(',');
+            const [produtos] = await mysqlConnection.execute(
+                `SELECT AIDH, AESTADOP, AFECHA, ATIPOETIQUETA
+                 FROM tbinventario 
+                 WHERE ATIPOETIQUETA IN (${placeholders})`,
+                photoNumbers
+            );
+
+            // Atualizar lastChecked
+            await CDEBlockedPhoto.updateMany(
+                { photoNumber: { $in: photoNumbers } },
+                { $set: { lastChecked: new Date(), $inc: { checkCount: 1 } } }
+            );
+
+            return produtos;
+        } catch (error) {
+            console.error('[CDE Sync] Erro ao verificar bloqueados:', error.message);
+            return [];
         }
     }
 

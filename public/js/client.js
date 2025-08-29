@@ -1112,6 +1112,62 @@ async function openPhotoModal(photoIndex) {
     navigationState.currentPhotoIndex = photoIndex;
     const photo = photos[photoIndex];
 
+    // Verificar se a foto está reservada
+    setTimeout(() => {
+        // Extrair apenas o número da foto
+        const photoNumber = photo.id.split('/').pop().replace('.webp', '');
+
+        // Tentar várias formas de encontrar o elemento
+        let photoElement = document.querySelector(`[data-photo-id="${photoNumber}"]`) ||
+            document.querySelector(`[data-photo-id="${photoNumber}.webp"]`) ||
+            document.querySelector(`[data-photo-id*="${photoNumber}"]`);
+
+
+        const isReserved = photoElement && photoElement.getAttribute('data-status') === 'reserved';
+
+        // Remover overlay anterior se existir
+        const oldOverlay = document.getElementById('modalUnavailableOverlay');
+        if (oldOverlay) oldOverlay.remove();
+
+        if (isReserved) {
+            // Criar overlay fosco com UNAVAILABLE centralizado
+            const modalContent = document.querySelector('.modal-content');
+            if (modalContent) {
+                const overlay = document.createElement('div');
+                overlay.id = 'modalUnavailableOverlay';
+                overlay.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(255, 193, 7, 0.95);
+                    color: #000;
+                    padding: 20px 40px;
+                    font-size: 24px;
+                    font-weight: bold;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    pointer-events: none;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                `;
+                overlay.innerHTML = '<i class="fas fa-lock"></i> UNAVAILABLE';
+                modalContent.appendChild(overlay);
+
+                // Deixar a imagem um pouco fosca
+                const modalPhoto = document.getElementById('modalPhoto');
+                if (modalPhoto) {
+                    modalPhoto.style.filter = 'brightness(0.5)';
+                }
+            }
+        } else {
+            // Restaurar brilho normal se não estiver reservada
+            const modalPhoto = document.getElementById('modalPhoto');
+            if (modalPhoto) {
+                modalPhoto.style.filter = 'none';
+            }
+        }
+    }, 500); // Aumentei o tempo para garantir que o DOM esteja pronto
+
     // Mostrar modal
     const modal = document.getElementById('photoModal');
     modal.style.display = 'flex';
@@ -1459,6 +1515,11 @@ async function loadPhotoInModal(photoId) {
 
 // Navegar para foto anterior
 function previousPhoto() {
+    // Limpar overlay e restaurar imagem
+    const oldOverlay = document.getElementById('modalUnavailableOverlay');
+    if (oldOverlay) oldOverlay.remove();
+    const modalPhoto = document.getElementById('modalPhoto');
+    if (modalPhoto) modalPhoto.style.filter = 'none';
     if (navigationState.currentPhotoIndex > 0) {
         // Notificar mudança de foto para resetar zoom
         if (typeof notifyPhotoChange === 'function') {
@@ -1472,6 +1533,11 @@ function previousPhoto() {
 
 // Navegar para próxima foto
 function nextPhoto() {
+    // Limpar overlay e restaurar imagem
+    const oldOverlay = document.getElementById('modalUnavailableOverlay');
+    if (oldOverlay) oldOverlay.remove();
+    const modalPhoto = document.getElementById('modalPhoto');
+    if (modalPhoto) modalPhoto.style.filter = 'none';
     if (navigationState.currentPhotoIndex < navigationState.currentPhotos.length - 1) {
         // Notificar mudança de foto para resetar zoom
         if (typeof notifyPhotoChange === 'function') {
@@ -2757,6 +2823,18 @@ function startStatusPolling() {
 
             if (data.success && data.changes) {
                 data.changes.forEach(photo => {
+
+                    // Pegar o código do cliente atual
+                    const savedSession = localStorage.getItem('sunshineSession');
+                    const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
+                    const currentSessionId = clientCode ? localStorage.getItem(`cartSessionId_${clientCode}`) : null;
+
+                    // Se é uma reserva do próprio cliente, ignorar
+                    if (photo.status === 'reserved' && photo.sessionId === currentSessionId) {
+                        console.log(`[Polling] Ignorando própria reserva: ${photo.id}`);
+                        return; // Pula esta foto
+                    }
+
                     // Procurar de TRÊS formas diferentes
                     let photoElement = null;
 
@@ -2780,6 +2858,15 @@ function startStatusPolling() {
                             if (cartBtn) {
                                 cartBtn.disabled = true;
                                 cartBtn.innerHTML = '<i class="fas fa-ban"></i><span>Sold Out</span>';
+                            }
+                        } else if (photo.status === 'reserved') {
+                            photoElement.setAttribute('data-status', 'reserved');
+                            const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
+                            if (cartBtn) {
+                                cartBtn.disabled = true;
+                                cartBtn.innerHTML = '<i class="fas fa-lock"></i><span>Unavailable</span>';
+                                cartBtn.style.backgroundColor = '#ffc107';
+                                cartBtn.style.color = '#000';
                             }
                         }
                     }

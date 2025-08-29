@@ -18,7 +18,8 @@ class StatusMonitor {
                 .project({
                     driveFileId: 1,
                     status: 1,
-                    updatedAt: 1
+                    updatedAt: 1,
+                    reservedBy: 1
                 })
                 .toArray();
 
@@ -39,11 +40,12 @@ class StatusMonitor {
                 const photoId = product.driveFileId
                     .split('/').pop()
                     .replace('.webp', '');
-                
+
                 changes.push({
                     id: photoId,
                     status: product.status,
-                    source: 'reservation'
+                    source: 'reservation',
+                    sessionId: product.reservedBy ? product.reservedBy.sessionId : null
                 });
             }
 
@@ -57,7 +59,7 @@ class StatusMonitor {
             }
 
             // Se uma foto não está mais em products, está available
-            const productIds = new Set(products.map(p => 
+            const productIds = new Set(products.map(p =>
                 p.driveFileId.split('/').pop().replace('.webp', '')
             ));
 
@@ -74,7 +76,7 @@ class StatusMonitor {
                 const photoId = freed.driveFileId
                     .split('/').pop()
                     .replace('.webp', '');
-                
+
                 if (!productIds.has(photoId)) {
                     changes.push({
                         id: photoId,
