@@ -125,6 +125,15 @@ app.use('*', (req, res) => {
     });
 });
 
+// Sincronização CDE a cada 5 minutos
+const CDESync = require('./services/CDESync');
+console.log('[Server] Iniciando sincronização CDE a cada 5 minutos');
+CDESync.syncAllStates(); // Executar uma vez ao iniciar
+setInterval(() => {
+    console.log('[Server] Executando sincronização CDE...');
+    CDESync.syncAllStates();
+}, 60000); // 60 segundos ao invés de 30
+
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);

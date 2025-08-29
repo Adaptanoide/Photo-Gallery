@@ -377,6 +377,14 @@ const photoStatusSchema = new mongoose.Schema({
         }
     },
 
+    // ===== SINCRONIZAÇÃO COM CDE =====
+    cdeStatus: {
+        type: String,
+        enum: ['INGRESADO', 'RETIRADO', 'RESERVED', 'STANDBY', null],
+        default: null,
+        index: true
+    },
+
     // ===== CONFIGURAÇÕES =====
     config: {
         // Se permite reserva múltipla

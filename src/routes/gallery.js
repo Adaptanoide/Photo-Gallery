@@ -270,12 +270,13 @@ router.get('/photos', verifyClientToken, async (req, res) => {
 
         const result = await StorageService.getPhotos(prefix);
 
-        // FILTRAR baseado no tipo de acesso (CLIENTE NORMAL)
         // Filtrar fotos reservadas/vendidas/special
         const unavailablePhotos = await PhotoStatus.find({
             $or: [
                 { 'virtualStatus.status': { $in: ['reserved', 'sold'] } },
-                { 'virtualStatus.status': { $regex: /^special_/ } }
+                { 'virtualStatus.status': { $regex: /^special_/ } },
+                { 'currentStatus': 'sold' },
+                { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
             ]
         }).select('fileName');
 
@@ -287,16 +288,37 @@ router.get('/photos', verifyClientToken, async (req, res) => {
             return !unavailableFileNames.has(fileName);
         });
 
+        // Buscar status de todas as fotos
+        const photoIds = filteredPhotos.map(photo => {
+            const name = photo.fileName || photo.name.split('/').pop();
+            return name.replace('.webp', '');
+        });
+
+        const photoStatuses = await PhotoStatus.find({
+            photoId: { $in: photoIds }
+        }).select('photoId currentStatus');
+
+        const statusMap = {};
+        photoStatuses.forEach(ps => {
+            statusMap[ps.photoId] = ps.currentStatus;
+        });
+
         // Processar fotos
-        const photos = filteredPhotos.map(photo => ({
-            id: photo.r2Key || photo.id,
-            name: photo.name,
-            fileName: photo.fileName,
-            webViewLink: photo.url || photo.webViewLink,
-            thumbnailLink: photo.thumbnailUrl,
-            size: photo.size,
-            mimeType: photo.mimeType
-        }));
+        const photos = filteredPhotos.map(photo => {
+            const fileName = photo.fileName || photo.name.split('/').pop();
+            const photoId = fileName.replace('.webp', '');
+
+            return {
+                id: photo.r2Key || photo.id,
+                name: photo.name,
+                fileName: photo.fileName,
+                webViewLink: photo.url || photo.webViewLink,
+                thumbnailLink: photo.thumbnailUrl,
+                size: photo.size,
+                mimeType: photo.mimeType,
+                status: statusMap[photoId] || 'available'  // ADICIONE ESTA LINHA
+            };
+        });
 
         res.json({
             success: true,
@@ -314,6 +336,26 @@ router.get('/photos', verifyClientToken, async (req, res) => {
             success: false,
             error: error.message
         });
+    }
+});
+
+// Endpoint para verificar mudanças de status
+router.get('/status-updates', async (req, res) => {
+    try {
+        const StatusMonitor = require('../services/StatusMonitor');
+        const changes = await StatusMonitor.getRecentChanges(1);
+
+        if (changes.length > 0) {
+            console.log(`📊 Status updates: ${changes.length} mudanças detectadas`);
+            changes.forEach(c => {
+                console.log(`  - Foto ${c.id}: ${c.status} (${c.source})`);
+            });
+        }
+
+        res.json({ success: true, changes });
+    } catch (error) {
+        console.error('Erro ao buscar status updates:', error);
+        res.json({ success: false, changes: [] });
     }
 });
 
