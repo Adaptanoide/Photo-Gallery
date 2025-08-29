@@ -12,7 +12,8 @@ class StatusMonitor {
                 .find({
                     $or: [
                         { updatedAt: { $gte: since } },
-                        { createdAt: { $gte: since } }
+                        { createdAt: { $gte: since } },
+                        { status: 'reserved' }  // Incluir todos os reserved atuais
                     ]
                 })
                 .project({

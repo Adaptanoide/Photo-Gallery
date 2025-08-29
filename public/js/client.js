@@ -2913,6 +2913,16 @@ function startStatusPolling() {
                                 cartBtn.style.backgroundColor = '#ffc107';
                                 cartBtn.style.color = '#000';
                             }
+                        } else if (photo.status === 'available') {
+                            // Foto voltou a estar disponível - remover overlay
+                            photoElement.removeAttribute('data-status');
+                            const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
+                            if (cartBtn) {
+                                cartBtn.disabled = false;
+                                cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
+                                cartBtn.style.backgroundColor = '';
+                                cartBtn.style.color = '';
+                            }
                         }
                     }
                 });
