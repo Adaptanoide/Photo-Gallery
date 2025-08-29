@@ -41,7 +41,6 @@ class SunshineSync {
             stats: {
                 photosAnalyzed: 0,
                 newPhotosFound: 0,
-                soldPhotosFound: 0,
                 photosDownloaded: 0,
                 photosProcessed: 0,
                 photosUploaded: 0,
@@ -167,7 +166,6 @@ class SunshineSync {
         // Atualizar estatísticas
         this.state.stats.photosAnalyzed = analysis.totalPhotos;
         this.state.stats.newPhotosFound = analysis.newPhotos.length;
-        this.state.stats.soldPhotosFound = analysis.soldPhotos.length;
         this.saveState();
 
         // Mostrar resultado
@@ -177,73 +175,11 @@ class SunshineSync {
         console.log(`📸 Total no Drive: ${analysis.driveCount} fotos`);
         console.log(`☁️  Total no R2: ${analysis.r2Count} fotos`);
         console.log(`🟢 Fotos NOVAS para upload: ${analysis.newPhotos.length}`);
-        console.log(`🔴 Fotos VENDIDAS para marcar: ${analysis.soldPhotos.length}`);
         console.log(`⚪ Vendidas anteriormente (ignoradas): ${analysis.previouslySold || 0}`);
         console.log(`⚡ Tempo de análise: ${elapsed}s`);
         console.log('─'.repeat(50));
 
         return analysis;
-    }
-
-    // Processar fotos vendidas
-    async processSoldPhotos(soldPhotos) {
-        if (soldPhotos.length === 0) {
-            console.log('\n✅ Nenhuma foto vendida para processar');
-            return;
-        }
-
-        this.state.currentStep = 'marking_sold';
-        this.saveState();
-
-        console.log('\n🔴 FASE 2: MARCAR FOTOS VENDIDAS\n');
-        console.log(`Marcando ${soldPhotos.length} fotos como vendidas...`);
-
-        // Mostrar primeiras 5
-        console.log('\nPrimeiras fotos:');
-        soldPhotos.slice(0, 5).forEach(photo => {
-            console.log(`  - ${photo.number} (${photo.category})`);
-        });
-        if (soldPhotos.length > 5) {
-            console.log(`  ... e mais ${soldPhotos.length - 5} fotos`);
-        }
-
-        const confirm = await this.askUser('\nConfirmar marcação como vendidas? (s/n): ');
-        if (confirm.toLowerCase() !== 's') {
-            console.log('⚠️  Marcação cancelada');
-            return;
-        }
-
-        const startTime = Date.now();
-        let marked = 0;
-        let errors = 0;
-
-        for (const photo of soldPhotos) {
-            try {
-                await this.services.db.markPhotoAsSold(photo.number);
-                marked++;
-
-                // Mostrar progresso a cada 50
-                if (marked % 50 === 0) {
-                    console.log(`  ✓ ${marked}/${soldPhotos.length} marcadas...`);
-                }
-            } catch (error) {
-                errors++;
-                this.state.stats.errors.push({
-                    photo: photo.number,
-                    error: error.message
-                });
-            }
-        }
-
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-
-        this.state.stats.photosMarkedSold = marked;
-        this.saveState();
-
-        console.log(`\n✅ ${marked} fotos marcadas como vendidas em ${elapsed}s`);
-        if (errors > 0) {
-            console.log(`⚠️  ${errors} erros durante marcação`);
-        }
     }
 
     // Processar fotos novas
@@ -320,7 +256,6 @@ class SunshineSync {
         console.log('\nRESULTADOS:');
         console.log(`  📸 Fotos analisadas: ${this.state.stats.photosAnalyzed}`);
         console.log(`  🟢 Novas encontradas: ${this.state.stats.newPhotosFound}`);
-        console.log(`  🔴 Vendidas encontradas: ${this.state.stats.soldPhotosFound}`);
 
         if (this.state.stats.photosDownloaded > 0) {
             console.log('\nPROCESSAMENTO:');
@@ -374,7 +309,7 @@ class SunshineSync {
             const analysis = await this.runAnalysis();
 
             // Verificar se há trabalho a fazer
-            if (analysis.newPhotos.length === 0 && analysis.soldPhotos.length === 0) {
+            if (analysis.newPhotos.length === 0) {
                 console.log('\n✅ Sistema já está sincronizado!');
                 console.log('   Nada para fazer.\n');
                 await this.cleanup();
@@ -382,7 +317,7 @@ class SunshineSync {
             }
 
             // 2. Processar vendidas (rápido)
-            await this.processSoldPhotos(analysis.soldPhotos);
+            //await this.processSoldPhotos(analysis.soldPhotos);
 
             // 3. Processar novas (demorado)
             await this.processNewPhotos(analysis.newPhotos);

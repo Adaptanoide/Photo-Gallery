@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"googleDriveId":{"$numberInt":"1"}},"name":"googleDriveId_1","background":true,"unique":true}],"uuid":"8a4aaaf0487442ca99f168dc32dec9be","collectionName":"photocategories","type":"collection"}

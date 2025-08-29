@@ -41,13 +41,13 @@ router.get('/', async (req, res) => {
 
         // Se status for 'all', query fica vazio = busca TODAS as seleções
 
-        const selections = await Selection.find(query)
+        const selections = await Selection.find({ ...query, isDeleted: { $ne: true } })
             .sort({ createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .populate('items.productId');
 
-        const total = await Selection.countDocuments(query);
+        const total = await Selection.countDocuments({ ...query, isDeleted: { $ne: true } });
 
         res.json({
             success: true,
@@ -114,6 +114,7 @@ router.get('/stats', async (req, res) => {
 
         // Valor médio
         const avgResult = await Selection.aggregate([
+            { $match: { isDeleted: { $ne: true } } },
             { $group: { _id: null, avg: { $avg: '$totalValue' } } }
         ]);
         const averageValue = avgResult[0]?.avg || 0;
@@ -143,11 +144,11 @@ router.get('/stats', async (req, res) => {
 router.get('/:selectionId', async (req, res) => {
     try {
         const { selectionId } = req.params;
-        
+
         // Buscar a seleção com todos os dados populados
         const selection = await Selection.findOne({ selectionId })
             .populate('items.productId');
-        
+
         if (!selection) {
             return res.status(404).json({
                 success: false,
@@ -675,6 +676,43 @@ router.post('/:selectionId/revert-sold', async (req, res) => {
         });
     } finally {
         await session.endSession();
+    }
+});
+
+// DELETE - Soft delete selection
+router.delete('/:selectionId', async (req, res) => {
+    try {
+        const { selectionId } = req.params;
+        console.log(`🗑️ Soft deleting selection: ${selectionId}`);
+
+        const result = await Selection.findOneAndUpdate(
+            { selectionId },
+            {
+                isDeleted: true,
+                deletedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!result) {
+            return res.status(404).json({
+                success: false,
+                message: 'Selection not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Selection deleted successfully',
+            selectionId: selectionId
+        });
+
+    } catch (error) {
+        console.error('Error deleting selection:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting selection: ' + error.message
+        });
     }
 });
 

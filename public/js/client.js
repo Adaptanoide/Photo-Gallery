@@ -323,6 +323,13 @@ function updateClientInterface(data) {
 }
 
 async function showCategories() {
+    // Parar polling se estiver rodando
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        statusCheckInterval = null;
+        console.log('⏹️ Polling parado');
+    }
+
     hideAllContainers();
     updateBreadcrumb();
     updatePriceFilterVisibility();
@@ -779,6 +786,12 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     document.getElementById('photosContainer').style.display = 'block';
     document.getElementById('breadcrumbContainer').style.display = 'block';
 
+    // ADICIONAR AQUI - Iniciar polling quando fotos são mostradas
+    if (!statusCheckInterval) {
+        console.log('🔄 Iniciando polling de status');
+        startStatusPolling();
+    }
+
     // Atualizar título e contador COM PREÇO
     const galleryTitle = document.getElementById('galleryTitle');
     // 🌟 NOVO: Verificar primeiro se tem customPrice nas fotos (Special Selection)
@@ -847,7 +860,7 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
             const isInCart = window.CartSystem && CartSystem.isInCart(photo.id);
 
             return `
-                <div class="photo-thumbnail" onclick="openPhotoModal(${index})">
+                <div class="photo-thumbnail" data-photo-id="${photo.id}" data-status="${photo.status || 'available'}" onclick="openPhotoModal(${index})">
                     <img src="${thumbnailUrl}" 
                         alt="${photo.name}" 
                         onerror="this.onerror=null; this.src=this.src.replace('/_thumbnails/', '/');"
@@ -2732,3 +2745,59 @@ async function updateModalPriceBadge() {
 
 // Exportar para uso global
 window.updateModalPriceBadge = updateModalPriceBadge;
+
+// Sistema de atualização de status em tempo real
+let statusCheckInterval;
+
+function startStatusPolling() {
+    statusCheckInterval = setInterval(async () => {
+        try {
+            const response = await fetch('/api/gallery/status-updates');
+            const data = await response.json();
+
+            if (data.success && data.changes) {
+                data.changes.forEach(photo => {
+                    // Procurar de TRÊS formas diferentes
+                    let photoElement = null;
+
+                    // 1. Tentar com o ID exato como veio
+                    photoElement = document.querySelector(`[data-photo-id="${photo.id}"]`);
+
+                    // 2. Se não achou, tentar com wildcard
+                    if (!photoElement) {
+                        photoElement = document.querySelector(`[data-photo-id*="${photo.id.replace('.webp', '')}"]`);
+                    }
+
+                    // 3. Se ainda não achou e é só número, procurar com .webp
+                    if (!photoElement && /^\d+$/.test(photo.id)) {
+                        photoElement = document.querySelector(`[data-photo-id*="${photo.id}.webp"]`);
+                    }
+
+                    if (photoElement) {
+                        if (photo.status === 'sold') {
+                            photoElement.setAttribute('data-status', 'sold');
+                            const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
+                            if (cartBtn) {
+                                cartBtn.disabled = true;
+                                cartBtn.innerHTML = '<i class="fas fa-ban"></i><span>Sold Out</span>';
+                            }
+                        }
+                    }
+                });
+
+                if (data.changes.length > 0) {
+                    console.log(`[Status Update] ${data.changes.length} fotos atualizadas`);
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao verificar status:', error);
+        }
+    }, 30000);
+}
+
+// Parar polling quando sair da página
+window.addEventListener('beforeunload', () => {
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+});

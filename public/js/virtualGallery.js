@@ -87,6 +87,8 @@ class VirtualGallery {
             const photoIndex = startIndex + index;
             const div = document.createElement('div');
             div.className = 'photo-thumbnail';
+            div.setAttribute('data-photo-id', photo.fileName ? photo.fileName.replace('.webp', '') : photo.id);
+            div.setAttribute('data-status', photo.status || 'available');
             div.setAttribute('data-photo-index', photoIndex);
 
             // IMPORTANTE: Manter compatibilidade com openPhotoModal

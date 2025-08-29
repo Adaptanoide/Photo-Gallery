@@ -276,7 +276,7 @@ class AdminSelections {
     // ===== GET ACTION BUTTONS =====
     getActionButtons(selection) {
         let buttons = '';
-        
+
         // VIEW para TODOS os status (sempre primeiro)
         buttons += `
             <button class="special-btn-icon btn-view" 
@@ -320,6 +320,17 @@ class AdminSelections {
                         onclick="adminSelections.forceCancelSelection('${selection.selectionId}')" 
                         data-tooltip="⚠️ Force Cancel">
                     <i class="fas fa-exclamation-triangle"></i>
+                </button>
+            `;
+        }
+
+        // DELETE - para seleções antigas (não pending)
+        if (selection.status !== 'pending') {
+            buttons += `
+                <button class="special-btn-icon btn-delete" 
+                        onclick="adminSelections.deleteSelection('${selection.selectionId}')"
+                        data-tooltip="Delete Selection">
+                    <i class="fas fa-trash"></i>
                 </button>
             `;
         }
@@ -512,9 +523,9 @@ class AdminSelections {
 
                 <!-- Action Buttons -->
                 <div class="modal-actions">
-                    <button class="btn-modal-action btn-download" onclick="adminSelections.downloadSelectionPDF('${selection.selectionId}')">
-                        <i class="fas fa-download"></i>
-                        Download PDF
+                    <button class="btn-modal-action btn-download" onclick="adminSelections.downloadSelectionExcel('${selection.selectionId}')">
+                        <i class="fas fa-file-excel"></i>
+                        Download Excel
                     </button>
                     <button class="btn-modal-action btn-print" onclick="adminSelections.printSelection('${selection.selectionId}')">
                         <i class="fas fa-print"></i>
@@ -872,6 +883,397 @@ class AdminSelections {
             </tr>
         `;
     }
+
+    // ===== DOWNLOAD EXCEL FUNCTION - VERSÃO CORRIGIDA =====
+    async downloadSelectionExcel(selectionId) {
+        try {
+            console.log(`📊 Baixando Excel para seleção: ${selectionId}`);
+
+            // Fazer a mesma chamada que viewSelection faz
+            const response = await fetch(`/api/selections/${selectionId}`, {
+                headers: this.getAuthHeaders()
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.generateExcelFile(data.selection);
+            } else {
+                throw new Error(data.message || 'Erro ao carregar dados');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao baixar Excel:', error);
+            alert('Erro ao gerar arquivo Excel. Tente novamente.');
+        }
+    }
+
+    // ===== GENERATE EXCEL FILE - LAYOUT ORGANIZADO =====
+    async generateExcelFile(selection) {
+        try {
+            console.log('📄 Gerando Excel com dados:', selection);
+
+            // Buscar nome da empresa
+            let companyName = selection.clientName;
+            try {
+                const response = await fetch('/api/admin/access-codes', {
+                    headers: this.getAuthHeaders()
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.codes) {
+                        const client = data.codes.find(ac => ac.code === selection.clientCode);
+                        if (client?.companyName) {
+                            companyName = client.companyName;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('ERRO AO BUSCAR EMPRESA:', error);
+            }
+
+            // Criar workbook
+            const workbook = XLSX.utils.book_new();
+
+            // CABEÇALHO
+            const allData = [
+                ['SUNSHINE COWHIDES'],
+                ['Selection Details Report'],
+                [''],
+                ['Date:', this.formatDateForExcel(selection.createdAt)],
+                ['Company:', companyName],
+                ['Client:', selection.clientName],
+                ['Client Code:', selection.clientCode],
+                ['Selection ID:', selection.selectionId],
+                ['Status:', this.getStatusText(selection.status)],
+                ['']
+            ];
+
+            // AGRUPAR ITEMS POR CATEGORIA
+            const itemsByCategory = {};
+            if (selection.items && selection.items.length > 0) {
+                selection.items.forEach(item => {
+                    if (!itemsByCategory[item.category]) {
+                        itemsByCategory[item.category] = [];
+                    }
+                    itemsByCategory[item.category].push(item);
+                });
+            }
+
+            let totalItems = 0;
+            let grandTotal = 0;
+
+            // ADICIONAR CADA CATEGORIA COMO SEÇÃO
+            Object.entries(itemsByCategory).forEach(([category, items]) => {
+                const categoryTotal = items.reduce((sum, item) => sum + (item.price || 0), 0);
+                const averagePrice = categoryTotal / items.length;
+
+                // CABEÇALHO DA CATEGORIA
+                allData.push([`CATEGORY: ${category}`]);
+                allData.push(['Quantity:', `${items.length} items`]);
+                allData.push(['Unit Price:', `$${averagePrice.toFixed(2)}`]);
+                allData.push(['Total:', `$${categoryTotal.toFixed(2)}`]);
+                allData.push(['Photos:']);
+
+                // NÚMEROS DAS FOTOS - TODOS EM UMA LINHA SEM ESPAÇOS
+                const photoNumbers = items.map(item => {
+                    const fileName = item.fileName || item.name || '';
+                    return fileName.replace(/\.(webp|jpg|jpeg|png|gif)$/i, '');
+                });
+
+                // Juntar todos os números sem espaços: xxxx-xxxxx-xxxxx
+                const allPhotoNumbers = photoNumbers.join('-');
+                allData.push([allPhotoNumbers]);
+
+                allData.push(['']); // Linha em branco
+
+                totalItems += items.length;
+                grandTotal += categoryTotal;
+            });
+
+            // RESUMO FINAL
+            allData.push(['SUMMARY']);
+            allData.push(['Total Categories:', Object.keys(itemsByCategory).length]);
+            allData.push(['Total Items:', totalItems]);
+            allData.push(['Grand Total:', `$${grandTotal.toFixed(2)}`]);
+
+            // CRIAR PLANILHA
+            const worksheet = XLSX.utils.aoa_to_sheet(allData);
+
+            // CONFIGURAR LARGURA DAS COLUNAS
+            worksheet['!cols'] = [
+                { width: 50 }, // Coluna principal
+                { width: 20 }  // Coluna de valores
+            ];
+
+            // FORMATAÇÃO PROFISSIONAL
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!worksheet[cellAddress]) continue;
+
+                    const cell = worksheet[cellAddress];
+                    if (!cell.s) cell.s = {};
+
+                    const cellValue = cell.v ? cell.v.toString() : '';
+
+                    // BORDAS PADRÃO PARA TODAS AS CÉLULAS
+                    cell.s.border = {
+                        top: { style: "thin", color: { rgb: "CCCCCC" } },
+                        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                        left: { style: "thin", color: { rgb: "CCCCCC" } },
+                        right: { style: "thin", color: { rgb: "CCCCCC" } }
+                    };
+
+                    // CABEÇALHO PRINCIPAL
+                    if (R <= 1) {
+                        cell.s.font = { bold: true, size: 16, color: { rgb: "FFFFFF" } };
+                        cell.s.alignment = { horizontal: "center", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "2E5BBA" } }; // Azul escuro
+                        cell.s.border = {
+                            top: { style: "thick", color: { rgb: "000000" } },
+                            bottom: { style: "thick", color: { rgb: "000000" } },
+                            left: { style: "thick", color: { rgb: "000000" } },
+                            right: { style: "thick", color: { rgb: "000000" } }
+                        };
+                    }
+
+                    // INFORMAÇÕES DO CLIENTE (Date, Company, Client, etc.)
+                    else if (R >= 3 && R <= 8 && C === 0) {
+                        cell.s.font = { bold: true, size: 11 };
+                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "F0F0F0" } }; // Cinza claro
+                    }
+
+                    // VALORES DAS INFORMAÇÕES (lado direito das informações)
+                    else if (R >= 3 && R <= 8 && C === 1) {
+                        cell.s.font = { size: 11 };
+                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "FFFFFF" } };
+                    }
+
+                    // CABEÇALHOS DE CATEGORIA - FUNDO AMARELO
+                    else if (cellValue.includes('CATEGORY:')) {
+                        cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
+                        cell.s.fill = { fgColor: { rgb: "FFD700" } }; // AMARELO
+                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        cell.s.border = {
+                            top: { style: "thick", color: { rgb: "FF8C00" } },
+                            bottom: { style: "thick", color: { rgb: "FF8C00" } },
+                            left: { style: "thick", color: { rgb: "FF8C00" } },
+                            right: { style: "thick", color: { rgb: "FF8C00" } }
+                        };
+                    }
+
+                    // LABELS DA CATEGORIA (Quantity, Unit Price, Total, Photos)
+                    else if (cellValue.includes(':') &&
+                        (cellValue.includes('Quantity') || cellValue.includes('Unit Price') ||
+                            cellValue.includes('Total') || cellValue.includes('Photos'))) {
+                        cell.s.font = { bold: true, size: 10 };
+                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "E6E6E6" } }; // Cinza
+                    }
+
+                    // VALORES DA CATEGORIA
+                    else if (R > 10 && cellValue && !cellValue.includes(':') &&
+                        (cellValue.includes('$') || cellValue.includes('items'))) {
+                        cell.s.font = { size: 10 };
+                        cell.s.alignment = { horizontal: "right", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "FFFFFF" } };
+                    }
+
+                    // NÚMEROS DE FOTOS - FUNDO AMARELO DESTACADO
+                    else if (cellValue.includes('-') && !cellValue.includes(':') && !cellValue.includes(' ')) {
+                        cell.s.alignment = { horizontal: "left", wrapText: true, vertical: "center" };
+                        cell.s.font = { name: "Courier New", size: 10, bold: true };
+                        cell.s.fill = { fgColor: { rgb: "FFFF99" } }; // AMARELO CLARO
+                        cell.s.border = {
+                            top: { style: "thick", color: { rgb: "FF8C00" } },
+                            bottom: { style: "thick", color: { rgb: "FF8C00" } },
+                            left: { style: "thick", color: { rgb: "FF8C00" } },
+                            right: { style: "thick", color: { rgb: "FF8C00" } }
+                        };
+                    }
+
+                    // SEÇÃO SUMMARY
+                    else if (cellValue.includes('SUMMARY')) {
+                        cell.s.font = { bold: true, size: 12, color: { rgb: "FFFFFF" } };
+                        cell.s.fill = { fgColor: { rgb: "4CAF50" } }; // Verde
+                        cell.s.alignment = { horizontal: "center", vertical: "center" };
+                        cell.s.border = {
+                            top: { style: "thick", color: { rgb: "2E7D32" } },
+                            bottom: { style: "thick", color: { rgb: "2E7D32" } },
+                            left: { style: "thick", color: { rgb: "2E7D32" } },
+                            right: { style: "thick", color: { rgb: "2E7D32" } }
+                        };
+                    }
+
+                    // LABELS DO SUMMARY
+                    else if (cellValue.includes('Total') && cellValue.includes(':')) {
+                        cell.s.font = { bold: true, size: 10 };
+                        cell.s.fill = { fgColor: { rgb: "E8F5E8" } }; // Verde claro
+                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                    }
+
+                    // TEXTO GERAL
+                    else {
+                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        cell.s.font = { size: 10 };
+                    }
+                }
+            }
+
+            // SALVAR
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Selection');
+            const fileName = `Selection_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${selection.clientCode}_${this.formatDateForFileName(selection.createdAt)}.xlsx`;
+
+            XLSX.writeFile(workbook, fileName);
+            console.log(`✅ Excel organizado gerado: ${fileName}`);
+
+        } catch (error) {
+            console.error('❌ Erro ao gerar Excel:', error);
+            alert('Erro detalhado: ' + error.message);
+        }
+    }
+
+    // ===== HELPER FUNCTION - QUEBRAR TEXTO =====
+    wrapText(text, maxLength) {
+        if (!text || text.length <= maxLength) return text;
+
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+            if ((currentLine + word).length <= maxLength) {
+                currentLine += (currentLine ? ' ' : '') + word;
+            } else {
+                if (currentLine) lines.push(currentLine);
+                currentLine = word;
+            }
+        });
+
+        if (currentLine) lines.push(currentLine);
+        return lines.join('\n');
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    formatDateForExcel(dateString) {
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return 'Data inválida';
+            }
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return 'Data não disponível';
+        }
+    }
+
+    formatDateForFileName(dateString) {
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return 'unknown-date';
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch (error) {
+            return 'unknown-date';
+        }
+    }
+
+    // ===== PRINT FUNCTION =====
+    printSelection(selectionId) {
+        const modal = document.getElementById('selectionDetailsModal');
+        if (!modal) return;
+
+        const printWindow = window.open('', '_blank');
+        const modalContent = modal.querySelector('.selection-details-body').innerHTML;
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Selection Details - ${selectionId}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .selection-details-container { max-width: 800px; }
+                    .selection-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+                    .info-item { padding: 10px; border: 1px solid #ddd; }
+                    .info-item label { font-weight: bold; }
+                    .category-group { margin-bottom: 15px; }
+                    .category-header { background: #f5f5f5; padding: 10px; font-weight: bold; }
+                    .item-row { padding: 5px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+                    .totals-section { margin-top: 20px; border-top: 2px solid #333; padding-top: 10px; }
+                    .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
+                    .total-final { font-weight: bold; font-size: 1.2em; }
+                </style>
+            </head>
+            <body>
+                <h1>SUNSHINE COWHIDES - Selection Details</h1>
+                ${modalContent}
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    // ===== DELETE SELECTION =====
+    async deleteSelection(selectionId) {
+        const confirmed = await UISystem.confirm(
+            'Delete Selection?',
+            'This will permanently delete this selection. This action cannot be undone.'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            this.setLoading(true);
+            console.log(`🗑️ Deleting selection: ${selectionId}`);
+
+            const response = await fetch(`/api/selections/${selectionId}`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to delete selection');
+            }
+
+            if (result.success) {
+                // Remover da tabela imediatamente
+                const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
+                if (row) {
+                    row.style.opacity = '0.3';
+                    setTimeout(() => row.remove(), 500);
+                }
+
+                // Recarregar lista
+                setTimeout(() => this.loadSelections(), 1000);
+            }
+
+        } catch (error) {
+            console.error('❌ Error deleting selection:', error);
+            this.showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
 }
 
 // Initialize when DOM loads

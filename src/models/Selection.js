@@ -356,6 +356,14 @@ const selectionSchema = new mongoose.Schema({
     },
     finalizedAt: {
         type: Date
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
+    deletedAt: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true

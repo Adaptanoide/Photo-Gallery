@@ -3449,3 +3449,49 @@ span.contact-price i {
     color: var(--gold-primary);
     margin-right: 5px;
 }
+
+/* Status de fotos - Unavailable e Sold */
+.photo-thumbnail[data-status="reserved"] {
+    position: relative;
+}
+
+.photo-thumbnail[data-status="reserved"]::after {
+    content: "UNAVAILABLE";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 152, 0, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.photo-thumbnail[data-status="sold"] {
+    position: relative;
+}
+
+.photo-thumbnail[data-status="sold"]::after {
+    content: "SOLD OUT";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(211, 47, 47, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.photo-thumbnail[data-status="sold"] img,
+.photo-thumbnail[data-status="reserved"] img {
+    opacity: 0.6;
+}
