@@ -8,11 +8,11 @@ const PhotoStatus = require('../models/PhotoStatus');
 class CDESync {
     constructor() {
         this.cdeConfig = {
-            host: '216.246.112.6',
-            port: 3306,
-            user: 'tzwgctib_photos',
-            password: 'T14g0@photos',
-            database: 'tzwgctib_inventario'
+            host: process.env.CDE_HOST,
+            port: parseInt(process.env.CDE_PORT),
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE
         };
         this.lastSync = new Date();
     }
@@ -73,6 +73,29 @@ class CDESync {
                 // Tentar com diferentes formatos (com e sem zeros)
                 const photoId = photoNumber.padStart(5, '0');
                 const photoIdNoZeros = photoNumber.replace(/^0+/, '') || '0';
+
+                // Buscar foto atual para verificar se precisa atualizar
+                const existingPhoto = await PhotoStatus.findOne({
+                    $or: [
+                        { photoId: photoId },
+                        { photoId: photoIdNoZeros },
+                        { photoId: photoNumber },
+                        { fileName: `${photoId}.webp` },
+                        { fileName: `${photoIdNoZeros}.webp` }
+                    ]
+                });
+
+                // Se já está sincronizado com o mesmo status, pular
+                if (existingPhoto &&
+                    existingPhoto.cdeStatus === newCdeStatus &&
+                    existingPhoto.currentStatus === newStatus) {
+                    continue; // Pula para próxima foto sem fazer update
+                }
+
+                // Se não existe no MongoDB, também pular
+                if (!existingPhoto) {
+                    continue;
+                }
 
                 // Atualizar no MongoDB
                 const result = await PhotoStatus.updateOne(
