@@ -1,6 +1,7 @@
 // src/services/R2Service.js
 const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const PhotoStatus = require('../models/PhotoStatus');
 
 class R2Service {
 
@@ -54,26 +55,57 @@ class R2Service {
                     Prefix: folderPath,
                     MaxKeys: 1000
                 });
-
                 const photosResponse = await client.send(photosCommand);
 
-                // Filtrar apenas fotos originais (não thumbnails, preview, display)
-                const photoCount = photosResponse.Contents ?
+                // Contar SUBFOLDERS dentro desta pasta
+                const subfoldersCommand = new ListObjectsV2Command({
+                    Bucket: process.env.R2_BUCKET_NAME,
+                    Prefix: folderPath,
+                    Delimiter: '/'
+                });
+                const subfoldersResponse = await client.send(subfoldersCommand);
+                const subfolderCount = (subfoldersResponse.CommonPrefixes || []).length;
+
+                // Contar fotos físicas no R2
+                const allPhotos = photosResponse.Contents ?
                     photosResponse.Contents.filter(obj =>
                         !obj.Key.includes('/_thumbnails/') &&
                         !obj.Key.includes('/_preview/') &&
                         !obj.Key.includes('/_display/') &&
                         obj.Key.endsWith('.webp')
-                    ).length : 0;
+                    ) : [];
+
+                // Se tem fotos, contar apenas disponíveis no MongoDB
+                let photoCount = 0;
+                if (allPhotos.length > 0) {
+                    const photoIds = allPhotos.map(obj => {
+                        const fileName = obj.Key.split('/').pop();
+                        return fileName.replace('.webp', '');
+                    });
+
+                    // Contar fotos que NÃO estão vendidas/reservadas (mesmo critério da rota /photos)
+                    const unavailableCount = await PhotoStatus.countDocuments({
+                        photoId: { $in: photoIds },
+                        $or: [
+                            { 'virtualStatus.status': 'sold' },
+                            { 'currentStatus': 'sold' },
+                            { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
+                        ]
+                    });
+                    photoCount = allPhotos.length - unavailableCount;
+                }
+
+                console.log(`📊 CONTAGEM CORRIGIDA: ${folderName} - Total: ${allPhotos.length} → Disponíveis: ${photoCount}`);
 
                 return {
-                    id: folderPath,           // Usar path como ID
+                    id: folderPath,
                     name: folderName,
                     path: folderPath,
                     type: 'folder',
-                    hasSubfolders: true,      // Assumir que pode ter subpastas
-                    imageCount: photoCount,   // NOVO - contagem de fotos
-                    hasImages: photoCount > 0 // NOVO - tem fotos?
+                    hasSubfolders: subfolderCount > 0,  // REAL, não assumido
+                    totalSubfolders: subfolderCount,     // NOVO - quantidade real
+                    imageCount: photoCount,
+                    hasImages: photoCount > 0
                 };
             }));
 

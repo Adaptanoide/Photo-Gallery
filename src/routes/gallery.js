@@ -124,6 +124,17 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             result.folders = result.folders.filter(f => !f.name.startsWith('_'));
         }
 
+        // DEBUG temporário para entender a estrutura
+        console.log('🔍 DEBUG - Folders encontradas:', result.folders?.length || 0);
+        if (result.folders && result.folders.length > 0) {
+            console.log('📁 Primeira pasta:', {
+                name: result.folders[0].name,
+                path: result.folders[0].path,
+                imageCount: result.folders[0].imageCount,
+                totalSubfolders: result.folders[0].totalSubfolders
+            });
+        }
+
         // DEBUG: Ver o que retornou
         console.log('📊 RESULTADO DO R2:', {
             folders: result.folders?.length || 0,
@@ -158,6 +169,15 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             hasImages: false,
             totalImages: 0
         };
+
+        // SE tem folders SEM subfolders (pastas finais), corrigir imageCount
+        if (result.folders && result.folders.length > 0) {
+            const firstFolder = result.folders[0];
+            if (firstFolder.totalSubfolders === 0) {
+                // São pastas finais com fotos, NÃO corrigir aqui pois fica lento
+                // O imageCount vai mostrar total mesmo
+            }
+        }
 
         res.json({
             success: true,

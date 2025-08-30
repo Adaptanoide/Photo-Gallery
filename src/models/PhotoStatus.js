@@ -15,6 +15,10 @@ const photoStatusSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    photoNumber: {
+        type: String,
+        index: true
+    },
 
     // ===== STATUS ATUAL =====
     currentStatus: {
@@ -772,6 +776,14 @@ photoStatusSchema.statics.getStatistics = async function () {
 
 // Pre-save: limpeza e validações
 photoStatusSchema.pre('save', function (next) {
+    // Auto-preencher photoNumber se não existir
+    if (!this.photoNumber && this.photoId) {
+        let number = this.photoId;
+        if (number.includes('/')) {
+            number = number.split('/').pop().replace('.webp', '');
+        }
+        this.photoNumber = number;
+    }
     // Limpar locks expirados automaticamente
     if (this.lockInfo.isLocked && this.lockInfo.lockExpiresAt && new Date() > this.lockInfo.lockExpiresAt) {
         this.unlock('system', false);

@@ -486,8 +486,10 @@ async function showCategories() {
                     <h3>${category.name}</h3>
                     <p>${description}</p>
                     <div class="folder-stats">
-                        ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} total photos</span>` : ''}
-                        ${stats.categories?.length > 0 ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>` : ''}
+                        ${stats.categories?.length > 0
+                    ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>`
+                    : ''
+                }
                         ${shouldShowPrices() && priceRange !== 'Price on request' ? `<span><i class="fas fa-tag"></i> ${priceRange}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                     </div>
                     <div class="category-action">
@@ -628,19 +630,31 @@ function showSubfolders(folders) {
     containerEl.innerHTML = folders.map(folder => {
         const description = generateProductDescription(folder.name);
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
-        const photoCount = folder.photoCount || folder.imageCount || folder.totalFiles || 0;
+        const photoCount = folder.imageCount || folder.photoCount || folder.totalFiles || 0;
+        console.log('📊 FOLDER DEBUG:', {
+            name: folder.name,
+            imageCount: folder.imageCount,
+            photoCount: folder.photoCount,
+            totalFiles: folder.totalFiles,
+            finalCount: photoCount
+        });
         const price = folder.price || 0;
         const formattedPrice = shouldShowPrices()
             ? (folder.formattedPrice || (price > 0 ? `$${price.toFixed(2)}` : ''))
             : '';  // Não mostrar preço se showPrices = false
+        console.log('Debug folder:', folder.name, 'totalSubfolders:', folder.totalSubfolders, 'hasPhotos:', hasPhotos);
 
         return `
             <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
                 <h4>${folder.name}</h4>
                 <div class="folder-description">${description}</div>
                 <div class="folder-stats">
-                    ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
-                    ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
+                ${folder.totalSubfolders > 0
+                ? `<span><i class="fas fa-th-large"></i> ${folder.totalSubfolders} subcategories</span>`
+                : (hasPhotos && photoCount > 0
+                    ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>`
+                    : '')
+            }
                     ${shouldShowPrices() && formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                 </div>
                 <div class="category-action">

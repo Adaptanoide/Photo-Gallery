@@ -137,6 +137,7 @@ class CDESync {
                             'virtualStatus.lastStatusChange': new Date(),
                             cdeStatus: newCdeStatus,
                             idhCode: item.AIDH,
+                            photoNumber: photoNumber,
                             lastCDESync: new Date(),
                             syncedFromCDE: true
                         }
