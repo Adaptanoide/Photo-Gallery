@@ -78,6 +78,53 @@ function updatePriceFilterVisibility() {
 // Tornar global
 window.shouldShowPrices = shouldShowPrices;
 
+// ===== SISTEMA DE CACHE CENTRALIZADO PARA CATEGORIES/FILTERED =====
+const CategoriesCache = {
+    data: null,
+    timestamp: 0,
+    promise: null,
+    CACHE_DURATION: 60000, // 60 segundos
+
+    async fetch() {
+        const now = Date.now();
+
+        // Se tem cache válido, retorna ele
+        if (this.data && (now - this.timestamp < this.CACHE_DURATION)) {
+            console.log('✅ Usando cache de categories/filtered');
+            return this.data;
+        }
+
+        // Se já tem uma requisição em andamento, espera ela
+        if (this.promise) {
+            console.log('⏳ Esperando requisição em andamento...');
+            return this.promise;
+        }
+
+        // Fazer nova requisição
+        console.log('🔄 Buscando categories/filtered (nova requisição)');
+        this.promise = fetch('/api/pricing/categories/filtered')
+            .then(response => response.json())
+            .then(data => {
+                this.data = data;
+                this.timestamp = now;
+                this.promise = null;
+                return data;
+            })
+            .catch(error => {
+                this.promise = null;
+                throw error;
+            });
+
+        return this.promise;
+    },
+
+    clear() {
+        this.data = null;
+        this.timestamp = 0;
+        this.promise = null;
+    }
+};
+
 // ===== FUNÇÃO HELPER PARA URLs SEGURAS =====
 // Helper para sempre encodar parâmetros de URL corretamente
 function safeURL(baseURL, params) {
@@ -368,12 +415,8 @@ async function showCategories() {
 
             try {
                 // Buscar categorias especiais do backend
-                const response = await fetch('/api/pricing/categories/filtered', {
-                    headers: {
-                        'Authorization': `Bearer ${session.token}`
-                    }
-                });
-                const data = await response.json();
+                const data = await CategoriesCache.fetch();
+
 
                 if (data.isSpecialSelection) {
                     // Se tem apenas 1 categoria "Special Selection", ir direto para fotos
@@ -435,8 +478,7 @@ async function showCategories() {
     // Buscar informações completas de cada categoria (preços, fotos, etc)
     try {
         // Buscar dados do backend
-        const response = await fetch('/api/pricing/categories/filtered');
-        const data = await response.json();
+        const data = await CategoriesCache.fetch();
 
         // Criar mapa de dados por nome
         const categoryDataMap = {};
@@ -486,10 +528,8 @@ async function showCategories() {
                     <h3>${category.name}</h3>
                     <p>${description}</p>
                     <div class="folder-stats">
-                        ${stats.categories?.length > 0
-                    ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>`
-                    : ''
-                }
+                        ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} total photos</span>` : ''}
+                        ${stats.categories?.length > 0 ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>` : ''}
                         ${shouldShowPrices() && priceRange !== 'Price on request' ? `<span><i class="fas fa-tag"></i> ${priceRange}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                     </div>
                     <div class="category-action">
@@ -539,8 +579,8 @@ async function navigateToCategory(categoryId, categoryName) {
 
 // Carregar conteúdo de uma pasta
 async function loadFolderContents(folderId) {
-    console.log('🔍 DEBUG loadFolderContents - folderId:', folderId);
     try {
+        console.time('⏱️ Total loadFolderContents');
         showLoading();
 
         // ========== NOVO: PEGAR TOKEN ==========
@@ -557,10 +597,12 @@ async function loadFolderContents(folderId) {
         // ========== FIM DO NOVO CÓDIGO ==========
 
         // Buscar estrutura da pasta
+        console.time('  📡 Fetch structure');
         const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`, {
             headers: headers  // <-- ADICIONADO
         });
         const data = await response.json();
+        console.timeEnd('  📡 Fetch structure');
 
         if (!data.success) {
             throw new Error(data.message || 'Error loading folder');
@@ -572,10 +614,9 @@ async function loadFolderContents(folderId) {
         if (folderData.hasSubfolders && folderData.folders.length > 0) {
             try {
                 // Buscar dados completos com preços
-                const priceResponse = await fetch('/api/pricing/categories/filtered', {
-                    headers: headers  // <-- ADICIONADO TAMBÉM AQUI
-                });
-                const priceData = await priceResponse.json();
+                console.time('  💰 Cache preços');
+                const priceData = await CategoriesCache.fetch();
+                console.timeEnd('  💰 Cache preços');
 
                 // Criar mapa de preços por nome
                 const priceMap = {};
@@ -604,14 +645,16 @@ async function loadFolderContents(folderId) {
             }
 
             // Mostrar subpastas com preços
+            console.time('  🖼️ Render subfolders');
             showSubfolders(folderData.folders);
+            console.timeEnd('  🖼️ Render subfolders');
 
         } else if (folderData.hasImages || folderData.totalImages > 0) {
-            console.log('🔍 DEBUG antes de loadPhotos - folderId:', folderId);
             await loadPhotos(folderId);
         } else {
             showNoContent('Empty folder', 'This category has no content at the moment.');
         }
+        console.timeEnd('⏱️ Total loadFolderContents');
     } catch (error) {
         console.error('Error loading folder:', error);
         showNoContent('Error loading content', error.message);
@@ -631,30 +674,18 @@ function showSubfolders(folders) {
         const description = generateProductDescription(folder.name);
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
         const photoCount = folder.imageCount || folder.photoCount || folder.totalFiles || 0;
-        console.log('📊 FOLDER DEBUG:', {
-            name: folder.name,
-            imageCount: folder.imageCount,
-            photoCount: folder.photoCount,
-            totalFiles: folder.totalFiles,
-            finalCount: photoCount
-        });
         const price = folder.price || 0;
         const formattedPrice = shouldShowPrices()
             ? (folder.formattedPrice || (price > 0 ? `$${price.toFixed(2)}` : ''))
             : '';  // Não mostrar preço se showPrices = false
-        console.log('Debug folder:', folder.name, 'totalSubfolders:', folder.totalSubfolders, 'hasPhotos:', hasPhotos);
 
         return `
             <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
                 <h4>${folder.name}</h4>
                 <div class="folder-description">${description}</div>
                 <div class="folder-stats">
-                ${folder.totalSubfolders > 0
-                ? `<span><i class="fas fa-th-large"></i> ${folder.totalSubfolders} subcategories</span>`
-                : (hasPhotos && photoCount > 0
-                    ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>`
-                    : '')
-            }
+                    ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
+                    ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
                     ${shouldShowPrices() && formattedPrice ? `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` : (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                 </div>
                 <div class="category-action">
@@ -812,7 +843,6 @@ function showPhotosGallery(photos, folderName, categoryPrice) {
     const customPrice = photos[0]?.customPrice;
 
     // Verificar se deve mostrar preços
-    console.log('🔍 DEBUG Gallery Title - shouldShowPrices:', shouldShowPrices());
     if (!shouldShowPrices()) {
         // Não mostrar preços - Contact for Price
         galleryTitle.innerHTML = `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
@@ -1921,7 +1951,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('✅ Sistema de filtros carregado');
 
     // Esperar mais tempo e verificar se está carregado
+    let attemptCount = 0;
     const checkAndInitialize = setInterval(() => {
+        attemptCount++;
+
         if (window.navigationState &&
             window.navigationState.allowedCategories &&
             window.navigationState.allowedCategories.length > 0) {
@@ -1931,8 +1964,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             initializeCategoriesCache();
             console.log('📊 Cache inicializado com sucesso!');
             console.log('📁 Categorias mapeadas:', mainCategoriesMap);
-        } else {
-            console.log('⏳ Aguardando navigationState carregar...');
+        } else if (attemptCount > 10) {
+            // Parar após 5 segundos (10 * 500ms)
+            clearInterval(checkAndInitialize);
+            console.log('⚠️ Timeout aguardando navigationState');
         }
     }, 500);
 
@@ -2232,6 +2267,9 @@ function clearFilters() {
     updateBreadcrumb();
 
     console.log('✅ Filtros limpos e navegação resetada');
+
+    // Limpar cache ao limpar filtros
+    CategoriesCache.clear();
 }
 
 // Aplicar filtros automaticamente
@@ -2287,8 +2325,7 @@ async function autoApplyFilters() {
 
     // Buscar categorias com preços
     try {
-        const response = await fetch('/api/pricing/categories/filtered');
-        const data = await response.json();
+        const data = await CategoriesCache.fetch();
 
         if (!data.categories) {
             console.error('Erro ao buscar categorias');
@@ -2505,8 +2542,7 @@ function hideNavigationLoading() {
 async function loadFilterCounts() {
     try {
         // Buscar todas as categorias sem filtro
-        const response = await fetch('/api/pricing/categories/filtered');
-        const data = await response.json();
+        const data = await CategoriesCache.fetch();
 
         if (!data.categories) return;
 
@@ -2657,8 +2693,7 @@ async function showAllCategories() {
         showNavigationLoading();
 
         // Buscar todas as categorias
-        const response = await fetch('/api/pricing/categories/filtered');
-        const data = await response.json();
+        const data = await CategoriesCache.fetch();
 
         // Exibir todas
         displayFilteredCategories(data.categories || []);

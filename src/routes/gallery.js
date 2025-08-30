@@ -19,21 +19,15 @@ const ID_TO_PATH_MAP = {
 };
 
 // ========== NOVO MIDDLEWARE: Verificar token do cliente ==========
-// ========== NOVO MIDDLEWARE: Verificar token do cliente ==========
 const verifyClientToken = async (req, res, next) => {
-    console.log('🔍 [DEBUG] Headers recebidos:', Object.keys(req.headers));
-    console.log('🔍 [DEBUG] Authorization header:', req.headers['authorization']?.substring(0, 50));
 
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-
-    console.log('🔍 [DEBUG] Token extraído:', token ? 'SIM' : 'NÃO');
 
     if (token) {
         try {
             // Verificar e decodificar token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            console.log('🔍 [DEBUG] Token decodificado:', decoded);
 
             if (decoded.type === 'client') {
                 // Buscar AccessCode atualizado do banco
@@ -41,10 +35,6 @@ const verifyClientToken = async (req, res, next) => {
                     code: decoded.clientCode,
                     isActive: true
                 });
-
-                console.log('🔍 [DEBUG] AccessCode encontrado:', accessCode ? 'SIM' : 'NÃO');
-                console.log('🔍 [DEBUG] AccessType:', accessCode?.accessType);
-                console.log('🔍 [DEBUG] SpecialSelection:', accessCode?.specialSelection);
 
                 // Adicionar informações ao req
                 req.client = {
@@ -124,28 +114,9 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             result.folders = result.folders.filter(f => !f.name.startsWith('_'));
         }
 
-        // DEBUG temporário para entender a estrutura
-        console.log('🔍 DEBUG - Folders encontradas:', result.folders?.length || 0);
-        if (result.folders && result.folders.length > 0) {
-            console.log('📁 Primeira pasta:', {
-                name: result.folders[0].name,
-                path: result.folders[0].path,
-                imageCount: result.folders[0].imageCount,
-                totalSubfolders: result.folders[0].totalSubfolders
-            });
-        }
-
-        // DEBUG: Ver o que retornou
-        console.log('📊 RESULTADO DO R2:', {
-            folders: result.folders?.length || 0,
-            folderNames: result.folders?.map(f => f.name) || []
-        });
-
         // SE não tem pastas, tentar buscar fotos diretamente
         if (!result.folders || result.folders.length === 0) {
-            console.log('🔄 Sem subpastas, buscando fotos...');
             const photosResult = await StorageService.getPhotos(prefix);
-            console.log(`📸 Encontradas ${photosResult.photos?.length || 0} fotos`);
 
             // Se tem fotos, retornar como hasImages
             if (photosResult.photos && photosResult.photos.length > 0) {
@@ -169,15 +140,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             hasImages: false,
             totalImages: 0
         };
-
-        // SE tem folders SEM subfolders (pastas finais), corrigir imageCount
-        if (result.folders && result.folders.length > 0) {
-            const firstFolder = result.folders[0];
-            if (firstFolder.totalSubfolders === 0) {
-                // São pastas finais com fotos, NÃO corrigir aqui pois fica lento
-                // O imageCount vai mostrar total mesmo
-            }
-        }
 
         res.json({
             success: true,
@@ -301,7 +263,6 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         }).select('fileName');
 
         const unavailableFileNames = new Set(unavailablePhotos.map(p => p.fileName));
-        console.log(`🔒 Ocultando ${unavailableFileNames.size} fotos não disponíveis`);
 
         const filteredPhotos = result.photos.filter(photo => {
             const fileName = photo.fileName || photo.name.split('/').pop();

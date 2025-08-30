@@ -1,8 +1,13 @@
 // src/services/R2Service.js
 const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const FolderStats = require('../models/FolderStats');
 
 class R2Service {
+
+    // Cache de estrutura de pastas
+    static structureCache = new Map();
+    static CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
     // ===== CONFIGURAÇÃO =====
     static client = null;
@@ -30,6 +35,17 @@ class R2Service {
      */
     static async getSubfolders(prefix = '') {
         try {
+            // Verificar cache primeiro
+            const cacheKey = `folders:${prefix}`;
+            const cached = this.structureCache.get(cacheKey);
+
+            if (cached && (Date.now() - cached.timestamp < this.CACHE_DURATION)) {
+                console.log(`📦 Cache hit para: ${prefix || '/'}`);
+                return cached.data;
+            }
+
+            console.log(`🔄 Cache miss, buscando: ${prefix || '/'}`);
+
             const client = this.getClient();
 
             // Garantir que prefix termine com /
@@ -44,6 +60,7 @@ class R2Service {
             const response = await client.send(command);
 
             // CommonPrefixes contém as "pastas"
+
             const folders = await Promise.all((response.CommonPrefixes || []).map(async prefix => {
                 const folderPath = prefix.Prefix;
                 const folderName = folderPath.replace(normalizedPrefix, '').replace('/', '');
@@ -65,15 +82,9 @@ class R2Service {
                 const subfoldersResponse = await client.send(subfoldersCommand);
                 const subfolderCount = (subfoldersResponse.CommonPrefixes || []).length;
 
-                // Contar fotos físicas no R2
-                const photoCount = photosResponse.Contents ?
-                    photosResponse.Contents.filter(obj =>
-                        !obj.Key.includes('/_thumbnails/') &&
-                        !obj.Key.includes('/_preview/') &&
-                        !obj.Key.includes('/_display/') &&
-                        obj.Key.endsWith('.webp')
-                    ).length : 0;
-
+                // Buscar do cache FolderStats
+                const stats = await FolderStats.findOne({ folderPath: folderPath });
+                const photoCount = stats ? stats.availablePhotos : 0;
                 return {
                     id: folderPath,
                     name: folderName,
@@ -88,10 +99,18 @@ class R2Service {
 
             console.log(`📁 [R2] ${folders.length} pastas encontradas em: ${normalizedPrefix || '/'}`);
 
-            return {
+            const result = {
                 success: true,
                 folders: folders
             };
+
+            // Salvar no cache
+            this.structureCache.set(cacheKey, {
+                data: result,
+                timestamp: Date.now()
+            });
+
+            return result;
 
         } catch (error) {
             console.error('❌ [R2] Erro ao listar pastas:', error);
@@ -150,12 +169,6 @@ class R2Service {
                 });
 
             console.log(`📸 [R2] ${photos.length} fotos encontradas em: ${normalizedPrefix || '/'}`);
-
-            // ===== ADICIONAR ESTAS 3 LINHAS AQUI =====
-            console.log(`🔍 [DEBUG] Buscando em prefix: "${normalizedPrefix}"`);
-            console.log(`🔍 [DEBUG] Bucket: ${process.env.R2_BUCKET_NAME}`);
-            console.log(`🔍 [DEBUG] Primeiras 3 fotos:`, photos.slice(0, 3).map(p => ({ key: p.r2Key, name: p.name })));
-            // ===== FIM DAS LINHAS =====
 
             return {
                 success: true,
@@ -306,6 +319,11 @@ class R2Service {
             console.error('❌ [R2] Erro ao deletar:', error);
             throw error;
         }
+    }
+    
+    static clearCache() {
+        this.structureCache.clear();
+        console.log('🗑️ Cache do R2Service limpo');
     }
 }
 
