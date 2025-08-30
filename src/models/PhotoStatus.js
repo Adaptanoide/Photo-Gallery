@@ -19,6 +19,10 @@ const photoStatusSchema = new mongoose.Schema({
         type: String,
         index: true
     },
+    idhCode: {
+        type: String,
+        index: true
+    },
 
     // ===== STATUS ATUAL =====
     currentStatus: {
