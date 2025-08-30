@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
-const PhotoStatus = require('../src/models/PhotoStatus');
+const PhotoStatus = require('../../src/models/PhotoStatus');
 require('dotenv').config();
 
 async function alignInitial() {

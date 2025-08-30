@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
+require('../../src/models/PhotoStatus')
 
 async function addPhotoNumberField() {
     await mongoose.connect(process.env.MONGODB_URI);

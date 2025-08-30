@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
-const PhotoStatus = require('../src/models/PhotoStatus');
+const PhotoStatus = require('../../src/models/PhotoStatus');
 const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 require('dotenv').config();
 
