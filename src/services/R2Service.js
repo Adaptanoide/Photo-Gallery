@@ -1,7 +1,6 @@
 // src/services/R2Service.js
 const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const PhotoStatus = require('../models/PhotoStatus');
 
 class R2Service {
 
@@ -67,35 +66,13 @@ class R2Service {
                 const subfolderCount = (subfoldersResponse.CommonPrefixes || []).length;
 
                 // Contar fotos físicas no R2
-                const allPhotos = photosResponse.Contents ?
+                const photoCount = photosResponse.Contents ?
                     photosResponse.Contents.filter(obj =>
                         !obj.Key.includes('/_thumbnails/') &&
                         !obj.Key.includes('/_preview/') &&
                         !obj.Key.includes('/_display/') &&
                         obj.Key.endsWith('.webp')
-                    ) : [];
-
-                // Se tem fotos, contar apenas disponíveis no MongoDB
-                let photoCount = 0;
-                if (allPhotos.length > 0) {
-                    const photoIds = allPhotos.map(obj => {
-                        const fileName = obj.Key.split('/').pop();
-                        return fileName.replace('.webp', '');
-                    });
-
-                    // Contar fotos que NÃO estão vendidas/reservadas (mesmo critério da rota /photos)
-                    const unavailableCount = await PhotoStatus.countDocuments({
-                        photoId: { $in: photoIds },
-                        $or: [
-                            { 'virtualStatus.status': 'sold' },
-                            { 'currentStatus': 'sold' },
-                            { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
-                        ]
-                    });
-                    photoCount = allPhotos.length - unavailableCount;
-                }
-
-                console.log(`📊 CONTAGEM CORRIGIDA: ${folderName} - Total: ${allPhotos.length} → Disponíveis: ${photoCount}`);
+                    ).length : 0;
 
                 return {
                     id: folderPath,

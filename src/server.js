@@ -129,7 +129,7 @@ app.use('*', (req, res) => {
 const CDESync = require('./services/CDESync');
 const syncInterval = process.env.NODE_ENV === 'production'
     ? 720 * 60 * 1000    // 5 minutos em produção(12 horas no final de semana)
-    : 30 * 1000;     // 30 segundos em desenvolvimento
+    : 30 * 100000;     // 30 segundos em desenvolvimento
 
 const syncMinutes = syncInterval / 60000;
 console.log(`[Server] Iniciando sincronização CDE a cada ${syncMinutes} minutos`);
