@@ -1,0 +1,136 @@
+/* admin-storage.css - Integrado com o padrão Sunshine */
+
+/* Upload Zone - Mantém o estilo dark */
+.upload-zone {
+    border: 2px dashed #555;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 20px 0;
+}
+
+.upload-zone:hover {
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.upload-zone.dragover {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.upload-zone h3 {
+    color: #d4af37;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.upload-zone p {
+    color: #999;
+    font-size: 14px;
+}
+
+/* Folder Input */
+.folder-input-group {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    align-items: center;
+}
+
+.folder-input-group label {
+    color: #999;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Files Preview Grid */
+.files-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.file-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #4a4a4a;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.file-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.file-card .file-name {
+    padding: 8px;
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-card .remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Upload Actions */
+.upload-actions {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+/* Results */
+.upload-results {
+    margin-top: 20px;
+}
+
+.result-item {
+    padding: 10px 15px;
+    margin: 5px 0;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.result-item.success {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid #4CAF50;
+    color: #4CAF50;
+}
+
+.result-item.error {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid #f44336;
+    color: #f44336;
+}
+
+.result-item a {
+    color: #d4af37;
+    text-decoration: none;
+}
+
+.result-item a:hover {
+    text-decoration: underline;
+}

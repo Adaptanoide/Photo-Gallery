@@ -1,0 +1,695 @@
+/*public/css/style.css*/
+
+/* ===== SUNSHINE COWHIDES - STYLE.CSS LUXUOSO ===== */
+
+/* Reset e Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* === PALETA LUXUOSA SUNSHINE COWHIDES === */
+    
+    /* Cores principais */
+    --luxury-dark: #2c2c34;          /* Fundo principal elegante */
+    --luxury-medium: #3a3a42;        /* Cards e containers */
+    --luxury-light: #f8f9fa;         /* Texto em fundos escuros */
+    
+    /* Dourado elegante */
+    --gold-primary: #d4af37;         /* Botões e acentos principais */
+    --gold-hover: #b8941f;           /* Hover states */
+    --gold-light: rgba(212, 175, 55, 0.1); /* Backgrounds sutis */
+    
+    /* Textos */
+    --text-primary: #ffffff;         /* Texto principal */
+    --text-secondary: #e2e8f0;       /* Texto secundário */
+    --text-muted: #94a3b8;           /* Texto discreto */
+    
+    /* Cores funcionais (mantidas para funcionalidades) */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    
+    /* Acentos */
+    --border-subtle: #4a5568;        /* Bordas discretas */
+    --hover-bg: #374151;             /* Background hover */
+    
+    /* Compatibilidade (mapeamento das cores antigas) */
+    --primary-color: var(--gold-primary);
+    --secondary-color: var(--luxury-medium);
+    --dark-color: var(--luxury-dark);
+    --light-color: var(--luxury-light);
+    --white: #ffffff;
+    --gray: var(--text-muted);
+    
+    /* Sombras luxuosas */
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.25);
+    --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.2);
+    
+    /* Bordas e transições */
+    --border-radius: 8px;
+    --border-radius-large: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: var(--luxury-dark);
+    min-height: 100vh;
+    position: relative;
+    padding-top: 70px; /* Compensar header fixo */
+}
+
+/* Textura sutil de fundo para elegância */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Remover padding quando não há header na página client */
+body.client-page {
+    padding-top: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ===== HEADER LUXUOSO ===== */
+
+.luxury-header {
+    background: rgba(44, 44, 52, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 70px;
+    display: flex;
+    align-items: center;
+}
+
+.luxury-header .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.luxury-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.luxury-header-logo i {
+    font-size: 1.8rem;
+    color: var(--gold-primary);
+    filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.3));
+}
+
+/* Header antigo (compatibilidade) */
+.header {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 20px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.logo i {
+    font-size: 2rem;
+}
+
+.nav {
+    display: flex;
+    gap: 15px;
+}
+
+/* ===== HOMEPAGE LUXUOSA ===== */
+
+.luxury-welcome-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.luxury-container {
+    max-width: 480px;
+    width: 100%;
+}
+
+/* Branding elegante */
+.luxury-brand {
+    margin-bottom: 3rem;
+}
+
+.luxury-logo {
+    margin-bottom: 1.5rem;
+}
+
+.luxury-logo i {
+    font-size: 3.5rem;
+    color: var(--gold-primary);
+    filter: drop-shadow(0 4px 12px rgba(212, 175, 55, 0.3));
+}
+
+.luxury-title {
+    font-size: 3rem;
+    font-weight: 300;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.luxury-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-weight: 300;
+    margin-bottom: 0;
+}
+
+/* Formulário de acesso elegante */
+.luxury-access-form {
+    background: rgba(58, 58, 66, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--border-radius-large);
+    padding: 2.5rem 2rem;
+    box-shadow: var(--shadow);
+}
+
+.direct-access-form {
+    margin-bottom: 2rem;
+}
+
+.code-input-group {
+    margin-bottom: 1.5rem;
+}
+
+.luxury-code-input {
+    width: 100%;
+    height: 60px;
+    background: var(--luxury-dark);
+    border: 2px solid var(--border-subtle);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 8px;
+    transition: var(--transition);
+    outline: none;
+}
+
+.luxury-code-input::placeholder {
+    color: var(--text-muted);
+    letter-spacing: 4px;
+}
+
+.luxury-code-input:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 3px var(--gold-light);
+    transform: translateY(-2px);
+}
+
+.luxury-btn-primary {
+    width: 100%;
+    height: 54px;
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    border: none;
+    border-radius: var(--border-radius);
+    color: var(--luxury-dark);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: var(--shadow-gold);
+}
+
+.luxury-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+}
+
+.luxury-btn-primary:active {
+    transform: translateY(-1px);
+}
+
+.luxury-btn-primary i {
+    font-size: 1.1rem;
+}
+
+/* Link admin discreto */
+.luxury-admin-access {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 1.5rem;
+}
+
+.luxury-admin-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+}
+
+.luxury-admin-link:hover {
+    color: var(--gold-primary);
+    background: var(--gold-light);
+}
+
+.luxury-admin-link i {
+    font-size: 0.8rem;
+}
+
+/* ===== BUTTONS (GERAIS) ===== */
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    font-size: 0.95rem;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--gold-hover);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: var(--luxury-medium);
+}
+
+.btn-full {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ===== MAIN CONTENT ===== */
+
+.main {
+    flex: 1;
+    padding: 2rem 0;
+}
+
+/* ===== WELCOME SECTION ANTIGA (COMPATIBILIDADE) ===== */
+
+.welcome-section {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.welcome-section h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.welcome-section p {
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 2rem;
+}
+
+.access-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.access-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.access-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.admin-card .card-icon {
+    color: var(--primary-color);
+}
+
+.client-card .card-icon {
+    color: var(--secondary-color);
+}
+
+.access-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--dark-color);
+}
+
+.access-card p {
+    color: var(--gray);
+    margin-bottom: 1.5rem;
+}
+
+/* ===== MODAL ===== */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 10% auto;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--gray);
+    transition: var(--transition);
+}
+
+.close:hover {
+    color: var(--danger);
+}
+
+.modal h2 {
+    margin-bottom: 1.5rem;
+    color: var(--dark-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== FORMS ===== */
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #E9ECEF;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+}
+
+.help-text {
+    text-align: center;
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+/* ===== STATUS SECTION ===== */
+
+.status-section {
+    margin-top: 3rem;
+}
+
+.status-card {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.status-card h3 {
+    margin-bottom: 1rem;
+    color: var(--dark-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-info {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #F8F9FA;
+}
+
+.status-label {
+    font-weight: 500;
+}
+
+.status-value {
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-ok {
+    background: #D4EDDA;
+    color: var(--success);
+}
+
+.status-error {
+    background: #F8D7DA;
+    color: var(--danger);
+}
+
+.status-loading {
+    background: #FFF3CD;
+    color: var(--warning);
+}
+
+/* ===== LOADING ===== */
+
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ===== FOOTER ===== */
+
+.footer {
+    background: var(--dark-color);
+    color: var(--white);
+    text-align: center;
+    padding: 1rem 0;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+    /* Homepage luxuosa responsiva */
+    .luxury-welcome-section {
+        padding: 1rem;
+    }
+    
+    .luxury-container {
+        max-width: 100%;
+    }
+    
+    .luxury-title {
+        font-size: 2.2rem;
+    }
+    
+    .luxury-access-form {
+        padding: 2rem 1.5rem;
+    }
+    
+    .luxury-code-input {
+        height: 50px;
+        font-size: 1.3rem;
+        letter-spacing: 6px;
+    }
+    
+    .luxury-btn-primary {
+        height: 48px;
+        font-size: 0.9rem;
+    }
+    
+    /* Elementos antigos */
+    .welcome-section h1 {
+        font-size: 2rem;
+    }
+    
+    .access-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .header .container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        margin: 20% auto;
+        width: 95%;
+    }
+}

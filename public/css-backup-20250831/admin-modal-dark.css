@@ -1,0 +1,249 @@
+/* public/css/admin-modal-dark.css */
+/* ===== MODAL ADMIN - TEMA DARK LUXUOSO ===== */
+/* Sobrescreve o tema light apenas para o modal administrativo */
+
+/* ===== OVERLAY DO MODAL ===== */
+#adminModal {
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(10px);
+}
+
+/* ===== MODAL CONTENT - TEMA DARK ===== */
+#adminModal .modal-content {
+    background: #2c2c34 !important;
+    border: 1px solid rgba(212, 175, 55, 0.2) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+    max-width: 420px;
+    animation: modalSlideIn 0.3s ease;
+}
+
+/* ===== BOTÃO FECHAR (X) ===== */
+#adminModal .close {
+    color: #718096 !important;
+    transition: all 0.2s ease;
+    font-size: 1.5rem;
+    opacity: 0.7;
+}
+
+#adminModal .close:hover {
+    color: #d4af37 !important;
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* ===== TÍTULO DO MODAL ===== */
+#adminModal h2 {
+    color: #ffffff !important;
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin-bottom: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#adminModal h2 i {
+    color: #d4af37;
+    font-size: 1.3rem;
+}
+
+/* ===== LABELS DOS CAMPOS ===== */
+#adminModal .form-group label {
+    color: #e2e8f0 !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+    display: block;
+}
+
+/* ===== INPUTS - DARK ELEGANTE ===== */
+#adminModal .form-group input {
+    background: #1a1a1a !important;
+    border: 2px solid #3a3a42 !important;
+    color: #ffffff !important;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#adminModal .form-group input::placeholder {
+    color: #718096 !important;
+}
+
+#adminModal .form-group input:focus {
+    border-color: #d4af37 !important;
+    background: #0f0f0f !important;
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1) !important;
+    outline: none;
+}
+
+/* Input com valor preenchido */
+#adminModal .form-group input:not(:placeholder-shown) {
+    color: #ffffff !important;
+}
+
+/* ===== BOTÃO ENTRAR - DOURADO LUXUOSO ===== */
+#adminModal button[type="submit"] {
+    background: linear-gradient(135deg, #d4af37, #b8941f) !important;
+    color: #1a1a1a !important;
+    border: none !important;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 1rem;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+#adminModal button[type="submit"]:hover {
+    background: linear-gradient(135deg, #b8941f, #9e7e1a) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
+}
+
+#adminModal button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+#adminModal button[type="submit"] i {
+    font-size: 1.1rem;
+}
+
+/* ===== HELP TEXT (se houver) ===== */
+#adminModal .help-text {
+    color: #94a3b8 !important;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 1rem;
+    opacity: 0.8;
+}
+
+#adminModal .help-text i {
+    color: #d4af37;
+    margin-right: 4px;
+}
+
+/* ===== ANIMAÇÃO DO MODAL ===== */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    #adminModal .modal-content {
+        margin: 15% auto;
+        width: 90%;
+        max-width: none;
+        padding: 1.5rem;
+    }
+    
+    #adminModal h2 {
+        font-size: 1.2rem;
+    }
+    
+    #adminModal .form-group input {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+    }
+    
+    #adminModal button[type="submit"] {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #adminModal .modal-content {
+        margin: 20% auto;
+        width: 95%;
+        padding: 1.25rem;
+    }
+    
+    #adminModal h2 {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    #adminModal .form-group {
+        margin-bottom: 1.25rem;
+    }
+}
+
+/* ===== ESTADO DE LOADING (se necessário) ===== */
+#adminModal button[type="submit"]:disabled {
+    background: linear-gradient(135deg, #718096, #4a5568) !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none !important;
+}
+
+#adminModal button[type="submit"]:disabled i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== OVERRIDE ESPECÍFICO - GARANTIR TEMA DARK ===== */
+body.home-page #adminModal {
+    /* Modal admin always dark, regardless of page theme */
+    z-index: 10000;
+}
+
+/* ===== VISUAL PREMIUM - DETALHES FINAIS ===== */
+#adminModal .modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    border-radius: 8px 8px 0 0;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+/* Borda dourada sutil ao redor do modal */
+#adminModal .modal-content {
+    position: relative;
+    overflow: hidden;
+}
+
+#adminModal .modal-content::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, transparent 30%, rgba(212, 175, 55, 0.1) 50%, transparent 70%);
+    z-index: -1;
+    animation: borderGlow 3s linear infinite;
+}
+
+@keyframes borderGlow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}

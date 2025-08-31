@@ -1,0 +1,172 @@
+/* public/css/toast-notifications.css */
+/* ===== SISTEMA GLOBAL DE NOTIFICAÇÕES CENTRALIZADAS ===== */
+
+/* Base para todas as notificações */
+.notification {
+    position: fixed !important;
+    top: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(-100px) !important;
+    z-index: 20000 !important;
+    
+    /* Estilo */
+    padding: 1rem 1.5rem !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 500 !important;
+    max-width: 400px !important;
+    min-width: 250px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    text-align: center !important;
+    
+    /* Animação */
+    transition: all 0.3s ease !important;
+    opacity: 0;
+}
+
+/* Estado visível */
+.toast-notification.show,
+.notification.show {
+    transform: translateX(-50%) translateY(0) !important;
+    opacity: 1 !important;
+}
+
+/* Conteúdo */
+.notification-content,
+.toast-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+}
+
+/* Ícones */
+.notification-content i,
+.toast-content i {
+    font-size: 1.2rem !important;
+}
+
+/* Texto */
+.notification-content span,
+.toast-content span {
+    font-size: 0.95rem !important;
+    line-height: 1.2 !important;
+}
+
+/* Tipos de notificação */
+.notification-success,
+.toast-success {
+    background-color: #28a745 !important;
+}
+
+.notification-error,
+.toast-error {
+    background-color: #dc3545 !important;
+}
+
+.notification-warning,
+.toast-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.notification-info,
+.toast-info {
+    background-color: #17a2b8 !important;
+}
+
+/* Animações de entrada e saída */
+@keyframes slideDown {
+    from {
+        transform: translateX(-50%) translateY(-100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-50%) translateY(-100px);
+        opacity: 0;
+    }
+}
+
+.notification.entering {
+    animation: slideDown 0.3s ease forwards;
+}
+
+.notification.leaving {
+    animation: slideUp 0.3s ease forwards;
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+    .toast-notification,
+    .notification {
+        max-width: 90% !important;
+        min-width: 200px !important;
+        font-size: 0.9rem !important;
+        padding: 0.8rem 1.2rem !important;
+    }
+    
+    .notification-content i,
+    .toast-content i {
+        font-size: 1rem !important;
+    }
+    
+    .notification-content span,
+    .toast-content span {
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Garantir que fica acima de TUDO */
+.toast-notification,
+.notification {
+    z-index: 99999 !important;
+}
+
+/* Remover estilos conflitantes antigos */
+.notification[style*="right"],
+.toast-notification[style*="right"] {
+    right: unset !important;
+}
+
+/* Múltiplas notificações (stack) */
+.notification:nth-of-type(2) {
+    top: 90px !important;
+}
+
+.notification:nth-of-type(3) {
+    top: 160px !important;
+}
+
+.notification:nth-of-type(4) {
+    top: 230px !important;
+}
+
+/* Forçar posição para área do cliente especificamente */
+body .notification {
+    position: fixed !important;
+    top: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(-100px) !important;
+}
+
+body .notification.show {
+    transform: translateX(-50%) translateY(0) !important;
+    opacity: 1 !important;
+}
+
+/* Garantir que fica no topo mesmo */
+.client-page .notification {
+    top: 20px !important;
+    bottom: auto !important;
+}

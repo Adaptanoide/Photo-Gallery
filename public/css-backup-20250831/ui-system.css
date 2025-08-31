@@ -1,0 +1,212 @@
+/* TOAST - Centro Superior */
+.ui-toast {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    animation: slideDown 0.3s forwards;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.ui-toast-exit {
+    animation: slideUp 0.3s forwards;
+}
+
+.toast-content {
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ui-toast-success .toast-content {
+    background: #28a745;  /* Verde sólido sem gradiente */
+    color: white;
+}
+
+.ui-toast-error .toast-content {
+    background: #dc3545;
+    color: white;
+}
+
+@keyframes slideDown {
+    to { top: 20px; }
+}
+
+@keyframes slideUp {
+    to { top: -100px; }
+}
+
+/* MODAL PADRONIZADO (como Edit Access Code) */
+.ui-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s;
+}
+
+.ui-modal {
+    background: #3a3b3c;
+    border-radius: 12px;
+    min-width: 400px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.ui-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #4a4b4c;
+    gap: 12px;
+}
+
+.ui-modal-header h3 {
+    flex: 1;
+    margin: 0;
+    color: white;
+    font-size: 18px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.modal-close:hover {
+    color: white;
+}
+
+.ui-modal-body {
+    padding: 20px;
+    color: #e4e6eb;
+    overflow-y: auto;
+    max-height: 50vh;
+}
+
+.ui-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #4a4b4c;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* PROCESSING OVERLAY */
+.processing-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.processing-box {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 300px;
+}
+
+.processing-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* BOTÕES MELHORADOS - ADICIONAR NO FINAL */
+.ui-modal-footer button {
+    padding: 10px 24px;  /* Maior que antes */
+    border-radius: 6px;   /* Arredondado */
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    min-width: 100px;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #dbb934;  /* Amarelo do sistema */
+    color: #1a1a1a;
+}
+
+.btn-primary:hover {
+    background: #c5a52e;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* SISTEMA DE STATUS INLINE - ADICIONAR NO FINAL */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-processing {
+    background: rgba(219, 185, 52, 0.2);
+    color: #dbb934;
+}
+
+.badge-cancelling {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.badge-moving {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.spinner-inline {
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    opacity: 0.5;
+}
