@@ -223,22 +223,27 @@
                         <label class="filter-checkbox">
                             <input type="radio" name="typePattern" value="brindle" onchange="applyFilters()">
                             <span>Brindle</span>
+                            <small class="count">(0)</small>
                         </label>
                         <label class="filter-checkbox">
                             <input type="radio" name="typePattern" value="salt-pepper" onchange="applyFilters()">
                             <span>Salt & Pepper</span>
+                            <small class="count">(0)</small>
                         </label>
                         <label class="filter-checkbox">
                             <input type="radio" name="typePattern" value="black-white" onchange="applyFilters()">
                             <span>Black & White</span>
+                            <small class="count">(0)</small>
                         </label>
                         <label class="filter-checkbox">
                             <input type="radio" name="typePattern" value="tricolor" onchange="applyFilters()">
                             <span>Tricolor</span>
+                            <small class="count">(0)</small>
                         </label>
                         <label class="filter-checkbox">
                             <input type="radio" name="typePattern" value="exotic" onchange="applyFilters()">
                             <span>Exotic</span>
+                            <small class="count">(0)</small>
                         </label>
                     </div>
                 </div>
