@@ -19,11 +19,18 @@
     <link rel="manifest" href="/images/favicon/site.webmanifest" />
 
 
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/client.css">
+    <!-- CSS Modular do Cliente -->
+    <link rel="stylesheet" href="css/client/client-base.css">
+    <link rel="stylesheet" href="css/client/client-layout.css">
+    <link rel="stylesheet" href="css/client/client-navigation.css">
+    <link rel="stylesheet" href="css/client/client-gallery.css">
+    <link rel="stylesheet" href="css/client/client-modal.css">
+    <link rel="stylesheet" href="css/client/client-cart.css">
+    <link rel="stylesheet" href="css/client/client-order-summary.css">
+    <link rel="stylesheet" href="css/client/client-animations.css">
+    <link rel="stylesheet" href="css/client/client-responsive.css">
+    <link rel="stylesheet" href="css/client/client-theme-light.css">
     <link rel="stylesheet" href="/css/ui-system.css">
-    <link rel="stylesheet" href="css/client-light-theme.css">
-    <link rel="stylesheet" href="css/toast-notifications.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
 </head>
@@ -31,7 +38,7 @@
 <body class="client-page">
     <header class="client-luxury-header">
         <div class="container">
-            <div class="client-header-logo">
+            <div class="client-header-logo" onclick="navigateToRoot()">
                 <img src="/images/logo-small.png" alt="Sunshine Cowhides" class="header-logo-img">
                 <span>Sunshine Cowhides - Gallery</span>
             </div>
@@ -39,13 +46,18 @@
                 <span id="headerWelcome"
                     style="margin-right: 20px; color: #666; font-size: 14px; font-weight: 500;">Welcome!</span>
 
+                <!-- Botão de Filtros (só mobile) -->
+                <button onclick="toggleFilters()" class="mobile-filter-btn">
+                    <i class="fas fa-filter"></i>
+                </button>
+
                 <button onclick="openCartSidebar()" class="client-cart-btn">
                     <i class="fas fa-shopping-cart"></i>
                     <span id="headerCartBadge" class="header-cart-badge">0</span>
                 </button>
                 <button onclick="logout()" class="client-logout-btn">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                    <span class="logout-text">Logout</span>
                 </button>
             </nav>
         </div>
@@ -79,6 +91,9 @@
                 <!-- Navegação breadcrumb -->
                 <div id="breadcrumbContainer" class="breadcrumb-container" style="display: none;">
                     <nav class="breadcrumb">
+                        <button class="breadcrumb-back-btn" onclick="navigateBack()" style="display:none;">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
                         <button class="breadcrumb-item home-btn" onclick="navigateToRoot()">
                             <i class="fas fa-home"></i> Home
                         </button>
@@ -125,6 +140,21 @@
                             </div>
                         </div>
 
+                        <!-- Container para rate rules (será preenchido pelo JS) -->
+                        <div id="priceProgressContainer" style="display: none;">
+                            <!-- Rate rules serão inseridos aqui pelo JavaScript -->
+                        </div>
+
+                        <!-- Mobile Info Bar (preço + contador) -->
+                        <div id="mobileInfoBar" class="mobile-info-bar" style="display:none;">
+                            <div class="info-price">
+                                <span id="infoPriceBadge"></span>
+                            </div>
+                            <div class="info-counter">
+                                <span id="infoPhotoCount">0 photos</span>
+                            </div>
+                        </div>
+
                         <!-- Grid de fotos -->
                         <div id="photosGrid" class="photos-grid">
                             <!-- Fotos serão carregadas aqui -->
@@ -146,6 +176,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- Filter Backdrop -->
+        <div class="filter-backdrop" onclick="toggleFilters()"></div>
+
     </main>
 
     <!-- Modal de visualização fullscreen -->
@@ -209,6 +243,9 @@
                     <i class="fas fa-filter"></i>
                     <span>Filters</span>
                 </h3>
+                <button class="filter-close-btn" onclick="toggleFilters()" style="display:none;">
+                    <i class="fas fa-times"></i>
+                </button>
                 <button onclick="clearAllFilters()" class="btn-clear-filters">
                     Clear
                 </button>
@@ -269,6 +306,13 @@
                         </label>
                     </div>
                 </div>
+            </div>
+
+            <!-- Botão Apply & Close para mobile -->
+            <div class="filter-actions-mobile" style="display:none;">
+                <button onclick="applyFiltersAndClose()" class="btn-apply-close">
+                    <i class="fas fa-check"></i> Apply & Close
+                </button>
             </div>
         </div>
     </div>
@@ -407,6 +451,11 @@
         </div>
     </div>
 
+    <!-- Botão Voltar ao Topo -->
+    <button id="scrollToTop" class="scroll-to-top" title="Voltar ao topo">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
     <!-- Scripts modularizados com versionamento -->
     <script src="/js/image-utils.js?v=1755889230412"></script>
     <script src="js/app.js?v=1755889230412"></script>
@@ -420,7 +469,6 @@
     <script src="js/client-commerce.js?v=1755889230415"></script>
 
     <!-- ORIGINAL COMENTADO - PODE DELETAR DEPOIS -->
-    <!-- <script src="js/client.js?v=1755889230412"></script> -->
 
     <script src="/js/ui-system.js?v=1755889230413"></script>
 

@@ -3112,17 +3112,17 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Container de preços - fazer sticky */
+/* COMENTADO - movido para client-gallery.css
 #priceInfoContainer {
     position: sticky !important;
     top: 220px !important;
-    /* AUMENTADO para 220px */
     z-index: 85 !important;
     background: #f8f9fa !important;
     padding: 15px 5px;
     margin: 0 -2rem 1rem -2rem;
     border-bottom: 1px solid #dee2e6;
 }
+*/
 
 /* Garantir que o grid de fotos não cubra */
 .photos-grid {

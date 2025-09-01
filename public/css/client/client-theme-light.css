@@ -5,31 +5,42 @@
 /* Aplicar apenas quando estiver na página do cliente */
 body.client-page {
     /* === SOBRESCREVER CORES PARA TEMA LIGHT === */
-    
+
     /* Fundos - Invertemos completamente */
-    --luxury-dark: #ffffff;              /* Era #2c2c34, agora branco puro */
-    --luxury-medium: #f8f9fa;            /* Era #3a3a42, agora cinza muito claro */
-    --luxury-light: #2c2c34;             /* Era #f8f9fa, agora escuro para contraste */
-    
+    --luxury-dark: #ffffff;
+    /* Era #2c2c34, agora branco puro */
+    --luxury-medium: #f8f9fa;
+    /* Era #3a3a42, agora cinza muito claro */
+    --luxury-light: #2c2c34;
+    /* Era #f8f9fa, agora escuro para contraste */
+
     /* Dourado - MANTÉM IGUAL */
-    --gold-primary: #d4af37;             /* Mantém dourado */
-    --gold-hover: #b8941f;               /* Mantém dourado escuro */
-    --gold-light: rgba(212, 175, 55, 0.08); /* Mais sutil no fundo claro */
-    
+    --gold-primary: #d4af37;
+    /* Mantém dourado */
+    --gold-hover: #b8941f;
+    /* Mantém dourado escuro */
+    --gold-light: rgba(212, 175, 55, 0.08);
+    /* Mais sutil no fundo claro */
+
     /* Textos - Invertemos para escuro */
-    --text-primary: #1a1a1a;             /* Era branco, agora quase preto */
-    --text-secondary: #4a5568;           /* Era claro, agora cinza médio */
-    --text-muted: #718096;               /* Era cinza claro, agora cinza mais escuro */
-    
+    --text-primary: #1a1a1a;
+    /* Era branco, agora quase preto */
+    --text-secondary: #4a5568;
+    /* Era claro, agora cinza médio */
+    --text-muted: #718096;
+    /* Era cinza claro, agora cinza mais escuro */
+
     /* Bordas e fundos */
-    --border-subtle: #e2e8f0;            /* Era escuro, agora cinza bem claro */
-    --hover-bg: #f7fafc;                 /* Era escuro, agora quase branco */
-    
+    --border-subtle: #e2e8f0;
+    /* Era escuro, agora cinza bem claro */
+    --hover-bg: #f7fafc;
+    /* Era escuro, agora quase branco */
+
     /* Sombras mais suaves para tema light */
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
     --shadow-gold: 0 4px 16px rgba(212, 175, 55, 0.25);
-    
+
     /* Background geral */
     background: #ffffff;
     background-image: none;
@@ -37,7 +48,7 @@ body.client-page {
 
 /* Remover textura escura do fundo */
 body.client-page::before {
-    background: 
+    background:
         radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.02) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.015) 0%, transparent 50%);
 }
@@ -54,7 +65,7 @@ body.client-page::before {
 
 /* Logo no tema light */
 .client-page .client-header-logo {
-    color: #1a1a1a;
+    color: #ffffff;
 }
 
 .client-page .client-header-logo i {
@@ -64,9 +75,9 @@ body.client-page::before {
 
 /* Botão de logout elegante */
 .client-page .client-logout-btn {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid var(--gold-primary);
-    color: var(--gold-primary);
+    background: white;
+    border: 1px solid #d4af37;
+    color: #d4af37;
 }
 
 .client-page .client-logout-btn:hover {
@@ -98,6 +109,8 @@ body.client-page::before {
 /* Breadcrumb no tema light */
 .client-page .breadcrumb {
     background: #f8f9fa;
+    padding-left: 6px;
+    padding-top: 28px;
 }
 
 .client-page .breadcrumb-item {
@@ -110,7 +123,7 @@ body.client-page::before {
 
 .client-page .breadcrumb-item.current {
     background: rgba(212, 175, 55, 0.15);
-    color: #1a1a1a;
+    color: #4a5568;
 }
 
 /* Back navigation */
@@ -149,7 +162,8 @@ body.client-page::before {
 
 /* ===== MODAL FULLSCREEN - Mantém escuro para destaque ===== */
 .client-page .photo-modal {
-    background: rgba(0, 0, 0, 0.95); /* Mantém escuro para destacar a foto */
+    background: rgba(0, 0, 0, 0.95);
+    /* Mantém escuro para destacar a foto */
 }
 
 .client-page .modal-header,
@@ -280,6 +294,7 @@ body.client-page::before {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid #e2e8f0;
+    margin-top: 12px;
 }
 
 .client-page .zoom-btn-simple {
@@ -299,7 +314,7 @@ body.client-page::before {
 .client-page .category-card h3,
 .client-page .folder-card h4,
 .client-page .gallery-header h3 {
-    color: #1a1a1a;
+    color: #4a5568;
 }
 
 .client-page .category-card p,
@@ -309,7 +324,7 @@ body.client-page::before {
 
 .client-page .folder-stats span {
     background: #ffffff;
-    color:rgb(0, 0, 0);
+    color: #4a5568;
     font-size: 16px;
 }
 
@@ -362,9 +377,9 @@ body.client-page::before {
 
 /* ===== ANIMAÇÕES SUAVES ===== */
 .client-page * {
-    transition: background-color 0.3s ease, 
-                border-color 0.3s ease, 
-                box-shadow 0.3s ease;
+    transition: background-color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 /* ===== PRINT STYLES ===== */
@@ -373,7 +388,7 @@ body.client-page::before {
         background: white !important;
         color: black !important;
     }
-    
+
     .client-page .client-luxury-header,
     .client-page .cart-floating-btn,
     .client-page .client-logout-btn {
@@ -383,20 +398,23 @@ body.client-page::before {
 
 /* ===== LOGO NO HEADER DO CLIENTE ===== */
 .client-page .header-logo-img {
-    height: 40px;  /* Voltar para 40px */
+    height: 58px;
     width: auto;
     object-fit: contain;
     margin-right: 10px;
+    margin-left: 6px;
 }
 
 .client-header-logo {
     display: flex;
     align-items: center;
-    height: 60px; /* Fixar altura do container */
+    height: 45px;
+    /* Fixar altura do container */
 }
 
 .client-luxury-header {
-    padding: 10px 0; /* Reduzir padding vertical */
+    padding: 10px 0;
+    /* Reduzir padding vertical */
 }
 
 /* Esconder o ícone de sol se ainda existir */
@@ -409,7 +427,8 @@ body.client-page::before {
     position: absolute;
     bottom: 10px;
     right: 10px;
-    background: #28a745; /* VERDE para ADD */
+    background: #28a745;
+    /* VERDE para ADD */
     color: white;
     border: none;
     border-radius: 20px;
@@ -423,7 +442,7 @@ body.client-page::before {
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     z-index: 10;
-    
+
     /* Escondido por padrão */
     opacity: 0;
     transform: translateY(10px);
@@ -443,7 +462,8 @@ body.client-page::before {
 
 /* Estado "Remove" - Vermelho suave */
 .thumbnail-cart-btn.in-cart {
-    background: #dc3545; /* VERMELHO para REMOVE */
+    background: #dc3545;
+    /* VERMELHO para REMOVE */
     opacity: 0.9;
     transform: translateY(0);
 }

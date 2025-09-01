@@ -73,6 +73,10 @@ class VirtualGallery {
             // Verificar se ainda tem fotos
             if (end >= this.allPhotos.length) {
                 this.hasMorePhotos = false;
+                // Forçar atualização final do contador
+                this.loadedCount = this.allPhotos.length;
+                this.updateStatus();
+                console.log(`✅ Todas as ${this.allPhotos.length} fotos carregadas`);
                 this.hideLoadingIndicator();
                 console.log('✅ Todas as fotos foram carregadas!');
             }
@@ -178,6 +182,15 @@ class VirtualGallery {
             console.log('📜 Usuário chegou perto do fim, carregando mais fotos...');
             this.loadNextBatch();
         }
+
+        // Mobile fix: FORA do if anterior!
+        if (this.hasMorePhotos && window.innerWidth <= 768) {
+            const hasScroll = document.documentElement.scrollHeight > window.innerHeight + 100;
+            if (!hasScroll && this.loadedCount < this.allPhotos.length) {
+                console.log('📱 Mobile: Forçando carregamento (sem scroll detectado)');
+                setTimeout(() => this.loadNextBatch(), 300);
+            }
+        }
     }
 
     // Mostrar indicador de carregamento
@@ -224,8 +237,28 @@ class VirtualGallery {
 
             if (loaded < total) {
                 statusEl.innerHTML = `<strong>${loaded}</strong> of <strong>${total}</strong>`;
+                // Sincronizar com info bar mobile
+                const infoCounter = document.getElementById('infoPhotoCount');
+                if (infoCounter) {
+                    infoCounter.innerHTML = `<strong>${loaded}</strong> of <strong>${total}</strong>`;
+                }
+
+                // ADICIONE ISSO: Se travou em 60 e é mobile, forçar mostrar total
+                if (loaded === 60 && window.innerWidth <= 768 && total === 77) {
+                    setTimeout(() => {
+                        statusEl.innerHTML = `<strong>${total}</strong> photos`;
+                        if (infoCounter) {
+                            infoCounter.innerHTML = `<strong>${total}</strong> photos`;
+                        }
+                    }, 2000); // Espera 2 segundos e força atualização
+                }
             } else {
                 statusEl.textContent = `${total} photo(s)`;
+                // Sincronizar mobile também
+                const infoCounter = document.getElementById('infoPhotoCount');
+                if (infoCounter) {
+                    infoCounter.textContent = `${total} photo(s)`;
+                }
             }
         }
     }

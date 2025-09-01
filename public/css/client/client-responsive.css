@@ -1,0 +1,1060 @@
+/* public/css/client/client-responsive.css */
+/* ===== RESPONSIVE - ALL MEDIA QUERIES ===== */
+
+/* === TABLET (768px - 1024px) === */
+@media (max-width: 1024px) {
+
+    /* Adjust sidebar width */
+    :root {
+        --sidebar-width: 0px;
+    }
+
+    /* Main content full width */
+    .client-page main {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+/* === MOBILE (max-width: 768px) === */
+@media (max-width: 768px) {
+
+    /* Prevenir scroll horizontal */
+    body,
+    html {
+        overflow-x: hidden !important;
+        width: 100% !important;
+    }
+
+    .client-page {
+        overflow-x: hidden !important;
+    }
+
+    /* Ajustar título que está quebrando */
+    .gallery-header h3 {
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
+        word-break: break-word !important;
+    }
+
+    /* Volume pricing - scroll horizontal */
+    #priceProgressContainer {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+    }
+
+    .price-progress-wrapper {
+        min-width: fit-content !important;
+    }
+
+    /* === LAYOUT === */
+    .client-page .main {
+        padding: 1rem 0 2rem 0;
+    }
+
+    .container {
+        padding: 0 15px;
+    }
+
+    /* === HEADER === */
+    .client-luxury-header {
+        padding: 0.75rem 0;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: white;
+        z-index: 9996;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Header fixo no mobile */
+    .client-luxury-header {
+        padding: 0.75rem 0;
+        position: sticky !important;
+        top: 0;
+        z-index: 100;
+        background: white;
+    }
+
+    /* Forçar header fixo - sobrescreve definições anteriores */
+    .client-luxury-header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        z-index: 9997 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .client-header-logo span {
+        font-size: 1.1rem;
+    }
+
+    .header-logo-img {
+        height: 35px;
+    }
+
+    /* Transformar logo em botão Home no mobile */
+    .client-header-logo {
+        background: var(--gold-primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .client-header-logo:hover {
+        background: var(--gold-hover);
+    }
+
+    /* Ocultar logo e texto */
+    .client-header-logo img,
+    .client-header-logo span {
+        display: none !important;
+    }
+
+    /* Adicionar ícone Home Font Awesome */
+    .client-header-logo::after {
+        content: "\f015";
+        /* Ícone home do Font Awesome */
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 1.1rem;
+    }
+
+    .client-cart-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
+        margin-right: 10px;
+    }
+
+    /* Scroll to top - menor no mobile */
+    .scroll-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    /* Botão de filtros - só aparece no mobile */
+    .mobile-filter-btn {
+        display: block !important;
+        width: 43px;
+        height: 44px;
+        background: white;
+        color: #d4af37;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        margin-right: 10px;
+        cursor: pointer;
+        transition: background 0.3s;
+        border: 1px solid #d4af37;
+    }
+
+    .mobile-filter-btn:hover {
+        background: #b8984f;
+        /* Dourado mais escuro no hover */
+    }
+
+    /* Logout - só ícone no mobile */
+    .client-logout-btn {
+        width: 42px;
+        height: 43px;
+        padding: 0;
+        justify-content: center;
+        font-size: 1.1rem;
+        background: #c9a961;
+        /* Mesmo dourado */
+        color: white;
+        border: none;
+        border-radius: 8px;
+    }
+
+    .client-logout-btn:hover {
+        background: #b8984f;
+    }
+
+    .client-logout-btn .logout-text {
+        display: none;
+    }
+
+    /* Ajustes específicos do sidebar para mobile */
+    .filter-sidebar {
+        margin-top: 0 !important;
+        /* Sem espaço no topo no mobile */
+    }
+
+    .btn-clear-filters {
+        margin-right: 45px !important;
+        /* Espaço para o X no mobile */
+        margin-top: 0 !important;
+        /* Sem espaço no topo no mobile */
+    }
+
+    #headerWelcome {
+        display: none;
+    }
+
+    /* === CLIENT HEADER === */
+    .client-header {
+        padding: 1.25rem 1.5rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .client-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .client-header p {
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* === NAVIGATION === */
+    .breadcrumb-container {
+        top: 60px;
+    }
+
+    .breadcrumb {
+        padding: 0.75rem 1rem;
+        gap: 0;
+    }
+
+    .breadcrumb-item {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+        max-width: 150px;
+    }
+
+    .breadcrumb-item.home-btn {
+        padding: 0.4rem 0.5rem;
+        display: none !important;
+        /* NOVO - Esconder Home no mobile */
+    }
+
+    .breadcrumb-separator {
+        display: none !important;
+        /* Ocultar as setinhas >> */
+    }
+
+    .breadcrumb-back-btn {
+        background: var(--gold-primary);
+        border: none;
+        color: white !important;
+        /* Seta branca */
+        font-size: 1rem;
+        padding: 6px 12px;
+        cursor: pointer;
+        margin-right: 10px;
+        border-radius: 4px;
+        transition: background 0.3s;
+    }
+
+    .breadcrumb-back-btn:hover {
+        background: var(--gold-hover);
+    }
+
+    /* Garantir que o ícone também fique branco */
+    .breadcrumb-back-btn i {
+        color: white !important;
+    }
+
+    /* Mostrar botão Back no mobile quando não estiver na root */
+    .breadcrumb-back-btn {
+        display: inline-block !important;
+    }
+
+    .back-navigation .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Ocultar título redundante no mobile */
+    .gallery-header {
+        display: none !important;
+    }
+
+    /* Breadcrumb agora é o título principal */
+    .breadcrumb-container {
+        top: 60px;
+        background: #faf8f3;
+        /* Fundo levemente bege/dourado */
+        border-bottom: 1px solid #e0e0e0;
+        position: sticky;
+        z-index: 95;
+        padding: 8px 10px;
+        /* Adiciona espaço ao redor */
+    }
+
+    .breadcrumb {
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 12px 15px;
+    }
+
+    /* Categoria atual maior e destacada */
+    .breadcrumb-item:last-child {
+        max-width: none !important;
+        font-size: 1rem;
+    }
+
+    /* NOVO - Esconder níveis intermediários, mostrar só o último */
+    .breadcrumb-item:not(:last-child) {
+        display: none !important;
+    }
+
+    /* === FILTER SIDEBAR === */
+    .filter-sidebar {
+        position: fixed !important;
+        left: -100% !important;
+        top: 0 !important;
+        height: 100vh !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        /* MUDOU de 400px para 100% */
+        z-index: 9999 !important;
+        transition: left 0.3s ease !important;
+        background: white !important;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .filter-sidebar.active {
+        left: 0 !important;
+    }
+
+    /* Backdrop escuro */
+    .filter-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+    }
+
+    .filter-backdrop.active {
+        display: block;
+    }
+
+    /* Botão Apply & Close */
+    .filter-actions-mobile {
+        display: block !important;
+        padding: 20px;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .btn-apply-close {
+        width: 100%;
+        padding: 12px;
+        background: var(--gold-primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    /* Tablets - sidebar com largura limitada */
+    @media (min-width: 481px) and (max-width: 768px) {
+        .filter-sidebar {
+            max-width: 400px !important;
+        }
+    }
+
+    /* Botão fechar X no sidebar */
+    .filter-sidebar .filter-close-btn {
+        position: absolute;
+        right: 15px;
+        top: 12px;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: white;
+        border: none;
+        color: #c9a961;
+        /* Dourado */
+        font-size: 1.2rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+    }
+
+    .filter-sidebar .filter-close-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .filter-sidebar .filter-header {
+        position: relative;
+    }
+
+    /* === GALLERIES === */
+
+    /* Remover título duplicado - usar breadcrumb como título */
+    .gallery-header {
+        display: none !important;
+    }
+
+    /* Breadcrumb é o título agora */
+    .breadcrumb-container {
+        position: fixed !important;
+        top: 60px !important;
+        /* Altura do header */
+        left: 0 !important;
+        right: 0 !important;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        z-index: 9995;
+        padding: 0;
+    }
+
+    /* Compensar espaço do breadcrumb fixo */
+    .categories-grid,
+    .folders-grid,
+    .photos-gallery {
+        padding-top: 140px !important;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: flex-start;
+        padding: 8px 12px;
+        /* Mais espaço interno */
+        gap: 10px;
+        background: white;
+        /* Fundo branco interno */
+        border-radius: 6px;
+        /* Bordas arredondadas */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        /* Sombra suave */
+    }
+
+    /* Botão back sempre visível e fixo no topo */
+    .breadcrumb-back-btn {
+        flex-shrink: 0;
+        margin-top: 2px;
+        background: #d4af37;
+        border-radius: 50%;
+        height: 40px;
+        width: 40px;
+        margin-right: 1px;
+    }
+
+    /* Categoria atual com quebra de linha automática */
+    .breadcrumb-item:last-child {
+        flex: 1;
+        max-width: calc(100% - 50px);
+        /* Desconta espaço do botão back */
+        font-size: 0.95rem;
+        font-weight: 600;
+        word-wrap: break-word;
+        white-space: normal;
+        /* Permite quebra */
+        overflow-wrap: break-word;
+        line-height: 1.4;
+
+    }
+
+    /* Esconder todos exceto o último */
+    .breadcrumb-item:not(:last-child):not(.breadcrumb-back-btn) {
+        display: none !important;
+    }
+
+    /* Rate rules - sem bordas extras */
+    #priceProgressContainer {
+        position: fixed !important;
+        top: 130px !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 84;
+        padding: 22px 10px 0px 10px !important;
+        background: #ffffff;
+        border: none !important;
+        margin: 0 !important;
+    }
+
+    /* Info bar - logo abaixo do rate rules */
+    .mobile-info-bar {
+        display: none;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 25px 10px 15px;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        position: fixed !important;
+        top: 210px !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 83;
+        margin-top: 114px;
+    }
+
+    /* Info bar sobe quando não tem rate rules */
+    .mobile-info-bar.no-rate-rules {
+        top: 140px !important;
+        margin-top: 0 !important;
+    }
+
+    /* Photos grid sobe quando não tem rate rules */
+    .photos-grid.no-rate-rules {
+        margin-top: 48px !important;
+        /* Só header + breadcrumb + info bar */
+    }
+
+    .mobile-info-bar .info-price {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .mobile-info-bar .info-counter {
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    /* Volume pricing compacto */
+    .price-progress-wrapper {
+        flex-direction: column !important;
+        /* Sempre vertical */
+        flex-wrap: nowrap !important;
+        /* Não quebrar linha */
+        gap: 5px !important;
+    }
+
+    .price-tier {
+        width: 100% !important;
+        /* Largura total */
+        padding: 10px 15px !important;
+        /* Mais espaço interno */
+        font-size: 0.85rem !important;
+        /* Fonte um pouco maior */
+        text-align: left !important;
+        /* Alinhado à esquerda */
+        display: flex !important;
+        justify-content: space-between !important;
+        /* Espaço entre texto e preço */
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 5px;
+    }
+
+    .price-tier.active {
+        background: #fff3cd !important;
+        border-color: #ffc107 !important;
+        font-weight: 600;
+    }
+
+    /* Grids e cards */
+    .categories-grid,
+    .folders-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 15px;
+    }
+
+    .category-card,
+    .folder-card {
+        padding: 1.5rem;
+        min-height: auto;
+    }
+
+    .photos-gallery {
+        padding: 0;
+    }
+
+    .photos-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        /* Sempre 2 colunas */
+        gap: 1rem;
+        padding: 15px;
+        margin-top: 230px;
+        padding-left: 35px;
+        padding-right: 35px;
+    }
+
+    /* === MODAL === */
+    .modal-header,
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .modal-header h4 {
+        font-size: 0.8rem !important;
+        line-height: 1.2 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 60% !important;
+    }
+
+    .nav-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .nav-prev {
+        left: 10px;
+    }
+
+    .nav-next {
+        right: 10px;
+    }
+
+    /* Imagem maior no modal mobile - sobrescreve ZoomManager */
+    #modalPhoto {
+        max-width: 100vw !important;
+        max-height: 80vh !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
+    }
+
+    .zoom-btn-simple {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .photo-info {
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-cart-toggle {
+        padding: 10px 18px;
+        font-size: 0.85rem;
+    }
+
+    /* === CART === */
+    .cart-container {
+        max-width: 100%;
+    }
+
+    .cart-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .cart-item {
+        padding: 0.75rem;
+    }
+
+    .cart-item-image {
+        width: 60px;
+        height: 60px;
+    }
+
+    .cart-item-title {
+        font-size: 0.85rem;
+    }
+
+    /* === MODALS === */
+    .selection-modal {
+        padding: 0.5rem;
+    }
+
+    .selection-modal-content {
+        max-width: none;
+        width: 100%;
+    }
+
+    .selection-modal-header {
+        padding: 1.5rem 1.5rem 1rem 1.5rem;
+    }
+
+    .selection-modal-body {
+        padding: 1.5rem;
+    }
+
+    /* === ORDER SUMMARY === */
+    .order-summary-content {
+        width: 95%;
+        height: 90vh !important;
+        min-height: 90vh !important;
+        max-height: 90vh !important;
+    }
+
+    .order-summary-body {
+        height: calc(90vh - 70px - 65px);
+        max-height: calc(90vh - 70px - 65px);
+    }
+}
+
+/* === SMALL MOBILE (max-width: 480px) === */
+@media (max-width: 480px) {
+
+    /* === LAYOUT === */
+    .client-page .main {
+        padding: 0.75rem 0 1.5rem 0;
+    }
+
+    .container {
+        padding: 0 1px;
+    }
+
+    /* === HEADER === */
+    .client-luxury-header {
+        padding: 0.5rem 0;
+    }
+
+    .client-header-logo span {
+        font-size: 0.9rem;
+        display: none;
+        /* Hide text, show only logo */
+    }
+
+    .header-logo-img {
+        height: 30px;
+    }
+
+    /* === NAVIGATION === */
+    .breadcrumb {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .breadcrumb-item {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
+        max-width: 120px;
+    }
+
+    .breadcrumb-item.home-btn span {
+        display: none;
+        /* Show only icon */
+    }
+
+    /* === CLIENT HEADER === */
+    .client-header {
+        margin-bottom: 1.25rem;
+        padding: 1rem;
+    }
+
+    .client-header h1 {
+        font-size: 1.2rem;
+    }
+
+    /* === GALLERIES === */
+    .category-card,
+    .folder-card {
+        padding: 1.25rem;
+    }
+
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 0.75rem;
+    }
+
+    /* === MODAL === */
+    .modal-header,
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    /* Modal header organizado */
+    .modal-header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 1060 !important;
+        background: white !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px;
+        padding-right: 50px !important;
+        /* Espaço para o X */
+    }
+
+    /* Título com quebra e fundo */
+    .modal-header h4 {
+        font-size: 0.85rem !important;
+        line-height: 1.3 !important;
+        white-space: normal !important;
+        max-width: 100% !important;
+        background: rgba(212, 175, 55, 0.1);
+        padding: 8px;
+        border-radius: 4px;
+        margin: 0;
+    }
+
+    /* Botão X fixo no canto */
+    .modal-header .btn-close {
+        position: absolute !important;
+        top: 10px !important;
+        right: 10px !important;
+    }
+
+    /* Container para preço e contador */
+    .modal-header .price-info {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+
+    /* Barra de rate rules compacta acima do footer */
+    .modal-rate-rules-bar {
+        position: fixed !important;
+        bottom: 48px !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: #fff !important;
+        border-top: 1px solid #ddd;
+        padding: 11px 11px !important;
+        font-size: 1.0rem !important;
+        text-align: center;
+        z-index: 1054;
+        color: #000000;
+        display: none;
+        margin: 3px 0px 24px 0px;
+    }
+
+    .modal-rate-rules-bar.active {
+        display: block !important;
+        z-index: 10000 !important;
+        /* Força ficar na frente */
+    }
+
+    .modal-rate-rules-bar .tier-item {
+        color: #999;
+    }
+
+    .modal-rate-rules-bar .tier-item.active {
+        color: #d4af37;
+        font-weight: bold;
+    }
+
+    .modal-rate-rules-bar .separator {
+        margin: 0 8px;
+        color: #ddd;
+    }
+
+    /* Footer fixo embaixo - minimalista */
+    .modal-footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: #ffffff !important;
+        padding: 8px !important;
+        z-index: 1055 !important;
+        border-top: 1px solid #e0e0e0;
+        display: flex !important;
+        justify-content: center !important;
+        flex-direction: row-reverse !important;
+        align-items: center !important;
+        gap: 10px;
+    }
+
+    /* Ordem dos elementos - zoom esquerda, add direita */
+    .modal-footer .zoom-controls-simple {
+        order: 1 !important;
+        margin: 0 5px !important;
+        /* Margem menor dos dois lados */
+    }
+
+    .modal-footer .btn-cart-toggle {
+        order: 2 !important;
+        margin: 0 5px !important;
+        /* Margem menor dos dois lados */
+    }
+
+    /* Zoom controls dentro do footer */
+    .modal-footer .zoom-controls-simple {
+        position: relative !important;
+        display: inline-flex !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Botão Add simplificado - SÓ "Add" */
+    .btn-cart-toggle {
+        padding: 10px 18px;
+        font-size: 0.85rem;
+    }
+
+    .btn-cart-toggle span {
+        display: none;
+    }
+
+    /* Texto dinâmico baseado na classe in-cart */
+    .btn-cart-toggle:not(.in-cart)::after {
+        content: "Add" !important;
+    }
+
+    .btn-cart-toggle.in-cart::after {
+        content: "Remove" !important;
+    }
+
+    /* Botões de navegação */
+    .nav-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .nav-prev {
+        left: 10px;
+    }
+
+    .nav-next {
+        right: 10px;
+    }
+
+    /* Controles de zoom - posição padrão antes do JS mover */
+    .zoom-controls-simple {
+        position: fixed !important;
+        bottom: 80px !important;
+        right: 10px !important;
+        padding: 6px 10px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+        z-index: 1050;
+    }
+
+    .zoom-btn-simple {
+        width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
+    }
+
+    .photo-info {
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    /* === CART === */
+    .cart-header {
+        padding: 12px 15px;
+    }
+
+    .cart-content {
+        padding: 1rem;
+    }
+
+    .cart-footer {
+        padding: 0.75rem;
+    }
+
+    .btn-finalize {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* === LANDSCAPE MOBILE === */
+@media (max-width: 768px) and (orientation: landscape) {
+
+    .modal-header,
+    .modal-footer {
+        padding: 0.5rem 1rem;
+    }
+
+    /* Imagem maior no modal mobile */
+    #modalPhoto {
+        width: 100vw !important;
+        height: auto !important;
+        max-height: 80vh !important;
+        object-fit: contain !important;
+    }
+
+    .nav-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* === VERY SMALL DEVICES === */
+@media (max-width: 360px) {
+    .client-header h1 {
+        font-size: 1.1rem;
+    }
+
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .category-card,
+    .folder-card {
+        padding: 1rem;
+    }
+}
+
+/* === PRINT STYLES === */
+@media print {
+
+    .client-luxury-header,
+    .filter-sidebar,
+    .cart-sidebar,
+    .client-logout-btn,
+    .client-cart-btn,
+    .btn-clear-filters,
+    .nav-btn,
+    .zoom-controls-simple {
+        display: none !important;
+    }
+
+    .client-page {
+        background: white !important;
+        color: black !important;
+    }
+
+    .breadcrumb,
+    .category-card,
+    .folder-card,
+    .photos-gallery {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+}
+
+/* === HIGH CONTRAST MODE === */
+@media (prefers-contrast: high) {
+
+    .modal-header,
+    .modal-footer {
+        background: rgba(0, 0, 0, 0.95);
+    }
+
+    .nav-btn {
+        background: var(--gold-primary);
+        border: 2px solid var(--luxury-dark);
+    }
+
+    .breadcrumb-item:focus,
+    .nav-btn:focus,
+    .btn-close:focus {
+        outline: 3px solid var(--gold-primary);
+        outline-offset: 3px;
+    }
+}

@@ -1,0 +1,163 @@
+/* public/css/client/client-base.css */
+/* ===== BASE STYLES - FOUNDATION ===== */
+
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Variáveis do tema Cliente */
+:root {
+    /* === CORES PRINCIPAIS === */
+    --luxury-dark: #2c2c34;
+    --luxury-medium: #3a3a42;
+    --luxury-light: #f8f9fa;
+    
+    /* Dourado */
+    --gold-primary: #d4af37;
+    --gold-hover: #b8941f;
+    --gold-light: rgba(212, 175, 55, 0.08);
+    
+    /* Textos */
+    --text-primary: #ffffff;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    
+    /* Estados */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    
+    /* Bordas e fundos */
+    --border-subtle: #4a5568;
+    --hover-bg: #374151;
+    
+    /* Sombras */
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.25);
+    --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.2);
+    
+    /* Medidas */
+    --border-radius: 8px;
+    --border-radius-large: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Layout */
+    --header-height: 70px;
+    --sidebar-width: 270px;
+    --cart-width: 450px;
+}
+
+/* Body base para cliente */
+body.client-page {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: var(--luxury-dark);
+    min-height: 100vh;
+    position: relative;
+    padding-top: 0;
+}
+
+/* Container principal */
+.container {
+    max-width: 100%;  /* MUDANÇA: usar largura total */
+    margin: 0 auto;
+    padding: 0 40px;  /* MUDANÇA: mais espaço nas laterais */
+}
+
+/* Container para conteúdo (não header) */
+.main .container {
+    max-width: 100%;  /* Usar toda largura disponível */
+    padding: 0 20px;   /* Padding lateral menor */
+}
+
+/* === CLASSES UTILITÁRIAS === */
+
+/* Visibilidade */
+.hidden { display: none !important; }
+.invisible { visibility: hidden !important; }
+
+/* Texto */
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.text-right { text-align: right !important; }
+
+/* Flex helpers */
+.flex { display: flex !important; }
+.flex-column { flex-direction: column !important; }
+.align-center { align-items: center !important; }
+.justify-center { justify-content: center !important; }
+.justify-between { justify-content: space-between !important; }
+.gap-1 { gap: 0.5rem !important; }
+.gap-2 { gap: 1rem !important; }
+.gap-3 { gap: 1.5rem !important; }
+
+/* Margins */
+.mt-1 { margin-top: 0.5rem !important; }
+.mt-2 { margin-top: 1rem !important; }
+.mt-3 { margin-top: 1.5rem !important; }
+.mb-1 { margin-bottom: 0.5rem !important; }
+.mb-2 { margin-bottom: 1rem !important; }
+.mb-3 { margin-bottom: 1.5rem !important; }
+
+/* Paddings */
+.p-1 { padding: 0.5rem !important; }
+.p-2 { padding: 1rem !important; }
+.p-3 { padding: 1.5rem !important; }
+
+/* Scrollbar customizada */
+.client-page ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.client-page ::-webkit-scrollbar-track {
+    background: var(--luxury-medium);
+}
+
+.client-page ::-webkit-scrollbar-thumb {
+    background: var(--gold-primary);
+    border-radius: 5px;
+}
+
+.client-page ::-webkit-scrollbar-thumb:hover {
+    background: var(--gold-hover);
+}
+
+/* Performance optimizations */
+.will-change-transform {
+    will-change: transform;
+}
+
+.hardware-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus styles */
+*:focus-visible {
+    outline: 2px solid var(--gold-primary);
+    outline-offset: 2px;
+}
+
+/* Remove focus para mouse */
+*:focus:not(:focus-visible) {
+    outline: none;
+}

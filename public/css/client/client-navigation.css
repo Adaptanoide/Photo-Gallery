@@ -1,0 +1,350 @@
+/* public/css/client/client-navigation.css */
+/* ===== NAVIGATION - BREADCRUMB, BACK BUTTON ===== */
+
+/* === BREADCRUMB CONTAINER === */
+.breadcrumb-container {
+    margin-bottom: 1.5rem;
+    animation: slideInDown 0.3s ease-out;
+    background: white;
+    position: sticky;
+    top: 70px;
+    z-index: 100;
+    padding: 12px 1px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 1rem 1.5rem;
+    background: var(--luxury-medium);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+}
+
+.breadcrumb::-webkit-scrollbar {
+    display: none;
+}
+
+/* Breadcrumb path */
+#breadcrumbPath {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+}
+
+/* Breadcrumb items */
+.breadcrumb-item {
+    background: none;
+    border: none;
+    color: var(--gold-primary);
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    font-weight: 500;
+    white-space: nowrap;
+    min-width: 0;
+    flex-shrink: 0;
+    border: 1px solid #d4af37;
+    margin-left: 10px;
+}
+
+.breadcrumb-item:hover:not(.current) {
+    background: var(--gold-light);
+    color: var(--gold-hover);
+}
+
+.breadcrumb-item.current {
+    color: var(--text-primary);
+    background: var(--gold-light);
+    cursor: default;
+    font-weight: 600;
+}
+
+.breadcrumb-item.home-btn {
+    flex-shrink: 0;
+    max-width: none;
+    margin-right: 0.5rem;
+    order: -1;
+}
+
+.breadcrumb-item:focus {
+    outline: 2px solid var(--gold-primary);
+    outline-offset: 2px;
+    background: var(--gold-light);
+}
+
+.breadcrumb-item.disabled {
+    color: #999;
+    cursor: default;
+    opacity: 0.7;
+    text-decoration: none;
+}
+
+.breadcrumb-item.disabled:hover {
+    background: none;
+    color: #999;
+}
+
+/* Breadcrumb separators */
+.breadcrumb-separator {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0 0.25rem;
+    flex-shrink: 0;
+}
+
+.breadcrumb-separator i {
+    opacity: 0.6;
+}
+
+/* === BACK NAVIGATION === */
+.back-navigation {
+    margin-bottom: 1.5rem;
+    animation: slideInDown 0.3s ease-out;
+    padding: 15px 20px;
+    background: white;
+    margin-bottom: 10px;
+}
+
+/* Hide back button - using breadcrumb instead */
+#backNavigation {
+    display: none !important;
+}
+
+.back-navigation .btn {
+    background: var(--luxury-medium);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    border-radius: var(--border-radius);
+}
+
+.back-navigation .btn:hover {
+    background: var(--gold-primary);
+    color: var(--luxury-dark);
+    border-color: var(--gold-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-hover);
+}
+
+.back-navigation .btn i {
+    margin-right: 0.5rem;
+}
+
+/* === FILTER SIDEBAR === */
+.filter-sidebar {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    width: 270px;
+    height: calc(100vh - 80px);
+    background: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    border-radius: 0;
+    border-right: 1px solid #e0e0e0;
+}
+
+.filter-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Filter header */
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--gold-primary);
+    color: white;
+}
+
+.filter-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.filter-header h3 i {
+    font-size: 14px;
+}
+
+/* Clear filters button */
+.btn-clear-filters {
+    padding: 5px 12px;
+    background: #fff;
+    border: none;
+    border-radius: 3px;
+    color: #595454;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 45px;
+    height: 28px;
+    width: 64px;
+}
+
+.btn-clear-filters:hover {
+    background: #f0f0f0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Filter content */
+.filter-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px 20px;
+}
+
+.filter-section {
+    margin-bottom: 25px;
+}
+
+.filter-section h4 {
+    margin: 0 0 12px 0;
+    color: #4a5568;
+    font-size: 0.95rem;
+    border-bottom: 2px solid var(--gold-primary);
+    padding-bottom: 6px;
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-checkbox,
+.filter-radio {
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.filter-checkbox:hover,
+.filter-radio:hover {
+    background: #f5f5f5;
+}
+
+.filter-checkbox input,
+.filter-radio input {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.filter-checkbox span,
+.filter-radio span {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.filter-checkbox .count {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+/* Filter scrollbar */
+.filter-content::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.filter-content::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.filter-content::-webkit-scrollbar-thumb {
+    background: #d0d0d0 !important;
+    border-radius: 10px !important;
+}
+
+.filter-content::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0 !important;
+}
+
+/* Spacing adjustments */
+.breadcrumb-container + .back-navigation {
+    margin-top: -0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.client-header + .breadcrumb-container {
+    margin-top: -0.5rem;
+}
+
+/* Esconder botão de filtros no desktop */
+@media (min-width: 769px) {
+    .mobile-filter-btn {
+        display: none !important;
+    }
+}
+
+/* Ajustes específicos para desktop */
+@media (min-width: 769px) {
+    .filter-sidebar {
+        margin-top: 13px;  /* Espaço no topo APENAS no desktop */
+    }
+    
+    .btn-clear-filters {
+        margin-right: 0;  /* Sem margin-right no desktop */
+    }
+}
+
+/* Ajustes do filter header apenas para desktop */
+@media (min-width: 769px) {
+    .filter-header {
+        padding: 15px 20px;  /* Reduz padding vertical de 15px para 10px */
+        margin-top: -15px;    /* Remove gap superior se houver */
+    }
+    
+    /* Se precisar ajustar o container do sidebar também */
+    .filter-sidebar {
+        padding-top: 0;      /* Remove padding top se houver */
+    }
+}
+
+/* Mensagem do breadcrumb quando está na home */
+.breadcrumb-home-message {
+    color: #666;
+    font-style: italic;
+    padding: 4px 16px;
+    display: inline-block;
+    font-size: 19px;
+    font-weight: bold;
+}

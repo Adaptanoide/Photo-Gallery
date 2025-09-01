@@ -1,0 +1,553 @@
+/* public/css/client/client-gallery.css */
+/* ===== GALLERY - CARDS, GRIDS, PHOTOS ===== */
+
+/* === CATEGORIES & FOLDERS GRID === */
+.categories-grid,
+.folders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Category cards */
+.category-card,
+.folder-card {
+    background: var(--luxury-medium);
+    padding: 2rem;
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    animation: slideIn 0.3s ease forwards;
+}
+
+.category-card::before,
+.folder-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--gold-primary);
+    transition: var(--transition);
+}
+
+.category-card:hover,
+.folder-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--gold-primary);
+}
+
+.category-card:hover::before,
+.folder-card:hover::before {
+    width: 8px;
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+}
+
+/* Card content */
+.category-card h3,
+.folder-card h4 {
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-card h3 i,
+.folder-card h4 i {
+    color: var(--gold-primary);
+    font-size: 1.1rem;
+}
+
+.category-card p,
+.folder-description {
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+    min-height: 48px;
+    max-height: 48px;
+    overflow: hidden;
+}
+
+/* Category metadata */
+.folder-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(212, 165, 116, 0.2);
+    flex-wrap: wrap;
+}
+
+.folder-stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--gold-light);
+    color: var(--gold-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Price badges GREEN - nas categorias principais */
+.category-price-badge,
+.folder-price-badge {
+    background: #27ae60 !important;
+    color: white !important;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+/* Contact for price - verde também */
+.contact-price {
+    background: #22c55e;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Badge no título da galeria */
+.gallery-header .category-price-badge {
+    display: inline-block;
+    background: #22c55e;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    vertical-align: middle;
+}
+
+/* Price badges in cards */
+.folder-stats span:has(.fa-tag) {
+    background: #27ae60;
+    color: white !important;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.folder-stats .fa-tag {
+    color: white !important;
+    font-size: 0.9rem;
+}
+
+/* Category action */
+.category-action {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    color: #999;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Collection label */
+.category-collection {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* === PHOTOS GALLERY === */
+.photos-gallery {
+    background: var(--luxury-medium);
+    border-radius: var(--border-radius-large);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    overflow: visible;
+}
+
+/* Gallery header */
+.gallery-header {
+    position: sticky;
+    top: 165px;
+    z-index: 90;
+    background: white;
+    padding: 20px 20px;
+    margin: -2rem -1.1rem 0 -1.1rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 8px 8px 1px 1px;
+    border: 1px solid #e0e0e0;
+}
+
+.gallery-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 560;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.gallery-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+/* Photos grid */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    background: white;
+    padding-top: 20px;
+    margin: 0 -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+/* Photo thumbnails */
+.photo-thumbnail {
+    position: relative;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--luxury-dark);
+    aspect-ratio: 1;
+    border: 1px solid var(--border-subtle);
+    animation: slideIn 0.3s ease forwards;
+}
+
+.photo-thumbnail:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--gold-primary);
+}
+
+.photo-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+/* Photo placeholder */
+.photo-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--luxury-dark);
+    color: var(--text-muted);
+}
+
+.photo-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+/* Photo overlay */
+.photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    color: var(--text-primary);
+    padding: 1rem;
+    font-size: 0.85rem;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+}
+
+.photo-thumbnail:hover .photo-overlay {
+    transform: translateY(0);
+}
+
+/* Photo status badges */
+.photo-thumbnail[data-status="reserved"]::after {
+    content: "UNAVAILABLE";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 152, 0, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.photo-thumbnail[data-status="sold"]::after {
+    content: "SOLD OUT";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(211, 47, 47, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.photo-thumbnail[data-status="sold"] img,
+.photo-thumbnail[data-status="reserved"] img {
+    opacity: 0.6;
+}
+
+/* Price info container - Volume pricing */
+#priceProgressContainer,
+.price-info-container {
+    position: sticky;
+    top: 220px;
+    /* VOLTAR para 220px como estava */
+    background: #f8f9fa;
+    padding: 12px 20px;
+    margin: 0 -2rem 1rem -2rem;
+    border-bottom: 1px solid #dee2e6;
+    box-sizing: border-box;
+    z-index: 85;
+    /* VOLTAR para 85 como estava */
+    width: auto;
+    display: block;
+}
+
+/* Forçar posição correta com sidebar */
+.photos-gallery #priceProgressContainer,
+.photos-gallery .price-info-container {
+    margin-left: -2rem;
+    margin-right: -2rem;
+}
+
+.price-info-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 6px;
+    font-size: 14px;
+    border: 1px solid #e0e0e0;
+}
+
+.price-info-label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+.price-info-label i {
+    color: #f4a020;
+    margin-right: 5px;
+}
+
+.price-range-item {
+    font-size: 14px;
+    padding: 6px 12px;
+    font-weight: 500;
+    color: #999;
+    transition: all 0.3s;
+    border-radius: 4px;
+}
+
+.price-range-item.active {
+    background: #fff3cd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.price-range-item strong {
+    color: #f4a020;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.price-range-separator {
+    color: #ddd;
+    margin: 0 5px;
+}
+
+.cart-progress {
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: auto;
+    padding-left: 15px;
+    border-left: 1px solid #dee2e6;
+    color: #666;
+}
+
+.cart-progress .savings {
+    color: #28a745;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* Estilos para o price progress real */
+.price-progress-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 8px 15px;
+    background: transparent;
+    font-size: 18px;
+}
+
+.price-tier {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    padding: 4px 8px;
+    color: #666;
+    transition: all 0.3s;
+}
+
+/* Estado ativo para tier de desconto */
+.price-tier.active {
+    background: #fff3cd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.price-tier.active .tier-price {
+    color: #333;
+    font-weight: 700;
+}
+
+.price-tier.completed {
+    opacity: 0.6;
+}
+
+.price-tier .tier-price {
+    font-weight: 700;
+    color: #f4a020;
+    font-size: 18px;
+}
+
+/* Loading states */
+.photos-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.photos-loading i {
+    color: var(--gold-primary);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Garantir que info bar não apareça no desktop */
+@media (min-width: 769px) {
+    .mobile-info-bar {
+        display: none !important;
+    }
+}
+
+/* Desktop - manter zoom controls normal */
+@media (min-width: 769px) {
+    .zoom-controls-simple {
+        display: block !important;
+        position: absolute !important;
+        top: 80px !important;
+        right: 20px !important;
+    }
+}
+
+/* Garantir que a barra de rate rules NUNCA apareça no desktop */
+@media (min-width: 769px) {
+    .modal-rate-rules-bar {
+        display: none !important;
+    }
+}
+
+/* Otimização de espaço no desktop */
+@media (min-width: 1024px) {
+    .photos-gallery {
+        padding: 1rem;  /* Reduz de 2rem para 1rem */
+    }
+    
+    .photos-grid {
+        margin: 0;
+        padding: 1rem 0.5rem;  /* Menos padding lateral */
+        gap: 1rem;  /* Gap menor entre fotos */
+    }
+}

@@ -6,9 +6,22 @@
  */
 
 // ===== CONFIGURAÇÃO DO MÓDULO =====
-(function() {
+(function () {
     'use strict';
-    
+
+    // Mover zoom para footer APENAS no mobile
+    function moveZoomToFooter() {
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                const zoomControls = document.querySelector('.zoom-controls-simple');
+                const modalFooter = document.querySelector('.modal-footer');
+                if (zoomControls && modalFooter && !modalFooter.contains(zoomControls)) {
+                    modalFooter.appendChild(zoomControls);
+                }
+            }, 100);
+        }
+    }
+
     // Verificar dependências
     if (!window.navigationState) {
         console.error('❌ client-gallery.js requer client-core.js');
@@ -16,7 +29,7 @@
     }
 
     // ===== CARREGAR FOTOS =====
-    window.loadPhotos = async function(folderId) {
+    window.loadPhotos = async function (folderId) {
         try {
             showPhotosLoading(true);
 
@@ -82,8 +95,36 @@
                     window.specialSelectionBasePrice = null;
                     if (data.clientType === 'special') {
                         window.PriceProgressBar.hide();
+                        // ADICIONE AQUI - Ajustar info bar quando não tem rate rules
+                        const infoBar = document.getElementById('mobileInfoBar');
+                        if (infoBar && window.innerWidth <= 768) {
+                            infoBar.classList.add('no-rate-rules');
+                        }
                     } else {
                         window.PriceProgressBar.init(navigationState.currentFolderId);
+                        // Remover classe primeiro
+                        const infoBar = document.getElementById('mobileInfoBar');
+                        if (infoBar && window.innerWidth <= 768) {
+                            infoBar.classList.remove('no-rate-rules');
+                            // Remover também do grid de fotos
+                            const photosGrid = document.querySelector('.photos-grid');
+                            if (photosGrid) {
+                                photosGrid.classList.remove('no-rate-rules');
+                            }
+
+                            // Verificar se realmente tem rate rules após init
+                            setTimeout(() => {
+                                const priceContainer = document.getElementById('priceProgressContainer');
+                                if (priceContainer && priceContainer.style.display === 'none') {
+                                    infoBar.classList.add('no-rate-rules');
+                                    // Ajustar também o grid de fotos
+                                    const photosGrid = document.querySelector('.photos-grid');
+                                    if (photosGrid) {
+                                        photosGrid.classList.add('no-rate-rules');
+                                    }
+                                }
+                            }, 500);
+                        }
                     }
                 }
             }
@@ -100,7 +141,7 @@
     }
 
     // ===== MOSTRAR GALERIA =====
-    window.showPhotosGallery = function(photos, folderName, categoryPrice) {
+    window.showPhotosGallery = function (photos, folderName, categoryPrice) {
         navigationState.currentCategoryName = folderName;
 
         hideAllContainers();
@@ -135,6 +176,41 @@
             galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
         }
 
+        // Popular mobile info bar
+        const infoBar = document.getElementById('mobileInfoBar');
+        const infoPriceBadge = document.getElementById('infoPriceBadge');
+        const infoPhotoCount = document.getElementById('infoPhotoCount');
+
+        if (infoBar && window.innerWidth <= 768) {
+            // Mostrar a barra no mobile
+            infoBar.style.display = 'flex';
+
+            // Copiar preço
+            if (infoPriceBadge) {
+                if (!shouldShowPrices()) {
+                    infoPriceBadge.innerHTML = 'Contact for Price';
+                    infoPriceBadge.className = 'category-price-badge contact-price';
+                } else if (customPrice) {
+                    infoPriceBadge.innerHTML = `$${parseFloat(customPrice).toFixed(2)}`;
+                    infoPriceBadge.className = 'category-price-badge';
+                } else if (categoryPrice && categoryPrice.hasPrice) {
+                    infoPriceBadge.innerHTML = categoryPrice.formattedPrice;
+                    infoPriceBadge.className = 'category-price-badge';
+                } else {
+                    infoPriceBadge.innerHTML = 'Price on request';
+                    infoPriceBadge.className = 'category-price-badge no-price';
+                }
+            }
+
+            // Atualizar contador com formato "X of Y"
+            if (infoPhotoCount) {
+                const originalCounter = document.getElementById('photosCount');
+                if (originalCounter) {
+                    infoPhotoCount.textContent = originalCounter.textContent;
+                }
+            }
+        }
+
         const gridEl = document.getElementById('photosGrid');
 
         if (photos.length === 0) {
@@ -148,6 +224,11 @@
         if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
             console.log(`🚀 Usando Virtual Scrolling para ${photos.length} fotos`);
             document.getElementById('photosCount').innerHTML = `Loading <strong>${photos.length}</strong> photos...`;
+            // Atualizar info bar também
+            const infoCount = document.getElementById('infoPhotoCount');
+            if (infoCount && window.innerWidth <= 768) {
+                infoCount.innerHTML = `Loading <strong>${photos.length}</strong> photos...`;
+            }
             window.virtualGallery.init(photos, gridEl, categoryPrice);
         } else {
             // Modo tradicional
@@ -192,7 +273,7 @@
     }
 
     // ===== MODAL DE FOTOS =====
-    window.openPhotoModal = async function(photoIndex) {
+    window.openPhotoModal = async function (photoIndex) {
         const photos = navigationState.currentPhotos;
         if (!photos || photoIndex < 0 || photoIndex >= photos.length) return;
 
@@ -312,10 +393,12 @@
         if (window.updateModalPriceBadge) {
             setTimeout(() => window.updateModalPriceBadge(), 200);
         }
+        // Mover zoom para footer no mobile
+        moveZoomToFooter();
     }
 
     // ===== CARREGAR FOTO NO MODAL =====
-    window.loadPhotoInModal = async function(photoId) {
+    window.loadPhotoInModal = async function (photoId) {
         const img = document.getElementById('modalPhoto');
         const spinner = document.getElementById('photoLoadingSpinner');
 
@@ -399,7 +482,7 @@
     }
 
     // ===== NAVEGAÇÃO NO MODAL =====
-    window.previousPhoto = function() {
+    window.previousPhoto = function () {
         const oldOverlay = document.getElementById('modalUnavailableOverlay');
         if (oldOverlay) oldOverlay.remove();
         const modalPhoto = document.getElementById('modalPhoto');
@@ -414,7 +497,7 @@
         }
     }
 
-    window.nextPhoto = function() {
+    window.nextPhoto = function () {
         const oldOverlay = document.getElementById('modalUnavailableOverlay');
         if (oldOverlay) oldOverlay.remove();
         const modalPhoto = document.getElementById('modalPhoto');
@@ -429,7 +512,7 @@
         }
     }
 
-    window.closePhotoModal = function() {
+    window.closePhotoModal = function () {
         if (typeof destroyPhotoZoom === 'function') {
             destroyPhotoZoom();
         }
@@ -442,14 +525,14 @@
     }
 
     // ===== INFORMAÇÕES COMERCIAIS =====
-    window.updateModalCommercialInfo = async function(photo, photoIndex, totalPhotos) {
+    window.updateModalCommercialInfo = async function (photo, photoIndex, totalPhotos) {
         const categoryName = getCurrentCategoryDisplayName();
         document.getElementById('modalPhotoTitle').textContent = categoryName;
         document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
         await updateModalPriceInfo(photo);
     }
 
-    window.getCurrentCategoryDisplayName = function() {
+    window.getCurrentCategoryDisplayName = function () {
         const currentPath = navigationState.currentPath;
 
         if (currentPath && currentPath.length > 0) {
@@ -465,7 +548,7 @@
         return 'Premium Cowhide Selection';
     }
 
-    window.updateModalPriceInfo = async function(photo) {
+    window.updateModalPriceInfo = async function (photo) {
         try {
             if (!shouldShowPrices()) {
                 const photoIndex = navigationState.currentPhotoIndex;
@@ -548,23 +631,13 @@
                                 currentCategoryName = lastPath.name;
                             }
 
-                            if (currentCategoryName) {
-                                cartCount = window.CartSystem.state.items.filter(item => {
-                                    let itemCategory = item.category;
-                                    if (itemCategory && itemCategory.includes('/')) {
-                                        const parts = itemCategory.split('/');
-                                        itemCategory = parts[parts.length - 1] || parts[parts.length - 2];
-                                    }
-                                    return itemCategory === currentCategoryName;
-                                }).length;
-                            } else {
-                                cartCount = window.CartSystem.state.totalItems;
-                            }
+                            // Contar TODOS os itens (global) como nas thumbnails
+                            cartCount = window.CartSystem.state.totalItems;
                         }
                     }
 
                     let volumeHTML = '<div class="modal-volume-pricing">';
-                    volumeHTML += '<span class="volume-label">Volume Pricing:</span>';
+                    // Removido "Volume Pricing:" para ficar igual às thumbnails
 
                     rangeData.data.ranges.forEach((range, index) => {
                         let isCurrentTier = false;
@@ -580,13 +653,11 @@
 
                         volumeHTML += `
                             <span class="${tierClass}">
-                                ${range.min}${range.max ? `-${range.max}` : '+'}: 
-                                <span class="tier-price">$${range.price}</span>
+                                ${range.min}${range.max ? `-${range.max}` : '+'} photos
+                                <span class="tier-price">$${range.price}/each</span>
                             </span>
                         `;
-                        if (index < rangeData.data.ranges.length - 1) {
-                            volumeHTML += '<span class="tier-separator">|</span>';
-                        }
+                        // Sem separador, vai usar gap no CSS
                     });
 
                     volumeHTML += `
@@ -597,7 +668,28 @@
 
                     volumeHTML += '</div>';
                     gridEl.innerHTML = volumeHTML;
-                    gridEl.style.display = 'block';
+                    // Criar barra compacta para mobile
+                    if (window.innerWidth <= 768) {
+                        let rateBar = document.querySelector('.modal-rate-rules-bar');
+                        if (!rateBar) {
+                            rateBar = document.createElement('div');
+                            rateBar.className = 'modal-rate-rules-bar';
+                            document.getElementById('photoModal').appendChild(rateBar);
+                        }
+
+                        let compactHTML = '';
+                        rangeData.data.ranges.forEach((range, index) => {
+                            const isActive = cartCount >= range.min && (!range.max || cartCount <= range.max);
+                            const tierClass = isActive ? 'tier-item active' : 'tier-item';
+
+                            if (index > 0) compactHTML += '<span class="separator">|</span>';
+                            compactHTML += `<span class="${tierClass}">${range.min}${range.max ? `-${range.max}` : '+'}: $${range.price}</span>`;
+                        });
+
+                        rateBar.innerHTML = compactHTML;
+                        rateBar.classList.add('active');
+                    }
+                    gridEl.style.display = window.innerWidth <= 768 ? 'none' : 'block';
                 } else if (gridEl) {
                     gridEl.style.display = 'none';
                 }
@@ -613,11 +705,11 @@
     }
 
     // ===== FUNÇÕES AUXILIARES =====
-    window.showPhotosLoading = function(show) {
+    window.showPhotosLoading = function (show) {
         document.getElementById('photosLoading').style.display = show ? 'block' : 'none';
     }
 
-    window.notifyCartOnPhotoChange = function() {
+    window.notifyCartOnPhotoChange = function () {
         if (window.CartSystem && window.CartSystem.updateToggleButton) {
             setTimeout(() => {
                 window.CartSystem.updateToggleButton();
@@ -625,7 +717,7 @@
         }
     }
 
-    window.getCurrentCategoryName = function() {
+    window.getCurrentCategoryName = function () {
         if (navigationState.currentPath && navigationState.currentPath.length > 0) {
             return navigationState.currentPath[navigationState.currentPath.length - 1];
         }
@@ -635,7 +727,7 @@
     // ===== PREÇOS =====
     window.categoryPrices = new Map();
 
-    window.loadCategoryPrice = async function(folderId) {
+    window.loadCategoryPrice = async function (folderId) {
         try {
             if (window.categoryPrices.has(folderId)) {
                 return window.categoryPrices.get(folderId);
@@ -697,7 +789,7 @@
     // ===== STATUS POLLING =====
     window.statusCheckInterval = null;
 
-    window.startStatusPolling = function() {
+    window.startStatusPolling = function () {
         window.statusCheckInterval = setInterval(async () => {
             try {
                 const response = await fetch('/api/gallery/status-updates');
@@ -768,7 +860,7 @@
     }
 
     // ===== KEYBOARD NAVIGATION =====
-    window.setupKeyboardNavigation = function() {
+    window.setupKeyboardNavigation = function () {
         document.addEventListener('keydown', (e) => {
             const modal = document.getElementById('photoModal');
             if (modal && modal.style.display !== 'none') {
@@ -789,6 +881,209 @@
             }
         });
     }
+
+    // Função para adicionar/remover do carrinho pela thumbnail
+    window.addToCartFromThumbnail = async function (photoId, photoIndex) {
+        try {
+            // Feedback visual instantâneo
+            const thumbButton = document.querySelector(`.thumbnail-cart-btn[onclick*="${photoId}"]`);
+            if (thumbButton) {
+                const isInCart = thumbButton.classList.contains('in-cart');
+
+                if (isInCart) {
+                    thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Removing...</span>';
+                } else {
+                    thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
+                }
+                thumbButton.disabled = true;
+
+                setTimeout(() => {
+                    if (thumbButton) thumbButton.disabled = false;
+                }, 2000);
+            }
+
+            // Pegar a foto
+            const photo = navigationState.currentPhotos[photoIndex];
+            if (!photo || !window.CartSystem) return;
+
+            const isInCart = window.CartSystem.isInCart(photoId);
+
+            if (isInCart) {
+                // Remover do carrinho
+                await window.CartSystem.removeItem(photoId);
+
+                // Atualizar PriceProgressBar
+                if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
+                    window.PriceProgressBar.updateProgress();
+                }
+            } else {
+                // Preparar dados do item
+                let price = 0;
+                let formattedPrice = 'No price';
+
+                if (photo.customPrice) {
+                    price = parseFloat(photo.customPrice);
+                    formattedPrice = `$${price.toFixed(2)}`;
+                } else if (navigationState.currentFolderId) {
+                    try {
+                        const priceInfo = await window.loadCategoryPrice(navigationState.currentFolderId);
+                        price = priceInfo.price || 0;
+                        formattedPrice = priceInfo.formattedPrice || 'No price';
+                    } catch (error) {
+                        console.warn('Error loading price:', error);
+                    }
+                }
+
+                // Adicionar ao carrinho
+                await window.CartSystem.addItem(photoId, {
+                    driveFileId: photoId,
+                    photoUrl: photo.url,
+                    thumbnailUrl: photo.thumbnailUrl,
+                    category: getCurrentCategoryDisplayName(),
+                    price: price,
+                    formattedPrice: formattedPrice,
+                    photoNumber: photo.photoNumber || photoId.split('.')[0]
+                });
+
+                // Atualizar PriceProgressBar
+                if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
+                    window.PriceProgressBar.updateProgress();
+                }
+            }
+
+            // Sincronizar todos os botões
+            window.syncThumbnailButtons();
+
+            // Atualizar botão do modal se estiver aberto
+            if (window.CartSystem.updateToggleButton) {
+                window.CartSystem.updateToggleButton();
+            }
+
+        } catch (error) {
+            console.error('Error toggling cart item:', error);
+            // Reverter botão em caso de erro
+            window.syncThumbnailButtons();
+        }
+    }
+
+    // Função para sincronizar botões das thumbnails com o carrinho
+    window.syncThumbnailButtons = function () {
+        console.log('🔄 syncThumbnailButtons EXECUTADA!');
+
+        const thumbnails = document.querySelectorAll('.photo-thumbnail');
+        console.log('📸 Total de thumbnails encontradas:', thumbnails.length);
+
+        thumbnails.forEach(thumbnail => {
+            const photoId = thumbnail.dataset.photoId;
+            const cartBtn = thumbnail.querySelector('.thumbnail-cart-btn');
+
+            if (cartBtn && window.CartSystem) {
+                // Tentar várias formas de verificar se está no carrinho
+                let isInCart = false;
+
+                // Verificar com ID simples
+                isInCart = window.CartSystem.isInCart(photoId);
+
+                // Se não encontrou, tentar com .webp
+                if (!isInCart) {
+                    isInCart = window.CartSystem.isInCart(photoId + '.webp');
+                }
+
+                // Se não encontrou, tentar com caminho completo
+                if (!isInCart && navigationState.currentPath) {
+                    const fullPath = navigationState.currentPath.map(p => p.name).join('/') + '/' + photoId + '.webp';
+                    isInCart = window.CartSystem.isInCart(fullPath);
+                }
+
+                console.log(`📌 Foto ${photoId}: está no carrinho? ${isInCart}`);
+
+                if (isInCart) {
+                    cartBtn.classList.add('in-cart');
+                    cartBtn.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+                    cartBtn.title = 'Remove from cart';
+                } else {
+                    cartBtn.classList.remove('in-cart');
+                    cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
+                    cartBtn.title = 'Add to cart';
+                }
+            }
+        });
+
+        console.log('✅ syncThumbnailButtons FINALIZADA!');
+    }
+
+    // Toggle filtros no mobile
+    window.toggleFilters = function () {
+        const sidebar = document.querySelector('.filter-sidebar');
+        const backdrop = document.querySelector('.filter-backdrop');
+        const toggleBtn = document.querySelector('.filter-toggle-btn');
+
+        if (sidebar && backdrop) {
+            sidebar.classList.toggle('active');
+            backdrop.classList.toggle('active');
+
+            // Mudar ícone do botão
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('i');
+                if (sidebar.classList.contains('active')) {
+                    icon.className = 'fas fa-times';
+                } else {
+                    icon.className = 'fas fa-filter';
+                }
+            }
+        }
+    }
+
+    // Aplicar filtros e fechar no mobile
+    window.applyFiltersAndClose = function () {
+        if (window.applyFilters) {
+            window.applyFilters();
+        }
+        toggleFilters();
+    }
+
+    // Mostrar/ocultar botão de filtros baseado no tamanho da tela
+    function checkFilterButton() {
+        const filterBtn = document.querySelector('.mobile-filter-btn');
+        if (filterBtn) {
+            filterBtn.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+        }
+
+        // Mostrar/ocultar X do sidebar baseado no tamanho
+        const closeBtn = document.querySelector('.filter-close-btn');
+        if (closeBtn) {
+            closeBtn.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+        }
+
+        // Mostrar/ocultar botão Apply & Close
+        const applyBtn = document.querySelector('.filter-actions-mobile');
+        if (applyBtn) {
+            applyBtn.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+        }
+    }
+
+    // Executar ao carregar
+    document.addEventListener('DOMContentLoaded', checkFilterButton);
+    window.addEventListener('resize', checkFilterButton);
+
+    // Executar imediatamente também
+    checkFilterButton();
+
+    // Mostrar botão toggle apenas no mobile
+    window.addEventListener('resize', function () {
+        const toggleBtn = document.querySelector('.filter-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+        }
+    });
+
+    // Executar ao carregar
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleBtn = document.querySelector('.filter-toggle-btn');
+        if (toggleBtn && window.innerWidth <= 768) {
+            toggleBtn.style.display = 'block';
+        }
+    });
 
     // ===== INICIALIZAÇÃO =====
     console.log('📸 client-gallery.js carregado - Módulo de galeria pronto');

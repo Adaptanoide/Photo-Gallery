@@ -313,8 +313,8 @@ window.CartSystem = {
             }
             setTimeout(() => this.updateToggleButton(), 300); // Delay para sincronizar
             // Sincronizar com thumbnails
-            if (window.syncCartUIFromRemove) {
-                window.syncCartUIFromRemove(driveFileId);
+            if (window.syncThumbnailButtons) {
+                window.syncThumbnailButtons();
             }
             console.log(`✅ Item ${driveFileId} removido do carrinho`);
 
@@ -937,7 +937,7 @@ window.CartSystem = {
                     }
                 }
 
-                
+
 
                 // Renderizar o item
                 html += this.renderCartItem(modifiedItem);
@@ -1240,6 +1240,12 @@ window.toggleCartItem = async function () {
         if (CartSystem.isInCart(currentPhoto)) {
             console.log('🟡 Removendo item do carrinho'); // ← NOVO LOG
             await CartSystem.removeItem(currentPhoto);
+            // Sincronizar thumbnails após remover (com delay para modal fechar)
+            setTimeout(() => {
+                if (window.syncThumbnailButtons) {
+                    window.syncThumbnailButtons();
+                }
+            }, 100);
         } else {
             console.log('🟡 Adicionando item ao carrinho'); // ← NOVO LOG
 
@@ -1286,10 +1292,12 @@ window.toggleCartItem = async function () {
 
             await CartSystem.addItem(currentPhoto, itemData);
 
-            // Sincronizar thumbnails quando adiciona pelo modal
-            if (window.syncCartUIFromAdd) {
-                window.syncCartUIFromAdd(currentPhoto);
-            }
+            // Sincronizar thumbnails após adicionar (com delay para modal fechar)
+            setTimeout(() => {
+                if (window.syncThumbnailButtons) {
+                    window.syncThumbnailButtons();
+                }
+            }, 100);
 
         }
 

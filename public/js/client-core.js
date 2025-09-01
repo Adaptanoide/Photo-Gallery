@@ -276,7 +276,7 @@ window.showCategories = async function () {
                             <div class="folder-stats">
                                 <span><i class="fas fa-images"></i> ${category.photoCount} photos</span>
                                 ${shouldShowPrices() && category.formattedPrice ?
-                            `<span><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` :
+                            `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` :
                             (!shouldShowPrices() && category.formattedPrice ?
                                 '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                             </div>
@@ -354,7 +354,7 @@ window.showCategories = async function () {
                         ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} total photos</span>` : ''}
                         ${stats.categories?.length > 0 ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>` : ''}
                         ${shouldShowPrices() && priceRange !== 'Price on request' ?
-                    `<span><i class="fas fa-tag"></i> ${priceRange}</span>` :
+                    `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${priceRange}</span>` :
                     (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                     </div>
                     <div class="category-action">
@@ -537,7 +537,7 @@ window.showSubfolders = function (folders) {
                     ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
                     ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
                     ${shouldShowPrices() && formattedPrice ?
-                `<span><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
+                `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
                 (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                 </div>
                 <div class="category-action">
@@ -565,6 +565,22 @@ window.showSubfolders = function (folders) {
 // ===== BREADCRUMB =====
 window.updateBreadcrumb = function () {
     const pathEl = document.getElementById('breadcrumbPath');
+    const container = document.getElementById('breadcrumbContainer');
+
+    // Se está na home (path vazio), mostrar mensagem orientadora
+    if (!navigationState.currentPath || navigationState.currentPath.length === 0) {
+        if (pathEl) {
+            pathEl.innerHTML = `
+                <span class="breadcrumb-home-message">
+                    Select a category to begin
+                </span>
+            `;
+        }
+        if (container) {
+            container.style.display = 'block';
+        }
+        return;
+    }
 
     const breadcrumbHtml = navigationState.currentPath.map((item, index) => {
         const isLast = index === navigationState.currentPath.length - 1;
@@ -687,6 +703,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Carregar dados iniciais
     loadClientData();
+
+    // Inicializar botão scroll to top
+    const scrollBtn = document.getElementById('scrollToTop');
+    if (scrollBtn) {
+        // Mostrar/esconder baseado no scroll
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollBtn.classList.add('show');
+            } else {
+                scrollBtn.classList.remove('show');
+            }
+        });
+
+        // Voltar ao topo quando clicar
+        scrollBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    }
 
     // Setup keyboard se necessário
     if (window.setupKeyboardNavigation) {

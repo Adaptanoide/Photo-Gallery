@@ -162,7 +162,13 @@ window.PriceProgressBar = {
         if (!priceBarContainer) {
             priceBarContainer = document.createElement('div');
             priceBarContainer.id = 'priceProgressContainer';
-            sidebar.appendChild(priceBarContainer);
+            // Inserir após o gallery-header, não no sidebar
+            const galleryHeader = document.querySelector('.gallery-header');
+            if (galleryHeader && galleryHeader.parentElement) {
+                galleryHeader.parentElement.insertBefore(priceBarContainer, galleryHeader.nextSibling);
+            } else {
+                sidebar.appendChild(priceBarContainer); // fallback
+            }
         }
 
         // HTML para Special Selection
@@ -216,7 +222,13 @@ window.PriceProgressBar = {
         if (!priceBarContainer) {
             priceBarContainer = document.createElement('div');
             priceBarContainer.id = 'priceProgressContainer';
-            sidebar.insertBefore(priceBarContainer, sidebar.firstChild);
+            // Inserir após o gallery-header, não no sidebar
+            const galleryHeader = document.querySelector('.gallery-header');
+            if (galleryHeader && galleryHeader.parentElement) {
+                galleryHeader.parentElement.insertBefore(priceBarContainer, galleryHeader.nextSibling);
+            } else {
+                sidebar.insertBefore(priceBarContainer, sidebar.firstChild); // fallback
+            }
         }
 
         if (!shouldShowPrices()) {
@@ -263,16 +275,8 @@ window.PriceProgressBar = {
                 currentCategoryName = lastPath.name;
             }
 
-            if (currentCategoryName) {
-                relevantItemCount = window.CartSystem.state.items.filter(item => {
-                    let itemCategory = item.category;
-                    if (itemCategory && itemCategory.includes('/')) {
-                        const parts = itemCategory.split('/');
-                        itemCategory = parts[parts.length - 1] || parts[parts.length - 2];
-                    }
-                    return itemCategory === currentCategoryName;
-                }).length;
-            }
+            // Contar TODOS os itens do carrinho (global)
+            relevantItemCount = window.CartSystem.state.totalItems;
         }
 
         // Atualizar tiers
@@ -288,6 +292,36 @@ window.PriceProgressBar = {
                 tier.classList.add('completed');
             }
         });
+
+        // Atualizar preços quando tier muda (DESKTOP E MOBILE)
+        const activeTier = document.querySelector('.price-tier.active');
+        if (activeTier) {
+            // Extrair preço do tier ativo
+            const priceText = activeTier.querySelector('.tier-price')?.textContent || activeTier.textContent;
+            const priceMatch = priceText.match(/\$(\d+)/);
+
+            if (priceMatch) {
+                const currentPrice = priceMatch[0]; // $109, $105, etc
+
+                // Atualizar info bar
+                const infoBadge = document.getElementById('infoPriceBadge');
+                if (infoBadge && !infoBadge.classList.contains('no-price')) {
+                    infoBadge.textContent = `${currentPrice}/each`;
+                }
+
+                // Atualizar modal se estiver aberto
+                const modalBadge = document.querySelector('.modal-price-badge');
+                if (modalBadge && !modalBadge.classList.contains('contact-price')) {
+                    modalBadge.textContent = `${currentPrice}/each`;
+                }
+
+                // ADICIONAR PARA DESKTOP - Atualizar título da galeria
+                const galleryBadge = document.querySelector('.gallery-header .category-price-badge');
+                if (galleryBadge && !galleryBadge.classList.contains('no-price')) {
+                    galleryBadge.textContent = `${currentPrice}/each`;
+                }
+            }
+        }
 
         // Atualizar informações para Special Selection
         if (window.isSpecialSelection) {
@@ -348,7 +382,7 @@ window.updateCategoryPriceBadge = async function () {
     const existingBadge = galleryTitle.querySelector('.cart-count-badge');
 
     if (relevantItemCount > 0) {
-        const badgeHTML = `<span class="cart-count-badge">${relevantItemCount} in cart</span>`;
+        const badgeHTML = ''; // Removido "in cart" - não faz sentido com desconto global
 
         if (existingBadge) {
             existingBadge.outerHTML = badgeHTML;
