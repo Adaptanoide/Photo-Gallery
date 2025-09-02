@@ -863,7 +863,7 @@
         top: 0 !important;
         z-index: 1060 !important;
         background: white !important;
-        padding: calc(60px + env(safe-area-inset-top)) 15px 15px 15px !important;
+        padding: calc(40px + env(safe-area-inset-top)) 15px 15px 15px !important;
         min-height: 120px !important;
         height: 200px !important;
         display: flex !important;
@@ -881,7 +881,7 @@
         margin-top: 30px !important;
         /* ADICIONE - desce os controls */
         margin-bottom: 15px !important;
-        gap: 110px;
+        gap: 120px;
     }
 
     /* Preço - mostrar só o badge, esconder contador */
