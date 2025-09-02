@@ -865,7 +865,7 @@
         background: white !important;
         padding: calc(60px + env(safe-area-inset-top)) 15px 15px 15px !important;
         min-height: 120px !important;
-        height: 250px !important;
+        height: 200px !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
@@ -881,7 +881,7 @@
         margin-top: 30px !important;
         /* ADICIONE - desce os controls */
         margin-bottom: 15px !important;
-        gap: 170px;
+        gap: 110px;
     }
 
     /* Preço - mostrar só o badge, esconder contador */
@@ -966,7 +966,7 @@
         flex-direction: row-reverse !important;
         align-items: center !important;
         gap: 10px;
-        height: 110px;
+        height: 80px;
     }
 
     /* Ordem dos elementos - zoom esquerda, add direita */
