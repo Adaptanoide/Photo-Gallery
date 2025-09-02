@@ -349,7 +349,8 @@
 /* Zoom controls */
 .zoom-controls-simple {
     position: absolute;
-    top: 100px;  /* MUDANÇA: era 80px, agora 100px */
+    top: 100px;
+    /* MUDANÇA: era 80px, agora 100px */
     right: 20px;
     display: flex;
     align-items: center;
@@ -434,8 +435,13 @@
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes zoomIn {
@@ -443,8 +449,254 @@
         transform: scale(0.9);
         opacity: 0;
     }
+
     to {
         transform: scale(1);
         opacity: 1;
     }
+}
+
+/* === SELECTION SUCCESS MODAL === */
+.selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    backdrop-filter: blur(5px);
+}
+
+.selection-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.selection-modal-content {
+    position: relative;
+    background: linear-gradient(135deg, #ffffff, #fafafa);
+    border-radius: 20px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    z-index: 10002;
+    overflow: hidden;
+}
+
+.selection-modal-header {
+    padding: 2.5rem 2rem 1.5rem;
+    text-align: center;
+    background: linear-gradient(135deg, var(--gold-primary), #e4c67a);
+    position: relative;
+}
+
+.selection-modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+}
+
+.selection-modal-header .success-icon {
+    font-size: 4rem;
+    color: white;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.selection-modal-header h2 {
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.selection-modal-body {
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+
+.selection-modal-body p {
+    color: #555;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0.5rem 0;
+}
+
+.selection-modal-body strong {
+    color: var(--gold-primary);
+    font-size: 1.3rem;
+}
+
+.selection-modal-footer {
+    padding: 1.5rem 2rem 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.selection-modal-footer .btn {
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.selection-modal-footer .btn-primary {
+    background: var(--gold-primary);
+    color: white;
+}
+
+.selection-modal-footer .btn-primary:hover {
+    background: var(--gold-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+.selection-modal-footer .btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.selection-modal-footer .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* Animação de entrada */
+.selection-modal.active .selection-modal-content {
+    animation: modalBounceIn 0.5s ease;
+}
+
+@keyframes modalBounceIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Ajustes do header - menor e mais elegante */
+.selection-modal-header {
+    padding: 1.5rem 2rem 1rem;
+    /* Reduzido de 2.5rem */
+    text-align: center;
+    background: linear-gradient(135deg, var(--gold-primary), #e4c67a);
+    position: relative;
+}
+
+.selection-modal-header .success-icon {
+    font-size: 3rem;
+    /* Reduzido de 4rem */
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.selection-modal-header h2 {
+    color: white;
+    font-size: 1.5rem;
+    /* Reduzido de 1.8rem */
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Organização do conteúdo do body */
+.selection-info {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.info-label {
+    color: #666;
+    font-size: 1rem;
+}
+
+.info-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--gold-primary);
+}
+
+/* Next steps section */
+.next-steps {
+    text-align: left;
+    padding: 0 1rem;
+}
+
+.next-steps h3 {
+    color: #333;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.next-steps h3 i {
+    color: var(--gold-primary);
+}
+
+.next-steps ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.next-steps li {
+    padding: 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #555;
+    font-size: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.next-steps li:last-child {
+    border-bottom: none;
+}
+
+.next-steps li i {
+    color: #28a745;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* Ajustar padding do body */
+.selection-modal-body {
+    padding: 2rem;
+    /* Reduzido de 2.5rem */
 }

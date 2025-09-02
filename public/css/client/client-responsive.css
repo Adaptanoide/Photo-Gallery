@@ -353,6 +353,15 @@
     }
 
     /* Botão Apply & Close */
+
+    /* Ajustar container para não esconder o botão */
+    .filter-container {
+        padding-bottom: 100px;
+        /* Espaço para o botão fixo */
+        overflow-y: auto;
+        max-height: calc(100vh - 180px);
+    }
+
     .filter-actions-mobile {
         display: block !important;
         padding: 20px;
@@ -681,16 +690,51 @@
     }
 
     .selection-modal-content {
-        max-width: none;
-        width: 100%;
+        max-width: 95%;
+        width: 95%;
+        max-height: 85vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .selection-modal-header {
-        padding: 1.5rem 1.5rem 1rem 1.5rem;
+        padding: 1rem;
+        flex-shrink: 0;
+    }
+
+    .selection-modal-header .success-icon {
+        font-size: 2.5rem;
+    }
+
+    .selection-modal-header h2 {
+        font-size: 1.3rem;
     }
 
     .selection-modal-body {
-        padding: 1.5rem;
+        padding: 1rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .selection-info {
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .next-steps li {
+        font-size: 0.9rem;
+        padding: 0.5rem 0;
+    }
+
+    .selection-modal-footer {
+        padding: 1rem;
+        flex-shrink: 0;
+    }
+
+    .selection-modal-footer .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
     }
 
     /* === ORDER SUMMARY === */
@@ -777,6 +821,19 @@
         padding: 1rem;
     }
 
+    /* Modal ainda menor para telas pequenas */
+    .selection-modal-content {
+        max-height: 90vh;
+    }
+
+    .selection-modal-header {
+        padding: 0.8rem;
+    }
+
+    .selection-modal-header h2 {
+        font-size: 1.1rem;
+    }
+
     /* Modal header organizado */
     .modal-header {
         position: sticky !important;
@@ -788,6 +845,8 @@
         gap: 8px;
         padding-right: 50px !important;
         /* Espaço para o X */
+        padding-top: calc(1.5rem + env(safe-area-inset-top));
+        min-height: 70px;
     }
 
     /* Título com quebra e fundo */
