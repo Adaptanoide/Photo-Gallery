@@ -43,7 +43,7 @@
 
 /* Header da sidebar com gradiente dourado */
 .sidebar-header {
-    padding: 1.5rem;
+    padding: 2.0rem;
     border-bottom: 1px solid var(--border-subtle);
     background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
     color: var(--luxury-dark);
@@ -254,8 +254,8 @@
 
 /* Conteúdo principal */
 .admin-content {
-    padding: 2rem;
-    max-width: 1400px;
+    padding: 20px 20px 20px 20px;
+    max-width: 1700px;
     margin: 0 auto;
 }
 

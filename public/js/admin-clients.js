@@ -12,6 +12,7 @@ class AdminClients {
         this.selectedCategories = [];
         this.isLoading = false;
         this.currentClient = null;
+        this.selectedFolders = [];
 
         // ADICIONE ESTAS DUAS LINHAS NOVAS:
         this.hasUnsavedChanges = false;
@@ -163,7 +164,7 @@ class AdminClients {
                     <div class="filter-group">
                         <label class="filter-label">Search Client</label>
                         <input type="text" id="searchClients" class="filter-input" 
-                            placeholder="Name, code or email...">
+                            placeholder="Name, company or email...">
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">Status</label>
@@ -176,12 +177,15 @@ class AdminClients {
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">Sort by</label>
-                        <select id="sortClients" class="filter-select">
-                            <option value="recent">Most Recent</option>
-                            <option value="name">Name A-Z</option>
-                            <option value="code">Code</option>
-                            <option value="usage">Most Used</option>
-                        </select>
+                            <select id="sortClients" class="filter-select">
+                                <option value="recent">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="last-access">Recently Accessed</option>
+                                <option value="name">Name A-Z</option>
+                                <option value="code">Code</option>
+                                <option value="usage">Most Used</option>
+                                <option value="expires-soon">Expiring Soon</option>
+                            </select>
                     </div>
                     <button id="btnApplyFilters" class="btn-filter">
                         <i class="fas fa-filter"></i>
@@ -197,8 +201,10 @@ class AdminClients {
                         <tr>
                             <th>Code</th>
                             <th>Client</th>
+                            <th>Company</th>
                             <th>Access Type</th>
                             <th>Usage</th>
+                            <th>Created</th>
                             <th>Expires</th>
                             <th>Status</th>
                             <th style="text-align: center;">Actions</th>
@@ -206,7 +212,7 @@ class AdminClients {
                     </thead>
                     <tbody id="clientsTableBody">
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="9" class="text-center">
                                 <i class="fas fa-spinner fa-spin"></i>
                                 Loading codes...
                             </td>
@@ -215,7 +221,7 @@ class AdminClients {
                 </table>
             </div>
 
-            <!-- Client Modal -->
+            <!-- Client Modal (EDIT) - SEM FOLDERS -->
             <div id="clientModal" class="client-modal">
                 <div class="client-modal-content">
                     <div class="client-modal-header">
@@ -231,91 +237,75 @@ class AdminClients {
                     <div class="client-modal-body">
                         <form id="clientForm" class="client-form">
                             <!-- Client Information -->
-                                        <div class="form-section-clients">
-                                            <h4 class="form-section-title-clients">
-                                                <i class="fas fa-user"></i>
-                                                Client Information
-                                            </h4>
-                                            <div class="form-grid">
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients required">Full Name</label>
-                                                    <input type="text" id="clientName" class="form-input-clients" 
-                                                        placeholder="e.g. John Smith" required>
-                                                </div>
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients">Company Name</label>
-                                                    <input type="text" id="companyName" class="form-input-clients" 
-                                                        placeholder="e.g. ABC Industries LLC">
-                                                </div>
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients">Email</label>
-                                                    <input type="email" id="clientEmail" class="form-input-clients" 
-                                                        placeholder="e.g. contact@company.com">
-                                                </div>
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients">Phone Number</label>
-                                                    <input type="tel" id="clientPhone" class="form-input-clients" 
-                                                        placeholder="e.g. (555) 123-4567">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Address Information -->
-                                        <div class="form-section-clients">
-                                            <h4 class="form-section-title-clients">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                                Address Information
-                                            </h4>
-                                            <div class="form-grid">
-                                                <div class="form-group-clients full-width">
-                                                    <label class="form-label-clients">Address Line 1</label>
-                                                    <input type="text" id="addressLine1" class="form-input-clients" 
-                                                        placeholder="e.g. 123 Main Street">
-                                                </div>
-                                                <div class="form-group-clients full-width">
-                                                    <label class="form-label-clients">Address Line 2</label>
-                                                    <input type="text" id="addressLine2" class="form-input-clients" 
-                                                        placeholder="e.g. Suite 100 (Optional)">
-                                                </div>
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients">City</label>
-                                                    <input type="text" id="city" class="form-input-clients" 
-                                                        placeholder="e.g. New York">
-                                                </div>
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients">State</label>
-                                                    <input type="text" id="state" class="form-input-clients" 
-                                                        placeholder="e.g. NY, CA, TX" maxlength="20">
-                                                </div>
-                                                <div class="form-group-clients">
-                                                    <label class="form-label-clients">ZIP Code</label>
-                                                    <input type="text" id="zipCode" class="form-input-clients" 
-                                                        placeholder="e.g. 10001 or 10001-1234" maxlength="15">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                            <!-- Access Code -->
                             <div class="form-section-clients">
                                 <h4 class="form-section-title-clients">
-                                    <i class="fas fa-key"></i>
-                                    Access Code
+                                    <i class="fas fa-user"></i>
+                                    Client Information
                                 </h4>
-                                <div class="form-group-clients">
-                                    <div id="codePreview" class="code-preview">
-                                        ----
+                                <div class="form-grid">
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients required">Full Name</label>
+                                        <input type="text" id="clientName" class="form-input-clients" 
+                                            placeholder="e.g. John Smith" required>
                                     </div>
-                                    <small style="color: var(--text-muted); text-align: center; display: block; margin-top: 0.5rem;">
-                                        Code will be generated automatically
-                                    </small>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">Company Name</label>
+                                        <input type="text" id="companyName" class="form-input-clients" 
+                                            placeholder="e.g. ABC Industries LLC">
+                                    </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">Email</label>
+                                        <input type="email" id="clientEmail" class="form-input-clients" 
+                                            placeholder="e.g. contact@company.com">
+                                    </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">Phone Number</label>
+                                        <input type="tel" id="clientPhone" class="form-input-clients" 
+                                            placeholder="e.g. (555) 123-4567">
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Settings -->
+                            <!-- Address Information -->
+                            <div class="form-section-clients">
+                                <h4 class="form-section-title-clients">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Address Information
+                                </h4>
+                                <div class="form-grid">
+                                    <div class="form-group-clients full-width">
+                                        <label class="form-label-clients">Address Line 1</label>
+                                        <input type="text" id="addressLine1" class="form-input-clients" 
+                                            placeholder="e.g. 123 Main Street">
+                                    </div>
+                                    <div class="form-group-clients full-width">
+                                        <label class="form-label-clients">Address Line 2</label>
+                                        <input type="text" id="addressLine2" class="form-input-clients" 
+                                            placeholder="e.g. Suite 100 (Optional)">
+                                    </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">City</label>
+                                        <input type="text" id="city" class="form-input-clients" 
+                                            placeholder="e.g. New York">
+                                    </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">State</label>
+                                        <input type="text" id="state" class="form-input-clients" 
+                                            placeholder="e.g. NY, CA, TX" maxlength="20">
+                                    </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">ZIP Code</label>
+                                        <input type="text" id="zipCode" class="form-input-clients" 
+                                            placeholder="e.g. 10001 or 10001-1234" maxlength="15">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Access Settings (SEM FOLDERS) -->
                             <div class="form-section-clients">
                                 <h4 class="form-section-title-clients">
                                     <i class="fas fa-cog"></i>
-                                    Settings
+                                    Access Settings
                                 </h4>
                                 <div class="form-grid">
                                     <div class="form-group-clients">
@@ -323,34 +313,29 @@ class AdminClients {
                                         <input type="number" id="expireDays" class="form-input-clients" 
                                             value="30" min="1" max="365">
                                     </div>
+                                    
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">Access Code</label>
+                                        <div class="code-input-group">
+                                            <div id="codePreview" class="code-preview-compact">----</div>
+                                            <button type="button" class="btn-copy-code" onclick="adminClients.copyAccessInfo()" title="Copy access info">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="form-group-clients">
                                         <label class="form-label-clients">Show Prices to Client</label>
                                         <div class="toggle-item">
                                             <label class="toggle-switch">
-                                                <input type="checkbox" id="showPrices">
+                                                <input type="checkbox" id="showPrices" checked>
                                                 <span class="toggle-slider"></span>
                                             </label>
-                                            <span id="showPricesLabel" style="margin-left: 10px; color: var(--text-muted);">Enabled</span>
+                                            <span id="showPricesLabel" style="margin-left: 10px;">Enabled</span>
                                         </div>
                                         <small style="color: var(--text-muted); margin-top: 5px; display: block;">
                                             When disabled, client will see "Contact for Price"
                                         </small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Allowed Categories -->
-                            <div class="form-section-clients">
-                                <h4 class="form-section-title-clients">
-                                    <i class="fas fa-folder-open"></i>
-                                    Allowed Categories
-                                </h4>
-                                <div class="form-group-clients full-width">
-                                    <div id="categoriesSelection" class="categories-selection">
-                                        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
-                                            <i class="fas fa-spinner fa-spin"></i>
-                                            Loading categories...
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -378,7 +363,7 @@ class AdminClients {
                 </div>
             </div>
 
-            <!-- Client View Modal -->
+            <!-- Client View Modal (MANTÉM COMO ESTÁ) -->
             <div id="clientViewModal" class="client-view-modal">
                 <div class="client-view-content">
                     <div class="client-view-header">
@@ -515,7 +500,72 @@ class AdminClients {
                 </div>
             </div>
 
-            <!-- Modal de Confirmação Luxury -->
+            <!-- Modal de FOLDERS (APENAS FOLDERS) -->
+            <div id="clientSettingsModal" class="client-modal">
+                <div class="client-modal-content">
+                    <div class="client-modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-folder-open"></i>
+                            <span id="settingsModalTitle">Allowed Categories</span>
+                        </h3>
+                        <button class="modal-close" onclick="adminClients.closeSettingsModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="client-modal-body">
+                        <!-- Allowed Folders ONLY -->
+                        <div class="form-section-clients">
+                            <h4 class="form-section-title-clients">
+                                <i class="fas fa-sitemap"></i>
+                                Select Categories to Allow
+                            </h4>
+                            <input type="text" 
+                                id="settingsFolderSearchInput" 
+                                class="form-input-clients" 
+                                placeholder="Search by QB code or category name..."
+                                oninput="adminClients.handleSettingsFolderSearch(this.value)">
+                            
+                            <div id="settingsFolderSearchResults" class="folder-search-results"></div>
+                            
+                            <!-- Tree View Section com título -->
+                            <div class="tree-section-header">
+                                <h5 class="tree-title">
+                                    <i class="fas fa-sitemap"></i>
+                                    Browse All Categories
+                                </h5>
+                            </div>
+                            
+                            <!-- Tree View Container -->
+                            <div id="treeViewContainer" style="display: block; margin: 0.5rem 0; border: 1px solid var(--border-subtle); border-radius: 4px; background: var(--luxury-dark); padding: 1rem;">
+                                <div id="treeViewContent" class="tree-view-content">
+                                    <!-- Tree será carregado aqui -->
+                                </div>
+                            </div>
+
+                            <div class="selected-folders-container">
+                                <label class="form-label-clients">Selected Categories (<span id="settingsSelectedCount">0</span>)</label>
+                                <div id="settingsSelectedFoldersList" class="selected-folders-list">
+                                    <div class="empty-state">No categories selected</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="client-modal-footer">
+                        <button type="button" class="btn-modal btn-cancel" onclick="adminClients.closeSettingsModal()">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="button" class="btn-modal btn-save" onclick="adminClients.saveSettings()">
+                            <i class="fas fa-save"></i>
+                            Save Categories
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Confirmação Luxury (MANTÉM) -->
             <div id="luxuryConfirmModal" class="luxury-confirm-modal">
                 <div class="luxury-confirm-content">
                     <div class="luxury-confirm-header">
@@ -668,7 +718,7 @@ class AdminClients {
         if (this.clients.length === 0) {
             this.table.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center">
+                    <td colspan="9" class="text-center">
                         <i class="fas fa-inbox"></i>
                         No codes found
                         <br><small style="color: var(--text-muted);">Click "New Client" to create the first one</small>
@@ -685,6 +735,9 @@ class AdminClients {
                     <div>${client.clientName}</div>
                     <div class="client-email-cell">${client.clientEmail || 'No email'}</div>
                 </td>
+                <td class="client-company-cell">
+                    <div class="company-name">${client.companyName || '-'}</div>
+                </td>
                 <td class="client-access-type-cell">
                     <div class="access-type-preview">
                         ${this.renderAccessType(client)}
@@ -694,14 +747,18 @@ class AdminClients {
                     <div class="usage-count">${client.usageCount || 0}x</div>
                     <div class="usage-last">${this.formatDate(client.lastUsed, 'Never used')}</div>
                 </td>
+                <td class="client-created-cell">
+                    <div style="font-weight: 500;">${this.formatDate(client.createdAt)}</div>
+                    <div style="font-size: 0.85em; color: var(--text-muted);">${this.getDaysAgo(client.createdAt)}</div>
+                </td>
                 <td>${this.formatDate(client.expiresAt)}</td>
                 <td class="client-status-cell">
                     ${this.renderStatusBadge(client)}
                 </td>
                 <td class="client-actions-cell" onclick="event.stopPropagation();">
                     <div class="action-buttons">
-                        <button class="special-btn-icon" onclick="adminClients.viewClient('${client._id || client.code}')" title="View">
-                            <i class="fas fa-eye"></i>
+                        <button class="special-btn-icon settings" onclick="adminClients.openSettingsModal('${client._id || client.code}')" title="Settings">
+                            <i class="fas fa-cog"></i>
                         </button>
                         <button class="special-btn-icon edit" onclick="adminClients.editClient('${client._id || client.code}')" title="Edit">
                             <i class="fas fa-edit"></i>
@@ -794,8 +851,7 @@ class AdminClients {
         // Generate code preview
         this.generateCodePreview();
 
-        // Render categories
-        this.renderCategoriesSelection();
+        this.selectedFolders = [];
 
         // Show modal
         this.modal.classList.add('active');
@@ -831,54 +887,155 @@ class AdminClients {
         document.getElementById('codePreview').textContent = code;
     }
 
-    renderCategoriesSelection() {
-        const container = document.getElementById('categoriesSelection');
+    copyAccessInfo() {
+        const code = document.getElementById('codePreview').textContent;
+        const clientName = document.getElementById('clientName').value || 'Client';
 
-        if (this.availableCategories.length === 0) {
-            container.innerHTML = `
-                <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>No categories available</p>
-                </div>
-            `;
+        const accessInfo = `Hello ${clientName},\n\nHere is your exclusive access to Sunshine Cowhides Gallery:\n\n🌐 Website: https://sunshinecowhides-gallery.com\n🔑 Access Code: ${code}\n\nInstructions:\n1. Visit the website above\n2. Enter your 4-digit access code: ${code}\n3. Browse and select your preferred cowhides\n4. Your selections will be saved for 24 hours\n\nNeed assistance? Contact us anytime.\n\nBest regards,\nSunshine Cowhides Team`;
+
+        navigator.clipboard.writeText(accessInfo).then(() => {
+            // Pegar o botão sem usar event
+            const button = document.querySelector('.btn-copy-code');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.classList.add('copied');
+
+            UISystem.showToast('success', 'Access information copied!');
+
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            UISystem.showToast('error', 'Failed to copy');
+        });
+    }
+
+    async handleFolderSearch(query) {
+        if (query.length < 2) {
+            document.getElementById('folderSearchResults').innerHTML = '';
             return;
         }
 
-        const html = this.availableCategories.map(category => `
-            <div class="category-item">
-                <input type="checkbox" 
-                       class="category-checkbox" 
-                       id="cat_${category.id}" 
-                       value="${category.name}"
-                       ${this.selectedCategories.includes(category.name) ? 'checked' : ''}
-                       onchange="adminClients.handleCategoryChange('${category.name}', this.checked)">
-                <div class="category-info">
-                    <div class="category-name">${category.name}</div>
-                    <div class="category-details">Updated: ${this.formatDate(category.modifiedTime)}</div>
-                </div>
-                <div class="category-preview">
-                    <i class="fas fa-folder"></i>
-                </div>
-            </div>
-        `).join('');
+        try {
+            // Usar token da sessão atual
+            const token = this.getAdminToken();
 
-        container.innerHTML = html;
+            // Chamar rota real do backend
+            const response = await fetch(`/api/admin/folders-search?query=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log(`🔍 Encontrados ${data.results.length} resultados para: ${query}`);
+                this.displaySearchResults(data.results);
+            } else {
+                console.error('❌ Erro na busca:', data.message);
+                document.getElementById('folderSearchResults').innerHTML = '<div class="no-results">Erro na busca</div>';
+            }
+        } catch (error) {
+            console.error('❌ Search error:', error);
+            document.getElementById('folderSearchResults').innerHTML = '<div class="no-results">Erro na conexão</div>';
+        }
     }
 
-    handleCategoryChange(categoryName, isChecked) {
-        if (isChecked) {
-            if (!this.selectedCategories.includes(categoryName)) {
-                this.selectedCategories.push(categoryName);
-            }
-        } else {
-            this.selectedCategories = this.selectedCategories.filter(cat => cat !== categoryName);
-        }
-        console.log('📝 Selected categories:', this.selectedCategories);
+    displaySearchResults(results) {
+        const container = document.getElementById('folderSearchResults');
 
-        // ADICIONE ESTAS DUAS LINHAS NOVAS:
-        if (this.originalFormData) {
-            this.hasUnsavedChanges = this.checkForChanges();
+        if (results.length === 0) {
+            container.innerHTML = '<div class="no-results">No folders found</div>';
+            return;
         }
+
+        // Filtrar resultados que já foram selecionados
+        const filteredResults = results.filter(item =>
+            !this.selectedFolders.find(f => f.path === item.path)
+        );
+
+        if (filteredResults.length === 0) {
+            container.innerHTML = '<div class="no-results">All matching folders already selected</div>';
+            return;
+        }
+
+        container.innerHTML = filteredResults.map(item => `
+            <div class="search-result-item" onclick="adminClients.addFolder('${item.qbItem}', '${item.path.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">
+                <span class="folder-qb">${item.qbItem}</span>
+                <span class="folder-path">${item.path}</span>
+                <span class="folder-count">${item.photoCount} photos</span>
+            </div>
+        `).join('');
+    }
+
+    async addFolder(qbItem, path) {
+        if (this.selectedFolders.find(f => f.path === path)) {
+            UISystem.showToast('warning', 'Folder already selected');
+            return;
+        }
+
+        this.selectedFolders.push({ qbItem, path });
+        this.updateSettingsFoldersList(); // MUDANÇA: usar updateSettingsFoldersList ao invés de updateSelectedFoldersList
+
+        // Carregar árvore se necessário
+        const treeContainer = document.getElementById('treeViewContent'); // MUDANÇA: usar treeViewContent
+        if (!treeContainer || !treeContainer.innerHTML || treeContainer.innerHTML.trim() === '' || treeContainer.innerHTML.includes('Loading categories')) {
+            await this.loadTreeView(); // MUDANÇA: usar loadTreeView
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        // Marcar checkbox na árvore
+        setTimeout(() => {
+            const checkbox = document.querySelector(`.tree-checkbox[data-qbitem="${qbItem}"]`);
+            if (checkbox && !checkbox.checked) {
+                checkbox.checked = true;
+                this.updateParentCheckboxes();
+            }
+        }, 100);
+
+        // Manter o valor do input mas refazer a busca
+        const searchInput = document.getElementById('folderSearchInput');
+        const currentQuery = searchInput.value;
+
+        // Re-executar a busca para atualizar os resultados
+        if (currentQuery && currentQuery.length >= 2) {
+            this.handleFolderSearch(currentQuery);
+        }
+
+        UISystem.showToast('success', `Added: ${qbItem}`);
+    }
+
+    removeFolder(path) {
+        this.selectedFolders = this.selectedFolders.filter(f => f.path !== path);
+        this.updateSettingsFoldersList(); // MUDOU AQUI
+    }
+
+    updateSelectedFoldersList() {
+        const container = document.getElementById('selectedFoldersList');
+        const count = document.getElementById('selectedCount');
+
+        // Proteção: se elementos não existem, sair
+        if (!container || !count) {
+            return;
+        }
+
+        count.textContent = this.selectedFolders.length;
+
+        if (this.selectedFolders.length === 0) {
+            container.innerHTML = '<div class="empty-state">No folders selected</div>';
+            return;
+        }
+
+        container.innerHTML = this.selectedFolders.map(folder => `
+            <div class="selected-folder-item">
+                <span class="folder-qb">${folder.qbItem}</span>
+                <span class="folder-path">${folder.path}</span>
+                <button class="btn-remove-folder" onclick="adminClients.removeFolder('${folder.path}')">×</button>
+            </div>
+        `).join('');
     }
 
     async handleFormSubmit(e) {
@@ -894,11 +1051,12 @@ class AdminClients {
             city: document.getElementById('city').value.trim(),
             state: document.getElementById('state').value.trim().toUpperCase(),
             zipCode: document.getElementById('zipCode').value.trim(),
-            allowedCategories: this.selectedCategories,
+            allowedCategories: this.selectedCategories.length > 0 ? this.selectedCategories : [],
             expiresInDays: parseInt(document.getElementById('expireDays').value),
             showPrices: document.getElementById('showPrices').checked,
             accessType: this.currentClient?.accessType || 'normal',
-            isActive: true
+            isActive: true,
+            code: this.currentClient ? this.currentClient.code : document.getElementById('codePreview').textContent
         };
 
         // DEBUG - Ver o que está sendo enviado
@@ -1040,29 +1198,17 @@ class AdminClients {
     validateFormData(formData) {
         const errors = [];
 
-        // Validate name
+        // Só validar nome (obrigatório)
         if (!formData.clientName || formData.clientName.length < 2) {
             errors.push('Name must have at least 2 characters');
         }
 
-        // Validate email (if provided)
+        // Validar email SE fornecido
         if (formData.clientEmail && !this.isValidEmail(formData.clientEmail)) {
             errors.push('Invalid email address');
         }
 
-        // Debug
-        console.log('🔍 DEBUG validateEditForm:');
-        console.log('  formData.accessType:', formData.accessType);
-        console.log('  formData.allowedCategories:', formData.allowedCategories);
-
-        // Só validar categorias se NÃO for Special Selection
-        const isSpecialSelection = formData.accessType === 'special';
-
-        if (!isSpecialSelection && (!formData.allowedCategories || formData.allowedCategories.length === 0)) {
-            errors.push('Select at least one category');
-        }
-
-        // Validate expiration days
+        // Validar dias de expiração
         if (!formData.expiresInDays || formData.expiresInDays < 1 || formData.expiresInDays > 365) {
             errors.push('Expiration days must be between 1 and 365');
         }
@@ -1135,8 +1281,7 @@ class AdminClients {
         document.getElementById('modalTitle').textContent = 'Duplicate Access Code';
         document.getElementById('saveButtonText').textContent = 'Create Copy';
 
-        // Render categories
-        this.renderCategoriesSelection();
+        this.updateSelectedFoldersList();
 
         // Show modal
         this.modal.classList.add('active');
@@ -1398,8 +1543,8 @@ class AdminClients {
         document.getElementById('modalTitle').textContent = 'Edit Access Code';
         document.getElementById('saveButtonText').textContent = 'Save Changes';
 
-        // Render categories
-        this.renderCategoriesSelection();
+        // Carregar folders selecionados do cliente (temporariamente vazio até implementar)
+        this.selectedFolders = [];
 
         // Show modal
         this.modal.classList.add('active');
@@ -1538,11 +1683,15 @@ class AdminClients {
 
         // Apply search
         if (this.filters.search) {
-            filteredClients = filteredClients.filter(client =>
-                client.clientName.toLowerCase().includes(this.filters.search) ||
-                client.code.includes(this.filters.search) ||
-                (client.clientEmail && client.clientEmail.toLowerCase().includes(this.filters.search))
-            );
+            filteredClients = filteredClients.filter(client => {
+                const searchTerm = this.filters.search.toLowerCase();
+                return (
+                    client.clientName.toLowerCase().includes(searchTerm) ||
+                    client.code.includes(searchTerm) ||
+                    (client.clientEmail && client.clientEmail.toLowerCase().includes(searchTerm)) ||
+                    (client.companyName && client.companyName.toLowerCase().includes(searchTerm))
+                );
+            });
         }
 
         // Apply status filter
@@ -1574,6 +1723,12 @@ class AdminClients {
                         return a.code.localeCompare(b.code);
                     case 'usage':
                         return (b.usageCount || 0) - (a.usageCount || 0);
+                    case 'oldest':
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    case 'last-access':
+                        return new Date(b.lastUsed || 0) - new Date(a.lastUsed || 0);
+                    case 'expires-soon':
+                        return new Date(a.expiresAt) - new Date(b.expiresAt);
                     case 'recent':
                     default:
                         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -1621,6 +1776,17 @@ class AdminClients {
             month: '2-digit',
             year: 'numeric'
         });
+    }
+
+    getDaysAgo(date) {
+        if (!date) return '';
+        const days = Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24));
+        if (days === 0) return 'Today';
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return `${days} days ago`;
+        if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+        if (days < 365) return `${Math.floor(days / 30)} months ago`;
+        return `${Math.floor(days / 365)} years ago`;
     }
 
     calculateDaysUntilExpiry(expiresAt) {
@@ -1689,6 +1855,534 @@ class AdminClients {
     closeViewModal() {
         document.getElementById('clientViewModal').classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    // ===== NOVO MODAL DE SETTINGS =====
+    async openSettingsModal(clientId) {
+        const client = this.clients.find(c => c._id === clientId || c.code === clientId);
+        if (!client) {
+            this.showError('Client not found');
+            return;
+        }
+
+        console.log('⚙️ Opening settings for:', client.clientName);
+
+        this.currentSettingsClient = client;
+
+        // Atualizar título
+        document.getElementById('settingsModalTitle').textContent = `Allowed Categories - ${client.clientName}`;
+
+        // Limpar seleção anterior
+        this.selectedFolders = [];
+
+        // Carregar categorias salvas com dados reais
+        if (client.allowedCategories && Array.isArray(client.allowedCategories)) {
+            try {
+                const token = this.getAdminToken();
+
+                // Buscar informações das categorias salvas
+                const response = await fetch('/api/admin/map-categories', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        items: client.allowedCategories
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Adicionar com dados reais
+                    data.mapped.forEach(item => {
+                        this.selectedFolders.push({
+                            qbItem: item.qbItem || item.original,
+                            path: item.displayName || item.original
+                        });
+                    });
+                    console.log(`📁 Loaded ${this.selectedFolders.length} saved categories with real data`);
+                } else {
+                    // Fallback se não conseguir mapear
+                    client.allowedCategories.forEach(cat => {
+                        this.selectedFolders.push({
+                            qbItem: cat,
+                            path: cat
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading saved categories:', error);
+            }
+        }
+
+        this.updateSettingsFoldersList();
+
+        // Carregar tree
+        if (!this.treeLoaded) {
+            this.loadTreeView();
+        }
+
+        // Marcar checkboxes das categorias salvas
+        setTimeout(() => {
+            this.markSavedCheckboxes();
+        }, 500);
+
+        // Mostrar modal
+        document.getElementById('clientSettingsModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Nova função para marcar checkboxes
+    markSavedCheckboxes() {
+        const checkboxes = document.querySelectorAll('.tree-checkbox');
+        checkboxes.forEach(checkbox => {
+            const qbItem = checkbox.dataset.qbitem;
+            const path = checkbox.dataset.path;
+
+            // Verificar se está na lista de selecionados
+            const isSelected = this.selectedFolders.some(f =>
+                f.qbItem === qbItem || f.path === path || f.qbItem === path
+            );
+
+            if (isSelected) {
+                checkbox.checked = true;
+            }
+        });
+
+        // Atualizar estados dos pais após marcar os salvos
+        this.updateParentCheckboxes();
+    }
+
+    closeSettingsModal() {
+        document.body.style.overflow = '';
+        document.getElementById('clientSettingsModal').classList.remove('active');
+        this.currentSettingsClient = null;
+        this.selectedFolders = [];
+    }
+
+    // Handler para busca no modal settings
+    async handleSettingsFolderSearch(query) {
+        if (query.length < 2) {
+            document.getElementById('settingsFolderSearchResults').innerHTML = '';
+            return;
+        }
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/admin/folders-search?query=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.displaySettingsSearchResults(data.results);
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    }
+
+    // Display results no modal settings
+    displaySettingsSearchResults(results) {
+        const container = document.getElementById('settingsFolderSearchResults');
+
+        const filteredResults = results.filter(item =>
+            !this.selectedFolders.find(f => f.path === item.path)
+        );
+
+        if (filteredResults.length === 0) {
+            container.innerHTML = '<div class="no-results">No folders found</div>';
+            return;
+        }
+
+        container.innerHTML = filteredResults.map(item => `
+            <div class="search-result-item" onclick="adminClients.addSettingsFolder('${item.qbItem}', '${item.path.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">
+                <span class="folder-qb">${item.qbItem}</span>
+                <span class="folder-path">${item.path}</span>
+                <span class="folder-count">${item.photoCount} photos</span>
+            </div>
+        `).join('');
+    }
+
+    // Adicionar folder no modal settings
+    addSettingsFolder(qbItem, path) {
+        if (this.selectedFolders.find(f => f.path === path)) {
+            return;
+        }
+
+        this.selectedFolders.push({ qbItem, path });
+        this.updateSettingsFoldersList();
+
+        // Marcar checkbox na árvore
+        setTimeout(() => {
+            const checkbox = document.querySelector(`.tree-checkbox[data-qbitem="${qbItem}"]`);
+            if (checkbox && !checkbox.checked) {
+                checkbox.checked = true;
+                this.updateParentCheckboxes();
+            }
+        }, 100);
+
+        // Re-executar busca para atualizar
+        const searchInput = document.getElementById('settingsFolderSearchInput');
+        if (searchInput.value.length >= 2) {
+            this.handleSettingsFolderSearch(searchInput.value);
+        }
+    }
+
+    // Atualizar lista no modal settings
+    updateSettingsFoldersList() {
+        const container = document.getElementById('settingsSelectedFoldersList');
+        const count = document.getElementById('settingsSelectedCount');
+
+        // Verificar se elementos existem
+        if (!container || !count) {
+            console.warn('Settings elements not found');
+            return;
+        }
+
+        count.textContent = this.selectedFolders.length;
+
+        if (this.selectedFolders.length === 0) {
+            container.innerHTML = '<div class="empty-state">No categories selected</div>';
+            return;
+        }
+
+        container.innerHTML = this.selectedFolders.map(folder => `
+            <div class="selected-folder-item">
+                <span class="folder-qb">${folder.qbItem}</span>
+                <span class="folder-path">${folder.path}</span>
+            <button class="btn-remove-folder" onclick="adminClients.removeSettingsFolder('${folder.path.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">×</button>
+            </div>
+        `).join('');
+    }
+
+    // Remover folder no modal settings
+    removeSettingsFolder(path) {
+        this.selectedFolders = this.selectedFolders.filter(f => f.path !== path);
+        this.updateSettingsFoldersList();
+
+        // Desmarcar checkbox na árvore
+        const checkboxes = document.querySelectorAll('.tree-checkbox');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.dataset.path === path) {
+                checkbox.checked = false;
+            }
+        });
+        // Atualizar estado dos pais
+        this.updateParentCheckboxes();
+    }
+
+    // Toggle Tree View
+    async toggleTreeView() {
+        const container = document.getElementById('treeViewContainer');
+        const toggleBtn = document.getElementById('treeToggleText');
+        const searchContainer = document.getElementById('settingsFolderSearchInput').parentElement;
+
+        if (container.style.display === 'none') {
+            // Mostrar tree
+            container.style.display = 'block';
+            toggleBtn.textContent = 'Hide Tree';
+
+            // Carregar tree se ainda não foi carregada
+            if (!this.treeLoaded) {
+                await this.loadTreeView();
+            }
+        } else {
+            // Esconder tree
+            container.style.display = 'none';
+            toggleBtn.textContent = 'Show Tree';
+        }
+    }
+
+    // Carregar Tree View
+    async loadTreeView() {
+        console.log('🌳 Loading tree view...');
+
+        // Limpar loading message
+        const container = document.getElementById('treeViewContent');
+        container.innerHTML = '<div style="text-align: center; padding: 1rem;"><i class="fas fa-spinner fa-spin"></i> Loading categories...</div>';
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch('/api/admin/categories-tree', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.renderTreeView(data.tree);
+                this.treeLoaded = true;
+            } else {
+                container.innerHTML = '<div style="text-align: center; color: var(--danger);">Failed to load categories</div>';
+            }
+        } catch (error) {
+            console.error('Error loading tree:', error);
+            container.innerHTML = '<div style="text-align: center; color: var(--danger);">Error loading categories</div>';
+        }
+    }
+
+    // Renderizar Tree View
+    renderTreeView(tree) {
+        const container = document.getElementById('treeViewContent');
+
+        if (Object.keys(tree).length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-muted);">No categories found</div>';
+            return;
+        }
+
+        let html = '<div class="tree-view">';
+
+        Object.keys(tree).forEach(key => {
+            html += this.renderTreeNode(tree[key], key, 0);
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // Renderizar nó da árvore
+    renderTreeNode(node, key, level) {
+        const hasChildren = node.children && Object.keys(node.children).length > 0;
+        const indent = level * 20;
+        const nodeId = `tree-${node.fullPath || key}`.replace(/[^a-zA-Z0-9]/g, '-');
+
+        let html = `
+            <div class="tree-node" data-node-id="${nodeId}" style="margin-left: ${indent}px;">
+                <div class="tree-node-content">
+                    ${hasChildren ?
+                `<span class="tree-toggle" onclick="adminClients.toggleTreeNode('${nodeId}')">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>` :
+                '<span class="tree-spacer"></span>'
+            }
+                    <label class="tree-label">
+                        <input type="checkbox" 
+                            class="tree-checkbox" 
+                            data-path="${node.fullPath || key}"
+                            data-qbitem="${node.qbItem || ''}"
+                            data-node-id="${nodeId}"
+                            onchange="adminClients.handleTreeCheckbox(this)">
+                        ${node.qbItem ? `<span class="tree-qb-code">${node.qbItem}</span>` : ''}
+                        <span class="tree-name">${key}</span>
+                        <span class="tree-count">(${node.photoCount || Object.keys(node.children || {}).length})</span>
+                        <span class="tree-selection-badge" id="badge-${nodeId}" style="display:none;"></span>
+                    </label>
+                </div>
+                ${hasChildren ?
+                `<div id="${nodeId}" class="tree-children" style="display: none;">
+                        ${Object.keys(node.children).map(childKey =>
+                    this.renderTreeNode(node.children[childKey], childKey, level + 1)
+                ).join('')}
+                    </div>` : ''
+            }
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Toggle nó da árvore
+    toggleTreeNode(nodeId) {
+        const children = document.getElementById(nodeId);
+        const toggleBtn = document.querySelector(`[onclick="adminClients.toggleTreeNode('${nodeId}')"]`);
+
+        if (!children || !toggleBtn) {
+            console.error('Tree node elements not found:', nodeId);
+            return;
+        }
+
+        const icon = toggleBtn.querySelector('i');
+
+        if (children.style.display === 'none') {
+            children.style.display = 'block';
+            icon.className = 'fas fa-chevron-down';
+        } else {
+            children.style.display = 'none';
+            icon.className = 'fas fa-chevron-right';
+        }
+    }
+
+    // Handle checkbox da tree
+    handleTreeCheckbox(checkbox) {
+        const path = checkbox.dataset.path;
+        const qbItem = checkbox.dataset.qbitem || 'NO-QB';
+
+        if (checkbox.checked) {
+            // Só adicionar se tem QB item válido (não é NO-QB ou vazio)
+            if (qbItem && qbItem !== 'NO-QB' && qbItem !== '') {
+                if (!this.selectedFolders.find(f => f.path === path)) {
+                    this.selectedFolders.push({
+                        qbItem: qbItem,
+                        path: path
+                    });
+                }
+            }
+
+            // Marcar todos os filhos (eles serão adicionados se tiverem QB)
+            this.checkAllChildren(checkbox, true);
+        } else {
+            // Remover pasta
+            this.selectedFolders = this.selectedFolders.filter(f => f.path !== path);
+
+            // Desmarcar todos os filhos
+            this.checkAllChildren(checkbox, false);
+        }
+
+        this.updateSettingsFoldersList();
+        // Atualizar estados dos pais
+        setTimeout(() => {
+            this.updateParentCheckboxes();
+        }, 50);
+    }
+
+    // Função para marcar/desmarcar todos os filhos
+    checkAllChildren(parentCheckbox, checked) {
+        const parentNode = parentCheckbox.closest('.tree-node');
+        const childrenContainer = parentNode.querySelector('.tree-children');
+
+        if (childrenContainer) {
+            const childCheckboxes = childrenContainer.querySelectorAll('.tree-checkbox');
+            childCheckboxes.forEach(child => {
+                child.checked = checked;
+
+                const childPath = child.dataset.path;
+                const childQbItem = child.dataset.qbitem || 'NO-QB';
+
+                if (checked) {
+                    // Só adicionar se tem QB item válido
+                    if (childQbItem && childQbItem !== 'NO-QB' && childQbItem !== '') {
+                        if (!this.selectedFolders.find(f => f.path === childPath)) {
+                            this.selectedFolders.push({
+                                qbItem: childQbItem,
+                                path: childPath
+                            });
+                        }
+                    }
+                } else {
+                    // Remover
+                    this.selectedFolders = this.selectedFolders.filter(f => f.path !== childPath);
+                }
+            });
+        }
+    }
+
+    // Atualizar estado dos checkboxes pais baseado nos filhos
+    updateParentCheckboxes() {
+        // Começar dos nós mais profundos e subir
+        const allNodes = document.querySelectorAll('.tree-node');
+
+        // Processar de baixo para cima (reverse)
+        const nodesArray = Array.from(allNodes).reverse();
+
+        nodesArray.forEach(node => {
+            const childrenContainer = node.querySelector('.tree-children');
+            if (childrenContainer) {
+                const checkbox = node.querySelector('.tree-checkbox');
+                const childCheckboxes = childrenContainer.querySelectorAll('.tree-checkbox');
+
+                if (childCheckboxes.length > 0) {
+                    const checkedCount = Array.from(childCheckboxes).filter(cb => cb.checked).length;
+                    const indeterminateCount = Array.from(childCheckboxes).filter(cb => cb.indeterminate).length;
+
+                    const badge = node.querySelector('.tree-selection-badge');
+                    const nodeElement = checkbox.closest('.tree-node');
+
+                    if (checkedCount === 0 && indeterminateCount === 0) {
+                        // Nenhum filho selecionado
+                        checkbox.checked = false;
+                        checkbox.indeterminate = false;
+                        nodeElement.classList.remove('partial-selected');
+                        if (badge) badge.style.display = 'none';
+
+                    } else if (checkedCount === childCheckboxes.length && indeterminateCount === 0) {
+                        // Todos os filhos selecionados
+                        checkbox.checked = true;
+                        checkbox.indeterminate = false;
+                        nodeElement.classList.remove('partial-selected');
+                        if (badge) badge.style.display = 'none';
+
+                    } else {
+                        // Parcialmente selecionado
+                        checkbox.checked = false;
+                        checkbox.indeterminate = false;  // <-- FORÇAR FALSE
+                        nodeElement.classList.add('partial-selected');
+                        if (badge) {
+                            badge.textContent = `${checkedCount}/${childCheckboxes.length}`;
+                            badge.style.display = 'inline';
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Salvar configurações
+    async saveSettings() {
+        console.log('💾 Saving folder permissions...');
+
+        if (!this.currentSettingsClient) {
+            this.showError('No client selected');
+            return;
+        }
+
+        try {
+            const token = this.getAdminToken();
+
+            // Extrair QB items ou nomes de categorias principais
+            const allowedCategories = this.selectedFolders.map(f => {
+                // Se tem QB item válido, usar ele
+                if (f.qbItem && f.qbItem !== 'NO-QB' && f.qbItem !== 'SAVED' && f.qbItem !== 'TREE') {
+                    return f.qbItem;
+                }
+                // Senão, usar o nome da categoria principal (primeiro segmento do path)
+                const parts = f.path.split(' → ');
+                return parts[0];
+            });
+
+            // Remover duplicatas
+            const uniqueCategories = [...new Set(allowedCategories)];
+
+            console.log('📁 Saving categories/QB items:', uniqueCategories);
+
+            const response = await fetch(`/api/admin/clients/${this.currentSettingsClient._id}/categories`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    allowedCategories: uniqueCategories
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess(`Saved ${uniqueCategories.length} permissions for ${this.currentSettingsClient.clientName}`);
+
+                // Atualizar cliente local
+                const clientIndex = this.clients.findIndex(c => c._id === this.currentSettingsClient._id);
+                if (clientIndex > -1) {
+                    this.clients[clientIndex].allowedCategories = uniqueCategories;
+                }
+
+                this.closeSettingsModal();
+                this.renderClientsTable();
+            } else {
+                this.showError(data.message || 'Failed to save categories');
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            this.showError('Error saving categories');
+        }
     }
 
     // Funções auxiliares para estatísticas

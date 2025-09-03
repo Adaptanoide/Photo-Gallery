@@ -88,6 +88,180 @@ router.get('/structure', verifyClientToken, async (req, res) => {
 
         console.log(`📂 Buscando estrutura de: ${prefix || '/'}`);
 
+        // ========== FILTRAR POR ALLOWED CATEGORIES ==========
+        let allowedToSee = true;  // Por padrão, permitir tudo
+
+        if (req.client && req.client.clientCode) {
+            // Buscar categorias permitidas do cliente
+            const accessCode = await AccessCode.findOne({
+                code: req.client.clientCode
+            });
+
+            if (accessCode && accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+                console.log(`🔐 Cliente tem restrições:`, accessCode.allowedCategories);
+
+                // Buscar mapeamento de QB items
+                const PhotoCategory = require('../models/PhotoCategory');
+                const allowedPaths = new Set();
+
+                console.log('🔍 DEBUG - Cliente:', req.client.clientCode);
+                console.log('🔍 DEBUG - AllowedCategories:', accessCode.allowedCategories);
+                console.log('🔍 DEBUG - Prefix atual:', prefix);
+
+                for (const item of accessCode.allowedCategories) {
+                    // Se é QB item, buscar path
+                    if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(item)) {
+                        const cat = await PhotoCategory.findOne({ qbItem: item });
+                        if (cat) {
+                            // Extrair categoria principal do path
+                            const mainCategory = cat.googleDrivePath.split('/')[0];
+                            allowedPaths.add(mainCategory);
+                            console.log(`✅ QB ${item} → Path: ${cat.googleDrivePath} → Main: ${mainCategory}`);
+                        } else {
+                            console.log(`❌ QB ${item} não encontrado no PhotoCategory`);
+                        }
+                    } else {
+                        // É categoria principal
+                        allowedPaths.add(item);
+                        console.log(`📂 Categoria principal: ${item}`);
+                    }
+                }
+
+                console.log('📊 AllowedPaths final:', Array.from(allowedPaths));
+
+                // Se estamos no root, filtrar categorias
+                if (!prefix || prefix === '') {
+                    const result = await StorageService.getSubfolders(prefix);
+                    console.log('🔍 Categorias R2 antes do filtro:', result.folders.map(f => f.name));
+
+                    result.folders = result.folders.filter(f =>
+                        !f.name.startsWith('_') && allowedPaths.has(f.name)
+                    );
+
+                    console.log(`📁 Mostrando ${result.folders.length} de ${allowedPaths.size} categorias permitidas`);
+
+                    return res.json({
+                        success: true,
+                        structure: {
+                            hasSubfolders: result.folders.length > 0,
+                            folders: result.folders,
+                            hasImages: false,
+                            totalImages: 0
+                        },
+                        prefix: prefix
+                    });
+                }
+
+                // Verificar se a categoria atual é permitida
+                const currentCategory = prefix.split('/')[0];
+                if (!allowedPaths.has(currentCategory)) {
+                    console.log(`🚫 Categoria ${currentCategory} não permitida`);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Category not allowed'
+                    });
+                }
+            }
+        }
+        // ========== FIM DO FILTRO ==========
+
+        // ========== FILTRAR SUBCATEGORIAS BASEADO NOS QB ITEMS ==========
+        // Este código filtra quando navegando dentro das categorias
+        if (prefix && req.client && req.client.clientCode && !req.client.hasSpecialSelection) {
+            const accessCode = await AccessCode.findOne({
+                code: req.client.clientCode
+            });
+
+            if (accessCode && accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+                console.log(`🔍 Filtrando subcategorias para: ${prefix}`);
+
+                const PhotoCategory = require('../models/PhotoCategory');
+                const allowedSubfolders = new Set();
+
+                // Buscar todos os QB items e seus paths
+                for (const item of accessCode.allowedCategories) {
+                    // Verificar se é QB item (números com letras)
+                    if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(item)) {
+                        const cat = await PhotoCategory.findOne({ qbItem: item });
+                        if (cat) {
+                            console.log(`📁 QB ${item} tem path: ${cat.googleDrivePath}`);
+
+                            // Verificar se este QB item está dentro do prefix atual
+                            if (cat.googleDrivePath.startsWith(prefix + '/') || cat.googleDrivePath.startsWith(prefix)) {
+                                // Extrair o próximo nível do caminho
+                                const fullPath = cat.googleDrivePath;
+                                const prefixLength = prefix.endsWith('/') ? prefix.length : prefix.length + 1;
+                                const remainingPath = fullPath.substring(prefixLength);
+
+                                if (remainingPath) {
+                                    // Pegar apenas o próximo nível (antes da próxima /)
+                                    const nextLevel = remainingPath.split('/')[0];
+                                    if (nextLevel) {
+                                        allowedSubfolders.add(nextLevel);
+                                        console.log(`   ✅ Permitindo subfolder: ${nextLevel}`);
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log(`❌ QB ${item} não encontrado no PhotoCategory`);
+                        }
+                    }
+                }
+
+                // Se encontrou subfolders permitidas, aplicar filtro
+                if (allowedSubfolders.size > 0) {
+                    console.log(`🎯 Subfolders permitidas: ${Array.from(allowedSubfolders).join(', ')}`);
+
+                    const result = await StorageService.getSubfolders(prefix);
+                    const originalCount = result.folders ? result.folders.length : 0;
+
+                    // Filtrar apenas as pastas permitidas
+                    if (result.folders) {
+                        result.folders = result.folders.filter(f => {
+                            const isAllowed = allowedSubfolders.has(f.name);
+                            if (!isAllowed) {
+                                console.log(`   🚫 Bloqueando: ${f.name}`);
+                            }
+                            return !f.name.startsWith('_') && isAllowed;
+                        });
+                    }
+
+                    console.log(`📊 Mostrando ${result.folders?.length || 0} de ${originalCount} subcategorias`);
+
+                    // Verificar se ao invés de pastas, temos fotos direto
+                    if ((!result.folders || result.folders.length === 0) && allowedSubfolders.size > 0) {
+                        // Pode ser que estamos no último nível - verificar fotos
+                        const photosResult = await StorageService.getPhotos(prefix);
+                        if (photosResult.photos && photosResult.photos.length > 0) {
+                            return res.json({
+                                success: true,
+                                structure: {
+                                    hasSubfolders: false,
+                                    folders: [],
+                                    hasImages: true,
+                                    totalImages: photosResult.photos.length
+                                },
+                                prefix: prefix
+                            });
+                        }
+                    }
+
+                    // Retornar estrutura filtrada
+                    return res.json({
+                        success: true,
+                        structure: {
+                            hasSubfolders: result.folders && result.folders.length > 0,
+                            folders: result.folders || [],
+                            hasImages: false,
+                            totalImages: 0
+                        },
+                        prefix: prefix
+                    });
+                }
+            }
+        }
+        // ========== FIM DA FILTRAGEM DE SUBCATEGORIAS ==========
+
         // ========== SPECIAL SELECTION: Retornar estrutura simplificada ==========
         if (req.client && req.client.hasSpecialSelection) {
             console.log(`🌟 Cliente ${req.client.clientCode} tem Special Selection`);

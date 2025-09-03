@@ -17,10 +17,26 @@ router.post('/create-test-code', async (req, res) => {
         let codeExists = true;
         let attempts = 0;
 
-        while (codeExists && attempts < 100) {
-            code = Math.floor(1000 + Math.random() * 9000).toString();
+        // Usar código enviado ou gerar novo
+        if (req.body.code) {
+            code = req.body.code;
             codeExists = await AccessCode.findOne({ code });
-            attempts++;
+
+            // Se o código enviado já existe, gerar novo
+            if (codeExists) {
+                while (codeExists && attempts < 100) {
+                    code = Math.floor(1000 + Math.random() * 9000).toString();
+                    codeExists = await AccessCode.findOne({ code });
+                    attempts++;
+                }
+            }
+        } else {
+            // Se não foi enviado código, gerar novo
+            while (codeExists && attempts < 100) {
+                code = Math.floor(1000 + Math.random() * 9000).toString();
+                codeExists = await AccessCode.findOne({ code });
+                attempts++;
+            }
         }
 
         const accessCode = new AccessCode({
@@ -115,10 +131,10 @@ router.post('/access-codes', async (req, res) => {
             expiresInDays = 30
         } = req.body;
 
-        if (!clientName || (accessType !== 'special' && (!allowedCategories || allowedCategories.length === 0))) {
+        if (!clientName) {
             return res.status(400).json({
                 success: false,
-                message: 'Nome do cliente e categorias são obrigatórios'
+                message: 'Nome do cliente é obrigatório'
             });
         }
 
@@ -127,10 +143,26 @@ router.post('/access-codes', async (req, res) => {
         let codeExists = true;
         let attempts = 0;
 
-        while (codeExists && attempts < 100) {
-            code = Math.floor(1000 + Math.random() * 9000).toString();
+        // Usar código enviado ou gerar novo
+        if (req.body.code) {
+            code = req.body.code;
             codeExists = await AccessCode.findOne({ code });
-            attempts++;
+
+            // Se o código enviado já existe, gerar novo
+            if (codeExists) {
+                while (codeExists && attempts < 100) {
+                    code = Math.floor(1000 + Math.random() * 9000).toString();
+                    codeExists = await AccessCode.findOne({ code });
+                    attempts++;
+                }
+            }
+        } else {
+            // Se não foi enviado código, gerar novo
+            while (codeExists && attempts < 100) {
+                code = Math.floor(1000 + Math.random() * 9000).toString();
+                codeExists = await AccessCode.findOne({ code });
+                attempts++;
+            }
         }
 
         if (codeExists) {
@@ -456,6 +488,224 @@ router.get('/access-codes/:id', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro interno do servidor'
+        });
+    }
+});
+
+// ===== NOVA ROTA PARA BUSCAR FOLDERS COM QB ITEMS =====
+// Buscar folders/categorias para seleção de cliente
+router.get('/folders-search', authenticateToken, async (req, res) => {
+    try {
+        const { query } = req.query;
+        const PhotoCategory = require('../models/PhotoCategory');
+
+        // Se query muito curta, retornar vazio
+        if (!query || query.length < 2) {
+            return res.json({ success: true, results: [] });
+        }
+
+        console.log('🔍 Buscando folders com query:', query);
+
+        // Buscar categorias que correspondem
+        const categories = await PhotoCategory.find({
+            $or: [
+                { qbItem: { $regex: query, $options: 'i' } },
+                { displayName: { $regex: query, $options: 'i' } },
+                { folderName: { $regex: query, $options: 'i' } }
+            ],
+            isActive: true,
+            photoCount: { $gt: 0 }
+        })
+            .limit(20)
+            .select('qbItem displayName folderName photoCount googleDrivePath');
+
+        console.log(`✅ Encontradas ${categories.length} categorias`);
+
+        // Formatar resultados
+        const results = categories.map(cat => ({
+            qbItem: cat.qbItem || `TEMP-${cat._id.toString().slice(-4)}`,
+            path: cat.getCleanDisplayName() || cat.folderName,
+            fullPath: cat.googleDrivePath,
+            photoCount: cat.photoCount || 0,
+            hasQB: !!cat.qbItem
+        }));
+
+        res.json({ success: true, results });
+
+    } catch (error) {
+        console.error('❌ Folder search error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error searching folders'
+        });
+    }
+});
+
+// ===== ROTA PARA TREE VIEW HIERÁRQUICA =====
+router.get('/categories-tree', authenticateToken, async (req, res) => {
+    try {
+        const PhotoCategory = require('../models/PhotoCategory');
+
+        console.log('🌳 Building categories tree...');
+
+        // Buscar todas as categorias ativas
+        const categories = await PhotoCategory.find({
+            isActive: true,
+            photoCount: { $gt: 0 }
+        }).select('displayName qbItem photoCount googleDrivePath');
+
+        // Construir estrutura hierárquica
+        const tree = {};
+
+        categories.forEach(cat => {
+            const path = cat.displayName || cat.googleDrivePath || '';
+            const parts = path.split(' → ').filter(p => p);
+
+            let current = tree;
+            parts.forEach((part, index) => {
+                if (!current[part]) {
+                    current[part] = {
+                        name: part,
+                        fullPath: parts.slice(0, index + 1).join(' → '),
+                        children: {},
+                        qbItem: index === parts.length - 1 ? cat.qbItem : null,
+                        photoCount: index === parts.length - 1 ? cat.photoCount : 0
+                    };
+                }
+                current = current[part].children;
+            });
+        });
+
+        console.log(`✅ Tree built with ${Object.keys(tree).length} root categories`);
+        res.json({ success: true, tree });
+
+    } catch (error) {
+        console.error('❌ Tree build error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error building categories tree'
+        });
+    }
+});
+
+// ===== MAPEAR QB ITEMS PARA DISPLAY NAMES =====
+router.post('/map-categories', authenticateToken, async (req, res) => {
+    try {
+        const { items } = req.body;
+        const PhotoCategory = require('../models/PhotoCategory');
+
+        console.log('🗺️ Mapeando categorias:', items);
+
+        const mapped = [];
+
+        for (const item of items) {
+            // Limpar item (remover barra final se houver)
+            const cleanItem = item.replace(/\/$/, '');
+
+            // Verificar se é QB item (numérico ou com letras)
+            if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(cleanItem)) {
+                // É um QB item, buscar por qbItem
+                const category = await PhotoCategory.findOne({ qbItem: cleanItem });
+                if (category) {
+                    mapped.push({
+                        original: item,
+                        qbItem: category.qbItem,
+                        displayName: category.displayName,
+                        path: category.googleDrivePath
+                    });
+                } else {
+                    mapped.push({
+                        original: item,
+                        qbItem: cleanItem,
+                        displayName: cleanItem,
+                        path: cleanItem
+                    });
+                }
+            } else {
+                // É um caminho/nome, buscar por googleDrivePath ou displayName
+                const category = await PhotoCategory.findOne({
+                    $or: [
+                        { googleDrivePath: cleanItem },
+                        { googleDrivePath: item },  // com barra
+                        { displayName: cleanItem },
+                        { displayName: item }
+                    ]
+                });
+
+                // ADICIONE ESTE DEBUG:
+                console.log('🔍 Buscando categoria:', item);
+                console.log('📦 Categoria encontrada:', category ? {
+                    displayName: category.displayName,
+                    qbItem: category.qbItem,
+                    googleDrivePath: category.googleDrivePath
+                } : 'NÃO ENCONTRADA');
+
+                if (category) {
+                    mapped.push({
+                        original: item,
+                        qbItem: category.qbItem || 'NO-QB',
+                        displayName: category.displayName,
+                        path: category.googleDrivePath
+                    });
+                } else {
+                    mapped.push({
+                        original: item,
+                        qbItem: 'NO-QB',
+                        displayName: item,
+                        path: item
+                    });
+                }
+            }
+        }
+
+        console.log(`✅ Mapeadas ${mapped.length} categorias`);
+        res.json({ success: true, mapped });
+
+    } catch (error) {
+        console.error('❌ Erro ao mapear categorias:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error mapping categories'
+        });
+    }
+});
+
+// ===== ATUALIZAR CATEGORIAS PERMITIDAS DO CLIENTE =====
+router.put('/clients/:clientId/categories', authenticateToken, async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        const { allowedCategories } = req.body;
+
+        console.log(`📁 Updating categories for client ${clientId}:`, allowedCategories.length, 'categories');
+
+        const client = await AccessCode.findByIdAndUpdate(
+            clientId,
+            {
+                allowedCategories: allowedCategories,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: 'Client not found'
+            });
+        }
+
+        console.log(`✅ Categories updated for ${client.clientName}`);
+        res.json({
+            success: true,
+            client,
+            message: `${allowedCategories.length} categories saved`
+        });
+
+    } catch (error) {
+        console.error('❌ Error updating categories:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating categories'
         });
     }
 });

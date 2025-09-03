@@ -229,7 +229,6 @@ class AdminSelections {
                 </td>
                 <td class="date-cell">
                     <div class="date-created">${this.formatDate(selection.createdAt)}</div>
-                    ${selection.isExpired ? '<div class="status-expired"><i class="fas fa-clock"></i> Expired</div>' : ''}
                 </td>
                 <td class="status-cell">
                     <span class="status-badge status-${selection.status}">
@@ -353,6 +352,13 @@ class AdminSelections {
             const data = await response.json();
 
             if (data.success) {
+                // Buscar QB items para as categorias
+                const categories = [...new Set(data.selection.items.map(item => item.category))];
+                const qbMap = await this.fetchQBItems(categories);
+
+                // Adicionar QB items aos dados
+                data.selection.qbMap = qbMap;
+
                 this.showSelectionModal(selectionId, data.selection, false);
             } else {
                 throw new Error(data.message || 'Failed to load selection details');
@@ -489,7 +495,10 @@ class AdminSelections {
                                     <div class="category-title">
                                         <i class="fas fa-chevron-right toggle-icon"></i>
                                         <span class="category-name">${category}</span>
-                                        <span class="category-info">${items.length} items | ${this.formatCurrency(items.reduce((sum, item) => sum + item.price, 0))}</span>
+                                        <span class="category-info">
+                                            ${items.length} items | ${this.formatCurrency(items.reduce((sum, item) => sum + item.price, 0))}
+                                            ${selection.qbMap && selection.qbMap[category] ? ` | <strong style="color: #d4af37;">QB: ${selection.qbMap[category]}</strong>` : ''}
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="category-items">
@@ -538,6 +547,40 @@ class AdminSelections {
                 </div>
             </div>
         `;
+    }
+
+    // Buscar QB items para as categorias
+    async fetchQBItems(categories) {
+        try {
+            console.log('🔍 Buscando QB para categorias:', categories);
+
+            const response = await fetch('/api/admin/map-categories', {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    items: categories
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const qbMap = {};
+                data.mapped.forEach(item => {
+                    const qbCode = item.qbItem || 'NO-QB';
+
+                    // Mapeia com e sem barra final
+                    const cleanCategory = item.original.replace(/\/$/, '');
+                    qbMap[cleanCategory] = qbCode;
+                    qbMap[item.original] = qbCode;
+                });
+                console.log('🗺️ QB Map final:', qbMap);
+                return qbMap;
+            }
+        } catch (error) {
+            console.error('Erro ao buscar QB items:', error);
+        }
+        return {};
     }
 
     // Adicione também a função hideSelectionModal se não existir:
@@ -935,18 +978,20 @@ class AdminSelections {
             // Criar workbook
             const workbook = XLSX.utils.book_new();
 
-            // CABEÇALHO
+            // CABEÇALHO MELHORADO
             const allData = [
-                ['SUNSHINE COWHIDES'],
-                ['Selection Details Report'],
-                [''],
-                ['Date:', this.formatDateForExcel(selection.createdAt)],
-                ['Company:', companyName],
-                ['Client:', selection.clientName],
-                ['Client Code:', selection.clientCode],
-                ['Selection ID:', selection.selectionId],
-                ['Status:', this.getStatusText(selection.status)],
-                ['']
+                ['', 'SUNSHINE COWHIDES', '', ''],
+                ['', 'Selection Details Report', '', ''],
+                ['', '', '', ''],
+                ['', 'Date:', this.formatDateForExcel(selection.createdAt), ''],
+                ['', 'Company:', companyName, ''],
+                ['', 'Client:', selection.clientName, ''],
+                ['', 'Client Code:', selection.clientCode, ''],
+                ['', 'Selection ID:', selection.selectionId, ''],
+                ['', 'Status:', this.getStatusText(selection.status), ''],
+                ['', '', '', ''],
+                ['', '═══════════════════════════════════════', '', ''],
+                ['', '', '', '']
             ];
 
             // AGRUPAR ITEMS POR CATEGORIA
@@ -962,48 +1007,67 @@ class AdminSelections {
 
             let totalItems = 0;
             let grandTotal = 0;
+            let categoryNumber = 1;
 
             // ADICIONAR CADA CATEGORIA COMO SEÇÃO
-            Object.entries(itemsByCategory).forEach(([category, items]) => {
+            for (const [category, items] of Object.entries(itemsByCategory)) {
                 const categoryTotal = items.reduce((sum, item) => sum + (item.price || 0), 0);
                 const averagePrice = categoryTotal / items.length;
 
-                // CABEÇALHO DA CATEGORIA
-                allData.push([`CATEGORY: ${category}`]);
-                allData.push(['Quantity:', `${items.length} items`]);
-                allData.push(['Unit Price:', `$${averagePrice.toFixed(2)}`]);
-                allData.push(['Total:', `$${categoryTotal.toFixed(2)}`]);
-                allData.push(['Photos:']);
+                // Buscar QB para esta categoria
+                const qbCode = await this.getQBForCategory(category);
 
-                // NÚMEROS DAS FOTOS - TODOS EM UMA LINHA SEM ESPAÇOS
+                // CABEÇALHO DA CATEGORIA COM NÚMERO
+                allData.push(['', `CATEGORY ${categoryNumber}: ${category}`, '', '']);
+
+                // QB CODE EM LINHA SEPARADA COM DESTAQUE
+                if (qbCode && qbCode !== 'NO-QB') {
+                    allData.push(['', 'QB CODE →', qbCode, '⚠️ IMPORTANT']);
+                }
+
+                // INFORMAÇÕES DA CATEGORIA EM GRID
+                allData.push(['', 'Quantity:', `${items.length} items`, '']);
+                allData.push(['', 'Unit Price:', `$${averagePrice.toFixed(2)}`, '']);
+                allData.push(['', 'Category Total:', `$${categoryTotal.toFixed(2)}`, '']);
+                allData.push(['', '', '', '']);
+                allData.push(['', 'Photo Numbers:', '', '']);
+
+                // NÚMEROS DAS FOTOS
                 const photoNumbers = items.map(item => {
                     const fileName = item.fileName || item.name || '';
                     return fileName.replace(/\.(webp|jpg|jpeg|png|gif)$/i, '');
                 });
 
-                // Juntar todos os números sem espaços: xxxx-xxxxx-xxxxx
                 const allPhotoNumbers = photoNumbers.join('-');
-                allData.push([allPhotoNumbers]);
+                allData.push(['', allPhotoNumbers, '', '']);
 
-                allData.push(['']); // Linha em branco
+                // SEPARADOR ENTRE CATEGORIAS
+                allData.push(['', '', '', '']);
+                allData.push(['', '───────────────────────────────────────', '', '']);
+                allData.push(['', '', '', '']);
 
                 totalItems += items.length;
                 grandTotal += categoryTotal;
-            });
+                categoryNumber++;
+            }
 
-            // RESUMO FINAL
-            allData.push(['SUMMARY']);
-            allData.push(['Total Categories:', Object.keys(itemsByCategory).length]);
-            allData.push(['Total Items:', totalItems]);
-            allData.push(['Grand Total:', `$${grandTotal.toFixed(2)}`]);
+            // RESUMO FINAL MELHORADO
+            allData.push(['', '═══════════════════════════════════════', '', '']);
+            allData.push(['', 'FINAL SUMMARY', '', '']);
+            allData.push(['', '═══════════════════════════════════════', '', '']);
+            allData.push(['', 'Total Categories:', Object.keys(itemsByCategory).length, '']);
+            allData.push(['', 'Total Items:', totalItems, '']);
+            allData.push(['', 'GRAND TOTAL:', `$${grandTotal.toFixed(2)}`, '']);
 
             // CRIAR PLANILHA
             const worksheet = XLSX.utils.aoa_to_sheet(allData);
 
             // CONFIGURAR LARGURA DAS COLUNAS
             worksheet['!cols'] = [
-                { width: 50 }, // Coluna principal
-                { width: 20 }  // Coluna de valores
+                { width: 3 },   // Margem esquerda
+                { width: 40 },  // Labels
+                { width: 60 },  // Valores/Conteúdo
+                { width: 15 }   // Notas/Extra
             ];
 
             // FORMATAÇÃO PROFISSIONAL
@@ -1019,108 +1083,96 @@ class AdminSelections {
 
                     const cellValue = cell.v ? cell.v.toString() : '';
 
-                    // BORDAS PADRÃO PARA TODAS AS CÉLULAS
+                    // BORDAS PADRÃO
                     cell.s.border = {
-                        top: { style: "thin", color: { rgb: "CCCCCC" } },
-                        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-                        left: { style: "thin", color: { rgb: "CCCCCC" } },
-                        right: { style: "thin", color: { rgb: "CCCCCC" } }
+                        top: { style: "thin", color: { rgb: "E0E0E0" } },
+                        bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+                        left: { style: "thin", color: { rgb: "E0E0E0" } },
+                        right: { style: "thin", color: { rgb: "E0E0E0" } }
                     };
 
-                    // CABEÇALHO PRINCIPAL
-                    if (R <= 1) {
-                        cell.s.font = { bold: true, size: 16, color: { rgb: "FFFFFF" } };
+                    // TÍTULO PRINCIPAL (SUNSHINE COWHIDES)
+                    if (R === 0 && C === 1) {
+                        cell.s.font = { bold: true, size: 18, color: { rgb: "FFFFFF" } };
                         cell.s.alignment = { horizontal: "center", vertical: "center" };
-                        cell.s.fill = { fgColor: { rgb: "2E5BBA" } }; // Azul escuro
-                        cell.s.border = {
-                            top: { style: "thick", color: { rgb: "000000" } },
-                            bottom: { style: "thick", color: { rgb: "000000" } },
-                            left: { style: "thick", color: { rgb: "000000" } },
-                            right: { style: "thick", color: { rgb: "000000" } }
-                        };
+                        cell.s.fill = { fgColor: { rgb: "1E3A5F" } };
                     }
 
-                    // INFORMAÇÕES DO CLIENTE (Date, Company, Client, etc.)
-                    else if (R >= 3 && R <= 8 && C === 0) {
-                        cell.s.font = { bold: true, size: 11 };
-                        cell.s.alignment = { horizontal: "left", vertical: "center" };
-                        cell.s.fill = { fgColor: { rgb: "F0F0F0" } }; // Cinza claro
+                    // SUBTÍTULO
+                    if (R === 1 && C === 1) {
+                        cell.s.font = { bold: true, size: 14, color: { rgb: "FFFFFF" } };
+                        cell.s.alignment = { horizontal: "center", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "2E5BBA" } };
                     }
 
-                    // VALORES DAS INFORMAÇÕES (lado direito das informações)
-                    else if (R >= 3 && R <= 8 && C === 1) {
-                        cell.s.font = { size: 11 };
-                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                    // LABELS (Date:, Company:, etc.)
+                    if (C === 1 && cellValue.includes(':') && R >= 3 && R <= 8) {
+                        cell.s.font = { bold: true, size: 11, color: { rgb: "333333" } };
+                        cell.s.fill = { fgColor: { rgb: "F5F5F5" } };
+                    }
+
+                    // VALORES DOS LABELS
+                    if (C === 2 && R >= 3 && R <= 8) {
+                        cell.s.font = { size: 11, color: { rgb: "000000" } };
                         cell.s.fill = { fgColor: { rgb: "FFFFFF" } };
                     }
 
-                    // CABEÇALHOS DE CATEGORIA - FUNDO AMARELO
-                    else if (cellValue.includes('CATEGORY:')) {
+                    // CATEGORY HEADERS
+                    if (cellValue.includes('CATEGORY') && cellValue.includes(':')) {
                         cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
-                        cell.s.fill = { fgColor: { rgb: "FFD700" } }; // AMARELO
-                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        cell.s.fill = { fgColor: { rgb: "FFD700" } }; // DOURADO
                         cell.s.border = {
-                            top: { style: "thick", color: { rgb: "FF8C00" } },
-                            bottom: { style: "thick", color: { rgb: "FF8C00" } },
-                            left: { style: "thick", color: { rgb: "FF8C00" } },
-                            right: { style: "thick", color: { rgb: "FF8C00" } }
+                            top: { style: "thick", color: { rgb: "FFA500" } },
+                            bottom: { style: "thick", color: { rgb: "FFA500" } },
+                            left: { style: "thick", color: { rgb: "FFA500" } },
+                            right: { style: "thick", color: { rgb: "FFA500" } }
                         };
                     }
 
-                    // LABELS DA CATEGORIA (Quantity, Unit Price, Total, Photos)
-                    else if (cellValue.includes(':') &&
-                        (cellValue.includes('Quantity') || cellValue.includes('Unit Price') ||
-                            cellValue.includes('Total') || cellValue.includes('Photos'))) {
-                        cell.s.font = { bold: true, size: 10 };
-                        cell.s.alignment = { horizontal: "left", vertical: "center" };
-                        cell.s.fill = { fgColor: { rgb: "E6E6E6" } }; // Cinza
-                    }
-
-                    // VALORES DA CATEGORIA
-                    else if (R > 10 && cellValue && !cellValue.includes(':') &&
-                        (cellValue.includes('$') || cellValue.includes('items'))) {
-                        cell.s.font = { size: 10 };
+                    // QB CODE - SUPER DESTAQUE
+                    if (cellValue === 'QB CODE →') {
+                        cell.s.font = { bold: true, size: 11, color: { rgb: "FF0000" } };
+                        cell.s.fill = { fgColor: { rgb: "FFFF00" } }; // AMARELO FORTE
                         cell.s.alignment = { horizontal: "right", vertical: "center" };
-                        cell.s.fill = { fgColor: { rgb: "FFFFFF" } };
                     }
 
-                    // NÚMEROS DE FOTOS - FUNDO AMARELO DESTACADO
-                    else if (cellValue.includes('-') && !cellValue.includes(':') && !cellValue.includes(' ')) {
-                        cell.s.alignment = { horizontal: "left", wrapText: true, vertical: "center" };
-                        cell.s.font = { name: "Courier New", size: 10, bold: true };
-                        cell.s.fill = { fgColor: { rgb: "FFFF99" } }; // AMARELO CLARO
-                        cell.s.border = {
-                            top: { style: "thick", color: { rgb: "FF8C00" } },
-                            bottom: { style: "thick", color: { rgb: "FF8C00" } },
-                            left: { style: "thick", color: { rgb: "FF8C00" } },
-                            right: { style: "thick", color: { rgb: "FF8C00" } }
-                        };
-                    }
-
-                    // SEÇÃO SUMMARY
-                    else if (cellValue.includes('SUMMARY')) {
-                        cell.s.font = { bold: true, size: 12, color: { rgb: "FFFFFF" } };
-                        cell.s.fill = { fgColor: { rgb: "4CAF50" } }; // Verde
+                    // VALOR DO QB CODE
+                    if (C === 2 && cellValue.match(/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/)) {
+                        cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
+                        cell.s.fill = { fgColor: { rgb: "FFFF00" } }; // AMARELO FORTE
                         cell.s.alignment = { horizontal: "center", vertical: "center" };
                         cell.s.border = {
-                            top: { style: "thick", color: { rgb: "2E7D32" } },
-                            bottom: { style: "thick", color: { rgb: "2E7D32" } },
-                            left: { style: "thick", color: { rgb: "2E7D32" } },
-                            right: { style: "thick", color: { rgb: "2E7D32" } }
+                            top: { style: "thick", color: { rgb: "FF0000" } },
+                            bottom: { style: "thick", color: { rgb: "FF0000" } },
+                            left: { style: "thick", color: { rgb: "FF0000" } },
+                            right: { style: "thick", color: { rgb: "FF0000" } }
                         };
                     }
 
-                    // LABELS DO SUMMARY
-                    else if (cellValue.includes('Total') && cellValue.includes(':')) {
-                        cell.s.font = { bold: true, size: 10 };
-                        cell.s.fill = { fgColor: { rgb: "E8F5E8" } }; // Verde claro
-                        cell.s.alignment = { horizontal: "left", vertical: "center" };
+                    // NÚMEROS DAS FOTOS
+                    if (cellValue.includes('-') && cellValue.length > 20 && !cellValue.includes(' ')) {
+                        cell.s.font = { name: "Courier New", size: 10, bold: true };
+                        cell.s.fill = { fgColor: { rgb: "FFFFCC" } }; // AMARELO CLARO
+                        cell.s.alignment = { horizontal: "left", wrapText: true };
                     }
 
-                    // TEXTO GERAL
-                    else {
-                        cell.s.alignment = { horizontal: "left", vertical: "center" };
-                        cell.s.font = { size: 10 };
+                    // FINAL SUMMARY
+                    if (cellValue === 'FINAL SUMMARY') {
+                        cell.s.font = { bold: true, size: 14, color: { rgb: "FFFFFF" } };
+                        cell.s.fill = { fgColor: { rgb: "4CAF50" } };
+                        cell.s.alignment = { horizontal: "center", vertical: "center" };
+                    }
+
+                    // GRAND TOTAL
+                    if (cellValue === 'GRAND TOTAL:') {
+                        cell.s.font = { bold: true, size: 12, color: { rgb: "FFFFFF" } };
+                        cell.s.fill = { fgColor: { rgb: "2E7D32" } };
+                    }
+
+                    // VALOR DO GRAND TOTAL
+                    if (C === 2 && cellValue.includes('$') && R > range.e.r - 5) {
+                        cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
+                        cell.s.fill = { fgColor: { rgb: "C8E6C9" } };
                     }
                 }
             }
@@ -1130,12 +1182,22 @@ class AdminSelections {
             const fileName = `Selection_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${selection.clientCode}_${this.formatDateForFileName(selection.createdAt)}.xlsx`;
 
             XLSX.writeFile(workbook, fileName);
-            console.log(`✅ Excel organizado gerado: ${fileName}`);
+            console.log(`✅ Excel profissional gerado: ${fileName}`);
 
         } catch (error) {
             console.error('❌ Erro ao gerar Excel:', error);
             alert('Erro detalhado: ' + error.message);
         }
+    }
+
+    // Buscar QB para uma categoria específica
+    async getQBForCategory(category) {
+        // Limpar categoria (remover barra final)
+        const cleanCategory = category.replace(/\/$/, '');
+        const qbMap = await this.fetchQBItems([cleanCategory, category]);
+
+        // Tentar com e sem barra
+        return qbMap[category] || qbMap[cleanCategory] || null;
     }
 
     // ===== HELPER FUNCTION - QUEBRAR TEXTO =====

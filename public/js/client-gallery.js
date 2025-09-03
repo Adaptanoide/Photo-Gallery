@@ -37,21 +37,7 @@
             window.specialSelectionRateRules = null;
             window.specialSelectionBasePrice = null;
 
-            // Pegar token
-            const savedSession = localStorage.getItem('sunshineSession');
-            const headers = {};
-
-            if (savedSession) {
-                const session = JSON.parse(savedSession);
-                if (session.token) {
-                    headers['Authorization'] = `Bearer ${session.token}`;
-                    console.log('🔐 Enviando token JWT na requisição');
-                }
-            }
-
-            const response = await fetch(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`, {
-                headers: headers
-            });
+            const response = await fetchWithAuth(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`);
             const data = await response.json();
 
             if (!data.success) {

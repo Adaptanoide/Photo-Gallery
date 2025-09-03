@@ -16,6 +16,24 @@ window.navigationState = {
     currentCategoryName: null // Para Special Selection
 };
 
+// ===== HELPER PARA REQUISIÇÕES AUTENTICADAS =====
+window.fetchWithAuth = async function (url, options = {}) {
+    const savedSession = localStorage.getItem('sunshineSession');
+
+    if (savedSession) {
+        const session = JSON.parse(savedSession);
+        if (session.token) {
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${session.token}`
+            };
+            console.log('🔐 Enviando token JWT para:', url);
+        }
+    }
+
+    return fetch(url, options);
+}
+
 // Compatibilidade
 const navigationState = window.navigationState;
 
@@ -48,7 +66,7 @@ window.CategoriesCache = {
 
         // Nova requisição
         console.log('🔄 Buscando categories/filtered (nova requisição)');
-        this.promise = fetch('/api/pricing/categories/filtered')
+        this.promise = fetchWithAuth('/api/pricing/categories/filtered')
             .then(response => response.json())
             .then(data => {
                 this.data = data;
@@ -147,7 +165,7 @@ window.loadClientData = async function () {
             throw new Error('Access code not found');
         }
 
-        const response = await fetch(`/api/auth/client/data?code=${encodeURIComponent(session.accessCode)}`);
+        const response = await fetchWithAuth(`/api/auth/client/data?code=${encodeURIComponent(session.accessCode)}`);
         const data = await response.json();
 
         if (!response.ok || !data.success) {
@@ -434,22 +452,9 @@ window.loadFolderContents = async function (folderId) {
         console.time('⏱️ Total loadFolderContents');
         showLoading();
 
-        // Pegar token
-        const savedSession = localStorage.getItem('sunshineSession');
-        const headers = {};
-
-        if (savedSession) {
-            const session = JSON.parse(savedSession);
-            if (session.token) {
-                headers['Authorization'] = `Bearer ${session.token}`;
-            }
-        }
-
-        // Buscar estrutura
+        // Buscar estrutura - USANDO fetchWithAuth
         console.time('  📡 Fetch structure');
-        const response = await fetch(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`, {
-            headers: headers
-        });
+        const response = await fetchWithAuth(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`);
         const data = await response.json();
         console.timeEnd('  📡 Fetch structure');
 

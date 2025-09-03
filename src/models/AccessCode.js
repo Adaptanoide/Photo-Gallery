@@ -539,9 +539,10 @@ accessCodeSchema.pre('save', function (next) {
 
     // Validar configuração de acesso normal
     if (this.accessType === 'normal') {
-        if (!this.allowedCategories || this.allowedCategories.length === 0) {
-            return next(new Error('Normal access requires at least one allowed category'));
-        }
+        // COMENTADO - Categorias podem ser configuradas depois
+        // if (!this.allowedCategories || this.allowedCategories.length === 0) {
+        //     return next(new Error('Normal access requires at least one allowed category'));
+        // }
 
         // Limpar specialSelection para acesso normal
         this.specialSelection = undefined;

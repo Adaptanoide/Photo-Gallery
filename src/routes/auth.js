@@ -184,42 +184,52 @@ router.get('/client/data', async (req, res) => {
 
         // NOVO: Buscar categorias do R2
         const StorageService = require('../services/StorageService');
+        const PhotoCategory = require('../models/PhotoCategory');
         let r2Categories = [];
 
         try {
             const result = await StorageService.getSubfolders('');
-            r2Categories = result.folders || [];
-            console.log(`📂 ${r2Categories.length} categorias disponíveis no R2`);
+            // FILTRAR pastas que começam com _ 
+            r2Categories = result.folders.filter(f => !f.name.startsWith('_')) || [];
+            console.log(`📂 ${r2Categories.length} categorias válidas no R2`);
         } catch (error) {
             console.error('❌ Erro ao buscar categorias do R2:', error);
         }
 
-        // Converter allowedCategories (strings) para objetos e filtrar
+        // Processar categorias permitidas
         let allowedCategories = [];
 
         if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
-            // Se tem categorias específicas, filtrar
-            allowedCategories = accessCode.allowedCategories
-                .map(cat => {
-                    // Se é string, converter para objeto
-                    if (typeof cat === 'string') {
-                        // Verificar se existe no R2
-                        const r2Cat = r2Categories.find(r2 =>
-                            r2.name.toLowerCase() === cat.toLowerCase()
-                        );
+            const allowedPaths = new Set();
 
-                        if (r2Cat) {
-                            return {
-                                id: r2Cat.name,  // Usar nome como ID para R2
-                                name: r2Cat.name
-                            };
-                        }
+            // Processar cada item permitido
+            for (const item of accessCode.allowedCategories) {
+                // Se é QB item (formato: números com letras)
+                if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(item)) {
+                    const cat = await PhotoCategory.findOne({ qbItem: item });
+                    if (cat) {
+                        // Extrair categoria principal
+                        const mainCategory = cat.googleDrivePath.split('/')[0];
+                        allowedPaths.add(mainCategory);
+                        console.log(`✅ QB ${item} → ${mainCategory}`);
                     }
-                    return null;
-                })
-                .filter(cat => cat !== null);
+                } else {
+                    // É categoria principal direta
+                    allowedPaths.add(item);
+                }
+            }
+
+            // Filtrar apenas categorias permitidas
+            allowedCategories = r2Categories
+                .filter(cat => allowedPaths.has(cat.name))
+                .map(cat => ({
+                    id: cat.name,
+                    name: cat.name
+                }));
+
+            console.log(`🔐 Filtrando: ${allowedCategories.length} de ${r2Categories.length} categorias`);
         } else {
-            // Se não tem restrições, mostrar todas do R2
+            // Sem restrições - mostrar todas (exceto _)
             allowedCategories = r2Categories.map(cat => ({
                 id: cat.name,
                 name: cat.name
@@ -227,7 +237,6 @@ router.get('/client/data', async (req, res) => {
         }
 
         console.log(`✅ ${allowedCategories.length} categorias permitidas para o cliente`);
-
         // Atualizar último uso
         accessCode.lastUsed = new Date();
         accessCode.usageCount += 1;
