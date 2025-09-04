@@ -636,56 +636,102 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
         const { items } = req.body;
         const PhotoCategory = require('../models/PhotoCategory');
 
-        console.log('🗺️ Mapeando', items.length, 'categorias');
+        console.log('🗺️ Mapeando', items.length, 'items');
         const startTime = Date.now();
 
-        // Criar todas variações possíveis de uma vez
-        const allVariations = new Set();
+        // Separar items em QB codes e categorias
+        const qbCodes = [];
+        const categoryPaths = [];
+
         items.forEach(item => {
             const clean = item.replace(/\/$/, '').trim();
-
-            // Adicionar original
-            allVariations.add(clean);
-
-            // Adicionar sem espaços
-            allVariations.add(clean.replace(/\s+/g, ''));
-
-            // Se tem formato 5302BBW, adicionar 5302B BW
-            if (/^\d+[A-Z]{2,}/.test(clean)) {
-                const withSpace = clean.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2');
-                allVariations.add(withSpace);
+            // QB codes começam com números
+            if (/^\d/.test(clean)) {
+                qbCodes.push(clean);
+            } else {
+                categoryPaths.push(clean);
             }
         });
 
-        console.log(`📦 Buscando ${allVariations.size} variações no banco...`);
+        console.log(`📊 Separados: ${qbCodes.length} QB codes, ${categoryPaths.length} categorias`);
 
-        // UMA ÚNICA QUERY para buscar TUDO
-        const categories = await PhotoCategory.find({
-            qbItem: { $in: Array.from(allVariations) }
-        }).select('qbItem displayName googleDrivePath photoCount');
+        // Buscar AMBOS os tipos
+        const allCategories = [];
 
-        console.log(`✅ Encontradas ${categories.length} categorias em ${Date.now() - startTime}ms`);
+        // 1. Buscar por QB codes (se houver)
+        if (qbCodes.length > 0) {
+            const allVariations = new Set();
+            qbCodes.forEach(item => {
+                allVariations.add(item);
+                allVariations.add(item.replace(/\s+/g, ''));
+                if (/^\d+[A-Z]{2,}/.test(item)) {
+                    const withSpace = item.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2');
+                    allVariations.add(withSpace);
+                }
+            });
 
-        // Criar mapa para lookup rápido O(1)
-        const categoryMap = new Map();
-        categories.forEach(cat => {
-            categoryMap.set(cat.qbItem, cat);
+            const qbCategories = await PhotoCategory.find({
+                qbItem: { $in: Array.from(allVariations) }
+            }).select('qbItem displayName googleDrivePath photoCount');
+
+            allCategories.push(...qbCategories);
+            console.log(`✅ Encontradas ${qbCategories.length} categorias por QB`);
+        }
+
+        // 2. Buscar por paths de categoria (se houver)
+        if (categoryPaths.length > 0) {
+            const pathCategories = await PhotoCategory.find({
+                $or: categoryPaths.map(path => ({
+                    $or: [
+                        { googleDrivePath: path },
+                        { googleDrivePath: path + '/' },
+                        { googleDrivePath: { $regex: path, $options: 'i' } },
+                        { displayName: { $regex: path, $options: 'i' } },
+                        { folderName: path.split('/').pop() }
+                    ]
+                }))
+            }).select('qbItem displayName googleDrivePath photoCount');
+
+            allCategories.push(...pathCategories);
+            console.log(`✅ Encontradas ${pathCategories.length} categorias por path`);
+        }
+
+        // Criar mapa para lookup rápido
+        const categoryMapByQB = new Map();
+        const categoryMapByPath = new Map();
+
+        allCategories.forEach(cat => {
+            if (cat.qbItem) categoryMapByQB.set(cat.qbItem, cat);
+            if (cat.googleDrivePath) {
+                // Mapear COM e SEM barra final
+                categoryMapByPath.set(cat.googleDrivePath, cat);
+                categoryMapByPath.set(cat.googleDrivePath.replace(/\/$/, ''), cat); // SEM BARRA
+
+                // Também mapear pelo final do path
+                const folderName = cat.googleDrivePath.split('/').pop();
+                if (folderName) categoryMapByPath.set(folderName, cat);
+            }
         });
 
         // Mapear resultados mantendo a ordem original
         const mapped = items.map(item => {
             const clean = item.replace(/\/$/, '').trim();
 
-            // Tentar encontrar nas 3 variações
-            const category =
-                categoryMap.get(clean) ||
-                categoryMap.get(clean.replace(/\s+/g, '')) ||
-                categoryMap.get(clean.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2'));
+            // Tentar encontrar como QB primeiro
+            let category = categoryMapByQB.get(clean) ||
+                categoryMapByQB.get(clean.replace(/\s+/g, '')) ||
+                categoryMapByQB.get(clean.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2'));
+
+            // Se não achou, tentar como path
+            if (!category) {
+                category = categoryMapByPath.get(clean) ||
+                    categoryMapByPath.get(clean.split('/').pop());
+            }
 
             if (category) {
                 return {
                     original: item,
-                    qbItem: category.qbItem,
+                    qbItem: category.qbItem || 'NO-QB',
                     displayName: category.displayName || category.googleDrivePath,
                     path: category.googleDrivePath,
                     photoCount: category.photoCount || 0
@@ -694,7 +740,7 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
                 console.log(`⚠️ Não encontrado: ${clean}`);
                 return {
                     original: item,
-                    qbItem: clean,  // Manter o item ao invés de NO-QB
+                    qbItem: /^\d/.test(clean) ? clean : 'NO-QB',
                     displayName: clean,
                     path: clean,
                     photoCount: 0
@@ -703,6 +749,7 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
         });
 
         console.log(`✅ Mapeamento completo em ${Date.now() - startTime}ms`);
+        console.log(`📊 Com QB: ${mapped.filter(m => m.qbItem !== 'NO-QB').length}/${mapped.length}`);
         res.json({ success: true, mapped });
 
     } catch (error) {
