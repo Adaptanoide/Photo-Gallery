@@ -40,11 +40,11 @@ class R2Service {
             const cached = this.structureCache.get(cacheKey);
 
             if (cached && (Date.now() - cached.timestamp < this.CACHE_DURATION)) {
-                console.log(`📦 Cache hit para: ${prefix || '/'}`);
+                //console.log(`📦 Cache hit para: ${prefix || '/'}`);
                 return cached.data;
             }
 
-            console.log(`🔄 Cache miss, buscando: ${prefix || '/'}`);
+            //console.log(`🔄 Cache miss, buscando: ${prefix || '/'}`);
 
             const client = this.getClient();
 

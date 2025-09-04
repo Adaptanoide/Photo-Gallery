@@ -113,6 +113,75 @@ router.post('/client/verify', async (req, res) => {
         accessCode.lastUsed = new Date();
         await accessCode.save();
 
+
+        // INÍCIO DO NOVO CÓDIGO - Calcular permissões no login
+        if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+            console.log('🔐 Calculando permissões para cache...');
+            const startTime = Date.now();
+
+            const PhotoCategory = require('../models/PhotoCategory');
+            const ClientPermissionsCache = require('../models/ClientPermissionsCache');
+            const allowedPaths = new Set();
+
+            // Buscar TODOS os PhotoCategory de uma vez
+            const allQBItems = accessCode.allowedCategories.filter(item => /\d/.test(item));
+            const categories = await PhotoCategory.find({
+                qbItem: { $in: allQBItems }
+            });
+
+            // Criar mapa para lookup rápido
+            const categoryMap = new Map();
+            categories.forEach(cat => {
+                categoryMap.set(cat.qbItem, cat);
+            });
+
+            // Processar paths
+            for (const item of accessCode.allowedCategories) {
+                const isQBItem = /\d/.test(item);
+
+                if (isQBItem) {
+                    const cat = categoryMap.get(item);
+                    if (cat && cat.googleDrivePath) {
+                        const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+
+                        if (pathParts[0]) {
+                            allowedPaths.add(pathParts[0]);
+                            allowedPaths.add(pathParts[0] + '/');
+                        }
+                        if (pathParts[1]) {
+                            const subPath = pathParts[0] + '/' + pathParts[1];
+                            allowedPaths.add(subPath);
+                            allowedPaths.add(subPath + '/');
+                        }
+                        if (pathParts[2]) {
+                            const fullPath = pathParts[0] + '/' + pathParts[1] + '/' + pathParts[2];
+                            allowedPaths.add(fullPath);
+                            allowedPaths.add(fullPath + '/');
+                        }
+                        allowedPaths.add(cat.googleDrivePath);
+                    }
+                } else {
+                    allowedPaths.add(item);
+                    allowedPaths.add(item + '/');
+                }
+            }
+
+            // Salvar no cache
+            await ClientPermissionsCache.findOneAndUpdate(
+                { clientCode: accessCode.code },
+                {
+                    clientCode: accessCode.code,
+                    allowedPaths: Array.from(allowedPaths),
+                    processedAt: new Date(),
+                    expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+                },
+                { upsert: true, new: true }
+            );
+
+            console.log(`✅ Cache de permissões criado em ${Date.now() - startTime}ms`);
+        }
+        // FIM DO NOVO CÓDIGO
+
         // ========== NOVO: CRIAR TOKEN JWT PARA CLIENTE ==========
         const token = jwt.sign(
             {
@@ -200,38 +269,61 @@ router.get('/client/data', async (req, res) => {
         let allowedCategories = [];
 
         if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
-            const allowedPaths = new Set();
+            // NOVO: Usar cache ao invés de fazer 105 queries
+            const ClientPermissionsCache = require('../models/ClientPermissionsCache');
 
-            // Processar cada item permitido
-            for (const item of accessCode.allowedCategories) {
-                // Detectar QB items (qualquer item com números)
-                const isQBItem = /\d/.test(item);
+            let allowedPaths = new Set();
 
-                if (isQBItem) {
-                    const cat = await PhotoCategory.findOne({ qbItem: item });
-                    if (cat && cat.googleDrivePath) {
-                        // Adicionar TODOS os níveis do path
-                        const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+            // Buscar do cache
+            const cached = await ClientPermissionsCache.findOne({
+                clientCode: code,
+                expiresAt: { $gt: new Date() }
+            });
 
-                        // Adicionar categoria principal
-                        if (pathParts[0]) allowedPaths.add(pathParts[0]);
+            if (cached && cached.allowedPaths) {
+                console.log('📦 Usando cache de permissões em /client/data');
+                allowedPaths = new Set(cached.allowedPaths);
+            } else {
+                // Se não tem cache (não deveria acontecer), calcular
+                console.log('⚠️ Cache não encontrado em /client/data, recalculando...');
 
-                        // Adicionar subcategoria se existir
-                        if (pathParts[1]) {
-                            allowedPaths.add(pathParts[0] + '/' + pathParts[1]);
+                // Buscar todas as categorias de uma vez
+                const PhotoCategory = require('../models/PhotoCategory');
+                const qbItems = accessCode.allowedCategories.filter(item => /\d/.test(item));
+
+                if (qbItems.length > 0) {
+                    const categories = await PhotoCategory.find({
+                        qbItem: { $in: qbItems }
+                    });
+
+                    for (const cat of categories) {
+                        if (cat.googleDrivePath) {
+                            const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+                            if (pathParts[0]) allowedPaths.add(pathParts[0]);
+                            if (pathParts[1]) allowedPaths.add(pathParts[0] + '/' + pathParts[1]);
+                            if (pathParts[2]) allowedPaths.add(pathParts[0] + '/' + pathParts[1] + '/' + pathParts[2]);
                         }
-
-                        // Adicionar terceiro nível se existir
-                        if (pathParts[2]) {
-                            allowedPaths.add(pathParts[0] + '/' + pathParts[1] + '/' + pathParts[2]);
-                        }
-
-                        console.log(`✅ QB ${item} → ${cat.googleDrivePath}`);
                     }
-                } else {
-                    // Categoria direta
-                    allowedPaths.add(item);
                 }
+
+                // Adicionar categorias diretas
+                accessCode.allowedCategories.forEach(item => {
+                    if (!/\d/.test(item)) {
+                        allowedPaths.add(item);
+                    }
+                });
+
+                // Salvar no cache para próxima vez
+                await ClientPermissionsCache.findOneAndUpdate(
+                    { clientCode: code },
+                    {
+                        clientCode: code,
+                        allowedPaths: Array.from(allowedPaths),
+                        processedAt: new Date(),
+                        expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+                    },
+                    { upsert: true, new: true }
+                );
             }
 
             // Filtrar apenas categorias permitidas
@@ -252,10 +344,6 @@ router.get('/client/data', async (req, res) => {
         }
 
         console.log(`✅ ${allowedCategories.length} categorias permitidas para o cliente`);
-        // Atualizar último uso
-        accessCode.lastUsed = new Date();
-        accessCode.usageCount += 1;
-        await accessCode.save();
 
         res.json({
             success: true,
@@ -381,60 +469,6 @@ router.get('/debug/accesscode/:code', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao buscar AccessCode',
-            error: error.message
-        });
-    }
-});
-
-// CORREÇÃO: Atualizar categorias do AccessCode (TEMPORÁRIO)
-router.post('/fix/accesscode/:code', async (req, res) => {
-    try {
-        const { code } = req.params;
-
-        const accessCode = await AccessCode.findOne({ code });
-
-        if (!accessCode) {
-            return res.status(404).json({
-                success: false,
-                message: 'Código não encontrado'
-            });
-        }
-
-        // Corrigir categorias para o cliente 7064
-        if (code === '7064') {
-            const oldCategories = [...accessCode.allowedCategories];
-
-            accessCode.allowedCategories = [
-                "1. Colombian Cowhides",
-                "2. Brazil Best Sellers"
-            ];
-
-            await accessCode.save();
-
-            return res.json({
-                success: true,
-                message: 'AccessCode 7064 corrigido com sucesso',
-                changes: {
-                    before: oldCategories,
-                    after: accessCode.allowedCategories
-                },
-                accessCode: {
-                    code: accessCode.code,
-                    clientName: accessCode.clientName,
-                    allowedCategories: accessCode.allowedCategories
-                }
-            });
-        }
-
-        res.json({
-            success: false,
-            message: 'Código não necessita correção ou não é suportado para correção automática'
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao corrigir AccessCode',
             error: error.message
         });
     }
