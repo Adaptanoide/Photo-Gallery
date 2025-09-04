@@ -806,7 +806,7 @@ window.displayFilteredCategories = function (categories) {
             <h3>${cleanName}</h3>
             <p class="category-path">${displayName}</p>
             <div class="folder-stats">
-                ${category.photoCount > 0 ? `<span><i class="fas fa-images"></i> ${category.photoCount} photos</span>` : ''}
+                ${''}
                 ${window.shouldShowPrices() && category.formattedPrice ?
                 `<span><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
             </div>

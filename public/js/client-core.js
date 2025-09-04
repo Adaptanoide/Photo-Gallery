@@ -369,8 +369,8 @@ window.showCategories = async function () {
                     <h3>${category.name}</h3>
                     <p>${description}</p>
                     <div class="folder-stats">
-                        ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} total photos</span>` : ''}
-                        ${stats.categories?.length > 0 ? `<span><i class="fas fa-th-large"></i> ${stats.categories.length} subcategories</span>` : ''}
+                        ${''/* Ocultado temporariamente - contagem incorreta */}
+                        ${''}
                         ${shouldShowPrices() && priceRange !== 'Price on request' ?
                     `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${priceRange}</span>` :
                     (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
@@ -540,7 +540,7 @@ window.showSubfolders = function (folders) {
                 <div class="folder-description">${description}</div>
                 <div class="folder-stats">
                     ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
-                    ${folder.totalSubfolders > 0 ? `<span><i class="fas fa-folder"></i> ${folder.totalSubfolders} subfolder(s)</span>` : ''}
+                    ${''}
                     ${shouldShowPrices() && formattedPrice ?
                 `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
                 (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
