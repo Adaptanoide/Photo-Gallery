@@ -237,7 +237,8 @@
                         </div>
                         
                         <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
-                                onclick="event.stopPropagation(); addToCartFromThumbnail('${photo.id}', ${index})"
+                                data-photo-id="${photo.id.replace(/"/g, '&quot;')}" 
+                                data-photo-index="${index}"
                                 title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
                             <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
                             <span>${isInCart ? 'Remove' : 'Add'}</span>
@@ -255,11 +256,35 @@
                     </div>
                 `;
             }).join('');
+
+            // Configurar event listeners para os botões do carrinho
+            setTimeout(() => {
+                const buttons = document.querySelectorAll('.thumbnail-cart-btn');
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+
+                        // Pegar dados do botão
+                        const photoId = this.dataset.photoId.replace(/&quot;/g, '"');
+                        const photoIndex = parseInt(this.dataset.photoIndex);
+
+                        // Chamar a função
+                        if (window.addToCartFromThumbnail) {
+                            window.addToCartFromThumbnail(photoId, photoIndex);
+                        }
+                    });
+                });
+            }, 100);
         }
     }
 
     // ===== MODAL DE FOTOS =====
     window.openPhotoModal = async function (photoIndex) {
+        // Resetar flag se não foi definida (não veio do carrinho)
+        if (typeof window.modalOpenedFromCart === 'undefined') {
+            window.modalOpenedFromCart = false;
+        }
         const photos = navigationState.currentPhotos;
         if (!photos || photoIndex < 0 || photoIndex >= photos.length) return;
 
@@ -504,17 +529,66 @@
         }
         document.getElementById('photoModal').style.display = 'none';
 
+        // ADICIONAR ESTE BLOCO
+        // Se o modal foi aberto do carrinho, reabrir o carrinho
+        if (window.modalOpenedFromCart) {
+            window.modalOpenedFromCart = false; // Resetar flag
+            if (window.CartSystem && window.CartSystem.openSidebar) {
+                setTimeout(() => {
+                    window.CartSystem.openSidebar();
+                }, 100);
+            }
+        }
+
+        // Se estava vendo do carrinho, restaurar contexto
+        if (window.navigationState.isViewingCart && window.CartSystem) {
+            window.CartSystem.restoreNavigationContext();
+        }
+
         if (window.PriceProgressBar && typeof window.PriceProgressBar.updateProgress === 'function') {
-            console.log('🔄 Atualizando Volume Pricing após fechar modal');
             window.PriceProgressBar.updateProgress();
         }
     }
 
     // ===== INFORMAÇÕES COMERCIAIS =====
     window.updateModalCommercialInfo = async function (photo, photoIndex, totalPhotos) {
-        const categoryName = getCurrentCategoryDisplayName();
-        document.getElementById('modalPhotoTitle').textContent = categoryName;
-        document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
+        // Se está vendo do carrinho, mostrar categoria + contexto
+        if (window.navigationState.isViewingCart) {
+            // Pegar a categoria da foto atual
+            const currentPhoto = window.navigationState.currentPhotos[photoIndex];
+            const categoryName = currentPhoto.category || 'Product';
+
+            // Mostrar categoria + indicador de carrinho
+            document.getElementById('modalPhotoTitle').innerHTML = `
+                ${categoryName} 
+                <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">
+                    From Cart
+                </span>
+            `;
+
+            // Contador com destaque
+            document.getElementById('modalPhotoCounter').innerHTML = `
+                <span style="color: #28a745;">
+                    Cart Item ${photoIndex + 1} / ${totalPhotos}
+                </span>
+            `;
+
+            // Adicionar nome do arquivo também
+            const photoName = currentPhoto.fileName || currentPhoto.name;
+            if (photoName) {
+                // Se tiver um elemento para mostrar o nome da foto
+                const nameElement = document.getElementById('modalPhotoName');
+                if (nameElement) {
+                    nameElement.textContent = photoName;
+                }
+            }
+        } else {
+            // Comportamento normal (não do carrinho)
+            const categoryName = getCurrentCategoryDisplayName();
+            document.getElementById('modalPhotoTitle').textContent = categoryName;
+            document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
+        }
+
         await updateModalPriceInfo(photo);
     }
 

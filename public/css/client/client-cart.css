@@ -451,17 +451,80 @@
 
 /* Animations */
 @keyframes slideInRight {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes highlightDiscount {
-    0% { background: rgba(40, 167, 69, 0.1); }
-    50% { background: rgba(40, 167, 69, 0.2); }
-    100% { background: transparent; }
+    0% {
+        background: rgba(40, 167, 69, 0.1);
+    }
+
+    50% {
+        background: rgba(40, 167, 69, 0.2);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+/* ===== CART ITEMS - CLICKABLE FULLSCREEN ===== */
+.cart-item-image {
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.cart-item-image:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.cart-item-info {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cart-item-info:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Prevenir conflito de clique com a imagem */
+.cart-item-image img {
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Indicador visual no modal quando vem do carrinho */
+.modal-viewing-cart .modal-header {
+    background: linear-gradient(90deg, #28a745 0%, #218838 100%);
+}
+
+/* Badge especial para itens do carrinho no modal */
+.cart-context-badge {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    display: inline-block;
 }

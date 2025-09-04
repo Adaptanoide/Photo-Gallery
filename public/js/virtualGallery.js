@@ -128,10 +128,8 @@ class VirtualGallery {
                 </div>
                 
                 <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
-                        onclick="event.stopPropagation(); 
-                                if(typeof addToCartFromThumbnail === 'function') {
-                                    addToCartFromThumbnail('${photo.id}', ${photoIndex});
-                                }"
+                        data-photo-id="${photo.id.replace(/"/g, '&quot;')}" 
+                        data-photo-index="${photoIndex}"
                         title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
                     <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
                     <span>${isInCart ? 'Remove' : 'Add'}</span>
@@ -147,6 +145,24 @@ class VirtualGallery {
         });
 
         this.container.appendChild(fragment);
+
+        // Adicionar event listeners aos botões do carrinho
+        setTimeout(() => {
+            const buttons = this.container.querySelectorAll('.thumbnail-cart-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    const photoId = this.dataset.photoId.replace(/&quot;/g, '"');
+                    const photoIndex = parseInt(this.dataset.photoIndex);
+
+                    if (window.addToCartFromThumbnail) {
+                        window.addToCartFromThumbnail(photoId, photoIndex);
+                    }
+                });
+            });
+        }, 100);
     }
 
     // Configurar listener de scroll

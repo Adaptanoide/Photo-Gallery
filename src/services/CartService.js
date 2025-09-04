@@ -73,17 +73,39 @@ class CartService {
                     throw new Error('This item has been reserved by another customer');
                 }
 
-                // 2. Buscar carrinho (ativo ou inativo)
-                let cart = await Cart.findOne({ sessionId }).session(session);
+                // 2. Buscar carrinho existente DO CLIENTE primeiro
+                let cart = await Cart.findOne({
+                    clientCode: clientCode,
+                    isActive: true
+                }).session(session);
 
+                // Se não tem carrinho ativo do cliente, tentar pelo sessionId
                 if (!cart) {
-                    // Criar novo carrinho apenas se não existir nenhum
+                    cart = await Cart.findOne({ sessionId }).session(session);
+                }
+
+                // Se ainda não tem, criar novo
+                if (!cart) {
+                    // Desativar qualquer carrinho vazio anterior do cliente
+                    await Cart.updateMany(
+                        {
+                            clientCode: clientCode,
+                            totalItems: 0,
+                            isActive: true
+                        },
+                        {
+                            isActive: false
+                        }
+                    ).session(session);
+
+                    // Criar novo carrinho
                     cart = new Cart({
                         sessionId,
                         clientCode,
                         clientName,
                         items: []
                     });
+                    console.log(`🛒 Novo carrinho criado para ${clientName} (${clientCode})`);
                 } else if (!cart.isActive) {
                     // Reativar carrinho existente se estiver inativo
                     console.log(`🔄 Reativando carrinho inativo: ${sessionId}`);

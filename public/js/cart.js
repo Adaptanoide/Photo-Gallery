@@ -941,6 +941,7 @@ window.CartSystem = {
         });
 
         this.elements.items.innerHTML = html;
+        this.setupCartItemListeners();
     },
 
     // NOVA FUNÇÃO - Adicionar após renderCartItems
@@ -959,39 +960,75 @@ window.CartSystem = {
         }
     },
 
+    // Funções auxiliares para evitar problemas com caracteres especiais
+    setupCartItemListeners() {
+        // Configurar cliques após renderizar
+        setTimeout(() => {
+            document.querySelectorAll('.cart-item').forEach(item => {
+                const fileId = item.dataset.driveFileId.replace(/&quot;/g, '"');
+
+                // Clique na imagem
+                const img = item.querySelector('.cart-item-image');
+                if (img) {
+                    img.onclick = (e) => {
+                        e.stopPropagation();
+                        this.openPhotoFromCart(fileId);
+                    };
+                }
+
+                // Clique nas informações
+                const info = item.querySelector('.cart-item-info');
+                if (info) {
+                    info.onclick = (e) => {
+                        e.stopPropagation();
+                        this.openPhotoFromCart(fileId);
+                    };
+                }
+
+                // Botão remover
+                const removeBtn = item.querySelector('.cart-item-remove');
+                if (removeBtn) {
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.removeItem(fileId);
+                    };
+                }
+            });
+        }, 100);
+    },
+
     /**
      * Renderizar item individual do carrinho
      */
     renderCartItem(item) {
+        // ESCAPAR aspas duplas para uso seguro no HTML
+        const safeDriveFileId = item.driveFileId.replace(/"/g, '&quot;');
         const timeRemaining = item.timeRemaining || 0;
-
         const timeText = this.formatTimeReadable(timeRemaining);
-        // FIM DA NOVA FORMATAÇÃO
 
         let timerClass = '';
-        if (timeRemaining < 300) timerClass = 'critical'; // < 5min
-        else if (timeRemaining < 600) timerClass = 'warning'; // < 10min
+        if (timeRemaining < 300) timerClass = 'critical';
+        else if (timeRemaining < 600) timerClass = 'warning';
 
-        // TODO O RESTO CONTINUA IGUAL
         return `
-            <div class="cart-item" data-drive-file-id="${item.driveFileId}">
-                <div class="cart-item-image">
+            <div class="cart-item" data-drive-file-id="${safeDriveFileId}">
+                <div class="cart-item-image" style="cursor: pointer;">
                     ${item.thumbnailUrl ?
                 `<img src="${item.thumbnailUrl}" alt="${item.fileName}" loading="lazy">` :
                 `<div class="placeholder"><i class="fas fa-image"></i></div>`
             }
                 </div>
-                <div class="cart-item-info">
+                <div class="cart-item-info" style="cursor: pointer;">
                     <div class="cart-item-title">${item.fileName}</div>
                     <div class="cart-item-category">${item.category}</div>
                     ${(window.shouldShowPrices && window.shouldShowPrices()) ?
                 `<div class="cart-item-price">
-                            ${item.hasPrice ?
+                                ${item.hasPrice ?
                     `<span class="price-value">${item.formattedPrice}</span>` :
                     `<span class="price-consult">Check price</span>`
                 }
-                        </div>` :
-                ''  // Não mostrar NADA quando showPrices = false
+                            </div>` :
+                ''
             }
                     <div class="cart-item-timer ${timerClass}">
                         <i class="fas fa-clock"></i>
@@ -999,12 +1036,68 @@ window.CartSystem = {
                     </div>
                 </div>
                 <div class="cart-item-actions">
-                    <button class="cart-item-remove" onclick="CartSystem.removeItem('${item.driveFileId}')" title="Remove item">
+                    <button class="cart-item-remove" title="Remove item">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
             </div>
         `;
+    },
+
+    // Abrir foto do carrinho em modal fullscreen
+    openPhotoFromCart(driveFileId) {
+        // Fechar sidebar do carrinho
+        this.closeSidebar();
+
+        window.modalOpenedFromCart = true;
+
+        // Preparar array de fotos do carrinho
+        const cartPhotos = this.state.items.map((item, index) => ({
+            id: item.driveFileId,
+            name: item.fileName,
+            fileName: item.fileName,
+            webViewLink: `https://images.sunshinecowhides-gallery.com/${item.driveFileId}`,
+            thumbnailUrl: item.thumbnailUrl,
+            category: item.category,
+            price: item.price,
+            formattedPrice: item.formattedPrice,
+            hasPrice: item.hasPrice
+        }));
+
+        // Encontrar índice da foto clicada
+        const photoIndex = cartPhotos.findIndex(p => p.id === driveFileId);
+
+        if (photoIndex === -1) {
+            console.error('Foto não encontrada no carrinho');
+            return;
+        }
+
+        // Salvar contexto anterior
+        this.previousNavigationState = {
+            photos: window.navigationState.currentPhotos,
+            index: window.navigationState.currentPhotoIndex,
+            isFromCart: false
+        };
+
+        // Substituir temporariamente as fotos da navegação
+        window.navigationState.currentPhotos = cartPhotos;
+        window.navigationState.currentPhotoIndex = photoIndex;
+        window.navigationState.isViewingCart = true; // Flag especial
+
+        // Abrir modal
+        if (window.openPhotoModal) {
+            window.openPhotoModal(photoIndex);
+        }
+    },
+
+    // Restaurar contexto quando fechar modal
+    restoreNavigationContext() {
+        if (this.previousNavigationState) {
+            window.navigationState.currentPhotos = this.previousNavigationState.photos;
+            window.navigationState.currentPhotoIndex = this.previousNavigationState.index;
+            window.navigationState.isViewingCart = false;
+            this.previousNavigationState = null;
+        }
     },
 
     /**
@@ -1234,59 +1327,42 @@ window.toggleCartItem = async function () {
         if (CartSystem.isInCart(currentPhoto)) {
             console.log('🟡 Removendo item do carrinho'); // ← NOVO LOG
             await CartSystem.removeItem(currentPhoto);
-            // Sincronizar thumbnails após remover (com delay para modal fechar)
-            setTimeout(() => {
-                if (window.syncThumbnailButtons) {
-                    window.syncThumbnailButtons();
+
+            // AUTO-AVANÇO: Se removeu do modal e está vendo carrinho
+            if (window.navigationState && window.navigationState.isViewingCart &&
+                document.getElementById('photoModal').style.display !== 'none') {
+
+                console.log('🔄 Auto-avançando após remoção...');
+
+                // Remover foto atual do array de navegação
+                const currentIndex = window.navigationState.currentPhotoIndex;
+                window.navigationState.currentPhotos.splice(currentIndex, 1);
+
+                if (window.navigationState.currentPhotos.length > 0) {
+                    // Ainda tem fotos no carrinho
+                    let nextIndex = currentIndex;
+                    if (nextIndex >= window.navigationState.currentPhotos.length) {
+                        nextIndex = window.navigationState.currentPhotos.length - 1;
+                    }
+
+                    // Pequeno delay para feedback visual antes de trocar
+                    setTimeout(() => {
+                        window.openPhotoModal(nextIndex);
+                    }, 400);
+                } else {
+                    // Não tem mais fotos, fechar modal e mostrar carrinho vazio
+                    console.log('📭 Carrinho vazio, fechando modal...');
+                    setTimeout(() => {
+                        window.closePhotoModal();
+                        CartSystem.showNotification('Cart is now empty', 'info');
+                    }, 400);
                 }
-            }, 100);
-        } else {
-            console.log('🟡 Adicionando item ao carrinho'); // ← NOVO LOG
 
-            // Buscar dados da foto atual
-            const photoData = window.navigationState?.currentPhotos?.[window.navigationState.currentPhotoIndex];
-            console.log('🟡 photoData:', photoData); // ← NOVO LOG
-
-            // Buscar preço da categoria atual
-            const currentFolderId = window.navigationState?.currentFolderId;
-            console.log('🟡 currentFolderId para busca:', currentFolderId); // ← NOVO LOG
-
-            let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
-
-            if (currentFolderId && window.loadCategoryPrice) {
-                try {
-                    console.log('🟡 Executando busca de preço...'); // ← NOVO LOG
-                    priceInfo = await window.loadCategoryPrice(currentFolderId);
-                    console.log('🟡 Preço encontrado para carrinho:', priceInfo); // ← NOVO LOG
-                } catch (error) {
-                    console.warn('❌ Erro ao buscar preço para carrinho:', error);
-                }
-            } else {
-                console.log('🟡 Não vai buscar preço:', {
-                    currentFolderId,
-                    loadCategoryPrice: !!window.loadCategoryPrice
-                });
+                // Return early para não processar mais
+                return;
             }
 
-            const itemData = {
-                fileName: photoData?.name || 'Unnamed product',
-                // Pegar o ÚLTIMO nível do path (onde a foto realmente está)
-                // 🌟 Usar o nome guardado (Special Selection) ou path normal
-                category: window.navigationState?.currentCategoryName || (window.navigationState?.currentPath?.length > 1
-                    ? window.navigationState.currentPath[window.navigationState.currentPath.length - 1].name
-                    : window.navigationState?.currentPath?.[0]?.name) || 'Category',
-                thumbnailUrl: ImageUtils.getThumbnailUrl(photoData),
-                basePrice: priceInfo.basePrice || 0,  // ← ADICIONE ESTA LINHA!
-                price: priceInfo.price,
-                formattedPrice: priceInfo.formattedPrice,
-                hasPrice: priceInfo.hasPrice
-            };
-
-            console.log('🟡 Dados que serão enviados para addItem:', itemData); // ← NOVO LOG
-
-            await CartSystem.addItem(currentPhoto, itemData);
-
-            // Sincronizar thumbnails após adicionar (com delay para modal fechar)
+            // Sincronizar thumbnails após remover (com delay para modal fechar)
             setTimeout(() => {
                 if (window.syncThumbnailButtons) {
                     window.syncThumbnailButtons();
