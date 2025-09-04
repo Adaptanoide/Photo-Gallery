@@ -109,21 +109,43 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                 console.log('🔍 DEBUG - Prefix atual:', prefix);
 
                 for (const item of accessCode.allowedCategories) {
-                    // Se é QB item, buscar path
-                    if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(item)) {
+                    // QB items podem ter espaços (5302B BW) ou não (5375SP)
+                    const isQBItem = /\d/.test(item);
+
+                    if (isQBItem) {
                         const cat = await PhotoCategory.findOne({ qbItem: item });
-                        if (cat) {
-                            // Extrair categoria principal do path
-                            const mainCategory = cat.googleDrivePath.split('/')[0];
-                            allowedPaths.add(mainCategory);
-                            console.log(`✅ QB ${item} → Path: ${cat.googleDrivePath} → Main: ${mainCategory}`);
+                        if (cat && cat.googleDrivePath) {
+                            const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+
+                            // Adicionar TODOS os níveis do path
+                            if (pathParts[0]) {
+                                allowedPaths.add(pathParts[0]);
+                                allowedPaths.add(pathParts[0] + '/');
+                            }
+
+                            if (pathParts[1]) {
+                                const subPath = pathParts[0] + '/' + pathParts[1];
+                                allowedPaths.add(subPath);
+                                allowedPaths.add(subPath + '/');
+                            }
+
+                            if (pathParts[2]) {
+                                const fullPath = pathParts[0] + '/' + pathParts[1] + '/' + pathParts[2];
+                                allowedPaths.add(fullPath);
+                                allowedPaths.add(fullPath + '/');
+                            }
+
+                            // Adicionar path completo
+                            allowedPaths.add(cat.googleDrivePath);
+
+                            console.log(`✅ QB ${item} → ${pathParts.join('/')}`);
                         } else {
-                            console.log(`❌ QB ${item} não encontrado no PhotoCategory`);
+                            console.log(`❌ QB ${item} não encontrado`);
                         }
                     } else {
-                        // É categoria principal
+                        // Categoria direta
                         allowedPaths.add(item);
-                        console.log(`📂 Categoria principal: ${item}`);
+                        allowedPaths.add(item + '/');
                     }
                 }
 

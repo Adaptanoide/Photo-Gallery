@@ -204,17 +204,32 @@ router.get('/client/data', async (req, res) => {
 
             // Processar cada item permitido
             for (const item of accessCode.allowedCategories) {
-                // Se é QB item (formato: números com letras)
-                if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(item)) {
+                // Detectar QB items (qualquer item com números)
+                const isQBItem = /\d/.test(item);
+
+                if (isQBItem) {
                     const cat = await PhotoCategory.findOne({ qbItem: item });
-                    if (cat) {
-                        // Extrair categoria principal
-                        const mainCategory = cat.googleDrivePath.split('/')[0];
-                        allowedPaths.add(mainCategory);
-                        console.log(`✅ QB ${item} → ${mainCategory}`);
+                    if (cat && cat.googleDrivePath) {
+                        // Adicionar TODOS os níveis do path
+                        const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+
+                        // Adicionar categoria principal
+                        if (pathParts[0]) allowedPaths.add(pathParts[0]);
+
+                        // Adicionar subcategoria se existir
+                        if (pathParts[1]) {
+                            allowedPaths.add(pathParts[0] + '/' + pathParts[1]);
+                        }
+
+                        // Adicionar terceiro nível se existir
+                        if (pathParts[2]) {
+                            allowedPaths.add(pathParts[0] + '/' + pathParts[1] + '/' + pathParts[2]);
+                        }
+
+                        console.log(`✅ QB ${item} → ${cat.googleDrivePath}`);
                     }
                 } else {
-                    // É categoria principal direta
+                    // Categoria direta
                     allowedPaths.add(item);
                 }
             }

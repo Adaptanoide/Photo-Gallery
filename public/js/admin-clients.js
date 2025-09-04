@@ -1880,40 +1880,87 @@ class AdminClients {
             try {
                 const token = this.getAdminToken();
 
-                // Buscar informações das categorias salvas
-                const response = await fetch('/api/admin/map-categories', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        items: client.allowedCategories
-                    })
+                // Separar QB items de outros itens
+                const qbItems = [];
+                const otherItems = [];
+
+                client.allowedCategories.forEach(cat => {
+                    // QB items são códigos alfanuméricos (5302B BW, 5375SP, etc)
+                    if (/^[0-9]/.test(cat)) {
+                        qbItems.push(cat);
+                    } else {
+                        otherItems.push(cat);
+                    }
                 });
 
-                const data = await response.json();
+                // QB items TAMBÉM precisam de mapeamento para pegar o path correto!
+                if (qbItems.length > 0) {
+                    const qbResponse = await fetch('/api/admin/map-categories', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            items: qbItems
+                        })
+                    });
 
-                if (data.success) {
-                    // Adicionar com dados reais
-                    data.mapped.forEach(item => {
-                        this.selectedFolders.push({
-                            qbItem: item.qbItem || item.original,
-                            path: item.displayName || item.original
+                    const qbData = await qbResponse.json();
+                    if (qbData.success) {
+                        qbData.mapped.forEach(item => {
+                            this.selectedFolders.push({
+                                qbItem: item.qbItem || item.original,
+                                path: item.displayName || item.original
+                            });
                         });
-                    });
-                    console.log(`📁 Loaded ${this.selectedFolders.length} saved categories with real data`);
-                } else {
-                    // Fallback se não conseguir mapear
-                    client.allowedCategories.forEach(cat => {
-                        this.selectedFolders.push({
-                            qbItem: cat,
-                            path: cat
+                        console.log(`✅ Mapeados ${qbItems.length} QB items com paths reais`);
+                    } else {
+                        // Fallback se falhar
+                        qbItems.forEach(qb => {
+                            this.selectedFolders.push({
+                                qbItem: qb,
+                                path: qb
+                            });
                         });
-                    });
+                    }
                 }
+
+                // Mapear apenas itens que NÃO são QB (se houver)
+                if (otherItems.length > 0) {
+                    const response = await fetch('/api/admin/map-categories', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            items: otherItems
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        data.mapped.forEach(item => {
+                            this.selectedFolders.push({
+                                qbItem: item.qbItem || item.original,
+                                path: item.displayName || item.original
+                            });
+                        });
+                    }
+                }
+
+                console.log(`📁 Loaded ${this.selectedFolders.length} categories (${qbItems.length} QB items, ${otherItems.length} mapped)`);
+
             } catch (error) {
                 console.error('Error loading saved categories:', error);
+                // Fallback
+                client.allowedCategories.forEach(cat => {
+                    this.selectedFolders.push({
+                        qbItem: cat,
+                        path: cat
+                    });
+                });
             }
         }
 
@@ -1937,6 +1984,13 @@ class AdminClients {
     // Nova função para marcar checkboxes
     markSavedCheckboxes() {
         const checkboxes = document.querySelectorAll('.tree-checkbox');
+
+        // IMPORTANTE: Primeiro desmarcar TODOS os checkboxes
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Agora marcar apenas os que devem estar marcados
         checkboxes.forEach(checkbox => {
             const qbItem = checkbox.dataset.qbitem;
             const path = checkbox.dataset.path;

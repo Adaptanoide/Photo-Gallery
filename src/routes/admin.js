@@ -594,79 +594,78 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
         const { items } = req.body;
         const PhotoCategory = require('../models/PhotoCategory');
 
-        console.log('🗺️ Mapeando categorias:', items);
+        console.log('🗺️ Mapeando', items.length, 'categorias');
+        const startTime = Date.now();
 
-        const mapped = [];
+        // Criar todas variações possíveis de uma vez
+        const allVariations = new Set();
+        items.forEach(item => {
+            const clean = item.replace(/\/$/, '').trim();
 
-        for (const item of items) {
-            // Limpar item (remover barra final se houver)
-            const cleanItem = item.replace(/\/$/, '');
+            // Adicionar original
+            allVariations.add(clean);
 
-            // Verificar se é QB item (numérico ou com letras)
-            if (/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/i.test(cleanItem)) {
-                // É um QB item, buscar por qbItem
-                const category = await PhotoCategory.findOne({ qbItem: cleanItem });
-                if (category) {
-                    mapped.push({
-                        original: item,
-                        qbItem: category.qbItem,
-                        displayName: category.displayName,
-                        path: category.googleDrivePath
-                    });
-                } else {
-                    mapped.push({
-                        original: item,
-                        qbItem: cleanItem,
-                        displayName: cleanItem,
-                        path: cleanItem
-                    });
-                }
-            } else {
-                // É um caminho/nome, buscar por googleDrivePath ou displayName
-                const category = await PhotoCategory.findOne({
-                    $or: [
-                        { googleDrivePath: cleanItem },
-                        { googleDrivePath: item },  // com barra
-                        { displayName: cleanItem },
-                        { displayName: item }
-                    ]
-                });
+            // Adicionar sem espaços
+            allVariations.add(clean.replace(/\s+/g, ''));
 
-                // ADICIONE ESTE DEBUG:
-                console.log('🔍 Buscando categoria:', item);
-                console.log('📦 Categoria encontrada:', category ? {
-                    displayName: category.displayName,
-                    qbItem: category.qbItem,
-                    googleDrivePath: category.googleDrivePath
-                } : 'NÃO ENCONTRADA');
-
-                if (category) {
-                    mapped.push({
-                        original: item,
-                        qbItem: category.qbItem || 'NO-QB',
-                        displayName: category.displayName,
-                        path: category.googleDrivePath
-                    });
-                } else {
-                    mapped.push({
-                        original: item,
-                        qbItem: 'NO-QB',
-                        displayName: item,
-                        path: item
-                    });
-                }
+            // Se tem formato 5302BBW, adicionar 5302B BW
+            if (/^\d+[A-Z]{2,}/.test(clean)) {
+                const withSpace = clean.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2');
+                allVariations.add(withSpace);
             }
-        }
+        });
 
-        console.log(`✅ Mapeadas ${mapped.length} categorias`);
+        console.log(`📦 Buscando ${allVariations.size} variações no banco...`);
+
+        // UMA ÚNICA QUERY para buscar TUDO
+        const categories = await PhotoCategory.find({
+            qbItem: { $in: Array.from(allVariations) }
+        }).select('qbItem displayName googleDrivePath photoCount');
+
+        console.log(`✅ Encontradas ${categories.length} categorias em ${Date.now() - startTime}ms`);
+
+        // Criar mapa para lookup rápido O(1)
+        const categoryMap = new Map();
+        categories.forEach(cat => {
+            categoryMap.set(cat.qbItem, cat);
+        });
+
+        // Mapear resultados mantendo a ordem original
+        const mapped = items.map(item => {
+            const clean = item.replace(/\/$/, '').trim();
+
+            // Tentar encontrar nas 3 variações
+            const category =
+                categoryMap.get(clean) ||
+                categoryMap.get(clean.replace(/\s+/g, '')) ||
+                categoryMap.get(clean.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2'));
+
+            if (category) {
+                return {
+                    original: item,
+                    qbItem: category.qbItem,
+                    displayName: category.displayName || category.googleDrivePath,
+                    path: category.googleDrivePath,
+                    photoCount: category.photoCount || 0
+                };
+            } else {
+                console.log(`⚠️ Não encontrado: ${clean}`);
+                return {
+                    original: item,
+                    qbItem: clean,  // Manter o item ao invés de NO-QB
+                    displayName: clean,
+                    path: clean,
+                    photoCount: 0
+                };
+            }
+        });
+
+        console.log(`✅ Mapeamento completo em ${Date.now() - startTime}ms`);
         res.json({ success: true, mapped });
 
     } catch (error) {
-        console.error('❌ Erro ao mapear categorias:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error mapping categories'
-        });
+        console.error('❌ Error mapping categories:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
