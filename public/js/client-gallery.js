@@ -850,7 +850,8 @@
     window.statusCheckInterval = null;
 
     window.startStatusPolling = function () {
-        window.statusCheckInterval = setInterval(async () => {
+        // Função de verificação extraída para reutilizar
+        const checkStatus = async () => {
             try {
                 const response = await fetch('/api/gallery/status-updates');
                 const data = await response.json();
@@ -916,7 +917,19 @@
             } catch (error) {
                 console.error('Erro ao verificar status:', error);
             }
-        }, 30000);
+        };
+
+        // PRIMEIRA VERIFICAÇÃO RÁPIDA - em 3 segundos (uma única vez)
+        setTimeout(() => {
+            console.log('⚡ Primeira verificação rápida (3s)');
+            checkStatus();
+        }, 3000);
+
+        // VERIFICAÇÕES REGULARES - a cada 10 segundos
+        window.statusCheckInterval = setInterval(() => {
+            console.log('🔄 Verificação regular (10s)');
+            checkStatus();
+        }, 10000);
     }
 
     // ===== KEYBOARD NAVIGATION =====
