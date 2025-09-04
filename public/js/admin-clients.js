@@ -31,6 +31,7 @@ class AdminClients {
         this.setupElements();
         this.setupEventListeners();
         this.loadInitialData();
+        this.startDateUpdateTimer();
         console.log('✅ Client Management initialized');
     }
 
@@ -496,6 +497,17 @@ class AdminClients {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 🛒 NEW SECTION: Current Shopping Cart -->
+                        <div class="view-section">
+                            <h4 class="view-section-title">
+                                <i class="fas fa-shopping-cart"></i>
+                                Current Shopping Cart
+                            </h4>
+                            <div id="viewClientCart" class="view-cart-container">
+                                <!-- Cart will be loaded here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -728,53 +740,71 @@ class AdminClients {
             return;
         }
 
-        const rows = this.clients.map(client => `
-            <tr onclick="adminClients.viewClient('${client._id || client.code}')">
-                <td class="client-code-cell">${client.code}</td>
-                <td class="client-name-cell">
-                    <div>${client.clientName}</div>
-                    <div class="client-email-cell">${client.clientEmail || 'No email'}</div>
-                </td>
-                <td class="client-company-cell">
-                    <div class="company-name">${client.companyName || '-'}</div>
-                </td>
-                <td class="client-access-type-cell">
-                    <div class="access-type-preview">
-                        ${this.renderAccessType(client)}
+        const rows = this.clients.map(client => {
+            // Badge do carrinho temporário
+            let cartBadge = '';
+            if (client.cartInfo && client.cartInfo.itemCount > 0) {
+                cartBadge = `
+                    <div class="cart-indicator" title="${client.cartInfo.itemCount} items in cart (temporary - 24h) - Total: $${client.cartInfo.totalValue.toFixed(2)}">
+                        <i class="fas fa-clock"></i>
+                        <span class="cart-badge-count">${client.cartInfo.itemCount}</span>
                     </div>
-                </td>
-                <td class="client-usage-cell">
-                    <div class="usage-count">${client.usageCount || 0}x</div>
-                    <div class="usage-last">${this.formatDate(client.lastUsed, 'Never used')}</div>
-                </td>
-                <td class="client-created-cell">
-                    <div style="font-weight: 500;">${this.formatDate(client.createdAt)}</div>
-                    <div style="font-size: 0.85em; color: var(--text-muted);">${this.getDaysAgo(client.createdAt)}</div>
-                </td>
-                <td>${this.formatDate(client.expiresAt)}</td>
-                <td class="client-status-cell">
-                    ${this.renderStatusBadge(client)}
-                </td>
-                <td class="client-actions-cell" onclick="event.stopPropagation();">
-                    <div class="action-buttons">
-                        <button class="special-btn-icon settings" onclick="adminClients.openSettingsModal('${client._id || client.code}')" title="Settings">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                        <button class="special-btn-icon edit" onclick="adminClients.editClient('${client._id || client.code}')" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="special-btn-icon ${client.isActive ? 'deactivate' : 'activate'}" 
-                                onclick="adminClients.toggleClientStatus('${client._id || client.code}')" 
-                                title="${client.isActive ? 'Deactivate' : 'Activate'}">
-                            <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
-                        </button>
-                        <button class="special-btn-icon delete" onclick="adminClients.deleteClient('${client._id || client.code}')" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+                `;
+            }
+
+            return `
+                <tr onclick="adminClients.viewClient('${client._id || client.code}')">
+                    <td class="client-code-cell">
+                        <div class="code-with-cart">
+                            <span class="code-text">${client.code}</span>
+                            ${cartBadge}
+                        </div>
+                    </td>
+                    <td class="client-name-cell">
+                        <div>${client.clientName}</div>
+                        <div class="client-email-cell">${client.clientEmail || 'No email'}</div>
+                    </td>
+                    <td class="client-company-cell">
+                        <div class="company-name">${client.companyName || '-'}</div>
+                    </td>
+                    <td class="client-access-type-cell">
+                        <div class="access-type-preview">
+                            ${this.renderAccessType(client)}
+                        </div>
+                    </td>
+                    <td class="client-usage-cell">
+                        <div class="usage-count">${client.usageCount || 0}x</div>
+                        <div class="usage-last">${this.formatDate(client.lastUsed, 'Never used')}</div>
+                    </td>
+                    <td class="client-created-cell">
+                        <div style="font-weight: 500;">${this.formatDate(client.createdAt)}</div>
+                        <div style="font-size: 0.85em; color: var(--text-muted);">${this.getDaysAgo(client.createdAt)}</div>
+                    </td>
+                    <td>${this.formatDate(client.expiresAt)}</td>
+                    <td class="client-status-cell">
+                        ${this.renderStatusBadge(client)}
+                    </td>
+                    <td class="client-actions-cell" onclick="event.stopPropagation();">
+                        <div class="action-buttons">
+                            <button class="special-btn-icon settings" onclick="adminClients.openSettingsModal('${client._id || client.code}')" title="Permissions">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button class="special-btn-icon edit" onclick="adminClients.editClient('${client._id || client.code}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="special-btn-icon ${client.isActive ? 'deactivate' : 'activate'}" 
+                                    onclick="adminClients.toggleClientStatus('${client._id || client.code}')" 
+                                    title="${client.isActive ? 'Deactivate' : 'Activate'}">
+                                <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button class="special-btn-icon delete" onclick="adminClients.deleteClient('${client._id || client.code}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
         this.table.innerHTML = rows;
     }
@@ -977,7 +1007,10 @@ class AdminClients {
             return;
         }
 
-        this.selectedFolders.push({ qbItem, path });
+        this.selectedFolders.push({
+            qbItem,
+            path: path.replace(/"/g, '&quot;')
+        });
         this.updateSettingsFoldersList(); // MUDANÇA: usar updateSettingsFoldersList ao invés de updateSelectedFoldersList
 
         // Carregar árvore se necessário
@@ -1077,21 +1110,45 @@ class AdminClients {
             this.showModalLoading(true);
 
             if (this.currentClient) {
-                // EDITING existing client
+                // EDITING existing client - comportamento normal
                 console.log('✏️ Editing client:', this.currentClient._id || this.currentClient.code);
                 await this.updateClient(this.currentClient._id || this.currentClient.code, formData);
                 this.showSuccess('Code updated successfully!');
-            } else {
-                // CREATING new client
-                console.log('➕ Creating new client');
-                await this.createClient(formData);
-                this.showSuccess('Code created successfully!');
-            }
 
-            this.hasUnsavedChanges = false; // Reset ANTES de fechar
-            this.originalFormData = null;    // Reset ANTES de fechar
-            this.closeModal();
-            await this.refreshData();
+                this.hasUnsavedChanges = false;
+                this.originalFormData = null;
+                this.closeModal();
+                await this.refreshData();
+
+            } else {
+                // CREATING new client - vai abrir permissões depois
+                console.log('➕ Creating new client');
+                const newClientData = await this.createClient(formData);
+                this.showSuccess('Code created successfully!');
+
+                // Guardar código do cliente criado
+                const createdCode = formData.code;
+
+                // Limpar e fechar modal de criação
+                this.hasUnsavedChanges = false;
+                this.originalFormData = null;
+                this.closeModal();
+
+                // Atualizar lista de clientes
+                await this.refreshData();
+
+                // Aguardar um pouco e abrir modal de permissões
+                setTimeout(() => {
+                    // Encontrar o cliente recém criado
+                    const newClient = this.clients.find(c => c.code === createdCode);
+                    if (newClient) {
+                        // Mostrar mensagem
+                        this.showSuccess('Now configure permissions for the new client');
+                        // Abrir modal de permissões
+                        this.openSettingsModal(newClient._id || newClient.code);
+                    }
+                }, 500);
+            }
 
         } catch (error) {
             console.error('❌ Error saving:', error);
@@ -1432,69 +1489,201 @@ class AdminClients {
         document.getElementById('viewClientName').textContent = client.clientName;
         document.getElementById('viewClientEmail').textContent = client.clientEmail || 'No email provided';
         document.getElementById('viewClientCode').textContent = client.code;
+        document.getElementById('viewClientPhone').textContent = client.clientPhone || 'Not provided';
+        document.getElementById('viewClientCompany').textContent = client.companyName || 'Not provided';
 
-        // Dados adicionais (se os elementos existirem no HTML)
-        const phoneElement = document.getElementById('viewClientPhone');
-        const companyElement = document.getElementById('viewClientCompany');
-        const addressElement = document.getElementById('viewClientAddress');
+        // Address
+        const addressParts = [
+            client.addressLine1,
+            client.addressLine2,
+            client.city,
+            client.state,
+            client.zipCode
+        ].filter(part => part && part.trim());
+        document.getElementById('viewClientAddress').textContent =
+            addressParts.length > 0 ? addressParts.join(', ') : 'Not provided';
 
-        if (phoneElement) phoneElement.textContent = client.clientPhone || 'Not provided';
-        if (companyElement) companyElement.textContent = client.companyName || 'Not provided';
-        if (addressElement) {
-            const addressParts = [
-                client.addressLine1,
-                client.addressLine2,
-                client.city,
-                client.state,
-                client.zipCode
-            ].filter(part => part && part.trim());
-
-            addressElement.textContent = addressParts.length > 0 ? addressParts.join(', ') : 'Not provided';
-        }
-
-        // Status com badge
+        // Status
         const statusEl = document.getElementById('viewClientStatus');
         const now = new Date();
         const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
 
         if (isExpired) {
-            statusEl.innerHTML = '<span style="color: #ef4444;">⚠️ Expired</span>';
+            statusEl.innerHTML = '<span class="status-badge status-expired">⚠️ Expired</span>';
         } else if (client.isActive) {
-            statusEl.innerHTML = '<span style="color: #22c55e;">✅ Active</span>';
+            statusEl.innerHTML = '<span class="status-badge status-active">✅ Active</span>';
         } else {
-            statusEl.innerHTML = '<span style="color: #f59e0b;">⏸️ Inactive</span>';
+            statusEl.innerHTML = '<span class="status-badge status-inactive">⏸️ Inactive</span>';
         }
 
-        // Configuração de acesso
+        // Access Configuration
         document.getElementById('viewAccessType').textContent = client.accessType || 'Regular';
         document.getElementById('viewExpirationDate').textContent = this.formatDate(client.expiresAt);
         document.getElementById('viewCreatedDate').textContent = this.formatDate(client.createdAt);
         document.getElementById('viewDaysLeft').textContent = this.calculateDaysUntilExpiry(client.expiresAt) + ' days';
 
-        // Categorias permitidas
+        // Allowed Categories - COLLAPSIBLE VERSION
         const categoriesContainer = document.getElementById('viewAllowedCategories');
-        if (client.allowedCategories && client.allowedCategories.length > 0) {
-            categoriesContainer.innerHTML = client.allowedCategories.map(category =>
-                `<span class="view-category-tag">${category}</span>`
-            ).join('');
+        const categoriesCount = client.allowedCategories ? client.allowedCategories.length : 0;
+
+        if (categoriesCount > 0) {
+            // Cria uma versão que colapsa/expande
+            categoriesContainer.innerHTML = `
+                <div class="categories-collapsible">
+                    <div class="categories-header" onclick="adminClients.toggleCategoriesView()">
+                        <span class="categories-summary">
+                            <i class="fas fa-folder-tree"></i>
+                            <strong>${categoriesCount}</strong> categories allowed
+                        </span>
+                        <span class="categories-toggle">
+                            <i class="fas fa-chevron-down" id="categoriesToggleIcon"></i>
+                        </span>
+                    </div>
+                    <div class="categories-content" id="categoriesContent" style="display: none;">
+                        <div class="categories-grid">
+                            ${client.allowedCategories.map(category =>
+                `<div class="category-item">
+                                    <i class="fas fa-tag"></i>
+                                    <span>${category}</span>
+                                </div>`
+            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
         } else {
-            categoriesContainer.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">No categories assigned</span>';
+            categoriesContainer.innerHTML = `
+                <div class="categories-empty">
+                    <i class="fas fa-folder-open"></i>
+                    <span>No categories assigned</span>
+                </div>
+            `;
         }
 
-        // Estatísticas de uso
+        // Usage Statistics
         document.getElementById('viewTotalLogins').textContent = client.usageCount || 0;
         document.getElementById('viewDaysActive').textContent = this.calculateDaysActive(client.createdAt);
         document.getElementById('viewLastAccess').textContent = this.calculateDaysSinceLastAccess(client.lastUsed);
 
-        // Informações de segurança (placeholder para futuras implementações)
+        // Security Info
         document.getElementById('viewLastIP').textContent = client.lastIP || 'Not tracked';
         document.getElementById('viewLastDevice').textContent = client.lastDevice || 'Not tracked';
         document.getElementById('viewAccountType').textContent = client.accessType === 'special' ? 'Special Access' : 'Standard';
         document.getElementById('viewRiskLevel').textContent = isExpired ? 'Medium' : 'Low';
 
-        // Mostrar modal
-        document.getElementById('clientViewModal').classList.add('active');
+        // 🛒 NOVA PARTE: Carregar carrinho
+        this.loadClientCart(client.code);
+
+        // Mostrar modal com classe wide para ser mais largo
+        const modal = document.getElementById('clientViewModal');
+        modal.classList.add('active', 'modal-wide');
         document.body.style.overflow = 'hidden';
+    }
+
+    // 🛒 NEW FUNCTION: Load and display client cart
+    async loadClientCart(clientCode) {
+        const cartContainer = document.getElementById('viewClientCart');
+
+        // Show loading
+        cartContainer.innerHTML = `
+            <div class="cart-loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading cart...
+            </div>
+        `;
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/admin/client/${clientCode}/cart`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!data.success || !data.cart || data.cart.items.length === 0) {
+                cartContainer.innerHTML = `
+                    <div class="cart-empty">
+                        <i class="fas fa-shopping-cart" style="font-size: 2rem; color: var(--text-muted);"></i>
+                        <p style="margin-top: 0.5rem;">No items in cart</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const cart = data.cart;
+
+            // Render cart
+            cartContainer.innerHTML = `
+                <div class="cart-summary">
+                    <div class="cart-summary-stats">
+                        <div class="stat">
+                            <span class="stat-label">Total Items:</span>
+                            <span class="stat-value">${cart.totalItems}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Total Value:</span>
+                            <span class="stat-value" style="color: var(--success); font-weight: bold;">
+                                $${cart.totalValue.toFixed(2)}
+                            </span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Last Activity:</span>
+                            <span class="stat-value">${this.formatDate(cart.lastActivity)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="cart-items-list">
+                    ${cart.items.map((item, index) => {
+                const statusClass = item.isExpired ? 'item-expired' : 'item-active';
+                const statusText = item.isExpired ?
+                    '<span class="expired-badge">Expired</span>' :
+                    `<span class="timer">${item.expiresInMinutes}min remaining</span>`;
+
+                return `
+                            <div class="cart-item ${statusClass}">
+                                <div class="item-number">${index + 1}</div>
+                                <div class="item-info">
+                                    <div class="item-name">${item.name}</div>
+                                    <div class="item-path">
+                                        <i class="fas fa-folder-open"></i> 
+                                        ${item.category}${item.subcategory ? ' / ' + item.subcategory : ''}
+                                    </div>
+                                </div>
+                                <div class="item-price">$${item.price}</div>
+                                <div class="item-status">${statusText}</div>
+                            </div>
+                        `;
+            }).join('')}
+                </div>
+            `;
+
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            cartContainer.innerHTML = `
+                <div class="cart-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading cart data</p>
+                </div>
+            `;
+        }
+    }
+
+    // Toggle categories view (expand/collapse)
+    toggleCategoriesView() {
+        const content = document.getElementById('categoriesContent');
+        const icon = document.getElementById('categoriesToggleIcon');
+
+        if (content.style.display === 'none') {
+            // Expandir
+            content.style.display = 'block';
+            icon.className = 'fas fa-chevron-up';
+        } else {
+            // Colapsar
+            content.style.display = 'none';
+            icon.className = 'fas fa-chevron-down';
+        }
     }
 
     editClient(clientId) {
@@ -1726,7 +1915,7 @@ class AdminClients {
                     case 'oldest':
                         return new Date(a.createdAt) - new Date(b.createdAt);
                     case 'last-access':
-                        return new Date(b.lastUsed || 0) - new Date(a.lastUsed || 0);
+                        return new Date(b.lastUsed || '1970-01-01') - new Date(a.lastUsed || '1970-01-01');
                     case 'expires-soon':
                         return new Date(a.expiresAt) - new Date(b.expiresAt);
                     case 'recent':
@@ -1780,22 +1969,64 @@ class AdminClients {
 
     getDaysAgo(date) {
         if (!date) return '';
-        const days = Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24));
-        if (days === 0) return 'Today';
-        if (days === 1) return 'Yesterday';
-        if (days < 7) return `${days} days ago`;
-        if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-        if (days < 365) return `${Math.floor(days / 30)} months ago`;
-        return `${Math.floor(days / 365)} years ago`;
+
+        // Criar datas sem horário para comparação correta
+        const inputDate = new Date(date);
+        const today = new Date();
+
+        // Zerar horários para comparar apenas datas
+        inputDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        // Calcular diferença em milissegundos
+        const diffTime = today - inputDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        // Retornar descrição baseada na diferença
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays === 2) return '2 days ago';
+        if (diffDays === 3) return '3 days ago';
+        if (diffDays === 4) return '4 days ago';
+        if (diffDays === 5) return '5 days ago';
+        if (diffDays === 6) return '6 days ago';
+        if (diffDays < 14) return `${diffDays} days ago`;
+        if (diffDays < 21) return '2 weeks ago';
+        if (diffDays < 30) return '3 weeks ago';
+        if (diffDays < 45) return '1 month ago';
+        if (diffDays < 60) return '1.5 months ago';
+        if (diffDays < 90) return '2 months ago';
+        if (diffDays < 180) return '3+ months ago';
+        if (diffDays < 365) return '6+ months ago';
+        return 'Over 1 year ago';
+    }
+
+    // Atualizar datas automaticamente a cada minuto
+    startDateUpdateTimer() {
+        // Atualizar a cada 60 segundos
+        setInterval(() => {
+            // Só atualizar se a aba estiver visível
+            if (!document.hidden) {
+                console.log('🔄 Updating relative dates...');
+                this.renderClientsTable();
+            }
+        }, 60000); // 60 segundos
     }
 
     calculateDaysUntilExpiry(expiresAt) {
         if (!expiresAt) return 30;
-        const now = new Date();
+
+        const today = new Date();
         const expiry = new Date(expiresAt);
-        const diffTime = expiry - now;
+
+        // Zerar horários
+        today.setHours(0, 0, 0, 0);
+        expiry.setHours(0, 0, 0, 0);
+
+        const diffTime = expiry - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return Math.max(1, diffDays);
+
+        return diffDays;
     }
 
     truncateText(text, length) {
@@ -2009,7 +2240,21 @@ class AdminClients {
         this.updateParentCheckboxes();
     }
 
-    closeSettingsModal() {
+    async closeSettingsModal() {
+        // Verificar se tem algo selecionado
+        if (this.selectedFolders.length === 0 && this.currentSettingsClient) {
+            const confirmed = await this.showConfirmModal(
+                '<i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> Warning: No permissions selected!<br><br>' +
+                'The client will have <strong>FULL ACCESS</strong> to all categories.<br>' +
+                'This may be a security risk.<br><br>' +
+                'Are you sure you want to close without selecting any permissions?'
+            );
+
+            if (!confirmed) {
+                return; // Não fecha o modal
+            }
+        }
+
         document.body.style.overflow = '';
         document.getElementById('clientSettingsModal').classList.remove('active');
         this.currentSettingsClient = null;
@@ -2069,7 +2314,10 @@ class AdminClients {
             return;
         }
 
-        this.selectedFolders.push({ qbItem, path });
+        this.selectedFolders.push({
+            qbItem,
+            path: path.replace(/"/g, '&quot;')
+        });
         this.updateSettingsFoldersList();
 
         // Marcar checkbox na árvore
@@ -2220,7 +2468,7 @@ class AdminClients {
                     <label class="tree-label">
                         <input type="checkbox" 
                             class="tree-checkbox" 
-                            data-path="${node.fullPath || key}"
+                            data-path="${(node.fullPath || key).replace(/"/g, '&quot;')}"
                             data-qbitem="${node.qbItem || ''}"
                             data-node-id="${nodeId}"
                             onchange="adminClients.handleTreeCheckbox(this)">
@@ -2385,6 +2633,19 @@ class AdminClients {
         if (!this.currentSettingsClient) {
             this.showError('No client selected');
             return;
+        }
+
+        // NOVA VALIDAÇÃO - Aviso se não selecionou nada
+        if (this.selectedFolders.length === 0) {
+            const confirmed = await this.showConfirmModal(
+                '<i class="fas fa-exclamation-triangle" style="color: #d4af37;"></i> <strong style="color: #d4af37;">No permissions selected</strong><br><br>' +
+                'Saving with no selections means the client will have <strong>FULL ACCESS</strong> to all categories.<br><br>' +
+                'Are you sure you want to continue?'
+            );
+
+            if (!confirmed) {
+                return; // Não salva
+            }
         }
 
         try {

@@ -823,6 +823,57 @@ router.use((error, req, res, next) => {
     });
 });
 
+/**
+ * GET /api/cart/active/:clientCode
+ * SEMPRE retorna o carrinho ativo do cliente (independente do sessionId)
+ */
+router.get('/active/:clientCode', async (req, res) => {
+    try {
+        const { clientCode } = req.params;
+
+        console.log(`🔍 Buscando carrinho ativo para cliente: ${clientCode}`);
+
+        // Buscar carrinho ativo mais recente
+        let cart = await CartService.getCart(null, clientCode);
+
+        if (!cart) {
+            // Buscar diretamente no banco
+            const Cart = require('../models/Cart');
+            cart = await Cart.findOne({
+                clientCode: clientCode,
+                isActive: true,
+                totalItems: { $gt: 0 }
+            }).sort({ lastActivity: -1 });
+        }
+
+        if (!cart) {
+            return res.json({
+                success: true,
+                message: 'Nenhum carrinho ativo encontrado',
+                totalItems: 0,
+                items: [],
+                sessionId: null
+            });
+        }
+
+        // Retornar carrinho encontrado
+        const summary = await CartService.getCartSummary(cart.sessionId);
+
+        res.json({
+            success: true,
+            sessionId: cart.sessionId,
+            ...summary
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar carrinho ativo:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 module.exports = router;
 module.exports.calculateDiscountWithHierarchy = calculateDiscountWithHierarchy;
 module.exports = router;

@@ -335,43 +335,37 @@ window.CartSystem = {
      */
     async loadCart() {
         try {
+            // Primeiro tentar buscar carrinho ativo do servidor
+            const clientSession = this.getClientSession();
+            if (clientSession && clientSession.accessCode) {
+
+                console.log('🔍 Buscando carrinho ativo do servidor...');
+                const activeResponse = await fetch(`/api/cart/active/${clientSession.accessCode}`);
+                const activeCart = await activeResponse.json();
+
+                if (activeCart.success && activeCart.sessionId) {
+                    console.log('✅ Carrinho ativo encontrado:', activeCart.sessionId);
+                    // Atualizar sessionId local
+                    this.state.sessionId = activeCart.sessionId;
+                    const storageKey = `cartSessionId_${clientSession.accessCode}`;
+                    localStorage.setItem(storageKey, activeCart.sessionId);
+                }
+            }
+
+            // Continuar com o fluxo normal
             const response = await fetch(`${this.config.apiBaseUrl}/${this.state.sessionId}/summary`);
             const result = await response.json();
 
             if (response.ok && result.success !== false) {
                 this.state.items = result.items || [];
-                //console.log('🔍 ITEMS CARREGADOS DO SERVIDOR:', this.state.items.map(item => ({
-                //    fileName: item.fileName,
-                //    basePrice: item.basePrice,
-                //    price: item.price,
-                //    hasBasePrice: item.basePrice !== undefined
-                //})));
                 this.state.totalItems = result.totalItems || 0;
-
                 this.updateUI();
                 this.startTimers();
-
-                //console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
-
-                // Atualizar o badge de preço se tiver items
-                if (this.state.totalItems > 0 && window.updateCategoryPriceBadge) {
-                    setTimeout(() => window.updateCategoryPriceBadge(), 100);
-                }
-
-                // Atualizar modal também se tiver items
-                if (this.state.totalItems > 0 && window.updateModalPriceBadge) {
-                    setTimeout(() => window.updateModalPriceBadge(), 150);
-                }
-            } else {
-                // Carrinho vazio ou erro - resetar estado
-                this.state.items = [];
-                this.state.totalItems = 0;
-                this.updateUI();
+                console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
             }
 
         } catch (error) {
             console.error('❌ Erro ao carregar carrinho:', error);
-            // Em caso de erro, manter estado local
         }
     },
 

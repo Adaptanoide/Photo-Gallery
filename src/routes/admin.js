@@ -92,16 +92,58 @@ router.get('/db-status', async (req, res) => {
     }
 });
 
-// Listar códigos de acesso
+// Listar códigos de acesso COM INFO DE CARRINHO (APENAS CARRINHO, NÃO SELECTIONS!)
 router.get('/access-codes', async (req, res) => {
     try {
         const codes = await AccessCode.find()
             .sort({ createdAt: -1 })
             .limit(50);
 
+        // Buscar APENAS carrinhos ativos (NÃO selections confirmadas!)
+        const Cart = require('../models/Cart');
+        const now = new Date();
+
+        // IMPORTANTE: Buscar apenas carrinhos com itens E que sejam ativos
+        const carts = await Cart.find({
+            'items.0': { $exists: true },
+            isActive: true,  // Apenas carrinhos ativos
+            $or: [
+                { expiresAt: { $gt: now } }, // Não expirado
+                { expiresAt: { $exists: false } } // Ou sem data de expiração
+            ]
+        }).select('clientCode items createdAt expiresAt');
+
+        console.log(`🛒 Found ${carts.length} active carts with items`);
+
+        // Criar mapa de carrinhos por cliente
+        const cartMap = {};
+        carts.forEach(cart => {
+            // Filtrar apenas itens não expirados
+            const validItems = cart.items.filter(item => {
+                if (!item.expiresAt) return true;
+                return new Date(item.expiresAt) > now;
+            });
+
+            // Só adicionar se tiver itens válidos
+            if (validItems.length > 0) {
+                cartMap[cart.clientCode] = {
+                    itemCount: validItems.length,
+                    totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0),
+                    isTemporary: true // Flag para indicar que é carrinho temporário
+                };
+                console.log(`  Client ${cart.clientCode}: ${validItems.length} items in cart`);
+            }
+        });
+
+        // Adicionar info de carrinho em cada código
+        const codesWithCart = codes.map(code => ({
+            ...code.toObject(),
+            cartInfo: cartMap[code.code] || null
+        }));
+
         res.json({
             success: true,
-            codes
+            codes: codesWithCart
         });
 
     } catch (error) {
@@ -769,6 +811,72 @@ router.get('/access-codes-stats', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro interno do servidor'
+        });
+    }
+});
+
+// ===== GET CLIENT'S SHOPPING CART =====
+router.get('/client/:code/cart', authenticateToken, async (req, res) => {
+    try {
+        const { code } = req.params;
+        const Cart = require('../models/Cart');
+
+        console.log(`🛒 Fetching cart for client ${code}...`);
+
+        // Find active cart for client
+        const cart = await Cart.findOne({
+            clientCode: code,
+            'items.0': { $exists: true } // Only return if has items
+        }).sort({ createdAt: -1 }); // Most recent first
+
+        if (!cart) {
+            return res.json({
+                success: true,
+                cart: null,
+                message: 'No active cart found'
+            });
+        }
+
+        // Calculate remaining time and format data
+        const now = new Date();
+        const cartData = {
+            _id: cart._id,
+            clientCode: cart.clientCode,
+            clientName: cart.clientName,
+            createdAt: cart.createdAt,
+            lastActivity: cart.lastActivity,
+            totalItems: cart.items.length,
+            items: cart.items.map(item => {
+                const expiresIn = item.expiresAt ?
+                    Math.round((new Date(item.expiresAt) - now) / 1000 / 60) : null;
+
+                return {
+                    // Adapt to R2
+                    r2Key: item.r2Key || item.driveFileId,
+                    name: item.name || item.fileName || 'Unnamed',
+                    price: item.price || 0,
+                    category: item.category || '',
+                    subcategory: item.subcategory || '',
+                    addedAt: item.addedAt,
+                    expiresAt: item.expiresAt,
+                    expiresInMinutes: expiresIn,
+                    isExpired: expiresIn !== null && expiresIn <= 0
+                };
+            }),
+            totalValue: cart.items.reduce((sum, item) => sum + (item.price || 0), 0)
+        };
+
+        console.log(`✅ Cart found: ${cartData.totalItems} items, total value: $${cartData.totalValue}`);
+        res.json({
+            success: true,
+            cart: cartData
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching cart:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching cart data'
         });
     }
 });

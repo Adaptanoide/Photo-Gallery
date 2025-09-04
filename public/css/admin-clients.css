@@ -1832,3 +1832,316 @@
 .tree-label:hover .tree-name {
     color: var(--gold-primary);
 }
+
+/* Modal mais largo para comportar carrinho */
+.client-view-modal.modal-wide .client-view-content {
+    max-width: 1200px !important;
+    width: 90% !important;
+}
+
+/* Seção do Carrinho */
+.view-cart-container {
+    background: var(--luxury-dark);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.cart-loading,
+.cart-empty,
+.cart-error {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.cart-summary {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+    border: 1px solid var(--accent-gold);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.cart-summary-stats {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cart-summary-stats .stat {
+    text-align: center;
+}
+
+.cart-summary-stats .stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.cart-summary-stats .stat-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Lista de itens do carrinho */
+.cart-items-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--card-background);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.cart-item:hover {
+    border-color: var(--accent-gold);
+    transform: translateX(5px);
+}
+
+.cart-item.item-expired {
+    opacity: 0.6;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.item-number {
+    width: 30px;
+    height: 30px;
+    background: var(--accent-gold);
+    color: var(--luxury-black);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 1rem;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.item-path {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.item-price {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--success);
+    margin: 0 1rem;
+}
+
+.item-status {
+    min-width: 120px;
+    text-align: right;
+}
+
+.timer {
+    color: var(--warning);
+    font-size: 0.85rem;
+}
+
+.expired-badge {
+    background: var(--danger);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* ===== COLLAPSIBLE CATEGORIES SECTION ===== */
+.categories-collapsible {
+    background: var(--luxury-dark);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.categories-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    width: 1140px;
+    max-width: 1141px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), transparent);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.categories-header:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+}
+
+.categories-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.categories-summary i {
+    color: var(--accent-gold);
+}
+
+.categories-toggle {
+    color: var(--accent-gold);
+    transition: transform 0.3s ease;
+}
+
+.categories-content {
+    padding: 1rem;
+    border-top: 1px solid var(--border-subtle);
+    max-height: 1141px;
+    width: 1140px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.4rem;
+    max-width: 100%;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.5rem;
+    background: var(--card-background);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.category-item:hover {
+    border-color: var(--accent-gold);
+    background: rgba(212, 175, 55, 0.05);
+}
+
+.category-item i {
+    color: var(--accent-gold);
+    font-size: 0.75rem;
+}
+
+.categories-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ===== CART INDICATOR BADGE ===== */
+.code-with-cart {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.code-text {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.cart-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: white;
+    padding: 0.15rem 0.4rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: help;
+    animation: pulse-cart 2s infinite;
+    position: relative;
+}
+
+.cart-indicator i {
+    font-size: 0.7rem;
+}
+
+.cart-badge-count {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.1rem 0.3rem;
+    border-radius: 8px;
+    min-width: 18px;
+    text-align: center;
+}
+
+@keyframes pulse-cart {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.5);
+    }
+}
+
+/* Hover effect */
+.cart-indicator:hover {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, #ff7777, #ff5555);
+    box-shadow: 0 2px 12px rgba(238, 85, 85, 0.6);
+}
+
+/* Linha da tabela com carrinho fica levemente destacada */
+tr:has(.cart-indicator) {
+    background: linear-gradient(90deg,
+            rgba(238, 85, 85, 0.03) 0%,
+            transparent 10%);
+}
+
+tr:has(.cart-indicator):hover {
+    background: linear-gradient(90deg,
+            rgba(238, 85, 85, 0.06) 0%,
+            rgba(212, 175, 55, 0.05) 10%);
+}
+
+/* Hover sutil verde para botão de permissões */
+.special-btn-icon.settings:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+}
+
+.special-btn-icon.settings:hover i {
+    color: #10b981;
+}
