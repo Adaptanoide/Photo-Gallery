@@ -3,6 +3,8 @@
 const mongoose = require('mongoose');
 const Cart = require('../models/Cart'); ``
 const Product = require('../models/Product');
+const PhotoStatus = require('../models/PhotoStatus');
+const CDEWriter = require('./CDEWriter');
 
 class CartService {
 
@@ -163,6 +165,32 @@ class CartService {
                 cart.items.push(cartItem);
                 await cart.save({ session });
 
+                // NOVO: Notificar CDE em background (não bloqueia)
+                setImmediate(async () => {
+                    try {
+                        const photoStatus = await PhotoStatus.findOne({
+                            $or: [
+                                { photoId: driveFileId },
+                                { photoNumber: driveFileId.match(/\d+/)?.[0] }
+                            ]
+                        });
+
+                        if (photoStatus?.idhCode) {
+                            console.log(`[CartService] Tentando notificar CDE sobre reserva de ${photoStatus.photoNumber}`);
+                            // Só vai funcionar quando tiver permissão WRITE (segunda-feira)
+                            await CDEWriter.markAsReserved(
+                                photoStatus.photoNumber,
+                                photoStatus.idhCode,
+                                clientCode,
+                                sessionId
+                            );
+                        }
+                    } catch (error) {
+                        console.error('[CartService] Erro ao notificar CDE:', error.message);
+                        // Não falha a operação principal se CDE der erro
+                    }
+                });
+
                 console.log(`✅ Item ${driveFileId} adicionado ao carrinho ${sessionId}`);
 
                 return {
@@ -229,6 +257,30 @@ class CartService {
                 }
 
                 await cart.save({ session });
+
+                // NOVO: Notificar CDE em background (não bloqueia)
+                setImmediate(async () => {
+                    try {
+                        const photoStatus = await PhotoStatus.findOne({
+                            $or: [
+                                { photoId: driveFileId },
+                                { photoNumber: driveFileId.match(/\d+/)?.[0] }
+                            ]
+                        });
+
+                        if (photoStatus?.idhCode) {
+                            console.log(`[CartService] Tentando notificar CDE sobre liberação de ${photoStatus.photoNumber}`);
+                            // Só vai funcionar quando tiver permissão WRITE (segunda-feira)
+                            await CDEWriter.markAsAvailable(
+                                photoStatus.photoNumber,
+                                photoStatus.idhCode
+                            );
+                        }
+                    } catch (error) {
+                        console.error('[CartService] Erro ao notificar CDE:', error.message);
+                        // Não falha a operação principal se CDE der erro
+                    }
+                });
 
                 console.log(`✅ Item ${driveFileId} removido do carrinho ${sessionId}`);
 
