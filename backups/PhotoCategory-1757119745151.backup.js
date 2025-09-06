@@ -8,7 +8,8 @@ const photoCategorySchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+        index: true
+    },
 
     // Caminho completo no Google Drive
     googleDrivePath: {
@@ -54,13 +55,15 @@ const photoCategorySchema = new mongoose.Schema({
         type: String,
         enum: ['base', 'client', 'quantity'],
         default: 'base',
-        },
+        index: true
+    },
 
     // Status da categoria
     isActive: {
         type: Boolean,
         default: true,
-        },
+        index: true
+    },
 
     // Metadados da pasta
     metadata: {
@@ -77,7 +80,8 @@ const photoCategorySchema = new mongoose.Schema({
     lastSync: {
         type: Date,
         default: Date.now,
-        },
+        index: true
+    },
 
     // Regras de desconto específicas para esta categoria
     discountRules: [{

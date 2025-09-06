@@ -38,7 +38,8 @@ const productSchema = new mongoose.Schema({
         type: String,
         enum: ['available', 'reserved', 'reserved_pending', 'sold'],  // ← NOVO STATUS ADICIONADO
         default: 'available',
-        },
+        index: true
+    },
     reservedBy: {
         clientCode: {
             type: String,

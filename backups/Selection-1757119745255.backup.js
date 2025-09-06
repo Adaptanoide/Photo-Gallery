@@ -7,11 +7,13 @@ const selectionSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+        index: true
+    },
     sessionId: {
         type: String,
         required: true,
-        },
+        index: true
+    },
     clientCode: {
         type: String,
         required: true,
@@ -33,7 +35,8 @@ const selectionSchema = new mongoose.Schema({
         type: String,
         enum: ['normal', 'special'],
         default: 'normal',
-        },
+        index: true
+    },
 
     // ===== NOVO: CONFIGURAÇÕES PARA SELEÇÕES ESPECIAIS =====
     specialSelectionConfig: {
@@ -256,7 +259,8 @@ const selectionSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'confirmed', 'finalized', 'cancelled', 'cancelling', 'approving', 'deleting', 'reverted'],
         default: 'pending',
-        },
+        index: true
+    },
     googleDriveInfo: {
         clientFolderId: {
             type: String // ID da pasta criada para o cliente
@@ -348,7 +352,8 @@ const selectionSchema = new mongoose.Schema({
     },
     reservationExpiredAt: {
         type: Date,
-        },
+        index: true
+    },
     finalizedAt: {
         type: Date
     },

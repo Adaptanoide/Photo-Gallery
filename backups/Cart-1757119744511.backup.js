@@ -7,11 +7,13 @@ const cartSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+        index: true
+    },
     clientCode: {
         type: String,
         required: true,
-        },
+        index: true
+    },
     clientName: {
         type: String,
         required: true
@@ -59,11 +61,13 @@ const cartSchema = new mongoose.Schema({
     lastActivity: {
         type: Date,
         default: Date.now,
-        },
+        index: true
+    },
     isActive: {
         type: Boolean,
         default: true,
-        }
+        index: true
+    }
 }, {
     timestamps: true
 });

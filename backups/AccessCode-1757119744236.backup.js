@@ -54,13 +54,15 @@ const accessCodeSchema = new mongoose.Schema({
         type: String,
         enum: ['normal', 'special'],
         default: 'normal',
-        },
+        index: true
+    },
 
     // ===== CONTROLE GLOBAL DE EXIBIÇÃO DE PREÇOS =====
     showPrices: {
         type: Boolean,
         default: true,
-        },
+        index: true
+    },
 
     // ===== CONFIGURAÇÃO PARA ACESSO NORMAL (EXISTENTE) =====
     allowedCategories: [{

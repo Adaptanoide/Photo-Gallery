@@ -8,7 +8,8 @@ const photoStatusSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+        index: true
+    },
     fileName: {
         type: String,
         required: true,
@@ -16,10 +17,12 @@ const photoStatusSchema = new mongoose.Schema({
     },
     photoNumber: {
         type: String,
-        },
+        index: true
+    },
     idhCode: {
         type: String,
-        },
+        index: true
+    },
 
     // ===== STATUS ATUAL =====
     currentStatus: {
@@ -34,7 +37,8 @@ const photoStatusSchema = new mongoose.Schema({
         ],
         default: 'available',
         required: true,
-        },
+        index: true
+    },
 
     // ===== LOCALIZAÇÃO ATUAL =====
     currentLocation: {
@@ -386,7 +390,8 @@ const photoStatusSchema = new mongoose.Schema({
         type: String,
         enum: ['INGRESADO', 'RETIRADO', 'RESERVED', 'STANDBY', null],
         default: null,
-        },
+        index: true
+    },
 
     // ===== CONFIGURAÇÕES =====
     config: {

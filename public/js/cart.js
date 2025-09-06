@@ -1267,7 +1267,7 @@ window.CartSystem = {
  * Toggle item no carrinho (chamada pelo botão do modal)
  */
 window.toggleCartItem = async function () {
-    console.log('🟡 toggleCartItem() executado'); // ← NOVO LOG
+    console.log('🟡 toggleCartItem() executado');
 
     // ============ FEEDBACK VISUAL INSTANTÂNEO ============
     const clickedButton = event?.target?.closest('button') ||
@@ -1278,21 +1278,13 @@ window.toggleCartItem = async function () {
         const originalHTML = clickedButton.innerHTML;
         const originalClass = clickedButton.classList.contains('in-cart');
 
-        // CORRIGIDO - ícones certos!
-        if (originalClass) {
-            // Se está no carrinho (Remove) - mostra APENAS spinner
-            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> </span>';
-        } else {
-            // Se NÃO está no carrinho (Add) - mostra APENAS spinner
-            clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> </span>';
-        }
+        clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> </span>';
         clickedButton.disabled = true;
     }
-    // ============ FIM DO FEEDBACK INSTANTÂNEO ============
 
-    // GARANTIR RESTAURAÇÃO após 1.5s - FORÇANDO DIRETAMENTE
+    // Garantir restauração após 1.5s
     setTimeout(() => {
-        const modalBtn = document.getElementById('cartToggleBtn');  // ID CORRETO!
+        const modalBtn = document.getElementById('cartToggleBtn');
         if (modalBtn) {
             const currentPhoto = CartSystem.getCurrentModalPhoto();
             if (currentPhoto) {
@@ -1300,7 +1292,6 @@ window.toggleCartItem = async function () {
 
                 modalBtn.disabled = false;
 
-                // FORÇAR O TEXTO E CLASSE
                 if (isInCart) {
                     modalBtn.classList.add('in-cart');
                     modalBtn.classList.remove('adding');
@@ -1316,16 +1307,16 @@ window.toggleCartItem = async function () {
 
     const currentPhoto = CartSystem.getCurrentModalPhoto();
     if (!currentPhoto) {
-        console.log('❌ Nenhuma foto selecionada'); // ← NOVO LOG
+        console.log('❌ Nenhuma foto selecionada');
         CartSystem.showNotification('No photo selected', 'error');
         return;
     }
 
-    console.log('🟡 currentPhoto:', currentPhoto); // ← NOVO LOG
+    console.log('🟡 currentPhoto:', currentPhoto);
 
     try {
         if (CartSystem.isInCart(currentPhoto)) {
-            console.log('🟡 Removendo item do carrinho'); // ← NOVO LOG
+            console.log('🟡 Removendo item do carrinho');
             await CartSystem.removeItem(currentPhoto);
 
             // AUTO-AVANÇO: Se removeu do modal e está vendo carrinho
@@ -1334,68 +1325,100 @@ window.toggleCartItem = async function () {
 
                 console.log('🔄 Auto-avançando após remoção...');
 
-                // Remover foto atual do array de navegação
                 const currentIndex = window.navigationState.currentPhotoIndex;
                 window.navigationState.currentPhotos.splice(currentIndex, 1);
 
                 if (window.navigationState.currentPhotos.length > 0) {
-                    // Ainda tem fotos no carrinho
                     let nextIndex = currentIndex;
                     if (nextIndex >= window.navigationState.currentPhotos.length) {
                         nextIndex = window.navigationState.currentPhotos.length - 1;
                     }
 
-                    // Pequeno delay para feedback visual antes de trocar
                     setTimeout(() => {
                         window.openPhotoModal(nextIndex);
                     }, 400);
                 } else {
-                    // Não tem mais fotos, fechar modal e mostrar carrinho vazio
-                    console.log('📭 Carrinho vazio, fechando modal...');
+                    console.log('🔭 Carrinho vazio, fechando modal...');
                     setTimeout(() => {
                         window.closePhotoModal();
                         CartSystem.showNotification('Cart is now empty', 'info');
                     }, 400);
                 }
 
-                // Return early para não processar mais
                 return;
             }
 
-            // Sincronizar thumbnails após remover (com delay para modal fechar)
+            // Sincronizar thumbnails após remover
             setTimeout(() => {
                 if (window.syncThumbnailButtons) {
                     window.syncThumbnailButtons();
                 }
             }, 100);
 
+        } else {
+            // =============== CORREÇÃO DO BUG AQUI ===============
+            console.log('🟡 Adicionando item ao carrinho');
+            
+            // Buscar dados da foto atual
+            const photos = window.navigationState.currentPhotos;
+            const photoIndex = window.navigationState.currentPhotoIndex;
+            const photo = photos[photoIndex];
+            
+            if (!photo) {
+                throw new Error('Photo data not found');
+            }
+            
+            // Buscar preço da categoria
+            let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
+            
+            // Verificar se tem customPrice (Special Selection)
+            if (photo.customPrice) {
+                priceInfo = {
+                    hasPrice: true,
+                    basePrice: parseFloat(photo.customPrice),
+                    price: parseFloat(photo.customPrice),
+                    formattedPrice: `$${parseFloat(photo.customPrice).toFixed(2)}`
+                };
+            } else if (window.navigationState.currentFolderId && window.loadCategoryPrice) {
+                // Buscar preço da categoria
+                try {
+                    priceInfo = await window.loadCategoryPrice(window.navigationState.currentFolderId);
+                } catch (error) {
+                    console.warn('Erro ao buscar preço:', error);
+                }
+            }
+            
+            // Montar dados completos do item
+            const itemData = {
+                fileName: photo.name || photo.fileName || 'Unnamed product',
+                category: window.navigationState?.currentCategoryName || 
+                         window.getCurrentCategoryDisplayName() || 
+                         'Category',
+                thumbnailUrl: ImageUtils.getThumbnailUrl(photo),
+                pathLevels: window.navigationState?.currentPath?.map(p => p.name) || [],
+                fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || '',
+                basePrice: priceInfo.basePrice || 0,
+                price: priceInfo.price || 0,
+                formattedPrice: priceInfo.formattedPrice || 'No price',
+                hasPrice: priceInfo.hasPrice || false
+            };
+            
+            console.log('📦 Dados do item montados:', itemData);
+            
+            // Adicionar ao carrinho COM OS DADOS COMPLETOS
+            await CartSystem.addItem(currentPhoto, itemData);
+            
+            // Sincronizar thumbnails após adicionar
+            setTimeout(() => {
+                if (window.syncThumbnailButtons) {
+                    window.syncThumbnailButtons();
+                }
+            }, 100);
         }
-
-        // COMENTAR TUDO ISSO - está causando o "piscar"
-        /*
-        // GARANTIR RESTAURAÇÃO após 1.5s
-        setTimeout(() => {
-            // Usar CartSystem ao invés de this
-            if (CartSystem && CartSystem.updateToggleButton) {
-                CartSystem.updateToggleButton();
-            }
-
-            // Forçar também diretamente para garantir
-            const modalBtn = document.querySelector('.modal-cart-btn');
-            if (modalBtn) {
-                const currentPhoto = CartSystem.getCurrentModalPhoto();
-                const isInCart = CartSystem.isInCart(currentPhoto);
-
-                modalBtn.disabled = false;
-                modalBtn.innerHTML = isInCart ?
-                    '<i class="fas fa-trash"></i><span>Remove</span>' :
-                    '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
-            }
-        }, 1500);
-        */
 
     } catch (error) {
         console.error('❌ Erro no toggle do carrinho:', error);
+        CartSystem.showNotification(error.message || 'Error managing cart', 'error');
     }
 };
 

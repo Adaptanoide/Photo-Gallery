@@ -110,6 +110,8 @@ class AdminDashboard {
         }
     }
 
+    // SUBSTITUA as funções verifyToken e setUserInfo no admin-dashboard.js por estas:
+
     async verifyToken(token) {
         try {
             const response = await fetch('/api/auth/verify-token', {
@@ -121,6 +123,13 @@ class AdminDashboard {
             const data = await response.json();
 
             if (data.success && data.user) {
+                // Salva o role na sessão também
+                const sessionData = JSON.parse(localStorage.getItem('sunshineSession'));
+                if (sessionData) {
+                    sessionData.user.role = data.user.role;
+                    localStorage.setItem('sunshineSession', JSON.stringify(sessionData));
+                }
+
                 this.setUserInfo(data.user);
             } else {
                 throw new Error('Token inválido');
@@ -134,7 +143,7 @@ class AdminDashboard {
     }
 
     setUserInfo(user) {
-        console.log(`👤 Usuário logado: ${user.username}`);
+        console.log(`👤 Usuário logado: ${user.username} (Role: ${user.role})`);
 
         // Atualizar avatar com primeira letra
         if (this.userAvatar) {
@@ -145,8 +154,19 @@ class AdminDashboard {
         if (this.userName) {
             this.userName.textContent = user.username;
         }
-    }
 
+        // CONTROLE DE ACESSO - Esconde Settings se não for super_admin
+        if (user.role !== 'super_admin') {
+            const settingsLink = document.querySelector('[data-section="settings"]');
+            if (settingsLink && settingsLink.parentElement) {
+                settingsLink.parentElement.style.display = 'none';
+                console.log('⚠️ Settings menu hidden - user is not super_admin');
+            }
+        } else {
+            console.log('✅ Super Admin detected - full access granted');
+        }
+    }
+    
     // ===== NAVEGAÇÃO =====
     navigateToSection(section) {
         console.log(`📍 Navegando para: ${section}`);
