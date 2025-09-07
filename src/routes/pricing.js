@@ -4,6 +4,8 @@ const express = require('express');
 const PricingService = require('../services/PricingService');
 const PhotoCategory = require('../models/PhotoCategory');
 const { authenticateToken } = require('./auth');
+const PhotoStatus = require('../models/PhotoStatus');
+
 
 const router = express.Router();
 
@@ -804,7 +806,7 @@ router.get('/categories', async (req, res) => {
     try {
         const {
             search = '',
-            priceStatus = 'all',  // MUDADO DE hasPrice PARA priceStatus
+            priceStatus = 'all',
             page = 1,
             limit = 50
         } = req.query;
@@ -822,7 +824,6 @@ router.get('/categories', async (req, res) => {
                 { basePrice: { $exists: false } }
             ];
         }
-        // Se priceStatus === 'all', não adiciona filtro (mostra TODAS)
 
         // Aplicar filtro de busca
         if (search) {
@@ -837,6 +838,23 @@ router.get('/categories', async (req, res) => {
             .sort({ displayName: 1 })
             .lean();
 
+        // ⚠️ MUDANÇA AQUI - Calcular fotos disponíveis para cada categoria
+        for (let category of categories) {
+            try {
+                // USAR currentPath COM REGEX para buscar pela subcategoria
+                const availableCount = await PhotoStatus.countDocuments({
+                    'virtualStatus.status': 'available',
+                    'currentLocation.currentPath': {
+                        $regex: category.folderName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                        $options: 'i'
+                    }
+                });
+                category.availableCount = availableCount;
+            } catch (err) {
+                category.availableCount = category.photoCount || 0;
+            }
+        }
+
         // Paginação
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + parseInt(limit);
@@ -846,6 +864,7 @@ router.get('/categories', async (req, res) => {
             success: true,
             categories: paginatedCategories.map(category => ({
                 ...category,
+                availableCount: category.availableCount, // ⚠️ ADICIONAR AQUI TAMBÉM
                 formattedPrice: category.basePrice > 0 ?
                     `$${category.basePrice.toFixed(2)}` : 'No price',
                 hasCustomRules: category.discountRules && category.discountRules.length > 0
@@ -887,9 +906,24 @@ router.get('/categories/:id', async (req, res) => {
             });
         }
 
+        // ⚠️ ADICIONAR AQUI - Calcular fotos disponíveis
+        try {
+            const availableCount = await PhotoStatus.countDocuments({
+                'virtualStatus.status': 'available',
+                'currentLocation.currentPath': {
+                    $regex: category.folderName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                    $options: 'i'
+                }
+            });
+            category.availableCount = availableCount;
+        } catch (err) {
+            category.availableCount = category.photoCount || 0;
+        }
+
         // Informações adicionais
         const details = {
             ...category.toObject(),
+            availableCount: category.availableCount, // ⚠️ ADICIONAR AQUI TAMBÉM
             summary: category.getSummary(),
             priceHistoryCount: category.priceHistory.length,
             activeDiscountRules: category.discountRules.filter(r => r.isActive).length,

@@ -762,7 +762,7 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
 router.put('/clients/:clientId/categories', authenticateToken, async (req, res) => {
     try {
         const { clientId } = req.params;
-        const { allowedCategories } = req.body;
+        const { allowedCategories, showPrices } = req.body;
 
         console.log(`📁 Updating categories for client ${clientId}:`, allowedCategories.length, 'categories');
 
@@ -770,6 +770,7 @@ router.put('/clients/:clientId/categories', authenticateToken, async (req, res) 
             clientId,
             {
                 allowedCategories: allowedCategories,
+                showPrices: showPrices,  // ADICIONAR ESTA LINHA
                 updatedAt: new Date()
             },
             { new: true }

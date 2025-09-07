@@ -208,7 +208,7 @@ router.post('/client/verify', async (req, res) => {
                 email: accessCode.clientEmail,
                 code: accessCode.code,
                 accessType: accessCode.accessType || 'normal',
-                showPrices: accessCode.showPrices !== false
+                showPrices: accessCode.showPrices
             },
             allowedCategories: accessCode.allowedCategories,
             expiresAt: accessCode.expiresAt
@@ -351,7 +351,7 @@ router.get('/client/data', async (req, res) => {
                 name: accessCode.clientName,
                 email: accessCode.clientEmail,
                 code: accessCode.code,
-                showPrices: accessCode.showPrices !== false
+                showPrices: accessCode.showPrices
             },
             allowedCategories: allowedCategories,
             totalCategories: r2Categories.length,

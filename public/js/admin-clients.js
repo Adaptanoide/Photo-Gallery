@@ -324,20 +324,6 @@ class AdminClients {
                                             </button>
                                         </div>
                                     </div>
-                                    
-                                    <div class="form-group-clients">
-                                        <label class="form-label-clients">Show Prices to Client</label>
-                                        <div class="toggle-item">
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" id="showPrices" checked>
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                            <span id="showPricesLabel" style="margin-left: 10px;">Enabled</span>
-                                        </div>
-                                        <small style="color: var(--text-muted); margin-top: 5px; display: block;">
-                                            When disabled, client will see "Contact for Price"
-                                        </small>
-                                    </div>
                                 </div>
                             </div>
                         </form>
@@ -526,7 +512,22 @@ class AdminClients {
                     </div>
                     
                     <div class="client-modal-body">
-                        <!-- Allowed Folders ONLY -->
+                        <!-- Show Prices Toggle PRIMEIRO -->
+                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <label class="form-label-clients">Show Prices to Client</label>
+                            <div class="toggle-item">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="showPricesSettings" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span id="showPricesSettingsLabel" style="margin-left: 10px;">Enabled</span>
+                            </div>
+                            <small style="color: var(--text-muted); margin-top: 5px; display: block;">
+                                When disabled, client will see "Contact for Price"
+                            </small>
+                        </div>
+
+                        <!-- Allowed Folders DEPOIS -->
                         <div class="form-section-clients">
                             <h4 class="form-section-title-clients">
                                 <i class="fas fa-sitemap"></i>
@@ -631,16 +632,36 @@ class AdminClients {
         document.getElementById('clientName').addEventListener('input', () => this.generateCodePreview());
 
         // Toggle Show Prices listener
-        const showPricesToggle = document.getElementById('showPrices');
-        if (showPricesToggle) {
-            showPricesToggle.addEventListener('change', function () {
-                const label = document.getElementById('showPricesLabel');
+// REMOVIDO -         const showPricesToggle = document.getElementById('showPrices');
+// REMOVIDO -         if (showPricesToggle) {
+// REMOVIDO -             showPricesToggle.addEventListener('change', function () {
+// REMOVIDO -                 // Toggle Show Prices no Settings Modal
+// REMOVIDO -                 const showPricesSettingsToggle = document.getElementById('showPricesSettings');
+// REMOVIDO -                 if (showPricesSettingsToggle) {
+// REMOVIDO -                     showPricesSettingsToggle.addEventListener('change', function () {
+// REMOVIDO -                         const label = document.getElementById('showPricesSettingsLabel');
+// REMOVIDO -                         if (label) {
+// REMOVIDO -                             label.textContent = this.checked ? 'Enabled' : 'Disabled';
+// REMOVIDO -                         }
+// REMOVIDO -                     });
+// REMOVIDO -                 }
+// REMOVIDO -                 const label = document.getElementById('showPricesLabel');
+// REMOVIDO -                 if (label) {
+// REMOVIDO -                     label.textContent = this.checked ? 'Enabled' : 'Disabled';
+// REMOVIDO -                 }
+// REMOVIDO -             });
+// REMOVIDO -         }
+
+        // Toggle Show Prices no Settings Modal  
+        const showPricesSettingsToggle = document.getElementById('showPricesSettings');
+        if (showPricesSettingsToggle) {
+            showPricesSettingsToggle.addEventListener('change', function () {
+                const label = document.getElementById('showPricesSettingsLabel');
                 if (label) {
                     label.textContent = this.checked ? 'Enabled' : 'Disabled';
                 }
             });
         }
-
         // Close modal by clicking outside
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
@@ -871,7 +892,7 @@ class AdminClients {
         document.getElementById('state').value = '';
         document.getElementById('zipCode').value = '';
         document.getElementById('expireDays').value = '30';
-        document.getElementById('showPrices').checked = true;
+        // showPrices removido - agora está em Permissions
         document.getElementById('showPricesLabel').textContent = 'Enabled';
 
         // Update titles
@@ -1086,7 +1107,7 @@ class AdminClients {
             zipCode: document.getElementById('zipCode').value.trim(),
             allowedCategories: this.selectedCategories.length > 0 ? this.selectedCategories : [],
             expiresInDays: parseInt(document.getElementById('expireDays').value),
-            showPrices: document.getElementById('showPrices').checked,
+            showPrices: true, // Padrão true para novos clientes
             accessType: this.currentClient?.accessType || 'normal',
             isActive: true,
             code: this.currentClient ? this.currentClient.code : document.getElementById('codePreview').textContent
@@ -1725,8 +1746,7 @@ class AdminClients {
         document.getElementById('codePreview').textContent = client.code;
 
         // Fill Show Prices toggle
-        document.getElementById('showPrices').checked = client.showPrices !== false;
-        document.getElementById('showPricesLabel').textContent = client.showPrices !== false ? 'Enabled' : 'Disabled';
+        // showPrices removido - agora está em Permissions
 
         // Update titles
         document.getElementById('modalTitle').textContent = 'Edit Access Code';
@@ -1759,7 +1779,7 @@ class AdminClients {
             state: document.getElementById('state').value,
             zipCode: document.getElementById('zipCode').value,
             expireDays: document.getElementById('expireDays').value,
-            showPrices: document.getElementById('showPrices').checked,
+            showPrices: this.currentClient?.showPrices !== false, // Mantém valor existente
             selectedCategories: [...this.selectedCategories]
         };
         this.hasUnsavedChanges = false;
@@ -1801,7 +1821,7 @@ class AdminClients {
             state: document.getElementById('state').value,
             zipCode: document.getElementById('zipCode').value,
             expireDays: document.getElementById('expireDays').value,
-            showPrices: document.getElementById('showPrices').checked,
+            showPrices: true,
             selectedCategories: [...this.selectedCategories]
         };
 
@@ -2206,6 +2226,13 @@ class AdminClients {
         setTimeout(() => {
             this.markSavedCheckboxes();
         }, 500);
+
+        // Carregar valor do showPrices
+        const showPricesSettings = document.getElementById('showPricesSettings');
+        if (showPricesSettings && client) {
+            showPricesSettings.checked = client.showPrices !== false;
+            document.getElementById('showPricesSettingsLabel').textContent = client.showPrices !== false ? 'Enabled' : 'Disabled';
+        }
 
         // Mostrar modal
         document.getElementById('clientSettingsModal').classList.add('active');
@@ -2665,7 +2692,12 @@ class AdminClients {
             // Remover duplicatas
             const uniqueCategories = [...new Set(allowedCategories)];
 
+            // ⚠️ NOVO - Pegar valor do Show Prices
+            const showPrices = document.getElementById('showPricesSettings') ?
+                document.getElementById('showPricesSettings').checked : true;
+
             console.log('📁 Saving categories/QB items:', uniqueCategories);
+            console.log('💰 Show Prices:', showPrices);
 
             const response = await fetch(`/api/admin/clients/${this.currentSettingsClient._id}/categories`, {
                 method: 'PUT',
@@ -2674,7 +2706,8 @@ class AdminClients {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    allowedCategories: uniqueCategories
+                    allowedCategories: uniqueCategories,
+                    showPrices: showPrices  // ⚠️ NOVO - Adicionar showPrices aqui
                 })
             });
 
@@ -2687,6 +2720,7 @@ class AdminClients {
                 const clientIndex = this.clients.findIndex(c => c._id === this.currentSettingsClient._id);
                 if (clientIndex > -1) {
                     this.clients[clientIndex].allowedCategories = uniqueCategories;
+                    this.clients[clientIndex].showPrices = showPrices;  // ⚠️ NOVO - Atualizar showPrices local
                 }
 
                 this.closeSettingsModal();

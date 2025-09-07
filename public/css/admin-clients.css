@@ -540,6 +540,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    padding-bottom: 10px;
 }
 
 .required::after {
@@ -1560,8 +1561,8 @@
 }
 
 #clientSettingsModal .folder-search-results {
-    min-height: 150px;
-    max-height: 250px;
+    min-height: 60px;
+    max-height: 200px;
     /* Altura fixa para resultados */
     overflow-y: auto;
     margin: 1rem 0;
@@ -2144,4 +2145,46 @@ tr:has(.cart-indicator):hover {
 
 .special-btn-icon.settings:hover i {
     color: #10b981;
+}
+
+/* ===== FOOTER FIXO PARA MODAL EDIT - ADICIONADO EM 06/09/2025 ===== */
+#clientModal .client-modal-content {
+    width: 90%;
+    max-width: 1200px;
+    min-height: 85vh;
+    max-height: 90vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#clientModal .client-modal-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: calc(85vh - 140px) !important;
+    padding-bottom: 20px !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-subtle) transparent;
+}
+
+#clientModal .client-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+#clientModal .client-modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 4px;
+}
+
+#clientModal .client-modal-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--luxury-darker) !important;
+    border-top: 1px solid var(--border-subtle) !important;
+    padding: 1.5rem !important;
+    margin-top: auto !important;
+    z-index: 100 !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
+    min-height: 70px !important;
 }

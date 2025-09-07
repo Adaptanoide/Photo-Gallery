@@ -49,6 +49,7 @@
             <!-- Navegação -->
             <nav class="sidebar-nav">
                 <div class="nav-item">
+                <div class="nav-item" style="display:none">
                     <a href="#dashboard" class="nav-link active" data-section="dashboard">
                         <i class="fas fa-chart-line"></i>
                         <span class="nav-text">Dashboard</span>
@@ -56,7 +57,7 @@
                 </div>
 
                 <div class="nav-item">
-                    <a href="#clients" class="nav-link" data-section="clients">
+                    <a href="#clients" class="nav-link active" data-section="clients">
                         <i class="fas fa-users"></i>
                         <span class="nav-text">Client Management</span>
                     </a>
@@ -77,13 +78,15 @@
                 </div>
 
                 <div class="nav-item">
+                <div class="nav-item" style="display:none">
                     <a href="#special-selections" class="nav-link" data-section="special-selections">
                         <i class="fas fa-star"></i>
                         <span class="nav-text">Special Selections</span>
                     </a>
                 </div>
 
-                <div class="nav-item">
+                <div class="nav-item" style="display:none">
+                <div class="nav-item" style="display:none">
                     <a href="#reports" class="nav-link" data-section="reports">
                         <i class="fas fa-chart-bar"></i>
                         <span class="nav-text">Reports</span>
@@ -91,18 +94,18 @@
                 </div>
 
                 <div class="nav-item">
-                    <a href="#storage" class="nav-link" data-section="storage">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span class="nav-text">Storage Management</span>
-                    </a>
-                </div>
+                    <div class="nav-item" style="display:none">
+                        <a href="#storage" class="nav-link" data-section="storage">
+                            <span class="nav-text">Storage Management</span>
+                        </a>
+                    </div>
 
-                <div class="nav-item">
-                    <a href="#settings" class="nav-link" data-section="settings">
-                        <i class="fas fa-cog"></i>
-                        <span class="nav-text">Settings</span>
-                    </a>
-                </div>
+                    <div class="nav-item">
+                        <a href="#settings" class="nav-link" data-section="settings">
+                            <i class="fas fa-cog"></i>
+                            <span class="nav-text">Settings</span>
+                        </a>
+                    </div>
             </nav>
         </aside>
 
@@ -114,7 +117,7 @@
                     <button id="sidebarToggle" class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1 id="pageTitle" class="page-title">Dashboard</h1>
+                    <h1 id="pageTitle" class="page-title">Client Management</h1>
                 </div>
 
                 <div class="header-right">
@@ -132,7 +135,7 @@
             <!-- Conteúdo Principal -->
             <div class="admin-content">
                 <!-- Seção Dashboard -->
-                <div id="section-dashboard" class="content-section active">
+                <div id="section-dashboard" class="content-section" style="display: none;">
                     <!-- Cards de Estatísticas -->
                     <div class="stats-grid">
                         <!-- Card: Total de Clientes -->
@@ -283,7 +286,7 @@
                 </div>
 
                 <!-- Seção Clientes (Hidden por padrão) -->
-                <div id="section-clients" class="content-section" style="display: none;">
+                <div id="section-clients" class="content-section active">
                     <!-- Loading inicial elegante -->
                     <div id="clientsInitialLoading" class="luxury-loading">
                         <div class="luxury-loading-spinner"></div>
@@ -309,15 +312,6 @@
                                     Sync with Drive
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Banner de Sync (mantém como está) -->
-                    <div id="syncStatusBanner" class="sync-status-banner" style="display: none;">
-                        <div class="sync-status-content">
-                            <i class="fas fa-info-circle"></i>
-                            <span id="syncStatusText">System synchronized</span>
-                            <small id="syncLastUpdate">Last update: Never</small>
                         </div>
                     </div>
 
@@ -420,19 +414,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">Total Photos</div>
-                                        <div class="stat-value" id="totalPhotosCount">-</div>
-                                        <div class="stat-description">In all categories</div>
-                                    </div>
-                                    <div class="stat-icon secondary">
-                                        <i class="fas fa-images"></i>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -511,7 +492,7 @@
                 <!-- ===== MODAL DE PREÇOS REDESENHADO ===== -->
                 <div id="priceModal" class="price-modal" style="display: none;">
                     <div class="price-modal-overlay" onclick="adminPricing.closePriceModal()"></div>
-                    <div class="price-modal-content" style="max-width: 900px;">
+                    <div class="price-modal-content" style="max-width: 1000px;">
                         <div class="price-modal-header">
                             <h3 class="modal-title">
                                 <i class="fas fa-dollar-sign"></i>
@@ -841,20 +822,6 @@
                                     </div>
                                     <div class="stat-icon success">
                                         <i class="fas fa-calendar-check"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">Average Value</div>
-                                        <div class="stat-value" id="averageSelectionValue">-</div>
-                                        <div class="stat-description" id="averageSelectionValueDescription">Per
-                                            selection</div>
-                                    </div>
-                                    <div class="stat-icon secondary">
-                                        <i class="fas fa-dollar-sign"></i>
                                     </div>
                                 </div>
                             </div>

@@ -279,8 +279,8 @@ class AdminPricing {
                     <small class="text-muted">${category.folderName}</small>
                 </td>
                 <td class="photos-count-cell">
-                    <span class="photo-count-badge">${category.photoCount}</span>
-                    <small>photo${category.photoCount !== 1 ? 's' : ''}</small>
+                    <span class="photo-count-badge">${category.availableCount || category.photoCount}</span>
+                    <small>photo${(category.availableCount || category.photoCount) !== 1 ? 's' : ''}</small>
                 </td>
                 <td class="price-cell ${category.basePrice > 0 ? 'has-price' : 'no-price'}">
                     ${category.basePrice > 0 ?
@@ -312,7 +312,7 @@ class AdminPricing {
             'totalCategoriesCount': totalCount,
             'categoriesWithPriceCount': withPrice,
             'categoriesWithoutPriceCount': withoutPrice,
-            'totalPhotosCount': totalPhotos
+            // Linha removida - Total Photos card removido
         };
 
         Object.entries(elements).forEach(([id, value]) => {
@@ -357,7 +357,7 @@ class AdminPricing {
 
         if (modalTitle) modalTitle.textContent = 'Edit Price & Settings';
         if (categoryName) categoryName.textContent = this.cleanCategoryName(this.currentCategory.displayName);
-        if (photoCount) photoCount.textContent = `${this.currentCategory.photoCount} photos`;
+        if (photoCount) photoCount.textContent = `${this.currentCategory.availableCount || this.currentCategory.photoCount} photos`;
 
         if (currentPrice) {
             currentPrice.textContent = this.currentCategory.basePrice > 0 ?

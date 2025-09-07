@@ -348,10 +348,23 @@ class AdminSelections {
             const response = await fetch(`/api/selections/${selectionId}`, {
                 headers: this.getAuthHeaders()
             });
-
             const data = await response.json();
-
             if (data.success) {
+                // Buscar nome real da empresa do access-codes
+                try {
+                    const codesResp = await fetch('/api/admin/access-codes', {
+                        headers: this.getAuthHeaders()
+                    });
+                    const codesData = await codesResp.json();
+                    if (codesData.success) {
+                        const client = codesData.codes.find(c => c.code === data.selection.clientCode);
+                        if (client?.companyName) {
+                            data.selection.clientCompany = client.companyName;
+                        }
+                    }
+                } catch (err) {
+                    console.log('Erro buscando empresa:', err);
+                }
                 // Buscar QB items para as categorias
                 const categories = [...new Set(data.selection.items.map(item => item.category))];
                 const qbMap = await this.fetchQBItems(categories);
@@ -473,8 +486,8 @@ class AdminSelections {
                         <span>${selection.clientName}</span>
                     </div>
                     <div class="info-item">
-                        <label>Code:</label>
-                        <span>${selection.clientCode}</span>
+                        <label>Company:</label>
+                        <span>${selection.clientCompany || selection.clientName}</span>
                     </div>
                     <div class="info-item">
                         <label>Status:</label>
