@@ -1156,3 +1156,10 @@
         outline-offset: 3px;
     }
 }
+
+/* Thumbnails no mobile */
+@media (max-width: 768px) {
+    .folder-card.has-thumbnail .category-thumbnail {
+        height: 150px;
+    }
+}

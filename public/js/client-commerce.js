@@ -5,6 +5,31 @@
  * Parte 3/3 da modularização do client.js
  */
 
+
+// ===== INTERCEPTAR CLIQUES NOS FILTROS IMEDIATAMENTE =====
+document.addEventListener('click', function (e) {
+    // Se clicou em qualquer input dentro do filterSidebar
+    if (e.target && (e.target.type === 'checkbox' || e.target.type === 'radio')) {
+        const sidebar = document.getElementById('filterSidebar');
+        if (sidebar && sidebar.contains(e.target)) {
+            console.log('🚨 Filtro clicado - escondendo categorias IMEDIATAMENTE');
+
+            // ESCONDER TUDO INSTANTANEAMENTE
+            const categoriesContainer = document.getElementById('categoriesContainer');
+            if (categoriesContainer) {
+                categoriesContainer.style.visibility = 'hidden';
+                categoriesContainer.style.opacity = '0';
+            }
+
+            // Mostrar loading
+            const loadingEl = document.getElementById('navigationLoading');
+            if (loadingEl) {
+                loadingEl.style.display = 'flex';
+            }
+        }
+    }
+}, true); // TRUE = captura ANTES de qualquer outro evento
+
 // ===== VERIFICAR DEPENDÊNCIAS =====
 if (!window.navigationState) {
     console.error('❌ client-commerce.js requer client-core.js');
@@ -806,9 +831,9 @@ window.displayFilteredCategories = function (categories) {
             <h3>${cleanName}</h3>
             <p class="category-path">${displayName}</p>
             <div class="folder-stats">
-                ${''}
+                ${category.photoCount > 0 ? `<span><i class="fas fa-images"></i> ${category.photoCount} photos</span>` : ''}
                 ${window.shouldShowPrices() && category.formattedPrice ?
-                `<span><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
+                `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
             </div>
             <div class="category-action">
                 <i class="fas fa-arrow-right"></i>

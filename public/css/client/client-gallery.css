@@ -449,7 +449,7 @@
 .price-progress-wrapper {
     display: flex;
     align-items: left;
-    justify-content: left;
+    justify-content: lefte;
     gap: 18px;
     padding: 8px 15px;
     background: transparent;
@@ -542,12 +542,111 @@
 /* Otimização de espaço no desktop */
 @media (min-width: 1024px) {
     .photos-gallery {
-        padding: 1rem;  /* Reduz de 2rem para 1rem */
+        padding: 1rem;
+        /* Reduz de 2rem para 1rem */
     }
-    
+
     .photos-grid {
         margin: 0;
-        padding: 1rem 0.5rem;  /* Menos padding lateral */
-        gap: 1rem;  /* Gap menor entre fotos */
+        padding: 1rem 0.5rem;
+        /* Menos padding lateral */
+        gap: 1rem;
+        /* Gap menor entre fotos */
     }
+}
+
+/* Category Thumbnails - AJUSTADO */
+.folder-card.has-thumbnail {
+    padding-top: 0;
+    overflow: hidden;
+}
+
+.category-thumbnail {
+    width: calc(100% + 4rem);
+    height: 120px;
+    /* REDUZIDO de 200px para 120px */
+    margin: -2rem -2rem 1rem -2rem;
+    overflow: hidden;
+    background: #f8f8f8;
+    border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+}
+
+.category-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Mantém proporção e corta excesso */
+    object-position: center;
+    /* Centraliza a imagem */
+    transition: transform 0.3s ease;
+    background-color: white;
+}
+
+.folder-card:hover .category-thumbnail img {
+    transform: scale(1.05);
+}
+
+/* Ajustar título quando tem thumbnail */
+.folder-card.has-thumbnail h4 {
+    margin-top: 0.5rem;
+}
+
+/* Card com thumbnail - layout novo */
+.folder-card.has-thumbnail {
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.folder-card.has-thumbnail .category-thumbnail {
+    width: 100%;
+    height: 250px;
+    margin: 0;
+    position: relative;
+}
+
+/* Preço no canto superior direito */
+.price-corner {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #27ae60;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Rodapé com info */
+.card-footer-info {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+.card-footer-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.card-footer-info .photo-count {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* Badge Sample Photo */
+.sample-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.404);
+    color: white;
+    padding: 2px 2px;
+    font-size: 11px;
+    border-radius: 3px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
