@@ -373,8 +373,8 @@
 /* Forçar posição correta com sidebar */
 .photos-gallery #priceProgressContainer,
 .photos-gallery .price-info-container {
-    margin-left: -2rem;
-    margin-right: -2rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
 }
 
 .price-info-inline {
@@ -448,8 +448,8 @@
 /* Estilos para o price progress real */
 .price-progress-wrapper {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: left;
+    justify-content: left;
     gap: 18px;
     padding: 8px 15px;
     background: transparent;
@@ -485,7 +485,7 @@
 
 .price-tier .tier-price {
     font-weight: 700;
-    color: #f4a020;
+    color: #28a745;
     font-size: 18px;
 }
 

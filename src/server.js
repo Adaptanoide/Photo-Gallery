@@ -127,7 +127,7 @@ app.use('*', (req, res) => {
 
 // Sincronização CDE - intervalo baseado no ambiente e horário comercial
 const CDESync = require('./services/CDESync');
-
+const UpdatePhotoCounters = require('./jobs/updatePhotoCounters');
 // Função para verificar horário comercial Fort Myers (EST/EDT)
 function isBusinessHours() {
     const now = new Date();
@@ -143,8 +143,11 @@ function isBusinessHours() {
 // Função para executar sync com verificação de horário
 function runCDESync() {
     if (isBusinessHours()) {
-        console.log('[Server] Dentro do horário comercial Fort Myers - executando CDESync...');
+        console.log('[Server] Dentro do horário comercial Fort Myers - executando syncs...');
         CDESync.syncAllStates();
+
+        // NOVO - Atualizar contadores de fotos
+        UpdatePhotoCounters.updateCounters();
     } else {
         const now = new Date();
         const ftTime = now.toLocaleString("en-US", {
@@ -153,7 +156,7 @@ function runCDESync() {
             hour: '2-digit',
             minute: '2-digit'
         });
-        console.log(`[Server] Fora do horário comercial (Fort Myers: ${ftTime}) - CDESync pausado`);
+        console.log(`[Server] Fora do horário comercial (Fort Myers: ${ftTime}) - syncs pausados`);
     }
 }
 

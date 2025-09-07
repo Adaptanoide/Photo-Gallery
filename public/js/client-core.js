@@ -369,8 +369,7 @@ window.showCategories = async function () {
                     <h3>${category.name}</h3>
                     <p>${description}</p>
                     <div class="folder-stats">
-                        ${''/* Ocultado temporariamente - contagem incorreta */}
-                        ${''}
+                        ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} photos</span>` : ''}                        ${''}
                         ${shouldShowPrices() && priceRange !== 'Price on request' ?
                     `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${priceRange}</span>` :
                     (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
