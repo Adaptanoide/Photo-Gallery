@@ -873,7 +873,7 @@ class AdminClients {
         document.getElementById('zipCode').value = '';
         document.getElementById('expireDays').value = '30';
         // showPrices removido - agora está em Permissions
-        document.getElementById('showPricesLabel').textContent = 'Enabled';
+        //document.getElementById('showPricesLabel').textContent = 'Enabled';
 
         // Update titles
         document.getElementById('modalTitle').textContent = 'New Access Code';
@@ -2211,7 +2211,7 @@ class AdminClients {
         const showPricesSettings = document.getElementById('showPricesSettings');
         if (showPricesSettings && client) {
             showPricesSettings.checked = client.showPrices !== false;
-            document.getElementById('showPricesSettingsLabel').textContent = client.showPrices !== false ? 'Enabled' : 'Temporaly Disabled';
+            document.getElementById('showPricesSettingsLabel').textContent = client.showPrices !== false ? 'Temporaly Disabled' : 'Temporaly Disabled';
         }
 
         // Mostrar modal

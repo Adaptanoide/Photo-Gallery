@@ -1,5 +1,6 @@
 // src/services/CDEWriter.js
 const mysql = require('mysql2/promise');
+require('dotenv').config();  // ADICIONE ESTA LINHA!
 
 class CDEWriter {
     constructor() {
@@ -10,13 +11,13 @@ class CDEWriter {
             password: process.env.CDE_PASSWORD,
             database: process.env.CDE_DATABASE
         };
-        
+
         // MODO SIMULAÇÃO - MUDAR PARA false QUANDO TIVER PERMISSÃO!
-        this.simulationMode = true;
-        
+        this.simulationMode = false;
+
         // Fila para retry se CDE estiver offline
         this.retryQueue = [];
-        
+
         // Processar fila a cada 5 minutos
         setInterval(() => this.processRetryQueue(), 5 * 60 * 1000);
     }
@@ -41,7 +42,7 @@ class CDEWriter {
             console.log(`  SQL: UPDATE tbinventario SET RESERVEDUSU = 'SUNSHINE_${clientCode}_${sessionId}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
             return true;
         }
-        
+
         const connection = await this.getConnection();
         if (!connection) {
             // Adicionar à fila para retry
@@ -55,23 +56,23 @@ class CDEWriter {
 
         try {
             console.log(`[CDEWriter] Marcando ${photoNumber} como RESERVED para cliente ${clientCode}`);
-            
+
             // Por enquanto, usar campo RESERVEDUSU até Ingrid criar os novos
             const query = `
-                UPDATE tbinventario 
-                SET RESERVEDUSU = ?,
-                    AFECHA = NOW()
+    UPDATE tbinventario 
+    SET ANOTA = ?,
+        AFECHA = NOW()
                 WHERE (AIDH = ? OR ATIPOETIQUETA = ?)
                 AND AESTADOP = 'INGRESADO'
             `;
-            
+
             const reserveInfo = `SUNSHINE_${clientCode}_${sessionId}`;
-            
+
             const [result] = await connection.execute(
                 query,
                 [reserveInfo, idhCode || '', photoNumber]
             );
-            
+
             if (result.affectedRows > 0) {
                 console.log(`[CDEWriter] ✅ Foto ${photoNumber} reservada no CDE`);
                 return true;
@@ -79,17 +80,17 @@ class CDEWriter {
                 console.log(`[CDEWriter] ⚠️ Foto ${photoNumber} não atualizada - pode já estar reservada`);
                 return false;
             }
-            
+
         } catch (error) {
             console.error(`[CDEWriter] Erro ao reservar ${photoNumber}:`, error.message);
-            
+
             // Adicionar à fila para retry
             this.retryQueue.push({
                 action: 'reserve',
                 data: { photoNumber, idhCode, clientCode, sessionId },
                 timestamp: new Date()
             });
-            
+
             return false;
         } finally {
             if (connection) await connection.end();
@@ -104,7 +105,7 @@ class CDEWriter {
             console.log(`  SQL: UPDATE tbinventario SET RESERVEDUSU = NULL WHERE ATIPOETIQUETA = '${photoNumber}'`);
             return true;
         }
-        
+
         const connection = await this.getConnection();
         if (!connection) {
             this.retryQueue.push({
@@ -117,7 +118,7 @@ class CDEWriter {
 
         try {
             console.log(`[CDEWriter] Liberando ${photoNumber}`);
-            
+
             const query = `
                 UPDATE tbinventario 
                 SET RESERVEDUSU = NULL,
@@ -125,28 +126,28 @@ class CDEWriter {
                 WHERE (AIDH = ? OR ATIPOETIQUETA = ?)
                 AND RESERVEDUSU LIKE 'SUNSHINE_%'
             `;
-            
+
             const [result] = await connection.execute(
                 query,
                 [idhCode || '', photoNumber]
             );
-            
+
             if (result.affectedRows > 0) {
                 console.log(`[CDEWriter] ✅ Foto ${photoNumber} liberada no CDE`);
                 return true;
             }
-            
+
             return false;
-            
+
         } catch (error) {
             console.error(`[CDEWriter] Erro ao liberar ${photoNumber}:`, error.message);
-            
+
             this.retryQueue.push({
                 action: 'release',
                 data: { photoNumber, idhCode },
                 timestamp: new Date()
             });
-            
+
             return false;
         } finally {
             if (connection) await connection.end();
@@ -162,7 +163,7 @@ class CDEWriter {
             console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'RETIRADO', RESERVEDUSU = 'SOLD_SUNSHINE_${clientCode}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
             return true;
         }
-        
+
         const connection = await this.getConnection();
         if (!connection) {
             this.retryQueue.push({
@@ -175,38 +176,38 @@ class CDEWriter {
 
         try {
             console.log(`[CDEWriter] Marcando ${photoNumber} como RETIRADO (vendido)`);
-            
+
             const query = `
                 UPDATE tbinventario 
-                SET AESTADOP = 'RETIRADO',
-                    RESERVEDUSU = ?,
+SET AESTADOP = 'RETIRADO',
+    ANOTA = ?,
                     AFECHA = NOW()
                 WHERE (AIDH = ? OR ATIPOETIQUETA = ?)
             `;
-            
+
             const soldInfo = `SOLD_SUNSHINE_${clientCode}`;
-            
+
             const [result] = await connection.execute(
                 query,
                 [soldInfo, idhCode || '', photoNumber]
             );
-            
+
             if (result.affectedRows > 0) {
                 console.log(`[CDEWriter] ✅ Foto ${photoNumber} marcada como VENDIDA no CDE`);
                 return true;
             }
-            
+
             return false;
-            
+
         } catch (error) {
             console.error(`[CDEWriter] Erro ao marcar como vendida ${photoNumber}:`, error.message);
-            
+
             this.retryQueue.push({
                 action: 'sell',
                 data: { photoNumber, idhCode, clientCode },
                 timestamp: new Date()
             });
-            
+
             return false;
         } finally {
             if (connection) await connection.end();
@@ -216,12 +217,12 @@ class CDEWriter {
     // 4. PROCESSAR FILA DE RETRY (para quando CDE estava offline)
     async processRetryQueue() {
         if (this.retryQueue.length === 0) return;
-        
+
         console.log(`[CDEWriter] Processando ${this.retryQueue.length} itens na fila de retry`);
-        
+
         const queue = [...this.retryQueue];
         this.retryQueue = [];
-        
+
         for (const item of queue) {
             switch (item.action) {
                 case 'reserve':
@@ -256,7 +257,7 @@ class CDEWriter {
             console.log('[CDEWriter] ❌ Não foi possível conectar ao CDE');
             return false;
         }
-        
+
         try {
             const [result] = await connection.execute('SELECT 1');
             console.log('[CDEWriter] ✅ Conexão com CDE funcionando!');
