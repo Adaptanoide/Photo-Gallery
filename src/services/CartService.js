@@ -1,15 +1,39 @@
 //src/services/CartService.js
 
 const mongoose = require('mongoose');
-const Cart = require('../models/Cart'); ``
+const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const PhotoStatus = require('../models/PhotoStatus');
 const CDEWriter = require('./CDEWriter');
 
+// Função auxiliar para extrair número da foto de forma segura
+function extractPhotoNumber(driveFileId) {
+    if (!driveFileId) return null;
+
+    try {
+        // Pegar só o nome do arquivo: "08211.webp"
+        const fileName = driveFileId.split('/').pop();
+        // Remover extensão: "08211"
+        const nameWithoutExt = fileName.replace('.webp', '').replace('.jpg', '').replace('.png', '');
+        // Extrair apenas números: "08211"
+        const numbers = nameWithoutExt.match(/\d+/);
+
+        if (numbers && numbers[0]) {
+            // Garantir 5 dígitos com zeros à esquerda
+            return numbers[0].padStart(5, '0');
+        }
+    } catch (error) {
+        console.log('[CartService] Erro ao extrair número:', error.message);
+    }
+
+    return null;
+}
+
 class CartService {
 
     // ===== CONFIGURAÇÕES =====
-    static RESERVATION_DURATION = 24 * 60 * 60 * 1000; // 24 horas em ms    static MAX_ITEMS_PER_CART = 100; // Limite máximo de itens por carrinho
+    static RESERVATION_DURATION = 24 * 60 * 60 * 1000; // 24 horas em ms
+    static MAX_ITEMS_PER_CART = 100; // Limite máximo de itens por carrinho
 
     // ===== MÉTODOS PRINCIPAIS =====
 
@@ -168,14 +192,24 @@ class CartService {
                 // NOVO: Notificar CDE em background (não bloqueia)
                 setImmediate(async () => {
                     try {
+                        // MUDANÇA: Usar a função extractPhotoNumber
+                        const photoNumber = extractPhotoNumber(driveFileId);
+
+                        if (!photoNumber) {
+                            console.log(`[CartService] Não foi possível extrair número da foto de: ${driveFileId}`);
+                            return;
+                        }
+
                         const photoStatus = await PhotoStatus.findOne({
                             $or: [
-                                { photoId: driveFileId },
-                                { photoNumber: driveFileId.match(/\d+/)?.[0] }
+                                { photoNumber: photoNumber },
+                                { photoId: photoNumber },
+                                { fileName: `${photoNumber}.webp` }
                             ]
                         });
 
                         if (photoStatus?.idhCode) {
+                            console.log(`[CartService] Foto encontrada: ${photoStatus.photoNumber} - IDH: ${photoStatus.idhCode}`);
                             console.log(`[CartService] Tentando notificar CDE sobre reserva de ${photoStatus.photoNumber}`);
                             // Só vai funcionar quando tiver permissão WRITE (segunda-feira)
                             await CDEWriter.markAsReserved(
@@ -184,6 +218,8 @@ class CartService {
                                 clientCode,
                                 sessionId
                             );
+                        } else {
+                            console.log(`[CartService] Foto NÃO encontrada no PhotoStatus: ${photoNumber}`);
                         }
                     } catch (error) {
                         console.error('[CartService] Erro ao notificar CDE:', error.message);
@@ -235,10 +271,16 @@ class CartService {
                 cart.items = cart.items.filter(item => item.driveFileId !== driveFileId);
 
                 // 3. Liberar reserva do produto (operação atômica)
-                await Product.updateOne(
+                // CORREÇÃO: Buscar o clientCode do carrinho para garantir liberação
+                const clientCode = cart.clientCode;
+
+                const updateResult = await Product.updateOne(
                     {
                         driveFileId,
-                        'reservedBy.sessionId': sessionId
+                        $or: [
+                            { 'reservedBy.sessionId': sessionId },      // Tenta pelo sessionId primeiro
+                            { 'reservedBy.clientCode': clientCode }     // Se não encontrar, tenta pelo cliente
+                        ]
                     },
                     {
                         $set: {
@@ -251,6 +293,13 @@ class CartService {
                     }
                 ).session(session);
 
+                // Adicionar log para debug
+                if (updateResult.modifiedCount === 0) {
+                    console.log(`⚠️ [CartService] Produto ${driveFileId} não foi liberado - pode já estar available`);
+                } else {
+                    console.log(`✅ [CartService] Produto ${driveFileId} liberado com sucesso`);
+                }
+
                 // 4. Salvar carrinho
                 if (cart.totalItems === 0) {
                     cart.isActive = false;
@@ -261,20 +310,32 @@ class CartService {
                 // NOVO: Notificar CDE em background (não bloqueia)
                 setImmediate(async () => {
                     try {
+                        // MUDANÇA: Usar a função extractPhotoNumber
+                        const photoNumber = extractPhotoNumber(driveFileId);
+
+                        if (!photoNumber) {
+                            console.log(`[CartService] Não foi possível extrair número da foto de: ${driveFileId}`);
+                            return;
+                        }
+
                         const photoStatus = await PhotoStatus.findOne({
                             $or: [
-                                { photoId: driveFileId },
-                                { photoNumber: driveFileId.match(/\d+/)?.[0] }
+                                { photoNumber: photoNumber },
+                                { photoId: photoNumber },
+                                { fileName: `${photoNumber}.webp` }
                             ]
                         });
 
                         if (photoStatus?.idhCode) {
+                            console.log(`[CartService] Foto encontrada: ${photoStatus.photoNumber} - IDH: ${photoStatus.idhCode}`);
                             console.log(`[CartService] Tentando notificar CDE sobre liberação de ${photoStatus.photoNumber}`);
                             // Só vai funcionar quando tiver permissão WRITE (segunda-feira)
                             await CDEWriter.markAsAvailable(
                                 photoStatus.photoNumber,
                                 photoStatus.idhCode
                             );
+                        } else {
+                            console.log(`[CartService] Foto NÃO encontrada no PhotoStatus: ${photoNumber}`);
                         }
                     } catch (error) {
                         console.error('[CartService] Erro ao notificar CDE:', error.message);

@@ -1,6 +1,6 @@
 // src/services/CDEWriter.js
 const mysql = require('mysql2/promise');
-require('dotenv').config();  // ADICIONE ESTA LINHA!
+require('dotenv').config();
 
 class CDEWriter {
     constructor() {
@@ -12,7 +12,7 @@ class CDEWriter {
             database: process.env.CDE_DATABASE
         };
 
-        // MODO SIMULAÇÃO - MUDAR PARA false QUANDO TIVER PERMISSÃO!
+        // MODO SIMULAÇÃO - false = ativo
         this.simulationMode = false;
 
         // Fila para retry se CDE estiver offline
@@ -39,7 +39,7 @@ class CDEWriter {
             console.log(`\n[CDEWriter - SIMULAÇÃO] Reservaria foto ${photoNumber}`);
             console.log(`  Cliente: ${clientCode}`);
             console.log(`  Session: ${sessionId}`);
-            console.log(`  SQL: UPDATE tbinventario SET RESERVEDUSU = 'SUNSHINE_${clientCode}_${sessionId}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
+            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'RESERVED', RESERVEDUSU = 'SUNSHINE-${clientCode}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
             return true;
         }
 
@@ -57,20 +57,21 @@ class CDEWriter {
         try {
             console.log(`[CDEWriter] Marcando ${photoNumber} como RESERVED para cliente ${clientCode}`);
 
-            // Por enquanto, usar campo RESERVEDUSU até Ingrid criar os novos
+            // IMPORTANTE: Agora muda AESTADOP para RESERVED e usa RESERVEDUSU
             const query = `
-    UPDATE tbinventario 
-    SET ANOTA = ?,
-        AFECHA = NOW()
-                WHERE (AIDH = ? OR ATIPOETIQUETA = ?)
+                UPDATE tbinventario 
+                SET AESTADOP = 'RESERVED',
+                    RESERVEDUSU = ?,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
                 AND AESTADOP = 'INGRESADO'
             `;
 
-            const reserveInfo = `SUNSHINE_${clientCode}_${sessionId}`;
+            const reserveInfo = `SUNSHINE-${clientCode}`;
 
             const [result] = await connection.execute(
                 query,
-                [reserveInfo, idhCode || '', photoNumber]
+                [reserveInfo, photoNumber]
             );
 
             if (result.affectedRows > 0) {
@@ -102,7 +103,7 @@ class CDEWriter {
         // MODO SIMULAÇÃO
         if (this.simulationMode) {
             console.log(`\n[CDEWriter - SIMULAÇÃO] Liberaria foto ${photoNumber}`);
-            console.log(`  SQL: UPDATE tbinventario SET RESERVEDUSU = NULL WHERE ATIPOETIQUETA = '${photoNumber}'`);
+            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'INGRESADO', RESERVEDUSU = NULL WHERE ATIPOETIQUETA = '${photoNumber}'`);
             return true;
         }
 
@@ -119,17 +120,20 @@ class CDEWriter {
         try {
             console.log(`[CDEWriter] Liberando ${photoNumber}`);
 
+            // IMPORTANTE: Volta AESTADOP para INGRESADO e limpa RESERVEDUSU
             const query = `
                 UPDATE tbinventario 
-                SET RESERVEDUSU = NULL,
+                SET AESTADOP = 'INGRESADO',
+                    RESERVEDUSU = NULL,
                     AFECHA = NOW()
-                WHERE (AIDH = ? OR ATIPOETIQUETA = ?)
-                AND RESERVEDUSU LIKE 'SUNSHINE_%'
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP = 'RESERVED'
+                AND RESERVEDUSU LIKE 'SUNSHINE-%'
             `;
 
             const [result] = await connection.execute(
                 query,
-                [idhCode || '', photoNumber]
+                [photoNumber]
             );
 
             if (result.affectedRows > 0) {
@@ -154,7 +158,7 @@ class CDEWriter {
         }
     }
 
-    // 3. QUANDO ADMIN APROVA SELEÇÃO
+    // 3. QUANDO ADMIN APROVA SELEÇÃO (POR ENQUANTO NÃO USAR - RETIRADO é processo físico)
     async markAsSold(photoNumber, idhCode, clientCode) {
         // MODO SIMULAÇÃO
         if (this.simulationMode) {
@@ -177,19 +181,21 @@ class CDEWriter {
         try {
             console.log(`[CDEWriter] Marcando ${photoNumber} como RETIRADO (vendido)`);
 
+            // NOTA: Por enquanto NÃO vamos usar este método
+            // RETIRADO deve ser feito pelo processo físico do CDE
             const query = `
                 UPDATE tbinventario 
-SET AESTADOP = 'RETIRADO',
-    ANOTA = ?,
+                SET AESTADOP = 'RETIRADO',
+                    RESERVEDUSU = ?,
                     AFECHA = NOW()
-                WHERE (AIDH = ? OR ATIPOETIQUETA = ?)
+                WHERE ATIPOETIQUETA = ?
             `;
 
             const soldInfo = `SOLD_SUNSHINE_${clientCode}`;
 
             const [result] = await connection.execute(
                 query,
-                [soldInfo, idhCode || '', photoNumber]
+                [soldInfo, photoNumber]
             );
 
             if (result.affectedRows > 0) {

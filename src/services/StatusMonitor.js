@@ -38,6 +38,11 @@ class StatusMonitor {
 
             // Processar products
             for (const product of products) {
+                // CORREÇÃO 1: Verificar se driveFileId existe
+                if (!product.driveFileId) {
+                    continue; // Pular este produto
+                }
+                
                 const photoId = product.driveFileId
                     .split('/').pop()
                     .replace('.webp', '');
@@ -60,9 +65,15 @@ class StatusMonitor {
             }
 
             // Se uma foto não está mais em products, está available
-            const productIds = new Set(products.map(p =>
-                p.driveFileId.split('/').pop().replace('.webp', '')
-            ));
+            const productIds = new Set();
+            
+            // CORREÇÃO 2: Filtrar produtos com driveFileId antes de mapear
+            products.forEach(p => {
+                if (p.driveFileId) {
+                    const id = p.driveFileId.split('/').pop().replace('.webp', '');
+                    productIds.add(id);
+                }
+            });
 
             // Buscar fotos que foram liberadas (não estão mais em products)
             const recentlyDeleted = await db.collection('products')
@@ -74,6 +85,11 @@ class StatusMonitor {
 
             // Adicionar fotos explicitamente marcadas como available
             for (const freed of recentlyDeleted) {
+                // CORREÇÃO 3: Verificar se driveFileId existe
+                if (!freed.driveFileId) {
+                    continue; // Pular este produto
+                }
+                
                 const photoId = freed.driveFileId
                     .split('/').pop()
                     .replace('.webp', '');
