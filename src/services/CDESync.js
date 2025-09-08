@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
 const PhotoStatus = require('../models/PhotoStatus');
 const CDEBlockedPhoto = require('../models/CDEBlockedPhoto');
+const Product = require('../models/Product');
 
 class CDESync {
     constructor() {
@@ -147,6 +148,16 @@ class CDESync {
                 if (result.modifiedCount > 0) {
                     updatedCount++;
                     console.log(`[CDE Sync] Foto ${photoNumber} atualizada: ${newCdeStatus} → ${newStatus}`);
+
+                    // NOVO: Também atualizar Product se existir
+                    const productResult = await Product.updateOne(
+                        { fileName: `${photoNumber.padStart(5, '0')}.webp` },
+                        { status: newStatus }
+                    );
+
+                    if (productResult.modifiedCount > 0) {
+                        console.log(`[CDE Sync] Product ${photoNumber} também atualizado`);
+                    }
                 }
             }
 

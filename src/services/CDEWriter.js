@@ -33,8 +33,7 @@ class CDEWriter {
     }
 
     // 1. QUANDO CLIENTE ADICIONA AO CARRINHO
-    async markAsReserved(photoNumber, idhCode, clientCode, sessionId) {
-        // MODO SIMULAÇÃO
+    async markAsReserved(photoNumber, idhCode, clientCode, sessionId, clientName = 'Client') {        // MODO SIMULAÇÃO
         if (this.simulationMode) {
             console.log(`\n[CDEWriter - SIMULAÇÃO] Reservaria foto ${photoNumber}`);
             console.log(`  Cliente: ${clientCode}`);
@@ -67,7 +66,7 @@ class CDEWriter {
                 AND AESTADOP = 'INGRESADO'
             `;
 
-            const reserveInfo = `SUNSHINE-${clientCode}`;
+            const reserveInfo = `${clientName}-${clientCode}`;
 
             const [result] = await connection.execute(
                 query,
@@ -128,7 +127,7 @@ class CDEWriter {
                     AFECHA = NOW()
                 WHERE ATIPOETIQUETA = ?
                 AND AESTADOP = 'RESERVED'
-                AND RESERVEDUSU LIKE 'SUNSHINE-%'
+                AND RESERVEDUSU IS NOT NULL
             `;
 
             const [result] = await connection.execute(

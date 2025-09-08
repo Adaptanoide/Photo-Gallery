@@ -211,12 +211,12 @@ class CartService {
                         if (photoStatus?.idhCode) {
                             console.log(`[CartService] Foto encontrada: ${photoStatus.photoNumber} - IDH: ${photoStatus.idhCode}`);
                             console.log(`[CartService] Tentando notificar CDE sobre reserva de ${photoStatus.photoNumber}`);
-                            // Só vai funcionar quando tiver permissão WRITE (segunda-feira)
                             await CDEWriter.markAsReserved(
                                 photoStatus.photoNumber,
                                 photoStatus.idhCode,
                                 clientCode,
-                                sessionId
+                                sessionId,
+                                clientName
                             );
                         } else {
                             console.log(`[CartService] Foto NÃO encontrada no PhotoStatus: ${photoNumber}`);
