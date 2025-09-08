@@ -496,7 +496,7 @@ function handlePriceFilterChange() {
     applyFilters();
 }
 
-window.applyFilters = function () {
+window.applyPhotoFilters = function () {
     const photos = document.querySelectorAll('.photo-thumbnail');
     let visibleCount = 0;
 
@@ -669,7 +669,7 @@ window.autoApplyFilters = async function () {
 
     const categoriesContainer = document.getElementById('categoriesContainer');
     if (categoriesContainer) {
-        categoriesContainer.style.display = 'flex';
+        categoriesContainer.style.display = 'grid';
     }
 
     const breadcrumbContainer = document.getElementById('breadcrumbContainer');
@@ -826,18 +826,25 @@ window.displayFilteredCategories = function (categories) {
 
         const displayName = category.displayName || category.name;
         const cleanName = displayName.split(' → ').pop();
+        const thumbnail = window.categoryThumbnails && window.categoryThumbnails[cleanName];
 
-        categoryCard.innerHTML = `
+        categoryCard.className = thumbnail ? 'category-card folder-card has-thumbnail' : 'category-card';
+        categoryCard.innerHTML = thumbnail ? `
+            <div class="category-thumbnail">
+                <img src="https://images.sunshinecowhides-gallery.com/category-thumbnails/${thumbnail}" 
+                    alt="${cleanName}" loading="lazy" />
+                ${category.formattedPrice ? `<span class="price-corner">${category.formattedPrice}</span>` : ''}
+                <span class="sample-badge">Sample Photo</span>
+            </div>
+            <div class="card-footer-info">
+                <h4>${window.cleanName(cleanName)}</h4>
+            </div>
+        ` : `
             <h3>${cleanName}</h3>
             <p class="category-path">${displayName}</p>
             <div class="folder-stats">
-                ${category.photoCount > 0 ? `<span><i class="fas fa-images"></i> ${category.photoCount} photos</span>` : ''}
                 ${window.shouldShowPrices() && category.formattedPrice ?
-                `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
-            </div>
-            <div class="category-action">
-                <i class="fas fa-arrow-right"></i>
-                <span>Click to explore</span>
+            `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
             </div>
         `;
 

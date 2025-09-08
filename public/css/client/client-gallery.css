@@ -34,7 +34,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
+    width: 2px;
     height: 100%;
     background: var(--gold-primary);
     transition: var(--transition);
@@ -47,11 +47,7 @@
     border-color: var(--gold-primary);
 }
 
-.category-card:hover::before,
-.folder-card:hover::before {
-    width: 8px;
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-}
+
 
 /* Card content */
 .category-card h3,

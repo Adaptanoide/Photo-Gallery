@@ -16,6 +16,146 @@ window.navigationState = {
     currentCategoryName: null // Para Special Selection
 };
 
+// NOVO - Mapa de thumbnails (por enquanto manual, depois virá do banco)
+window.categoryThumbnails = {
+    // Brazil Best Sellers
+    'Best Value - Brindle Medium and Dark Tones Mix ML-XL': 'brindle-novo.webp',
+    'Best Value -Salt & Pepper Mix - Black & White': 'salt-pepper-black.webp',
+    'Best Value -Salt & Pepper Mix - Brown & White + Tricolor': 'salt-pepper-brown.webp',
+    'Best Value -Salt & Pepper Mix - Chocolate & White': 'salt-pepper-chocolate.webp',
+    'Dark Tones Mix ML-XL': 'dark-tones-mlxl.webp',
+    'Exotic Tones ML-XL': 'exotic-tones-mlxl.webp',
+    'Light Tones Mix ML-XL': 'light-tones-mlxl.webp',
+    'Super Promo Small - Assorted Natural Tones': 'super-promo-small.webp',
+    'Super Promo XS - Assorted Tones': 'super-promo-xs.webp',
+    'Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - ML - XL': 'tannery-salt-pepper-mlxl.webp',
+    'Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - SMALL': 'tannery-salt-pepper-small.webp',
+
+    // Brazil Top Selected - XL
+    'Black & White XL': 'black-white.webp',
+    'Black and White Reddish XL': 'black-white-reddish.webp',
+    'Brindle Grey XL': 'brindle-grey.webp',
+    'Brindle Light Grey-Beige XL': 'brindle-light-grey-beige.webp',
+    'Brindle White Backbone XL': 'brindle-white-backbone.webp',
+    'Brindle White Belly XL': 'brindle-white-belly.webp',
+    'Brown & White XL': 'brown-white.webp',
+    'Champagne XL': 'champagne.webp',
+    'Grey Beige XL': 'grey-beige.webp',
+    'Grey XL': 'grey.webp',
+    'Hereford XL': 'hereford.webp',
+    'Natural White XL': 'natural-white.webp',
+    'Palomino Exotic XL': 'palomino-exotic.webp',
+    'Palomino Solid XL': 'palomino-solid.webp',
+    'Salt & Pepper - Tricolor, Brown and White XL': 'salt-pepper-tricolor-brown.webp',
+    'Salt & Pepper Black and White XL': 'salt-pepper-black.webp',
+    'Salt & Pepper Chocolate and White XL': 'salt-pepper-chocolate.webp',
+    'Taupe XL': 'taupe.webp',
+    'Tricolor XL': 'tricolor.webp',
+
+    // Brazil Top Selected - ML
+    'Black & White ML': 'black-white.webp',
+    'Black & White Reddish ML': 'black-white-reddish.webp',
+    'Brindle Grey ML': 'brindle-grey.webp',
+    'Brindle Light Grey-Beige ML': 'brindle-light-grey-beige.webp',
+    'Brindle White Backbone ML': 'brindle-white-backbone.webp',
+    'Brindle White Belly ML': 'brindle-white-belly.webp',
+    'Brown & White ML': 'brown-white.webp',
+    'Buttercream ML': 'buttercream.webp',
+    'Champagne ML': 'champagne.webp',
+    'Grey Beige ML': 'grey-beige.webp',
+    'Grey ML': 'grey.webp',
+    'Hereford ML': 'hereford.webp',
+    'Natural White ML': 'natural-white.webp',
+    'Palomino Exotic ML': 'palomino-exotic.webp',
+    'Palomino Solid ML': 'palomino-solid.webp',
+    'Salt & Pepper - Tricolor, Brown and White ML': 'salt-pepper-tricolor-brown.webp',
+    'Salt & Pepper - Tricolor, Brown and White Medium': 'salt-pepper-tricolor-brown.webp',
+    'Salt & Pepper Black and White ML': 'salt-pepper-black.webp',
+    'Salt & Pepper Chocolate and White ML': 'salt-pepper-chocolate.webp',
+    'Taupe ML': 'taupe.webp',
+    'Tricolor ML': 'tricolor.webp',
+
+    // Brazil Top Selected - SMALL
+    'Black & White Small': 'black-white.webp',
+    'Black & White Reddish Small': 'black-white-reddish.webp',
+    'Brindle Light Grey-Beige Small': 'brindle-light-grey-beige.webp',
+    'Brindle Medium Tone Small': 'brindle-medium-tone.webp',
+    'Brindle White Backbone Small': 'brindle-white-backbone.webp',
+    'Brindle White Belly Small': 'brindle-white-belly.webp',
+    'Brown & White Small': 'brown-white.webp',
+    'Champagne Small': 'champagne.webp',
+    'Grey Beige Small': 'grey-beige.webp',
+    'Grey Small': 'grey.webp',
+    'Hereford Small': 'hereford.webp',
+    'Natural White Small': 'natural-white.webp',
+    'Palomino Exotic Small': 'palomino-exotic.webp',
+    'Salt & Pepper - Tricolor, Brown and White Small': 'salt-pepper-tricolor-brown.webp',
+    'Salt & Pepper Black and White Small': 'salt-pepper-black.webp',
+    'Taupe Small': 'taupe.webp',
+    'Tricolor Small': 'tricolor.webp',
+
+    // Colombian Cowhides
+    'Black & White M': 'colombian-black-white.webp',
+    'Black & White L': 'colombian-black-white.webp',
+    'Brindle Mix M': 'colombian-brindle-mix.webp',
+    'Brindle Mix L': 'colombian-brindle-mix.webp',
+    'Brown & White M': 'colombian-brown-white.webp',
+    'Brown & White': 'colombian-brown-white.webp',
+    'Exotic M': 'colombian-exotic.webp',
+    'Exotic L': 'colombian-exotic.webp',
+    'Tricolor Mix M': 'colombian-tricolor-mix.webp',
+    'Tricolor Mix L': 'colombian-tricolor-mix.webp',
+    'Tricolor Mix XL': 'colombian-tricolor-mix.webp',
+    'Tricolor Clouded L': 'colombian-tricolor-clouded.webp',
+    'Tricolor Clouded XL': 'colombian-tricolor-clouded.webp',
+    'Tricolor Spotted L': 'colombian-tricolor-spotted.webp',
+    'Tricolor Spotted XL': 'colombian-tricolor-spotted.webp',
+
+    // Rodeo Rugs
+    "3' x 5' Star & Longhorns-Salt and Pepper & Brindle Mix Brazil": 'rodeo-star-longhorns-salt.webp',
+    "3' x 5' Star Brazil": 'rodeo-star-brazil.webp',
+    "3'x5' Star & Longhorns Colombia": 'rodeo-star-longhorns-colombia.webp',
+    "3'x5' Star Colombia": 'rodeo-star-colombia.webp',
+    '40" Round Star Colombia': 'rodeo-40-round-star.webp',
+    '60" Round Brazil': 'rodeo-60-round-brazil.webp',
+    '60" Round Multi Star Colombia': 'rodeo-60-round-multi.webp',
+
+    // Sheepskins
+    'Himalayan Exotic Tones': 'sheepskins-himalayan.webp',
+    'Tibetan Exotic Tones': 'sheepskins-tibetan.webp',
+
+    // Calfskins
+    'Metallica Silver On Black': 'calfskins-metallic-silver.webp',
+
+    // Duffle Bags
+    'LUXE BLACK HAIR ON COWHIDE': 'duffle-luxe-black.webp',
+    'WELLINGTON BLACK LEATHER WITH DARK BRINDLE HAIR ON ACCENTS': 'duffle-wellington-black-brindle.webp',
+    'WELLINGTON BLACK LEATHER WITH S&P BLACK & WHITE HAIR ON ACCENTS': 'duffle-wellington-black-sp.webp',
+    'WELLINGTON BLACK LEATHER WITH SOLID BLACK HAIR ON ACCENTS': 'duffle-wellington-black-solid.webp',
+    'WELLINGTON BROWN LEATHER WITH DARK BEIGE HAIR ON ACCENTS': 'duffle-wellington-brown-beige.webp',
+    'WELLINGTON BROWN LEATHER WITH PALOMINO EXOTIC HAIR ON ACCENTS': 'duffle-wellington-brown-palomino.webp',
+    'WELLINGTON BROWN LEATHER WITH S&P BROWN & WHITE HAIR ON ACCENTS': 'duffle-wellington-brown-sp.webp',
+    'WELLINGTON COFFEE LEATHER WITH DARK BRINDLE HAIR ON ACCENTS': 'duffle-wellington-coffee-brindle.webp',
+    'WELLINGTON COFFEE LEATHER WITH S&P TAUPE AND WHITE HAIR ON ACCENTS': 'duffle-wellington-coffee-taupe.webp',
+
+    // Furniture
+    ' PUFF L18XW18XH18 - SALT & PEPPER BLACK & WHITE': 'furniture-puff-sp-black.webp',
+    'PUFF L18WX18XH18 - SALT & PEPPER BROWN & WHITE': 'furniture-puff-sp-brown.webp',
+    'PUFF L18XW18XH18 - BROWN & WHITE': 'furniture-puff-brown-white.webp',
+    'PUFF L18XW18XH18 - PALOMINO & WHITE': 'furniture-puff-palomino.webp',
+    'PUFF L18XW18XH18 - SALT & PEPPER TRICOLOR': 'furniture-puff-sp-tricolor.webp'
+};
+
+// Função para limpar o nome
+window.cleanName = (name) => {
+    return name
+        .replace('Best Value - ', '')
+        .replace('Best Value -', '')
+        .replace('Tannery Run - ', '')
+        .replace('Super Promo ', '')
+        .replace(/^\d+\.\s*/, '');
+};
+
 // ===== HELPER PARA REQUISIÇÕES AUTENTICADAS =====
 window.fetchWithAuth = async function (url, options = {}) {
     const savedSession = localStorage.getItem('sunshineSession');
@@ -292,7 +432,6 @@ window.showCategories = async function () {
                             </h3>
                             <p>Special Selection Category</p>
                             <div class="folder-stats">
-                                <span><i class="fas fa-images"></i> ${category.photoCount} photos</span>
                                 ${shouldShowPrices() && category.formattedPrice ?
                             `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` :
                             (!shouldShowPrices() && category.formattedPrice ?
@@ -369,14 +508,9 @@ window.showCategories = async function () {
                     <h3>${category.name}</h3>
                     <p>${description}</p>
                     <div class="folder-stats">
-                        ${stats.totalPhotos > 0 ? `<span><i class="fas fa-images"></i> ${stats.totalPhotos} photos</span>` : ''}                        ${''}
                         ${shouldShowPrices() && priceRange !== 'Price on request' ?
                     `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${priceRange}</span>` :
                     (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
-                    </div>
-                    <div class="category-action">
-                        <i class="fas fa-arrow-right"></i>
-                        <span>Click to explore</span>
                     </div>
                 </div>
             `;
@@ -389,10 +523,6 @@ window.showCategories = async function () {
             <div class="category-card" onclick="navigateToCategory('${category.id}', '${escapeForJS(category.name)}')">
                 <h3>${category.name}</h3>
                 <p>Category with full navigation access enabled</p>
-                <div class="category-action">
-                    <i class="fas fa-arrow-right"></i>
-                    <span>Click to explore</span>
-                </div>
             </div>
         `).join('');
     }
@@ -524,145 +654,6 @@ window.showSubfolders = function (folders) {
 
     const containerEl = document.getElementById('foldersContainer');
 
-    // NOVO - Mapa de thumbnails (por enquanto manual, depois virá do banco)
-    const categoryThumbnails = {
-        // Brazil Best Sellers
-        'Best Value - Brindle Medium and Dark Tones Mix ML-XL': 'brindle-novo.webp',
-        'Best Value -Salt & Pepper Mix - Black & White': 'salt-pepper-black.webp',
-        'Best Value -Salt & Pepper Mix - Brown & White + Tricolor': 'salt-pepper-brown.webp',
-        'Best Value -Salt & Pepper Mix - Chocolate & White': 'salt-pepper-chocolate.webp',
-        'Dark Tones Mix ML-XL': 'dark-tones-mlxl.webp',
-        'Exotic Tones ML-XL': 'exotic-tones-mlxl.webp',
-        'Light Tones Mix ML-XL': 'light-tones-mlxl.webp',
-        'Super Promo Small - Assorted Natural Tones': 'super-promo-small.webp',
-        'Super Promo XS - Assorted Tones': 'super-promo-xs.webp',
-        'Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - ML - XL': 'tannery-salt-pepper-mlxl.webp',
-        'Tannery Run - Salt & Pepper Mix - Brown & White + Black & White + Tricolor - SMALL': 'tannery-salt-pepper-small.webp',
-
-        // Brazil Top Selected - XL
-        'Black & White XL': 'black-white.webp',
-        'Black and White Reddish XL': 'black-white-reddish.webp',
-        'Brindle Grey XL': 'brindle-grey.webp',
-        'Brindle Light Grey-Beige XL': 'brindle-light-grey-beige.webp',
-        'Brindle White Backbone XL': 'brindle-white-backbone.webp',
-        'Brindle White Belly XL': 'brindle-white-belly.webp',
-        'Brown & White XL': 'brown-white.webp',
-        'Champagne XL': 'champagne.webp',
-        'Grey Beige XL': 'grey-beige.webp',
-        'Grey XL': 'grey.webp',
-        'Hereford XL': 'hereford.webp',
-        'Natural White XL': 'natural-white.webp',
-        'Palomino Exotic XL': 'palomino-exotic.webp',
-        'Palomino Solid XL': 'palomino-solid.webp',
-        'Salt & Pepper - Tricolor, Brown and White XL': 'salt-pepper-tricolor-brown.webp',
-        'Salt & Pepper Black and White XL': 'salt-pepper-black.webp',
-        'Salt & Pepper Chocolate and White XL': 'salt-pepper-chocolate.webp',
-        'Taupe XL': 'taupe.webp',
-        'Tricolor XL': 'tricolor.webp',
-
-        // Brazil Top Selected - ML
-        'Black & White ML': 'black-white.webp',
-        'Black & White Reddish ML': 'black-white-reddish.webp',
-        'Brindle Grey ML': 'brindle-grey.webp',
-        'Brindle Light Grey-Beige ML': 'brindle-light-grey-beige.webp',
-        'Brindle White Backbone ML': 'brindle-white-backbone.webp',
-        'Brindle White Belly ML': 'brindle-white-belly.webp',
-        'Brown & White ML': 'brown-white.webp',
-        'Buttercream ML': 'buttercream.webp',
-        'Champagne ML': 'champagne.webp',
-        'Grey Beige ML': 'grey-beige.webp',
-        'Grey ML': 'grey.webp',
-        'Hereford ML': 'hereford.webp',
-        'Natural White ML': 'natural-white.webp',
-        'Palomino Exotic ML': 'palomino-exotic.webp',
-        'Palomino Solid ML': 'palomino-solid.webp',
-        'Salt & Pepper - Tricolor, Brown and White ML': 'salt-pepper-tricolor-brown.webp',
-        'Salt & Pepper - Tricolor, Brown and White Medium': 'salt-pepper-tricolor-brown.webp',
-        'Salt & Pepper Black and White ML': 'salt-pepper-black.webp',
-        'Salt & Pepper Chocolate and White ML': 'salt-pepper-chocolate.webp',
-        'Taupe ML': 'taupe.webp',
-        'Tricolor ML': 'tricolor.webp',
-
-        // Brazil Top Selected - SMALL
-        'Black & White Small': 'black-white.webp',
-        'Black & White Reddish Small': 'black-white-reddish.webp',
-        'Brindle Light Grey-Beige Small': 'brindle-light-grey-beige.webp',
-        'Brindle Medium Tone Small': 'brindle-medium-tone.webp',
-        'Brindle White Backbone Small': 'brindle-white-backbone.webp',
-        'Brindle White Belly Small': 'brindle-white-belly.webp',
-        'Brown & White Small': 'brown-white.webp',
-        'Champagne Small': 'champagne.webp',
-        'Grey Beige Small': 'grey-beige.webp',
-        'Grey Small': 'grey.webp',
-        'Hereford Small': 'hereford.webp',
-        'Natural White Small': 'natural-white.webp',
-        'Palomino Exotic Small': 'palomino-exotic.webp',
-        'Salt & Pepper - Tricolor, Brown and White Small': 'salt-pepper-tricolor-brown.webp',
-        'Salt & Pepper Black and White Small': 'salt-pepper-black.webp',
-        'Taupe Small': 'taupe.webp',
-        'Tricolor Small': 'tricolor.webp',
-
-        // Colombian Cowhides
-        'Black & White M': 'colombian-black-white.webp',
-        'Black & White L': 'colombian-black-white.webp',
-        'Brindle Mix M': 'colombian-brindle-mix.webp',
-        'Brindle Mix L': 'colombian-brindle-mix.webp',
-        'Brown & White M': 'colombian-brown-white.webp',
-        'Brown & White': 'colombian-brown-white.webp',
-        'Exotic M': 'colombian-exotic.webp',
-        'Exotic L': 'colombian-exotic.webp',
-        'Tricolor Mix M': 'colombian-tricolor-mix.webp',
-        'Tricolor Mix L': 'colombian-tricolor-mix.webp',
-        'Tricolor Mix XL': 'colombian-tricolor-mix.webp',
-        'Tricolor Clouded L': 'colombian-tricolor-clouded.webp',
-        'Tricolor Clouded XL': 'colombian-tricolor-clouded.webp',
-        'Tricolor Spotted L': 'colombian-tricolor-spotted.webp',
-        'Tricolor Spotted XL': 'colombian-tricolor-spotted.webp',
-
-        // Rodeo Rugs
-        "3' x 5' Star & Longhorns-Salt and Pepper & Brindle Mix Brazil": 'rodeo-star-longhorns-salt.webp',
-        "3' x 5' Star Brazil": 'rodeo-star-brazil.webp',
-        "3'x5' Star & Longhorns Colombia": 'rodeo-star-longhorns-colombia.webp',
-        "3'x5' Star Colombia": 'rodeo-star-colombia.webp',
-        '40" Round Star Colombia': 'rodeo-40-round-star.webp',
-        '60" Round Brazil': 'rodeo-60-round-brazil.webp',
-        '60" Round Multi Star Colombia': 'rodeo-60-round-multi.webp',
-
-        // Sheepskins
-        'Himalayan Exotic Tones': 'sheepskins-himalayan.webp',
-        'Tibetan Exotic Tones': 'sheepskins-tibetan.webp',
-
-        // Calfskins
-        'Metallica Silver On Black': 'calfskins-metallic-silver.webp',
-
-        // Duffle Bags
-        'LUXE BLACK HAIR ON COWHIDE': 'duffle-luxe-black.webp',
-        'WELLINGTON BLACK LEATHER WITH DARK BRINDLE HAIR ON ACCENTS': 'duffle-wellington-black-brindle.webp',
-        'WELLINGTON BLACK LEATHER WITH S&P BLACK & WHITE HAIR ON ACCENTS': 'duffle-wellington-black-sp.webp',
-        'WELLINGTON BLACK LEATHER WITH SOLID BLACK HAIR ON ACCENTS': 'duffle-wellington-black-solid.webp',
-        'WELLINGTON BROWN LEATHER WITH DARK BEIGE HAIR ON ACCENTS': 'duffle-wellington-brown-beige.webp',
-        'WELLINGTON BROWN LEATHER WITH PALOMINO EXOTIC HAIR ON ACCENTS': 'duffle-wellington-brown-palomino.webp',
-        'WELLINGTON BROWN LEATHER WITH S&P BROWN & WHITE HAIR ON ACCENTS': 'duffle-wellington-brown-sp.webp',
-        'WELLINGTON COFFEE LEATHER WITH DARK BRINDLE HAIR ON ACCENTS': 'duffle-wellington-coffee-brindle.webp',
-        'WELLINGTON COFFEE LEATHER WITH S&P TAUPE AND WHITE HAIR ON ACCENTS': 'duffle-wellington-coffee-taupe.webp',
-
-        // Furniture
-        ' PUFF L18XW18XH18 - SALT & PEPPER BLACK & WHITE': 'furniture-puff-sp-black.webp',
-        'PUFF L18WX18XH18 - SALT & PEPPER BROWN & WHITE': 'furniture-puff-sp-brown.webp',
-        'PUFF L18XW18XH18 - BROWN & WHITE': 'furniture-puff-brown-white.webp',
-        'PUFF L18XW18XH18 - PALOMINO & WHITE': 'furniture-puff-palomino.webp',
-        'PUFF L18XW18XH18 - SALT & PEPPER TRICOLOR': 'furniture-puff-sp-tricolor.webp'
-    };
-
-    // Função para limpar o nome
-    const cleanName = (name) => {
-        return name
-            .replace('Best Value - ', '')
-            .replace('Best Value -', '')
-            .replace('Tannery Run - ', '')
-            .replace('Super Promo ', '')
-            .replace(/^\d+\.\s*/, '');
-    };
 
     containerEl.innerHTML = folders.map(folder => {
         const description = generateProductDescription(folder.name);
@@ -688,8 +679,7 @@ window.showSubfolders = function (folders) {
                         <span class="sample-badge">Sample Photo</span>
                     </div>
                     <div class="card-footer-info">
-                        <h4>${cleanName(folder.name)}</h4>
-                        <span class="photo-count">${photoCount} photos</span>
+                        <h4>${window.cleanName(folder.name)}</h4>
                     </div>
                 </div>
             `;
@@ -697,17 +687,12 @@ window.showSubfolders = function (folders) {
             // Card SEM thumbnail - layout original
             return `
                 <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
-                    <h4>${folder.name.replace(/^\d+\.\s*/, '')}</h4>
+                        <h4>${window.cleanName(folder.name)}</h4>
                     <div class="folder-description">${description}</div>
                     <div class="folder-stats">
-                        ${hasPhotos && photoCount > 0 ? `<span><i class="fas fa-image"></i> ${photoCount} photos</span>` : ''}
                         ${shouldShowPrices() && formattedPrice ?
                     `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
                     (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
-                    </div>
-                    <div class="category-action">
-                        <i class="fas fa-arrow-right"></i>
-                        <span>Click to explore</span>
                     </div>
                 </div>
             `;
