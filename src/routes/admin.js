@@ -97,8 +97,8 @@ router.get('/access-codes', async (req, res) => {
     try {
         const codes = await AccessCode.find()
             .sort({ createdAt: -1 })
-            .limit(50);
-
+            .limit(100);
+            
         // Buscar APENAS carrinhos ativos (NÃO selections confirmadas!)
         const Cart = require('../models/Cart');
         const now = new Date();
@@ -925,6 +925,63 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching cart data'
+        });
+    }
+});
+
+// ===== EXTEND CART TIME =====
+router.post('/client/:code/cart/extend', authenticateToken, async (req, res) => {
+    try {
+        const { code } = req.params;
+        const { hours } = req.body;
+        const Cart = require('../models/Cart');
+
+        console.log(`⏰ Extending cart time for client ${code} by ${hours} hours`);
+
+        // Find active cart
+        const cart = await Cart.findOne({
+            clientCode: code,
+            'items.0': { $exists: true }
+        });
+
+        if (!cart) {
+            return res.status(404).json({
+                success: false,
+                message: 'No active cart found'
+            });
+        }
+
+        // Calculate new expiration
+        const now = new Date();
+        const additionalTime = hours * 60 * 60 * 1000; // Convert hours to milliseconds
+        const newExpiration = new Date(now.getTime() + additionalTime);
+
+        // Update cart
+        cart.expiresAt = newExpiration;
+        cart.lastActivity = now;
+        cart.extendedAt = now;
+        cart.extendedBy = req.user.username;
+
+        // Update each item's expiration
+        cart.items.forEach(item => {
+            item.expiresAt = newExpiration;
+        });
+
+        await cart.save();
+
+        console.log(`✅ Cart extended until ${newExpiration.toLocaleString()}`);
+
+        res.json({
+            success: true,
+            message: `Cart extended by ${hours} hours`,
+            newExpiration: newExpiration
+        });
+
+    } catch (error) {
+        console.error('❌ Error extending cart:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error extending cart time'
         });
     }
 });

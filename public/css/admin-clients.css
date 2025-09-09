@@ -472,7 +472,7 @@
 }
 
 .client-modal-body {
-    padding: 2rem;
+    padding: 1.2rem;
     position: relative;
 }
 
@@ -2147,6 +2147,18 @@ tr:has(.cart-indicator):hover {
     color: #10b981;
 }
 
+.special-btn-icon.cart:hover {
+    background: rgba(234, 88, 12, 0.15);
+    /* #ea580c com 15% opacidade */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+}
+
+.special-btn-icon.cart:hover i {
+    color: #ea580c;
+    /* Ícone laranja #ea580c */
+}
+
 /* ===== FOOTER FIXO PARA MODAL EDIT - ADICIONADO EM 06/09/2025 ===== */
 #clientModal .client-modal-content {
     width: 90%;
@@ -2187,4 +2199,115 @@ tr:has(.cart-indicator):hover {
     z-index: 100 !important;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
     min-height: 70px !important;
+}
+
+/* Cart Control Modal Styles */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--luxury-dark, #1a1a2e);
+    border-radius: 8px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+}
+
+.summary-value {
+    font-weight: bold;
+    color: #daa520;
+}
+
+.time-control-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.time-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(234, 88, 12, 0.1);
+    border: 1px solid #ea580c;
+    color: #ea580c;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.time-btn:hover {
+    background: #ea580c;
+    color: white;
+}
+
+.cart-items-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cart-item-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 100px 40px;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-remove-item {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid #dc2626;
+    color: #dc2626;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-remove-item:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* Footer fixo para Cart Control Modal */
+#cartControlModal .client-modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    /* Altura fixa */
+}
+
+#cartControlModal .client-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+#cartControlModal .client-modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: rgba(58, 58, 66, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    margin-top: auto;
+}
+
+/* Desabilitar hover nos items do carrinho */
+#cartControlModal .cart-item:hover {
+    transform: none !important;
+    background: transparent !important;
+}
+
+/* Botão de tempo ativo/selecionado */
+.time-btn.active {
+    background: #ea580c !important;
+    color: white !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(234, 88, 12, 0.5);
+    transform: scale(1.05);
+}
+
+.time-btn.active::after {
+    content: " ✓";
 }

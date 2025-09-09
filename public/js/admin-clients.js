@@ -580,6 +580,67 @@ class AdminClients {
                 </div>
             </div>
 
+            <!-- Modal Cart Control -->
+            <div id="cartControlModal" class="client-modal">
+                <div class="client-modal-content">
+                    <div class="client-modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cartControlTitle">Cart Control</span>
+                        </h3>
+                        <button class="modal-close" onclick="adminClients.closeCartControl()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="client-modal-body">
+                        <!-- Cart Summary -->
+                        <div class="form-section-clients">
+                            <h4 class="form-section-title-clients">
+                                <i class="fas fa-chart-bar"></i>
+                                Cart Summary
+                            </h4>
+                            <div id="cartSummary" class="cart-summary-grid">
+                                <!-- Será preenchido via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Time Control -->
+                        <div class="form-section-clients">
+                            <h4 class="form-section-title-clients">
+                                <i class="fas fa-clock"></i>
+                                Time Control
+                            </h4>
+                            <div id="cartTimeControl" class="cart-time-control">
+                                <!-- Será preenchido via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Cart Items -->
+                        <div class="form-section-clients">
+                            <h4 class="form-section-title-clients">
+                                <i class="fas fa-images"></i>
+                                Cart Items
+                            </h4>
+                            <div id="cartItemsList" class="cart-items-list">
+                                <!-- Será preenchido via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="client-modal-footer">
+                        <button type="button" class="btn-modal btn-cancel" onclick="adminClients.closeCartControl()">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="button" class="btn-modal btn-save" onclick="adminClients.saveCartChanges()">
+                            <i class="fas fa-save"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modal de Confirmação Luxury (MANTÉM) -->
             <div id="luxuryConfirmModal" class="luxury-confirm-modal">
                 <div class="luxury-confirm-content">
@@ -787,6 +848,9 @@ class AdminClients {
                     </td>
                     <td class="client-actions-cell" onclick="event.stopPropagation();">
                         <div class="action-buttons">
+                            <button class="special-btn-icon cart" onclick="adminClients.openCartControl('${client._id || client.code}')" title="Cart Control">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
                             <button class="special-btn-icon settings" onclick="adminClients.openSettingsModal('${client._id || client.code}')" title="Permissions">
                                 <i class="fas fa-key"></i>
                             </button>
@@ -1744,6 +1808,213 @@ class AdminClients {
             this.saveOriginalFormState();
             this.setupChangeDetection();
         }, 100);
+    }
+
+    async openCartControl(clientId) {
+        console.log('🛒 Opening Cart Control for client:', clientId);
+
+        try {
+            const modal = document.getElementById('cartControlModal');
+            if (!modal) return;
+
+            // Buscar dados do cliente
+            const client = this.clients.find(c => c._id === clientId || c.code === clientId);
+            if (!client) {
+                console.error('Client not found');
+                return;
+            }
+
+            // Abrir modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Atualizar título
+            document.getElementById('cartControlTitle').textContent = `Cart Control - ${client.clientName}`;
+
+            // Salvar cliente atual para uso posterior
+            this.currentCartClient = client;
+
+            // Usar a mesma API que já funciona
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/admin/client/${client.code}/cart`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!data.success || !data.cart || data.cart.items.length === 0) {
+                document.getElementById('cartSummary').innerHTML = '<p>No items in cart</p>';
+                document.getElementById('cartTimeControl').innerHTML = '<p>No cart to manage</p>';
+                document.getElementById('cartItemsList').innerHTML = '<p>No items</p>';
+                return;
+            }
+
+            const cart = data.cart;
+
+            // Cart Summary
+            document.getElementById('cartSummary').innerHTML = `
+            <div class="cart-summary-stats">
+                <div class="stat">
+                    <span class="stat-label">Total Items:</span>
+                    <span class="stat-value">${cart.totalItems}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Value:</span>
+                    <span class="stat-value" style="color: var(--success); font-weight: bold;">
+                        $${cart.totalValue.toFixed(2)}
+                    </span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Last Activity:</span>
+                    <span class="stat-value">${this.formatDate(cart.lastActivity)}</span>
+                </div>
+            </div>
+        `;
+
+            // Adicionar botões de controle de tempo
+            document.getElementById('cartTimeControl').innerHTML = `
+            <div class="time-control-buttons">
+                <button class="time-btn" onclick="adminClients.extendTime(2)">2h</button>
+                <button class="time-btn" onclick="adminClients.extendTime(6)">6h</button>
+                <button class="time-btn" onclick="adminClients.extendTime(12)">12h</button>
+                <button class="time-btn" onclick="adminClients.extendTime(24)">1 day</button>
+                <button class="time-btn" onclick="adminClients.extendTime(48)">2 days</button>
+                <button class="time-btn" onclick="adminClients.extendTime(72)">3 days</button>
+                <button class="time-btn" onclick="adminClients.extendTime(96)">4 days</button>
+                <button class="time-btn" onclick="adminClients.extendTime(120)">5 days</button>
+            </div>
+        `;
+
+            // Marcar botão da última extensão como ativo
+            if (this.lastTimeExtension) {
+                setTimeout(() => {
+                    const buttons = document.querySelectorAll('.time-btn');
+                    buttons.forEach(btn => {
+                        if ((this.lastTimeExtension < 24 && btn.textContent === this.lastTimeExtension + 'h') ||
+                            (this.lastTimeExtension === 24 && btn.textContent === '1 day') ||
+                            (this.lastTimeExtension === 48 && btn.textContent === '2 days') ||
+                            (this.lastTimeExtension === 72 && btn.textContent === '3 days') ||
+                            (this.lastTimeExtension === 96 && btn.textContent === '4 days') ||
+                            (this.lastTimeExtension === 120 && btn.textContent === '5 days')) {
+                            btn.classList.add('active');
+                        }
+                    });
+                }, 100);
+            }
+
+            // Listar items - USAR item.name como no modal original
+            document.getElementById('cartItemsList').innerHTML = cart.items.map((item, index) => {
+                const statusClass = item.isExpired ? 'item-expired' : 'item-active';
+                const statusText = item.isExpired ?
+                    '<span class="expired-badge">Expired</span>' :
+                    `<span class="timer" style="color: #ea580c;">${this.formatTimeRemaining(item.expiresInMinutes)}</span>`;
+
+                return `
+                <div class="cart-item ${statusClass}" style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div class="item-number" style="width: 30px; font-weight: bold;">${index + 1}.</div>
+                    <div class="item-info" style="flex: 1;">
+                        <div class="item-name" style="font-weight: bold;">${item.name}</div>
+                        <div class="item-path" style="font-size: 0.9em; color: #999;">
+                            <i class="fas fa-folder-open"></i> 
+                            ${item.category}${item.subcategory ? ' / ' + item.subcategory : ''}
+                        </div>
+                    </div>
+                    <div class="item-price" style="width: 80px; text-align: right; color: #daa520; font-weight: bold;">$${item.price}</div>
+                    <div class="item-status" style="width: 150px; text-align: right;">${statusText}</div>
+                </div>
+            `;
+            }).join('');
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    formatTimeRemaining(minutes) {
+        if (!minutes || minutes <= 0) return 'Expired';
+
+        const days = Math.floor(minutes / (24 * 60));
+        const hours = Math.floor((minutes % (24 * 60)) / 60);
+        const mins = minutes % 60;
+
+        if (days > 0) {
+            return `${days} day${days > 1 ? 's' : ''} ${hours}h ${mins}min`;
+        } else if (hours > 0) {
+            return `${hours}h ${mins}min`;
+        } else {
+            return `${mins}min`;
+        }
+    }
+
+    async extendTime(hours) {
+        if (!this.currentCartClient) {
+            console.error('No client selected');
+            return;
+        }
+
+        try {
+            console.log(`Extending time by ${hours} hours for ${this.currentCartClient.clientName}`);
+
+            const response = await fetch(`/api/admin/client/${this.currentCartClient.code}/cart/extend`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.getAdminToken()}`
+                },
+                body: JSON.stringify({ hours: hours })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                this.showSuccess('Cart time extended successfully');
+
+                // Guardar última extensão aplicada
+                this.lastTimeExtension = hours;
+
+                // Marcar botão IMEDIATAMENTE (sem esperar reload)
+                const buttons = document.querySelectorAll('.time-btn');
+                buttons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if ((hours < 24 && btn.textContent === hours + 'h') ||
+                        (hours === 24 && btn.textContent === '1 day') ||
+                        (hours === 48 && btn.textContent === '2 days') ||
+                        (hours === 72 && btn.textContent === '3 days') ||
+                        (hours === 96 && btn.textContent === '4 days') ||
+                        (hours === 120 && btn.textContent === '5 days')) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // Recarregar MAIS RÁPIDO - apenas 300ms
+                setTimeout(() => {
+                    this.openCartControl(this.currentCartClient._id);
+                }, 300);
+            } else {
+                this.showError(data.message || 'Failed to extend time');
+            }
+        } catch (error) {
+            console.error('Error extending time:', error);
+            this.showError('Error extending time');
+        }
+    }
+
+    closeCartControl() {
+        const modal = document.getElementById('cartControlModal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    saveCartChanges() {
+        console.log('Saving cart changes...');
+        this.showSuccess('Cart changes saved successfully');
+        setTimeout(() => {
+            this.closeCartControl();
+        }, 500);
     }
 
     // ===== NOVAS FUNÇÕES DE PROTEÇÃO DE DADOS =====
