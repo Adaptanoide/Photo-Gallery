@@ -665,38 +665,20 @@ window.showSubfolders = function (folders) {
             : '';
 
         // NOVO - Verificar se tem thumbnail
-        const thumbnail = categoryThumbnails[folder.name];
+        const thumbnail = null; // DESATIVADO - Remover fotos sample dos cards
 
-        if (thumbnail) {
-            // Card COM thumbnail - layout especial
-            return `
-                <div class="folder-card has-thumbnail" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
-                    <div class="category-thumbnail">
-                        <img src="https://images.sunshinecowhides-gallery.com/category-thumbnails/${thumbnail}" 
-                            alt="${folder.name}" 
-                            loading="lazy" />
-                        ${formattedPrice ? `<span class="price-corner">${formattedPrice}</span>` : ''}
-                        <span class="sample-badge">Sample Photo</span>
-                    </div>
-                    <div class="card-footer-info">
-                        <h4>${window.cleanName(folder.name)}</h4>
-                    </div>
-                </div>
-            `;
-        } else {
-            // Card SEM thumbnail - layout original
-            return `
-                <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
-                        <h4>${window.cleanName(folder.name)}</h4>
-                    <div class="folder-description">${description}</div>
-                    <div class="folder-stats">
-                        ${shouldShowPrices() && formattedPrice ?
+    // Cards sempre sem thumbnail - formato limpo
+    return `
+        <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
+            <h4>${folder.name}</h4>
+            <div class="folder-description">${description}</div>
+            <div class="folder-stats">
+                ${shouldShowPrices() && formattedPrice ?
                     `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
                     (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
-                    </div>
-                </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
     }).join('');
 
     // Event listeners

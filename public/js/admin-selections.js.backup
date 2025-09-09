@@ -1086,119 +1086,6 @@ class AdminSelections {
         }
     }
 
-    // ===== MODAL PARA PO NUMBER =====
-    createPONumberModal() {
-        if (document.getElementById('poNumberModal')) {
-            return;
-        }
-
-        const modalHTML = `
-            <div id="poNumberModal" class="selection-details-modal" style="display: none;">
-                <div class="selection-details-content" style="max-width: 500px;">
-                    <div class="selection-details-header">
-                        <h3 class="selection-details-title">
-                            <i class="fas fa-file-excel"></i>
-                            CDE Export - PO Number
-                        </h3>
-                        <button class="selection-details-close" onclick="document.getElementById('poNumberModal').classList.remove('active'); document.getElementById('poNumberModal').style.display='none';">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="selection-details-body" style="padding: 30px;">
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 10px; font-weight: bold; font-size: 16px;">
-                                Enter CDE PO Number:
-                            </label>
-                            <input 
-                                type="text" 
-                                id="cdePoNumber" 
-                                class="form-control" 
-                                placeholder="Ex: PO-2025-001"
-                                style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px;"
-                            >
-                            <small style="color: #666; display: block; margin-top: 10px;">
-                                This will be used in the PO. Number column for CDE import
-                            </small>
-                        </div>
-                        <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
-                            <button 
-                                class="btn-modal-action" 
-                                onclick="document.getElementById('poNumberModal').classList.remove('active'); document.getElementById('poNumberModal').style.display='none';"
-                                style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                                Cancel
-                            </button>
-                            <button 
-                                id="confirmPONumber" 
-                                class="btn-modal-action"
-                                style="padding: 10px 30px; background: #daa520; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                                Generate Excel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-
-    // ===== ABRIR MODAL DO PO NUMBER =====
-    async openPONumberModal(selectionId) {
-        // Criar modal se não existir
-        this.createPONumberModal();
-
-        // Buscar dados da seleção primeiro
-        const response = await fetch(`/api/selections/${selectionId}`, {
-            headers: this.getAuthHeaders()
-        });
-        const data = await response.json();
-
-        if (!data.success) {
-            this.showNotification('Erro ao carregar dados da seleção', 'error');
-            return;
-        }
-
-        const selection = data.selection;
-
-        // Mostrar modal
-        const modal = document.getElementById('poNumberModal');
-        modal.classList.add('active');
-        modal.style.display = 'flex';
-
-        // Limpar campo
-        document.getElementById('cdePoNumber').value = '';
-
-        // Focar no input
-        setTimeout(() => {
-            document.getElementById('cdePoNumber').focus();
-        }, 100);
-
-        // Configurar botão de confirmar
-        const confirmBtn = document.getElementById('confirmPONumber');
-
-        // Remover listener anterior se existir
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-
-        // Adicionar novo listener
-        newConfirmBtn.addEventListener('click', () => {
-            const poNumber = document.getElementById('cdePoNumber').value.trim();
-
-            if (!poNumber) {
-                alert('Please enter a PO Number');
-                document.getElementById('cdePoNumber').focus();
-                return;
-            }
-
-            // Fechar modal
-            modal.classList.remove('active');
-            modal.style.display = 'none';
-
-            // Gerar Excel com o PO Number
-            this.generateExcelFile(selection, poNumber);
-        });
-    }
-
     // ===== GERAR EXCEL COM PO NUMBER E RESERVEDUSU =====
     async generateExcelFile(selection, poNumber) {
         try {
@@ -1233,10 +1120,10 @@ class AdminSelections {
             });
             const photoNumbersString = allPhotoNumbers.join('-');
 
-            // FORMATO CORRETO: NOMECLIENTE-CÓDIGO
-            const clientNameFormatted = selection.clientName.toUpperCase().replace(/\s+/g, '');
-            const reservedusu = `${clientNameFormatted}-${selection.clientCode || '0000'}`;
-            console.log('RESERVEDUSU será:', reservedusu); // Ex: BRADFORD-2745
+            // CRIAR VALOR RESERVEDUSU - FORMATO: SUNSHINE-CLIENTCODE
+            const clientCode = selection.clientCode || selection.selectionId || selection.clientName.replace(/\s+/g, '').substring(0, 4).toUpperCase();
+            const reservedusu = `SUNSHINE-${clientCode}`;
+            console.log('RESERVEDUSU será:', reservedusu);
 
             // Agrupar por QB Item
             const qbGroups = {};
@@ -1288,7 +1175,7 @@ class AdminSelections {
             Object.values(qbGroups).forEach(group => {
                 // MANTER DESCRIÇÃO COMPLETA
                 let itemName = group.categoryName;
-
+                
                 // Apenas limpar barras extras e formatar melhor
                 itemName = itemName
                     .replace(/\/$/, '') // Remove barra final se existir
