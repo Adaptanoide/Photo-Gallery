@@ -8,7 +8,7 @@ const photoStatusSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+    },
     fileName: {
         type: String,
         required: true,
@@ -16,10 +16,10 @@ const photoStatusSchema = new mongoose.Schema({
     },
     photoNumber: {
         type: String,
-        },
+    },
     idhCode: {
         type: String,
-        },
+    },
 
     // ===== STATUS ATUAL =====
     currentStatus: {
@@ -34,7 +34,7 @@ const photoStatusSchema = new mongoose.Schema({
         ],
         default: 'available',
         required: true,
-        },
+    },
 
     // ===== LOCALIZAÇÃO ATUAL =====
     currentLocation: {
@@ -384,9 +384,9 @@ const photoStatusSchema = new mongoose.Schema({
     // ===== SINCRONIZAÇÃO COM CDE =====
     cdeStatus: {
         type: String,
-        enum: ['INGRESADO', 'RETIRADO', 'RESERVED', 'STANDBY', null],
+        enum: ['INGRESADO', 'RETIRADO', 'RESERVED', 'STANDBY', 'PRE-SELECTED', null],
         default: null,
-        },
+    },
 
     // ===== CONFIGURAÇÕES =====
     config: {

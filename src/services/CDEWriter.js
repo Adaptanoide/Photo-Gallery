@@ -38,7 +38,7 @@ class CDEWriter {
             console.log(`\n[CDEWriter - SIMULAÇÃO] Reservaria foto ${photoNumber}`);
             console.log(`  Cliente: ${clientCode}`);
             console.log(`  Session: ${sessionId}`);
-            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'RESERVED', RESERVEDUSU = 'SUNSHINE-${clientCode}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
+            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'PRE-SELECTED', RESERVEDUSU = 'SUNSHINE-${clientCode}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
             return true;
         }
 
@@ -54,12 +54,12 @@ class CDEWriter {
         }
 
         try {
-            console.log(`[CDEWriter] Marcando ${photoNumber} como RESERVED para cliente ${clientCode}`);
+            console.log(`[CDEWriter] Marcando ${photoNumber} como PRE-SELECTED para cliente ${clientCode}`);
 
             // IMPORTANTE: Agora muda AESTADOP para RESERVED e usa RESERVEDUSU
             const query = `
                 UPDATE tbinventario 
-                SET AESTADOP = 'RESERVED',
+                SET AESTADOP = 'PRE-SELECTED',
                     RESERVEDUSU = ?,
                     AFECHA = NOW()
                 WHERE ATIPOETIQUETA = ?
@@ -126,7 +126,7 @@ class CDEWriter {
                     RESERVEDUSU = NULL,
                     AFECHA = NOW()
                 WHERE ATIPOETIQUETA = ?
-                AND AESTADOP = 'RESERVED'
+                AND AESTADOP IN ('PRE-SELECTED', 'RESERVED')
                 AND RESERVEDUSU IS NOT NULL
             `;
 

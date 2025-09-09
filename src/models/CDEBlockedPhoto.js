@@ -10,7 +10,7 @@ const cdeBlockedPhotoSchema = new mongoose.Schema({
     idhCode: String,
     cdeStatus: {
         type: String,
-        enum: ['RESERVED', 'STANDBY'],
+        enum: ['RESERVED', 'STANDBY', 'PRE-SELECTED'],
         required: true
     },
     firstDetected: {

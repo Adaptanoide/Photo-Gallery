@@ -69,14 +69,14 @@ class CDESync {
 
                 if (item.AESTADOP === 'RETIRADO') {
                     newStatus = 'sold';
-                } else if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY') {
+                } else if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY' || item.AESTADOP === 'PRE-SELECTED') {
                     newStatus = 'unavailable';
                 } else if (item.AESTADOP === 'INGRESADO') {
                     newStatus = 'available';
                 }
 
                 // Gerenciar lista de bloqueados
-                if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY') {
+                if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY' || item.AESTADOP === 'PRE-SELECTED') {
                     // Adicionar à lista se não existe
                     await CDEBlockedPhoto.findOneAndUpdate(
                         { photoNumber: photoNumber },

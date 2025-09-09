@@ -449,7 +449,7 @@ router.get('/photos', verifyClientToken, async (req, res) => {
                 { 'virtualStatus.status': 'sold' },  // REMOVIDO 'reserved' daqui
                 { 'virtualStatus.status': { $regex: /^special_/ } },
                 { 'currentStatus': 'sold' },
-                { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
+                { 'cdeStatus': { $in: ['RESERVED', 'STANDBY', 'PRE-SELECTED'] } }
             ]
         }).select('fileName');
 
