@@ -964,12 +964,12 @@ class AdminSelections {
         }
     }
 
-    // ===== GENERATE EXCEL FILE - LAYOUT ORGANIZADO =====
+    // ===== GENERATE EXCEL FILE - FORMATO CDE PARA INGRID =====
     async generateExcelFile(selection) {
         try {
-            console.log('📄 Gerando Excel com dados:', selection);
+            console.log('📊 Gerando Excel formato CDE:', selection);
 
-            // Buscar nome da empresa
+            // 1. BUSCAR NOME DA EMPRESA
             let companyName = selection.clientName;
             try {
                 const response = await fetch('/api/admin/access-codes', {
@@ -985,105 +985,113 @@ class AdminSelections {
                     }
                 }
             } catch (error) {
-                console.log('ERRO AO BUSCAR EMPRESA:', error);
+                console.log('Usando nome do cliente:', companyName);
             }
 
-            // Criar workbook
-            const workbook = XLSX.utils.book_new();
+            // 2. COLETAR TODOS OS PHOTO NUMBERS
+            const allPhotoNumbers = [];
+            selection.items.forEach(item => {
+                const photoNumber = (item.fileName || '').replace(/\.(webp|jpg|jpeg|png)$/i, '');
+                if (photoNumber) {
+                    allPhotoNumbers.push(photoNumber);
+                }
+            });
 
-            // CABEÇALHO MELHORADO
-            const allData = [
-                ['', 'SUNSHINE COWHIDES', '', ''],
-                ['', 'Selection Details Report', '', ''],
-                ['', '', '', ''],
-                ['', 'Date:', this.formatDateForExcel(selection.createdAt), ''],
-                ['', 'Company:', companyName, ''],
-                ['', 'Client:', selection.clientName, ''],
-                ['', 'Client Code:', selection.clientCode, ''],
-                ['', 'Selection ID:', selection.selectionId, ''],
-                ['', 'Status:', this.getStatusText(selection.status), ''],
-                ['', '', '', ''],
-                ['', '═══════════════════════════════════════', '', ''],
-                ['', '', '', '']
-            ];
+            // Concatenar todos com hífen
+            const poNumber = allPhotoNumbers.join('-');
 
-            // AGRUPAR ITEMS POR CATEGORIA
-            const itemsByCategory = {};
-            if (selection.items && selection.items.length > 0) {
-                selection.items.forEach(item => {
-                    if (!itemsByCategory[item.category]) {
-                        itemsByCategory[item.category] = [];
-                    }
-                    itemsByCategory[item.category].push(item);
-                });
-            }
+            // 3. AGRUPAR ITEMS POR QB ITEM
+            const qbGroups = {};
 
-            let totalItems = 0;
-            let grandTotal = 0;
-            let categoryNumber = 1;
+            for (const item of selection.items) {
+                // Buscar QB code para esta categoria
+                const qbCode = await this.getQBForCategory(item.category) || 'NO-QB';
 
-            // ADICIONAR CADA CATEGORIA COMO SEÇÃO
-            for (const [category, items] of Object.entries(itemsByCategory)) {
-                const categoryTotal = items.reduce((sum, item) => sum + (item.price || 0), 0);
-                const averagePrice = categoryTotal / items.length;
-
-                // Buscar QB para esta categoria
-                const qbCode = await this.getQBForCategory(category);
-
-                // CABEÇALHO DA CATEGORIA COM NÚMERO
-                allData.push(['', `CATEGORY ${categoryNumber}: ${category}`, '', '']);
-
-                // QB CODE EM LINHA SEPARADA COM DESTAQUE
-                if (qbCode && qbCode !== 'NO-QB') {
-                    allData.push(['', 'QB CODE →', qbCode, '⚠️ IMPORTANT']);
+                if (!qbGroups[qbCode]) {
+                    qbGroups[qbCode] = {
+                        qbCode: qbCode,
+                        categoryName: item.category,
+                        items: [],
+                        totalQty: 0,
+                        unitPrice: 0,
+                        totalAmount: 0
+                    };
                 }
 
-                // INFORMAÇÕES DA CATEGORIA EM GRID
-                allData.push(['', 'Quantity:', `${items.length} items`, '']);
-                allData.push(['', 'Unit Price:', `$${averagePrice.toFixed(2)}`, '']);
-                allData.push(['', 'Category Total:', `$${categoryTotal.toFixed(2)}`, '']);
-                allData.push(['', '', '', '']);
-                allData.push(['', 'Photo Numbers:', '', '']);
+                qbGroups[qbCode].items.push(item);
+                qbGroups[qbCode].totalQty++;
 
-                // NÚMEROS DAS FOTOS
-                const photoNumbers = items.map(item => {
-                    const fileName = item.fileName || item.name || '';
-                    return fileName.replace(/\.(webp|jpg|jpeg|png|gif)$/i, '');
-                });
-
-                const allPhotoNumbers = photoNumbers.join('-');
-                allData.push(['', allPhotoNumbers, '', '']);
-
-                // SEPARADOR ENTRE CATEGORIAS
-                allData.push(['', '', '', '']);
-                allData.push(['', '───────────────────────────────────────', '', '']);
-                allData.push(['', '', '', '']);
-
-                totalItems += items.length;
-                grandTotal += categoryTotal;
-                categoryNumber++;
+                // Usar o preço do item para calcular média
+                const itemPrice = item.price || 0;
+                qbGroups[qbCode].totalAmount += itemPrice;
             }
 
-            // RESUMO FINAL MELHORADO
-            allData.push(['', '═══════════════════════════════════════', '', '']);
-            allData.push(['', 'FINAL SUMMARY', '', '']);
-            allData.push(['', '═══════════════════════════════════════', '', '']);
-            allData.push(['', 'Total Categories:', Object.keys(itemsByCategory).length, '']);
-            allData.push(['', 'Total Items:', totalItems, '']);
-            allData.push(['', 'GRAND TOTAL:', `$${grandTotal.toFixed(2)}`, '']);
+            // Calcular preço médio por QB group
+            Object.values(qbGroups).forEach(group => {
+                if (group.totalQty > 0) {
+                    group.unitPrice = group.totalAmount / group.totalQty;
+                }
+            });
 
-            // CRIAR PLANILHA
-            const worksheet = XLSX.utils.aoa_to_sheet(allData);
+            // 4. CRIAR DADOS DA PLANILHA (FORMATO INGRID)
+            const excelData = [];
 
-            // CONFIGURAR LARGURA DAS COLUNAS
+            // Cabeçalhos EXATOS como Ingrid pediu
+            excelData.push([
+                'Customer',
+                'PO. Number:',  // Com dois pontos como ela pediu
+                'ITEM REQ',
+                'ITEM NAME',
+                'ITEM QTY',
+                'RATE',
+                'AMOUNT',
+                'ESTADO'
+            ]);
+
+            // Adicionar uma linha por QB Item
+            Object.values(qbGroups).forEach(group => {
+                // Limpar nome da categoria para descrição
+                let itemName = group.categoryName
+                    .replace(/Brazil Best Sellers\//gi, '')
+                    .replace(/Colombian Cowhides\//gi, '')
+                    .replace(/Calfskins\//gi, '')
+                    .replace(/Sheepskins\//gi, '')
+                    .replace(/Rodeo Rugs\//gi, '')
+                    .replace(/Duffle Bags Brazil\//gi, '')
+                    .replace(/Best Value -/gi, '')
+                    .replace(/\//g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                excelData.push([
+                    companyName,                              // Customer
+                    poNumber,                                  // PO. Number: (todos os números)
+                    group.qbCode,                             // ITEM REQ (QB code)
+                    itemName,                                  // ITEM NAME (descrição)
+                    group.totalQty,                           // ITEM QTY (quantidade)
+                    group.unitPrice.toFixed(2),               // RATE (preço unitário médio)
+                    group.totalAmount.toFixed(2),             // AMOUNT (total)
+                    this.getStatusText(selection.status)      // ESTADO
+                ]);
+            });
+
+            // 5. CRIAR WORKBOOK E WORKSHEET
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+
+            // 6. CONFIGURAR LARGURAS DAS COLUNAS
             worksheet['!cols'] = [
-                { width: 3 },   // Margem esquerda
-                { width: 40 },  // Labels
-                { width: 60 },  // Valores/Conteúdo
-                { width: 15 }   // Notas/Extra
+                { width: 30 },  // Customer
+                { width: 100 }, // PO. Number (bem largo para todos os números)
+                { width: 15 },  // ITEM REQ
+                { width: 40 },  // ITEM NAME
+                { width: 12 },  // ITEM QTY
+                { width: 12 },  // RATE
+                { width: 15 },  // AMOUNT
+                { width: 15 }   // ESTADO
             ];
 
-            // FORMATAÇÃO PROFISSIONAL
+            // 7. ADICIONAR FORMATAÇÃO SIMPLES
             const range = XLSX.utils.decode_range(worksheet['!ref']);
 
             for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -1094,112 +1102,50 @@ class AdminSelections {
                     const cell = worksheet[cellAddress];
                     if (!cell.s) cell.s = {};
 
-                    const cellValue = cell.v ? cell.v.toString() : '';
-
-                    // BORDAS PADRÃO
-                    cell.s.border = {
-                        top: { style: "thin", color: { rgb: "E0E0E0" } },
-                        bottom: { style: "thin", color: { rgb: "E0E0E0" } },
-                        left: { style: "thin", color: { rgb: "E0E0E0" } },
-                        right: { style: "thin", color: { rgb: "E0E0E0" } }
-                    };
-
-                    // TÍTULO PRINCIPAL (SUNSHINE COWHIDES)
-                    if (R === 0 && C === 1) {
-                        cell.s.font = { bold: true, size: 18, color: { rgb: "FFFFFF" } };
+                    // Cabeçalhos em negrito com fundo cinza
+                    if (R === 0) {
+                        cell.s.font = { bold: true, size: 11 };
+                        cell.s.fill = { fgColor: { rgb: "E0E0E0" } };
                         cell.s.alignment = { horizontal: "center", vertical: "center" };
-                        cell.s.fill = { fgColor: { rgb: "1E3A5F" } };
-                    }
-
-                    // SUBTÍTULO
-                    if (R === 1 && C === 1) {
-                        cell.s.font = { bold: true, size: 14, color: { rgb: "FFFFFF" } };
-                        cell.s.alignment = { horizontal: "center", vertical: "center" };
-                        cell.s.fill = { fgColor: { rgb: "2E5BBA" } };
-                    }
-
-                    // LABELS (Date:, Company:, etc.)
-                    if (C === 1 && cellValue.includes(':') && R >= 3 && R <= 8) {
-                        cell.s.font = { bold: true, size: 11, color: { rgb: "333333" } };
-                        cell.s.fill = { fgColor: { rgb: "F5F5F5" } };
-                    }
-
-                    // VALORES DOS LABELS
-                    if (C === 2 && R >= 3 && R <= 8) {
-                        cell.s.font = { size: 11, color: { rgb: "000000" } };
-                        cell.s.fill = { fgColor: { rgb: "FFFFFF" } };
-                    }
-
-                    // CATEGORY HEADERS
-                    if (cellValue.includes('CATEGORY') && cellValue.includes(':')) {
-                        cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
-                        cell.s.fill = { fgColor: { rgb: "FFD700" } }; // DOURADO
                         cell.s.border = {
-                            top: { style: "thick", color: { rgb: "FFA500" } },
-                            bottom: { style: "thick", color: { rgb: "FFA500" } },
-                            left: { style: "thick", color: { rgb: "FFA500" } },
-                            right: { style: "thick", color: { rgb: "FFA500" } }
+                            top: { style: "thin", color: { rgb: "000000" } },
+                            bottom: { style: "thin", color: { rgb: "000000" } },
+                            left: { style: "thin", color: { rgb: "000000" } },
+                            right: { style: "thin", color: { rgb: "000000" } }
                         };
                     }
 
-                    // QB CODE - SUPER DESTAQUE
-                    if (cellValue === 'QB CODE →') {
-                        cell.s.font = { bold: true, size: 11, color: { rgb: "FF0000" } };
-                        cell.s.fill = { fgColor: { rgb: "FFFF00" } }; // AMARELO FORTE
-                        cell.s.alignment = { horizontal: "right", vertical: "center" };
-                    }
-
-                    // VALOR DO QB CODE
-                    if (C === 2 && cellValue.match(/^\d+[A-Z]*$|^[A-Z]+\d+[A-Z]*$/)) {
-                        cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
-                        cell.s.fill = { fgColor: { rgb: "FFFF00" } }; // AMARELO FORTE
-                        cell.s.alignment = { horizontal: "center", vertical: "center" };
+                    // Dados com bordas
+                    if (R > 0) {
                         cell.s.border = {
-                            top: { style: "thick", color: { rgb: "FF0000" } },
-                            bottom: { style: "thick", color: { rgb: "FF0000" } },
-                            left: { style: "thick", color: { rgb: "FF0000" } },
-                            right: { style: "thick", color: { rgb: "FF0000" } }
+                            top: { style: "thin", color: { rgb: "CCCCCC" } },
+                            bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                            left: { style: "thin", color: { rgb: "CCCCCC" } },
+                            right: { style: "thin", color: { rgb: "CCCCCC" } }
                         };
-                    }
 
-                    // NÚMEROS DAS FOTOS
-                    if (cellValue.includes('-') && cellValue.length > 20 && !cellValue.includes(' ')) {
-                        cell.s.font = { name: "Courier New", size: 10, bold: true };
-                        cell.s.fill = { fgColor: { rgb: "FFFFCC" } }; // AMARELO CLARO
-                        cell.s.alignment = { horizontal: "left", wrapText: true };
-                    }
-
-                    // FINAL SUMMARY
-                    if (cellValue === 'FINAL SUMMARY') {
-                        cell.s.font = { bold: true, size: 14, color: { rgb: "FFFFFF" } };
-                        cell.s.fill = { fgColor: { rgb: "4CAF50" } };
-                        cell.s.alignment = { horizontal: "center", vertical: "center" };
-                    }
-
-                    // GRAND TOTAL
-                    if (cellValue === 'GRAND TOTAL:') {
-                        cell.s.font = { bold: true, size: 12, color: { rgb: "FFFFFF" } };
-                        cell.s.fill = { fgColor: { rgb: "2E7D32" } };
-                    }
-
-                    // VALOR DO GRAND TOTAL
-                    if (C === 2 && cellValue.includes('$') && R > range.e.r - 5) {
-                        cell.s.font = { bold: true, size: 12, color: { rgb: "000000" } };
-                        cell.s.fill = { fgColor: { rgb: "C8E6C9" } };
+                        // Alinhar números ao centro
+                        if (C === 4 || C === 5 || C === 6) {
+                            cell.s.alignment = { horizontal: "center" };
+                        }
                     }
                 }
             }
 
-            // SALVAR
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Selection');
-            const fileName = `Selection_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${selection.clientCode}_${this.formatDateForFileName(selection.createdAt)}.xlsx`;
+            // 8. ADICIONAR SHEET E SALVAR
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Orden');
+
+            // Nome do arquivo formato CDE
+            const fileName = `CDE_${companyName.replace(/[^a-zA-Z0-9]/g, '')}_${selection.clientCode}_${this.formatDateForFileName(selection.createdAt)}.xlsx`;
 
             XLSX.writeFile(workbook, fileName);
-            console.log(`✅ Excel profissional gerado: ${fileName}`);
+
+            console.log(`✅ Excel CDE gerado: ${fileName}`);
+            this.showNotification('✅ Planilha formato CDE baixada com sucesso!', 'success');
 
         } catch (error) {
-            console.error('❌ Erro ao gerar Excel:', error);
-            alert('Erro detalhado: ' + error.message);
+            console.error('❌ Erro ao gerar Excel CDE:', error);
+            this.showNotification('Erro ao gerar planilha: ' + error.message, 'error');
         }
     }
 
