@@ -660,7 +660,7 @@ window.CartSystem = {
                             <span><strong>Total Items:</strong></span>
                             <span><strong>${this.state.totalItems}</strong></span>
                         </div>
-                        <div class="contact-price" style="margin-top: 10px; padding: 10px; text-align: center;">
+                        <div class="contact-price" style="display: none; margin-top: 10px; padding: 10px; text-align: center;">
                             <i class="fas fa-phone"></i> Contact for Price
                         </div>
                     </div>`;
@@ -818,7 +818,7 @@ window.CartSystem = {
 
         html = `
             <div style="
-                background: #28a745;
+                background: #b8941f;
                 color: white;
                 padding: 12px;
                 border-radius: 8px;
@@ -1832,7 +1832,7 @@ async function generateOrderSummary() {
                 <span><strong>Total Items:</strong></span>
                 <span><strong>${totalItems}</strong></span>
             </div>
-            <div class="contact-price" style="margin-top: 15px; padding: 15px; text-align: center;">
+            <div class="contact-price" style="display: none; margin-top: 15px; padding: 15px; text-align: center;">
                 <i class="fas fa-phone"></i> Contact for Price
             </div>
         `;

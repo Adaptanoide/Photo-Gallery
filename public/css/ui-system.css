@@ -22,11 +22,12 @@
     gap: 12px;
     font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .ui-toast-success .toast-content {
-    background: #28a745;  /* Verde sólido sem gradiente */
+    background: #28a745;
+    /* Verde sólido sem gradiente */
     color: white;
 }
 
@@ -36,18 +37,22 @@
 }
 
 @keyframes slideDown {
-    to { top: 20px; }
+    to {
+        top: 20px;
+    }
 }
 
 @keyframes slideUp {
-    to { top: -100px; }
+    to {
+        top: -100px;
+    }
 }
 
 /* MODAL PADRONIZADO (como Edit Access Code) */
 .ui-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
     z-index: 10002;
     display: flex;
@@ -63,7 +68,7 @@
     max-width: 600px;
     max-height: 80vh;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .ui-modal-header {
@@ -115,7 +120,7 @@
 .processing-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.8);
     z-index: 10001;
     display: flex;
     align-items: center;
@@ -141,13 +146,17 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* BOTÕES MELHORADOS - ADICIONAR NO FINAL */
 .ui-modal-footer button {
-    padding: 10px 24px;  /* Maior que antes */
-    border-radius: 6px;   /* Arredondado */
+    padding: 10px 24px;
+    /* Maior que antes */
+    border-radius: 6px;
+    /* Arredondado */
     font-size: 14px;
     font-weight: 500;
     border: none;
@@ -157,12 +166,14 @@
 }
 
 .btn-primary {
-    background: #dbb934;  /* Amarelo do sistema */
+    background: #dbb934;
+    /* Dourado original */
     color: #1a1a1a;
 }
 
 .btn-primary:hover {
-    background: #c5a52e;
+    background: #c9a82e;
+    /* Dourado mais escuro no hover */
 }
 
 .btn-secondary {
@@ -209,4 +220,24 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
     opacity: 0.5;
+}
+
+/* BOTÃO COMPLETE SELECTION - VERDE */
+.btn-complete-selection {
+    background: #28a745 !important;
+    /* Verde */
+    color: white !important;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.btn-complete-selection:hover {
+    background: #218838 !important;
+    /* Verde mais escuro */
 }
