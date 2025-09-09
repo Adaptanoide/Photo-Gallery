@@ -158,7 +158,7 @@ function runCDESync() {
 
 // Configurar intervalo baseado no ambiente
 const syncInterval = process.env.NODE_ENV === 'production'
-    ? 30 * 60 * 1000    // 30 minutos em produção
+    ? 10 * 60 * 1000    // 10 minutos em produção
     : 5 * 60 * 1000;    // 5 minutos em desenvolvimento
 
 const syncMinutes = syncInterval / 60000;
