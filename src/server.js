@@ -125,36 +125,84 @@ app.use('*', (req, res) => {
     });
 });
 
+// ===== SUBSTITUIR TODO O BLOCO DE SINCRONIZAÇÃO CDE NO server.js =====
+// Localização: Aproximadamente linhas 155-220
+
 // Sincronização CDE - intervalo baseado no ambiente e horário comercial
 const CDESync = require('./services/CDESync');
 
-// Função para executar sync com verificação de horário
-function runCDESync() {
-    console.log('[CDESync] Tentando executar sync...');
+// Função para verificar horário comercial Fort Myers (EST/EDT)
+function isBusinessHours() {
+    const now = new Date();
+    const ftMyersTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
 
-    CDESync.syncAllStates()
-        .then(result => {
-            console.log('[CDESync] Sync completo:', result);
-        })
-        .catch(error => {
-            console.error('[CDESync] ERRO no sync:', error.message);
-        });
+    const day = ftMyersTime.getDay();
+    const hour = ftMyersTime.getHours();
+
+    // Segunda(1) a Sexta(5), 7am-6pm Fort Myers
+    return (day >= 1 && day <= 5 && hour >= 7 && hour < 18);
 }
 
-// Configurar intervalo para 30 segundos (teste)
-const syncInterval = 30 * 1000; // 30 segundos
+// Função para executar sync com verificação de horário
+function runCDESync() {
+    const now = new Date();
+    const ftTime = now.toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
 
-console.log(`[Server] CDESync configurado para rodar a cada 30 segundos`);
+    if (process.env.NODE_ENV !== 'production') {
+        // Em desenvolvimento, roda sempre
+        console.log(`[CDESync] Modo DEV - Executando sync... (Fort Myers: ${ftTime})`);
+        CDESync.syncAllStates()
+            .then(result => {
+                console.log('[CDESync] Sync completo:', result);
+            })
+            .catch(error => {
+                console.error('[CDESync] ERRO no sync:', error.message);
+            });
+    } else if (isBusinessHours()) {
+        // Em produção, só em horário comercial
+        console.log(`[CDESync] Horário comercial - Executando sync... (Fort Myers: ${ftTime})`);
+        CDESync.syncAllStates()
+            .then(result => {
+                console.log('[CDESync] Sync completo:', result);
+            })
+            .catch(error => {
+                console.error('[CDESync] ERRO no sync:', error.message);
+            });
+    } else {
+        // Fora do horário em produção
+        console.log(`[CDESync] Fora do horário comercial (Fort Myers: ${ftTime}) - sync pausado`);
+    }
+}
 
-// Executar sync inicial
-console.log('[Server] Executando sync inicial em 3 segundos...');
+// Configurar intervalo baseado no ambiente
+const syncInterval = process.env.NODE_ENV === 'production'
+    ? 5 * 60 * 1000     // 5 minutos em produção
+    : 1 * 60 * 1000;    // 1 minuto em desenvolvimento
+
+// Mostrar configuração
+const intervalMinutes = syncInterval / 60000;
+const modeText = process.env.NODE_ENV === 'production' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO';
+
+console.log(`\n🔄 CDESync Configurado:`);
+console.log(`   Modo: ${modeText}`);
+console.log(`   Intervalo: ${intervalMinutes} minuto${intervalMinutes > 1 ? 's' : ''}`);
+console.log(`   Horário: ${process.env.NODE_ENV === 'production' ? 'Seg-Sex 7am-6pm (Fort Myers)' : '24/7 (modo dev)'}`);
+console.log(`   Timezone: America/New_York (Fort Myers, FL)\n`);
+
+// Executar sync inicial após 10 segundos
+console.log('[CDESync] Sync inicial em 10 segundos...');
 setTimeout(() => {
     runCDESync();
-}, 3000);
+}, 10000);
 
-// Configurar intervalo
+// Configurar intervalo de execução
 setInterval(() => {
-    console.log(`\n[Server] === Timer disparado: ${new Date().toLocaleTimeString()} ===`);
     runCDESync();
 }, syncInterval);
 

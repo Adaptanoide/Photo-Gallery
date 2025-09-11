@@ -1199,7 +1199,9 @@ class AdminSelections {
         });
     }
 
-    // ===== GERAR EXCEL COM PO NUMBER E RESERVEDUSU =====
+    // ===== SUBSTITUIR A FUNÇÃO generateExcelFile NO ARQUIVO admin-selections.js =====
+    // Localizar a função por volta da linha 1290 e substituir TODA ela por esta versão corrigida:
+
     async generateExcelFile(selection, poNumber) {
         try {
             console.log('Gerando Excel com PO:', poNumber);
@@ -1223,22 +1225,15 @@ class AdminSelections {
                 console.log('Usando nome do cliente:', companyName);
             }
 
-            // Coletar todos os photo numbers
-            const allPhotoNumbers = [];
-            selection.items.forEach(item => {
-                const photoNumber = (item.fileName || '').replace(/\.(webp|jpg|jpeg|png)$/i, '');
-                if (photoNumber) {
-                    allPhotoNumbers.push(photoNumber);
-                }
-            });
-            const photoNumbersString = allPhotoNumbers.join('-');
+            // REMOVER O CÓDIGO ANTIGO QUE COLETAVA TODAS AS FOTOS
+            // NÃO fazer mais isso aqui!
 
             // FORMATO CORRETO: NOMECLIENTE-CÓDIGO
             const clientNameFormatted = selection.clientName.toUpperCase().replace(/\s+/g, '');
             const reservedusu = `${clientNameFormatted}-${selection.clientCode || '0000'}`;
-            console.log('RESERVEDUSU será:', reservedusu); // Ex: BRADFORD-2745
+            console.log('RESERVEDUSU será:', reservedusu);
 
-            // Agrupar por QB Item
+            // Agrupar por QB Item e COLETAR FOTOS POR CATEGORIA
             const qbGroups = {};
             for (const item of selection.items) {
                 const qbCode = await this.getQBForCategory(item.category) || 'NO-QB';
@@ -1248,6 +1243,7 @@ class AdminSelections {
                         qbCode: qbCode,
                         categoryName: item.category,
                         items: [],
+                        photoNumbers: [], // NOVO: Array para fotos desta categoria
                         totalQty: 0,
                         unitPrice: 0,
                         totalAmount: 0
@@ -1258,6 +1254,12 @@ class AdminSelections {
                 qbGroups[qbCode].totalQty++;
                 const itemPrice = item.price || 0;
                 qbGroups[qbCode].totalAmount += itemPrice;
+
+                // NOVO: Adicionar número da foto APENAS para esta categoria
+                const photoNumber = (item.fileName || '').replace(/\.(webp|jpg|jpeg|png)$/i, '');
+                if (photoNumber) {
+                    qbGroups[qbCode].photoNumbers.push(photoNumber);
+                }
             }
 
             // Calcular preço médio
@@ -1274,8 +1276,8 @@ class AdminSelections {
             excelData.push([
                 'Customer',
                 'PO. Number',
-                'RESERVEDUSU',     // Coluna 3 - valor SUNSHINE-CLIENTCODE
-                'Photo.Number',    // Coluna 4 - números das fotos concatenados
+                'RESERVEDUSU',
+                'Photo.Number',
                 'ITEM REQ',
                 'ITEM NAME',
                 'ITEM QTY',
@@ -1284,8 +1286,11 @@ class AdminSelections {
                 'ESTADO'
             ]);
 
-            // Adicionar linhas com RESERVEDUSU
+            // Adicionar linhas com fotos ESPECÍFICAS de cada categoria
             Object.values(qbGroups).forEach(group => {
+                // NOVO: Criar string de fotos APENAS desta categoria
+                const categoryPhotoNumbers = group.photoNumbers.join('-');
+
                 // MANTER DESCRIÇÃO COMPLETA
                 let itemName = group.categoryName;
 
@@ -1298,8 +1303,8 @@ class AdminSelections {
                 excelData.push([
                     companyName,                              // Customer
                     poNumber,                                  // PO. Number (digitado pelo usuário)
-                    reservedusu,                              // RESERVEDUSU (SUNSHINE-CLIENTCODE)
-                    photoNumbersString,                        // Photo.Number (números concatenados)
+                    reservedusu,                              // RESERVEDUSU
+                    categoryPhotoNumbers,                      // Photo.Number - AGORA ESPECÍFICO DA CATEGORIA!
                     group.qbCode,                             // ITEM REQ
                     itemName,                                  // ITEM NAME (descrição completa)
                     group.totalQty,                           // ITEM QTY
@@ -1307,6 +1312,9 @@ class AdminSelections {
                     group.totalAmount.toFixed(2),             // AMOUNT
                     this.getStatusText(selection.status)      // ESTADO
                 ]);
+
+                // LOG para debug
+                console.log(`Categoria ${group.qbCode}: ${group.photoNumbers.length} fotos`);
             });
 
             // Criar workbook
@@ -1320,7 +1328,7 @@ class AdminSelections {
                 { width: 25 },  // RESERVEDUSU
                 { width: 100 }, // Photo.Number (largo para todos números)
                 { width: 15 },  // ITEM REQ
-                { width: 60 },  // ITEM NAME (aumentei para 60 para caber descrição completa)
+                { width: 60 },  // ITEM NAME
                 { width: 12 },  // ITEM QTY
                 { width: 12 },  // RATE
                 { width: 15 },  // AMOUNT
@@ -1335,8 +1343,9 @@ class AdminSelections {
 
             XLSX.writeFile(workbook, fileName);
 
-            console.log(`Excel gerado com PO: ${poNumber}`);
-            console.log(`RESERVEDUSU aplicado: ${reservedusu}`);
+            console.log(`✅ Excel gerado com PO: ${poNumber}`);
+            console.log(`✅ RESERVEDUSU aplicado: ${reservedusu}`);
+            console.log(`✅ Total de categorias: ${Object.keys(qbGroups).length}`);
             this.showNotification(`Planilha CDE baixada com PO: ${poNumber} | RESERVEDUSU: ${reservedusu}`, 'success');
 
         } catch (error) {

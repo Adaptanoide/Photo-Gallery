@@ -3,6 +3,7 @@
 const mongoose = require('mongoose');
 const Cart = require('../models/Cart');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+const AccessCode = require('../models/AccessCode'); // ADICIONADO
 // const Product = require('../models/Product'); // COMENTAR
 // const PhotoStatus = require('../models/PhotoStatus'); // COMENTAR
 const CDEWriter = require('./CDEWriter');
@@ -54,6 +55,11 @@ class CartService {
             return await session.withTransaction(async () => {
                 console.log(`🛒 Tentando adicionar item ${driveFileId} ao carrinho ${sessionId}`);
 
+                // ADICIONADO: Buscar configuração TTL do cliente
+                const clientConfig = await AccessCode.findOne({ code: clientCode }).session(session);
+                const TTL_HOURS = clientConfig?.cartSettings?.ttlHours || 24;
+                const CUSTOM_DURATION = TTL_HOURS * 60 * 60 * 1000;
+                console.log(`⏰ TTL para cliente ${clientCode}: ${TTL_HOURS} horas`);
 
                 // 1. Verificar se produto existe, senão criar automaticamente
                 let product = await UnifiedProductComplete.findOne({
@@ -164,8 +170,8 @@ class CartService {
                     throw new Error(`Limite máximo de ${CartService.MAX_ITEMS_PER_CART} itens por carrinho`);
                 }
 
-                // 5. Calcular tempo de expiração
-                const expiresAt = new Date(Date.now() + CartService.RESERVATION_DURATION);
+                // 5. Calcular tempo de expiração - MODIFICADO
+                const expiresAt = new Date(Date.now() + CUSTOM_DURATION);
 
                 // 6. Reservar produto (operação atômica)
                 const updateResult = await UnifiedProductComplete.updateOne(
@@ -248,7 +254,7 @@ class CartService {
                     item: cartItem,
                     cart: await this.getCartSummary(sessionId),
                     expiresAt,
-                    timeRemaining: Math.floor(CartService.RESERVATION_DURATION / 1000)
+                    timeRemaining: Math.floor(CUSTOM_DURATION / 1000) // MODIFICADO
                 };
             });
 
