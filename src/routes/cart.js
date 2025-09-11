@@ -462,6 +462,8 @@ router.get('/:sessionId', validateSessionId, async (req, res) => {
         // Chamar service
         const cart = await CartService.getCart(sessionId);
 
+        
+
         if (!cart) {
             return res.json({
                 success: true,

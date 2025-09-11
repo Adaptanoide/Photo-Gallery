@@ -48,64 +48,53 @@
 
             <!-- Navegação -->
             <nav class="sidebar-nav">
-                <div class="nav-item">
                 <div class="nav-item" style="display:none">
-                    <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                    <a href="#dashboard" class="nav-link" data-section="dashboard">
                         <i class="fas fa-chart-line"></i>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
-
                 <div class="nav-item">
                     <a href="#clients" class="nav-link active" data-section="clients">
                         <i class="fas fa-users"></i>
                         <span class="nav-text">Client Management</span>
                     </a>
                 </div>
-
                 <div class="nav-item">
                     <a href="#pricing" class="nav-link" data-section="pricing">
                         <i class="fas fa-dollar-sign"></i>
                         <span class="nav-text">Price Management</span>
                     </a>
                 </div>
-
                 <div class="nav-item">
                     <a href="#selections" class="nav-link" data-section="selections">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="nav-text">Selection Management</span>
                     </a>
                 </div>
-
-                <div class="nav-item">
                 <div class="nav-item" style="display:none">
                     <a href="#special-selections" class="nav-link" data-section="special-selections">
                         <i class="fas fa-star"></i>
                         <span class="nav-text">Special Selections</span>
                     </a>
                 </div>
-
-                <div class="nav-item" style="display:none">
                 <div class="nav-item" style="display:none">
                     <a href="#reports" class="nav-link" data-section="reports">
                         <i class="fas fa-chart-bar"></i>
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
-
-                <div class="nav-item">
-                    <div class="nav-item" style="display:none">
-                        <a href="#storage" class="nav-link" data-section="storage">
-                            <span class="nav-text">Storage Management</span>
-                        </a>
-                    </div>
-
-                    <div class="nav-item">
-                        <a href="#settings" class="nav-link" data-section="settings">
-                            <i class="fas fa-cog"></i>
-                            <span class="nav-text">Settings</span>
-                        </a>
-                    </div>
+                <div class="nav-item" style="display:none">
+                    <a href="#storage" class="nav-link" data-section="storage">
+                        <span class="nav-text">Storage Management</span>
+                    </a>
+                </div>
+                <div class="nav-item"> <!-- SEM display:none -->
+                    <a href="#settings" class="nav-link" data-section="settings">
+                        <i class="fas fa-cog"></i>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                </div>
             </nav>
         </aside>
 
@@ -984,7 +973,7 @@
                 </div>
 
                 <!-- Seção Configurações (Hidden por padrão) -->
-                <div id="section-settings" class="content-section" style="display: none;">
+                <div id="section-settings" class="content-section">
                     <!-- Loading -->
                     <div id="configLoading" class="loading-section">
                         <div class="loading-spinner">

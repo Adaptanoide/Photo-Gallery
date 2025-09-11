@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const StorageService = require('../services/StorageService');
-const PhotoStatus = require('../models/PhotoStatus');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const jwt = require('jsonwebtoken');
 const AccessCode = require('../models/AccessCode');
 
@@ -443,13 +443,15 @@ router.get('/photos', verifyClientToken, async (req, res) => {
 
         const result = await StorageService.getPhotos(prefix);
 
+
+
         // Filtrar fotos reservadas/vendidas/special
-        const unavailablePhotos = await PhotoStatus.find({
+        const unavailablePhotos = await UnifiedProductComplete.find({
             $or: [
                 { 'virtualStatus.status': 'sold' },  // REMOVIDO 'reserved' daqui
                 { 'virtualStatus.status': { $regex: /^special_/ } },
                 { 'currentStatus': 'sold' },
-                { 'cdeStatus': { $in: ['RESERVED', 'STANDBY', 'PRE-SELECTED'] } }
+                { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
             ]
         }).select('fileName');
 
@@ -466,7 +468,7 @@ router.get('/photos', verifyClientToken, async (req, res) => {
             return name.replace('.webp', '');
         });
 
-        const photoStatuses = await PhotoStatus.find({
+        const photoStatuses = await UnifiedProductComplete.find({
             photoId: { $in: photoIds }
         }).select('photoId currentStatus');
 

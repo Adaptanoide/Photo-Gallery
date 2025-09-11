@@ -7,6 +7,7 @@ const Selection = require('../models/Selection');
 const Product = require('../models/Product');
 const EmailService = require('../services/EmailService');
 const PhotoTagService = require('../services/PhotoTagService');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 
 const router = express.Router();
 
@@ -37,18 +38,43 @@ router.post('/finalize', async (req, res) => {
 
             // 2. Buscar produtos detalhados
             const productIds = cart.items.map(item => item.productId);
-            const products = await Product.find({
-                _id: { $in: productIds },
-                status: 'reserved',
-                'reservedBy.sessionId': sessionId
+            console.log('🔍 DEBUG COMPLETO:');
+            console.log('  Cart items:', cart.items.length);
+            console.log('  ProductIds:', productIds);
+            console.log('  SessionId:', sessionId);
+            console.log('  ClientCode:', clientCode);
+
+            // Buscar SEM filtros primeiro para debug
+            const allProducts = await UnifiedProductComplete.find({
+                _id: { $in: productIds }
             }).session(session);
 
-            if (products.length !== cart.totalItems) {
-                throw new Error('Alguns itens do carrinho não estão mais disponíveis');
+            console.log(`  Produtos encontrados (sem filtro): ${allProducts.length}`);
+            if (allProducts.length > 0) {
+                allProducts.forEach(p => {
+                    console.log(`    - ${p.fileName}: status=${p.status}, clientCode=${p.reservedBy?.clientCode}, sessionId=${p.reservedBy?.sessionId}`);
+                });
             }
 
-            console.log(`✅ Produtos validados: ${products.length} itens`);
+            // Agora buscar com filtros
+            const products = await UnifiedProductComplete.find({
+                _id: { $in: productIds },
+                $or: [
+                    { status: 'available' },
+                    {
+                        status: 'reserved',
+                        'reservedBy.clientCode': clientCode
+                    }
+                ]
+            }).session(session);
 
+            console.log(`  Produtos válidos: ${products.length}`);
+
+            if (products.length !== cart.totalItems) {
+                console.log(`  ❌ ERRO: Esperado ${cart.totalItems}, encontrado ${products.length}`);
+                throw new Error('Alguns itens do carrinho não estão mais disponíveis');
+            }
+            
             // 3. ✅ NOVA ORDEM: Verificar PRIMEIRO se é cliente especial
             const AccessCode = require('../models/AccessCode');
             const SpecialSelectionService = require('../services/SpecialSelectionService');
@@ -372,7 +398,7 @@ router.post('/finalize', async (req, res) => {
             }
 
             // 9. Atualizar status dos produtos (comum para ambos)
-            await Product.updateMany(
+            await UnifiedProductComplete.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {

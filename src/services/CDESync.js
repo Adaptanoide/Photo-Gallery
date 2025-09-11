@@ -3,9 +3,9 @@
 
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
-const PhotoStatus = require('../models/PhotoStatus');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');  // MUDAR
 const CDEBlockedPhoto = require('../models/CDEBlockedPhoto');
-const Product = require('../models/Product');
+// const Product = require('../models/Product');  // COMENTAR
 
 class CDESync {
     constructor() {
@@ -29,7 +29,7 @@ class CDESync {
             return { success: false, error: 'MongoDB não conectado' };
         }
         const db = mongoose.connection.db;
-        const collection = db.collection('photostatuses');
+        const collection = db.collection('unified_products_complete');
 
         try {
             mysqlConnection = await mysql.createConnection(this.cdeConfig);
@@ -98,11 +98,11 @@ class CDESync {
                 const photoIdNoZeros = photoNumber.replace(/^0+/, '') || '0';
 
                 // Buscar foto atual para verificar se precisa atualizar
-                const existingPhoto = await PhotoStatus.findOne({
+                const existingPhoto = await UnifiedProductComplete.findOne({
                     $or: [
-                        { photoId: photoId },
-                        { photoId: photoIdNoZeros },
-                        { photoId: photoNumber },
+                        { photoNumber: photoNumber },
+                        { photoNumber: photoId },
+                        { photoNumber: photoIdNoZeros },
                         { fileName: `${photoId}.webp` },
                         { fileName: `${photoIdNoZeros}.webp` }
                     ]
@@ -121,7 +121,7 @@ class CDESync {
                 }
 
                 // Atualizar no MongoDB
-                const result = await PhotoStatus.updateOne(
+                const result = await UnifiedProductComplete.updateOne(
                     {
                         $or: [
                             { photoId: photoId },
@@ -148,16 +148,6 @@ class CDESync {
                 if (result.modifiedCount > 0) {
                     updatedCount++;
                     console.log(`[CDE Sync] Foto ${photoNumber} atualizada: ${newCdeStatus} → ${newStatus}`);
-
-                    // NOVO: Também atualizar Product se existir
-                    const productResult = await Product.updateOne(
-                        { fileName: `${photoNumber.padStart(5, '0')}.webp` },
-                        { status: newStatus }
-                    );
-
-                    if (productResult.modifiedCount > 0) {
-                        console.log(`[CDE Sync] Product ${photoNumber} também atualizado`);
-                    }
                 }
             }
 
@@ -211,13 +201,13 @@ class CDESync {
     // Método para obter mudanças recentes (para o frontend)
     async getRecentChanges(minutes = 5) {
         const db = mongoose.connection.db;
-        const photostatuses = db.collection('photostatuses');
-        const products = db.collection('products');
+        const unifiedProducts = db.collection('unified_products_complete');
+
 
         const since = new Date(Date.now() - (minutes * 60000));
 
         // Buscar mudanças em photostatuses (CDE/sold)
-        const changes = await photostatuses.find({
+        const changes = await unifiedProducts.find({
             $or: [
                 { lastCDESync: { $gte: since } },
                 { 'virtualStatus.lastStatusChange': { $gte: since } }
@@ -229,7 +219,7 @@ class CDESync {
         }).toArray();
 
         // Buscar reservas em products
-        const reserved = await products.find({
+        const reserved = await unifiedProducts.find({
             status: 'reserved'
         }).project({
             driveFileId: 1,

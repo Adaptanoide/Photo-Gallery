@@ -127,52 +127,39 @@ app.use('*', (req, res) => {
 
 // Sincronização CDE - intervalo baseado no ambiente e horário comercial
 const CDESync = require('./services/CDESync');
-// Função para verificar horário comercial Fort Myers (EST/EDT)
-function isBusinessHours() {
-    const now = new Date();
-    const ftMyersTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-
-    const day = ftMyersTime.getDay();
-    const hour = ftMyersTime.getHours();
-
-    // Segunda(1) a Sexta(5), 7am-6pm
-    return (day >= 1 && day <= 5 && hour >= 7 && hour < 18);
-}
 
 // Função para executar sync com verificação de horário
 function runCDESync() {
-    if (isBusinessHours()) {
-        console.log('[Server] Dentro do horário comercial Fort Myers - executando syncs...');
-        CDESync.syncAllStates();
-    } else {
-        const now = new Date();
-        const ftTime = now.toLocaleString("en-US", {
-            timeZone: "America/New_York",
-            weekday: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
+    console.log('[CDESync] Tentando executar sync...');
+
+    CDESync.syncAllStates()
+        .then(result => {
+            console.log('[CDESync] Sync completo:', result);
+        })
+        .catch(error => {
+            console.error('[CDESync] ERRO no sync:', error.message);
         });
-        console.log(`[Server] Fora do horário comercial (Fort Myers: ${ftTime}) - syncs pausados`);
-    }
 }
 
-// Configurar intervalo baseado no ambiente
-const syncInterval = process.env.NODE_ENV === 'production'
-    ? 10 * 60 * 1000    // 10 minutos em produção
-    : 5 * 60 * 1000;    // 5 minutos em desenvolvimento
+// Configurar intervalo para 30 segundos (teste)
+const syncInterval = 30 * 1000; // 30 segundos
 
-const syncMinutes = syncInterval / 60000;
-const syncHours = syncMinutes / 60;
-console.log(`[Server] CDESync configurado para cada ${syncMinutes >= 60 ? syncHours + ' horas' : syncMinutes + ' minutos'} (somente horário comercial)`);
+console.log(`[Server] CDESync configurado para rodar a cada 30 segundos`);
 
 // Executar sync inicial
-runCDESync();
+console.log('[Server] Executando sync inicial em 3 segundos...');
+setTimeout(() => {
+    runCDESync();
+}, 3000);
 
 // Configurar intervalo
 setInterval(() => {
+    console.log(`\n[Server] === Timer disparado: ${new Date().toLocaleTimeString()} ===`);
     runCDESync();
 }, syncInterval);
+
 // Iniciar servidor
+
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);

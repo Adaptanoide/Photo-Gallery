@@ -7,8 +7,8 @@ class StatusMonitor {
         const changes = [];
 
         try {
-            // 1. Monitorar mudanças em products (reservas temporárias)
-            const products = await db.collection('products')
+            // Buscar da NOVA collection unificada
+            const products = await db.collection('unified_products_complete')
                 .find({
                     $or: [
                         { updatedAt: { $gte: since } },
@@ -18,6 +18,8 @@ class StatusMonitor {
                 })
                 .project({
                     driveFileId: 1,
+                    photoNumber: 1,
+                    fileName: 1,
                     status: 1,
                     updatedAt: 1,
                     reservedBy: 1
@@ -38,14 +40,12 @@ class StatusMonitor {
 
             // Processar products
             for (const product of products) {
-                // CORREÇÃO 1: Verificar se driveFileId existe
-                if (!product.driveFileId) {
-                    continue; // Pular este produto
-                }
-                
-                const photoId = product.driveFileId
-                    .split('/').pop()
-                    .replace('.webp', '');
+                // Usar photoNumber ao invés de extrair do driveFileId
+                const photoId = product.photoNumber ||
+                    product.fileName?.replace('.webp', '') ||
+                    product.driveFileId?.split('/').pop().replace('.webp', '');
+
+                if (!photoId) continue;
 
                 changes.push({
                     id: photoId,
@@ -66,7 +66,7 @@ class StatusMonitor {
 
             // Se uma foto não está mais em products, está available
             const productIds = new Set();
-            
+
             // CORREÇÃO 2: Filtrar produtos com driveFileId antes de mapear
             products.forEach(p => {
                 if (p.driveFileId) {
@@ -76,7 +76,7 @@ class StatusMonitor {
             });
 
             // Buscar fotos que foram liberadas (não estão mais em products)
-            const recentlyDeleted = await db.collection('products')
+            const recentlyDeleted = await db.collection('unified_products_complete')
                 .find({
                     status: 'available',
                     updatedAt: { $gte: since }
@@ -89,7 +89,7 @@ class StatusMonitor {
                 if (!freed.driveFileId) {
                     continue; // Pular este produto
                 }
-                
+
                 const photoId = freed.driveFileId
                     .split('/').pop()
                     .replace('.webp', '');

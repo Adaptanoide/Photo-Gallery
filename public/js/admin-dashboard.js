@@ -154,19 +154,9 @@ class AdminDashboard {
         if (this.userName) {
             this.userName.textContent = user.username;
         }
-
-        // CONTROLE DE ACESSO - Esconde Settings se não for super_admin
-        if (user.role !== 'super_admin') {
-            const settingsLink = document.querySelector('[data-section="settings"]');
-            if (settingsLink && settingsLink.parentElement) {
-                settingsLink.parentElement.style.display = 'none';
-                console.log('⚠️ Settings menu hidden - user is not super_admin');
-            }
-        } else {
-            console.log('✅ Super Admin detected - full access granted');
-        }
+        // FIM - removido verificação de super_admin
     }
-    
+
     // ===== NAVEGAÇÃO =====
     navigateToSection(section) {
         console.log(`📍 Navegando para: ${section}`);

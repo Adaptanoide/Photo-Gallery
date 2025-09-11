@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"folderPath":{"$numberInt":"1"}},"name":"folderPath_1","background":true,"unique":true}],"uuid":"6b72924b7dba4f538028207b2db62373","collectionName":"folderstats","type":"collection"}

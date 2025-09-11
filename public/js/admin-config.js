@@ -14,15 +14,10 @@ function checkAuthentication() {
     const session = getSession();
     if (!session || !session.token) {
         console.warn('⚠️ User not authenticated');
-        window.location.href = '/admin';
-        return;
+        // window.location.href = '/admin';  // COMENTAR
+        return false;
     }
-
-    // Update username
-    const usernameEl = document.getElementById('adminUsername');
-    if (usernameEl && session.user) {
-        usernameEl.textContent = session.user.username || 'admin';
-    }
+    return true;
 }
 
 function getSession() {
@@ -447,7 +442,8 @@ function showNotification(message, type = 'info') {
 
 function logout() {
     localStorage.removeItem('sunshineSession');
-    window.location.href = '/admin';
+    localStorage.removeItem('adminToken');  // Adicionar esta linha também
+    window.location.href = '/admin';  // DESCOMENTAR esta linha
 }
 
 console.log('🔧 admin-config.js loaded');
@@ -476,17 +472,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Inicializar Settings quando ficar visível
     const settingsSection = document.getElementById('section-settings');
     if (settingsSection) {
-        observer.observe(settingsSection, { attributes: true });
-
-        // If already visible, initialize immediately
         if (settingsSection.style.display !== 'none') {
-            console.log('🔧 Settings section already visible - initializing...');
-            adminConfig = true;
-            checkAuthentication();
-            loadConfiguration();
-            setupFormHandlers();
+            // Verificar se tem QUALQUER sessão
+            const hasSession = localStorage.getItem('sunshineSession') ||
+                localStorage.getItem('adminToken');
+
+            if (hasSession) {
+                console.log('🔧 Settings section already visible - initializing...');
+                // NÃO chamar checkAuthentication - causa problemas
+                loadConfiguration();
+                setupFormHandlers();
+            }
         }
     }
 });

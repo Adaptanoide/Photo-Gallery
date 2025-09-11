@@ -1,7 +1,7 @@
 // src/services/PhotoTagService.js
 
 const mongoose = require('mongoose');
-const PhotoStatus = require('../models/PhotoStatus');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Product = require('../models/Product');
 
 class PhotoTagService {
@@ -20,7 +20,7 @@ class PhotoTagService {
 
         try {
             // 1. Atualizar PhotoStatus com tags
-            const photoResult = await PhotoStatus.updateMany(
+            const photoResult = await UnifiedProductComplete.updateMany(
                 {
                     photoId: { $in: photoIds },
                     'virtualStatus.status': 'available'
@@ -64,14 +64,14 @@ class PhotoTagService {
 
         try {
             // 1. Buscar fotos da seleção
-            const photos = await PhotoStatus.find({
+            const photos = await UnifiedProductComplete.find({
                 'virtualStatus.currentSelection': selectionId
             });
 
             const photoIds = photos.map(p => p.photoId);
 
             // 2. Marcar como vendidas
-            const photoResult = await PhotoStatus.updateMany(
+            const photoResult = await UnifiedProductComplete.updateMany(
                 { 'virtualStatus.currentSelection': selectionId },
                 {
                     $set: {
@@ -106,14 +106,14 @@ class PhotoTagService {
 
         try {
             // 1. Buscar fotos da seleção
-            const photos = await PhotoStatus.find({
+            const photos = await UnifiedProductComplete.find({
                 'virtualStatus.currentSelection': selectionId
             });
 
             const photoIds = photos.map(p => p.photoId);
 
             // 2. Voltar para disponível
-            const photoResult = await PhotoStatus.updateMany(
+            const photoResult = await UnifiedProductComplete.updateMany(
                 { 'virtualStatus.currentSelection': selectionId },
                 {
                     $set: {
@@ -158,7 +158,7 @@ class PhotoTagService {
 
         try {
             // 1. Buscar todos os PhotoStatus
-            const allPhotos = await PhotoStatus.find({});
+            const allPhotos = await UnifiedProductComplete.find({});
             console.log(`📊 ${allPhotos.length} fotos para verificar`);
 
             let migrated = 0;

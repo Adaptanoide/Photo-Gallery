@@ -7,11 +7,11 @@ const cartSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+    },
     clientCode: {
         type: String,
         required: true,
-        },
+    },
     clientName: {
         type: String,
         required: true
@@ -59,11 +59,11 @@ const cartSchema = new mongoose.Schema({
     lastActivity: {
         type: Date,
         default: Date.now,
-        },
+    },
     isActive: {
         type: Boolean,
         default: true,
-        }
+    }
 }, {
     timestamps: true
 });
@@ -124,8 +124,9 @@ cartSchema.statics.findActiveBySession = function (sessionId) {
     return this.findOne({
         sessionId,
         isActive: true
-    }).populate('items.productId');
+    });  // REMOVER O .populate()
 };
+
 
 // Buscar carrinho ativo por cliente
 cartSchema.statics.findActiveByClient = function (clientCode) {

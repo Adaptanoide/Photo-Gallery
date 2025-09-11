@@ -3,7 +3,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AccessCode = require('../models/AccessCode');
-const Product = require('../models/Product');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Sale = require('../models/Sale');
 const { authenticateToken } = require('./auth');
 

@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"photoNumber":{"$numberInt":"1"}},"name":"photoNumber_1","background":true,"unique":true}],"uuid":"689dc9d48d734dfea4dddbe1a7bb3565","collectionName":"cdeblockedphotos","type":"collection"}

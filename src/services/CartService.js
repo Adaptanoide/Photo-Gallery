@@ -2,8 +2,9 @@
 
 const mongoose = require('mongoose');
 const Cart = require('../models/Cart');
-const Product = require('../models/Product');
-const PhotoStatus = require('../models/PhotoStatus');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+// const Product = require('../models/Product'); // COMENTAR
+// const PhotoStatus = require('../models/PhotoStatus'); // COMENTAR
 const CDEWriter = require('./CDEWriter');
 
 // Função auxiliar para extrair número da foto de forma segura
@@ -53,8 +54,9 @@ class CartService {
             return await session.withTransaction(async () => {
                 console.log(`🛒 Tentando adicionar item ${driveFileId} ao carrinho ${sessionId}`);
 
+
                 // 1. Verificar se produto existe, senão criar automaticamente
-                let product = await Product.findOne({
+                let product = await UnifiedProductComplete.findOne({
                     driveFileId
                 }).session(session);
 
@@ -62,16 +64,27 @@ class CartService {
                     // CRIAR PRODUTO AUTOMATICAMENTE A PARTIR DA FOTO DO GOOGLE DRIVE
                     console.log(`📦 Criando produto automaticamente para foto: ${driveFileId}`);
 
-                    product = new Product({
+                    // LINHA ~47-60 - Criar produto automaticamente
+                    product = new UnifiedProductComplete({
+                        // Campos obrigatórios do novo model
+                        idhCode: `TEMP_${Date.now()}`, // Temporário até buscar no CDE
+                        photoNumber: extractPhotoNumber(driveFileId) || 'unknown',
+                        photoId: driveFileId,
+
+                        // Campos originais do Product
                         driveFileId: driveFileId,
                         fileName: itemData.fileName || 'Produto sem nome',
                         category: itemData.category || 'Categoria',
                         subcategory: null,
-                        price: 0, // Será definido depois pelo admin
+                        price: 0,
                         status: 'available',
                         thumbnailUrl: itemData.thumbnailUrl || null,
                         webViewLink: null,
-                        size: null
+                        size: null,
+
+                        // Campos adicionais necessários
+                        currentStatus: 'available',
+                        virtualStatus: { status: 'available' }
                     });
 
                     await product.save({ session });
@@ -155,7 +168,7 @@ class CartService {
                 const expiresAt = new Date(Date.now() + CartService.RESERVATION_DURATION);
 
                 // 6. Reservar produto (operação atômica)
-                const updateResult = await Product.updateOne(
+                const updateResult = await UnifiedProductComplete.updateOne(
                     {
                         _id: product._id,
                         status: 'available' // Double-check
@@ -200,7 +213,7 @@ class CartService {
                             return;
                         }
 
-                        const photoStatus = await PhotoStatus.findOne({
+                        const photoStatus = await UnifiedProductComplete.findOne({
                             $or: [
                                 { photoNumber: photoNumber },
                                 { photoId: photoNumber },
@@ -274,7 +287,7 @@ class CartService {
                 // CORREÇÃO: Buscar o clientCode do carrinho para garantir liberação
                 const clientCode = cart.clientCode;
 
-                const updateResult = await Product.updateOne(
+                const updateResult = await UnifiedProductComplete.updateOne(
                     {
                         driveFileId,
                         $or: [
@@ -318,7 +331,7 @@ class CartService {
                             return;
                         }
 
-                        const photoStatus = await PhotoStatus.findOne({
+                        const photoStatus = await UnifiedProductComplete.findOne({
                             $or: [
                                 { photoNumber: photoNumber },
                                 { photoId: photoNumber },
@@ -464,7 +477,7 @@ class CartService {
             const now = new Date();
 
             // Liberar reservas expiradas
-            const result = await Product.updateMany(
+            const result = await UnifiedProductComplete.updateMany(
                 {
                     'reservedBy.sessionId': sessionId,
                     'reservedBy.expiresAt': { $lt: now }
@@ -495,7 +508,7 @@ class CartService {
             console.log(`🧹 Iniciando limpeza de reservas expiradas...`);
 
             // 1. Liberar produtos com reservas expiradas
-            const productResult = await Product.updateMany(
+            const productResult = await UnifiedProductComplete.updateMany(
                 {
                     status: 'reserved',
                     'reservedBy.expiresAt': { $lt: now }
@@ -549,9 +562,9 @@ class CartService {
             const stats = await Promise.all([
                 Cart.countDocuments({ isActive: true }),
                 Cart.countDocuments({ isActive: false }),
-                Product.countDocuments({ status: 'available' }),
-                Product.countDocuments({ status: 'reserved' }),
-                Product.countDocuments({ status: 'sold' }),
+                UnifiedProductComplete.countDocuments({ status: 'available' }),
+                UnifiedProductComplete.countDocuments({ status: 'reserved' }),
+                UnifiedProductComplete.countDocuments({ status: 'sold' }),
                 Cart.aggregate([
                     { $match: { isActive: true } },
                     { $group: { _id: null, totalItems: { $sum: '$totalItems' } } }

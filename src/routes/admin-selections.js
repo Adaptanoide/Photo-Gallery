@@ -3,8 +3,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Selection = require('../models/Selection');
-const Product = require('../models/Product');
-const PhotoStatus = require('../models/PhotoStatus');
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+// const Product = require('../models/Product'); // COMENTAR
+// const PhotoStatus = require('../models/PhotoStatus'); // COMENTAR
 const PhotoTagService = require('../services/PhotoTagService');
 const { authenticateToken } = require('./auth');
 const router = express.Router();
@@ -45,8 +46,6 @@ router.get('/', async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .populate('items.productId');
-
         const total = await Selection.countDocuments({ ...query, isDeleted: { $ne: true } });
 
         res.json({
@@ -94,12 +93,15 @@ router.get('/stats', async (req, res) => {
             { selectionType: { $ne: 'special' } },
             {
                 selectionType: 'special',
-                status: { $in: ['pending', 'finalized', 'cancelled'] },
+                status: { $in: ['pending', 'finalized'] },
                 'movementLog.action': 'finalized'
             }
         ];
 
-        const totalSelections = await Selection.countDocuments(query);
+        const totalSelections = await Selection.countDocuments({
+            ...query,
+            status: { $nin: ['cancelled', 'cancelling'] }  // Excluir cancelled e cancelling
+        });
         const pendingQuery = { ...query, status: { $in: ['pending'] } };
         const pendingSelections = await Selection.countDocuments(pendingQuery);
 
@@ -109,7 +111,8 @@ router.get('/stats', async (req, res) => {
         startOfMonth.setHours(0, 0, 0, 0);
 
         const thisMonthSelections = await Selection.countDocuments({
-            createdAt: { $gte: startOfMonth }
+            createdAt: { $gte: startOfMonth },
+            status: { $nin: ['cancelled', 'cancelling'] }  // Excluir cancelled aqui também
         });
 
         // Valor médio
@@ -147,7 +150,6 @@ router.get('/:selectionId', async (req, res) => {
 
         // Buscar a seleção com todos os dados populados
         const selection = await Selection.findOne({ selectionId })
-            .populate('items.productId');
 
         if (!selection) {
             return res.status(404).json({
@@ -262,11 +264,14 @@ router.post('/:selectionId/approve', async (req, res) => {
             // 3. Atualizar produtos: reserved_pending → sold
             const productIds = selection.items.map(item => item.productId);
 
-            await Product.updateMany(
+            await UnifiedProductComplete.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {
                         status: 'sold',
+                        currentStatus: 'sold',  // ADICIONAR
+                        'virtualStatus.status': 'sold',  // ADICIONAR
+                        cdeStatus: 'RETIRADO',  // ADICIONAR
                         soldAt: new Date()
                     },
                     $unset: { 'reservedBy': 1 }
@@ -335,7 +340,6 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
             // 1. Buscar seleção com dados completos
             const selection = await Selection.findOne({ selectionId })
-                .populate('items.productId')
                 .session(session);
 
             if (!selection) {
@@ -381,21 +385,48 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
             console.log(`🏷️ [TAGS] Cancelamento concluído: ${successfulReverts} fotos liberadas`);
             // 3. Atualizar produtos: reserved_pending → available
+            console.log('🔍 DEBUG CANCEL - Selection items:', selection.items.length);
             const productIds = selection.items.map(item => item.productId);
+            console.log('🔍 DEBUG CANCEL - ProductIds:', productIds);
 
-            await Product.updateMany(
+            // Debug antes do update
+            console.log('🔍 DEBUG - Buscando produtos com IDs:', productIds);
+
+            const updateResult = await UnifiedProductComplete.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {
-                        status: 'available'
+                        status: 'available',
+                        currentStatus: 'available',
+                        'virtualStatus.status': 'available',
+                        'virtualStatus.clientCode': null,
+                        cdeStatus: 'INGRESADO'
                     },
                     $unset: {
                         'reservedBy': 1,
+                        'reservationInfo': 1,
+                        'soldAt': 1,
                         'reservedAt': 1,
                         'cartAddedAt': 1
                     }
                 }
             ).session(session);
+
+            console.log('🔍 DEBUG - UpdateResult:', {
+                acknowledged: updateResult.acknowledged,
+                modifiedCount: updateResult.modifiedCount,
+                matchedCount: updateResult.matchedCount
+            });
+
+            // Verificar se realmente atualizou
+            const checkUpdate = await UnifiedProductComplete.findById(productIds[0]).session(session);
+            console.log('🔍 DEBUG - Após update:', {
+                status: checkUpdate?.status,
+                currentStatus: checkUpdate?.currentStatus,
+                cdeStatus: checkUpdate?.cdeStatus
+            });
+
+            console.log(`🔍 DEBUG CANCEL - Documentos atualizados: ${updateResult.modifiedCount}`);
 
             // 4. Atualizar seleção
             selection.status = 'cancelled';
@@ -469,7 +500,6 @@ router.post('/:selectionId/force-cancel', async (req, res) => {
 
             // 1. Buscar seleção (aceita qualquer status)
             const selection = await Selection.findOne({ selectionId })
-                .populate('items.productId')
                 .session(session);
 
             if (!selection) {
@@ -531,17 +561,23 @@ router.post('/:selectionId/force-cancel', async (req, res) => {
             // 3. Atualizar produtos: qualquer status → available
             const productIds = selection.items.map(item => item.productId);
 
-            await Product.updateMany(
+            await UnifiedProductComplete.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {
-                        status: 'available'
+                        status: 'available',
+                        currentStatus: 'available',
+                        'virtualStatus.status': 'available',
+                        'virtualStatus.clientCode': null,
+                        'virtualStatus.tags': [],
+                        cdeStatus: 'INGRESADO'
                     },
                     $unset: {
                         'reservedBy': 1,
+                        'reservationInfo': 1,
+                        'soldAt': 1,
                         'reservedAt': 1,
-                        'cartAddedAt': 1,
-                        'soldAt': 1
+                        'cartAddedAt': 1
                     }
                 }
             ).session(session);
@@ -610,7 +646,7 @@ router.post('/:selectionId/revert-sold', async (req, res) => {
             const { selectionId } = req.params;
             const { adminUser, reason } = req.body;
 
-            console.log(`🔄 Revertendo seleção ${selectionId} de SOLD para AVAILABLE...`);
+            console.log(`🔄 Revertendo seleção ${selectionId} de SOLD para PENDING...`);
 
             // 1. Buscar seleção
             const selection = await Selection.findOne({ selectionId }).session(session);
@@ -629,40 +665,38 @@ router.post('/:selectionId/revert-sold', async (req, res) => {
                 });
             }
 
-            // 2. Reverter tags
+            // 2. Buscar e atualizar produtos
             const driveFileIds = selection.items.map(item => item.driveFileId);
 
-            // Primeiro limpar as tags
-            await PhotoStatus.updateMany(
-                { photoId: { $in: driveFileIds } },
+            // UM ÚNICO UPDATE que faz tudo
+            await UnifiedProductComplete.updateMany(
+                { driveFileId: { $in: driveFileIds } },
                 {
                     $set: {
-                        'virtualStatus.status': 'available',
+                        status: 'reserved_pending',  // Volta para pendente, não available!
+                        currentStatus: 'reserved',
+                        'virtualStatus.status': 'reserved',
                         'virtualStatus.currentSelection': null,
-                        'virtualStatus.clientCode': null,
-                        'virtualStatus.tags': ['available']  // Resetar tags para apenas 'available'
+                        'virtualStatus.clientCode': selection.clientCode,  // Mantém o cliente
+                        'virtualStatus.tags': [],
+                        cdeStatus: 'PRE-SELECTED'  // Mantém reservado no CDE
+                    },
+                    $unset: {
+                        'soldAt': 1  // Remove apenas a data de venda
                     }
                 }
             ).session(session);
 
-            const result = { modifiedCount: driveFileIds.length };
-
-            // 3. Atualizar produtos
-            await Product.updateMany(
-                { driveFileId: { $in: driveFileIds } },
-                { $set: { status: 'available' } }
-            ).session(session);
-
-            // 4. Atualizar seleção
-            selection.status = 'reverted';
+            // 3. Atualizar seleção
+            selection.status = 'pending';  // Volta para pending, não reverted
             selection.addMovementLog('reverted', `Revertida por ${adminUser}: ${reason}`);
             await selection.save({ session });
 
-            console.log(`✅ ${result.modifiedCount} fotos revertidas para AVAILABLE`);
+            console.log(`✅ ${driveFileIds.length} fotos revertidas para PENDING`);
 
             res.json({
                 success: true,
-                message: `${result.modifiedCount} fotos revertidas com sucesso`,
+                message: `${driveFileIds.length} fotos revertidas com sucesso`,
                 selection: selection.getSummary()
             });
         });
