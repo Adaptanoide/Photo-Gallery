@@ -18,6 +18,8 @@ const specialSelectionsRoutes = require('./routes/special-selections'); // NOVO
 const storageRoutes = require('./routes/storage');
 const Cart = require('./models/Cart');
 const { CartService } = require('./services');
+const CDESync = require('./services/CDESync');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
