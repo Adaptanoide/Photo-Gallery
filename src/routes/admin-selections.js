@@ -732,6 +732,127 @@ router.post('/:selectionId/revert-sold', async (req, res) => {
     }
 });
 
+// Rota para remover múltiplos items de uma seleção
+router.post('/:selectionId/remove-items', async (req, res) => {
+    try {
+        const { selectionId } = req.params;
+        const { items } = req.body;
+
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No items provided'
+            });
+        }
+
+        // Buscar a seleção
+        const Selection = require('../models/Selection');
+        const selection = await Selection.findOne({ selectionId });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Selection not found'
+            });
+        }
+
+        // Verificar se pode editar
+        if (selection.status === 'cancelled') {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot modify cancelled selections'
+            });
+        }
+
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+        const CDEWriter = require('../services/CDEWriter');
+        const removedItems = [];
+
+        // Processar cada item para remoção
+        for (const itemToRemove of items) {
+            const itemIndex = selection.items.findIndex(item =>
+                item.fileName === itemToRemove.fileName
+            );
+
+            if (itemIndex !== -1) {
+                const removedItem = selection.items[itemIndex];
+
+                // Liberar a foto no MongoDB
+                const photoNumber = removedItem.fileName.replace('.webp', '');
+                await UnifiedProductComplete.updateOne(
+                    {
+                        $or: [
+                            { photoNumber: photoNumber },
+                            { fileName: removedItem.fileName }
+                        ]
+                    },
+                    {
+                        $set: {
+                            status: 'available',
+                            currentStatus: 'available',
+                            'virtualStatus.status': 'available',
+                            'virtualStatus.currentSelection': null,
+                            'virtualStatus.clientCode': null,
+                            'reservedBy': {}
+                        }
+                    }
+                );
+
+                // Atualizar status no CDE para INGRESADO
+                await CDEWriter.markAsAvailable(photoNumber, removedItem.driveFileId);
+
+                // Remover da seleção
+                selection.items.splice(itemIndex, 1);
+                removedItems.push(removedItem);
+            }
+        }
+
+        // Atualizar totais
+        selection.totalItems = selection.items.length;
+        selection.totalValue = selection.items.reduce((sum, item) => sum + (item.price || 0), 0);
+
+        // Adicionar ao log
+        selection.movementLog.push({
+            action: 'cancelled',
+            timestamp: new Date(),
+            details: `${removedItems.length} items removed by admin`,
+            items: removedItems.map(i => i.fileName),
+            success: true
+        });
+
+        // Se não sobrou nenhum item, cancelar a seleção
+        if (selection.items.length === 0) {
+            selection.status = 'cancelled';
+            selection.movementLog.push({
+                action: 'cancelled',
+                timestamp: new Date(),
+                details: 'Selection cancelled - no items remaining',
+                success: true
+            });
+        }
+
+        await selection.save();
+
+        res.json({
+            success: true,
+            message: `${removedItems.length} items removed successfully`,
+            data: {
+                updatedSelection: selection,
+                removedCount: removedItems.length,
+                remainingCount: selection.items.length
+            }
+        });
+
+    } catch (error) {
+        console.error('Error removing items:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error removing items',
+            error: error.message
+        });
+    }
+});
+
 // DELETE - Soft delete selection
 router.delete('/:selectionId', async (req, res) => {
     try {

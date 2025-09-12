@@ -412,6 +412,8 @@ class AdminSelections {
         }
 
         modal.classList.add('active');
+        // Inicializar listeners dos checkboxes
+        this.initCheckboxListeners();
     }
 
     // ===== CREATE SELECTION MODAL =====
@@ -500,7 +502,18 @@ class AdminSelections {
 
                 <!-- Items by Category -->
                 <div class="items-section">
-                    <h4 class="section-title">Items by Category</h4>
+                    <div class="items-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 class="section-title" style="margin: 0;">Items by Category</h4>
+                        ${(selection.status === 'pending' || selection.status === 'approved') ? `
+                            <button class="btn-remove-selected" 
+                                id="btn-remove-selected-${selection.selectionId}"
+                                style="display: none; background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;"
+                                onclick="adminSelections.removeSelectedItems('${selection.selectionId}')"
+                                <i class="fas fa-trash"></i>
+                                Remove Selected (<span class="selected-count">0</span>)
+                            </button>
+                        ` : ''}
+                    </div>
                     <div class="categories-list">
                         ${Object.entries(itemsByCategory).map(([category, items]) => `
                             <div class="category-group">
@@ -514,10 +527,33 @@ class AdminSelections {
                                         </span>
                                     </div>
                                 </div>
+                                ${(selection.status === 'pending' || selection.status === 'approved') ? `
+                                    <div class="category-select-all-container" style="padding: 8px 15px; background: #2a2a2a; border-top: 1px solid #444;">
+                                        <label style="color: #d4af37; cursor: pointer; display: flex; align-items: center;">
+                                            <input type="checkbox" 
+                                                class="category-select-all" 
+                                                data-category="${category.replace(/'/g, '\\\'')}"
+                                                style="accent-color: #d4af37; margin-right: 8px; width: 18px; height: 18px;"
+                                                onchange="adminSelections.toggleCategorySelection(this, '${category.replace(/'/g, '\\\'')}')">
+                                            <span>Select All</span>
+                                        </label>
+                                    </div>
+                                ` : ''}
                                 <div class="category-items">
-                                    ${items.map(item => `
+                                    ${items.map((item, index) => `
                                         <div class="item-row">
-                                            <span class="item-name">${item.fileName}</span>
+                                            <div style="display: flex; align-items: center; flex: 1;">
+                                                <span class="item-name">${item.fileName}</span>
+                                                ${(selection.status === 'pending' || selection.status === 'approved') ? `
+                                                    <input type="checkbox" 
+                                                        class="item-checkbox" 
+                                                        data-filename="${item.fileName}"
+                                                        data-price="${item.price}"
+                                                        data-category="${category}"
+                                                        id="item-${selection.selectionId}-${category}-${index}"
+                                                        style="margin-left: 10px;">
+                                                ` : ''}
+                                            </div>
                                             <span class="item-price">${this.formatCurrency(item.price)}</span>
                                         </div>
                                     `).join('')}
@@ -1351,6 +1387,132 @@ class AdminSelections {
         } catch (error) {
             console.error('Erro ao gerar Excel:', error);
             this.showNotification('Erro ao gerar planilha: ' + error.message, 'error');
+        }
+    }
+
+    // Função para gerenciar checkboxes
+    initCheckboxListeners() {
+        setTimeout(() => {
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    // Atualizar contador
+                    this.updateRemoveButtonCount();
+
+                    // Verificar se todos da categoria estão marcados
+                    const category = checkbox.dataset.category;
+                    const escapedCategory = category.replace(/['"\\]/g, '\\$&');
+                    const categoryCheckboxes = document.querySelectorAll(`.item-checkbox[data-category="${escapedCategory}"]`);
+                    const selectAllCheckbox = document.querySelector(`.category-select-all[data-category="${escapedCategory}"]`);
+
+                    if (selectAllCheckbox) {
+                        const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
+                        const someChecked = Array.from(categoryCheckboxes).some(cb => cb.checked);
+
+                        if (allChecked) {
+                            selectAllCheckbox.checked = true;
+                            selectAllCheckbox.indeterminate = false;
+                        } else if (someChecked) {
+                            selectAllCheckbox.checked = false;
+                            selectAllCheckbox.indeterminate = true; // Estado intermediário
+                        } else {
+                            selectAllCheckbox.checked = false;
+                            selectAllCheckbox.indeterminate = false;
+                        }
+                    }
+                });
+            });
+        }, 500);
+    }
+
+    // Função para marcar/desmarcar todos os checkboxes de uma categoria
+    toggleCategorySelection(selectAllCheckbox, category) {
+        const isChecked = selectAllCheckbox.checked;
+        // Escapar caracteres especiais na categoria para o seletor
+        const escapedCategory = category.replace(/['"\\]/g, '\\$&');
+        // Encontrar todos os checkboxes dessa categoria
+        const categoryCheckboxes = document.querySelectorAll(`.item-checkbox[data-category="${escapedCategory}"]`);
+
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+
+        // Atualizar o contador do botão Remove Selected
+        this.updateRemoveButtonCount();
+    }
+
+    // Função para atualizar o contador do botão
+    updateRemoveButtonCount() {
+        const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+        const removeBtn = document.querySelector('.btn-remove-selected');
+
+        if (removeBtn) {
+            if (checkedBoxes.length > 0) {
+                removeBtn.style.display = 'inline-flex';
+                const countSpan = removeBtn.querySelector('.selected-count');
+                if (countSpan) {
+                    countSpan.textContent = checkedBoxes.length;
+                }
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        }
+    }
+
+    // Função para remover items selecionados
+    async removeSelectedItems(selectionId) {
+        const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+
+        if (checkedBoxes.length === 0) {
+            this.showNotification('No items selected', 'warning');
+            return;
+        }
+
+        // Coletar informações dos items selecionados
+        const itemsToRemove = Array.from(checkedBoxes).map(checkbox => ({
+            fileName: checkbox.dataset.filename,
+            price: parseFloat(checkbox.dataset.price) || 0,
+            category: checkbox.dataset.category
+        }));
+
+        const confirmMessage = itemsToRemove.length === 1
+            ? 'Remove 1 selected item from this selection?'
+            : `Remove ${itemsToRemove.length} selected items from this selection?`;
+
+        const confirmed = await UISystem.confirm(
+            'Remove Selected Items?',
+            confirmMessage
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/selections/${selectionId}/remove-items`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({ items: itemsToRemove })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UISystem.showToast('success', `Successfully removed ${itemsToRemove.length} items`);
+                // Recarregar o modal com dados atualizados
+                if (result.data && result.data.updatedSelection) {
+                    this.showSelectionModal(selectionId, result.data.updatedSelection);
+                }
+
+                // Recarregar a lista principal
+                await this.loadSelections();
+            } else {
+                UISystem.showToast('error', result.message || 'Failed to remove items');
+            }
+        } catch (error) {
+            console.error('Error removing items:', error);
+            UISystem.showToast('error', 'Error removing items');
         }
     }
 }

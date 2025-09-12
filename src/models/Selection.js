@@ -7,11 +7,11 @@ const selectionSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+    },
     sessionId: {
         type: String,
         required: true,
-        },
+    },
     clientCode: {
         type: String,
         required: true,
@@ -33,7 +33,7 @@ const selectionSchema = new mongoose.Schema({
         type: String,
         enum: ['normal', 'special'],
         default: 'normal',
-        },
+    },
 
     // ===== NOVO: CONFIGURAÇÕES PARA SELEÇÕES ESPECIAIS =====
     specialSelectionConfig: {
@@ -228,6 +228,10 @@ const selectionSchema = new mongoose.Schema({
         default: 0,
         validate: {
             validator: function (value) {
+                // NOVO: Se está sendo cancelada, permitir 0 items
+                if (this.status === 'cancelled' || this.status === 'cancelling') {
+                    return true;
+                }
                 // Para seleções especiais: permitir 0 ou mais
                 if (this.selectionType === 'special') {
                     return value >= 0;
@@ -238,6 +242,10 @@ const selectionSchema = new mongoose.Schema({
                 }
             },
             message: function (props) {
+                // NOVO: Verificar se props.instance existe
+                if (!props || !props.instance) {
+                    return 'Selection must have at least 1 item';
+                }
                 const selectionType = props.instance.selectionType || 'normal';
                 if (selectionType === 'special') {
                     return 'Special selections must have 0 or more items (got {VALUE})';
@@ -256,7 +264,7 @@ const selectionSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'confirmed', 'finalized', 'cancelled', 'cancelling', 'approving', 'deleting', 'reverted'],
         default: 'pending',
-        },
+    },
     googleDriveInfo: {
         clientFolderId: {
             type: String // ID da pasta criada para o cliente
@@ -348,7 +356,7 @@ const selectionSchema = new mongoose.Schema({
     },
     reservationExpiredAt: {
         type: Date,
-        },
+    },
     finalizedAt: {
         type: Date
     },
