@@ -448,9 +448,12 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         // Filtrar fotos reservadas/vendidas/special
         const unavailablePhotos = await UnifiedProductComplete.find({
             $or: [
-                { 'virtualStatus.status': 'sold' },  // REMOVIDO 'reserved' daqui
+                { 'virtualStatus.status': 'sold' },
+                { 'virtualStatus.status': 'unavailable' },  // ADICIONAR
                 { 'virtualStatus.status': { $regex: /^special_/ } },
                 { 'currentStatus': 'sold' },
+                { 'currentStatus': 'unavailable' },  // ADICIONAR
+                { 'status': 'reserved_pending' },  // ADICIONAR
                 { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
             ]
         }).select('fileName');

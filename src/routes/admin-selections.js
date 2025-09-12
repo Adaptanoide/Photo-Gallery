@@ -400,6 +400,8 @@ router.post('/:selectionId/cancel', async (req, res) => {
                         currentStatus: 'available',
                         'virtualStatus.status': 'available',
                         'virtualStatus.clientCode': null,
+                        'virtualStatus.currentSelection': null,
+                        'virtualStatus.tags': [],
                         cdeStatus: 'INGRESADO'
                     },
                     $unset: {
@@ -427,6 +429,23 @@ router.post('/:selectionId/cancel', async (req, res) => {
             });
 
             console.log(`🔍 DEBUG CANCEL - Documentos atualizados: ${updateResult.modifiedCount}`);
+
+            // Notificar CDE para liberar as fotos
+            setImmediate(async () => {
+                try {
+                    const CDEWriter = require('../services/CDEWriter');
+                    for (const item of selection.items) {
+                        const photoMatch = item.fileName?.match(/(\d+)/);
+                        if (photoMatch) {
+                            const photoNumber = photoMatch[1];
+                            await CDEWriter.markAsAvailable(photoNumber);
+                            console.log(`[CANCEL] CDE notificado: ${photoNumber} → INGRESADO`);
+                        }
+                    }
+                } catch (error) {
+                    console.log(`[CANCEL] Erro ao notificar CDE:`, error.message);
+                }
+            });
 
             // 4. Atualizar seleção
             selection.status = 'cancelled';
