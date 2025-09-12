@@ -18,8 +18,6 @@ const specialSelectionsRoutes = require('./routes/special-selections'); // NOVO
 const storageRoutes = require('./routes/storage');
 const Cart = require('./models/Cart');
 const { CartService } = require('./services');
-const CDESync = require('./services/CDESync');
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -127,7 +125,25 @@ app.use('*', (req, res) => {
     });
 });
 
-// SIMPLIFICAR - Remover verificação de horário comercial
+// ===== SUBSTITUIR TODO O BLOCO DE SINCRONIZAÇÃO CDE NO server.js =====
+// Localização: Aproximadamente linhas 155-220
+
+// Sincronização CDE - intervalo baseado no ambiente e horário comercial
+const CDESync = require('./services/CDESync');
+
+// Função para verificar horário comercial Fort Myers (EST/EDT)
+function isBusinessHours() {
+    const now = new Date();
+    const ftMyersTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+
+    const day = ftMyersTime.getDay();
+    const hour = ftMyersTime.getHours();
+
+    // Segunda(1) a Sexta(5), 7am-6pm Fort Myers
+    return (day >= 1 && day <= 5 && hour >= 7 && hour < 18);
+}
+
+// Função para executar sync (24/7)
 function runCDESync() {
     const now = new Date();
     const ftTime = now.toLocaleString("en-US", {
@@ -148,16 +164,37 @@ function runCDESync() {
         });
 }
 
-// Intervalo: 5 minutos sempre
-const syncInterval = 5 * 60 * 1000;
+// Configurar intervalo baseado no ambiente
+const syncInterval = process.env.NODE_ENV === 'production'
+    ? 5 * 60 * 1000     // 5 minutos em produção
+    : 1 * 60 * 1000;    // 1 minuto em desenvolvimento
+
+// Mostrar configuração
+const intervalMinutes = syncInterval / 60000;
+const modeText = process.env.NODE_ENV === 'production' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO';
 
 console.log(`\n🔄 CDESync Configurado:`);
-console.log(`   Modo: 24/7`);
-console.log(`   Intervalo: 5 minutos`);
+console.log(`   Modo: ${modeText}`);
+console.log(`   Intervalo: ${intervalMinutes} minuto${intervalMinutes > 1 ? 's' : ''}`);
+console.log(`   Horário: 24/7`);
 console.log(`   Timezone: America/New_York (Fort Myers, FL)\n`);
 
-// Sync inicial após 10 segundos
-setTimeout(() => runCDESync(), 10000);
+// Executar sync inicial após 10 segundos
+console.log('[CDESync] Sync inicial em 10 segundos...');
+setTimeout(() => {
+    runCDESync();
+}, 10000);
 
-// Intervalo de 5 em 5 minutos
-setInterval(() => runCDESync(), syncInterval);
+// Configurar intervalo de execução
+setInterval(() => {
+    runCDESync();
+}, syncInterval);
+
+// Iniciar servidor
+
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`🌐 Acesse: http://localhost:${PORT}`);
+    console.log(`📊 Status: http://localhost:${PORT}/api/status`);
+    console.log(`⭐ Special Selections Test: http://localhost:${PORT}/special-selections-test`);
+});
