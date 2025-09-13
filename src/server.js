@@ -167,7 +167,7 @@ function runCDESync() {
 // Configurar intervalo baseado no ambiente
 const syncInterval = process.env.NODE_ENV === 'production'
     ? 5 * 60 * 1000     // 5 minutos em produção
-    : 1 * 60 * 1000;    // 1 minuto em desenvolvimento
+    : 2 * 60 * 1000;    // 1 minuto em desenvolvimento
 
 // Mostrar configuração
 const intervalMinutes = syncInterval / 60000;
@@ -190,8 +190,19 @@ setInterval(() => {
     runCDESync();
 }, syncInterval);
 
-// Iniciar servidor
+// TESTE DE LIMPEZA AUTOMÁTICA
+setTimeout(() => {
+    console.log('[TESTE CLEANUP] Executando limpeza...');
+    CartService.cleanupExpiredReservations()
+        .then(result => {
+            console.log('[TESTE CLEANUP] Resultado:', result);
+        })
+        .catch(error => {
+            console.error('[TESTE CLEANUP] Erro:', error);
+        });
+}, 5000); // 5 segundos após iniciar
 
+// Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);

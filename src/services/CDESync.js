@@ -37,11 +37,11 @@ class CDESync {
             // Buscar RETIRADOS desde a última sincronização
             const [produtos] = await mysqlConnection.execute(
                 `SELECT AIDH, AESTADOP, AFECHA, ATIPOETIQUETA
-                FROM tbinventario 
-                WHERE ATIPOETIQUETA != '0' 
-                AND ATIPOETIQUETA != ''
-                AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
-                ORDER BY AFECHA DESC`
+            FROM tbinventario 
+            WHERE ATIPOETIQUETA != '0' 
+            AND ATIPOETIQUETA != ''
+            AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
+            ORDER BY AFECHA DESC`
             );
 
             // Verificar também fotos bloqueadas conhecidas
@@ -66,11 +66,14 @@ class CDESync {
                 // Determinar o novo status baseado no AESTADOP do CDE
                 let newStatus = 'available';
                 let newCdeStatus = item.AESTADOP;
-
                 if (item.AESTADOP === 'RETIRADO') {
                     newStatus = 'sold';
-                } else if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY' || item.AESTADOP === 'PRE-SELECTED') {
+                } else if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY') {
                     newStatus = 'unavailable';
+                } else if (item.AESTADOP === 'PRE-SELECTED') {
+                    // PRE-SELECTED significa que está no carrinho de alguém
+                    // Deve manter como 'reserved' e NÃO sobrescrever o reservedBy
+                    newStatus = 'reserved';
                 } else if (item.AESTADOP === 'INGRESADO') {
                     newStatus = 'available';
                 }
@@ -108,15 +111,36 @@ class CDESync {
                     ]
                 });
 
-                // Se já está sincronizado com o mesmo status, pular
-                if (existingPhoto &&
-                    existingPhoto.cdeStatus === newCdeStatus &&
-                    existingPhoto.currentStatus === newStatus) {
-                    continue; // Pula para próxima foto sem fazer update
-                }
-
                 // Se não existe no MongoDB, também pular
                 if (!existingPhoto) {
+                    continue;
+                }
+
+                // NOVO: Preparar campos de atualização condicionalmente
+                let updateFields = {
+                    cdeStatus: newCdeStatus,
+                    idhCode: item.AIDH,
+                    photoNumber: photoNumber,
+                    lastCDESync: new Date(),
+                    syncedFromCDE: true
+                };
+
+                // NOVO: Se é PRE-SELECTED e já tem reserva, preservar
+                if (item.AESTADOP === 'PRE-SELECTED' && existingPhoto.reservedBy && existingPhoto.reservedBy.clientCode) {
+                    updateFields.status = 'reserved';
+                    updateFields.currentStatus = 'reserved';
+                    updateFields['virtualStatus.status'] = 'reserved';  // ADICIONE ESTA LINHA!
+                    console.log(`[CDE Sync] Mantendo reserva da foto ${photoNumber} para cliente ${existingPhoto.reservedBy.clientCode}`);
+                } else {
+                    // Atualização normal
+                    updateFields.currentStatus = newStatus;
+                    updateFields['virtualStatus.status'] = newStatus;
+                    updateFields['virtualStatus.lastStatusChange'] = new Date();
+                }
+
+                // Se já está sincronizado com os mesmos valores, pular
+                if (existingPhoto.cdeStatus === newCdeStatus &&
+                    existingPhoto.currentStatus === updateFields.currentStatus) {
                     continue;
                 }
 
@@ -127,27 +151,18 @@ class CDESync {
                             { photoId: photoId },
                             { photoId: photoIdNoZeros },
                             { photoId: photoNumber },
-                            { fileName: `${photoId}.webp` },        // com zeros
-                            { fileName: `${photoIdNoZeros}.webp` }  // sem zeros
+                            { fileName: `${photoId}.webp` },
+                            { fileName: `${photoIdNoZeros}.webp` }
                         ]
                     },
                     {
-                        $set: {
-                            currentStatus: newStatus,
-                            'virtualStatus.status': newStatus,
-                            'virtualStatus.lastStatusChange': new Date(),
-                            cdeStatus: newCdeStatus,
-                            idhCode: item.AIDH,
-                            photoNumber: photoNumber,
-                            lastCDESync: new Date(),
-                            syncedFromCDE: true
-                        }
+                        $set: updateFields
                     }
                 );
 
                 if (result.modifiedCount > 0) {
                     updatedCount++;
-                    console.log(`[CDE Sync] Foto ${photoNumber} atualizada: ${newCdeStatus} → ${newStatus}`);
+                    console.log(`[CDE Sync] Foto ${photoNumber} atualizada: ${newCdeStatus} → ${updateFields.currentStatus || newStatus}`);
                 }
             }
 
