@@ -521,26 +521,6 @@ window.applyPhotoFilters = function () {
     updateFilterCount(visibleCount, photos.length);
 }
 
-window.clearAllFilters = function () {
-    window.activeFilters = {
-        type: [],
-        tone: [],
-        size: [],
-        price: { min: null, max: null }
-    };
-
-    document.querySelectorAll('#filterSidebar input[type="checkbox"]').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-
-    const priceMin = document.getElementById('priceMin');
-    const priceMax = document.getElementById('priceMax');
-    if (priceMin) priceMin.value = '';
-    if (priceMax) priceMax.value = '';
-
-    applyFilters();
-}
-
 function updateFilterCount(visible, total) {
     const countEl = document.getElementById('filterCount');
     if (countEl) {
@@ -793,13 +773,13 @@ window.displayFilteredCategories = function (categories) {
                 <i class="fas fa-search fa-3x" style="color: #ccc; margin-bottom: 20px;"></i>
                 <h3>No categories found</h3>
                 <p>Try adjusting your filters</p>
-                <button onclick="clearAllFilters(); applyFilters();" class="btn btn-primary">Clear Filters</button>
+                <button onclick="clearAllFilters(); window.showCategories();" class="btn btn-primary">Clear Filters</button>
             </div>
         `;
         return;
     }
 
-    // Renderizar categorias filtradas
+    // Renderizar categorias filtradas - SEMPRE COMO CARDS COM DESCRIÇÃO
     categories.forEach(category => {
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
@@ -826,25 +806,18 @@ window.displayFilteredCategories = function (categories) {
 
         const displayName = category.displayName || category.name;
         const cleanName = displayName.split(' → ').pop();
-        const thumbnail = window.categoryThumbnails && window.categoryThumbnails[cleanName];
 
-        categoryCard.className = thumbnail ? 'category-card folder-card has-thumbnail' : 'category-card';
-        categoryCard.innerHTML = thumbnail ? `
-            <div class="category-thumbnail">
-                <img src="https://images.sunshinecowhides-gallery.com/category-thumbnails/${thumbnail}" 
-                    alt="${cleanName}" loading="lazy" />
-                ${category.formattedPrice ? `<span class="price-corner">${category.formattedPrice}</span>` : ''}
-                <span class="sample-badge">Sample Photo</span>
-            </div>
-            <div class="card-footer-info">
-                <h4>${window.cleanName(cleanName)}</h4>
-            </div>
-        ` : `
+        // Gerar descrição baseada no nome da categoria
+        const description = generateCategoryDescription(cleanName);
+
+        // IMPORTANTE: Sempre mostrar cards SEM thumbnails e SEM preços
+        categoryCard.innerHTML = `
             <h3>${cleanName}</h3>
-            <p class="category-path">${displayName}</p>
+            <p>${description}</p>
             <div class="folder-stats">
-                ${window.shouldShowPrices() && category.formattedPrice ?
-            `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` : ''}
+                <span class="contact-price">
+                    <i class="fas fa-phone"></i> Contact for Price
+                </span>
             </div>
         `;
 
@@ -852,6 +825,49 @@ window.displayFilteredCategories = function (categories) {
     });
 
     container.style.display = 'grid';
+}
+
+// Adicionar função auxiliar para gerar descrições
+window.generateCategoryDescription = function (categoryName) {
+    const descriptions = {
+        // Brindle
+        'Brindle': 'Natural tiger stripe pattern in various tones',
+        'Brindle Medium and Dark Tones': 'Mix of medium and dark brindle patterns',
+        'Brindle White Backbone': 'Brindle pattern with distinctive white backbone',
+        'Brindle White Belly': 'Brindle pattern with white belly marking',
+        'Brindle Grey': 'Grey-toned brindle pattern',
+        'Brindle Light Grey-Beige': 'Light grey and beige brindle combination',
+
+        // Salt & Pepper
+        'Salt & Pepper': 'Mixed pattern with varied tones',
+        'Salt & Pepper Black and White': 'Classic black and white speckled pattern',
+        'Salt & Pepper Chocolate and White': 'Chocolate brown and white combination',
+        'Salt & Pepper - Tricolor': 'Three-color salt and pepper pattern',
+
+        // Black & White
+        'Black & White': 'Classic black and white pattern',
+        'Black and White Reddish': 'Black and white with reddish tones',
+
+        // Tricolor
+        'Tricolor': 'Three colors in natural pattern',
+
+        // Exotic
+        'Exotic': 'Unique and special patterns',
+        'Exotic Tones': 'Various exotic color combinations',
+        'Palomino Exotic': 'Exotic palomino coloring',
+
+        // Default
+        'default': 'Selected high-quality leathers'
+    };
+
+    // Procurar correspondência parcial
+    for (const [key, desc] of Object.entries(descriptions)) {
+        if (categoryName.includes(key)) {
+            return desc;
+        }
+    }
+
+    return descriptions['default'];
 }
 
 // SUBSTITUIR a função applyFilters quebrada
@@ -873,17 +889,30 @@ window.applyFilters = async function () {
     }
 }
 
-// Função clearAllFilters corrigida
 window.clearAllFilters = function () {
-    // Desmarcar radio buttons
+    // Resetar o objeto de filtros ativos (importante para o sistema interno)
+    window.activeFilters = {
+        type: [],
+        tone: [],
+        size: [],
+        price: { min: null, max: null }
+    };
+
+    // Desmarcar radio buttons de tipo/padrão
     document.querySelectorAll('input[name="typePattern"]').forEach(rb => {
         rb.checked = false;
     });
 
-    // Desmarcar checkboxes de preço
-    document.querySelectorAll('#priceFilters input[type="checkbox"]').forEach(cb => {
-        cb.checked = false;
+    // Desmarcar todos os checkboxes do sidebar de filtros
+    document.querySelectorAll('#filterSidebar input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
     });
+
+    // Limpar campos de preço se existirem
+    const priceMin = document.getElementById('priceMin');
+    const priceMax = document.getElementById('priceMax');
+    if (priceMin) priceMin.value = '';
+    if (priceMax) priceMax.value = '';
 
     // Voltar para categorias principais
     window.showCategories();
