@@ -267,7 +267,6 @@ class AdminSelections {
             'confirmed': 'Confirmed',
             'cancelled': 'Cancelled',
             'finalized': 'SOLD',
-            'reverted': 'REVERTED'  // ADICIONE ESTA LINHA
         };
         return statusMap[status] || status;
     }
@@ -301,13 +300,13 @@ class AdminSelections {
             `;
         }
 
-        // FINALIZED (SOLD) - adiciona botão Revert
-        else if (selection.status === 'finalized') {
+        // FINALIZED (SOLD) - adiciona botão Cancel
+        if (selection.status === 'finalized') {
             buttons += `
-                <button class="special-btn-icon btn-revert" 
-                        onclick="adminSelections.revertSold('${selection.selectionId}')"
-                        data-tooltip="Revert to Available">
-                    <i class="fas fa-undo"></i>
+                <button class="special-btn-icon btn-cancel" 
+                        onclick="adminSelections.cancelSoldSelection('${selection.selectionId}')"
+                        data-tooltip="Cancel Sale & Release Photos">
+                    <i class="fas fa-times-circle"></i>
                 </button>
             `;
         }
@@ -323,8 +322,8 @@ class AdminSelections {
             `;
         }
 
-        // DELETE - para seleções antigas (não pending)
-        if (selection.status !== 'pending') {
+        // DELETE - apenas para seleções canceladas (para limpeza da interface)
+        if (selection.status === 'cancelled') {
             buttons += `
                 <button class="special-btn-icon btn-delete" 
                         onclick="adminSelections.deleteSelection('${selection.selectionId}')"
@@ -504,7 +503,7 @@ class AdminSelections {
                 <div class="items-section">
                     <div class="items-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h4 class="section-title" style="margin: 0;">Items by Category</h4>
-                        ${(selection.status === 'pending' || selection.status === 'approved') ? `
+                        ${(selection.status === 'pending' || selection.status === 'finalized') ? `
                             <button class="btn-remove-selected" 
                                 id="btn-remove-selected-${selection.selectionId}"
                                 style="display: none; background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;"
@@ -527,7 +526,7 @@ class AdminSelections {
                                         </span>
                                     </div>
                                 </div>
-                                ${(selection.status === 'pending' || selection.status === 'approved') ? `
+                                ${(selection.status === 'pending' || selection.status === 'finalized') ? `
                                     <div class="category-select-all-container" style="padding: 8px 15px; background: #2a2a2a; border-top: 1px solid #444;">
                                         <label style="color: #d4af37; cursor: pointer; display: flex; align-items: center;">
                                             <input type="checkbox" 
@@ -544,7 +543,7 @@ class AdminSelections {
                                         <div class="item-row">
                                             <div style="display: flex; align-items: center; flex: 1;">
                                                 <span class="item-name">${item.fileName}</span>
-                                                ${(selection.status === 'pending' || selection.status === 'approved') ? `
+                                                ${(selection.status === 'pending' || selection.status === 'finalized') ? `
                                                     <input type="checkbox" 
                                                         class="item-checkbox" 
                                                         data-filename="${item.fileName}"
@@ -793,6 +792,77 @@ class AdminSelections {
             }
 
             // NOVO: Restaurar botões em caso de erro
+            if (actionsCell) {
+                actionsCell.innerHTML = originalActions;
+            }
+        }
+    }
+
+    async cancelSoldSelection(selectionId) {
+        const confirmed = await UISystem.confirm(
+            'Cancel this SOLD selection?',
+            'This will release ALL photos back to available status. The sale will be reversed. Are you sure?'
+        );
+
+        if (!confirmed) return;
+
+        const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
+        if (!row) {
+            console.error('Row not found for selection:', selectionId);
+            UISystem.showToast('error', 'Could not find selection in table');
+            return;
+        }
+
+        const statusCell = row.querySelector('td:nth-child(6)');
+        const originalStatus = statusCell ? statusCell.innerHTML : '';
+
+        if (statusCell) {
+            statusCell.innerHTML = `
+                <span class="badge badge-cancelling">
+                    <span class="spinner-inline"></span>
+                    REVERSING...
+                </span>
+            `;
+        }
+
+        const actionsCell = row.querySelector('td:last-child');
+        const originalActions = actionsCell ? actionsCell.innerHTML : '';
+
+        if (actionsCell) {
+            actionsCell.innerHTML = `
+                <div style="text-align: center;">
+                    <span style="color: #dc3545; font-size: 20px;">🔒</span>
+                    <br>
+                    <small style="color: #999;">Processing</small>
+                </div>
+            `;
+        }
+
+        try {
+            const response = await fetch(`/api/selections/${selectionId}/cancel`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    adminUser: 'admin',
+                    reason: 'Sale cancelled - photos released'
+                })
+            });
+
+            if (response.ok) {
+                UISystem.showToast('success', 'Sale cancelled! All photos released to available.');
+                setTimeout(() => {
+                    this.loadSelections();
+                }, 2000);
+            } else {
+                throw new Error('Failed to cancel sale');
+            }
+        } catch (error) {
+            console.error('Error cancelling sold selection:', error);
+            UISystem.showToast('error', 'Error cancelling selection');
+
+            if (statusCell) {
+                statusCell.innerHTML = originalStatus;
+            }
             if (actionsCell) {
                 actionsCell.innerHTML = originalActions;
             }

@@ -131,7 +131,7 @@ class VirtualGallery {
                         data-photo-id="${photo.id.replace(/"/g, '&quot;')}" 
                         data-photo-index="${photoIndex}"
                         title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
-                    <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
+                    <i class="fas fa-${isInCart ? 'times' : 'shopping-cart'}"></i>
                     <span>${isInCart ? 'Remove' : 'Add'}</span>
                 </button>
                 

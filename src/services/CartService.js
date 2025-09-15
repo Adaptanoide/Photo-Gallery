@@ -113,9 +113,24 @@ class CartService {
                     }
                 }
 
-                // Verificar se produto está disponível
+                // Verificar se produto está disponível OU já reservado para o mesmo cliente
                 if (product.status !== 'available') {
-                    throw new Error('This item has been reserved by another customer');
+                    // Se já está reservado para o MESMO cliente, permitir continuar
+                    if (product.reservedBy && product.reservedBy.clientCode === clientCode) {
+                        console.log(`✅ Produto já reservado para cliente ${clientCode} - permitindo trabalhar com reserva existente`);
+
+                        // Verificar se já está no carrinho para evitar duplicação
+                        if (cart && cart.hasItem(driveFileId)) {
+                            throw new Error('Item já está no carrinho');
+                        }
+
+                        // Se não está no carrinho mas está reservado para ele, continuar normalmente
+                        // O produto já está reservado, então pular a parte de reservar novamente
+                    } else {
+                        // Só dar erro se está reservado para OUTRO cliente diferente
+                        console.log(`❌ Produto reservado para outro cliente: ${product.reservedBy?.clientCode}`);
+                        throw new Error('This item has been reserved by another customer');
+                    }
                 }
 
                 // 2. Buscar carrinho existente DO CLIENTE primeiro
@@ -505,47 +520,228 @@ class CartService {
 
     /**
      * Limpeza geral de reservas expiradas (job automático)
+     * CORRIGIDO: Não remove mais itens válidos dos carrinhos
      * @returns {object} Estatísticas da limpeza
      */
     static async cleanupExpiredReservations() {
         try {
             const now = new Date();
+            console.log(`🧹 Iniciando limpeza robusta - ${now.toISOString()}`);
 
-            console.log(`🧹 Iniciando limpeza de reservas expiradas...`);
+            // PASSO 1: Liberar produtos com reservas REALMENTE expiradas
+            // Adiciona margem de segurança de 2 minutos para evitar race conditions
+            const margemSeguranca = new Date(now.getTime() - 2 * 60000); // 2 minutos atrás
 
-            // 1. Liberar produtos com reservas expiradas
             const productResult = await UnifiedProductComplete.updateMany(
                 {
                     status: 'reserved',
-                    'reservedBy.expiresAt': { $lt: now }
+                    'reservedBy.expiresAt': { $lt: margemSeguranca } // Só libera se expirou há mais de 2 minutos
                 },
                 {
-                    $set: { status: 'available' },
-                    $unset: { 'reservedBy': 1, 'cartAddedAt': 1 }
+                    $set: {
+                        status: 'available',
+                        currentStatus: 'available',
+                        'virtualStatus.status': 'available',
+                        lastModified: now,
+                        'virtualStatus.lastStatusChange': now
+                    },
+                    $unset: {
+                        'reservedBy': 1,
+                        'cartAddedAt': 1
+                    }
                 }
             );
 
-            // 2. Limpar carrinhos expirados
-            const cartCleanupCount = await Cart.cleanupExpiredCarts();
+            console.log(`✓ ${productResult.modifiedCount} produtos liberados`);
 
-            const stats = {
-                productsReleased: productResult.modifiedCount,
-                cartsProcessed: cartCleanupCount,
-                timestamp: now
-            };
+            // Avisar o CDE sobre liberações (mantém como está)
+            if (productResult.modifiedCount > 0) {
+                console.log(`   🔍 Procurando fotos para avisar o CDE...`);
 
-            if (stats.productsReleased > 0 || stats.cartsProcessed > 0) {
-                console.log(`✅ Limpeza concluída:`, stats);
+                const fotosParaLiberar = await UnifiedProductComplete.find({
+                    status: 'available',
+                    cdeStatus: 'PRE-SELECTED'
+                }).limit(10);
+
+                console.log(`   📡 Encontradas ${fotosParaLiberar.length} fotos para liberar no CDE`);
+
+                for (const foto of fotosParaLiberar) {
+                    console.log(`   📡 Liberando foto ${foto.photoNumber} no CDE...`);
+                    await CDEWriter.markAsAvailable(foto.photoNumber, foto.idhCode);
+                }
             }
 
-            return stats;
+            // PASSO 2: Limpar APENAS items REALMENTE expirados dos carrinhos
+            const Cart = require('../models/Cart');
+            let cartsProcessed = 0;
+            let itemsRemoved = 0;
+
+            const cartsWithItems = await Cart.find({
+                'items.0': { $exists: true }
+            });
+
+            for (const cart of cartsWithItems) {
+                const originalCount = cart.items.length;
+
+                // IMPORTANTE: Só remove items que expiraram há mais de 2 minutos
+                cart.items = cart.items.filter(item => {
+                    if (!item.expiresAt) {
+                        console.log(`   ⚠️ Item sem expiração mantido: ${item.fileName}`);
+                        return true; // Sem data = mantém sempre
+                    }
+
+                    const expiracao = new Date(item.expiresAt);
+                    const expiradoComMargem = expiracao < margemSeguranca;
+
+                    if (expiradoComMargem) {
+                        console.log(`   🗑️ Removendo item expirado: ${item.fileName} (expirou em ${expiracao.toISOString()})`);
+                        return false; // Remove
+                    }
+
+                    return true; // Mantém se não expirou ou expirou há menos de 2 minutos
+                });
+
+                const removedCount = originalCount - cart.items.length;
+
+                if (removedCount > 0) {
+                    cart.totalItems = cart.items.length;
+
+                    // Se não tem mais items, desativar carrinho
+                    if (cart.items.length === 0) {
+                        cart.isActive = false;
+                        cart.notes = 'Auto-cleaned: all items expired';
+                    }
+
+                    await cart.save();
+                    cartsProcessed++;
+                    itemsRemoved += removedCount;
+
+                    console.log(`   ✓ Carrinho ${cart.clientCode}: removidos ${removedCount} items realmente expirados`);
+                }
+            }
+
+            // PASSO 3: DESABILITADO - Estava removendo itens válidos
+            // A verificação de "órfãos" estava muito agressiva e removia fotos que ainda eram válidas
+            let orphansFixed = 0;
+            console.log('   ⏭️ Verificação de órfãos DESABILITADA - preservando integridade dos carrinhos');
+
+            // CÓDIGO ANTIGO REMOVIDO - Não vamos mais fazer essa verificação
+            // Os itens só devem sair do carrinho quando REALMENTE expirarem
+            // ou quando o cliente remover manualmente
+
+            const summary = {
+                timestamp: now,
+                productsReleased: productResult.modifiedCount,
+                cartsProcessed: cartsProcessed,
+                itemsRemoved: itemsRemoved,
+                orphansFixed: 0, // Sempre 0 agora que desabilitamos
+                success: true
+            };
+
+            console.log(`✅ Limpeza concluída:`, summary);
+            return summary;
 
         } catch (error) {
-            console.error(`❌ Erro na limpeza automática:`, error);
+            console.error(`❌ Erro na limpeza robusta:`, error);
             return {
+                success: false,
                 error: error.message,
                 timestamp: new Date()
             };
+        }
+    }
+
+    /**
+     * Estender tempo do carrinho de forma sincronizada
+     * CRUCIAL: Atualiza tanto o carrinho quanto os produtos atomicamente
+     * @param {string} clientCode - Código do cliente
+     * @param {number} hours - Horas para estender (1 a 120)
+     * @param {string} extendedBy - Quem está estendendo (admin username)
+     * @returns {object} Resultado da operação
+     */
+    static async extendCartTime(clientCode, hours, extendedBy = 'admin') {
+        const session = await mongoose.startSession();
+
+        try {
+            return await session.withTransaction(async () => {
+                const now = new Date();
+                const newExpiration = new Date(now.getTime() + (hours * 60 * 60 * 1000));
+
+                console.log(`⏰ Estendendo tempo do carrinho ${clientCode} por ${hours} horas`);
+                console.log(`   Nova expiração: ${newExpiration.toISOString()}`);
+
+                // 1. Buscar o carrinho ativo do cliente
+                const cart = await Cart.findOne({
+                    clientCode: clientCode,
+                    isActive: true,
+                    'items.0': { $exists: true }
+                }).session(session);
+
+                if (!cart) {
+                    throw new Error('Carrinho não encontrado ou vazio');
+                }
+
+                console.log(`📦 Carrinho encontrado com ${cart.items.length} items`);
+
+                // 2. Coletar todos os fileNames para atualizar produtos
+                const fileNames = cart.items.map(item => item.fileName);
+
+                // 3. Atualizar TODOS os itens do carrinho
+                cart.items.forEach(item => {
+                    item.expiresAt = newExpiration;
+                });
+
+                // Atualizar metadados do carrinho
+                cart.lastActivity = now;
+                cart.extendedAt = now;
+                cart.extendedBy = extendedBy;
+
+                await cart.save({ session });
+                console.log(`✅ Carrinho atualizado: ${cart.items.length} items`);
+
+                // 4. CRUCIAL: Atualizar TODOS os produtos correspondentes
+                const updateResult = await UnifiedProductComplete.updateMany(
+                    {
+                        fileName: { $in: fileNames },
+                        'reservedBy.clientCode': clientCode,
+                        status: 'reserved'
+                    },
+                    {
+                        $set: {
+                            'reservedBy.expiresAt': newExpiration,
+                            lastModified: now,
+                            'extendedBy': extendedBy,
+                            'extendedAt': now
+                        }
+                    },
+                    { session }
+                );
+
+                console.log(`✅ Produtos atualizados: ${updateResult.modifiedCount} de ${fileNames.length}`);
+
+                // 5. Verificar consistência
+                if (cart.items.length !== updateResult.modifiedCount) {
+                    console.warn(`⚠️ INCONSISTÊNCIA DETECTADA:`);
+                    console.warn(`   Carrinho tem ${cart.items.length} items`);
+                    console.warn(`   Mas só ${updateResult.modifiedCount} produtos foram atualizados`);
+                }
+
+                return {
+                    success: true,
+                    cartItemsUpdated: cart.items.length,
+                    productsUpdated: updateResult.modifiedCount,
+                    newExpiration: newExpiration,
+                    consistent: cart.items.length === updateResult.modifiedCount,
+                    extendedBy: extendedBy,
+                    hoursExtended: hours
+                };
+            });
+
+        } catch (error) {
+            console.error(`❌ Erro ao estender tempo do carrinho:`, error);
+            throw error;
+        } finally {
+            await session.endSession();
         }
     }
 

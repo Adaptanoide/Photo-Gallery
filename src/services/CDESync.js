@@ -3,9 +3,8 @@
 
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
-const UnifiedProductComplete = require('../models/UnifiedProductComplete');  // MUDAR
+const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const CDEBlockedPhoto = require('../models/CDEBlockedPhoto');
-// const Product = require('../models/Product');  // COMENTAR
 
 class CDESync {
     constructor() {
@@ -28,59 +27,112 @@ class CDESync {
             console.log('[CDE Sync] MongoDB não conectado, pulando sincronização');
             return { success: false, error: 'MongoDB não conectado' };
         }
+
         const db = mongoose.connection.db;
         const collection = db.collection('unified_products_complete');
 
         try {
             mysqlConnection = await mysql.createConnection(this.cdeConfig);
 
-            // Buscar RETIRADOS desde a última sincronização
+            // Buscar mudanças recentes do CDE
             const [produtos] = await mysqlConnection.execute(
                 `SELECT AIDH, AESTADOP, AFECHA, ATIPOETIQUETA
-            FROM tbinventario 
-            WHERE ATIPOETIQUETA != '0' 
-            AND ATIPOETIQUETA != ''
-            AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
-            ORDER BY AFECHA DESC`
+                FROM tbinventario 
+                WHERE ATIPOETIQUETA != '0' 
+                AND ATIPOETIQUETA != ''
+                AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
+                ORDER BY AFECHA DESC`
             );
 
-            // Verificar também fotos bloqueadas conhecidas
+            // Verificar fotos bloqueadas conhecidas
             const blockedResults = await this.checkBlockedPhotos(mysqlConnection);
 
-            // Combinar resultados
-            const todosProdu7tos = [...produtos, ...blockedResults];
+            // CORREÇÃO 1: Deduplicar antes de processar
+            const photoMap = new Map();
 
-            console.log(`[CDE Sync] Encontrados ${produtos.length} mudanças recentes + ${blockedResults.length} bloqueadas verificadas`);
+            // Adicionar produtos das mudanças recentes
+            produtos.forEach(item => {
+                if (item.ATIPOETIQUETA && item.ATIPOETIQUETA !== '0') {
+                    photoMap.set(item.ATIPOETIQUETA, item);
+                }
+            });
+
+            // Adicionar/atualizar com blocked results (sem duplicar)
+            blockedResults.forEach(item => {
+                if (item.ATIPOETIQUETA && item.ATIPOETIQUETA !== '0') {
+                    const existing = photoMap.get(item.ATIPOETIQUETA);
+                    // Se já existe, manter o mais recente
+                    if (!existing || new Date(item.AFECHA) > new Date(existing.AFECHA)) {
+                        photoMap.set(item.ATIPOETIQUETA, item);
+                    }
+                }
+            });
+
+            const uniqueProducts = Array.from(photoMap.values());
+            console.log(`[CDE Sync] Processando ${uniqueProducts.length} produtos únicos (de ${produtos.length + blockedResults.length} registros totais)`);
 
             let updatedCount = 0;
+            let skippedCount = 0;
 
-            for (const item of todosProdu7tos) {
-                // Usar ATIPOETIQUETA como número da foto
+            for (const item of uniqueProducts) {
                 let photoNumber = item.ATIPOETIQUETA;
 
-                // Pular se não tem foto
                 if (!photoNumber || photoNumber === '0') {
                     continue;
                 }
 
-                // Determinar o novo status baseado no AESTADOP do CDE
+                // MUDANÇA CRÍTICA: Buscar a foto PRIMEIRO, antes de determinar qualquer status
+                const photoId = photoNumber.padStart(5, '0');
+                const photoIdNoZeros = photoNumber.replace(/^0+/, '') || '0';
+
+                const existingPhoto = await collection.findOne({
+                    $or: [
+                        { photoNumber: photoNumber },
+                        { photoNumber: photoId },
+                        { photoNumber: photoIdNoZeros },
+                        { fileName: `${photoId}.webp` },
+                        { fileName: `${photoIdNoZeros}.webp` }
+                    ]
+                });
+
+                if (!existingPhoto) {
+                    continue;
+                }
+
+                // MUDANÇA CRÍTICA: Verificar selectionId IMEDIATAMENTE após encontrar a foto
+                if (existingPhoto.selectionId) {
+                    // Verificar se o cdeStatus está incorreto e corrigir se necessário
+                    if (existingPhoto.cdeStatus !== item.AESTADOP && item.AESTADOP === 'PRE-SELECTED') {
+                        // O CDE diz que está PRE-SELECTED mas nosso banco tem outro status - corrigir
+                        await collection.updateOne(
+                            { _id: existingPhoto._id },
+                            { $set: { cdeStatus: 'PRE-SELECTED' } }
+                        );
+                        console.log(`[CDE Sync] Foto ${photoNumber} em seleção ${existingPhoto.selectionId} - cdeStatus corrigido de ${existingPhoto.cdeStatus} para PRE-SELECTED`);
+                    } else {
+                        console.log(`[CDE Sync] Foto ${photoNumber} está em seleção ${existingPhoto.selectionId} - preservando status`);
+                    }
+                    continue; // Pula TODO o processamento se tiver selectionId
+                }
+
+                // AGORA sim determinar o novo status baseado no CDE
                 let newStatus = 'available';
                 let newCdeStatus = item.AESTADOP;
+
+                // Lógica de status simplificada e consistente
                 if (item.AESTADOP === 'RETIRADO') {
                     newStatus = 'sold';
                 } else if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY') {
                     newStatus = 'unavailable';
                 } else if (item.AESTADOP === 'PRE-SELECTED') {
-                    // PRE-SELECTED significa que está no carrinho de alguém
-                    // Deve manter como 'reserved' e NÃO sobrescrever o reservedBy
-                    newStatus = 'reserved';
+                    // Vamos verificar se tem reserva no MongoDB antes de decidir
+                    newStatus = 'reserved'; // Será ajustado abaixo se necessário
                 } else if (item.AESTADOP === 'INGRESADO') {
                     newStatus = 'available';
                 }
 
                 // Gerenciar lista de bloqueados
                 if (item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY' || item.AESTADOP === 'PRE-SELECTED') {
-                    // Adicionar à lista se não existe
                     await CDEBlockedPhoto.findOneAndUpdate(
                         { photoNumber: photoNumber },
                         {
@@ -92,31 +144,10 @@ class CDESync {
                         { upsert: true }
                     );
                 } else if (item.AESTADOP === 'INGRESADO' || item.AESTADOP === 'RETIRADO') {
-                    // Remover da lista se voltou para INGRESADO ou foi RETIRADO (vendido)
                     await CDEBlockedPhoto.deleteOne({ photoNumber: photoNumber });
                 }
 
-                // Tentar com diferentes formatos (com e sem zeros)
-                const photoId = photoNumber.padStart(5, '0');
-                const photoIdNoZeros = photoNumber.replace(/^0+/, '') || '0';
-
-                // Buscar foto atual para verificar se precisa atualizar
-                const existingPhoto = await UnifiedProductComplete.findOne({
-                    $or: [
-                        { photoNumber: photoNumber },
-                        { photoNumber: photoId },
-                        { photoNumber: photoIdNoZeros },
-                        { fileName: `${photoId}.webp` },
-                        { fileName: `${photoIdNoZeros}.webp` }
-                    ]
-                });
-
-                // Se não existe no MongoDB, também pular
-                if (!existingPhoto) {
-                    continue;
-                }
-
-                // NOVO: Preparar campos de atualização condicionalmente
+                // Atualização consistente de TODOS os campos de status
                 let updateFields = {
                     cdeStatus: newCdeStatus,
                     idhCode: item.AIDH,
@@ -125,51 +156,66 @@ class CDESync {
                     syncedFromCDE: true
                 };
 
-                // NOVO: Se é PRE-SELECTED e já tem reserva, preservar
+                // Lógica especial para PRE-SELECTED com reserva existente
                 if (item.AESTADOP === 'PRE-SELECTED' && existingPhoto.reservedBy && existingPhoto.reservedBy.clientCode) {
-                    updateFields.status = 'reserved';
-                    updateFields.currentStatus = 'reserved';
-                    updateFields['virtualStatus.status'] = 'reserved';  // ADICIONE ESTA LINHA!
-                    console.log(`[CDE Sync] Mantendo reserva da foto ${photoNumber} para cliente ${existingPhoto.reservedBy.clientCode}`);
+                    // Verificar se a reserva ainda é válida
+                    if (new Date(existingPhoto.reservedBy.expiresAt) > new Date()) {
+                        updateFields.status = 'reserved';
+                        updateFields.currentStatus = 'reserved';
+                        updateFields['virtualStatus.status'] = 'reserved';
+                        updateFields['reservationInfo.isReserved'] = true;
+                        console.log(`[CDE Sync] Mantendo reserva válida da foto ${photoNumber} para cliente ${existingPhoto.reservedBy.clientCode}`);
+                    } else {
+                        // Reserva expirada - NÃO PROCESSAR AQUI
+                        // Deixar para o sistema de limpeza que notifica o CDE
+                        console.log(`[CDE Sync] Foto ${photoNumber} tem reserva expirada - pulando (será processada pela limpeza)`);
+                        skippedCount++;
+                        continue;
+                    }
                 } else {
-                    // Atualização normal
+                    // Atualização normal - garantir consistência
+                    updateFields.status = newStatus;
                     updateFields.currentStatus = newStatus;
                     updateFields['virtualStatus.status'] = newStatus;
                     updateFields['virtualStatus.lastStatusChange'] = new Date();
+                    updateFields['reservationInfo.isReserved'] = (newStatus === 'reserved');
                 }
 
-                // Se já está sincronizado com os mesmos valores, pular
+                // CRITICAL FIX: Preservar selectionId sempre
+                if (existingPhoto.selectionId) {
+                    updateFields.selectionId = existingPhoto.selectionId;
+                }
+
+                // Verificar se realmente precisa atualizar
                 if (existingPhoto.cdeStatus === newCdeStatus &&
+                    existingPhoto.status === updateFields.status &&
                     existingPhoto.currentStatus === updateFields.currentStatus) {
+                    skippedCount++;
                     continue;
                 }
 
-                // Atualizar no MongoDB
-                const result = await UnifiedProductComplete.updateOne(
-                    {
-                        $or: [
-                            { photoId: photoId },
-                            { photoId: photoIdNoZeros },
-                            { photoId: photoNumber },
-                            { fileName: `${photoId}.webp` },
-                            { fileName: `${photoIdNoZeros}.webp` }
-                        ]
-                    },
-                    {
-                        $set: updateFields
-                    }
+                // Aplicar atualização
+                const updateOperation = { $set: updateFields };
+                if (updateFields.$unset) {
+                    updateOperation.$unset = updateFields.$unset;
+                    delete updateFields.$unset;
+                }
+
+                const result = await collection.updateOne(
+                    { _id: existingPhoto._id },
+                    updateOperation
                 );
 
                 if (result.modifiedCount > 0) {
                     updatedCount++;
-                    console.log(`[CDE Sync] Foto ${photoNumber} atualizada: ${newCdeStatus} → ${updateFields.currentStatus || newStatus}`);
+                    console.log(`[CDE Sync] Foto ${photoNumber} atualizada: ${newCdeStatus} → ${updateFields.status}`);
                 }
             }
 
             this.lastSync = new Date();
-            console.log(`[CDE Sync] Sincronização completa: ${updatedCount} fotos atualizadas`);
+            console.log(`[CDE Sync] Sincronização completa: ${updatedCount} fotos atualizadas, ${skippedCount} já estavam sincronizadas`);
 
-            return { success: true, updated: updatedCount };
+            return { success: true, updated: updatedCount, skipped: skippedCount };
 
         } catch (error) {
             console.error('[CDE Sync] Erro:', error.message);
@@ -217,7 +263,6 @@ class CDESync {
     async getRecentChanges(minutes = 5) {
         const db = mongoose.connection.db;
         const unifiedProducts = db.collection('unified_products_complete');
-
 
         const since = new Date(Date.now() - (minutes * 60000));
 

@@ -111,6 +111,14 @@ const unifiedProductCompleteSchema = new mongoose.Schema({
             index: { expireAfterSeconds: 0 }  // TTL automático!
         }
     },
+
+    // ===== SELEÇÃO CONFIRMADA =====
+    selectionId: {
+        type: String,
+        index: true,
+        sparse: true  // Permite que seja null/undefined para a maioria dos produtos
+    },
+
     reservationInfo: {  // PhotoStatus.reservationInfo
         isReserved: { type: Boolean, default: false, index: true },
         reservedBy: {

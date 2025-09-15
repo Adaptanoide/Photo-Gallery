@@ -349,10 +349,10 @@ router.post('/:selectionId/cancel', async (req, res) => {
                 });
             }
 
-            if (selection.status !== 'pending') {
+            if (selection.status !== 'pending' && selection.status !== 'finalized') {
                 return res.status(400).json({
                     success: false,
-                    message: 'Apenas seleções pendentes podem ser canceladas'
+                    message: 'Only pendding or finalized selections can be cancelled'
                 });
             }
 
@@ -409,7 +409,8 @@ router.post('/:selectionId/cancel', async (req, res) => {
                         'reservationInfo': 1,
                         'soldAt': 1,
                         'reservedAt': 1,
-                        'cartAddedAt': 1
+                        'cartAddedAt': 1,
+                        'selectionId': 1
                     }
                 }
             ).session(session);
@@ -793,7 +794,13 @@ router.post('/:selectionId/remove-items', async (req, res) => {
                             'virtualStatus.status': 'available',
                             'virtualStatus.currentSelection': null,
                             'virtualStatus.clientCode': null,
-                            'reservedBy': {}
+                            cdeStatus: 'INGRESADO'
+                        },
+                        $unset: {
+                            selectionId: '',
+                            reservedBy: '',
+                            soldAt: '',
+                            reservedAt: ''
                         }
                     }
                 );

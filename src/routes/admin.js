@@ -6,6 +6,8 @@ const AccessCode = require('../models/AccessCode');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Sale = require('../models/Sale');
 const { authenticateToken } = require('./auth');
+const CartService = require('../services/CartService');
+
 
 const router = express.Router();
 
@@ -98,7 +100,7 @@ router.get('/access-codes', async (req, res) => {
         const codes = await AccessCode.find()
             .sort({ createdAt: -1 })
             .limit(100);
-            
+
         // Buscar APENAS carrinhos ativos (NÃO selections confirmadas!)
         const Cart = require('../models/Cart');
         const now = new Date();
@@ -929,59 +931,59 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
     }
 });
 
-// ===== EXTEND CART TIME =====
+// ===== EXTEND CART TIME - VERSÃO SINCRONIZADA =====
 router.post('/client/:code/cart/extend', authenticateToken, async (req, res) => {
     try {
         const { code } = req.params;
         const { hours } = req.body;
-        const Cart = require('../models/Cart');
 
-        console.log(`⏰ Extending cart time for client ${code} by ${hours} hours`);
-
-        // Find active cart
-        const cart = await Cart.findOne({
-            clientCode: code,
-            'items.0': { $exists: true }
-        });
-
-        if (!cart) {
-            return res.status(404).json({
+        // Validação básica
+        if (!hours || hours <= 0 || hours > 120) {
+            return res.status(400).json({
                 success: false,
-                message: 'No active cart found'
+                message: 'Invalid hours value (must be between 1 and 120)'
             });
         }
 
-        // Calculate new expiration
-        const now = new Date();
-        const additionalTime = hours * 60 * 60 * 1000; // Convert hours to milliseconds
-        const newExpiration = new Date(now.getTime() + additionalTime);
+        console.log(`⏰ Requisição para estender carrinho ${code} por ${hours} horas`);
 
-        // Update cart
-        cart.expiresAt = newExpiration;
-        cart.lastActivity = now;
-        cart.extendedAt = now;
-        cart.extendedBy = req.user.username;
+        // Usar a nova função centralizada que sincroniza tudo
+        const result = await CartService.extendCartTime(
+            code,
+            hours,
+            req.user.username || 'admin'
+        );
 
-        // Update each item's expiration
-        cart.items.forEach(item => {
-            item.expiresAt = newExpiration;
-        });
-
-        await cart.save();
-
-        console.log(`✅ Cart extended until ${newExpiration.toLocaleString()}`);
+        // Verificar se houve inconsistência
+        if (!result.consistent) {
+            console.warn(`⚠️ Extensão teve inconsistências para cliente ${code}`);
+            // Você pode adicionar aqui um email de alerta ou log especial
+        }
 
         res.json({
             success: true,
-            message: `Cart extended by ${hours} hours`,
-            newExpiration: newExpiration
+            message: `Cart extended by ${hours} hours successfully`,
+            details: {
+                newExpiration: result.newExpiration,
+                cartItemsUpdated: result.cartItemsUpdated,
+                productsUpdated: result.productsUpdated,
+                consistent: result.consistent
+            }
+        });
+
+        // Log para auditoria
+        console.log(`✅ Carrinho ${code} estendido com sucesso:`, {
+            hours: hours,
+            newExpiration: result.newExpiration,
+            itemsAffected: result.cartItemsUpdated,
+            extendedBy: req.user.username
         });
 
     } catch (error) {
-        console.error('❌ Error extending cart:', error);
+        console.error('❌ Erro ao estender carrinho:', error);
         res.status(500).json({
             success: false,
-            message: 'Error extending cart time'
+            message: error.message || 'Error extending cart time'
         });
     }
 });

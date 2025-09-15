@@ -276,6 +276,54 @@
                     });
                 });
             }, 100);
+
+            // Verificação adicional para corrigir estado inicial dos botões do carrinho
+            // Aguarda um pouco mais para garantir que tudo está renderizado
+            setTimeout(() => {
+                const savedSession = localStorage.getItem('sunshineSession');
+                if (!savedSession) return; // Se não há sessão, não fazer nada
+
+                try {
+                    const sessionData = JSON.parse(savedSession);
+                    const clientCode = sessionData.accessCode || sessionData.user?.code;
+
+                    if (!clientCode) return; // Se não há código de cliente, sair
+
+                    // Verificar se há carrinho para este cliente
+                    const cartSessionId = localStorage.getItem(`cartSessionId_${clientCode}`);
+
+                    // Se existe carrinho e tem items
+                    if (cartSessionId && window.cart && window.cart.items && window.cart.items.length > 0) {
+                        console.log(`[Initial Cart Check] Verificando ${window.cart.items.length} items no carrinho`);
+
+                        window.cart.items.forEach(item => {
+                            // Obter o ID da foto do nome do arquivo
+                            const photoId = item.fileName.replace('.webp', '');
+
+                            // Procurar o botão desta foto
+                            const cartBtn = document.querySelector(`.thumbnail-cart-btn[data-photo-id="${photoId}"], .thumbnail-cart-btn[data-photo-id="${photoId}.webp"]`);
+
+                            if (cartBtn && !cartBtn.classList.contains('in-cart')) {
+                                console.log(`[Initial Fix] Corrigindo botão da foto ${photoId} para mostrar Remove`);
+
+                                // Atualizar o botão para mostrar "Remove"
+                                cartBtn.classList.add('in-cart');
+                                cartBtn.innerHTML = '<i class="fas fa-times"></i><span>Remove</span>';
+                                cartBtn.title = 'Remove from cart';
+
+                                // Remover qualquer indicação de unavailable do elemento pai
+                                const photoElement = cartBtn.closest('.photo-item');
+                                if (photoElement) {
+                                    photoElement.classList.remove('unavailable');
+                                    photoElement.removeAttribute('data-status');
+                                }
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('[Initial Cart Check] Erro ao verificar carrinho:', error);
+                }
+            }, 300); // Aguarda 300ms após os event listeners serem configurados
         }
     }
 
@@ -866,11 +914,7 @@
                         const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
                         const currentSessionId = clientCode ? localStorage.getItem(`cartSessionId_${clientCode}`) : null;
 
-                        if (photo.status === 'reserved' && photo.sessionId === currentSessionId) {
-                            console.log(`[Polling] Ignorando própria reserva: ${photo.id}`);
-                            return;
-                        }
-
+                        // PRIMEIRO: Encontrar o elemento da foto no DOM
                         let photoElement = null;
                         photoElement = document.querySelector(`[data-photo-id="${photo.id}"]`);
                         if (!photoElement) {
@@ -880,6 +924,50 @@
                             photoElement = document.querySelector(`[data-photo-id*="${photo.id}.webp"]`);
                         }
 
+                        // AGORA podemos verificar se é reserva própria
+                        if (photo.status === 'reserved' && photo.sessionId === currentSessionId) {
+                            console.log(`[Polling] Processando própria reserva: ${photo.id}`);
+
+                            // Remover qualquer overlay UNAVAILABLE que possa existir
+                            if (photoElement) {
+                                // Remover overlay na galeria
+                                const unavailableOverlay = photoElement.querySelector('.unavailable-overlay');
+                                if (unavailableOverlay) {
+                                    unavailableOverlay.remove();
+                                }
+
+                                // Remover classe de unavailable
+                                photoElement.classList.remove('unavailable');
+                                photoElement.removeAttribute('data-status');
+
+                                // Atualizar botão para mostrar "Remove"
+                                const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
+                                if (cartBtn) {
+                                    cartBtn.disabled = false;
+                                    cartBtn.classList.add('in-cart');
+                                    cartBtn.innerHTML = '<i class="fas fa-times"></i><span>Remove</span>';
+                                    cartBtn.style.backgroundColor = '#dc3545';
+                                    cartBtn.style.color = 'white';
+                                    cartBtn.title = 'Remove from cart';
+                                }
+                            }
+
+                            // Também verificar e limpar no modal se estiver aberto
+                            const modalContent = document.querySelector('.modal-content');
+                            if (modalContent) {
+                                const modalPhotoId = document.getElementById('modalPhoto')?.getAttribute('data-photo-id');
+                                if (modalPhotoId && modalPhotoId.includes(photo.id)) {
+                                    const modalOverlay = modalContent.querySelector('.unavailable-overlay');
+                                    if (modalOverlay) {
+                                        modalOverlay.remove();
+                                    }
+                                }
+                            }
+
+                            return; // Ainda fazemos return, mas depois de limpar tudo
+                        }
+
+                        // Processar mudanças de status para outras situações
                         if (photoElement) {
                             if (photo.status === 'sold') {
                                 photoElement.setAttribute('data-status', 'sold');
@@ -889,20 +977,23 @@
                                     cartBtn.innerHTML = '<i class="fas fa-ban"></i><span>Sold Out</span>';
                                 }
                             } else if (photo.status === 'reserved') {
-                                photoElement.setAttribute('data-status', 'reserved');
-                                const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
-                                if (cartBtn) {
-                                    cartBtn.disabled = true;
-                                    cartBtn.innerHTML = '<i class="fas fa-lock"></i><span>Unavailable</span>';
-                                    cartBtn.style.backgroundColor = '#ffc107';
-                                    cartBtn.style.color = '#000';
+                                // IMPORTANTE: Verificar se NÃO é uma reserva própria antes de marcar como unavailable
+                                if (photo.sessionId !== currentSessionId) {
+                                    photoElement.setAttribute('data-status', 'reserved');
+                                    const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
+                                    if (cartBtn) {
+                                        cartBtn.disabled = true;
+                                        cartBtn.innerHTML = '<i class="fas fa-lock"></i><span>Unavailable</span>';
+                                        cartBtn.style.backgroundColor = '#ffc107';
+                                        cartBtn.style.color = '#000';
+                                    }
                                 }
                             } else if (photo.status === 'available') {
                                 photoElement.removeAttribute('data-status');
                                 const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
                                 if (cartBtn) {
                                     cartBtn.disabled = false;
-                                    cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
+                                    cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
                                     cartBtn.style.backgroundColor = '';
                                     cartBtn.style.color = '';
                                 }
@@ -1072,12 +1163,16 @@
 
                 if (isInCart) {
                     cartBtn.classList.add('in-cart');
-                    cartBtn.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+                    cartBtn.innerHTML = '<i class="fas fa-times"></i><span>Remove</span>';
                     cartBtn.title = 'Remove from cart';
+                    cartBtn.style.backgroundColor = '#dc3545';  // ADICIONAR ESTA LINHA
+                    cartBtn.style.color = 'white';              // ADICIONAR ESTA LINHA
                 } else {
                     cartBtn.classList.remove('in-cart');
                     cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
                     cartBtn.title = 'Add to cart';
+                    cartBtn.style.backgroundColor = '';  // STRING VAZIA
+                    cartBtn.style.color = '';           // STRING VAZIA            // ADICIONAR ESTA LINHA
                 }
             }
         });

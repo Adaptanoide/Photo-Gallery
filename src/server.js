@@ -167,7 +167,7 @@ function runCDESync() {
 // Configurar intervalo baseado no ambiente
 const syncInterval = process.env.NODE_ENV === 'production'
     ? 5 * 60 * 1000     // 5 minutos em produção
-    : 2 * 60 * 1000;    // 1 minuto em desenvolvimento
+    : 1 * 60 * 1000;    // 1 minuto em desenvolvimento
 
 // Mostrar configuração
 const intervalMinutes = syncInterval / 60000;
@@ -190,17 +190,52 @@ setInterval(() => {
     runCDESync();
 }, syncInterval);
 
-// TESTE DE LIMPEZA AUTOMÁTICA
-setTimeout(() => {
-    console.log('[TESTE CLEANUP] Executando limpeza...');
-    CartService.cleanupExpiredReservations()
-        .then(result => {
-            console.log('[TESTE CLEANUP] Resultado:', result);
-        })
-        .catch(error => {
-            console.error('[TESTE CLEANUP] Erro:', error);
-        });
-}, 5000); // 5 segundos após iniciar
+// ========== SISTEMA DE LIMPEZA AUTOMÁTICA ROBUSTA ==========
+
+// Função de limpeza com log detalhado
+const runAutomaticCleanup = async () => {
+    const startTime = Date.now();
+    console.log(`\n🧹 [CLEANUP] =======================================`);
+    console.log(`🧹 [CLEANUP] Iniciando limpeza automática`);
+    console.log(`🧹 [CLEANUP] Horário: ${new Date().toISOString()}`);
+
+    try {
+        const result = await CartService.cleanupExpiredReservations();
+
+        if (result.success) {
+            console.log(`🧹 [CLEANUP] ✅ Sucesso em ${Date.now() - startTime}ms`);
+
+            // Só mostrar detalhes se algo foi limpo
+            if (result.productsReleased > 0 || result.itemsRemoved > 0 || result.orphansFixed > 0) {
+                console.log(`🧹 [CLEANUP] Produtos liberados: ${result.productsReleased}`);
+                console.log(`🧹 [CLEANUP] Items removidos: ${result.itemsRemoved}`);
+                console.log(`🧹 [CLEANUP] Órfãos corrigidos: ${result.orphansFixed}`);
+            } else {
+                console.log(`🧹 [CLEANUP] Nada para limpar`);
+            }
+        } else {
+            console.log(`🧹 [CLEANUP] ❌ Erro: ${result.error}`);
+        }
+
+    } catch (error) {
+        console.error(`🧹 [CLEANUP] ❌ Erro crítico:`, error.message);
+    }
+
+    console.log(`🧹 [CLEANUP] =======================================\n`);
+};
+
+// Executar limpeza a cada 5 minutos
+const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 minutos - TEMPORÁRIO para resolver problema
+setInterval(runAutomaticCleanup, CLEANUP_INTERVAL);
+
+// Primeira limpeza 30 segundos após iniciar
+setTimeout(runAutomaticCleanup, 30000);
+
+console.log(`🧹 Sistema de limpeza automática configurado (executa a cada 5 minutos)`);
+console.log(`🧹 Primeira limpeza em 30 segundos...`);
+
+// ========== FIM DO SISTEMA DE LIMPEZA ==========
+
 
 // Iniciar servidor
 app.listen(PORT, () => {

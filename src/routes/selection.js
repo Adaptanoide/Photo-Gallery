@@ -74,7 +74,7 @@ router.post('/finalize', async (req, res) => {
                 console.log(`  ❌ ERRO: Esperado ${cart.totalItems}, encontrado ${products.length}`);
                 throw new Error('Alguns itens do carrinho não estão mais disponíveis');
             }
-            
+
             // 3. ✅ NOVA ORDEM: Verificar PRIMEIRO se é cliente especial
             const AccessCode = require('../models/AccessCode');
             const SpecialSelectionService = require('../services/SpecialSelectionService');
@@ -253,22 +253,12 @@ router.post('/finalize', async (req, res) => {
                     }
                 );
 
-                /* DESABILITADO - SISTEMA DE TAGS NÃO PRECISA DEVOLVER FOTOS
-                                // Processar devolução de fotos não selecionadas
-                                const selectedPhotoIds = products.map(p => p.driveFileId);
-                                ... todo código de devolução ...
-                                } else {
-                                    console.log(`✅ Sem devolução automática - continuando normalmente`);
-                                }
-                                */
-
                 // NOVO: Sistema de tags - fotos não selecionadas permanecem disponíveis
                 console.log('🏷️ [TAGS] Fotos não selecionadas permanecem com status AVAILABLE');
                 console.log('🏷️ [TAGS] Nenhuma devolução física necessária!');
 
                 // SEMPRE atualizar status e salvar
                 specialSelection.status = 'pending';
-                // Save movido para depois da reversão
 
                 // ===== DESATIVAR CLIENTE APÓS FINALIZAR SPECIAL SELECTION =====
                 console.log('🔒 Desativando acesso do cliente após finalizar Special Selection...');
@@ -397,17 +387,62 @@ router.post('/finalize', async (req, res) => {
                 // ===== FIM DA DESATIVAÇÃO REGULAR =====
             }
 
+            // ========== CORREÇÃO DEFINITIVA: ATUALIZAÇÃO EM DUAS ETAPAS ==========
             // 9. Atualizar status dos produtos (comum para ambos)
-            await UnifiedProductComplete.updateMany(
+            console.log(`🏷️ Marcando ${productIds.length} produtos com selectionId: ${selectionId}`);
+
+            // DEBUG: Verificar se selectionId está definido
+            console.log(`🔍 DEBUG - selectionId antes do update: "${selectionId}"`);
+            console.log(`🔍 DEBUG - Tipo do selectionId: ${typeof selectionId}`);
+
+            // PRIMEIRA ETAPA: Atualizar status e campos básicos incluindo cdeStatus
+            const updateResult = await UnifiedProductComplete.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {
-                        status: 'reserved_pending',
-                        reservedAt: new Date()
+                        status: 'in_selection',
+                        currentStatus: 'in_selection',
+                        cdeStatus: 'PRE-SELECTED',  // ADICIONAR ESTA LINHA
+                        reservedAt: new Date(),
+                        'virtualStatus.status': 'in_selection'
                     },
                     $unset: { 'cartAddedAt': 1 }
                 }
             ).session(session);
+
+            console.log(`📊 Primeira etapa - updateResult: ${JSON.stringify(updateResult)}`);
+
+            // SEGUNDA ETAPA: Adicionar selectionId especificamente
+            // Usando uma abordagem diferente para garantir que o campo seja salvo
+            const selectionUpdateResult = await UnifiedProductComplete.updateMany(
+                { _id: { $in: productIds } },
+                {
+                    $set: {
+                        'selectionId': String(selectionId),  // Forçar string
+                        'virtualStatus.selectionId': String(selectionId),
+                        'reservedBy.inSelection': true,
+                        'reservedBy.selectionId': String(selectionId)
+                    }
+                }
+            ).session(session);
+
+            console.log(`📊 Segunda etapa - selectionUpdateResult: ${JSON.stringify(selectionUpdateResult)}`);
+
+            // VERIFICAÇÃO: Confirmar que o selectionId foi salvo
+            const verifyUpdate = await UnifiedProductComplete.findOne(
+                { _id: productIds[0] },
+                { selectionId: 1, status: 1 }
+            ).session(session);
+
+            console.log(`✅ Verificação pós-update:`, {
+                selectionId: verifyUpdate?.selectionId,
+                status: verifyUpdate?.status
+            });
+
+            if (!verifyUpdate?.selectionId) {
+                console.error('⚠️ AVISO: selectionId não foi salvo corretamente!');
+            }
+            // ========== FIM DA CORREÇÃO ==========
 
             // 10. Desativar carrinho (comum para ambos)
             cart.isActive = false;

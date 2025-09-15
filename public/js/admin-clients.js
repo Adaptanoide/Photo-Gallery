@@ -1876,6 +1876,9 @@ class AdminClients {
             // Adicionar botões de controle de tempo
             document.getElementById('cartTimeControl').innerHTML = `
             <div class="time-control-buttons">
+                <button class="time-btn" onclick="adminClients.extendTime(0.0167)">1min</button>
+                <button class="time-btn" onclick="adminClients.extendTime(0.5)">30min</button>
+                <button class="time-btn" onclick="adminClients.extendTime(1)">1h</button>
                 <button class="time-btn" onclick="adminClients.extendTime(2)">2h</button>
                 <button class="time-btn" onclick="adminClients.extendTime(6)">6h</button>
                 <button class="time-btn" onclick="adminClients.extendTime(12)">12h</button>
@@ -1892,7 +1895,11 @@ class AdminClients {
                 setTimeout(() => {
                     const buttons = document.querySelectorAll('.time-btn');
                     buttons.forEach(btn => {
-                        if ((this.lastTimeExtension < 24 && btn.textContent === this.lastTimeExtension + 'h') ||
+                        if ((this.lastTimeExtension === 0.5 && btn.textContent === '30min') ||
+                            (this.lastTimeExtension === 1 && btn.textContent === '1h') ||
+                            (this.lastTimeExtension === 2 && btn.textContent === '2h') ||
+                            (this.lastTimeExtension === 6 && btn.textContent === '6h') ||
+                            (this.lastTimeExtension === 12 && btn.textContent === '12h') ||
                             (this.lastTimeExtension === 24 && btn.textContent === '1 day') ||
                             (this.lastTimeExtension === 48 && btn.textContent === '2 days') ||
                             (this.lastTimeExtension === 72 && btn.textContent === '3 days') ||

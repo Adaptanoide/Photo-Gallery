@@ -449,11 +449,15 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         const unavailablePhotos = await UnifiedProductComplete.find({
             $or: [
                 { 'virtualStatus.status': 'sold' },
-                { 'virtualStatus.status': 'unavailable' },  // ADICIONAR
+                { 'virtualStatus.status': 'unavailable' },
                 { 'virtualStatus.status': { $regex: /^special_/ } },
+                { 'virtualStatus.status': 'in_selection' },  // ADICIONAR
                 { 'currentStatus': 'sold' },
-                { 'currentStatus': 'unavailable' },  // ADICIONAR
-                { 'status': 'reserved_pending' },  // ADICIONAR
+                { 'currentStatus': 'unavailable' },
+                { 'currentStatus': 'in_selection' },  // ADICIONAR
+                { 'status': 'reserved_pending' },
+                { 'status': 'in_selection' },  // ADICIONAR
+                { 'selectionId': { $exists: true } },  // ADICIONAR - mais importante!
                 { 'cdeStatus': { $in: ['RESERVED', 'STANDBY'] } }
             ]
         }).select('fileName');
