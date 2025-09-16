@@ -35,12 +35,12 @@ class SyncEngine {
         console.log('  📷 Listando fotos do Google Drive...');
         this.analysis.drivePhotos = await this.drive.listAllPhotos();
         const driveNumbers = new Set(this.analysis.drivePhotos.map(p => p.number));
-        console.log(`     ✓ ${this.analysis.drivePhotos.length} fotos encontradas`);
+        console.log(`     ✔ ${this.analysis.drivePhotos.length} fotos encontradas`);
 
         console.log('  ☁️  Listando fotos do R2...');
         this.analysis.r2Photos = await this.r2.listAllPhotos();
         const r2Numbers = new Set(this.analysis.r2Photos.map(p => p.number));
-        console.log(`     ✓ ${this.analysis.r2Photos.length} fotos encontradas`);
+        console.log(`     ✔ ${this.analysis.r2Photos.length} fotos encontradas`);
 
         console.log('  💾 Listando registros do banco...');
         const dbRecords = await this.db.getAllPhotos();
@@ -48,7 +48,7 @@ class SyncEngine {
             number: record.photoId,
             status: record.virtualStatus.status
         }));
-        console.log(`     ✓ ${this.analysis.dbPhotos.length} registros encontrados`);
+        console.log(`     ✔ ${this.analysis.dbPhotos.length} registros encontrados`);
 
         // Análise de diferenças
         console.log('  🔍 Analisando diferenças...');
@@ -131,6 +131,61 @@ class SyncEngine {
             fullPath: result.path,
             relativePath: result.localPath
         }));
+    }
+
+    // Processar imagens (gerar 4 versões)
+    async processPhotos(downloadedPhotos) {
+        if (downloadedPhotos.length === 0) return [];
+
+        console.log(`\n  🎨 Gerando 4 versões WebP para ${downloadedPhotos.length} fotos...`);
+
+        const results = await this.processor.processBatch(downloadedPhotos, 5);
+
+        // Adicionar informações necessárias para upload
+        return results.map(result => ({
+            number: this.extractPhotoNumber(result.fileName),
+            fileName: result.fileName,
+            path: path.dirname(result.relativePath),
+            // ===== MUDANÇA CRÍTICA AQUI - LINHA 272-274 =====
+            // ANTES ERA: category: path.dirname(result.relativePath).split(/[/\\]/)[0] || 'uncategorized',
+            // AGORA É:
+            category: path.dirname(result.relativePath) || 'uncategorized',  // USAR O CAMINHO COMPLETO
+            processedPath: this.processor.outputDir,
+            relativePath: result.relativePath
+        }));
+    }
+
+    // Upload para R2
+    async uploadPhotos(processedPhotos) {
+        if (processedPhotos.length === 0) return [];
+
+        console.log(`\n  ☁️  Enviando ${processedPhotos.length} fotos para R2 (4 versões cada)...`);
+
+        const results = await this.r2.uploadBatch(
+            processedPhotos,
+            this.processor.outputDir,
+            3
+        );
+
+        // Filtrar apenas sucessos completos
+        const successful = results.filter(r =>
+            r.versions.every(v => v.success)
+        );
+
+        console.log(`  ✅ ${successful.length} fotos enviadas com sucesso`);
+
+        // Preparar dados para banco
+        return successful.map(result => {
+            const photo = processedPhotos.find(p => p.number === result.photo);
+            const originalVersion = result.versions.find(v => v.type === 'original');
+
+            return {
+                number: result.photo,
+                fileName: photo.fileName,
+                r2Key: originalVersion.key,
+                category: photo.category  // AGORA PASSA A CATEGORIA COMPLETA
+            };
+        });
     }
 
     // Processar imagens (gerar 4 versões)

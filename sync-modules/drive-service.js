@@ -61,7 +61,10 @@ class DriveService {
                             driveId: file.id,
                             fileName: file.name,
                             path: folderPath,
-                            category: folderPath.split('/')[0] || 'uncategorized',
+                            // ===== MUDANÇA CRÍTICA AQUI - LINHA 73 =====
+                            // ANTES ERA: category: folderPath.split('/')[0] || 'uncategorized',
+                            // AGORA É:
+                            category: folderPath || 'uncategorized',  // USAR O CAMINHO COMPLETO
                             mimeType: file.mimeType
                         });
                     }
@@ -136,7 +139,7 @@ class DriveService {
             // Mostrar progresso
             const downloaded = results.filter(r => r.success && !r.skipped).length;
             const skipped = results.filter(r => r.success && r.skipped).length;
-            console.log(`     ✓ ${downloaded} baixadas, ${skipped} já existentes`);
+            console.log(`     ✔ ${downloaded} baixadas, ${skipped} já existentes`);
         }
 
         return results;

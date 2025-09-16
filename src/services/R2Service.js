@@ -30,21 +30,16 @@ class R2Service {
     // ===== LISTAGEM =====
 
     /**
-     * Listar "pastas" (prefixos) no R2
-     * Compatível com GoogleDriveService.getSubfolders()
-     */
+ * Listar "pastas" (prefixos) no R2
+ * Compatível com GoogleDriveService.getSubfolders()
+ */
     static async getSubfolders(prefix = '') {
         try {
-            // Verificar cache primeiro
-            const cacheKey = `folders:${prefix}`;
-            const cached = this.structureCache.get(cacheKey);
-
-            if (cached && (Date.now() - cached.timestamp < this.CACHE_DURATION)) {
-                //console.log(`📦 Cache hit para: ${prefix || '/'}`);
-                return cached.data;
-            }
-
-            //console.log(`🔄 Cache miss, buscando: ${prefix || '/'}`);
+            // ============================================
+            // CACHE DESABILITADO TEMPORARIAMENTE
+            // Motivo: Bug de contaminação entre clientes
+            // TODO: Implementar cache por cliente após confirmar que isso resolve
+            // ============================================
 
             const client = this.getClient();
 
@@ -60,7 +55,6 @@ class R2Service {
             const response = await client.send(command);
 
             // CommonPrefixes contém as "pastas"
-
             const folders = await Promise.all((response.CommonPrefixes || []).map(async prefix => {
                 const folderPath = prefix.Prefix;
                 const folderName = folderPath.replace(normalizedPrefix, '').replace('/', '');
@@ -82,16 +76,17 @@ class R2Service {
                 const subfoldersResponse = await client.send(subfoldersCommand);
                 const subfolderCount = (subfoldersResponse.CommonPrefixes || []).length;
 
-                // Buscar do cache FolderStats
+                // Buscar do cache FolderStats (este é cache do MongoDB, não o cache problemático)
                 const stats = await FolderStats.findOne({ folderPath: folderPath });
                 const photoCount = stats ? stats.availablePhotos : 0;
+
                 return {
                     id: folderPath,
                     name: folderName,
                     path: folderPath,
                     type: 'folder',
-                    hasSubfolders: subfolderCount > 0,  // REAL, não assumido
-                    totalSubfolders: subfolderCount,     // NOVO - quantidade real
+                    hasSubfolders: subfolderCount > 0,
+                    totalSubfolders: subfolderCount,
                     imageCount: photoCount,
                     hasImages: photoCount > 0
                 };
@@ -104,12 +99,7 @@ class R2Service {
                 folders: folders
             };
 
-            // Salvar no cache
-            this.structureCache.set(cacheKey, {
-                data: result,
-                timestamp: Date.now()
-            });
-
+            // CACHE REMOVIDO - retornando resultado direto
             return result;
 
         } catch (error) {
@@ -320,7 +310,7 @@ class R2Service {
             throw error;
         }
     }
-    
+
     static clearCache() {
         this.structureCache.clear();
         console.log('🗑️ Cache do R2Service limpo');

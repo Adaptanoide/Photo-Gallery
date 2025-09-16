@@ -6,6 +6,33 @@ const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const jwt = require('jsonwebtoken');
 const AccessCode = require('../models/AccessCode');
 
+// ============================================
+// CACHE INTELIGENTE POR CLIENTE
+// Implementado em: 15/09/2025
+// Objetivo: Melhorar performance sem contaminar dados entre clientes
+// Cada cliente tem seu próprio cache isolado
+// ============================================
+
+const structureCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos de cache
+
+// Limpar entradas expiradas a cada minuto
+setInterval(() => {
+    const now = Date.now();
+    let cleaned = 0;
+    for (const [key, value] of structureCache.entries()) {
+        if (now - value.timestamp > CACHE_DURATION) {
+            structureCache.delete(key);
+            cleaned++;
+        }
+    }
+    if (cleaned > 0) {
+        console.log(`🧹 Cache limpo: ${cleaned} entradas expiradas removidas`);
+    }
+}, 60 * 1000);
+
+console.log('✅ Sistema de cache inteligente inicializado');
+
 // MAPEAMENTO: Google Drive ID → R2 Path
 const ID_TO_PATH_MAP = {
     // Suas categorias principais
@@ -87,6 +114,22 @@ router.get('/structure', verifyClientToken, async (req, res) => {
         prefix = convertToR2Path(prefix);
 
         console.log(`📂 Buscando estrutura de: ${prefix || '/'}`);
+
+        // ============================================
+        // VERIFICAR CACHE INTELIGENTE
+        // ============================================
+        if (req.client && req.client.clientCode) {
+            const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
+            const cached = structureCache.get(cacheKey);
+
+            if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+                console.log(`📦 [CACHE HIT] Cliente ${req.client.clientCode} - ${prefix || '/'}`);
+                console.log(`   ⏱️ Idade do cache: ${Math.round((Date.now() - cached.timestamp) / 1000)}s`);
+                return res.json(cached.data);
+            } else {
+                console.log(`🔄 [CACHE MISS] Cliente ${req.client.clientCode} - ${prefix || '/'} - Buscando dados novos`);
+            }
+        }
 
         // ========== FILTRAR POR ALLOWED CATEGORIES ==========
         let allowedToSee = true;  // Por padrão, permitir tudo
@@ -196,7 +239,8 @@ router.get('/structure', verifyClientToken, async (req, res) => {
 
                     console.log(`📁 Mostrando ${result.folders.length} categorias permitidas`);
 
-                    return res.json({
+                    // Preparar resposta para cache - categorias do root
+                    const responseData = {
                         success: true,
                         structure: {
                             hasSubfolders: result.folders.length > 0,
@@ -205,7 +249,19 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                             totalImages: 0
                         },
                         prefix: prefix
-                    });
+                    };
+
+                    // Salvar no cache para este cliente
+                    if (req.client && req.client.clientCode) {
+                        const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
+                        structureCache.set(cacheKey, {
+                            data: responseData,
+                            timestamp: Date.now()
+                        });
+                        console.log(`💾 [CACHE SAVE] Root filtrado - Cliente ${req.client.clientCode} - ${result.folders.length} categorias`);
+                    }
+
+                    return res.json(responseData);
                 }
 
                 // Verificar se a categoria atual é permitida
@@ -244,9 +300,29 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         const originalCount = result.folders ? result.folders.length : 0;
 
                         if (result.folders) {
-                            result.folders = result.folders.filter(f => {
-                                return !f.name.startsWith('_') && allowedSubfolders.has(f.name);
+                            // LOG DE DEBUG TEMPORÁRIO
+                            console.log(`\n🔍 DEBUG FILTRAGEM para ${prefix}:`);
+                            console.log(`   Pastas retornadas pelo R2:`);
+                            result.folders.forEach(f => {
+                                console.log(`     - "${f.name}"`);
                             });
+
+                            console.log(`   Pastas permitidas (allowedSubfolders):`);
+                            Array.from(allowedSubfolders).forEach(allowed => {
+                                console.log(`     - "${allowed}"`);
+                            });
+
+                            result.folders = result.folders.filter(f => {
+                                const startsWithUnderscore = f.name.startsWith('_');
+                                const isInAllowed = allowedSubfolders.has(f.name);
+                                const shouldKeep = !startsWithUnderscore && isInAllowed;
+
+                                console.log(`   Testando "${f.name}": underscore=${startsWithUnderscore}, permitida=${isInAllowed} => manter=${shouldKeep}`);
+
+                                return shouldKeep;
+                            });
+
+                            console.log(`   Resultado: ${result.folders.length} pastas após filtro\n`);
                         }
 
                         console.log(`📊 Mostrando ${result.folders?.length || 0} de ${originalCount} subcategorias`);
@@ -255,7 +331,8 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         if ((!result.folders || result.folders.length === 0) && allowedSubfolders.size > 0) {
                             const photosResult = await StorageService.getPhotos(prefix);
                             if (photosResult.photos && photosResult.photos.length > 0) {
-                                return res.json({
+                                // Preparar resposta quando há fotos mas não subpastas
+                                const responseData = {
                                     success: true,
                                     structure: {
                                         hasSubfolders: false,
@@ -264,11 +341,24 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                                         totalImages: photosResult.photos.length
                                     },
                                     prefix: prefix
-                                });
+                                };
+
+                                // Salvar no cache
+                                if (req.client && req.client.clientCode) {
+                                    const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
+                                    structureCache.set(cacheKey, {
+                                        data: responseData,
+                                        timestamp: Date.now()
+                                    });
+                                    console.log(`💾 [CACHE SAVE] Fotos sem pastas - Cliente ${req.client.clientCode} - ${prefix} - ${photosResult.photos.length} fotos`);
+                                }
+
+                                return res.json(responseData);
                             }
                         }
 
-                        return res.json({
+                        // Preparar resposta com subcategorias filtradas
+                        const responseData = {
                             success: true,
                             structure: {
                                 hasSubfolders: result.folders && result.folders.length > 0,
@@ -277,7 +367,19 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                                 totalImages: 0
                             },
                             prefix: prefix
-                        });
+                        };
+
+                        // Salvar no cache
+                        if (req.client && req.client.clientCode) {
+                            const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
+                            structureCache.set(cacheKey, {
+                                data: responseData,
+                                timestamp: Date.now()
+                            });
+                            console.log(`💾 [CACHE SAVE] Subcategorias - Cliente ${req.client.clientCode} - ${prefix} - ${result.folders?.length || 0} pastas`);
+                        }
+
+                        return res.json(responseData);
                     }
                 }
             }
@@ -288,7 +390,8 @@ router.get('/structure', verifyClientToken, async (req, res) => {
         if (req.client && req.client.hasSpecialSelection) {
             console.log(`🌟 Cliente ${req.client.clientCode} tem Special Selection`);
 
-            return res.json({
+            // Preparar resposta para Special Selection
+            const responseData = {
                 success: true,
                 structure: {
                     hasSubfolders: false,
@@ -298,7 +401,19 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                 },
                 prefix: 'special_selection',
                 message: 'Special Selection Active'
-            });
+            };
+
+            // Cache específico para Special Selection
+            if (req.client && req.client.clientCode) {
+                const cacheKey = `${req.client.clientCode}:special_selection`;
+                structureCache.set(cacheKey, {
+                    data: responseData,
+                    timestamp: Date.now()
+                });
+                console.log(`💾 [CACHE SAVE] Special Selection - Cliente ${req.client.clientCode}`);
+            }
+
+            return res.json(responseData);
         }
         // ========== FIM DA VERIFICAÇÃO SPECIAL ==========
 
@@ -312,7 +427,8 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             const photosResult = await StorageService.getPhotos(prefix);
 
             if (photosResult.photos && photosResult.photos.length > 0) {
-                return res.json({
+                // Preparar resposta quando há fotos após verificar folders
+                const responseData = {
                     success: true,
                     structure: {
                         hasSubfolders: false,
@@ -321,7 +437,19 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         totalImages: photosResult.photos.length
                     },
                     prefix: prefix
-                });
+                };
+
+                // Salvar no cache
+                if (req.client && req.client.clientCode) {
+                    const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
+                    structureCache.set(cacheKey, {
+                        data: responseData,
+                        timestamp: Date.now()
+                    });
+                    console.log(`💾 [CACHE SAVE] Fotos após folders - Cliente ${req.client.clientCode} - ${prefix} - ${photosResult.photos.length} fotos`);
+                }
+
+                return res.json(responseData);
             }
         }
 
@@ -332,11 +460,26 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             totalImages: 0
         };
 
-        res.json({
+        // Preparar resposta final (caso geral - sem filtros)
+        const responseData = {
             success: true,
             structure: structure,
             prefix: prefix
+        };
+
+        // Salvar no cache mesmo para usuários anônimos (com chave diferente)
+        const cacheKey = req.client && req.client.clientCode
+            ? `${req.client.clientCode}:${prefix || 'root'}`
+            : `anonymous:${prefix || 'root'}`;
+
+        structureCache.set(cacheKey, {
+            data: responseData,
+            timestamp: Date.now()
         });
+
+        console.log(`💾 [CACHE SAVE] Geral - Cliente ${req.client?.clientCode || 'anônimo'} - ${prefix || '/'} - ${result.folders?.length || 0} pastas`);
+
+        res.json(responseData);  // Note que aqui não tem return porque é o fim da função
 
     } catch (error) {
         console.error('❌ Erro ao buscar estrutura:', error);

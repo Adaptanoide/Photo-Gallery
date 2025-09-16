@@ -1,15 +1,26 @@
 /**
- * Database Service
- * Usa o modelo PhotoStatus real do sistema
+ * Database Service - VERSÃO ATUALIZADA PARA UnifiedProductComplete
+ * Adaptado para trabalhar com o modelo atual do sistema
  */
 
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
-const PhotoStatus = require('../src/models/PhotoStatus');
+const UnifiedProductComplete = require('../src/models/UnifiedProductComplete');
+const Cart = require('../src/models/Cart');
+const Selection = require('../src/models/Selection');
 
 class DatabaseService {
     constructor() {
         this.connected = false;
+        this.dryRun = false;
+    }
+
+    // Ativar/desativar modo dry-run
+    setDryRun(enabled) {
+        this.dryRun = enabled;
+        if (this.dryRun) {
+            console.log('🔸 [DB Service] Modo DRY-RUN ativado - nenhuma alteração será salva');
+        }
     }
 
     async connect() {
@@ -17,6 +28,13 @@ class DatabaseService {
             await mongoose.connect(process.env.MONGODB_URI);
             this.connected = true;
             console.log('✅ MongoDB conectado para sync');
+
+            // Mostrar estatísticas básicas
+            const totalPhotos = await UnifiedProductComplete.countDocuments();
+            const available = await UnifiedProductComplete.countDocuments({ status: 'available' });
+            const sold = await UnifiedProductComplete.countDocuments({ status: 'sold' });
+            console.log(`   📊 Total: ${totalPhotos} | Disponíveis: ${available} | Vendidas: ${sold}`);
+
         } catch (error) {
             console.error('Erro ao conectar MongoDB:', error.message);
             throw error;
@@ -31,18 +49,34 @@ class DatabaseService {
     }
 
     async getAllPhotos() {
-        return await PhotoStatus.find({});
+        return await UnifiedProductComplete.find({}).select({
+            photoNumber: 1,
+            idhCode: 1,
+            status: 1,
+            cdeStatus: 1,
+            selectionId: 1,
+            category: 1
+        });
     }
 
     async getPhotosByStatus(status) {
-        return await PhotoStatus.find({ 'virtualStatus.status': status });
+        return await UnifiedProductComplete.find({
+            status: status,
+            selectionId: null  // Não mexer em fotos com seleção
+        });
     }
 
     async getPhotoByNumber(photoNumber) {
-        return await PhotoStatus.findOne({
+        // Padronizar número para 5 dígitos
+        const paddedNumber = photoNumber.padStart(5, '0');
+
+        return await UnifiedProductComplete.findOne({
             $or: [
                 { photoNumber: photoNumber },
-                { photoId: photoNumber }
+                { photoNumber: paddedNumber },
+                { fileName: `${photoNumber}.webp` },
+                { fileName: `${paddedNumber}.webp` },
+                { photoId: new RegExp(photoNumber) }
             ]
         });
     }
@@ -51,10 +85,46 @@ class DatabaseService {
         let mysqlConn = null;
 
         try {
-            // Extrair apenas o número
+            // Extrair e padronizar número da foto
             let photoNumber = photoData.number;
             if (photoNumber.includes('/')) {
                 photoNumber = photoNumber.split('/').pop().replace('.webp', '');
+            }
+            photoNumber = photoNumber.padStart(5, '0');
+
+            // VERIFICAÇÃO CRÍTICA 1: Verificar se já existe
+            const existingPhoto = await UnifiedProductComplete.findOne({
+                photoNumber: photoNumber
+            });
+
+            if (existingPhoto) {
+                // PROTEÇÃO 1: Não tocar se tem selectionId
+                if (existingPhoto.selectionId) {
+                    console.log(`   ⚠️ Foto ${photoNumber} está em seleção ${existingPhoto.selectionId} - MANTENDO COMO ESTÁ`);
+                    return existingPhoto;
+                }
+
+                // PROTEÇÃO 2: Verificar se está em carrinho ativo
+                const inCart = await Cart.findOne({
+                    isActive: true,
+                    'items.fileName': { $in: [`${photoNumber}.webp`, `${photoData.fileName}`] }
+                });
+
+                if (inCart) {
+                    console.log(`   ⚠️ Foto ${photoNumber} está em carrinho ativo (${inCart.clientCode}) - MANTENDO COMO ESTÁ`);
+                    return existingPhoto;
+                }
+
+                // PROTEÇÃO 3: Verificar se está em seleção pendente
+                const inSelection = await Selection.findOne({
+                    status: { $in: ['pending', 'confirmed', 'approving'] },
+                    'items.fileName': { $in: [`${photoNumber}.webp`, `${photoData.fileName}`] }
+                });
+
+                if (inSelection) {
+                    console.log(`   ⚠️ Foto ${photoNumber} está em seleção ${inSelection.status} - MANTENDO COMO ESTÁ`);
+                    return existingPhoto;
+                }
             }
 
             // Buscar informações no CDE
@@ -71,20 +141,29 @@ class DatabaseService {
                 });
 
                 const [rows] = await mysqlConn.execute(
-                    'SELECT AIDH, AESTADOP FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    'SELECT AIDH, AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
                     [photoNumber]
                 );
 
                 if (rows.length > 0) {
                     idhCode = rows[0].AIDH;
                     cdeStatus = rows[0].AESTADOP;
-                    console.log(`📋 CDE: Foto ${photoNumber} → IDH: ${idhCode}, Status: ${cdeStatus}`);
+                    console.log(`   📋 CDE: Foto ${photoNumber} → IDH: ${idhCode}, Status: ${cdeStatus}`);
+
+                    // Se está PRE-SELECTED no CDE, verificar se é para algum cliente nosso
+                    if (cdeStatus === 'PRE-SELECTED' && rows[0].RESERVEDUSU) {
+                        console.log(`      Reservada no CDE para: ${rows[0].RESERVEDUSU}`);
+                    }
                 } else {
-                    console.log(`⚠️ Foto ${photoNumber} não encontrada no CDE`);
+                    console.log(`   ⚠️ Foto ${photoNumber} não encontrada no CDE - criando com valores padrão`);
+                    idhCode = `2001${photoNumber}`;
+                    cdeStatus = 'INGRESADO';
                 }
             } catch (cdeError) {
-                console.error(`⚠️ Erro ao consultar CDE para foto ${photoNumber}:`, cdeError.message);
-                // Continua sem dados do CDE
+                console.error(`   ⚠️ Erro ao consultar CDE:`, cdeError.message);
+                // CDE offline - usar valores padrão
+                idhCode = idhCode || `2001${photoNumber}`;
+                cdeStatus = cdeStatus || 'INGRESADO';
             } finally {
                 if (mysqlConn) {
                     await mysqlConn.end();
@@ -94,70 +173,187 @@ class DatabaseService {
             // Determinar status MongoDB baseado no CDE
             const mongoStatus =
                 cdeStatus === 'RETIRADO' ? 'sold' :
-                    cdeStatus === 'INGRESADO' ? 'available' :
-                        (cdeStatus === 'STANDBY' || cdeStatus === 'RESERVED') ? 'unavailable' :
-                            'available'; // default se não existir no CDE
+                    cdeStatus === 'PRE-SELECTED' ? 'reserved' :
+                        cdeStatus === 'RESERVED' ? 'unavailable' :
+                            cdeStatus === 'STANDBY' ? 'unavailable' :
+                                cdeStatus === 'INGRESADO' ? 'available' :
+                                    'available'; // default
 
-            const photoStatus = new PhotoStatus({
-                photoId: photoNumber,              // Usar número simples, não path
-                photoNumber: photoNumber,          // Campo normalizado
-                fileName: photoData.fileName.replace(/\.(jpg|jpeg|png)$/i, '.webp'),
-                r2Key: photoData.r2Key,
-                idhCode: idhCode,                  // IDH do CDE
-                cdeStatus: cdeStatus,              // Status do CDE
-                lastCDESync: cdeStatus ? new Date() : null,
+            // Se já existe, apenas atualizar campos seguros
+            if (existingPhoto) {
+                if (this.dryRun) {
+                    console.log(`   [DRY-RUN] Atualizaria foto ${photoNumber}: ${existingPhoto.status} → ${mongoStatus}`);
+                    return existingPhoto;
+                }
+
+                // Só atualizar se o status mudou significativamente
+                if (existingPhoto.cdeStatus !== cdeStatus || existingPhoto.status !== mongoStatus) {
+                    existingPhoto.idhCode = idhCode;
+                    existingPhoto.cdeStatus = cdeStatus;
+                    existingPhoto.status = mongoStatus;
+                    existingPhoto.currentStatus = mongoStatus;
+                    existingPhoto.virtualStatus.status = mongoStatus;
+                    existingPhoto.lastCDESync = new Date();
+
+                    await existingPhoto.save();
+                    console.log(`   ✅ Foto ${photoNumber} atualizada: ${existingPhoto.status} → ${mongoStatus}`);
+                }
+
+                return existingPhoto;
+            }
+
+            // CRIAR NOVO REGISTRO
+            if (this.dryRun) {
+                console.log(`   [DRY-RUN] Criaria novo registro para foto ${photoNumber} (${mongoStatus})`);
+                return null;
+            }
+
+            const unifiedProduct = new UnifiedProductComplete({
+                // === Identificação principal ===
+                idhCode: idhCode,
+                photoNumber: photoNumber,
+                fileName: photoData.fileName || `${photoNumber}.webp`,
+
+                // === Campos de compatibilidade (importantes!) ===
+                driveFileId: photoData.r2Key || `${photoData.category}/${photoNumber}.webp`,
+                photoId: photoData.r2Key || `${photoData.category}/${photoNumber}.webp`,
+
+                // === Localização ===
+                r2Path: photoData.r2Key,
+                category: photoData.category || 'uncategorized',
+                folderPath: photoData.category || 'uncategorized',
+
+                // === Todos os campos de status ===
+                status: mongoStatus,
+                currentStatus: mongoStatus,
+                cdeStatus: cdeStatus,
+
+                // === Virtual status (necessário para compatibilidade) ===
                 virtualStatus: {
                     status: mongoStatus,
-                    tags: [mongoStatus, `added_${new Date().toISOString().split('T')[0]}`],
+                    tags: [],
                     lastStatusChange: new Date()
                 },
-                currentStatus: mongoStatus,
+
+                // === Preços (serão configurados depois pelo admin) ===
+                price: 0,
+                basePrice: 0,
+                currentPricing: {
+                    currentPrice: 0,
+                    hasPrice: false,
+                    formattedPrice: 'No price'
+                },
+
+                // === Metadados importantes ===
+                lastCDESync: new Date(),
+                syncedFromCDE: true,
+                isActive: true,
+
+                // === Localizações para compatibilidade com PhotoStatus ===
                 currentLocation: {
                     locationType: 'stock',
-                    currentPath: photoData.r2Key,
+                    currentPath: photoData.r2Key || photoData.category,
                     currentParentId: 'r2',
                     currentCategory: photoData.category || 'uncategorized'
                 },
+
                 originalLocation: {
-                    originalPath: photoData.r2Key,
+                    originalPath: photoData.r2Key || photoData.category,
                     originalParentId: 'r2',
                     originalCategory: photoData.category || 'uncategorized'
+                },
+
+                // === Metadata adicional ===
+                metadata: {
+                    fileType: 'webp',
+                    quality: 'standard',
+                    tags: [`sync_${new Date().toISOString().split('T')[0]}`]
                 }
             });
 
-            await photoStatus.save();
-            console.log(`✅ Foto ${photoNumber} adicionada ao MongoDB (Status: ${mongoStatus})`);
-            return photoStatus;
+            await unifiedProduct.save();
+            console.log(`   ✅ Foto ${photoNumber} criada no MongoDB (Status: ${mongoStatus})`);
+            return unifiedProduct;
 
         } catch (error) {
-            console.error(`Erro ao criar registro para ${photoData.number}:`, error.message);
+            console.error(`   ❌ Erro ao processar foto ${photoData.number}:`, error.message);
             throw error;
         }
     }
 
     async updatePhotoStatus(photoId, updates) {
-        return await PhotoStatus.findOneAndUpdate(
-            { $or: [{ photoNumber: photoId }, { photoId: photoId }] },
-            updates,
-            { new: true }
-        );
+        // Buscar a foto primeiro para verificações
+        const photo = await this.getPhotoByNumber(photoId);
+
+        if (!photo) {
+            console.log(`   ⚠️ Foto ${photoId} não encontrada`);
+            return null;
+        }
+
+        // PROTEÇÃO: Não atualizar se tem selectionId
+        if (photo.selectionId) {
+            console.log(`   ⚠️ Foto ${photoId} tem selectionId (${photo.selectionId}) - NÃO ATUALIZANDO`);
+            return photo;
+        }
+
+        // PROTEÇÃO: Verificar se está em uso
+        const inCart = await Cart.findOne({
+            isActive: true,
+            'items.fileName': `${photo.photoNumber}.webp`
+        });
+
+        if (inCart) {
+            console.log(`   ⚠️ Foto ${photoId} está em carrinho ativo - NÃO ATUALIZANDO`);
+            return photo;
+        }
+
+        if (this.dryRun) {
+            console.log(`   [DRY-RUN] Atualizaria foto ${photoId}`);
+            return photo;
+        }
+
+        // Aplicar atualizações
+        Object.keys(updates).forEach(key => {
+            photo[key] = updates[key];
+        });
+
+        await photo.save();
+        return photo;
     }
 
     async markAsSold(photoId) {
+        const photo = await this.getPhotoByNumber(photoId);
+
+        if (!photo) {
+            return { success: false, error: 'Foto não encontrada' };
+        }
+
+        // Se já está vendida, não fazer nada
+        if (photo.status === 'sold') {
+            return { success: true, message: 'Já estava vendida' };
+        }
+
+        if (this.dryRun) {
+            console.log(`   [DRY-RUN] Marcaria foto ${photoId} como vendida`);
+            return { success: true, dryRun: true };
+        }
+
         return await this.updatePhotoStatus(photoId, {
-            'virtualStatus.status': 'sold',
+            status: 'sold',
             currentStatus: 'sold',
             cdeStatus: 'RETIRADO',
+            'virtualStatus.status': 'sold',
             'virtualStatus.lastStatusChange': new Date(),
-            lastCDESync: new Date()
+            lastCDESync: new Date(),
+            soldAt: new Date()
         });
     }
 
     async upsertPhotoBatch(photos) {
         const results = [];
-
-        // Criar conexão MySQL única para o batch
         let mysqlConn = null;
+
+        // Tentar conectar ao CDE uma vez para todo o batch
         try {
             mysqlConn = await mysql.createConnection({
                 host: process.env.CDE_HOST,
@@ -166,29 +362,37 @@ class DatabaseService {
                 password: process.env.CDE_PASSWORD,
                 database: process.env.CDE_DATABASE
             });
+            console.log('   📡 Conectado ao CDE para verificação em batch');
         } catch (error) {
-            console.error('⚠️ Não foi possível conectar ao CDE:', error.message);
+            console.error('   ⚠️ CDE não disponível - usando valores padrão:', error.message);
         }
 
+        // Processar cada foto
         for (const photo of photos) {
             try {
-                // Extrair número puro
-                let photoNumber = photo.number;
+                // Extrair número
+                let photoNumber = photo.number || photo.photoNumber;
                 if (photoNumber.includes('/')) {
                     photoNumber = photoNumber.split('/').pop().replace('.webp', '');
                 }
+                photoNumber = photoNumber.padStart(5, '0');
 
                 // Verificar se já existe
-                const existing = await PhotoStatus.findOne({
-                    $or: [
-                        { photoNumber: photoNumber },
-                        { photoId: photoNumber }
-                    ]
-                });
+                const existing = await this.getPhotoByNumber(photoNumber);
 
                 if (existing) {
+                    // Se tem selectionId, pular
+                    if (existing.selectionId) {
+                        results.push({
+                            number: photoNumber,
+                            status: 'skipped',
+                            reason: 'has selectionId'
+                        });
+                        continue;
+                    }
+
                     // Buscar status atualizado no CDE se tiver conexão
-                    if (mysqlConn) {
+                    if (mysqlConn && !this.dryRun) {
                         try {
                             const [rows] = await mysqlConn.execute(
                                 'SELECT AIDH, AESTADOP FROM tbinventario WHERE ATIPOETIQUETA = ?',
@@ -200,33 +404,57 @@ class DatabaseService {
                                 const mongoStatus =
                                     cdeStatus === 'RETIRADO' ? 'sold' :
                                         cdeStatus === 'INGRESADO' ? 'available' :
-                                            (cdeStatus === 'STANDBY' || cdeStatus === 'RESERVED') ? 'unavailable' :
-                                                existing.currentStatus;
+                                            cdeStatus === 'PRE-SELECTED' ? 'reserved' :
+                                                'unavailable';
 
-                                existing.idhCode = rows[0].AIDH;
-                                existing.cdeStatus = cdeStatus;
-                                existing.currentStatus = mongoStatus;
-                                existing.virtualStatus.status = mongoStatus;
-                                existing.lastCDESync = new Date();
+                                if (existing.cdeStatus !== cdeStatus || existing.status !== mongoStatus) {
+                                    existing.idhCode = rows[0].AIDH;
+                                    existing.cdeStatus = cdeStatus;
+                                    existing.status = mongoStatus;
+                                    existing.currentStatus = mongoStatus;
+                                    existing.virtualStatus.status = mongoStatus;
+                                    existing.lastCDESync = new Date();
+
+                                    if (!this.dryRun) {
+                                        await existing.save();
+                                    }
+
+                                    results.push({
+                                        number: photoNumber,
+                                        status: 'updated',
+                                        newStatus: mongoStatus
+                                    });
+                                    continue;
+                                }
                             }
                         } catch (error) {
-                            console.error(`⚠️ Erro ao consultar CDE para ${photoNumber}:`, error.message);
+                            console.error(`   Erro ao consultar CDE para ${photoNumber}:`, error.message);
                         }
                     }
 
-                    // Atualizar r2Key
-                    existing.r2Key = photo.r2Key;
-                    existing.updatedAt = new Date();
-                    await existing.save();
-                    results.push({ number: photo.number, status: 'updated' });
+                    // Atualizar campos básicos se necessário
+                    if (photo.r2Key && existing.r2Path !== photo.r2Key) {
+                        existing.r2Path = photo.r2Key;
+                        existing.driveFileId = photo.r2Key;
+
+                        if (!this.dryRun) {
+                            await existing.save();
+                        }
+                    }
+
+                    results.push({ number: photoNumber, status: 'exists' });
                 } else {
-                    // Criar novo (vai buscar do CDE internamente)
+                    // Criar novo
                     await this.createPhotoStatus(photo);
-                    results.push({ number: photo.number, status: 'created' });
+                    results.push({ number: photoNumber, status: 'created' });
                 }
             } catch (error) {
-                console.error(`Erro ao processar ${photo.number}:`, error.message);
-                results.push({ number: photo.number, status: 'error', error: error.message });
+                console.error(`   Erro ao processar ${photo.number}:`, error.message);
+                results.push({
+                    number: photo.number,
+                    status: 'error',
+                    error: error.message
+                });
             }
         }
 
@@ -235,7 +463,36 @@ class DatabaseService {
             await mysqlConn.end();
         }
 
+        // Mostrar resumo
+        const created = results.filter(r => r.status === 'created').length;
+        const updated = results.filter(r => r.status === 'updated').length;
+        const skipped = results.filter(r => r.status === 'skipped').length;
+        const errors = results.filter(r => r.status === 'error').length;
+
+        console.log(`   📊 Batch completo: ${created} criadas, ${updated} atualizadas, ${skipped} puladas, ${errors} erros`);
+
         return results;
+    }
+
+    // Método auxiliar para obter estatísticas do banco
+    async getStats() {
+        const total = await UnifiedProductComplete.countDocuments();
+        const available = await UnifiedProductComplete.countDocuments({ status: 'available' });
+        const sold = await UnifiedProductComplete.countDocuments({ status: 'sold' });
+        const reserved = await UnifiedProductComplete.countDocuments({ status: 'reserved' });
+        const withSelection = await UnifiedProductComplete.countDocuments({
+            selectionId: { $ne: null }
+        });
+
+        return {
+            total,
+            available,
+            sold,
+            reserved,
+            withSelection,
+            percentAvailable: ((available / total) * 100).toFixed(1),
+            percentSold: ((sold / total) * 100).toFixed(1)
+        };
     }
 }
 
