@@ -143,8 +143,12 @@ function isBusinessHours() {
     return (day >= 1 && day <= 5 && hour >= 7 && hour < 18);
 }
 
-// Função para executar sync (24/7)
 function runCDESync() {
+    // ADICIONE ESTA VERIFICAÇÃO NO INÍCIO DA FUNÇÃO
+    if (process.env.DISABLE_CDE_SYNC === 'true') {
+        return; // Sai imediatamente sem fazer nada
+    }
+
     const now = new Date();
     const ftTime = now.toLocaleString("en-US", {
         timeZone: "America/New_York",
