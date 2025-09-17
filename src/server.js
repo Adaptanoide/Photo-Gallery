@@ -179,16 +179,23 @@ console.log(`   Intervalo: ${intervalMinutes} minuto${intervalMinutes > 1 ? 's' 
 console.log(`   Horário: 24/7`);
 console.log(`   Timezone: America/New_York (Fort Myers, FL)\n`);
 
-// Executar sync inicial após 10 segundos
-console.log('[CDESync] Sync inicial em 10 segundos...');
-setTimeout(() => {
-    runCDESync();
-}, 10000);
+// Verificar se CDESync está habilitado
+if (process.env.DISABLE_CDE_SYNC === 'true') {
+    console.log('⚠️ CDESync DESABILITADO - Modo desenvolvimento isolado');
+} else {
+    // Executar sync inicial após 10 segundos
+    console.log('[CDESync] Sync inicial em 10 segundos...');
+    setTimeout(() => {
+        runCDESync();
+    }, 10000);
+}
 
 // Configurar intervalo de execução
-setInterval(() => {
-    runCDESync();
-}, syncInterval);
+if (process.env.DISABLE_CDE_SYNC !== 'true') {
+    setInterval(() => {
+        runCDESync();
+    }, syncInterval);
+}
 
 // ========== SISTEMA DE LIMPEZA AUTOMÁTICA ROBUSTA ==========
 

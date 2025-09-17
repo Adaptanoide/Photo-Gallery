@@ -119,11 +119,6 @@ class CartService {
                     if (product.reservedBy && product.reservedBy.clientCode === clientCode) {
                         console.log(`✅ Produto já reservado para cliente ${clientCode} - permitindo trabalhar com reserva existente`);
 
-                        // Verificar se já está no carrinho para evitar duplicação
-                        if (cart && cart.hasItem(driveFileId)) {
-                            throw new Error('Item já está no carrinho');
-                        }
-
                         // Se não está no carrinho mas está reservado para ele, continuar normalmente
                         // O produto já está reservado, então pular a parte de reservar novamente
                     } else {
@@ -602,6 +597,46 @@ class CartService {
                 });
 
                 const removedCount = originalCount - cart.items.length;
+
+                // LIBERAR FOTOS EXPIRADAS NO CDE
+                const itemsExpirados = [];
+                const originalItems = [...cart.items];
+
+                // Identificar quais items foram removidos
+                for (const item of originalItems) {
+                    if (!cart.items.find(i => i.fileName === item.fileName)) {
+                        itemsExpirados.push(item);
+                    }
+                }
+
+                // Processar liberação no CDE para cada item expirado
+                for (const item of itemsExpirados) {
+                    try {
+                        const photoNumber = item.fileName.replace('.webp', '');
+
+                        // Atualizar MongoDB
+                        await UnifiedProductComplete.updateOne(
+                            { fileName: item.fileName },
+                            {
+                                $set: {
+                                    status: 'available',
+                                    currentStatus: 'available',
+                                    cdeStatus: 'INGRESADO'
+                                },
+                                $unset: {
+                                    reservedBy: 1,
+                                    cartAddedAt: 1
+                                }
+                            }
+                        );
+
+                        // Avisar CDE
+                        await CDEWriter.liberarFoto(photoNumber);
+                        console.log(`   ✅ Foto ${photoNumber} liberada no CDE após expiração`);
+                    } catch (error) {
+                        console.error(`   ❌ Erro ao liberar foto ${item.fileName}:`, error.message);
+                    }
+                }
 
                 if (removedCount > 0) {
                     cart.totalItems = cart.items.length;
