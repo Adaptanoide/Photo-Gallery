@@ -164,10 +164,10 @@ function runCDESync() {
         });
 }
 
-// Configurar intervalo baseado no ambiente
+// CDESync
 const syncInterval = process.env.NODE_ENV === 'production'
-    ? 5 * 60 * 1000     // 5 minutos em produção
-    : 1 * 60 * 1000;    // 1 minuto em desenvolvimento
+    ? 3 * 60 * 1000   // 3 minutos em produção
+    : 1 * 60 * 1000;  // 1 minuto em desenvolvimento
 
 // Mostrar configuração
 const intervalMinutes = syncInterval / 60000;
@@ -224,9 +224,10 @@ const runAutomaticCleanup = async () => {
     console.log(`🧹 [CLEANUP] =======================================\n`);
 };
 
-// Executar limpeza a cada 5 minutos
-const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 minutos - TEMPORÁRIO para resolver problema
-setInterval(runAutomaticCleanup, CLEANUP_INTERVAL);
+// Limpeza
+const CLEANUP_INTERVAL = process.env.NODE_ENV === 'production'
+    ? 5 * 60 * 1000   // 5 minutos em produção  
+    : 2 * 60 * 1000;  // 2 minutos em desenvolvimento
 
 // Primeira limpeza 30 segundos após iniciar
 setTimeout(runAutomaticCleanup, 30000);

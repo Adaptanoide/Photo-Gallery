@@ -37,11 +37,11 @@ class CDESync {
             // Buscar mudanças recentes do CDE
             const [produtos] = await mysqlConnection.execute(
                 `SELECT AIDH, AESTADOP, AFECHA, ATIPOETIQUETA
-                FROM tbinventario 
-                WHERE ATIPOETIQUETA != '0' 
-                AND ATIPOETIQUETA != ''
-                AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
-                ORDER BY AFECHA DESC`
+            FROM tbinventario 
+            WHERE ATIPOETIQUETA != '0' 
+            AND ATIPOETIQUETA != ''
+            AND DATE(AFECHA) >= DATE(NOW() - INTERVAL 7 DAY)
+            ORDER BY AFECHA DESC`
             );
 
             // Verificar fotos bloqueadas conhecidas
@@ -194,11 +194,84 @@ class CDESync {
                     continue;
                 }
 
+                // FORÇAR LIMPEZA DE CARRINHO PARA STATUS CRÍTICOS
+                if (item.AESTADOP === 'RETIRADO' || item.AESTADOP === 'RESERVED' || item.AESTADOP === 'STANDBY') {
+                    console.log(`[CDE Sync] ATENÇÃO: Foto ${photoNumber} está ${item.AESTADOP} no CDE!`);
+                    const Cart = require('../models/Cart');
+                    const carrinhos = await Cart.find({ 'items.fileName': `${photoNumber}.webp` });
+
+                    for (const cart of carrinhos) {
+                        await Cart.updateOne(
+                            { _id: cart._id },
+                            {
+                                $pull: { items: { fileName: `${photoNumber}.webp` } },
+                                $inc: { totalItems: -1 }
+                            }
+                        );
+                        console.log(`[CDE Sync] REMOVIDA foto ${photoNumber} do carrinho ${cart.clientCode} porque está ${item.AESTADOP}`);
+                    }
+                }
+
                 // Aplicar atualização
                 const updateOperation = { $set: updateFields };
                 if (updateFields.$unset) {
                     updateOperation.$unset = updateFields.$unset;
                     delete updateFields.$unset;
+                }
+
+                // LÓGICA AMPLIADA: Remover dos carrinhos quando necessário
+                // MUDANÇA AQUI - Adicionando condição para INGRESADO quando vem de PRE-SELECTED
+                const deveRemoverDoCarrinho =
+                    newCdeStatus === 'RETIRADO' ||
+                    newCdeStatus === 'RESERVED' ||
+                    newCdeStatus === 'STANDBY' ||
+                    (newCdeStatus === 'INGRESADO' && existingPhoto.cdeStatus === 'PRE-SELECTED');
+
+                // DEBUG COMPLETO
+                if (photoNumber === '08206' || photoNumber === '8206') {
+                    console.log(`[CDE DEBUG 08206]:`);
+                    console.log(`  - Status no CDE: ${newCdeStatus}`);
+                    console.log(`  - Status anterior MongoDB: ${existingPhoto?.cdeStatus}`);
+                    console.log(`  - Deve remover? ${deveRemoverDoCarrinho}`);
+                }
+
+                if (deveRemoverDoCarrinho) {
+                    // Logo depois da linha que define deveRemoverDoCarrinho
+                    console.log(`[CDE Sync DEBUG] Foto ${photoNumber}: cdeStatus anterior=${existingPhoto?.cdeStatus}, novo=${newCdeStatus}, deveRemover=${deveRemoverDoCarrinho}`);
+                    try {
+                        const Cart = require('../models/Cart');
+
+                        // Verificar se esta foto está em algum carrinho ativo
+                        const cartsWithThisPhoto = await Cart.find({
+                            'items.fileName': `${photoNumber}.webp`,
+                            isActive: true
+                        });
+
+                        if (cartsWithThisPhoto.length > 0) {
+                            console.log(`[CDE Sync] ⚠️ Foto ${photoNumber} mudou de ${existingPhoto.cdeStatus} para ${newCdeStatus} - encontrada em ${cartsWithThisPhoto.length} carrinho(s)`);
+
+                            for (const cart of cartsWithThisPhoto) {
+                                // Contar quantos desta foto estão no carrinho (geralmente 1)
+                                const countBeforeRemoval = cart.items.filter(item =>
+                                    item.fileName === `${photoNumber}.webp`
+                                ).length;
+
+                                // Remover a foto
+                                await Cart.updateOne(
+                                    { _id: cart._id },
+                                    {
+                                        $pull: { items: { fileName: `${photoNumber}.webp` } },
+                                        $inc: { totalItems: -countBeforeRemoval }
+                                    }
+                                );
+
+                                console.log(`[CDE Sync] ✅ Removida foto ${photoNumber} do carrinho ${cart.clientCode} (${cart.clientName})`);
+                            }
+                        }
+                    } catch (cartCleanupError) {
+                        console.error(`[CDE Sync] Erro ao limpar carrinhos para foto ${photoNumber}:`, cartCleanupError.message);
+                        // Não interromper o sync por causa de erro na limpeza de carrinho
+                    }
                 }
 
                 const result = await collection.updateOne(
