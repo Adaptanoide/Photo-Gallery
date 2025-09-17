@@ -424,7 +424,7 @@ function logout() {
     AppState.accessCode = null;
     AppState.currentUser = null;
 
-    showNotification('Logout successful', 'success');
+    //showNotification('Logout successful', 'success');
 
     setTimeout(() => {
         window.location.href = '/';

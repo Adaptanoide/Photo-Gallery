@@ -9,16 +9,203 @@
     padding: 1rem 0;
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 9001;
     box-shadow: var(--shadow);
 }
 
 .client-luxury-header .container {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     max-width: 100%;
     padding: 6px 10px 6px 10px;
+}
+
+/* Posicionamento dos elementos do header */
+.client-header-logo {
+    margin-right: 20px;
+    /* Espaço entre logo e filtros */
+}
+
+.header-filters-dropdown {
+    margin-right: 0;
+    /* Remove margin-right auto */
+}
+
+.client-header-nav {
+    margin-left: auto;
+    /* Garante que fica na direita */
+}
+
+/* ===== BARRA DE BUSCA CENTRAL ===== */
+.search-container {
+    flex: 1;
+    max-width: 900px;
+    margin: 0px 24px 0px 0px;
+    position: relative;
+}
+
+/* Dropdown de sugestões de busca */
+.search-suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    z-index: 999;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-suggestions-dropdown.show {
+    display: block;
+}
+
+.suggestions-list {
+    padding: 5px 0;
+}
+
+.suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.suggestion-item:hover {
+    background: #f8f8f8;
+}
+
+.suggestion-item.no-results {
+    color: #999;
+    cursor: default;
+}
+
+.suggestion-item.no-results:hover {
+    background: transparent;
+}
+
+.suggestion-text strong {
+    color: #d4af37;
+    font-weight: 600;
+}
+
+.suggestion-count {
+    font-size: 0.85rem;
+    color: #999;
+    margin-left: 10px;
+}
+
+/* Esconder no mobile */
+@media (max-width: 768px) {
+    .search-suggestions-dropdown {
+        display: none !important;
+    }
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 0px 8px 8px 0px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.search-wrapper:focus-within {
+    border-color: transparent;
+    /* Cor dourada quando focado, como Amazon */
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    color: #111;
+}
+
+.search-input::placeholder {
+    color: #999;
+    font-size: 13px;
+}
+
+.search-button {
+    padding: 11px 16px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    border-radius: 0px 5px 5px 0px;
+    border: none;
+}
+
+.search-button:hover {
+    background: #ffffff;
+    /* Dourado mais escuro no hover */
+}
+
+.search-button i {
+    color: #b8941f;
+    font-size: 16px;
+}
+
+/* Dropdown de sugestões */
+.search-suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    /* Inicialmente oculto */
+    z-index: 1001;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-suggestions-dropdown.show {
+    display: block;
+}
+
+/* Para telas menores, ajustar a barra de busca */
+@media (max-width: 1200px) {
+    .search-container {
+        max-width: 550px;
+        /* Ajustado para telas médias */
+    }
+}
+
+@media (max-width: 992px) {
+    .search-container {
+        max-width: 400px;
+        /* Ajustado para telas um pouco menores */
+        margin: 0 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        display: none;
+        /* NÃO MEXER - mantém escondido no mobile */
+    }
 }
 
 /* Ajustes do header apenas para desktop */
@@ -47,7 +234,7 @@
 .client-header-logo span {
     font-size: 1.4rem;
     font-weight: 500;
-    color: #4a5568;
+    color: #ffffff;
 }
 
 /* Navigation */
@@ -153,7 +340,7 @@
     gap: 8px;
     font-size: 0.9rem;
     font-weight: 500;
-    height: 40px;
+    height: 42px;
 }
 
 .client-logout-btn:hover {
@@ -348,12 +535,34 @@
     font-size: 0.75rem;
 }
 
-/* Content container adjustments for sidebar */
+/* Layout do conteúdo principal */
 .client-page main {
-    margin-left: var(--sidebar-width);
-    margin-right: 20px;
-    padding-top: 20px;
+    margin-right: 0px;
+    padding-top: 0px;
     transition: margin-left 0.3s ease;
+}
+
+/* Desktop - sem sidebar lateral, usa toda largura */
+@media (min-width: 769px) {
+    .client-page main {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 2px;
+        padding-right: 10px;
+    }
+
+    .main .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0 20px;
+    }
+}
+
+/* Mobile - mantém comportamento original */
+@media (max-width: 768px) {
+    .client-page main {
+        margin-left: 0;
+    }
 }
 
 /* Animations */
@@ -397,8 +606,15 @@
 /* Ajuste do container do header APENAS para desktop */
 @media (min-width: 769px) {
     .client-luxury-header .container {
-        padding-left: 20px;
-        padding-right: 40px;
+        padding-left: 10px;
+        padding-right: 10px;
         /* Ajuste este valor conforme necessário */
+    }
+}
+
+/* Esconder botão de carrinho no desktop - carrinho sempre visível */
+@media (min-width: 769px) {
+    .client-cart-btn {
+        display: none !important;
     }
 }

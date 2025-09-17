@@ -691,6 +691,17 @@ window.autoApplyFilters = async function () {
                     if (type === 'black-white') {
                         return catName.includes('black') && catName.includes('white');
                     }
+                    if (type === 'brown-white') {
+                        // Procurar por "brown & white" OU "brown and white"
+                        return (catName.includes('brown & white') || catName.includes('brown and white'));
+                    }
+                    if (type === 'light tones') {
+                        return catName.includes('light tones') || catName.includes('light');
+                    }
+                    if (type === 'dark tones') {
+                        return catName.includes('dark tones') || catName.includes('dark');
+                    }
+                    // Para todos os outros, buscar exatamente como está
                     return catName.includes(type);
                 });
             });
@@ -890,7 +901,7 @@ window.applyFilters = async function () {
 }
 
 window.clearAllFilters = function () {
-    // Resetar o objeto de filtros ativos (importante para o sistema interno)
+    // Resetar o objeto de filtros ativos
     window.activeFilters = {
         type: [],
         tone: [],
@@ -898,24 +909,233 @@ window.clearAllFilters = function () {
         price: { min: null, max: null }
     };
 
-    // Desmarcar radio buttons de tipo/padrão
+    // Desmarcar radio buttons
     document.querySelectorAll('input[name="typePattern"]').forEach(rb => {
         rb.checked = false;
     });
 
-    // Desmarcar todos os checkboxes do sidebar de filtros
+    // Marcar "All Types" como selecionado
+    const allTypesRadio = document.querySelector('input[name="typePattern"][value=""]');
+    if (allTypesRadio) {
+        allTypesRadio.checked = true;
+    }
+
+    // Desmarcar checkboxes do sidebar
     document.querySelectorAll('#filterSidebar input[type="checkbox"]').forEach(checkbox => {
         checkbox.checked = false;
     });
 
-    // Limpar campos de preço se existirem
+    // Limpar campos de preço
     const priceMin = document.getElementById('priceMin');
     const priceMax = document.getElementById('priceMax');
     if (priceMin) priceMin.value = '';
     if (priceMax) priceMax.value = '';
 
+    // NOVO: Fechar o dropdown após limpar
+    const dropdown = document.getElementById('filtersDropdown');
+    const button = document.querySelector('.header-filters-btn');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
+    if (button) {
+        button.classList.remove('active');
+    }
+
     // Voltar para categorias principais
     window.showCategories();
 }
+
+// ===== SISTEMA DE BUSCA RECONSTRUÍDO COM SUGESTÕES =====
+window.handleSearchInput = function (event) {
+    const query = event.target.value.trim().toLowerCase();
+
+    if (query.length >= 2) {
+        performLiveSearch(query);
+        showSearchSuggestions(query);
+    } else if (query.length === 0) {
+        hideSearchSuggestions();
+        window.showCategories();
+    }
+}
+
+function performLiveSearch(query) {
+    console.log('🔍 Buscando por:', query);
+
+    // Buscar nos cards de categoria visíveis
+    const cards = document.querySelectorAll('.category-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const title = card.querySelector('h3')?.textContent?.toLowerCase() || '';
+        const desc = card.querySelector('p')?.textContent?.toLowerCase() || '';
+        const fullText = title + ' ' + desc;
+
+        if (fullText.includes(query)) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Se não achou nada nos cards visíveis, buscar no cache
+    if (visibleCount === 0 && window.CategoriesCache) {
+        searchInAllCategories(query);
+    }
+}
+
+async function searchInAllCategories(query) {
+    try {
+        const data = await window.CategoriesCache.fetch();
+        const categories = data.categories || [];
+
+        const results = categories.filter(cat => {
+            const name = (cat.name || '').toLowerCase();
+            const displayName = (cat.displayName || '').toLowerCase();
+            return name.includes(query) || displayName.includes(query);
+        });
+
+        if (results.length > 0) {
+            window.displayFilteredCategories(results);
+        }
+    } catch (error) {
+        console.error('Erro na busca:', error);
+    }
+}
+
+async function showSearchSuggestions(query) {
+    try {
+        const data = await window.CategoriesCache.fetch();
+        const categories = data.categories || [];
+
+        // Filtrar categorias que correspondem à busca
+        const results = categories.filter(cat => {
+            const name = (cat.name || '').toLowerCase();
+            const displayName = (cat.displayName || '').toLowerCase();
+            return name.includes(query) || displayName.includes(query);
+        }).slice(0, 10); // Limitar a 10 sugestões
+
+        // Criar ou atualizar dropdown
+        let dropdown = document.getElementById('searchSuggestionsDropdown');
+
+        if (!dropdown) {
+            const searchInput = document.getElementById('globalSearch');
+            if (!searchInput) return;
+
+            dropdown = document.createElement('div');
+            dropdown.id = 'searchSuggestionsDropdown';
+            dropdown.className = 'search-suggestions-dropdown';
+            dropdown.style.cssText = `
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                max-height: 300px;
+                overflow-y: auto;
+                z-index: 1000;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                display: none;
+            `;
+            searchInput.parentElement.style.position = 'relative';
+            searchInput.parentElement.appendChild(dropdown);
+        }
+
+        if (results.length > 0) {
+            let html = '';
+            results.forEach(cat => {
+                const displayName = cat.displayName || cat.name;
+                // Destacar o termo buscado
+                const highlighted = displayName.replace(
+                    new RegExp(`(${query})`, 'gi'),
+                    '<strong>$1</strong>'
+                );
+
+                html += `
+                    <div class="suggestion-item" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
+                         onmouseover="this.style.backgroundColor='#f5f5f5'"
+                         onmouseout="this.style.backgroundColor='white'"
+                         onclick="selectSuggestion('${(cat.driveId || cat.id).replace(/'/g, "\\'")}', '${displayName.replace(/'/g, "\\'")}')">
+                        <div>${highlighted}</div>
+                        <small style="color: #666;">${cat.photoCount || 0} photos</small>
+                    </div>
+                `;
+            });
+
+            dropdown.innerHTML = html;
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.innerHTML = `
+                <div style="padding: 10px; color: #666;">
+                    No results for "${query}"
+                </div>
+            `;
+            dropdown.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error('Erro ao mostrar sugestões:', error);
+    }
+}
+
+function hideSearchSuggestions() {
+    const dropdown = document.getElementById('searchSuggestionsDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+}
+
+window.selectSuggestion = function (categoryId, categoryName) {
+    hideSearchSuggestions();
+
+    // Navegar direto para a categoria selecionada
+    if (categoryName.includes(' → ')) {
+        const parts = categoryName.split(' → ');
+        window.navigationState.currentPath = parts.map((part, index) => ({
+            id: index === 0 ? categoryId.split('/')[0] : categoryId,
+            name: part.trim()
+        }));
+    } else {
+        window.navigationState.currentPath = [{ id: categoryId, name: categoryName }];
+    }
+
+    window.navigationState.currentFolderId = categoryId;
+    window.updateBreadcrumb();
+    window.loadFolderContents(categoryId);
+}
+
+window.executeGlobalSearch = function () {
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) return;
+
+    const query = searchInput.value.trim().toLowerCase();
+    if (query.length >= 2) {
+        performLiveSearch(query);
+    }
+}
+
+// Conectar ao campo de busca quando a página carregar
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearchInput);
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                hideSearchSuggestions();
+                executeGlobalSearch();
+            }
+        });
+
+        // Esconder sugestões ao clicar fora
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('#globalSearch') && !e.target.closest('#searchSuggestionsDropdown')) {
+                hideSearchSuggestions();
+            }
+        });
+    }
+});
 
 console.log('🛍️ client-commerce.js carregado - Módulo comercial pronto');

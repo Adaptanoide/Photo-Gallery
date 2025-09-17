@@ -667,15 +667,15 @@ window.showSubfolders = function (folders) {
         // NOVO - Verificar se tem thumbnail
         const thumbnail = null; // DESATIVADO - Remover fotos sample dos cards
 
-    // Cards sempre sem thumbnail - formato limpo
-    return `
+        // Cards sempre sem thumbnail - formato limpo
+        return `
         <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
             <h4>${folder.name}</h4>
             <div class="folder-description">${description}</div>
             <div class="folder-stats">
                 ${shouldShowPrices() && formattedPrice ?
-                    `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
-                    (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
+                `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
+                (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
             </div>
         </div>
     `;
@@ -866,6 +866,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup keyboard se necessário
     if (window.setupKeyboardNavigation) {
         window.setupKeyboardNavigation();
+    }
+});
+
+// ===== DROPDOWN DE FILTROS NO HEADER (APENAS DESKTOP) =====
+window.toggleFiltersDropdown = function () {
+    // Só funciona no desktop - proteção dupla
+    if (window.innerWidth <= 768) return;
+
+    const dropdown = document.getElementById('filtersDropdown');
+    const button = document.querySelector('.header-filters-btn');
+
+    if (!dropdown || !button) return;
+
+    // Toggle do dropdown
+    const isOpen = dropdown.classList.contains('show');
+
+    if (isOpen) {
+        dropdown.classList.remove('show');
+        button.classList.remove('active');
+    } else {
+        dropdown.classList.add('show');
+        button.classList.add('active');
+    }
+}
+
+// Fechar dropdown quando clicar fora
+document.addEventListener('click', function (event) {
+    // Só no desktop
+    if (window.innerWidth <= 768) return;
+
+    const dropdown = document.getElementById('filtersDropdown');
+    const button = document.querySelector('.header-filters-btn');
+
+    if (!dropdown || !button) return;
+
+    // Se clicou fora do dropdown e do botão
+    if (!event.target.closest('.header-filters-dropdown')) {
+        dropdown.classList.remove('show');
+        button.classList.remove('active');
     }
 });
 

@@ -39,12 +39,120 @@
     <header class="client-luxury-header">
         <div class="container">
             <div class="client-header-logo" onclick="navigateToRoot()">
-                <img src="/images/logo-small.png" alt="Sunshine Cowhides" class="header-logo-img">
+                <img src="/images/logo-transparent.png" alt="Sunshine Cowhides" class="header-logo-img">
                 <span>Sunshine Cowhides - Gallery</span>
+            </div>
+            <!-- DROPDOWN DE FILTROS NO HEADER (APENAS DESKTOP) -->
+            <div class="header-filters-dropdown">
+                <button class="header-filters-btn" onclick="toggleFiltersDropdown()">
+                    <i class="fas fa-filter"></i>
+                    <span>Filters</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+
+                <div id="filtersDropdown" class="filters-dropdown-content">
+                    <div class="dropdown-section">
+                        <h4>Type/Pattern</h4>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="" checked onchange="applyFilters()">
+                            <span>All Types</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="black-white" onchange="applyFilters()">
+                            <span>Black & White</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="brindle" onchange="applyFilters()">
+                            <span>Brindle</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="brindle grey" onchange="applyFilters()">
+                            <span>Brindle Grey</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="brindle white backbone"
+                                onchange="applyFilters()">
+                            <span>Brindle White Backbone</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="brindle white belly"
+                                onchange="applyFilters()">
+                            <span>Brindle White Belly</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="brown-white" onchange="applyFilters()">
+                            <span>Brown & White</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="champagne" onchange="applyFilters()">
+                            <span>Champagne</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="dark tones" onchange="applyFilters()">
+                            <span>Dark Tones</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="exotic" onchange="applyFilters()">
+                            <span>Exotic</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="grey beige" onchange="applyFilters()">
+                            <span>Grey Beige</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="hereford" onchange="applyFilters()">
+                            <span>Hereford</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="light tones" onchange="applyFilters()">
+                            <span>Light Tones</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="natural white" onchange="applyFilters()">
+                            <span>Natural White</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="palomino" onchange="applyFilters()">
+                            <span>Palomino</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="salt-pepper" onchange="applyFilters()">
+                            <span>Salt & Pepper</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="taupe" onchange="applyFilters()">
+                            <span>Taupe</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="radio" name="typePattern" value="tricolor" onchange="applyFilters()">
+                            <span>Tricolor</span>
+                        </label>
+                    </div>
+                    <div class="dropdown-actions">
+                        <button onclick="clearAllFilters()" class="btn-clear-dropdown">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- BARRA DE BUSCA CENTRAL -->
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <input type="text" id="globalSearch" class="search-input"
+                        placeholder="Search products, categories, or patterns..." autocomplete="off">
+                    <button class="search-button" onclick="executeGlobalSearch()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+
+                <!-- Dropdown de sugestões (inicialmente oculto) -->
+                <div class="search-suggestions-dropdown" id="searchSuggestionsDropdown">
+                    <!-- As sugestões vão aparecer aqui dinamicamente -->
+                </div>
             </div>
             <nav class="client-header-nav">
                 <span id="headerWelcome"
-                    style="margin-right: 20px; color: #666; font-size: 14px; font-weight: 500;">Welcome!</span>
+                    style="margin-right: 20px; color: #ffffff; font-size: 14px; font-weight: 500;">Welcome!</span>
 
                 <!-- Botão de Filtros (só mobile) -->
                 <button onclick="toggleFilters()" class="mobile-filter-btn">
@@ -324,8 +432,8 @@
             <!-- Header do Carrinho -->
             <div class="cart-header">
                 <h3>
-                    <i class="fas fa-shopping-cart"></i>
                     <span>My Cart</span>
+                    <span id="cartHeaderBadge" class="cart-header-badge">0</span>
                 </h3>
                 <!-- Botão X ORIGINAL -->
                 <button class="cart-close" onclick="closeCartSidebar()">

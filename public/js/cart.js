@@ -130,6 +130,7 @@ window.CartSystem = {
 
             // Contadores
             badge: document.getElementById('headerCartBadge'),
+            cartBadge: document.getElementById('cartHeaderBadge'),
             itemCount: document.getElementById('cartItemCount'),
             timer: document.getElementById('cartTimer'),
 
@@ -400,6 +401,12 @@ window.CartSystem = {
      * Fechar sidebar do carrinho
      */
     closeSidebar() {
+        // Não fechar no desktop - carrinho permanece sempre visível
+        if (window.innerWidth > 768) {
+            return; // Sai da função sem fazer nada no desktop
+        }
+
+        // Código original continua para mobile/tablet
         if (this.elements.sidebar) {
             this.elements.sidebar.classList.remove('active');
             document.body.style.overflow = ''; // Restaurar scroll
@@ -428,11 +435,18 @@ window.CartSystem = {
      * Atualizar badge de contador
      */
     updateBadge() {
+        // Atualizar badge do header principal (mobile)
         if (this.elements.badge) {
             this.elements.badge.textContent = this.state.totalItems;
             this.elements.badge.classList.toggle('hidden', this.state.totalItems === 0);
         }
 
+        // Atualizar badge do carrinho fixo (desktop)
+        if (this.elements.cartBadge) {
+            this.elements.cartBadge.textContent = this.state.totalItems;
+        }
+
+        // Atualizar contador de texto
         if (this.elements.itemCount) {
             const text = this.state.totalItems === 0 ? 'Empty cart' :
                 this.state.totalItems === 1 ? '1 item' :
@@ -818,13 +832,12 @@ window.CartSystem = {
 
         html = `
             <div style="
-                background: #b8941f;
-                color: white;
-                padding: 12px;
-                border-radius: 8px;
-                margin: 0 15px 15px 15px;
+                background: #f5e9c1;
+                color: #4b4747;
+                padding: 4px;
+                border-radius: 100px;
                 text-align: center;
-                font-weight: 600;
+                font-weight: 400;
                 font-size: 15px;
             ">
                 Special pricing available for 12+ photos
@@ -1358,19 +1371,19 @@ window.toggleCartItem = async function () {
         } else {
             // =============== CORREÇÃO DO BUG AQUI ===============
             console.log('🟡 Adicionando item ao carrinho');
-            
+
             // Buscar dados da foto atual
             const photos = window.navigationState.currentPhotos;
             const photoIndex = window.navigationState.currentPhotoIndex;
             const photo = photos[photoIndex];
-            
+
             if (!photo) {
                 throw new Error('Photo data not found');
             }
-            
+
             // Buscar preço da categoria
             let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
-            
+
             // Verificar se tem customPrice (Special Selection)
             if (photo.customPrice) {
                 priceInfo = {
@@ -1387,13 +1400,13 @@ window.toggleCartItem = async function () {
                     console.warn('Erro ao buscar preço:', error);
                 }
             }
-            
+
             // Montar dados completos do item
             const itemData = {
                 fileName: photo.name || photo.fileName || 'Unnamed product',
-                category: window.navigationState?.currentCategoryName || 
-                         window.getCurrentCategoryDisplayName() || 
-                         'Category',
+                category: window.navigationState?.currentCategoryName ||
+                    window.getCurrentCategoryDisplayName() ||
+                    'Category',
                 thumbnailUrl: ImageUtils.getThumbnailUrl(photo),
                 pathLevels: window.navigationState?.currentPath?.map(p => p.name) || [],
                 fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || '',
@@ -1402,12 +1415,12 @@ window.toggleCartItem = async function () {
                 formattedPrice: priceInfo.formattedPrice || 'No price',
                 hasPrice: priceInfo.hasPrice || false
             };
-            
+
             console.log('📦 Dados do item montados:', itemData);
-            
+
             // Adicionar ao carrinho COM OS DADOS COMPLETOS
             await CartSystem.addItem(currentPhoto, itemData);
-            
+
             // Sincronizar thumbnails após adicionar
             setTimeout(() => {
                 if (window.syncThumbnailButtons) {

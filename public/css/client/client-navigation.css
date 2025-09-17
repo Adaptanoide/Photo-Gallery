@@ -63,7 +63,6 @@
     white-space: nowrap;
     min-width: 0;
     flex-shrink: 0;
-    border: 1px solid #d4af37;
     margin-left: 10px;
 }
 
@@ -299,12 +298,12 @@
 }
 
 /* Spacing adjustments */
-.breadcrumb-container + .back-navigation {
+.breadcrumb-container+.back-navigation {
     margin-top: -0.5rem;
     margin-bottom: 1.5rem;
 }
 
-.client-header + .breadcrumb-container {
+.client-header+.breadcrumb-container {
     margin-top: -0.5rem;
 }
 
@@ -318,24 +317,29 @@
 /* Ajustes específicos para desktop */
 @media (min-width: 769px) {
     .filter-sidebar {
-        margin-top: 13px;  /* Espaço no topo APENAS no desktop */
+        margin-top: 13px;
+        /* Espaço no topo APENAS no desktop */
     }
-    
+
     .btn-clear-filters {
-        margin-right: 0;  /* Sem margin-right no desktop */
+        margin-right: 0;
+        /* Sem margin-right no desktop */
     }
 }
 
 /* Ajustes do filter header apenas para desktop */
 @media (min-width: 769px) {
     .filter-header {
-        padding: 15px 20px;  /* Reduz padding vertical de 15px para 10px */
-        margin-top: -15px;    /* Remove gap superior se houver */
+        padding: 15px 20px;
+        /* Reduz padding vertical de 15px para 10px */
+        margin-top: -15px;
+        /* Remove gap superior se houver */
     }
-    
+
     /* Se precisar ajustar o container do sidebar também */
     .filter-sidebar {
-        padding-top: 0;      /* Remove padding top se houver */
+        padding-top: 0;
+        /* Remove padding top se houver */
     }
 }
 
@@ -347,4 +351,205 @@
     display: inline-block;
     font-size: 19px;
     font-weight: bold;
+}
+
+/* ===== DROPDOWN DE FILTROS NO HEADER (APENAS DESKTOP) ===== */
+@media (min-width: 769px) {
+    .header-filters-dropdown {
+        position: relative;
+        margin-left: 30px;
+    }
+
+    .header-filters-btn {
+        background: #ffffff;
+        border: 1px solid #ffffff;
+        color: #b8941f;
+        padding: 10px 20px;
+        border-radius: 8px 0px 0px 8px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        height: 40px;
+    }
+
+    .header-filters-btn:hover {
+        background: var(--gold-primary);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+
+    .header-filters-btn.active {
+        background: var(--gold-primary);
+        color: white;
+    }
+
+    .dropdown-arrow {
+        transition: transform 0.3s ease;
+        font-size: 0.8rem;
+    }
+
+    .header-filters-btn.active .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    /* Remove TODOS os efeitos laranjas ao clicar/focar */
+    .header-filters-btn:focus,
+    .header-filters-btn:active,
+    .header-filters-btn:focus-visible,
+    .header-filters-btn:focus-within {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #d4af37 !important;
+    }
+
+    /* Mantém apenas a borda dourada normal, sem efeitos extras */
+    .header-filters-btn:active {
+        transform: translateY(0) !important;
+        background: white !important;
+        color: #d4af37 !important;
+    }
+
+    .filters-dropdown-content {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        width: 280px;
+        max-height: 500px;
+        z-index: 10001;
+        display: none;
+        /* NOVO: Estrutura flex para fixar footer */
+        flex-direction: column;
+    }
+
+    .filters-dropdown-content.show {
+        display: flex;
+    }
+
+    .dropdown-section {
+        padding: 20px;
+        /* NOVO: Permitir scroll apenas no conteúdo */
+        overflow-y: auto;
+        max-height: 380px;
+        flex: 1;
+        border-bottom: none;
+    }
+
+    /* NOVO: Customização do scrollbar */
+    .dropdown-section::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .dropdown-section::-webkit-scrollbar-track {
+        background: #f5f5f5;
+        border-radius: 4px;
+    }
+
+    .dropdown-section::-webkit-scrollbar-thumb {
+        background: #c4882b;
+        border-radius: 4px;
+    }
+
+    .dropdown-section::-webkit-scrollbar-thumb:hover {
+        background: #a87424;
+    }
+
+    /* Firefox scrollbar */
+    .dropdown-section {
+        scrollbar-width: thin;
+        scrollbar-color: #c4882b #f5f5f5;
+    }
+
+    .dropdown-section h4 {
+        margin: 0 0 15px 0;
+        color: #333;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .dropdown-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        margin: 5px 0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .dropdown-checkbox:hover {
+        background: #f8f9fa;
+    }
+
+    .dropdown-checkbox input {
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+    .dropdown-checkbox span {
+        color: #555;
+        font-size: 0.95rem;
+    }
+
+    .dropdown-actions {
+        position: sticky;
+        bottom: 0;
+        padding: 15px 20px;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        border-top: 1px solid #e0e0e0;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-clear-dropdown {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: white;
+        color: #666;
+        border: 1px solid #ddd;
+    }
+
+    .btn-clear-dropdown:hover {
+        background: #f0f0f0;
+    }
+}
+
+/* Esconder dropdown no mobile completamente */
+@media (max-width: 768px) {
+    .header-filters-dropdown {
+        display: none !important;
+    }
+}
+
+/* ===== ESCONDER SIDEBAR LATERAL NO DESKTOP (mantém no mobile) ===== */
+@media (min-width: 769px) {
+    .filter-sidebar {
+        display: none !important;
+    }
+
+    /* Ajustar margem do conteúdo principal já que não tem mais sidebar */
+    .main .container {
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+    }
 }

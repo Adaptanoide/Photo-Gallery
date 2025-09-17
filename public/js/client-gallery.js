@@ -139,9 +139,48 @@
             window.virtualGallery.destroy();
         }
 
-        document.getElementById('photosContainer').style.display = 'block';
-        document.getElementById('breadcrumbContainer').style.display = 'block';
+        // Verificar se o photosContainer existe, se não, precisamos recriá-lo
+        let photosContainer = document.getElementById('photosContainer');
+        if (!photosContainer) {
+            // Container não existe, vamos criá-lo com toda a estrutura necessária
+            const mainArea = document.querySelector('.gallery-content') ||
+                document.querySelector('.container') ||
+                document.querySelector('main');
 
+            if (mainArea) {
+                photosContainer = document.createElement('div');
+                photosContainer.id = 'photosContainer';
+                photosContainer.className = 'photos-container';
+
+                // Criar toda a estrutura interna que o código espera encontrar
+                photosContainer.innerHTML = `
+                    <div class="gallery-header">
+                        <h2 id="galleryTitle"></h2>
+                        <div id="photosCount"></div>
+                    </div>
+                    <div id="mobileInfoBar" class="mobile-info-bar" style="display: none;">
+                        <span id="infoPriceBadge" class="category-price-badge"></span>
+                        <span id="infoPhotoCount" class="photo-count"></span>
+                    </div>
+                    <div id="photosLoading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Loading photos...</span>
+                    </div>
+                    <div id="photosGrid" class="photos-grid"></div>
+                `;
+
+                mainArea.appendChild(photosContainer);
+            }
+        }
+
+        // Agora podemos mostrar com segurança
+        photosContainer.style.display = 'block';
+
+        // Fazer o mesmo para breadcrumb
+        const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+        if (breadcrumbContainer) {
+            breadcrumbContainer.style.display = 'block';
+        }
         // Iniciar polling
         if (!window.statusCheckInterval) {
             console.log('🔄 Iniciando polling de status');
@@ -152,14 +191,17 @@
         const galleryTitle = document.getElementById('galleryTitle');
         const customPrice = photos[0]?.customPrice;
 
-        if (!shouldShowPrices()) {
-            galleryTitle.innerHTML = `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
-        } else if (customPrice) {
-            galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">$${parseFloat(customPrice).toFixed(2)}</span>`;
-        } else if (categoryPrice && categoryPrice.hasPrice) {
-            galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${categoryPrice.formattedPrice}</span>`;
-        } else {
-            galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
+        // VERIFICAR SE O ELEMENTO EXISTE ANTES DE USAR
+        if (galleryTitle) {
+            if (!shouldShowPrices()) {
+                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
+            } else if (customPrice) {
+                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">$${parseFloat(customPrice).toFixed(2)}</span>`;
+            } else if (categoryPrice && categoryPrice.hasPrice) {
+                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${categoryPrice.formattedPrice}</span>`;
+            } else {
+                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
+            }
         }
 
         // Popular mobile info bar

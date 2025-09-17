@@ -45,12 +45,14 @@
 /* Cart header */
 .cart-header {
     position: relative;
-    padding: 15px 20px;
-    background: var(--gold-primary);
+    padding: 8px 16px;
     color: white;
     border-bottom: 2px solid var(--gold-dark);
     display: flex;
     align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 12px;
 }
 
 .cart-header h3 {
@@ -62,18 +64,39 @@
     color: white;
 }
 
+/* Badge no header do carrinho */
+.cart-header-badge {
+    background: #b8941f;
+    color: white;
+    font-size: 14px;
+    padding: 2px 9px;
+    border-radius: 18px;
+    font-weight: bold;
+    margin-left: 10px;
+    min-width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* Esconder no mobile - no mobile usa o badge do header principal */
+@media (max-width: 768px) {
+    .cart-header-badge {
+        display: none !important;
+    }
+}
+
 /* Cart close button */
 .cart-close {
     position: absolute;
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: white;
+    background: #d4af37;
     border: none;
-    color: var(--gold-primary);
+    color: #ffffff;
     font-size: 1.2rem;
     cursor: pointer;
     display: flex;
@@ -93,8 +116,33 @@
 .cart-content {
     flex: 1;
     overflow-y: auto;
-    padding: 1.5rem;
+    padding: 16px;
     background: var(--luxury-medium);
+}
+
+/* Customização do scrollbar do carrinho */
+.cart-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cart-content::-webkit-scrollbar-track {
+    background: #c2c1c1;
+    border-radius: 4px;
+}
+
+.cart-content::-webkit-scrollbar-thumb {
+    background: #c4882b;
+    border-radius: 4px;
+}
+
+.cart-content::-webkit-scrollbar-thumb:hover {
+    background: #a87424;
+}
+
+/* Firefox scrollbar */
+.cart-content {
+    scrollbar-width: thin;
+    scrollbar-color: #c4882b #ececec;
 }
 
 /* Cart loading */
@@ -139,9 +187,8 @@
 .cart-item {
     display: flex;
     gap: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--border-radius);
+    padding: 12px 0px 6px 0px;
+    border-bottom: 1px solid var(--border-subtle);
     background: var(--luxury-dark);
     transition: var(--transition);
 }
@@ -396,7 +443,7 @@
 }
 
 .review-summary-link a {
-    color: var(--gold-primary);
+    color: #777777;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
@@ -527,4 +574,59 @@
     border-radius: 20px;
     font-size: 0.9em;
     display: inline-block;
+}
+
+/* ===== CARRINHO FIXO NO DESKTOP ===== */
+@media (min-width: 769px) {
+
+    /* Carrinho sempre visível no desktop */
+    .cart-sidebar {
+        display: flex !important;
+        width: 380px !important;
+        top: 70px !important;
+        /* ADICIONE - começa abaixo do header */
+        height: calc(100vh - 76px) !important;
+        /* ADICIONE - altura ajustada */
+        z-index: 9000 !important;
+    }
+
+    .cart-sidebar {
+        z-index: 9000 !important;
+        /* Menor que o modal (10000) */
+    }
+
+    .cart-close {
+        display: none !important;
+    }
+
+
+    .main {
+        width: calc(100% - 380px) !important;
+    }
+
+    /* Remove o overlay escuro no desktop */
+    .cart-overlay {
+        display: none !important;
+    }
+
+    /* Ajusta o container do carrinho */
+    .cart-container {
+        max-width: 380px;
+        /* Reduzido de 450px */
+        animation: none;
+        /* Remove animação de slide */
+    }
+}
+
+/* Mobile continua igual */
+@media (max-width: 768px) {
+
+    /* Mantém comportamento original no mobile */
+    .cart-sidebar {
+        display: none;
+    }
+
+    .cart-sidebar.active {
+        display: flex;
+    }
 }

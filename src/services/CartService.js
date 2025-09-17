@@ -561,7 +561,7 @@ class CartService {
                 const fotosParaLiberar = await UnifiedProductComplete.find({
                     status: 'available',
                     cdeStatus: 'PRE-SELECTED'
-                }).limit(10);
+                });
 
                 console.log(`   📡 Encontradas ${fotosParaLiberar.length} fotos para liberar no CDE`);
 
