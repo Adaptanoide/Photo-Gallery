@@ -943,6 +943,7 @@
         // Função de verificação extraída para reutilizar
         const checkStatus = async () => {
             try {
+                // PARTE 1: Verificação de status das fotos (código original)
                 const response = await fetch('/api/gallery/status-updates');
                 const data = await response.json();
 
@@ -1047,6 +1048,118 @@
                         console.log(`[Status Update] ${data.changes.length} fotos atualizadas`);
                     }
                 }
+
+                // PARTE 2: NOVA VERIFICAÇÃO DO CARRINHO
+                // Esta é a parte nova que resolve o problema de sincronização
+                const savedSession = localStorage.getItem('sunshineSession');
+                if (savedSession && window.CartSystem) {
+                    const session = JSON.parse(savedSession);
+                    const clientCode = session.accessCode || session.user?.code;
+
+                    if (clientCode && session.token) {
+                        // Buscar estado atual do carrinho no servidor
+                        const cartResponse = await fetch(`/api/cart/status/${clientCode}`, {
+                            headers: {
+                                'Authorization': `Bearer ${session.token}`
+                            }
+                        });
+
+                        if (cartResponse.ok) {
+                            const serverCart = await cartResponse.json();
+
+                            // Comparar com o estado local
+                            if (window.CartSystem.state) {
+                                const localItems = window.CartSystem.state.items || [];
+                                const serverItems = serverCart.items || [];
+                                const localCount = localItems.length;
+                                const serverCount = serverItems.length;
+
+                                // Se houver diferença, recarregar o carrinho
+                                if (localCount !== serverCount) {
+                                    console.log(`[Cart Sync] Detectada mudança no carrinho: Local=${localCount}, Server=${serverCount}`);
+
+                                    // Identificar itens removidos
+                                    const removedItems = localItems.filter(localItem => {
+                                        return !serverItems.some(serverItem =>
+                                            serverItem.fileName === localItem.fileName
+                                        );
+                                    });
+
+                                    // Recarregar o carrinho do servidor
+                                    if (window.CartSystem && window.CartSystem.loadCart) {
+                                        console.log('[Cart Sync] Recarregando carrinho do servidor...');
+                                        await window.CartSystem.loadCart();
+
+                                        // Aguardar um momento para garantir que o estado foi atualizado
+                                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                                        // Reconstruir completamente a interface
+                                        if (window.CartSystem.rebuildCartInterface) {
+                                            console.log('[Cart Sync] Chamando rebuildCartInterface...');
+                                            window.CartSystem.rebuildCartInterface();
+                                        } else {
+                                            console.log('[Cart Sync] Método rebuildCartInterface não encontrado, fazendo atualização manual...');
+
+                                            // Fallback manual se o método não existir
+                                            const cartBadge = document.querySelector('.cart-badge');
+                                            const headerBadge = document.getElementById('headerCartBadge');
+                                            const cartItemCount = document.getElementById('cartItemCount');
+                                            const cartEmpty = document.getElementById('cartEmpty');
+                                            const cartItems = document.getElementById('cartItems');
+                                            const cartFooter = document.getElementById('cartFooter');
+
+                                            // Atualizar badges
+                                            if (cartBadge) {
+                                                cartBadge.textContent = serverCount;
+                                                cartBadge.style.display = serverCount > 0 ? 'flex' : 'none';
+                                            }
+
+                                            if (headerBadge) {
+                                                headerBadge.textContent = serverCount;
+                                                headerBadge.classList.toggle('hidden', serverCount === 0);
+                                            }
+
+                                            // Se carrinho ficou vazio
+                                            if (serverCount === 0) {
+                                                if (cartItemCount) {
+                                                    cartItemCount.textContent = 'Empty cart';
+                                                }
+
+                                                if (cartItems) {
+                                                    cartItems.innerHTML = '';
+                                                    cartItems.style.display = 'none';
+                                                }
+
+                                                if (cartEmpty) {
+                                                    cartEmpty.style.display = 'block';
+                                                    cartEmpty.innerHTML = `
+                    <div class="empty-cart-message">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>Your cart is empty</p>
+                        <small>Add leathers to begin your selection</small>
+                    </div>
+                `;
+                                                }
+
+                                                if (cartFooter) {
+                                                    cartFooter.style.display = 'none';
+                                                }
+                                            }
+                                        }
+
+                                        // Atualizar botões das thumbnails
+                                        if (window.syncThumbnailButtons) {
+                                            window.syncThumbnailButtons();
+                                        }
+
+                                        console.log('[Cart Sync] Interface atualizada com sucesso');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
             } catch (error) {
                 console.error('Erro ao verificar status:', error);
             }
@@ -1054,13 +1167,13 @@
 
         // PRIMEIRA VERIFICAÇÃO RÁPIDA - em 3 segundos (uma única vez)
         setTimeout(() => {
-            console.log('⚡ Primeira verificação rápida (3s)');
+            console.log('Primeira verificação rápida (3s)');
             checkStatus();
         }, 3000);
 
         // VERIFICAÇÕES REGULARES - a cada 10 segundos
         window.statusCheckInterval = setInterval(() => {
-            console.log('🔄 Verificação regular (10s)');
+            console.log('Verificação regular (10s)');
             checkStatus();
         }, 10000);
     }

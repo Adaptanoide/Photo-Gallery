@@ -1,279 +1,294 @@
 // src/services/CDEWriter.js
+// VERSÃO SIMPLIFICADA - Operações diretas no CDE sem complexidade
+
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 class CDEWriter {
-    constructor() {
-        this.config = {
+    /**
+     * Obter conexão com o CDE
+     * Simples e direto - se falhar, deixa o erro subir
+     */
+    static async getConnection() {
+        return await mysql.createConnection({
             host: process.env.CDE_HOST,
             port: process.env.CDE_PORT,
             user: process.env.CDE_USER,
             password: process.env.CDE_PASSWORD,
             database: process.env.CDE_DATABASE
-        };
-
-        // MODO SIMULAÇÃO - false = ativo
-        this.simulationMode = false;
-
-        // Fila para retry se CDE estiver offline
-        this.retryQueue = [];
-
-        // Processar fila a cada 5 minutos
-        setInterval(() => this.processRetryQueue(), 5 * 60 * 1000);
+        });
     }
 
-    // Método auxiliar para conectar
-    async getConnection() {
-        try {
-            return await mysql.createConnection(this.config);
-        } catch (error) {
-            console.error('[CDEWriter] Erro ao conectar:', error.message);
-            return null;
-        }
-    }
-
-    // 1. QUANDO CLIENTE ADICIONA AO CARRINHO
-    async markAsReserved(photoNumber, idhCode, clientCode, sessionId, clientName = 'Client') {        // MODO SIMULAÇÃO
-        if (this.simulationMode) {
-            console.log(`\n[CDEWriter - SIMULAÇÃO] Reservaria foto ${photoNumber}`);
-            console.log(`  Cliente: ${clientCode}`);
-            console.log(`  Session: ${sessionId}`);
-            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'PRE-SELECTED', RESERVEDUSU = 'SUNSHINE-${clientCode}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
-            return true;
-        }
-
-        const connection = await this.getConnection();
-        if (!connection) {
-            // Adicionar à fila para retry
-            this.retryQueue.push({
-                action: 'reserve',
-                data: { photoNumber, idhCode, clientCode, sessionId },
-                timestamp: new Date()
-            });
-            return false;
-        }
+    /**
+     * MARCAR COMO PRE-SELECTED (quando adiciona ao carrinho)
+     * Operação síncrona e direta
+     */
+    static async markAsReserved(photoNumber, clientCode, clientName = 'Client') {
+        let connection = null;
 
         try {
-            console.log(`[CDEWriter] Marcando ${photoNumber} como PRE-SELECTED para cliente ${clientCode}`);
+            connection = await this.getConnection();
 
-            // IMPORTANTE: Agora muda AESTADOP para RESERVED e usa RESERVEDUSU
-            const query = `
-                UPDATE tbinventario 
-                SET AESTADOP = 'PRE-SELECTED',
-                    RESERVEDUSU = ?,
-                    AFECHA = NOW()
-                WHERE ATIPOETIQUETA = ?
-                AND AESTADOP = 'INGRESADO'
-            `;
-
-            const reserveInfo = `${clientName}-${clientCode}`;
+            console.log(`[CDE] Reservando foto ${photoNumber} para ${clientCode}`);
 
             const [result] = await connection.execute(
-                query,
-                [reserveInfo, photoNumber]
+                `UPDATE tbinventario 
+                 SET AESTADOP = 'PRE-SELECTED',
+                     RESERVEDUSU = ?,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA = ?
+                 AND AESTADOP = 'INGRESADO'`,
+                [`${clientName}-${clientCode}`, photoNumber]
             );
 
             if (result.affectedRows > 0) {
-                console.log(`[CDEWriter] ✅ Foto ${photoNumber} reservada no CDE`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} reservada com sucesso`);
                 return true;
             } else {
-                console.log(`[CDEWriter] ⚠️ Foto ${photoNumber} não atualizada - pode já estar reservada`);
+                console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível`);
                 return false;
             }
 
         } catch (error) {
-            console.error(`[CDEWriter] Erro ao reservar ${photoNumber}:`, error.message);
-
-            // Adicionar à fila para retry
-            this.retryQueue.push({
-                action: 'reserve',
-                data: { photoNumber, idhCode, clientCode, sessionId },
-                timestamp: new Date()
-            });
-
-            return false;
+            console.error(`[CDE] ❌ Erro ao reservar ${photoNumber}:`, error.message);
+            throw error;
         } finally {
             if (connection) await connection.end();
         }
     }
 
-    // 2. QUANDO CLIENTE REMOVE DO CARRINHO
-    async markAsAvailable(photoNumber, idhCode) {
-        // MODO SIMULAÇÃO
-        if (this.simulationMode) {
-            console.log(`\n[CDEWriter - SIMULAÇÃO] Liberaria foto ${photoNumber}`);
-            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'INGRESADO', RESERVEDUSU = NULL WHERE ATIPOETIQUETA = '${photoNumber}'`);
-            return true;
-        }
-
-        const connection = await this.getConnection();
-        if (!connection) {
-            this.retryQueue.push({
-                action: 'release',
-                data: { photoNumber, idhCode },
-                timestamp: new Date()
-            });
-            return false;
-        }
+    /**
+     * MARCAR COMO INGRESADO (quando remove do carrinho ou expira)
+     * Operação síncrona e direta
+     */
+    static async markAsAvailable(photoNumber) {
+        let connection = null;
 
         try {
-            console.log(`[CDEWriter] Liberando ${photoNumber}`);
+            connection = await this.getConnection();
 
-            // IMPORTANTE: Volta AESTADOP para INGRESADO e limpa RESERVEDUSU
-            const query = `
-                UPDATE tbinventario 
-                SET AESTADOP = 'INGRESADO',
-                    RESERVEDUSU = NULL,
-                    AFECHA = NOW()
-                WHERE ATIPOETIQUETA = ?
-                AND AESTADOP IN ('PRE-SELECTED', 'RESERVED')
-                AND RESERVEDUSU IS NOT NULL
-            `;
+            console.log(`[CDE] Liberando foto ${photoNumber}`);
 
             const [result] = await connection.execute(
-                query,
+                `UPDATE tbinventario 
+                 SET AESTADOP = 'INGRESADO',
+                     RESERVEDUSU = NULL,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA = ?
+                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED')`,
                 [photoNumber]
             );
 
             if (result.affectedRows > 0) {
-                console.log(`[CDEWriter] ✅ Foto ${photoNumber} liberada no CDE`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} liberada com sucesso`);
                 return true;
+            } else {
+                console.log(`[CDE] ⚠️ Foto ${photoNumber} já estava liberada`);
+                return false;
             }
 
-            return false;
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro ao liberar ${photoNumber}:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * Método alternativo para liberarFoto (compatibilidade)
+     */
+    static async liberarFoto(photoNumber) {
+        return this.markAsAvailable(photoNumber);
+    }
+
+    /**
+     * VERIFICAR STATUS ATUAL NO CDE
+     * Consulta direta e síncrona
+     */
+    static async checkStatus(photoNumber) {
+        let connection = null;
+
+        try {
+            connection = await this.getConnection();
+
+            const [rows] = await connection.execute(
+                `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA 
+                 FROM tbinventario 
+                 WHERE ATIPOETIQUETA = ?`,
+                [photoNumber]
+            );
+
+            if (rows.length > 0) {
+                return {
+                    photoNumber: rows[0].ATIPOETIQUETA,
+                    status: rows[0].AESTADOP,
+                    reservedBy: rows[0].RESERVEDUSU,
+                    lastUpdate: rows[0].AFECHA
+                };
+            }
+
+            return null;
 
         } catch (error) {
-            console.error(`[CDEWriter] Erro ao liberar ${photoNumber}:`, error.message);
+            console.error(`[CDE] ❌ Erro ao verificar status:`, error.message);
+            return null;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
 
-            this.retryQueue.push({
-                action: 'release',
-                data: { photoNumber, idhCode },
-                timestamp: new Date()
-            });
+    /**
+     * VERIFICAR MÚLTIPLAS FOTOS DE UMA VEZ
+     * Para operações em lote quando necessário
+     */
+    static async checkMultipleStatus(photoNumbers) {
+        let connection = null;
 
+        try {
+            if (!Array.isArray(photoNumbers) || photoNumbers.length === 0) {
+                return [];
+            }
+
+            connection = await this.getConnection();
+
+            const placeholders = photoNumbers.map(() => '?').join(',');
+            const [rows] = await connection.execute(
+                `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU 
+                 FROM tbinventario 
+                 WHERE ATIPOETIQUETA IN (${placeholders})`,
+                photoNumbers
+            );
+
+            return rows.map(row => ({
+                photoNumber: row.ATIPOETIQUETA,
+                status: row.AESTADOP,
+                reservedBy: row.RESERVEDUSU
+            }));
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro ao verificar múltiplos status:`, error.message);
+            return [];
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * TESTAR CONEXÃO COM O CDE
+     * Útil para verificar se o CDE está acessível
+     */
+    static async testConnection() {
+        let connection = null;
+
+        try {
+            connection = await this.getConnection();
+
+            const [result] = await connection.execute('SELECT 1');
+
+            console.log('[CDE] ✅ Conexão com CDE funcionando');
+            return true;
+
+        } catch (error) {
+            console.error('[CDE] ❌ Erro ao conectar:', error.message);
             return false;
         } finally {
             if (connection) await connection.end();
         }
     }
 
-    // 3. QUANDO ADMIN APROVA SELEÇÃO (POR ENQUANTO NÃO USAR - RETIRADO é processo físico)
-    async markAsSold(photoNumber, idhCode, clientCode) {
-        // MODO SIMULAÇÃO
-        if (this.simulationMode) {
-            console.log(`\n[CDEWriter - SIMULAÇÃO] Marcaria foto ${photoNumber} como VENDIDA`);
-            console.log(`  Cliente: ${clientCode}`);
-            console.log(`  SQL: UPDATE tbinventario SET AESTADOP = 'RETIRADO', RESERVEDUSU = 'SOLD_SUNSHINE_${clientCode}' WHERE ATIPOETIQUETA = '${photoNumber}'`);
-            return true;
-        }
-
-        const connection = await this.getConnection();
-        if (!connection) {
-            this.retryQueue.push({
-                action: 'sell',
-                data: { photoNumber, idhCode, clientCode },
-                timestamp: new Date()
-            });
-            return false;
-        }
+    /**
+     * MARCAR COMO VENDIDO (RETIRADO)
+     * Usado apenas quando uma venda é confirmada fisicamente
+     * NOTA: Normalmente não usamos - o processo físico no CDE faz isso
+     */
+    static async markAsSold(photoNumber, clientCode) {
+        let connection = null;
 
         try {
-            console.log(`[CDEWriter] Marcando ${photoNumber} como RETIRADO (vendido)`);
+            connection = await this.getConnection();
 
-            // NOTA: Por enquanto NÃO vamos usar este método
-            // RETIRADO deve ser feito pelo processo físico do CDE
-            const query = `
-                UPDATE tbinventario 
-                SET AESTADOP = 'RETIRADO',
-                    RESERVEDUSU = ?,
-                    AFECHA = NOW()
-                WHERE ATIPOETIQUETA = ?
-            `;
-
-            const soldInfo = `SOLD_SUNSHINE_${clientCode}`;
+            console.log(`[CDE] Marcando foto ${photoNumber} como VENDIDA`);
 
             const [result] = await connection.execute(
-                query,
-                [soldInfo, photoNumber]
+                `UPDATE tbinventario 
+                 SET AESTADOP = 'RETIRADO',
+                     RESERVEDUSU = ?,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA = ?`,
+                [`SOLD_${clientCode}`, photoNumber]
             );
 
             if (result.affectedRows > 0) {
-                console.log(`[CDEWriter] ✅ Foto ${photoNumber} marcada como VENDIDA no CDE`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} marcada como vendida`);
                 return true;
             }
 
             return false;
 
         } catch (error) {
-            console.error(`[CDEWriter] Erro ao marcar como vendida ${photoNumber}:`, error.message);
-
-            this.retryQueue.push({
-                action: 'sell',
-                data: { photoNumber, idhCode, clientCode },
-                timestamp: new Date()
-            });
-
-            return false;
+            console.error(`[CDE] ❌ Erro ao marcar como vendida:`, error.message);
+            throw error;
         } finally {
             if (connection) await connection.end();
         }
     }
 
-    // 4. PROCESSAR FILA DE RETRY (para quando CDE estava offline)
-    async processRetryQueue() {
-        if (this.retryQueue.length === 0) return;
+    /**
+     * BUSCAR FOTOS POR STATUS
+     * Útil para relatórios e verificações
+     */
+    static async getPhotosByStatus(status) {
+        let connection = null;
 
-        console.log(`[CDEWriter] Processando ${this.retryQueue.length} itens na fila de retry`);
+        try {
+            connection = await this.getConnection();
 
-        const queue = [...this.retryQueue];
-        this.retryQueue = [];
+            const [rows] = await connection.execute(
+                `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA 
+                 FROM tbinventario 
+                 WHERE AESTADOP = ?
+                 AND ATIPOETIQUETA != '0'
+                 AND ATIPOETIQUETA != ''
+                 ORDER BY AFECHA DESC`,
+                [status]
+            );
 
-        for (const item of queue) {
-            switch (item.action) {
-                case 'reserve':
-                    await this.markAsReserved(
-                        item.data.photoNumber,
-                        item.data.idhCode,
-                        item.data.clientCode,
-                        item.data.sessionId
-                    );
-                    break;
-                case 'release':
-                    await this.markAsAvailable(
-                        item.data.photoNumber,
-                        item.data.idhCode
-                    );
-                    break;
-                case 'sell':
-                    await this.markAsSold(
-                        item.data.photoNumber,
-                        item.data.idhCode,
-                        item.data.clientCode
-                    );
-                    break;
-            }
+            return rows.map(row => ({
+                photoNumber: row.ATIPOETIQUETA,
+                status: row.AESTADOP,
+                reservedBy: row.RESERVEDUSU,
+                lastUpdate: row.AFECHA
+            }));
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro ao buscar fotos por status:`, error.message);
+            return [];
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
-    // 5. TESTE DE CONEXÃO
-    async testConnection() {
-        const connection = await this.getConnection();
-        if (!connection) {
-            console.log('[CDEWriter] ❌ Não foi possível conectar ao CDE');
-            return false;
-        }
+    /**
+     * EXECUTAR QUERY CUSTOMIZADA
+     * Para casos especiais que precisam de queries específicas
+     */
+    static async executeQuery(query, params = []) {
+        let connection = null;
 
         try {
-            const [result] = await connection.execute('SELECT 1');
-            console.log('[CDEWriter] ✅ Conexão com CDE funcionando!');
-            return true;
+            connection = await this.getConnection();
+
+            const [result] = await connection.execute(query, params);
+            return result;
+
         } catch (error) {
-            console.log('[CDEWriter] ❌ Erro ao testar conexão:', error.message);
-            return false;
+            console.error(`[CDE] ❌ Erro ao executar query:`, error.message);
+            throw error;
         } finally {
             if (connection) await connection.end();
         }
     }
 }
 
-module.exports = new CDEWriter();
+module.exports = CDEWriter;

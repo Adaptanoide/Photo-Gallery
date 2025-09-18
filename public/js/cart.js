@@ -339,14 +339,12 @@ window.CartSystem = {
             // Primeiro tentar buscar carrinho ativo do servidor
             const clientSession = this.getClientSession();
             if (clientSession && clientSession.accessCode) {
-
                 console.log('🔍 Buscando carrinho ativo do servidor...');
                 const activeResponse = await fetch(`/api/cart/active/${clientSession.accessCode}`);
                 const activeCart = await activeResponse.json();
 
                 if (activeCart.success && activeCart.sessionId) {
                     console.log('✅ Carrinho ativo encontrado:', activeCart.sessionId);
-                    // Atualizar sessionId local
                     this.state.sessionId = activeCart.sessionId;
                     const storageKey = `cartSessionId_${clientSession.accessCode}`;
                     localStorage.setItem(storageKey, activeCart.sessionId);
@@ -359,10 +357,20 @@ window.CartSystem = {
 
             if (response.ok && result.success !== false) {
                 this.state.items = result.items || [];
-                this.state.totalItems = result.totalItems || 0;
+
+                // CORREÇÃO CRÍTICA: Sempre usar o comprimento real do array
+                // Nunca confiar no campo totalItems do servidor
+                this.state.totalItems = this.state.items.length; // <-- Esta é a mudança chave
+
+                console.log(`📦 Carrinho carregado: ${this.state.totalItems} items (baseado no array real)`);
+
+                // Se há discrepância, logar um aviso
+                if (result.totalItems !== this.state.totalItems) {
+                    console.warn(`⚠️ Discrepância detectada! Servidor diz ${result.totalItems}, mas array tem ${this.state.totalItems}`);
+                }
+
                 this.updateUI();
                 this.startTimers();
-                console.log(`📦 Carrinho carregado: ${this.state.totalItems} items`);
             }
 
         } catch (error) {
@@ -453,6 +461,100 @@ window.CartSystem = {
                     `${this.state.totalItems} items`;
             this.elements.itemCount.textContent = text;
         }
+    },
+
+    /**
+     * Reconstruir completamente a interface do carrinho após mudanças externas
+     * Usado quando a sincronização CDE remove itens
+     */
+    rebuildCartInterface: function () {
+        console.log('[CartSystem] Reconstruindo interface do carrinho após sincronização...');
+
+        // 1. Atualizar o badge principal do header
+        if (this.elements.badge) {
+            const itemCount = this.state.items ? this.state.items.length : 0;
+            this.elements.badge.textContent = itemCount;
+            this.elements.badge.classList.toggle('hidden', itemCount === 0);
+        }
+
+        // 2. Atualizar o badge do carrinho fixo (desktop)
+        if (this.elements.cartBadge) {
+            const itemCount = this.state.items ? this.state.items.length : 0;
+            this.elements.cartBadge.textContent = itemCount;
+        }
+
+        // 3. Verificar se o carrinho ficou vazio
+        const hasItems = this.state.items && this.state.items.length > 0;
+
+        // 4. Se não tem mais itens, mostrar mensagem de carrinho vazio
+        if (!hasItems) {
+            // Limpar container de itens
+            if (this.elements.items) {
+                this.elements.items.innerHTML = '';
+                this.elements.items.style.display = 'none';
+            }
+
+            // Mostrar mensagem de vazio
+            if (this.elements.empty) {
+                this.elements.empty.style.display = 'block';
+                this.elements.empty.innerHTML = `
+                    <div class="empty-cart-message">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>Your cart is empty</p>
+                        <small>Add leathers to begin your selection</small>
+                    </div>
+                `;
+            }
+
+            // Esconder footer do carrinho
+            if (this.elements.footer) {
+                this.elements.footer.style.display = 'none';
+            }
+
+            // Atualizar contador de texto
+            if (this.elements.itemCount) {
+                this.elements.itemCount.textContent = 'Empty cart';
+            }
+
+            // Esconder botão flutuante se existir
+            if (this.elements.floatingBtn) {
+                this.elements.floatingBtn.classList.remove('has-items');
+            }
+
+            console.log('[CartSystem] Interface reconstruída - carrinho vazio');
+        } else {
+            // Tem itens - reconstruir lista
+            if (this.elements.empty) {
+                this.elements.empty.style.display = 'none';
+            }
+
+            if (this.elements.items) {
+                this.elements.items.style.display = 'block';
+            }
+
+            if (this.elements.footer) {
+                this.elements.footer.style.display = 'block';
+            }
+
+            // Renderizar itens novamente
+            this.renderCartItems();
+
+            // Atualizar contador
+            const text = this.state.totalItems === 1 ? '1 item' : `${this.state.totalItems} items`;
+            if (this.elements.itemCount) {
+                this.elements.itemCount.textContent = text;
+            }
+
+            console.log(`[CartSystem] Interface reconstruída - ${this.state.totalItems} itens`);
+        }
+
+        // 5. Atualizar botão toggle se modal estiver aberto
+        this.updateToggleButton();
+
+        // 6. Atualizar botão flutuante
+        this.updateFloatingButton();
+
+        console.log('[CartSystem] Reconstrução completa finalizada');
     },
 
     /**

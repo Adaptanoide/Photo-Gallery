@@ -1,4 +1,5 @@
-//src/server.js
+// src/server.js
+// VERSÃO 2.1 - Servidor com Sincronização Incremental Opcional
 
 const express = require('express');
 const cors = require('cors');
@@ -14,10 +15,8 @@ const clientRoutes = require('./routes/client');
 const cartRoutes = require('./routes/cart');
 const selectionRoutes = require('./routes/selection');
 const pricingRoutes = require('./routes/pricing');
-const specialSelectionsRoutes = require('./routes/special-selections'); // NOVO
+const specialSelectionsRoutes = require('./routes/special-selections');
 const storageRoutes = require('./routes/storage');
-const Cart = require('./models/Cart');
-const { CartService } = require('./services');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,17 +33,17 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Conectar ao MongoDB
 connectDB();
 
-// ===== TESTE DOS MODELS E SERVICES =====
-console.log('✅ Models carregados: Product, Cart, PhotoCategory, Selection, AccessCode, PhotoStatus');
-console.log('✅ Services carregados: CartService, PricingService, SpecialSelectionService');
+// Status de inicialização
+console.log('Sistema inicializando...');
+console.log('MongoDB configurado');
+console.log('Modo: ' + (process.env.NODE_ENV || 'development'));
 
-// Rotas
+// Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/selections', require('./routes/admin-selections'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
-// app.use('/api/drive', driveRoutes); // ANTIGA - comentada
-app.use('/api/gallery', require('./routes/gallery')); // NOVA - R2
+app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
@@ -53,61 +52,272 @@ app.use('/api/special-selections', specialSelectionsRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
 
-// Rota principal - Dashboard
+// Páginas principais
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Rota admin
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
-// Rota cliente
 app.get('/client', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/client.html'));
 });
 
-// NOVA: Rota para testar seleções especiais
-app.get('/special-selections-test', (req, res) => {
-    res.json({
-        message: 'Special Selections API is working!',
-        endpoints: [
-            'GET /api/special-selections - List all special selections',
-            'POST /api/special-selections - Create new special selection',
-            'GET /api/special-selections/:id - Get selection details',
-            'POST /api/special-selections/:id/activate - Activate selection',
-            'POST /api/special-selections/:id/categories - Add custom category',
-            'POST /api/special-selections/:id/photos/move - Move photo to category'
-        ],
-        timestamp: new Date().toISOString()
-    });
+// ============================================
+// SISTEMA DE SINCRONIZAÇÃO INCREMENTAL
+// ============================================
+
+// Variável para controlar o serviço de sincronização
+let CDEIncrementalSync = null;
+
+// Rota para iniciar sincronização incremental
+app.post('/api/sync/start', async (req, res) => {
+    try {
+        // Carregar o serviço apenas quando necessário
+        if (!CDEIncrementalSync) {
+            CDEIncrementalSync = require('./services/CDEIncrementalSync');
+        }
+
+        const { intervalMinutes = 2, mode = 'observe' } = req.body;
+
+        // Configurar o modo de operação
+        CDEIncrementalSync.setMode(mode); // 'observe', 'safe', ou 'full'
+
+        // Iniciar sincronização
+        CDEIncrementalSync.start(intervalMinutes);
+
+        res.json({
+            success: true,
+            message: `Sincronização iniciada em modo ${mode}`,
+            interval: `${intervalMinutes} minutos`
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
 });
 
-// Rota de status
+// Rota para parar sincronização
+app.post('/api/sync/stop', async (req, res) => {
+    try {
+        if (CDEIncrementalSync) {
+            CDEIncrementalSync.stop();
+            res.json({
+                success: true,
+                message: 'Sincronização parada'
+            });
+        } else {
+            res.json({
+                success: false,
+                message: 'Sincronização não estava rodando'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para executar sincronização uma única vez
+app.post('/api/sync/run-once', async (req, res) => {
+    try {
+        if (!CDEIncrementalSync) {
+            CDEIncrementalSync = require('./services/CDEIncrementalSync');
+        }
+
+        const { mode = 'observe' } = req.body;
+        CDEIncrementalSync.setMode(mode);
+
+        const result = await CDEIncrementalSync.runSync();
+
+        res.json({
+            success: true,
+            message: 'Sincronização executada',
+            result
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para obter estatísticas da sincronização
+app.get('/api/sync/stats', async (req, res) => {
+    try {
+        if (!CDEIncrementalSync) {
+            return res.json({
+                success: true,
+                stats: {
+                    status: 'not_initialized',
+                    message: 'Sincronização ainda não foi iniciada'
+                }
+            });
+        }
+
+        const stats = CDEIncrementalSync.getStats();
+
+        res.json({
+            success: true,
+            stats: {
+                ...stats,
+                status: CDEIncrementalSync.isRunning ? 'running' : 'idle',
+                mode: CDEIncrementalSync.mode || 'not_set'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para obter último relatório de discrepâncias
+app.get('/api/sync/last-report', async (req, res) => {
+    try {
+        if (!CDEIncrementalSync) {
+            return res.json({
+                success: false,
+                message: 'Sincronização não inicializada'
+            });
+        }
+
+        const report = CDEIncrementalSync.getLastReport();
+
+        res.json({
+            success: true,
+            report
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// FIM DO SISTEMA DE SINCRONIZAÇÃO
+// ============================================
+
+// Rota de status do sistema (atualizada)
 app.get('/api/status', (req, res) => {
+    const syncStatus = CDEIncrementalSync ?
+        (CDEIncrementalSync.isRunning ? 'active' : 'stopped') :
+        'not_initialized';
+
     res.json({
         status: 'OK',
         message: 'Sunshine Cowhides API funcionando',
         features: [
             'Normal Selections',
-            'Special Selections', // NOVO
+            'Special Selections',
             'Cart System',
             'R2 Storage Integration',
             'Pricing Management',
-            'Client Management'
+            'Client Management',
+            'CDE Incremental Sync'
         ],
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        version: '2.1.0',
+        mode: 'SYNC_DIRECT',
+        syncStatus: syncStatus
     });
 });
 
-// Handler de erros
+// Rota para verificar status do CDE
+app.get('/api/cde/status', async (req, res) => {
+    try {
+        const CDEWriter = require('./services/CDEWriter');
+        const connected = await CDEWriter.testConnection();
+
+        res.json({
+            connected,
+            message: connected ? 'CDE conectado e funcionando' : 'CDE não acessível',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            connected: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para sincronização manual completa (legado)
+app.post('/api/sync/manual', async (req, res) => {
+    try {
+        const CDEManualSync = require('./services/CDEManualSync');
+        const result = await CDEManualSync.syncNow();
+
+        res.json({
+            success: true,
+            message: 'Sincronização manual completa executada',
+            result
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para processar expirações manualmente
+app.post('/api/cart/process-expirations', async (req, res) => {
+    try {
+        const Cart = require('./models/Cart');
+        const CartService = require('./services/CartService');
+
+        const activeCarts = await Cart.find({
+            isActive: true,
+            'items.0': { $exists: true }
+        });
+
+        let processedCount = 0;
+        const now = new Date();
+
+        for (const cart of activeCarts) {
+            const expiredItems = cart.items.filter(item =>
+                item.expiresAt && new Date(item.expiresAt) < now
+            );
+
+            for (const item of expiredItems) {
+                await CartService.processExpiredItem(item, cart);
+                processedCount++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `${processedCount} itens expirados processados`,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Handler de erros global
 app.use((err, req, res, next) => {
-    console.error('Erro:', err.stack);
+    console.error('Erro não tratado:', err.stack);
     res.status(500).json({
-        error: 'Algo deu errado!',
-        message: process.env.NODE_ENV === 'development' ? err.message : 'Erro interno do servidor'
+        error: 'Erro interno do servidor',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Erro interno',
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -120,139 +330,111 @@ app.use('*', (req, res) => {
             '/admin',
             '/client',
             '/api/status',
-            '/special-selections-test'
-        ]
+            '/api/cde/status',
+            '/api/sync/manual',
+            '/api/sync/start',
+            '/api/sync/stop',
+            '/api/sync/run-once',
+            '/api/sync/stats',
+            '/api/sync/last-report',
+            '/api/cart/process-expirations'
+        ],
+        message: 'Verifique a URL e tente novamente'
     });
 });
-
-// ===== SUBSTITUIR TODO O BLOCO DE SINCRONIZAÇÃO CDE NO server.js =====
-// Localização: Aproximadamente linhas 155-220
-
-// Sincronização CDE - intervalo baseado no ambiente e horário comercial
-const CDESync = require('./services/CDESync');
-
-// Função para verificar horário comercial Fort Myers (EST/EDT)
-function isBusinessHours() {
-    const now = new Date();
-    const ftMyersTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-
-    const day = ftMyersTime.getDay();
-    const hour = ftMyersTime.getHours();
-
-    // Segunda(1) a Sexta(5), 7am-6pm Fort Myers
-    return (day >= 1 && day <= 5 && hour >= 7 && hour < 18);
-}
-
-function runCDESync() {
-    // ADICIONE ESTA VERIFICAÇÃO NO INÍCIO DA FUNÇÃO
-    if (process.env.DISABLE_CDE_SYNC === 'true') {
-        return; // Sai imediatamente sem fazer nada
-    }
-
-    const now = new Date();
-    const ftTime = now.toLocaleString("en-US", {
-        timeZone: "America/New_York",
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-    });
-
-    console.log(`[CDESync] Executando sync... (Fort Myers: ${ftTime})`);
-    CDESync.syncAllStates()
-        .then(result => {
-            console.log('[CDESync] Sync completo:', result);
-        })
-        .catch(error => {
-            console.error('[CDESync] ERRO no sync:', error.message);
-        });
-}
-
-// CDESync
-const syncInterval = process.env.NODE_ENV === 'production'
-    ? 3 * 60 * 1000   // 3 minutos em produção
-    : 1 * 60 * 1000;  // 1 minuto em desenvolvimento
-
-// Mostrar configuração
-const intervalMinutes = syncInterval / 60000;
-const modeText = process.env.NODE_ENV === 'production' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO';
-
-console.log(`\n🔄 CDESync Configurado:`);
-console.log(`   Modo: ${modeText}`);
-console.log(`   Intervalo: ${intervalMinutes} minuto${intervalMinutes > 1 ? 's' : ''}`);
-console.log(`   Horário: 24/7`);
-console.log(`   Timezone: America/New_York (Fort Myers, FL)\n`);
-
-// Verificar se CDESync está habilitado
-if (process.env.DISABLE_CDE_SYNC === 'true') {
-    console.log('⚠️ CDESync DESABILITADO - Modo desenvolvimento isolado');
-} else {
-    // Executar sync inicial após 10 segundos
-    console.log('[CDESync] Sync inicial em 10 segundos...');
-    setTimeout(() => {
-        runCDESync();
-    }, 10000);
-}
-
-// Configurar intervalo de execução
-if (process.env.DISABLE_CDE_SYNC !== 'true') {
-    setInterval(() => {
-        runCDESync();
-    }, syncInterval);
-}
-
-// ========== SISTEMA DE LIMPEZA AUTOMÁTICA ROBUSTA ==========
-
-// Função de limpeza com log detalhado
-const runAutomaticCleanup = async () => {
-    const startTime = Date.now();
-    console.log(`\n🧹 [CLEANUP] =======================================`);
-    console.log(`🧹 [CLEANUP] Iniciando limpeza automática`);
-    console.log(`🧹 [CLEANUP] Horário: ${new Date().toISOString()}`);
-
-    try {
-        const result = await CartService.cleanupExpiredReservations();
-
-        if (result.success) {
-            console.log(`🧹 [CLEANUP] ✅ Sucesso em ${Date.now() - startTime}ms`);
-
-            // Só mostrar detalhes se algo foi limpo
-            if (result.productsReleased > 0 || result.itemsRemoved > 0 || result.orphansFixed > 0) {
-                console.log(`🧹 [CLEANUP] Produtos liberados: ${result.productsReleased}`);
-                console.log(`🧹 [CLEANUP] Items removidos: ${result.itemsRemoved}`);
-                console.log(`🧹 [CLEANUP] Órfãos corrigidos: ${result.orphansFixed}`);
-            } else {
-                console.log(`🧹 [CLEANUP] Nada para limpar`);
-            }
-        } else {
-            console.log(`🧹 [CLEANUP] ❌ Erro: ${result.error}`);
-        }
-
-    } catch (error) {
-        console.error(`🧹 [CLEANUP] ❌ Erro crítico:`, error.message);
-    }
-
-    console.log(`🧹 [CLEANUP] =======================================\n`);
-};
-
-// Limpeza
-const CLEANUP_INTERVAL = process.env.NODE_ENV === 'production'
-    ? 5 * 60 * 1000   // 5 minutos em produção  
-    : 2 * 60 * 1000;  // 2 minutos em desenvolvimento
-
-// Primeira limpeza 30 segundos após iniciar
-setTimeout(runAutomaticCleanup, 30000);
-
-console.log(`🧹 Sistema de limpeza automática configurado (executa a cada 5 minutos)`);
-console.log(`🧹 Primeira limpeza em 30 segundos...`);
-
-// ========== FIM DO SISTEMA DE LIMPEZA ==========
-
 
 // Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`🌐 Acesse: http://localhost:${PORT}`);
-    console.log(`📊 Status: http://localhost:${PORT}/api/status`);
-    console.log(`⭐ Special Selections Test: http://localhost:${PORT}/special-selections-test`);
+const server = app.listen(PORT, () => {
+    console.log('\n' + '='.repeat(50));
+    console.log('SERVIDOR SUNSHINE COWHIDES v2.1');
+    console.log('='.repeat(50));
+    console.log(`Porta: ${PORT}`);
+    console.log(`URL: http://localhost:${PORT}`);
+    console.log(`Status: http://localhost:${PORT}/api/status`);
+    console.log(`CDE Status: http://localhost:${PORT}/api/cde/status`);
+    console.log('='.repeat(50));
+    console.log('Sistema operacional - Modo SYNC DIRECT');
+    console.log('Todas operações são síncronas e instantâneas');
+
+    // Verificar configuração de sincronização
+    const syncEnabled = process.env.ENABLE_CDE_SYNC === 'true';
+    const syncInterval = parseInt(process.env.SYNC_INTERVAL_MINUTES) || 2;
+    const syncMode = process.env.SYNC_MODE || 'observe';
+
+    if (syncEnabled) {
+        console.log('='.repeat(50));
+        console.log('SINCRONIZAÇÃO INCREMENTAL CONFIGURADA');
+        console.log(`Modo: ${syncMode}`);
+        console.log(`Intervalo: ${syncInterval} minutos`);
+        console.log('Iniciando em 30 segundos...');
+
+        // Iniciar sincronização automaticamente após 30 segundos
+        setTimeout(() => {
+            if (!CDEIncrementalSync) {
+                CDEIncrementalSync = require('./services/CDEIncrementalSync');
+            }
+            CDEIncrementalSync.setMode(syncMode);
+            CDEIncrementalSync.start(syncInterval);
+            console.log(`[SYNC] Sincronização iniciada em modo ${syncMode}`);
+        }, 30000);
+    } else {
+        console.log('Sincronização automática DESABILITADA');
+        console.log('Use /api/sync/start para iniciar manualmente');
+    }
+
+    console.log('='.repeat(50) + '\n');
 });
+
+// Tratamento de shutdown gracioso
+process.on('SIGTERM', () => {
+    console.log('SIGTERM recebido. Encerrando servidor...');
+
+    // Parar sincronização se estiver rodando
+    if (CDEIncrementalSync) {
+        CDEIncrementalSync.stop();
+    }
+
+    server.close(() => {
+        console.log('Servidor encerrado');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('\nSIGINT recebido. Encerrando servidor...');
+
+    // Parar sincronização se estiver rodando
+    if (CDEIncrementalSync) {
+        CDEIncrementalSync.stop();
+    }
+
+    server.close(() => {
+        console.log('Servidor encerrado');
+        process.exit(0);
+    });
+});
+
+// Tratamento de erros não capturados
+process.on('uncaughtException', (error) => {
+    console.error('ERRO NÃO CAPTURADO:', error);
+
+    // Tentar parar sincronização antes de sair
+    if (CDEIncrementalSync) {
+        CDEIncrementalSync.stop();
+    }
+
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('PROMISE REJEITADA NÃO TRATADA:', reason);
+
+    // Tentar parar sincronização antes de sair
+    if (CDEIncrementalSync) {
+        CDEIncrementalSync.stop();
+    }
+
+    process.exit(1);
+});
+
+module.exports = app;
