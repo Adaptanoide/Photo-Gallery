@@ -27,7 +27,16 @@ const selectionSchema = new mongoose.Schema({
         trim: true,
         lowercase: true
     },
-
+    salesRep: {
+        type: String,
+        trim: true,
+        default: 'Unassigned'
+    },
+    clientCompany: {
+        type: String,
+        trim: true,
+        default: null
+    },
     // ===== NOVO: TIPO DE SELEÇÃO =====
     selectionType: {
         type: String,

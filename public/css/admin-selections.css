@@ -1298,3 +1298,51 @@
     align-items: center;
     padding: 8px 12px;
 }
+
+/* === ALINHAMENTO DOS HEADERS E CÉLULAS === */
+.selections-table th:nth-child(6),
+.selections-table td:nth-child(6) {
+    text-align: center;  /* DATE */
+}
+
+.selections-table th:nth-child(7),
+.selections-table td:nth-child(7) {
+    text-align: left;  /* STATUS */
+}
+
+.selections-table th:nth-child(8) {
+    text-align: right;   /* ACTIONS header - alinhado à direita */
+    padding-right: 35px;  /* Espaço da borda */
+}
+
+.selections-table td:nth-child(8) {
+    text-align: center;  /* ACTIONS células */
+    padding-left: 0;
+    padding-right: 15px;
+}
+
+.selections-table td:nth-child(8) .action-buttons {
+    justify-content: flex-start;  /* Alinha botões à esquerda */
+    padding-left: 10px;  /* Pequeno espaço da borda esquerda */
+}
+
+.selections-table th:nth-child(4),
+.selections-table td:nth-child(4) {
+    text-align: center;  /* ITEMS */
+}
+
+.selections-table th:nth-child(5),
+.selections-table td:nth-child(5) {
+    text-align: right;   /* TOTAL VALUE */
+    padding-right: 20px;
+}
+
+/* Ajustar larguras das colunas */
+.selections-table th:nth-child(1) { width: 15%; }  /* CLIENT */
+.selections-table th:nth-child(2) { width: 15%; }  /* COMPANY */
+.selections-table th:nth-child(3) { width: 12%; }  /* SALES REP */
+.selections-table th:nth-child(4) { width: 10%; }  /* ITEMS */
+.selections-table th:nth-child(5) { width: 12%; }  /* TOTAL VALUE */
+.selections-table th:nth-child(6) { width: 13%; }  /* DATE */
+.selections-table th:nth-child(7) { width: 12%; }  /* STATUS - mais largo */
+.selections-table th:nth-child(8) { width: 11%; }  /* ACTIONS - mais estreito */

@@ -94,46 +94,108 @@ router.get('/db-status', async (req, res) => {
     }
 });
 
-// Listar códigos de acesso COM INFO DE CARRINHO (APENAS CARRINHO, NÃO SELECTIONS!)
+// Listar códigos de acesso COM PAGINAÇÃO E INFO DE CARRINHO
 router.get('/access-codes', async (req, res) => {
     try {
-        const codes = await AccessCode.find()
-            .sort({ createdAt: -1 })
-            .limit(100);
+        // Parâmetros de paginação e busca
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25; // 25 por página como padrão
+        const search = req.query.search || '';
+        const status = req.query.status || 'all';
+        const sortBy = req.query.sortBy || 'recent';
 
-        // Buscar APENAS carrinhos ativos (NÃO selections confirmadas!)
-        const Cart = require('../models/Cart');
+        // Calcular skip
+        const skip = (page - 1) * limit;
+
+        // Construir query de busca
+        let query = {};
+
+        // Busca por texto
+        if (search) {
+            query.$or = [
+                { clientName: { $regex: search, $options: 'i' } },
+                { clientEmail: { $regex: search, $options: 'i' } },
+                { companyName: { $regex: search, $options: 'i' } },
+                { code: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Filtro por status
         const now = new Date();
+        if (status === 'active') {
+            query.isActive = true;
+            query.expiresAt = { $gt: now };
+        } else if (status === 'inactive') {
+            query.isActive = false;
+        } else if (status === 'expired') {
+            query.expiresAt = { $lt: now };
+        }
 
-        // IMPORTANTE: Buscar apenas carrinhos com itens E que sejam ativos
+        // Definir ordenação
+        let sortOptions = {};
+        switch (sortBy) {
+            case 'name':
+                sortOptions = { clientName: 1 };
+                break;
+            case 'code':
+                sortOptions = { code: 1 };
+                break;
+            case 'oldest':
+                sortOptions = { createdAt: 1 };
+                break;
+            case 'usage':
+                sortOptions = { usageCount: -1 };
+                break;
+            case 'expires-soon':
+                sortOptions = { expiresAt: 1 };
+                break;
+            case 'recent':
+            default:
+                sortOptions = { createdAt: -1 };
+                break;
+        }
+
+        // Buscar total de registros (para calcular total de páginas)
+        const totalCount = await AccessCode.countDocuments(query);
+
+        // Buscar códigos com paginação
+        const codes = await AccessCode.find(query)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limit);
+
+        // Calcular informações de paginação
+        const totalPages = Math.ceil(totalCount / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
+        // Buscar APENAS carrinhos ativos
+        const Cart = require('../models/Cart');
         const carts = await Cart.find({
             'items.0': { $exists: true },
-            isActive: true,  // Apenas carrinhos ativos
+            isActive: true,
             $or: [
-                { expiresAt: { $gt: now } }, // Não expirado
-                { expiresAt: { $exists: false } } // Ou sem data de expiração
+                { expiresAt: { $gt: now } },
+                { expiresAt: { $exists: false } }
             ]
         }).select('clientCode items createdAt expiresAt');
 
-        console.log(`🛒 Found ${carts.length} active carts with items`);
+        console.log(`📊 Pagination: Page ${page}/${totalPages}, Showing ${codes.length} of ${totalCount} total clients`);
 
         // Criar mapa de carrinhos por cliente
         const cartMap = {};
         carts.forEach(cart => {
-            // Filtrar apenas itens não expirados
             const validItems = cart.items.filter(item => {
                 if (!item.expiresAt) return true;
                 return new Date(item.expiresAt) > now;
             });
 
-            // Só adicionar se tiver itens válidos
             if (validItems.length > 0) {
                 cartMap[cart.clientCode] = {
                     itemCount: validItems.length,
                     totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0),
-                    isTemporary: true // Flag para indicar que é carrinho temporário
+                    isTemporary: true
                 };
-                console.log(`  Client ${cart.clientCode}: ${validItems.length} items in cart`);
             }
         });
 
@@ -145,7 +207,17 @@ router.get('/access-codes', async (req, res) => {
 
         res.json({
             success: true,
-            codes: codesWithCart
+            codes: codesWithCart,
+            pagination: {
+                page,
+                limit,
+                totalCount,
+                totalPages,
+                hasNextPage,
+                hasPrevPage,
+                startIndex: skip + 1,
+                endIndex: Math.min(skip + limit, totalCount)
+            }
         });
 
     } catch (error) {
@@ -170,7 +242,8 @@ router.post('/access-codes', async (req, res) => {
             city,
             state,
             zipCode,
-            accessType,  // <- ADICIONE ESTA LINHA
+            salesRep,
+            accessType,
             allowedCategories,
             expiresInDays = 30
         } = req.body;
@@ -227,6 +300,7 @@ router.post('/access-codes', async (req, res) => {
             city,
             state,
             zipCode,
+            salesRep,
             allowedCategories,
             showPrices: req.body.showPrices !== false,
             expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
@@ -266,6 +340,7 @@ router.put('/access-codes/:id', async (req, res) => {
             city,
             state,
             zipCode,
+            salesRep,
             allowedCategories,
             expiresInDays,
             isActive
@@ -299,6 +374,7 @@ router.put('/access-codes/:id', async (req, res) => {
                 city: city ? city.trim() : undefined,
                 state: state ? state.trim() : undefined,
                 zipCode: zipCode ? zipCode.trim() : undefined,
+                salesRep: salesRep ? salesRep.trim() : undefined,
                 allowedCategories,
                 expiresAt,
                 isActive: isActive !== false, // Default true

@@ -28,6 +28,11 @@ const accessCodeSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    salesRep: {
+        type: String,
+        trim: true,
+        default: 'Unassigned'
+    },
     addressLine1: {
         type: String,
         trim: true
@@ -54,13 +59,13 @@ const accessCodeSchema = new mongoose.Schema({
         type: String,
         enum: ['normal', 'special'],
         default: 'normal',
-        },
+    },
 
     // ===== CONTROLE GLOBAL DE EXIBIÇÃO DE PREÇOS =====
     showPrices: {
         type: Boolean,
         default: true,
-        },
+    },
 
     // ===== CONFIGURAÇÃO PARA ACESSO NORMAL (EXISTENTE) =====
     allowedCategories: [{

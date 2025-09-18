@@ -54,6 +54,8 @@ router.get('/', async (req, res) => {
                 selectionId: s.selectionId,
                 clientCode: s.clientCode,
                 clientName: s.clientName,
+                clientCompany: s.clientCompany || '-',
+                salesRep: s.salesRep || 'Unassigned',
                 totalItems: s.totalItems,
                 totalValue: s.totalValue,
                 status: s.status,

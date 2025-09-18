@@ -209,14 +209,15 @@ class AdminSelections {
 
         tableBody.innerHTML = selections.map(selection => `
             <tr data-selection-id="${selection.selectionId}">
-                <td class="type-cell">
-                    <span class="type-badge ${selection.selectionType || 'normal'}">
-                        ${selection.selectionId.startsWith('SPEC_') ? '⭐ Special' : '📄 Regular'}
-                    </span>
-                </td>
                 <td class="client-info-cell">
                     <div class="client-name">${selection.clientName}</div>
                     <div class="client-code">Code: ${selection.clientCode}</div>
+                </td>
+                <td class="company-cell">
+                    ${selection.clientCompany || '-'}
+                </td>
+                <td class="sales-rep-cell">
+                    ${selection.salesRep || 'Unassigned'}
                 </td>
                 <td class="items-count-cell">
                     <span class="items-badge">

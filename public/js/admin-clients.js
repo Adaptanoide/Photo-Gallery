@@ -14,13 +14,18 @@ class AdminClients {
         this.currentClient = null;
         this.selectedFolders = [];
 
-        // ADICIONE ESTAS DUAS LINHAS NOVAS:
         this.hasUnsavedChanges = false;
         this.originalFormData = null;
 
+        this.currentPage = 1;
+        this.totalPages = 1;
+        this.totalClients = 0;
+        this.itemsPerPage = 25;
+
         this.filters = {
             search: '',
-            status: 'all'
+            status: 'all',
+            sortBy: 'recent'
         };
         this.init();
     }
@@ -203,7 +208,7 @@ class AdminClients {
                             <th>Code</th>
                             <th>Client</th>
                             <th>Company</th>
-                            <th>Access Type</th>
+                            <th>Sales Rep</th>
                             <th>Usage</th>
                             <th>Created</th>
                             <th>Expires</th>
@@ -220,6 +225,19 @@ class AdminClients {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Paginação -->
+            <div id="clientsPagination" class="pricing-pagination" style="display: flex;">
+                <button id="btnPrevPage" class="btn btn-secondary" onclick="adminClients.goToPage(adminClients.currentPage - 1)">
+                    <i class="fas fa-chevron-left"></i>
+                    Previous
+                </button>
+                <span id="paginationInfo">Page 1 of 1</span>
+                <button id="btnNextPage" class="btn btn-secondary" onclick="adminClients.goToPage(adminClients.currentPage + 1)">
+                    Next
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
 
             <!-- Client Modal (EDIT) - SEM FOLDERS -->
@@ -260,9 +278,14 @@ class AdminClients {
                                             placeholder="e.g. contact@company.com">
                                     </div>
                                     <div class="form-group-clients">
-                                        <label class="form-label-clients">Phone Number</label>
+                                        <label class="form-label-clients">Phone</label>
                                         <input type="tel" id="clientPhone" class="form-input-clients" 
-                                            placeholder="e.g. (555) 123-4567">
+                                            placeholder="(555) 123-4567">
+                                    </div>
+                                    <div class="form-group-clients">
+                                        <label class="form-label-clients">Sales Rep</label>
+                                        <input type="text" id="salesRep" class="form-input-clients" 
+                                            placeholder="Sales Representative name here">
                                     </div>
                                 </div>
                             </div>
@@ -714,10 +737,21 @@ class AdminClients {
     }
 
     // ===== DATA LOADING =====
-    async loadClients() {
+    async loadClients(page = 1) {
         try {
             const token = this.getAdminToken();
-            const response = await fetch('/api/admin/access-codes', {
+
+            // NOVO: Enviar TODOS os filtros para o backend
+            const params = new URLSearchParams({
+                page: page,
+                limit: this.itemsPerPage,
+                search: this.filters.search || '',
+                status: this.filters.status || 'all',
+                sortBy: this.filters.sortBy || 'recent'
+            });
+
+            // Buscar com todos os parâmetros
+            const response = await fetch(`/api/admin/access-codes?${params}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -727,28 +761,26 @@ class AdminClients {
 
             if (data.success) {
                 this.clients = data.codes || [];
-                console.log(`✅ ${this.clients.length} codes loaded`);
+
+                if (data.pagination) {
+                    this.currentPage = data.pagination.page;
+                    this.totalPages = data.pagination.totalPages;
+                    this.totalClients = data.pagination.totalCount;
+
+                    // Atualizar UI da paginação
+                    document.getElementById('paginationInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+                    document.getElementById('btnPrevPage').disabled = (this.currentPage === 1);
+                    document.getElementById('btnNextPage').disabled = (this.currentPage === this.totalPages);
+                }
+
+                console.log(`✅ Página ${this.currentPage}/${this.totalPages} - Total: ${this.totalClients} clientes (Filtrados)`);
             } else {
                 throw new Error(data.message || 'Error loading codes');
             }
 
         } catch (error) {
             console.error('❌ Error loading clients:', error);
-            // Fallback data for development
-            this.clients = [
-                {
-                    _id: '1',
-                    code: '7064',
-                    clientName: 'John Silva',
-                    clientEmail: 'john@email.com',
-                    allowedCategories: ['1. Colombian Cowhides', '2. Brazil Best Sellers'],
-                    isActive: true,
-                    usageCount: 3,
-                    lastUsed: new Date(),
-                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    createdAt: new Date()
-                }
-            ];
+            this.clients = [];
         }
     }
 
@@ -815,7 +847,7 @@ class AdminClients {
             }
 
             return `
-                <tr onclick="adminClients.viewClient('${client._id || client.code}')">
+                <tr>
                     <td class="client-code-cell">
                         <div class="code-with-cart">
                             <span class="code-text">${client.code}</span>
@@ -829,9 +861,9 @@ class AdminClients {
                     <td class="client-company-cell">
                         <div class="company-name">${client.companyName || '-'}</div>
                     </td>
-                    <td class="client-access-type-cell">
-                        <div class="access-type-preview">
-                            ${this.renderAccessType(client)}
+                    <td class="client-sales-rep-cell">
+                        <div class="sales-rep-name">
+                            ${client.salesRep || 'Unassigned'}
                         </div>
                     </td>
                     <td class="client-usage-cell">
@@ -846,7 +878,7 @@ class AdminClients {
                     <td class="client-status-cell">
                         ${this.renderStatusBadge(client)}
                     </td>
-                    <td class="client-actions-cell" onclick="event.stopPropagation();">
+                    <td class="client-actions-cell">
                         <div class="action-buttons">
                             <button class="special-btn-icon cart" onclick="adminClients.openCartControl('${client._id || client.code}')" title="Cart Control">
                                 <i class="fas fa-shopping-cart"></i>
@@ -935,6 +967,7 @@ class AdminClients {
         document.getElementById('city').value = '';
         document.getElementById('state').value = '';
         document.getElementById('zipCode').value = '';
+        document.getElementById('salesRep').value = '';
         document.getElementById('expireDays').value = '30';
         // showPrices removido - agora está em Permissions
         //document.getElementById('showPricesLabel').textContent = 'Enabled';
@@ -1149,6 +1182,7 @@ class AdminClients {
             city: document.getElementById('city').value.trim(),
             state: document.getElementById('state').value.trim().toUpperCase(),
             zipCode: document.getElementById('zipCode').value.trim(),
+            salesRep: document.getElementById('salesRep').value.trim(),
             allowedCategories: this.selectedCategories.length > 0 ? this.selectedCategories : [],
             expiresInDays: parseInt(document.getElementById('expireDays').value),
             showPrices: true, // Padrão true para novos clientes
@@ -1784,6 +1818,7 @@ class AdminClients {
         document.getElementById('city').value = client.city || '';
         document.getElementById('state').value = client.state || '';
         document.getElementById('zipCode').value = client.zipCode || '';
+        document.getElementById('salesRep').value = client.salesRep || '';
 
         // Fill form - Settings
         document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
@@ -2132,82 +2167,33 @@ class AdminClients {
     // ===== FILTERS AND SEARCH =====
     handleSearch(query) {
         this.filters.search = query.toLowerCase();
-        this.applyFilters();
+        this.currentPage = 1; // Voltar para página 1
+        this.loadClients(1).then(() => {
+            this.renderClientsTable();
+        });
     }
 
     handleStatusFilter(status) {
         this.filters.status = status;
-        this.applyFilters();
+        this.currentPage = 1; // Voltar para página 1
+        this.loadClients(1).then(() => {
+            this.renderClientsTable();
+        });
     }
 
     handleSort(sortBy) {
         this.filters.sortBy = sortBy;
-        this.applyFilters();
+        this.currentPage = 1; // Voltar para página 1
+        this.loadClients(1).then(() => {
+            this.renderClientsTable();
+        });
     }
 
     applyFilters() {
-        let filteredClients = [...this.clients];
-
-        // Apply search
-        if (this.filters.search) {
-            filteredClients = filteredClients.filter(client => {
-                const searchTerm = this.filters.search.toLowerCase();
-                return (
-                    client.clientName.toLowerCase().includes(searchTerm) ||
-                    client.code.includes(searchTerm) ||
-                    (client.clientEmail && client.clientEmail.toLowerCase().includes(searchTerm)) ||
-                    (client.companyName && client.companyName.toLowerCase().includes(searchTerm))
-                );
-            });
-        }
-
-        // Apply status filter
-        if (this.filters.status !== 'all') {
-            filteredClients = filteredClients.filter(client => {
-                const now = new Date();
-                const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
-
-                switch (this.filters.status) {
-                    case 'active':
-                        return client.isActive && !isExpired;
-                    case 'inactive':
-                        return !client.isActive;
-                    case 'expired':
-                        return isExpired;
-                    default:
-                        return true;
-                }
-            });
-        }
-
-        // Apply sorting
-        if (this.filters.sortBy) {
-            filteredClients.sort((a, b) => {
-                switch (this.filters.sortBy) {
-                    case 'name':
-                        return a.clientName.localeCompare(b.clientName);
-                    case 'code':
-                        return a.code.localeCompare(b.code);
-                    case 'usage':
-                        return (b.usageCount || 0) - (a.usageCount || 0);
-                    case 'oldest':
-                        return new Date(a.createdAt) - new Date(b.createdAt);
-                    case 'last-access':
-                        return new Date(b.lastUsed || '1970-01-01') - new Date(a.lastUsed || '1970-01-01');
-                    case 'expires-soon':
-                        return new Date(a.expiresAt) - new Date(b.expiresAt);
-                    case 'recent':
-                    default:
-                        return new Date(b.createdAt) - new Date(a.createdAt);
-                }
-            });
-        }
-
-        // Update array temporarily for rendering
-        const originalClients = this.clients;
-        this.clients = filteredClients;
-        this.renderClientsTable();
-        this.clients = originalClients;
+        this.currentPage = 1; // Sempre volta para página 1
+        this.loadClients(1).then(() => {
+            this.renderClientsTable();
+        });
     }
 
     async refreshData() {
@@ -3093,7 +3079,27 @@ class AdminClients {
         document.body.style.overflow = '';
     }
 
+    // Função para ir para uma página específica
+    goToPage(page) {
+        if (page < 1 || page > this.totalPages) return;
+
+        this.currentPage = page;
+        this.showLoading(true);
+
+        this.loadClients(page).then(() => {
+            this.renderClientsTable();
+
+            // Atualizar texto e botões
+            document.getElementById('paginationInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+            document.getElementById('btnPrevPage').disabled = (this.currentPage === 1);
+            document.getElementById('btnNextPage').disabled = (this.currentPage === this.totalPages);
+
+            this.showLoading(false);
+        });
+    }
 }
+
+
 
 
 // ===== GLOBAL INITIALIZATION =====
