@@ -92,7 +92,7 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
 
             await CartSystem.addItem(photoId, itemData);
             button.classList.add('in-cart');
-            button.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+            button.innerHTML = '<span>Remove</span>';
         }
 
         // Atualizar badge de preço
@@ -117,7 +117,7 @@ window.syncCartUIFromAdd = function (photoId) {
     const button = document.querySelector(`[data-photo-id="${photoId}"] .thumbnail-cart-btn`);
     if (button) {
         button.classList.add('in-cart');
-        button.innerHTML = '<i class="fas fa-check"></i><span>Remove</span>';
+        button.innerHTML = '<span>Remove</span>';
     }
 }
 

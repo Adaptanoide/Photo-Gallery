@@ -282,7 +282,6 @@
                                 data-photo-id="${photo.id.replace(/"/g, '&quot;')}" 
                                 data-photo-index="${index}"
                                 title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
-                            <i class="fas fa-${isInCart ? 'check' : 'shopping-cart'}"></i>
                             <span>${isInCart ? 'Remove' : 'Add'}</span>
                         </button>
                         
@@ -350,7 +349,7 @@
 
                                 // Atualizar o botão para mostrar "Remove"
                                 cartBtn.classList.add('in-cart');
-                                cartBtn.innerHTML = '<i class="fas fa-times"></i><span>Remove</span>';
+                                cartBtn.innerHTML = '<span>Remove</span>';  // Sem ícone X
                                 cartBtn.title = 'Remove from cart';
 
                                 // Remover qualquer indicação de unavailable do elemento pai
@@ -988,7 +987,7 @@
                                 if (cartBtn) {
                                     cartBtn.disabled = false;
                                     cartBtn.classList.add('in-cart');
-                                    cartBtn.innerHTML = '<i class="fas fa-times"></i><span>Remove</span>';
+                                    cartBtn.innerHTML = '<span>Remove</span>';
                                     cartBtn.style.backgroundColor = '#dc3545';
                                     cartBtn.style.color = 'white';
                                     cartBtn.title = 'Remove from cart';
@@ -1017,7 +1016,7 @@
                                 const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
                                 if (cartBtn) {
                                     cartBtn.disabled = true;
-                                    cartBtn.innerHTML = '<i class="fas fa-ban"></i><span>Sold Out</span>';
+                                    cartBtn.innerHTML = '<span>Sold Out</span>';
                                 }
                             } else if (photo.status === 'reserved') {
                                 // IMPORTANTE: Verificar se NÃO é uma reserva própria antes de marcar como unavailable
@@ -1026,7 +1025,7 @@
                                     const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
                                     if (cartBtn) {
                                         cartBtn.disabled = true;
-                                        cartBtn.innerHTML = '<i class="fas fa-lock"></i><span>Unavailable</span>';
+                                        cartBtn.innerHTML = '<span>Unavailable</span>';
                                         cartBtn.style.backgroundColor = '#ffc107';
                                         cartBtn.style.color = '#000';
                                     }
@@ -1036,7 +1035,7 @@
                                 const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
                                 if (cartBtn) {
                                     cartBtn.disabled = false;
-                                    cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
+                                    cartBtn.innerHTML = '<span>Add</span>';
                                     cartBtn.style.backgroundColor = '';
                                     cartBtn.style.color = '';
                                 }
@@ -1211,9 +1210,13 @@
 
                 if (isInCart) {
                     thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Removing...</span>';
+                    thumbButton.style.backgroundColor = '#6c757d';  // Cinza neutro
                 } else {
                     thumbButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
+                    thumbButton.style.backgroundColor = '#28a745';  // Verde
+                    thumbButton.style.color = 'white';
                 }
+
                 thumbButton.disabled = true;
 
                 setTimeout(() => {
@@ -1318,7 +1321,7 @@
 
                 if (isInCart) {
                     cartBtn.classList.add('in-cart');
-                    cartBtn.innerHTML = '<i class="fas fa-times"></i><span>Remove</span>';
+                    cartBtn.innerHTML = '<span>Remove</span>';
                     cartBtn.title = 'Remove from cart';
                     cartBtn.style.backgroundColor = '#dc3545';  // ADICIONAR ESTA LINHA
                     cartBtn.style.color = 'white';              // ADICIONAR ESTA LINHA
@@ -1349,7 +1352,7 @@
             if (toggleBtn) {
                 const icon = toggleBtn.querySelector('i');
                 if (sidebar.classList.contains('active')) {
-                    icon.className = 'fas fa-times';
+                    icon.className = 'fas fa-filter';
                 } else {
                     icon.className = 'fas fa-filter';
                 }

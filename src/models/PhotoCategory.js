@@ -135,7 +135,7 @@ photoCategorySchema.index({ 'discountRules.clientCode': 1 });
 
 // Método principal UNIFICADO - Verifica hierarquia completa
 photoCategorySchema.methods.getPriceForClient = async function (clientCode, quantity = 1) {
-    console.log(`🎯 Calculando preço: ${this.displayName} | Cliente: ${clientCode} | Qtd: ${quantity}`);
+//     console.log(`🎯 Calculando preço: ${this.displayName} | Cliente: ${clientCode} | Qtd: ${quantity}`);
 
     // HELPER: Encontrar melhor preço em faixas
     const findBestPrice = (ranges, qty) => {

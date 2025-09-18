@@ -592,7 +592,7 @@ window.CartSystem = {
             modalBtn.classList.toggle('in-cart', inCart);
             // GARANTIR QUE TENHA TEXTO!
             if (inCart) {
-                modalBtn.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
+                modalBtn.innerHTML = '<span>Remove</span>';
             } else {
                 modalBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add to Cart</span>';
             }
@@ -1410,7 +1410,7 @@ window.toggleCartItem = async function () {
                 if (isInCart) {
                     modalBtn.classList.add('in-cart');
                     modalBtn.classList.remove('adding');
-                    modalBtn.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>';
+                    modalBtn.innerHTML = '<span>Remove</span>';
                 } else {
                     modalBtn.classList.remove('in-cart');
                     modalBtn.classList.remove('adding');

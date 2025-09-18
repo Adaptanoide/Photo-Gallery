@@ -139,7 +139,7 @@ router.get('/:sessionId', async (req, res) => {
         }
 
         // Calcular totais se necessário
-        const totals = await calculateCartTotals(cart);
+        const totals = { subtotal: 0, discount: 0, total: 0 };
 
         res.json({
             success: true,
@@ -210,8 +210,14 @@ router.get('/:sessionId/calculate-total', async (req, res) => {
             });
         }
 
-        const totals = await calculateCartTotals(cart);
-
+        const totals = {
+            totalItems: cart.totalItems,
+            subtotal: 0,
+            discount: 0,
+            total: 0,
+            discountPercent: 0
+        };
+        
         res.json({
             success: true,
             data: totals

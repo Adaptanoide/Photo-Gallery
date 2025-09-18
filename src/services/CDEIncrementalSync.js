@@ -79,9 +79,29 @@ class CDEIncrementalSync {
                 database: process.env.CDE_DATABASE
             });
 
-            // Para testes: buscar TUDO dos últimos 30 dias (ignora completamente problemas de timezone)
-            const checkFromTime = new Date(Date.now() - 30 * 24 * 60 * 60000);
-            console.log(`[SYNC] Buscando mudanças dos últimos 30 dias para garantir que pegamos tudo`);
+            // Determinar período de busca baseado em se é primeira sync ou incremental
+            let checkFromTime;
+            let syncDescription;
+
+            // Verificar se é a primeira sincronização (lastSyncTime é null ou muito antigo)
+            const isFirstSync = !this.lastSyncTime ||
+                (Date.now() - this.lastSyncTime.getTime()) > (24 * 60 * 60 * 1000);
+
+            if (isFirstSync) {
+                // Primeira sync ou após longo período - usar SYNC_INITIAL_DAYS
+                const initialDays = parseInt(process.env.SYNC_INITIAL_DAYS || '7');
+                checkFromTime = new Date(Date.now() - initialDays * 24 * 60 * 60 * 1000);
+                syncDescription = `últimos ${initialDays} dias (sincronização inicial)`;
+            } else {
+                // Sincronização incremental - buscar apenas mudanças recentes
+                const intervalMinutes = parseInt(process.env.SYNC_INTERVAL_MINUTES || '2');
+                // Buscar o triplo do intervalo para garantir que não perdemos nada
+                const lookbackMinutes = intervalMinutes * 3;
+                checkFromTime = new Date(Date.now() - lookbackMinutes * 60 * 1000);
+                syncDescription = `últimos ${lookbackMinutes} minutos (incremental)`;
+            }
+
+            console.log(`[SYNC] Buscando mudanças dos ${syncDescription}`);
             console.log(`[SYNC] Buscando mudanças desde: ${checkFromTime.toISOString()}`);
 
             // Query otimizada para buscar apenas mudanças recentes
