@@ -43,7 +43,7 @@
 
 /* Header da sidebar com gradiente dourado */
 .sidebar-header {
-    padding: 2.0rem;
+    padding: 1.2rem;
     border-bottom: 1px solid var(--border-subtle);
     background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
     color: var(--luxury-dark);

@@ -96,6 +96,44 @@ class CDEWriter {
     }
 
     /**
+     * MARCAR COMO CONFIRMED (quando cliente confirma seleção)
+     * Estado intermediário entre PRE-SELECTED e SOLD
+     */
+    static async markAsConfirmed(photoNumber, clientCode, clientName = 'Client') {
+        let connection = null;
+
+        try {
+            connection = await this.getConnection();
+
+            console.log(`[CDE] Confirmando foto ${photoNumber} para ${clientCode}`);
+
+            const [result] = await connection.execute(
+                `UPDATE tbinventario 
+                 SET AESTADOP = 'CONFIRMED',
+                     RESERVEDUSU = ?,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA = ?
+                 AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
+                [`${clientName}-${clientCode}`, photoNumber]
+            );
+
+            if (result.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} CONFIRMED`);
+                return true;
+            } else {
+                console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível para confirmar`);
+                return false;
+            }
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro ao confirmar ${photoNumber}:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
      * Método alternativo para liberarFoto (compatibilidade)
      */
     static async liberarFoto(photoNumber) {

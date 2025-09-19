@@ -408,7 +408,7 @@ router.post('/finalize', async (req, res) => {
                     $set: {
                         status: 'in_selection',
                         currentStatus: 'in_selection',
-                        cdeStatus: 'PRE-SELECTED',  // ADICIONAR ESTA LINHA
+                        cdeStatus: 'CONFIRMED',
                         reservedAt: new Date(),
                         'virtualStatus.status': 'in_selection'
                     },
@@ -435,6 +435,28 @@ router.post('/finalize', async (req, res) => {
             console.log(`📊 Segunda etapa - selectionUpdateResult: ${JSON.stringify(selectionUpdateResult)}`);
 
             // VERIFICAÇÃO: Confirmar que o selectionId foi salvo
+            // ========== ATUALIZAR CDE PARA CONFIRMED ==========
+            console.log('📡 Atualizando CDE para CONFIRMED...');
+            const CDEWriter = require('../services/CDEWriter');
+
+            let cdeUpdateCount = 0;
+            for (const product of products) {
+                // Extrair número da foto
+                const photoNumber = product.fileName.match(/\d+/)?.[0];
+                if (photoNumber) {
+                    try {
+                        const success = await CDEWriter.markAsConfirmed(photoNumber, clientCode, clientName);
+                        if (success) cdeUpdateCount++;
+                    } catch (error) {
+                        console.error(`[CDE] Erro ao confirmar ${photoNumber}:`, error.message);
+                        // Continuar com as outras fotos mesmo se uma falhar
+                    }
+                }
+            }
+
+            console.log(`[CDE] ✅ ${cdeUpdateCount}/${products.length} fotos confirmadas no CDE`);
+            // ========== FIM DA ATUALIZAÇÃO CDE ==========
+
             const verifyUpdate = await UnifiedProductComplete.findOne(
                 { _id: productIds[0] },
                 { selectionId: 1, status: 1 }
