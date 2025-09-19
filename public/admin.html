@@ -430,14 +430,19 @@
                         </table>
                     </div>
 
-                    <!-- Paginação -->
-                    <div id="pricingPagination" class="pricing-pagination" style="display: none;">
-                        <button id="btnPrevPage" class="btn btn-secondary">
+                    <!-- Paginação do Price Management -->
+                    <div id="pricingPagination" class="pricing-pagination" style="display: flex; margin-top: 20px;">
+                        <button id="btnPrevPagePricing" class="btn btn-secondary" onclick="adminPricing.previousPage()">
                             <i class="fas fa-chevron-left"></i>
                             Previous
                         </button>
-                        <span id="paginationInfo">Page 1 of 1</span>
-                        <button id="btnNextPage" class="btn btn-secondary">
+
+                        <div id="pricingPaginationNumbers" class="pagination-numbers"
+                            style="display: flex; gap: 5px; margin: 0 15px;">
+                            <!-- Números serão inseridos aqui -->
+                        </div>
+
+                        <button id="btnNextPagePricing" class="btn btn-secondary" onclick="adminPricing.nextPage()">
                             Next
                             <i class="fas fa-chevron-right"></i>
                         </button>
@@ -865,6 +870,26 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <!-- Paginação das Seleções -->
+                        <div id="selectionsPagination" class="pricing-pagination"
+                            style="display: flex; margin-top: 20px;">
+                            <button id="btnPrevPageSel" class="btn btn-secondary"
+                                onclick="adminSelections.goToPage(adminSelections.currentPage - 1)">
+                                <i class="fas fa-chevron-left"></i>
+                                Previous
+                            </button>
+
+                            <div id="paginationNumbersSel" class="pagination-numbers"
+                                style="display: flex; gap: 5px; margin: 0 15px;">
+                                <!-- Números aqui -->
+                            </div>
+
+                            <button id="btnNextPageSel" class="btn btn-secondary"
+                                onclick="adminSelections.goToPage(adminSelections.currentPage + 1)">
+                                Next
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 

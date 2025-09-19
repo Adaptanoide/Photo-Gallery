@@ -40,17 +40,42 @@ router.get('/', async (req, res) => {
             }
         ];
 
-        // Se status for 'all', query fica vazio = busca TODAS as seleções
+        // Buscar TODAS as seleções primeiro (sem paginação)
+        const allSelections = await Selection.find({ ...query, isDeleted: { $ne: true } })
+            .lean();
 
-        const selections = await Selection.find({ ...query, isDeleted: { $ne: true } })
-            .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
-        const total = await Selection.countDocuments({ ...query, isDeleted: { $ne: true } });
+        // ✅ ORDENAR POR PRIORIDADE DE STATUS
+        const statusOrder = {
+            'pending': 1,      // Primeiro - precisam de ação
+            'finalized': 2,    // Segundo - já processadas (SOLD)
+            'cancelled': 3,    // Terceiro - canceladas
+            'confirmed': 4,    // Quarto - confirmadas
+            'reverted': 5      // Quinto - revertidas
+        };
+
+        allSelections.sort((a, b) => {
+            // Primeiro, ordenar por status
+            const statusA = statusOrder[a.status] || 999;
+            const statusB = statusOrder[b.status] || 999;
+
+            if (statusA !== statusB) {
+                return statusA - statusB;
+            }
+
+            // Se mesmo status, ordenar por data (mais recente primeiro)
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        // Aplicar paginação DEPOIS da ordenação
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + parseInt(limit);
+        const paginatedSelections = allSelections.slice(startIndex, endIndex);
+
+        const total = allSelections.length;
 
         res.json({
             success: true,
-            selections: selections.map(s => ({
+            selections: paginatedSelections.map(s => ({
                 selectionId: s.selectionId,
                 clientCode: s.clientCode,
                 clientName: s.clientName,
@@ -60,8 +85,6 @@ router.get('/', async (req, res) => {
                 totalValue: s.totalValue,
                 status: s.status,
                 createdAt: s.createdAt,
-                reservationExpiredAt: s.reservationExpiredAt,
-                isExpired: s.isExpired(),
                 googleDriveInfo: s.googleDriveInfo
             })),
             pagination: {

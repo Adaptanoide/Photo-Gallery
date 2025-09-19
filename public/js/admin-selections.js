@@ -3,6 +3,9 @@
 class AdminSelections {
     constructor() {
         this.currentPage = 1;
+        this.itemsPerPage = 25;
+        this.totalPages = 1;
+        this.totalSelections = 0;
         this.currentFilters = {
             status: 'all'
         };
@@ -82,12 +85,28 @@ class AdminSelections {
                 this.loadStatistics(),
                 this.loadSelections()
             ]);
-            this.showNotification('✅ Data refreshed successfully!', 'success');
+            if (window.UISystem && window.UISystem.showToast) {
+                UISystem.showToast('success', 'Data refreshed successfully!');
+            } else {
+                this.showNotification('✅ Data refreshed successfully!', 'success');
+            }
         } catch (error) {
             console.error('❌ Error refreshing data:', error);
             this.showNotification(`Error refreshing data: ${error.message}`, 'error');
         } finally {
             this.setLoading(false);
+        }
+    }
+
+    // ===== SILENT REFRESH (sem notificação) =====
+    async silentRefresh() {
+        try {
+            await Promise.all([
+                this.loadStatistics(),
+                this.loadSelections()
+            ]);
+        } catch (error) {
+            console.error('Error in silent refresh:', error);
         }
     }
 
@@ -155,19 +174,19 @@ class AdminSelections {
         try {
             const tableBody = document.getElementById('selectionsTableBody');
             tableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Loading selections...
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td colspan="8" class="text-center">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading selections...
+                </td>
+            </tr>
+        `;
 
             const params = new URLSearchParams({
                 status: this.currentFilters.status,
                 clientSearch: this.currentFilters.clientSearch || '',
                 page: this.currentPage,
-                limit: 20
+                limit: this.itemsPerPage
             });
 
             const response = await fetch(`/api/selections?${params}`, {
@@ -178,9 +197,21 @@ class AdminSelections {
 
             if (data.success) {
                 this.renderSelections(data.selections);
-                // ✅ LOG TEMPORÁRIO PARA DEBUG:
-                console.log('🔍 PRIMEIRA SELEÇÃO DEBUG:', data.selections[0]);
-                console.log(`✅ ${data.selections.length} selections loaded`);
+
+                // PROCESSAR PAGINAÇÃO
+                if (data.pagination) {
+                    this.currentPage = data.pagination.page;
+                    this.totalPages = data.pagination.totalPages;
+                    this.totalSelections = data.pagination.total;
+
+                    // Atualizar UI da paginação
+                    //document.getElementById('paginationInfoSel').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+                    document.getElementById('btnPrevPageSel').disabled = (this.currentPage === 1);
+                    document.getElementById('btnNextPageSel').disabled = (this.currentPage === this.totalPages);
+                    this.renderPaginationNumbers();
+                }
+
+                console.log(`✅ Página ${this.currentPage}/${this.totalPages} - Total: ${this.totalSelections} seleções`);
             } else {
                 throw new Error(data.message);
             }
@@ -189,6 +220,55 @@ class AdminSelections {
             console.error('❌ Error loading selections:', error);
             this.showTableError('Error loading selections: ' + error.message);
         }
+    }
+
+    // ===== GO TO PAGE =====
+    goToPage(page) {
+        if (page < 1 || page > this.totalPages) return;
+
+        this.currentPage = page;
+        this.loadSelections();
+    }
+
+    // ===== RENDER PAGINATION NUMBERS =====
+    renderPaginationNumbers() {
+        const container = document.getElementById('paginationNumbersSel');
+        if (!container) return;
+
+        let html = '';
+        const maxButtons = 5;
+        let startPage = 1;
+        let endPage = this.totalPages;
+
+        if (this.totalPages > maxButtons) {
+            const halfButtons = Math.floor(maxButtons / 2);
+
+            if (this.currentPage <= halfButtons + 1) {
+                endPage = maxButtons;
+            } else if (this.currentPage >= this.totalPages - halfButtons) {
+                startPage = this.totalPages - maxButtons + 1;
+            } else {
+                startPage = this.currentPage - halfButtons;
+                endPage = this.currentPage + halfButtons;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === this.currentPage ? 'active' : '';
+            html += `
+                <button class="btn-page-number ${isActive}" 
+                        onclick="adminSelections.goToPage(${i})"
+                        ${i === this.currentPage ? 'disabled' : ''}>
+                    ${i}
+                </button>
+            `;
+        }
+
+        if (endPage < this.totalPages) {
+            html += `<span class="pagination-dots">...</span>`;
+        }
+
+        container.innerHTML = html;
     }
 
     // ===== RENDER SELECTIONS TABLE =====
@@ -701,6 +781,7 @@ class AdminSelections {
                 // Recarregar tabela após 2 segundos
                 setTimeout(() => {
                     this.loadSelections();
+                    this.loadStatistics(); // ADICIONE ESTA LINHA
                 }, 2000);
             } else {
                 throw new Error('Failed to approve');
@@ -779,6 +860,7 @@ class AdminSelections {
                 // Recarregar tabela após 2 segundos
                 setTimeout(() => {
                     this.loadSelections();
+                    this.loadStatistics(); // ADICIONE ESTA LINHA
                 }, 2000);
             } else {
                 throw new Error('Failed to cancel');
@@ -853,6 +935,7 @@ class AdminSelections {
                 UISystem.showToast('success', 'Sale cancelled! All photos released to available.');
                 setTimeout(() => {
                     this.loadSelections();
+                    this.loadStatistics(); // ADICIONE ESTA LINHA
                 }, 2000);
             } else {
                 throw new Error('Failed to cancel sale');
@@ -1024,7 +1107,10 @@ class AdminSelections {
 
             if (response.ok) {
                 UISystem.showToast('success', 'Photos reverted to available!');
-                setTimeout(() => this.loadSelections(), 2000);
+                setTimeout(() => {
+                    this.loadSelections();
+                    this.loadStatistics();
+                }, 2000);
             } else {
                 throw new Error('Failed to revert');
             }
@@ -1182,7 +1268,10 @@ class AdminSelections {
                 }
 
                 // Recarregar lista
-                setTimeout(() => this.loadSelections(), 1000);
+                setTimeout(() => {
+                    this.loadSelections();
+                    this.loadStatistics();
+                }, 1000);
             }
 
         } catch (error) {

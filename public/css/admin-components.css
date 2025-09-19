@@ -572,3 +572,35 @@
         font-size: 0.9rem;
     }
 }
+
+.pagination-numbers {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin: 0 15px;
+}
+
+.btn-page-number {
+    padding: 5px 12px;
+    background: #3a3a3a;
+    border: 1px solid #555;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-page-number:hover {
+    background: #4a4a4a;
+}
+
+.btn-page-number.active {
+    background: #d4af37;
+    color: #000;
+    font-weight: bold;
+}
+
+.pagination-dots {
+    padding: 0 8px;
+    color: #888;
+}

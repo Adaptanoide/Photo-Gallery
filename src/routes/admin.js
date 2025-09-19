@@ -103,6 +103,8 @@ router.get('/access-codes', async (req, res) => {
         const search = req.query.search || '';
         const status = req.query.status || 'all';
         const sortBy = req.query.sortBy || 'recent';
+        console.log(`🔍 SortBy recebido: "${sortBy}" | Status: "${status}"`);
+
 
         // Calcular skip
         const skip = (page - 1) * limit;
@@ -148,6 +150,9 @@ router.get('/access-codes', async (req, res) => {
                 break;
             case 'expires-soon':
                 sortOptions = { expiresAt: 1 };
+                break;
+            case 'active-carts':
+                sortOptions = { createAt: -1 };
                 break;
             case 'recent':
             default:
@@ -199,9 +204,39 @@ router.get('/access-codes', async (req, res) => {
             }
         });
 
+        // ✅ ORDENAÇÃO ESPECIAL: Carrinhos ativos primeiro (quando sortBy = 'recent')
+        let sortedCodes = codes;
+        if (sortBy === 'recent' || !sortBy) {
+            console.log('✅ Aplicando ordenação por carrinho ativo');
+
+            // Separar clientes com e sem carrinho
+            const withCart = [];
+            const withoutCart = [];
+
+            codes.forEach(code => {
+                if (cartMap[code.code]) {
+                    withCart.push({
+                        ...code.toObject(),
+                        cartItemCount: cartMap[code.code].itemCount
+                    });
+                } else {
+                    withoutCart.push(code.toObject());
+                }
+            });
+
+            // Ordenar com carrinho por quantidade (maior → menor)
+            withCart.sort((a, b) => b.cartItemCount - a.cartItemCount);
+
+            // Ordenar sem carrinho por data recente
+            withoutCart.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            // Juntar: primeiro com carrinho, depois sem
+            sortedCodes = [...withCart, ...withoutCart];
+        }
+
         // Adicionar info de carrinho em cada código
-        const codesWithCart = codes.map(code => ({
-            ...code.toObject(),
+        const codesWithCart = sortedCodes.map(code => ({
+            ...(code.toObject ? code.toObject() : code),
             cartInfo: cartMap[code.code] || null
         }));
 

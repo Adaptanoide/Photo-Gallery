@@ -112,7 +112,7 @@ class AdminClients {
             return;
         }
 
-        this.showLoading(true);
+        //this.showLoading(true);
 
         try {
             // Create interface HTML
@@ -233,7 +233,11 @@ class AdminClients {
                     <i class="fas fa-chevron-left"></i>
                     Previous
                 </button>
-                <span id="paginationInfo">Page 1 of 1</span>
+                
+                <div id="paginationNumbers" class="pagination-numbers" style="display: flex; gap: 5px; margin: 0 15px;">
+                    <!-- Números aqui -->
+                </div>
+                
                 <button id="btnNextPage" class="btn btn-secondary" onclick="adminClients.goToPage(adminClients.currentPage + 1)">
                     Next
                     <i class="fas fa-chevron-right"></i>
@@ -737,8 +741,22 @@ class AdminClients {
     }
 
     // ===== DATA LOADING =====
-    async loadClients(page = 1) {
+    async loadClients(page = 1, showLoading = false) {
         try {
+            // Mostrar loading só quando solicitado
+            if (showLoading && this.table) {
+                this.table.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Loading codes...
+                    </td>
+                </tr>
+            `;
+            }
+
+            console.log(`🔄 Atualizando clientes - ${new Date().toLocaleTimeString()}`);
+
             const token = this.getAdminToken();
 
             // NOVO: Enviar TODOS os filtros para o backend
@@ -768,9 +786,10 @@ class AdminClients {
                     this.totalClients = data.pagination.totalCount;
 
                     // Atualizar UI da paginação
-                    document.getElementById('paginationInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+                    //document.getElementById('paginationInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
                     document.getElementById('btnPrevPage').disabled = (this.currentPage === 1);
                     document.getElementById('btnNextPage').disabled = (this.currentPage === this.totalPages);
+                    this.renderPaginationNumbers();
                 }
 
                 console.log(`✅ Página ${this.currentPage}/${this.totalPages} - Total: ${this.totalClients} clientes (Filtrados)`);
@@ -2197,14 +2216,14 @@ class AdminClients {
     }
 
     async refreshData() {
-        this.showLoading(true);
+        //this.showLoading(true);
         try {
             await Promise.all([
-                this.loadClients(),
+                this.loadClients(this.currentPage, true),  // MODIFICADO
                 this.loadAvailableCategories()
             ]);
             this.renderClientsTable();
-            console.log('✅ Client data refreshed successfully'); // ✅ SÓ LOG, SEM ALERT
+            console.log('✅ Client data refreshed successfully');
         } catch (error) {
             this.showError('Error updating data');
         } finally {
@@ -3084,18 +3103,62 @@ class AdminClients {
         if (page < 1 || page > this.totalPages) return;
 
         this.currentPage = page;
-        this.showLoading(true);
+        //this.showLoading(true);
 
         this.loadClients(page).then(() => {
             this.renderClientsTable();
 
             // Atualizar texto e botões
-            document.getElementById('paginationInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+            //document.getElementById('paginationInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
             document.getElementById('btnPrevPage').disabled = (this.currentPage === 1);
             document.getElementById('btnNextPage').disabled = (this.currentPage === this.totalPages);
-
+            this.renderPaginationNumbers();
             this.showLoading(false);
         });
+    }
+
+    // ===== RENDER PAGINATION NUMBERS =====
+    renderPaginationNumbers() {
+        const container = document.getElementById('paginationNumbers');
+        if (!container) return;
+
+        let html = '';
+        const maxButtons = 5; // Máximo de botões numéricos
+        let startPage = 1;
+        let endPage = this.totalPages;
+
+        // Lógica para mostrar apenas 5 botões
+        if (this.totalPages > maxButtons) {
+            const halfButtons = Math.floor(maxButtons / 2);
+
+            if (this.currentPage <= halfButtons + 1) {
+                endPage = maxButtons;
+            } else if (this.currentPage >= this.totalPages - halfButtons) {
+                startPage = this.totalPages - maxButtons + 1;
+            } else {
+                startPage = this.currentPage - halfButtons;
+                endPage = this.currentPage + halfButtons;
+            }
+        }
+
+        // Adicionar botões
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === this.currentPage ? 'active' : '';
+            html += `
+            <button class="btn-page-number ${isActive}" 
+                    onclick="adminClients.goToPage(${i})"
+                    ${i === this.currentPage ? 'disabled' : ''}>
+                ${i}
+            </button>
+        `;
+        }
+
+        // Adicionar elipses se necessário
+        if (endPage < this.totalPages) {
+            html += `<span class="pagination-dots">...</span>`;
+        }
+
+        container.innerHTML = html;
     }
 }
 

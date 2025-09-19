@@ -890,6 +890,48 @@ router.get('/categories', async (req, res) => {
 });
 
 /**
+ * GET /api/pricing/categories/all
+ * Retorna TODAS as categorias sem paginação para cache local
+ */
+router.get('/categories/all', async (req, res) => {
+    try {
+        console.log('📦 Carregando TODAS as categorias para cache...');
+
+        // Buscar TODAS as categorias ativas
+        const categories = await PhotoCategory.find({
+            isActive: true,
+            photoCount: { $gt: 0 }  // Apenas com fotos
+        })
+            .sort({ displayName: 1 })
+            .lean();
+
+        // Estatísticas
+        const withPrice = categories.filter(c => c.basePrice > 0).length;
+        const withoutPrice = categories.length - withPrice;
+
+        res.json({
+            success: true,
+            categories: categories,
+            totalCount: categories.length,
+            statistics: {
+                total: categories.length,
+                withPrice: withPrice,
+                withoutPrice: withoutPrice
+            }
+        });
+
+        console.log(`✅ Enviadas ${categories.length} categorias para cache`);
+
+    } catch (error) {
+        console.error('Erro ao buscar todas as categorias:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao carregar categorias'
+        });
+    }
+});
+
+/**
  * GET /api/pricing/categories/:id
  * Buscar categoria específica com detalhes completos
  */

@@ -13,7 +13,10 @@ class AdminPricing {
         this.currentCategory = null;
         this.isLoading = false;
         this.currentPage = 1;
-        this.itemsPerPage = 100;
+        this.itemsPerPage = 25;
+        this.allCategories = [];  // Cache de todas as categorias
+        this.filteredCategories = []; // Categorias após aplicar filtros
+        this.lastLoadTime = 0;    // Controle de tempo do cache
         this.clientRates = {};
         this.filters = {
             search: '',
@@ -84,8 +87,8 @@ class AdminPricing {
         }
 
         // Pagination
-        const btnPrevPage = document.getElementById('btnPrevPage');
-        const btnNextPage = document.getElementById('btnNextPage');
+        const btnPrevPage = document.getElementById('btnPrevPagePricing');
+        const btnNextPage = document.getElementById('btnNextPagePricing');
 
         if (btnPrevPage) btnPrevPage.addEventListener('click', () => this.previousPage());
         if (btnNextPage) btnNextPage.addEventListener('click', () => this.nextPage());
@@ -107,7 +110,7 @@ class AdminPricing {
     async loadInitialData() {
         try {
             await this.checkR2Status();
-            await this.loadCategories();
+            await this.loadCategories(true); // Forçar reload após sync
         } catch (error) {
             console.error('❌ Error loading initial data:', error);
             this.showError('Error loading pricing data');
@@ -213,37 +216,108 @@ class AdminPricing {
     }
 
     // ===== CATEGORY MANAGEMENT =====
-    async loadCategories() {
+    async loadCategories(forceReload = false) {
         try {
-            const params = new URLSearchParams({
-                search: this.filters.search,
-                priceStatus: this.filters.priceStatus === 'all' ? '' :
-                    this.filters.priceStatus === 'with' ? 'with' : 'without',
-                page: this.currentPage,
-                limit: this.itemsPerPage
-            });
+            // Se tem cache válido e não está forçando reload, usar cache
+            if (!forceReload && this.allCategories.length > 0) {
+                console.log('📦 Usando cache local');
+                this.renderFromCache();
+                return;
+            }
 
-            const response = await fetch(`/api/pricing/categories?${params}`, {
+            // Primeira vez ou reload forçado - carregar TUDO
+            console.log('🔄 Carregando todas as categorias...');
+
+            const response = await fetch('/api/pricing/categories/all', {
                 headers: this.getAuthHeaders()
             });
 
             const data = await response.json();
 
             if (data.success) {
-                this.categories = data.categories;
-                this.renderCategoriesTable();
-                this.updatePagination(data.pagination);
-                this.updateStatistics(data.categories);
+                // Salvar TODAS as categorias no cache
+                this.allCategories = data.categories;
+                console.log(`💾 Cache completo: ${this.allCategories.length} categorias`);
 
-                console.log(`✅ ${this.categories.length} categories loaded`);
+                // Aplicar filtros localmente
+                this.applyLocalFilters();
+
+                // Renderizar página atual
+                this.renderFromCache();
+
+                // Atualizar estatísticas
+                if (data.statistics) {
+                    this.updateStatistics(data.categories);
+                }
             } else {
-                throw new Error(data.message || 'Error loading categories');
+                throw new Error(data.message || 'Erro ao carregar categorias');
             }
 
         } catch (error) {
-            console.error('❌ Error loading categories:', error);
-            this.showError('Error loading categories');
+            console.error('❌ Erro ao carregar categorias:', error);
+            this.showError('Erro ao carregar categorias');
         }
+    }
+
+    // ===== APPLY LOCAL FILTERS =====
+    applyLocalFilters() {
+        let filtered = [...this.allCategories];
+
+        // Filtro de busca
+        if (this.filters.search) {
+            const searchLower = this.filters.search.toLowerCase();
+            filtered = filtered.filter(cat =>
+                cat.displayName.toLowerCase().includes(searchLower) ||
+                cat.folderName.toLowerCase().includes(searchLower) ||
+                (cat.qbItem && cat.qbItem.toLowerCase().includes(searchLower))
+            );
+        }
+
+        // Filtro de preço
+        if (this.filters.priceStatus === 'with') {
+            filtered = filtered.filter(cat => cat.basePrice > 0);
+        } else if (this.filters.priceStatus === 'without') {
+            filtered = filtered.filter(cat => !cat.basePrice || cat.basePrice === 0);
+        }
+
+        // Ordenação
+        switch (this.filters.sortBy) {
+            case 'name':
+                filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                break;
+            case 'price-high':
+                filtered.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0));
+                break;
+            case 'price-low':
+                filtered.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0));
+                break;
+            case 'photos':
+                filtered.sort((a, b) => b.photoCount - a.photoCount);
+                break;
+        }
+
+        this.filteredCategories = filtered;
+        console.log(`🔍 Filtrados: ${filtered.length} de ${this.allCategories.length}`);
+    }
+
+    // ===== RENDER FROM CACHE =====
+    renderFromCache() {
+        // Usar categorias filtradas ou todas se não houver filtros
+        const source = this.filteredCategories.length > 0 ? this.filteredCategories : this.allCategories;
+
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+
+        this.categories = source.slice(startIndex, endIndex);
+        this.renderCategoriesTable();
+
+        const totalPages = Math.ceil(source.length / this.itemsPerPage);
+        this.updatePagination({
+            page: this.currentPage,
+            totalPages: totalPages,
+            hasNext: this.currentPage < totalPages,
+            hasPrev: this.currentPage > 1
+        });
     }
 
     renderCategoriesTable() {
@@ -1791,20 +1865,35 @@ class AdminPricing {
         clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
             this.currentPage = 1;
-            this.loadCategories();
+            if (this.allCategories.length > 0) {
+                this.applyLocalFilters();
+                this.renderFromCache();
+            } else {
+                this.loadCategories();
+            }
         }, 300);
     }
 
     handlePriceFilter(value) {
         this.filters.priceStatus = value;
         this.currentPage = 1;
-        this.loadCategories();
+        if (this.allCategories.length > 0) {
+            this.applyLocalFilters();
+            this.renderFromCache();
+        } else {
+            this.loadCategories();
+        }
     }
 
     handleSort(value) {
         this.filters.sortBy = value;
         this.currentPage = 1;
-        this.loadCategories();
+        if (this.allCategories.length > 0) {
+            this.applyLocalFilters();
+            this.renderFromCache();
+        } else {
+            this.loadCategories();
+        }
     }
 
     // ===== PAGINATION =====
@@ -1813,13 +1902,16 @@ class AdminPricing {
 
         const { page = 1, totalPages = 1, hasNext = false, hasPrev = false } = pagination;
 
-        const paginationInfo = document.getElementById('paginationInfo');
-        const btnPrevPage = document.getElementById('btnPrevPage');
-        const btnNextPage = document.getElementById('btnNextPage');
+        // const paginationInfo = document.getElementById('paginationInfo');  // COMENTAR
+        const btnPrevPage = document.getElementById('btnPrevPagePricing');
+        const btnNextPage = document.getElementById('btnNextPagePricing');
 
-        if (paginationInfo) paginationInfo.textContent = `Page ${page} of ${totalPages}`;
+        // if (paginationInfo) paginationInfo.textContent = `Page ${page} of ${totalPages}`;  // COMENTAR
         if (btnPrevPage) btnPrevPage.disabled = !hasPrev;
         if (btnNextPage) btnNextPage.disabled = !hasNext;
+
+        // ADICIONAR ESTA LINHA:
+        this.renderPaginationNumbers(page, totalPages);
 
         this.pricingPagination.style.display = totalPages > 1 ? 'flex' : 'none';
     }
@@ -1834,6 +1926,54 @@ class AdminPricing {
     nextPage() {
         this.currentPage++;
         this.loadCategories();
+    }
+
+    // ===== GO TO PAGE =====
+    goToPage(page) {
+        if (page < 1) return;
+        this.currentPage = page;
+        this.loadCategories();
+    }
+
+    // ===== RENDER PAGINATION NUMBERS =====
+    renderPaginationNumbers(currentPage, totalPages) {
+        const container = document.getElementById('pricingPaginationNumbers');
+        if (!container) return;
+
+        let html = '';
+        const maxButtons = 5;
+        let startPage = 1;
+        let endPage = totalPages;
+
+        if (totalPages > maxButtons) {
+            const halfButtons = Math.floor(maxButtons / 2);
+
+            if (currentPage <= halfButtons + 1) {
+                endPage = maxButtons;
+            } else if (currentPage >= totalPages - halfButtons) {
+                startPage = totalPages - maxButtons + 1;
+            } else {
+                startPage = currentPage - halfButtons;
+                endPage = currentPage + halfButtons;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === currentPage ? 'active' : '';
+            html += `
+                <button class="btn-page-number ${isActive}" 
+                        onclick="adminPricing.goToPage(${i})"
+                        ${i === currentPage ? 'disabled' : ''}>
+                    ${i}
+                </button>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            html += `<span class="pagination-dots">...</span>`;
+        }
+
+        container.innerHTML = html;
     }
 
     // ===== BULK EDIT =====

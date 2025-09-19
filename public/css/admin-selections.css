@@ -1307,11 +1307,11 @@
 
 .selections-table th:nth-child(7),
 .selections-table td:nth-child(7) {
-    text-align: left;  /* STATUS */
+    text-align: center;  /* STATUS */
 }
 
 .selections-table th:nth-child(8) {
-    text-align: right;   /* ACTIONS header - alinhado à direita */
+    text-align: center;   /* ACTIONS header - alinhado à direita */
     padding-right: 35px;  /* Espaço da borda */
 }
 

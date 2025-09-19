@@ -83,6 +83,8 @@ router.post('/finalize', async (req, res) => {
             const accessCode = await AccessCode.findOne({ code: clientCode }).session(session);
             const salesRep = accessCode?.salesRep || 'Unassigned';
             console.log(`👤 Sales Rep do cliente: ${salesRep}`);
+            const companyName = accessCode?.companyName || '-';
+            console.log(`🏢 Company: ${companyName} | 👤 Sales Rep: ${salesRep}`);
 
             const isSpecialClient = accessCode &&
                 accessCode.accessType === 'special' &&
@@ -322,6 +324,7 @@ router.post('/finalize', async (req, res) => {
                     sessionId,
                     clientCode,
                     clientName,
+                    clientCompany: companyName,
                     salesRep: salesRep,
                     items: products.map(product => {
                         const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
@@ -464,6 +467,7 @@ router.post('/finalize', async (req, res) => {
                         selectionId,
                         clientCode,
                         clientName,
+                        clientCompany: companyName,
                         salesRep: salesRep,
                         totalItems: cart.totalItems,
                         totalValue: totalValue,
