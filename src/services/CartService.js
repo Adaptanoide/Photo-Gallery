@@ -6,6 +6,7 @@ const mysql = require('mysql2/promise');
 const Cart = require('../models/Cart');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const AccessCode = require('../models/AccessCode');
+const StatusConsistencyGuard = require('./StatusConsistencyGuard');
 
 class CartService {
     static MAX_ITEMS_PER_CART = 100;
@@ -145,8 +146,15 @@ class CartService {
             }
 
             // 7. Atualizar produto no MongoDB
-            product.status = 'reserved';
-            product.currentStatus = 'reserved';
+            product.cdeStatus = 'PRE-SELECTED';  // Define o CDE status primeiro
+            product.reservedBy = {
+                clientCode,
+                sessionId,
+                expiresAt
+            };
+            await product.save({ session: mongoSession });
+
+            // 7. Atualizar produto no MongoDB
             product.cdeStatus = 'PRE-SELECTED';
             product.reservedBy = {
                 clientCode,
@@ -154,6 +162,9 @@ class CartService {
                 expiresAt
             };
             await product.save({ session: mongoSession });
+
+            // 7.1 Garantir que todos os status fiquem consistentes (ANTES DO COMMIT!)
+            product = await StatusConsistencyGuard.ensureConsistency(product._id, mongoSession);
 
             // 8. Adicionar ao carrinho
             cart.items.push({
@@ -261,6 +272,12 @@ class CartService {
                     }
                 }
             ).session(mongoSession);
+
+            // 4.1 Garantir consistência após liberar (ANTES DO COMMIT!)
+            const updatedProduct = await UnifiedProductComplete.findOne({ driveFileId }).session(mongoSession);
+            if (updatedProduct) {
+                await StatusConsistencyGuard.ensureConsistency(updatedProduct._id, mongoSession);
+            }
 
             await mongoSession.commitTransaction();
 
