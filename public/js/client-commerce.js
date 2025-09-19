@@ -30,6 +30,75 @@ document.addEventListener('click', function (e) {
     }
 }, true); // TRUE = captura ANTES de qualquer outro evento
 
+// ===== FILTROS DINÂMICOS BASEADOS NO ACESSO =====
+window.setupDynamicFilters = async function () {
+    console.log('🔍 Configurando filtros dinâmicos...');
+
+    try {
+        // Buscar categorias que o cliente tem acesso
+        const data = await window.CategoriesCache.fetch();
+        const categories = data.categories || [];
+
+        // Analisar quais tipos existem nas categorias permitidas
+        const availableTypes = new Set();
+
+        categories.forEach(cat => {
+            const name = (cat.name || '').toLowerCase();
+
+            // Detectar tipos presentes
+            if (name.includes('brindle')) availableTypes.add('brindle');
+            if (name.includes('black') && name.includes('white')) availableTypes.add('black-white');
+            if (name.includes('brown') && name.includes('white')) availableTypes.add('brown-white');
+            if (name.includes('salt') || name.includes('pepper')) availableTypes.add('salt-pepper');
+            if (name.includes('tricolor')) availableTypes.add('tricolor');
+            if (name.includes('grey')) availableTypes.add('brindle-grey');
+            if (name.includes('backbone')) availableTypes.add('brindle-white-backbone');
+            if (name.includes('belly')) availableTypes.add('brindle-white-belly');
+            if (name.includes('exotic')) availableTypes.add('exotic');
+        });
+
+        console.log('✅ Tipos disponíveis:', Array.from(availableTypes));
+
+        // Ocultar radio buttons que não se aplicam
+        document.querySelectorAll('input[name="typePattern"]').forEach(radio => {
+            const value = radio.value;
+            const label = radio.parentElement;
+
+            // Sempre mostrar "All Types"
+            if (value === '' || value === 'all') {
+                label.style.display = '';
+                return;
+            }
+
+            // Mapear valores para tipos detectados
+            const typeMap = {
+                'black-white': 'black-white',
+                'brindle': 'brindle',
+                'brindle-grey': 'brindle-grey',
+                'brindle-white-backbone': 'brindle-white-backbone',
+                'brindle-white-belly': 'brindle-white-belly',
+                'brown-white': 'brown-white',
+                'salt-pepper': 'salt-pepper',
+                'tricolor': 'tricolor'
+            };
+
+            // Mostrar/Ocultar baseado no que existe
+            if (availableTypes.has(typeMap[value])) {
+                label.style.display = '';
+            } else {
+                label.style.display = 'none';
+            }
+        });
+
+        // Contar quantos filtros estão visíveis
+        const visibleFilters = document.querySelectorAll('input[name="typePattern"]:not([value=""]):not([style*="display: none"])').length;
+        console.log(`📊 ${visibleFilters} filtros visíveis de tipo`);
+
+    } catch (error) {
+        console.error('Erro configurando filtros dinâmicos:', error);
+    }
+}
+
 // ===== VERIFICAR DEPENDÊNCIAS =====
 if (!window.navigationState) {
     console.error('❌ client-commerce.js requer client-core.js');
@@ -624,6 +693,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup filtros
     setupFilters();
+
+    // Configurar filtros dinâmicos após carregar categorias
+    setTimeout(() => {
+        window.setupDynamicFilters();
+    }, 1000);
 
     // Carregar contagens - COMENTADO
     // if (window.loadFilterCounts) {

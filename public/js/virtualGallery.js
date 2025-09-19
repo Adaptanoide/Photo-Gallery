@@ -20,11 +20,15 @@ class VirtualGallery {
         console.log(`🚀 Virtual Gallery: Gerenciando ${photos.length} fotos`);
         console.log(`📸 Carregando apenas ${this.BATCH_SIZE} fotos inicialmente`);
 
+        // LIMPAR COMPLETAMENTE ANTES DE INICIAR
+        this.destroy();
+
         this.allPhotos = photos;
         this.container = container;
         this.categoryPrice = categoryPrice;
         this.loadedCount = 0;
         this.hasMorePhotos = true;
+        this.isLoading = false; // GARANTIR que não está travado
 
         // Limpar container
         this.container.innerHTML = '';
@@ -33,8 +37,19 @@ class VirtualGallery {
         // Carregar primeiro lote
         this.loadNextBatch();
 
-        // Configurar scroll listener
-        this.setupScrollListener();
+        // AGUARDAR DOM ESTABILIZAR antes de adicionar listeners
+        setTimeout(() => {
+            this.setupScrollListener();
+
+            // VERIFICAÇÃO DE SEGURANÇA - se não carregou o suficiente
+            setTimeout(() => {
+                const needsMore = document.documentElement.scrollHeight <= window.innerHeight + 100;
+                if (needsMore && this.hasMorePhotos && !this.isLoading) {
+                    console.log('📏 Auto-preenchendo tela grande');
+                    this.loadNextBatch();
+                }
+            }, 500);
+        }, 100);
 
         // Mostrar indicador se tem mais fotos
         if (photos.length > this.BATCH_SIZE) {
@@ -85,6 +100,12 @@ class VirtualGallery {
 
     // Renderizar fotos no DOM
     renderPhotos(photos, startIndex) {
+        // PROTEÇÃO: Verificar container antes de usar
+        if (!this.container) {
+            console.log('⚠️ Container não existe, pulando renderização');
+            return;
+        }
+
         const fragment = document.createDocumentFragment();
 
         photos.forEach((photo, index) => {
@@ -167,26 +188,34 @@ class VirtualGallery {
 
     // Configurar listener de scroll
     setupScrollListener() {
-        // Remover listener anterior se existir
+        // Remover listeners antigos
         if (this.scrollHandler) {
             window.removeEventListener('scroll', this.scrollHandler);
+            window.removeEventListener('wheel', this.scrollHandler);
         }
 
-        // Criar função de scroll com throttle
-        let scrollTimeout;
+        // Handler COM THROTTLE
+        let isThrottled = false;
         this.scrollHandler = () => {
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                this.checkScroll();
-            }, 150);
+            if (isThrottled) return;
+
+            isThrottled = true;
+            this.checkScroll();
+
+            // Liberar após 100ms
+            setTimeout(() => {
+                isThrottled = false;
+            }, 100);
         };
 
-        // Adicionar listener
-        window.addEventListener('scroll', this.scrollHandler);
+        // Apenas UM listener de cada tipo
+        window.addEventListener('scroll', this.scrollHandler, { passive: true });
+        window.addEventListener('wheel', this.scrollHandler, { passive: true });
     }
 
     // Verificar se precisa carregar mais fotos
     checkScroll() {
+
         if (this.isLoading || !this.hasMorePhotos) {
             return;
         }
@@ -299,6 +328,77 @@ class VirtualGallery {
         this.hideLoadingIndicator();
     }
 }
+
+// MONITOR DE SEGURANÇA RÁPIDO - Detecta e corrige em 3 segundos
+(function () {
+    let checkInterval = null;
+    let stuckCounter = 0;
+    let lastScrollCheck = 0;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        checkInterval = setInterval(() => {
+            if (!window.virtualGallery) return;
+
+            const vg = window.virtualGallery;
+
+            // CORREÇÃO 1: Destravar loading RAPIDAMENTE
+            if (vg.isLoading) {
+                stuckCounter++;
+                if (stuckCounter > 1) { // Após 3 segundos apenas!
+                    console.log('🔓 Monitor: Destravando loading flag');
+                    vg.isLoading = false;
+                    stuckCounter = 0;
+                }
+            } else {
+                stuckCounter = 0;
+            }
+
+            // CORREÇÃO 2: Container ANTES de tentar usar
+            if (!vg.container || !document.body.contains(vg.container)) {
+                const grid = document.getElementById('photosGrid');
+                if (grid) {
+                    console.log('🔧 Monitor: Restaurando container perdido');
+                    vg.container = grid;
+                    return; // Sair para não tentar usar ainda
+                }
+            }
+
+            // CORREÇÃO 3: Detectar se scroll parou de funcionar
+            const currentTime = Date.now();
+            if (vg.scrollHandler) {
+                // Testar se o handler ainda existe no evento
+                const hasListener = window.getEventListeners ?
+                    (window.getEventListeners(window).scroll?.length > 0) : true;
+
+                if (!hasListener || (currentTime - lastScrollCheck > 10000)) {
+                    console.log('🔄 Monitor: Scroll pode estar quebrado, reinstalando...');
+                    vg.setupScrollListener();
+                    lastScrollCheck = currentTime;
+                }
+            } else {
+                console.log('🔄 Monitor: Instalando scroll listeners');
+                vg.setupScrollListener();
+            }
+
+            // CORREÇÃO 4: Carregar mais fotos se necessário
+            if (vg.hasMorePhotos && vg.container && !vg.isLoading) {
+                const rect = vg.container.getBoundingClientRect();
+                const visibleBottom = rect.bottom;
+                const windowHeight = window.innerHeight;
+
+                if (visibleBottom < windowHeight + 200) {
+                    console.log('📦 Monitor: Carregando mais fotos preventivamente');
+                    vg.loadNextBatch();
+                }
+            }
+
+        }, 3000); // A cada 3 segundos - MAIS RÁPIDO!
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (checkInterval) clearInterval(checkInterval);
+    });
+})();
 
 // Criar instância global
 window.virtualGallery = new VirtualGallery();

@@ -454,6 +454,13 @@ router.post('/finalize', async (req, res) => {
             cart.isActive = false;
             cart.notes = `Finalizado como seleção ${selectionId}`;
             await cart.save({ session });
+            // LIMPAR ITEMS DO CARRINHO APÓS FINALIZAÇÃO
+            console.log(`🧹 Limpando items do carrinho ${sessionId}...`);
+            cart.items = [];
+            cart.totalItems = 0;
+            cart.totalPrice = 0;
+            await cart.save({ session });
+            console.log(`✅ Carrinho limpo - cliente ${clientCode} poderá fazer nova compra quando reativado`);
 
             console.log(`✅ Carrinho desativado e produtos atualizados`);
 

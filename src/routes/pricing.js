@@ -461,6 +461,56 @@ router.get('/categories/filtered', async (req, res) => {
         }
         // ========== FIM DA VERIFICAÇÃO SPECIAL ==========
 
+        // ========== FILTRAR POR PERMISSÕES DO CLIENTE ==========
+        let allowedCategoryNames = null;
+        let decoded = null;  // ADICIONAR ESTA LINHA!
+
+        // Verificar se tem token
+        if (token) {
+            try {
+                const jwt = require('jsonwebtoken');
+                decoded = jwt.verify(token, process.env.JWT_SECRET);  // DECODIFICAR AQUI!
+
+                if (decoded && decoded.type === 'client' && decoded.clientCode) {
+                    const AccessCode = require('../models/AccessCode');
+                    const accessCode = await AccessCode.findOne({
+                        code: decoded.clientCode
+                    });
+
+                    if (accessCode && accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+                        console.log(`🔐 Cliente ${decoded.clientCode} tem ${accessCode.allowedCategories.length} categorias permitidas`);
+
+                        // Criar Set com nomes permitidos
+                        allowedCategoryNames = new Set();
+
+                        for (const cat of accessCode.allowedCategories) {
+                            // Adicionar nome direto
+                            allowedCategoryNames.add(cat);
+
+                            // Se for QB item, buscar categorias
+                            if (/\d/.test(cat)) {
+                                const qbCategories = await PhotoCategory.find({
+                                    qbItem: cat
+                                }).select('googleDrivePath');
+
+                                qbCategories.forEach(qbCat => {
+                                    if (qbCat.googleDrivePath) {
+                                        const mainCategory = qbCat.googleDrivePath.split('/')[0];
+                                        allowedCategoryNames.add(mainCategory);
+                                    }
+                                });
+                            }
+                        }
+
+                        console.log(`✅ Categorias permitidas:`, Array.from(allowedCategoryNames));
+                    }
+                }
+            } catch (error) {
+                console.log('Token inválido:', error.message);
+            }
+        }
+        // ========== FIM DO FILTRO DE PERMISSÕES ==========
+
         console.log('📋 Parâmetros recebidos:', req.query);
 
         const {
@@ -473,9 +523,19 @@ router.get('/categories/filtered', async (req, res) => {
 
         // Buscar apenas categorias ativas e com fotos
         console.log('📂 Buscando categorias no banco...');
-        let categories = await PhotoCategory.find({
-            isActive: true,
-        }).lean(); // .lean() para melhor performance
+        // Construir query base
+        let query = { isActive: true };
+
+        // APLICAR FILTRO DE PERMISSÕES SE EXISTIR
+        if (allowedCategoryNames && allowedCategoryNames.size > 0) {
+            const allowedArray = Array.from(allowedCategoryNames);
+            query.googleDrivePath = {
+                $regex: `^(${allowedArray.join('|')})(/|$)`
+            };
+            console.log(`🔒 Filtro aplicado: apenas categorias de`, allowedArray);
+        }
+
+        let categories = await PhotoCategory.find(query).lean();
 
         const totalInicial = categories.length;
         console.log(`✅ Encontradas ${totalInicial} categorias ativas com fotos`);

@@ -529,6 +529,11 @@ window.showCategories = async function () {
 
     document.getElementById('breadcrumbContainer').style.display = 'block';
     document.getElementById('backNavigation').style.display = 'none';
+
+    // Atualizar filtros dinâmicos quando voltar às categorias
+    if (window.setupDynamicFilters) {
+        setTimeout(() => window.setupDynamicFilters(), 500);
+    }
 }
 
 // ===== NAVEGAÇÃO =====
