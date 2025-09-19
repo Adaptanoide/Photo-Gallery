@@ -1468,20 +1468,6 @@ class AdminSelections {
             // Criar dados da planilha - FORMATO CORRETO COM 10 COLUNAS
             const excelData = [];
 
-            // Cabeçalhos com RESERVEDUSU na posição correta
-            excelData.push([
-                'Customer',
-                'PO. Number',
-                'RESERVEDUSU',
-                'Photo.Number',
-                'ITEM REQ',
-                'ITEM NAME',
-                'ITEM QTY',
-                'RATE',
-                'AMOUNT',
-                'ESTADO'
-            ]);
-
             // Adicionar linhas com fotos ESPECÍFICAS de cada categoria
             Object.values(qbGroups).forEach(group => {
                 // NOVO: Criar string de fotos APENAS desta categoria
@@ -1506,7 +1492,7 @@ class AdminSelections {
                     group.totalQty,                           // ITEM QTY
                     group.unitPrice.toFixed(2),               // RATE
                     group.totalAmount.toFixed(2),             // AMOUNT
-                    this.getStatusText(selection.status)      // ESTADO
+                    //this.getStatusText(selection.status)      // ESTADO
                 ]);
 
                 // LOG para debug
@@ -1522,13 +1508,13 @@ class AdminSelections {
                 { width: 30 },  // Customer
                 { width: 20 },  // PO. Number
                 { width: 25 },  // RESERVEDUSU
-                { width: 100 }, // Photo.Number (largo para todos números)
+                { width: 100 }, // Photo.Number
                 { width: 15 },  // ITEM REQ
                 { width: 60 },  // ITEM NAME
                 { width: 12 },  // ITEM QTY
                 { width: 12 },  // RATE
-                { width: 15 },  // AMOUNT
-                { width: 15 }   // ESTADO
+                { width: 15 }   // AMOUNT
+                // REMOVIDO: width para ESTADO
             ];
 
             // Adicionar sheet e salvar
