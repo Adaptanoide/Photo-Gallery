@@ -75,7 +75,7 @@ class CDEWriter {
                      RESERVEDUSU = NULL,
                      AFECHA = NOW()
                  WHERE ATIPOETIQUETA = ?
-                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED')`,
+                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
                 [photoNumber]
             );
 
