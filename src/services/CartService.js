@@ -90,6 +90,26 @@ class CartService {
             const ttlHours = clientConfig?.cartSettings?.ttlHours || 24;
             const expiresAt = new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
 
+            // ===== PROTEÇÃO CONTRA DUPLICATAS =====
+            // Verificar se este item já está no carrinho
+            const itemExistente = cart.items.find(item =>
+                item.fileName === product.fileName ||
+                item.driveFileId === product.driveFileId
+            );
+
+            if (itemExistente) {
+                console.log(`[CART] ⚠️ Duplicata detectada: ${product.fileName} já está no carrinho`);
+                return {
+                    success: true,
+                    message: 'Item já está no carrinho',
+                    cartId: cart._id,
+                    itemCount: cart.items.length,
+                    isDuplicate: true,
+                    cart: cart
+                };
+            }
+            // ===== FIM DA PROTEÇÃO =====
+
             // 6. Adicionar ao carrinho
             cart.items.push({
                 productId: product._id,

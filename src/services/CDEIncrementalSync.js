@@ -93,7 +93,7 @@ class CDEIncrementalSync {
                 syncDescription = `últimos ${initialDays} dias (sincronização inicial)`;
             } else {
                 const intervalMinutes = parseInt(process.env.SYNC_INTERVAL_MINUTES || '2');
-                const lookbackMinutes = intervalMinutes * 3;
+                const lookbackMinutes = parseInt(process.env.SYNC_LOOKBACK_MINUTES || '240');
                 checkFromTime = new Date(Date.now() - lookbackMinutes * 60 * 1000);
                 syncDescription = `últimos ${lookbackMinutes} minutos (incremental)`;
             }
