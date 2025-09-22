@@ -300,32 +300,18 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         const originalCount = result.folders ? result.folders.length : 0;
 
                         if (result.folders) {
-                            // LOG DE DEBUG TEMPORÁRIO
-                            console.log(`\n🔍 DEBUG FILTRAGEM para ${prefix}:`);
-                            console.log(`   Pastas retornadas pelo R2:`);
-                            result.folders.forEach(f => {
-                                console.log(`     - "${f.name}"`);
-                            });
-
-                            console.log(`   Pastas permitidas (allowedSubfolders):`);
-                            Array.from(allowedSubfolders).forEach(allowed => {
-                                console.log(`     - "${allowed}"`);
-                            });
-
+                            // Filtrar pastas permitidas (sem logs verbosos)
                             result.folders = result.folders.filter(f => {
                                 const startsWithUnderscore = f.name.startsWith('_');
                                 const isInAllowed = allowedSubfolders.has(f.name);
-                                const shouldKeep = !startsWithUnderscore && isInAllowed;
-
-                                console.log(`   Testando "${f.name}": underscore=${startsWithUnderscore}, permitida=${isInAllowed} => manter=${shouldKeep}`);
-
-                                return shouldKeep;
+                                return !startsWithUnderscore && isInAllowed;
                             });
-
-                            console.log(`   Resultado: ${result.folders.length} pastas após filtro\n`);
                         }
 
-                        console.log(`📊 Mostrando ${result.folders?.length || 0} de ${originalCount} subcategorias`);
+                        // Log resumido (opcional - comente se quiser zero logs)
+                        if (process.env.NODE_ENV === 'development') {
+                            console.log(`📊 ${result.folders?.length || 0}/${originalCount} subcategorias permitidas em ${prefix}`);
+                        }
 
                         // Verificar se ao invés de pastas, temos fotos direto
                         if ((!result.folders || result.folders.length === 0) && allowedSubfolders.size > 0) {
@@ -350,7 +336,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                                         data: responseData,
                                         timestamp: Date.now()
                                     });
-                                    console.log(`💾 [CACHE SAVE] Fotos sem pastas - Cliente ${req.client.clientCode} - ${prefix} - ${photosResult.photos.length} fotos`);
                                 }
 
                                 return res.json(responseData);
@@ -376,7 +361,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                                 data: responseData,
                                 timestamp: Date.now()
                             });
-                            console.log(`💾 [CACHE SAVE] Subcategorias - Cliente ${req.client.clientCode} - ${prefix} - ${result.folders?.length || 0} pastas`);
                         }
 
                         return res.json(responseData);

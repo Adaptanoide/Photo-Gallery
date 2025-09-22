@@ -478,26 +478,40 @@ router.get('/categories/filtered', async (req, res) => {
                     if (accessCode && accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
                         console.log(`🔐 Cliente ${decoded.clientCode} tem ${accessCode.allowedCategories.length} categorias permitidas`);
 
-                        // Criar Set com nomes permitidos
+                        // Criar Set com nomes permitidos - VERSÃO OTIMIZADA
                         allowedCategoryNames = new Set();
 
+                        // Primeiro, separar QB codes de nomes diretos
+                        const qbCodes = [];
+                        const directNames = [];
+
                         for (const cat of accessCode.allowedCategories) {
-                            // Adicionar nome direto
-                            allowedCategoryNames.add(cat);
-
-                            // Se for QB item, buscar categorias
                             if (/\d/.test(cat)) {
-                                const qbCategories = await PhotoCategory.find({
-                                    qbItem: cat
-                                }).select('googleDrivePath');
-
-                                qbCategories.forEach(qbCat => {
-                                    if (qbCat.googleDrivePath) {
-                                        const mainCategory = qbCat.googleDrivePath.split('/')[0];
-                                        allowedCategoryNames.add(mainCategory);
-                                    }
-                                });
+                                qbCodes.push(cat);  // É um QB code
+                            } else {
+                                directNames.push(cat);  // É um nome direto
+                                allowedCategoryNames.add(cat);
                             }
+                        }
+
+                        console.log(`📊 Separados: ${qbCodes.length} QB codes, ${directNames.length} nomes diretos`);
+
+                        // Agora fazer UMA ÚNICA query para TODOS os QB codes
+                        if (qbCodes.length > 0) {
+                            console.time('⚡ Busca otimizada QB codes');
+                            const qbCategories = await PhotoCategory.find({
+                                qbItem: { $in: qbCodes }  // Busca TODOS de uma vez!
+                            }).select('googleDrivePath').lean();
+                            console.timeEnd('⚡ Busca otimizada QB codes');
+
+                            console.log(`✅ Encontradas ${qbCategories.length} categorias para ${qbCodes.length} QB codes`);
+
+                            qbCategories.forEach(qbCat => {
+                                if (qbCat.googleDrivePath) {
+                                    const mainCategory = qbCat.googleDrivePath.split('/')[0];
+                                    allowedCategoryNames.add(mainCategory);
+                                }
+                            });
                         }
                     }
                 }
@@ -522,12 +536,46 @@ router.get('/categories/filtered', async (req, res) => {
         // Construir query base
         let query = { isActive: true };
 
-        // APLICAR FILTRO DE PERMISSÕES SE EXISTIR
+        // APLICAR FILTRO DE PERMISSÕES SE EXISTIR - VERSÃO OTIMIZADA
         if (allowedCategoryNames && allowedCategoryNames.size > 0) {
+            // Separar QB codes de nomes de categoria
             const allowedArray = Array.from(allowedCategoryNames);
-            query.googleDrivePath = {
-                $regex: `^(${allowedArray.join('|')})(/|$)`
-            };
+            const qbCodes = allowedArray.filter(item => /^\d/.test(item)); // Começa com número = QB code
+            const categoryPaths = allowedArray.filter(item => !/^\d/.test(item)); // Não começa com número = path
+
+            console.log(`🔍 Filtros: ${qbCodes.length} QB codes, ${categoryPaths.length} paths diretos`);
+
+            // Construir query otimizada
+            const orConditions = [];
+
+            // 1. Buscar direto por QB codes (USA ÍNDICE!)
+            if (qbCodes.length > 0) {
+                orConditions.push({ qbItem: { $in: qbCodes } });
+            }
+
+            // 2. Buscar por paths diretos (menos comum)
+            if (categoryPaths.length > 0) {
+                // Para poucos paths, usar $in é mais eficiente que regex
+                if (categoryPaths.length <= 10) {
+                    orConditions.push({
+                        googleDrivePath: {
+                            $in: categoryPaths.map(p => new RegExp(`^${p}(/|$)`))
+                        }
+                    });
+                } else {
+                    // Só usar regex se muitos paths
+                    orConditions.push({
+                        googleDrivePath: {
+                            $regex: `^(${categoryPaths.join('|')})(/|$)`
+                        }
+                    });
+                }
+            }
+
+            // Aplicar filtros
+            if (orConditions.length > 0) {
+                query.$or = orConditions;
+            }
         }
 
         let categories = await PhotoCategory.find(query).lean();
