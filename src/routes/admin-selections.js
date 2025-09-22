@@ -294,9 +294,7 @@ router.post('/:selectionId/approve', async (req, res) => {
                 {
                     $set: {
                         status: 'sold',
-                        currentStatus: 'sold',  // ADICIONAR
-                        'virtualStatus.status': 'sold',  // ADICIONAR
-                        cdeStatus: 'RETIRADO',  // ADICIONAR
+                        cdeStatus: 'RETIRADO',
                         soldAt: new Date()
                     },
                     $unset: { 'reservedBy': 1 }
@@ -377,7 +375,7 @@ router.post('/:selectionId/cancel', async (req, res) => {
             if (selection.status !== 'pending' && selection.status !== 'finalized') {
                 return res.status(400).json({
                     success: false,
-                    message: 'Only pendding or finalized selections can be cancelled'
+                    message: 'Only pending or finalized selections can be cancelled'
                 });
             }
 
@@ -403,12 +401,6 @@ router.post('/:selectionId/cancel', async (req, res) => {
             console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como AVAILABLE`);
             console.log('📁 [TAGS] Nenhuma reversão física realizada!');
 
-            // Criar objeto revertResults fake para compatibilidade
-            const revertResults = [];
-            const successfulReverts = tagResult.photosTagged;
-            const failedReverts = 0;
-
-            console.log(`🏷️ [TAGS] Cancelamento concluído: ${successfulReverts} fotos liberadas`);
             // 3. Atualizar produtos: reserved_pending → available
             console.log('🔍 DEBUG CANCEL - Selection items:', selection.items.length);
             const productIds = selection.items.map(item => item.productId);
@@ -422,11 +414,6 @@ router.post('/:selectionId/cancel', async (req, res) => {
                 {
                     $set: {
                         status: 'available',
-                        currentStatus: 'available',
-                        'virtualStatus.status': 'available',
-                        'virtualStatus.clientCode': null,
-                        'virtualStatus.currentSelection': null,
-                        'virtualStatus.tags': [],
                         cdeStatus: 'INGRESADO'
                     },
                     $unset: {
@@ -446,40 +433,92 @@ router.post('/:selectionId/cancel', async (req, res) => {
                 matchedCount: updateResult.matchedCount
             });
 
-            // Verificar se realmente atualizou
-            const checkUpdate = await UnifiedProductComplete.findById(productIds[0]).session(session);
-            console.log('🔍 DEBUG - Após update:', {
-                status: checkUpdate?.status,
-                currentStatus: checkUpdate?.currentStatus,
-                cdeStatus: checkUpdate?.cdeStatus
-            });
+            // 4. CRÍTICO: Notificar CDE de forma SÍNCRONA (não mais setImmediate!)
+            console.log('[CANCEL] Liberando fotos no CDE de forma síncrona...');
+            const CDEWriter = require('../services/CDEWriter');
+            const cdeResults = [];
+            const failedReleases = [];
 
-            console.log(`🔍 DEBUG CANCEL - Documentos atualizados: ${updateResult.modifiedCount}`);
+            for (const item of selection.items) {
+                const photoMatch = item.fileName?.match(/(\d+)/);
+                if (!photoMatch) continue;
 
-            // Notificar CDE para liberar as fotos
-            setImmediate(async () => {
-                try {
-                    const CDEWriter = require('../services/CDEWriter');
-                    for (const item of selection.items) {
-                        const photoMatch = item.fileName?.match(/(\d+)/);
-                        if (photoMatch) {
-                            const photoNumber = photoMatch[1];
-                            await CDEWriter.markAsAvailable(photoNumber);
-                            console.log(`[CANCEL] CDE notificado: ${photoNumber} → INGRESADO`);
+                const photoNumber = photoMatch[1];
+                let releaseSuccess = false;
+                let attempts = 0;
+                const MAX_ATTEMPTS = 3;
+
+                // Tentar até 3 vezes liberar cada foto
+                while (!releaseSuccess && attempts < MAX_ATTEMPTS) {
+                    attempts++;
+
+                    try {
+                        // Verificar status atual no CDE
+                        const currentCDEStatus = await CDEWriter.checkStatus(photoNumber);
+
+                        if (currentCDEStatus?.status === 'INGRESADO') {
+                            console.log(`[CANCEL] ✅ Foto ${photoNumber} já está INGRESADO`);
+                            releaseSuccess = true;
+                            cdeResults.push({ photo: photoNumber, success: true, alreadyFree: true });
+                        } else {
+                            // Tentar liberar
+                            const released = await CDEWriter.markAsAvailable(photoNumber);
+
+                            if (released) {
+                                console.log(`[CANCEL] ✅ Foto ${photoNumber} liberada no CDE (tentativa ${attempts})`);
+                                releaseSuccess = true;
+                                cdeResults.push({ photo: photoNumber, success: true, attempts });
+                            } else if (attempts < MAX_ATTEMPTS) {
+                                console.log(`[CANCEL] ⚠️ Foto ${photoNumber} falhou, tentativa ${attempts}/${MAX_ATTEMPTS}`);
+                                // Pequena pausa antes de tentar novamente
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            }
+                        }
+                    } catch (cdeError) {
+                        console.error(`[CANCEL] Erro ao liberar ${photoNumber} (tentativa ${attempts}):`, cdeError.message);
+
+                        if (attempts >= MAX_ATTEMPTS) {
+                            failedReleases.push({
+                                photo: photoNumber,
+                                error: cdeError.message,
+                                attempts
+                            });
                         }
                     }
-                } catch (error) {
-                    console.log(`[CANCEL] Erro ao notificar CDE:`, error.message);
                 }
-            });
 
-            // 4. Atualizar seleção
+                if (!releaseSuccess) {
+                    console.error(`[CANCEL] ❌ Foto ${photoNumber} não pôde ser liberada após ${MAX_ATTEMPTS} tentativas`);
+                    cdeResults.push({ photo: photoNumber, success: false, attempts });
+                    failedReleases.push({ photo: photoNumber, attempts });
+                }
+            }
+
+            // Relatório de liberação no CDE
+            const successCount = cdeResults.filter(r => r.success).length;
+            const failedCount = cdeResults.filter(r => !r.success).length;
+
+            console.log(`[CANCEL] Liberação CDE completa: ${successCount}/${selection.items.length} fotos liberadas`);
+
+            if (failedCount > 0) {
+                console.error(`[CANCEL] ⚠️ ${failedCount} fotos falharam:`, failedReleases);
+
+                // Adicionar falhas ao log da seleção
+                selection.movementLog.push({
+                    action: 'cde_release_partial',
+                    timestamp: new Date(),
+                    details: `${failedCount} fotos não foram liberadas no CDE`,
+                    failedPhotos: failedReleases
+                });
+            }
+
+            // 5. Atualizar seleção
             selection.status = 'cancelled';
             selection.processedBy = adminUser || 'admin';
             selection.processedAt = new Date();
             selection.adminNotes = reason || 'Cancelada pelo admin';
 
-            // NOVO: Limpar processStatus após conclusão
+            // Limpar processStatus após conclusão
             selection.processStatus = {
                 active: false
             };
@@ -488,25 +527,27 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
             await selection.save({ session });
 
-            // 5. Tentar limpar pasta vazia no RESERVED
-            try {
-            } catch (cleanupError) {
-                console.warn('⚠️ Erro ao limpar pasta vazia:', cleanupError.message);
-            }
-
             console.log(`✅ Seleção ${selectionId} cancelada com sucesso`);
 
-            res.json({
+            // Preparar resposta
+            const responseData = {
                 success: true,
                 message: 'Seleção cancelada com sucesso',
                 selection: selection.getSummary(),
-                reversion: {
-                    total: revertResults.length,
-                    successful: successfulReverts,
-                    failed: failedReverts,
-                    details: revertResults
+                cdeRelease: {
+                    total: selection.items.length,
+                    successful: successCount,
+                    failed: failedCount,
+                    details: failedCount > 0 ? failedReleases : undefined
                 }
-            });
+            };
+
+            // Se houve falhas no CDE, adicionar aviso
+            if (failedCount > 0) {
+                responseData.warning = `${failedCount} fotos precisam ser liberadas manualmente no CDE`;
+            }
+
+            res.json(responseData);
         });
 
     } catch (error) {
@@ -611,10 +652,6 @@ router.post('/:selectionId/force-cancel', async (req, res) => {
                 {
                     $set: {
                         status: 'available',
-                        currentStatus: 'available',
-                        'virtualStatus.status': 'available',
-                        'virtualStatus.clientCode': null,
-                        'virtualStatus.tags': [],
                         cdeStatus: 'INGRESADO'
                     },
                     $unset: {
@@ -718,13 +755,8 @@ router.post('/:selectionId/revert-sold', async (req, res) => {
                 { driveFileId: { $in: driveFileIds } },
                 {
                     $set: {
-                        status: 'reserved_pending',  // Volta para pendente, não available!
-                        currentStatus: 'reserved',
-                        'virtualStatus.status': 'reserved',
-                        'virtualStatus.currentSelection': null,
-                        'virtualStatus.clientCode': selection.clientCode,  // Mantém o cliente
-                        'virtualStatus.tags': [],
-                        cdeStatus: 'PRE-SELECTED'  // Mantém reservado no CDE
+                        status: 'reserved_pending',
+                        cdeStatus: 'PRE-SELECTED'
                     },
                     $unset: {
                         'soldAt': 1  // Remove apenas a data de venda
@@ -815,10 +847,6 @@ router.post('/:selectionId/remove-items', async (req, res) => {
                     {
                         $set: {
                             status: 'available',
-                            currentStatus: 'available',
-                            'virtualStatus.status': 'available',
-                            'virtualStatus.currentSelection': null,
-                            'virtualStatus.clientCode': null,
                             cdeStatus: 'INGRESADO'
                         },
                         $unset: {

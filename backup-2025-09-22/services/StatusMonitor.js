@@ -30,11 +30,11 @@ class StatusMonitor {
             const photoStatuses = await db.collection('photostatuses')
                 .find({
                     updatedAt: { $gte: since },
-                    status: 'sold'
+                    currentStatus: 'sold'
                 })
                 .project({
                     photoId: 1,
-                    status: 1
+                    currentStatus: 1
                 })
                 .toArray();
 
@@ -59,7 +59,7 @@ class StatusMonitor {
             for (const photo of photoStatuses) {
                 changes.push({
                     id: photo.photoId,
-                    status: photo.status,
+                    status: photo.currentStatus,
                     source: 'cde'
                 });
             }

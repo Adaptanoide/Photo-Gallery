@@ -558,8 +558,8 @@ router.get('/photos', verifyClientToken, async (req, res) => {
             // Fallback: retornar todas se não encontrar categoria
             console.log('⚠️ Categoria não encontrada, retornando todas');
             const specialPhotos = await PhotoStatus.find({
-                'reservedBy.clientCode': req.client.clientCode,
-                status: 'reserved'
+                'virtualStatus.clientCode': req.client.clientCode,
+                'virtualStatus.status': 'reserved'
             });
 
             const photos = specialPhotos.map(photo => ({
@@ -612,11 +612,11 @@ router.get('/photos', verifyClientToken, async (req, res) => {
 
         const photoStatuses = await UnifiedProductComplete.find({
             photoId: { $in: photoIds }
-        }).select('photoId status');
+        }).select('photoId currentStatus');
 
         const statusMap = {};
         photoStatuses.forEach(ps => {
-            statusMap[ps.photoId] = ps.status;
+            statusMap[ps.photoId] = ps.currentStatus;
         });
 
         // Processar fotos

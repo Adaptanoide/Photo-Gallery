@@ -6,7 +6,7 @@ const mysql = require('mysql2/promise');
 const Cart = require('../models/Cart');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const AccessCode = require('../models/AccessCode');
-const StatusConsistencyGuard = require('./StatusConsistencyGuard');
+const CDEWriter = require('./CDEWriter');
 
 class CartService {
     static MAX_ITEMS_PER_CART = 100;
@@ -34,70 +34,43 @@ class CartService {
         return numbers ? numbers[0].padStart(5, '0') : null;
     }
 
-    /**
-     * ADICIONAR AO CARRINHO
-     * Atualiza MongoDB e CDE instantaneamente na mesma operação
-     */
     static async addToCart(sessionId, clientCode, clientName, driveFileId, itemData = {}) {
-        const mongoSession = await mongoose.startSession();
-        let cdeConnection = null;
+        const CDEWriter = require('./CDEWriter');
 
         try {
-            // Iniciar transação MongoDB
-            await mongoSession.startTransaction();
+            console.log(`[CART] Adicionando ${driveFileId} ao carrinho ${clientCode} - VERSÃO SIMPLIFICADA`);
 
-            console.log(`[CART] Adicionando ${driveFileId} ao carrinho ${clientCode}`);
-
-            // 1. Buscar/criar produto no MongoDB
-            let product = await UnifiedProductComplete.findOne({ driveFileId }).session(mongoSession);
+            // 1. Buscar ou criar produto
+            let product = await UnifiedProductComplete.findOne({ driveFileId });
 
             if (!product) {
-                const photoNumber = this.extractPhotoNumber(itemData.fileName);
+                const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1] || 'unknown';
                 product = new UnifiedProductComplete({
                     idhCode: `TEMP_${Date.now()}`,
-                    photoNumber: photoNumber || 'unknown',
+                    photoNumber: photoNumber,
                     photoId: driveFileId,
                     driveFileId: driveFileId,
                     fileName: itemData.fileName || 'Produto',
                     category: itemData.category || 'Categoria',
                     status: 'available',
-                    currentStatus: 'available',
+                    // REMOVIDO: currentStatus: 'available',
                     thumbnailUrl: itemData.thumbnailUrl || null
                 });
-                await product.save({ session: mongoSession });
-            } else {
-                // NOVO BLOCO: Atualizar thumbnailUrl se necessário
-                if (!product.thumbnailUrl && itemData.thumbnailUrl) {
-                    product.thumbnailUrl = itemData.thumbnailUrl;
-                    await product.save({ session: mongoSession });
-                    console.log(`[CART] Thumbnail atualizada para produto existente: ${driveFileId}`);
-                }
+                await product.save();
             }
 
             // 2. Verificar disponibilidade
             if (product.status !== 'available') {
-                if (product.reservedBy?.clientCode === clientCode) {
-                    console.log(`[CART] Produto já reservado para o mesmo cliente ${clientCode}`);
-                } else {
-                    throw new Error('Produto reservado para outro cliente');
+                if (product.reservedBy?.clientCode !== clientCode) {
+                    throw new Error('Produto não disponível');
                 }
             }
 
-            // 3. Buscar/criar carrinho - CORREÇÃO: verificar primeiro por sessionId
-            let cart = await Cart.findOne({
-                sessionId
-            }).session(mongoSession);
+            // 3. Buscar ou criar carrinho
+            let cart = await Cart.findOne({ sessionId }) ||
+                await Cart.findOne({ clientCode, isActive: true });
 
             if (!cart) {
-                // Se não existe carrinho com este sessionId, buscar por clientCode
-                cart = await Cart.findOne({
-                    clientCode,
-                    isActive: true
-                }).session(mongoSession);
-            }
-
-            if (!cart) {
-                // Só criar novo se realmente não existe nenhum carrinho
                 cart = new Cart({
                     sessionId,
                     clientCode,
@@ -105,68 +78,19 @@ class CartService {
                     items: [],
                     isActive: true
                 });
-            } else if (!cart.isActive) {
-                // Reativar carrinho existente
-                cart.isActive = true;
-                cart.clientCode = clientCode;
-                cart.clientName = clientName;
-                // Não limpar items aqui - deixar o filtro de duplicados cuidar disso
             }
 
-            // 4. Verificar se já está no carrinho
+            // 4. Verificar duplicata
             if (cart.hasItem(driveFileId)) {
                 throw new Error('Item já está no carrinho');
             }
 
-            // 5. Calcular expiração baseada no cliente
-            const clientConfig = await AccessCode.findOne({ code: clientCode }).session(mongoSession);
+            // 5. Configurar expiração
+            const clientConfig = await AccessCode.findOne({ code: clientCode });
             const ttlHours = clientConfig?.cartSettings?.ttlHours || 24;
             const expiresAt = new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
 
-            // 6. ATUALIZAÇÃO INSTANTÂNEA DO CDE
-            const photoNumber = this.extractPhotoNumber(itemData.fileName);
-            if (photoNumber) {
-                cdeConnection = await this.getCDEConnection();
-
-                const [cdeResult] = await cdeConnection.execute(
-                    `UPDATE tbinventario 
-                     SET AESTADOP = 'PRE-SELECTED',
-                         RESERVEDUSU = ?,
-                         AFECHA = NOW()
-                     WHERE ATIPOETIQUETA = ?
-                     AND AESTADOP = 'INGRESADO'`,
-                    [`${clientName}-${clientCode}`, photoNumber]
-                );
-
-                if (cdeResult.affectedRows === 0) {
-                    throw new Error('Foto não disponível no CDE');
-                }
-
-                console.log(`[CDE] Foto ${photoNumber} marcada como PRE-SELECTED`);
-            }
-
-            // 7. Atualizar produto no MongoDB
-            product.cdeStatus = 'PRE-SELECTED';  // Define o CDE status primeiro
-            product.reservedBy = {
-                clientCode,
-                sessionId,
-                expiresAt
-            };
-            await product.save({ session: mongoSession });
-
-            // 7. Atualizar produto no MongoDB
-            product.cdeStatus = 'PRE-SELECTED';
-            product.reservedBy = {
-                clientCode,
-                sessionId,
-                expiresAt
-            };
-            await product.save({ session: mongoSession });
-
-            // 7.1 Garantir que todos os status fiquem consistentes (ANTES DO COMMIT!)
-            product = await StatusConsistencyGuard.ensureConsistency(product._id, mongoSession);
-
-            // 8. Adicionar ao carrinho
+            // 6. Adicionar ao carrinho
             cart.items.push({
                 productId: product._id,
                 driveFileId: product.driveFileId,
@@ -181,12 +105,32 @@ class CartService {
                 addedAt: new Date()
             });
 
-            await cart.save({ session: mongoSession });
+            await cart.save();
+            console.log(`[CART] Carrinho salvo - ${cart.items.length} items`);
 
-            // 9. Commit da transação
-            await mongoSession.commitTransaction();
+            // 7. Marcar produto como reservado
+            product.status = 'reserved';
+            // REMOVIDO: product.currentStatus = 'reserved';
+            product.cdeStatus = 'PRE-SELECTED';
+            product.reservedBy = {
+                clientCode,
+                sessionId,
+                expiresAt
+            };
+            await product.save();
+            console.log(`[CART] Produto reservado`);
 
-            console.log(`[CART] ✅ Item ${driveFileId} adicionado com sucesso`);
+            // 8. Atualizar CDE
+            const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1];
+            if (photoNumber) {
+                try {
+                    await CDEWriter.markAsReserved(photoNumber, clientCode, clientName);
+                    console.log(`[CART] CDE atualizado`);
+                } catch (cdeError) {
+                    console.error(`[CART] Erro no CDE: ${cdeError.message}`);
+                    // Continua mesmo se CDE falhar - o sync corrige depois
+                }
+            }
 
             return {
                 success: true,
@@ -197,105 +141,53 @@ class CartService {
             };
 
         } catch (error) {
-            await mongoSession.abortTransaction();
-            console.error(`[CART] ❌ Erro ao adicionar item:`, error.message);
+            console.error(`[CART] Erro: ${error.message}`);
             throw error;
-        } finally {
-            await mongoSession.endSession();
-            if (cdeConnection) await cdeConnection.end();
         }
     }
 
-    /**
-     * REMOVER DO CARRINHO
-     * Atualiza MongoDB e CDE instantaneamente
-     */
     static async removeFromCart(sessionId, driveFileId) {
-        const mongoSession = await mongoose.startSession();
-        let cdeConnection = null;
-
         try {
-            await mongoSession.startTransaction();
+            console.log(`[CART] Removendo ${driveFileId} - VERSÃO SIMPLIFICADA`);
 
-            console.log(`[CART] Removendo ${driveFileId} do carrinho`);
+            // 1. Buscar e atualizar carrinho
+            const cart = await Cart.findOne({ sessionId, isActive: true });
+            if (!cart) throw new Error('Carrinho não encontrado');
 
-            // 1. Buscar carrinho
-            const cart = await Cart.findOne({
-                sessionId,
-                isActive: true
-            }).session(mongoSession);
-
-            if (!cart || !cart.hasItem(driveFileId)) {
-                throw new Error('Item não encontrado no carrinho');
-            }
-
-            // 2. Remover do carrinho
-            const removedItem = cart.items.find(i => i.driveFileId === driveFileId);
             cart.items = cart.items.filter(item => item.driveFileId !== driveFileId);
+            await cart.save();
+            console.log(`[CART] Carrinho atualizado - ${cart.items.length} items`);
 
-            cart.totalItems = cart.items.length;
-
-            if (cart.items.length === 0) {
-                cart.isActive = false;
-            }
-
-            await cart.save({ session: mongoSession });
-
-            // 3. ATUALIZAÇÃO INSTANTÂNEA DO CDE
-            const photoNumber = this.extractPhotoNumber(removedItem.fileName);
-            if (photoNumber) {
-                cdeConnection = await this.getCDEConnection();
-
-                await cdeConnection.execute(
-                    `UPDATE tbinventario 
-                     SET AESTADOP = 'INGRESADO',
-                         RESERVEDUSU = NULL,
-                         AFECHA = NOW()
-                     WHERE ATIPOETIQUETA = ?`,
-                    [photoNumber]
-                );
-
-                console.log(`[CDE] Foto ${photoNumber} liberada`);
-            }
-
-            // 4. Liberar no MongoDB
+            // 2. Liberar produto
             await UnifiedProductComplete.updateOne(
                 { driveFileId },
                 {
                     $set: {
                         status: 'available',
-                        currentStatus: 'available',
+                        // REMOVIDO: currentStatus: 'available',
                         cdeStatus: 'INGRESADO'
                     },
-                    $unset: {
-                        reservedBy: 1
-                    }
+                    $unset: { reservedBy: 1 }
                 }
-            ).session(mongoSession);
+            );
+            console.log(`[CART] Produto liberado`);
 
-            // 4.1 Garantir consistência após liberar (ANTES DO COMMIT!)
-            const updatedProduct = await UnifiedProductComplete.findOne({ driveFileId }).session(mongoSession);
-            if (updatedProduct) {
-                await StatusConsistencyGuard.ensureConsistency(updatedProduct._id, mongoSession);
+            // 3. Atualizar CDE
+            const photoNumber = driveFileId.match(/(\d+)/)?.[1];
+            if (photoNumber) {
+                await CDEWriter.markAsAvailable(photoNumber);
+                console.log(`[CART] CDE atualizado`);
             }
-
-            await mongoSession.commitTransaction();
-
-            console.log(`[CART] ✅ Item ${driveFileId} removido com sucesso`);
 
             return {
                 success: true,
-                message: 'Item removido do carrinho',
+                message: 'Item removido',
                 cart: await this.getCartSummary(sessionId)
             };
 
         } catch (error) {
-            await mongoSession.abortTransaction();
-            console.error(`[CART] ❌ Erro ao remover item:`, error.message);
+            console.error(`[CART] Erro: ${error.message}`);
             throw error;
-        } finally {
-            await mongoSession.endSession();
-            if (cdeConnection) await cdeConnection.end();
         }
     }
 
@@ -305,12 +197,12 @@ class CartService {
      */
     static async processExpiredItem(item, cart) {
         let cdeConnection = null;
+        const photoNumber = this.extractPhotoNumber(item.fileName);
 
         try {
             console.log(`[EXPIRE] Processando item expirado: ${item.fileName}`);
 
             // 1. ATUALIZAÇÃO INSTANTÂNEA DO CDE
-            const photoNumber = this.extractPhotoNumber(item.fileName);
             if (photoNumber) {
                 cdeConnection = await this.getCDEConnection();
 
@@ -332,7 +224,7 @@ class CartService {
                 {
                     $set: {
                         status: 'available',
-                        currentStatus: 'available',
+                        // REMOVIDO: currentStatus: 'available',
                         cdeStatus: 'INGRESADO'
                     },
                     $unset: {
@@ -367,10 +259,28 @@ class CartService {
      */
     static async getCart(sessionId) {
         try {
-            const cart = await Cart.findOne({
+            let cart = await Cart.findOne({
                 sessionId,
                 isActive: true
             });
+
+            if (!cart) {
+                // Verificar se existe mas está inativo
+                const inactiveCart = await Cart.findOne({ sessionId });
+
+                if (inactiveCart) {
+                    // Se tem items mas está inativo, REATIVAR!
+                    if (inactiveCart.items && inactiveCart.items.length > 0) {
+                        inactiveCart.isActive = true;
+                        inactiveCart.notes = undefined;
+                        await inactiveCart.save();
+                        cart = inactiveCart; // Usar o cart reativado
+                    }
+                } else {
+                    // Debug: mostrar carts ativos
+                    const allCarts = await Cart.find({ isActive: true }).limit(5);
+                }
+            }
 
             if (!cart) return null;
 
@@ -404,6 +314,10 @@ class CartService {
         try {
             const cart = await this.getCart(sessionId);
 
+            // ADICIONE ESTE DEBUG
+            if (cart) {
+            }
+
             if (!cart) {
                 return {
                     totalItems: 0,
@@ -413,7 +327,7 @@ class CartService {
             }
 
             return {
-                totalItems: cart.totalItems,
+                totalItems: cart.totalItems || cart.items.length, // MUDE ESTA LINHA
                 items: cart.items.map(item => ({
                     driveFileId: item.driveFileId,
                     fileName: item.fileName,

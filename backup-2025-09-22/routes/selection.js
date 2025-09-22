@@ -249,10 +249,10 @@ router.post('/finalize', async (req, res) => {
                 {
                     $set: {
                         status: 'in_selection',
-                        status: 'in_selection',
+                        currentStatus: 'in_selection',
                         cdeStatus: 'CONFIRMED',
                         reservedAt: new Date(),
-                        // Campo removido - virtualStatus não existe mais
+                        'virtualStatus.status': 'in_selection'
                     },
                     $unset: { 'cartAddedAt': 1 }
                 }
@@ -267,7 +267,7 @@ router.post('/finalize', async (req, res) => {
                 {
                     $set: {
                         'selectionId': String(selectionId),  // Forçar string
-                        // Campo removido - virtualStatus não existe mais,
+                        'virtualStatus.selectionId': String(selectionId),
                         'reservedBy.inSelection': true,
                         'reservedBy.selectionId': String(selectionId)
                     }

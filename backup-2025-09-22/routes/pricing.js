@@ -898,7 +898,7 @@ router.get('/categories', async (req, res) => {
             try {
                 // USAR currentPath COM REGEX para buscar pela subcategoria
                 const availableCount = await PhotoStatus.countDocuments({
-                    status: 'available',
+                    'virtualStatus.status': 'available',
                     'currentLocation.currentPath': {
                         $regex: category.folderName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
                         $options: 'i'
@@ -1006,7 +1006,7 @@ router.get('/categories/:id', async (req, res) => {
         // ⚠️ ADICIONAR AQUI - Calcular fotos disponíveis
         try {
             const availableCount = await PhotoStatus.countDocuments({
-                status: 'available',
+                'virtualStatus.status': 'available',
                 'currentLocation.currentPath': {
                     $regex: category.folderName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
                     $options: 'i'

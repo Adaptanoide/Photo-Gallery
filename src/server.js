@@ -15,7 +15,6 @@ const clientRoutes = require('./routes/client');
 const cartRoutes = require('./routes/cart');
 const selectionRoutes = require('./routes/selection');
 const pricingRoutes = require('./routes/pricing');
-const specialSelectionsRoutes = require('./routes/special-selections');
 const storageRoutes = require('./routes/storage');
 
 const app = express();
@@ -48,7 +47,6 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
-app.use('/api/special-selections', specialSelectionsRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
 

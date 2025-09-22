@@ -312,8 +312,9 @@ class CDEIncrementalSync {
             case 'RETIRADO':
                 updateFields = {
                     status: 'sold',
+                    currentStatus: 'sold',
                     cdeStatus: 'RETIRADO',
-                    // Campo removido - virtualStatus
+                    'virtualStatus.status': 'sold'
                 };
                 actionTaken = 'Marcada como vendida';
                 break;
@@ -322,8 +323,9 @@ class CDEIncrementalSync {
             case 'STANDBY':
                 updateFields = {
                     status: 'unavailable',
+                    currentStatus: 'unavailable',
                     cdeStatus: cdeStatus,
-                    // Campo removido - virtualStatus
+                    'virtualStatus.status': 'unavailable'
                 };
                 actionTaken = 'Marcada como indisponível';
                 break;
@@ -333,8 +335,9 @@ class CDEIncrementalSync {
                 if (mongoPhoto.status !== 'available') {
                     updateFields = {
                         status: 'available',
+                        currentStatus: 'available',
                         cdeStatus: 'INGRESADO',
-                        // Campo removido - virtualStatus
+                        'virtualStatus.status': 'available'
                     };
                     actionTaken = 'Marcada como disponível';
                 }
