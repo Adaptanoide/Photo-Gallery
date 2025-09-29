@@ -5,6 +5,8 @@ const StorageService = require('../services/StorageService');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const jwt = require('jsonwebtoken');
 const AccessCode = require('../models/AccessCode');
+// TEMPORÁRIO - Desabilitar preços durante desenvolvimento
+const FORCE_HIDE_PRICES = true;
 
 // ============================================
 // CACHE INTELIGENTE POR CLIENTE
