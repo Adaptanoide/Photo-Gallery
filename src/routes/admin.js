@@ -759,14 +759,22 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
         console.log('🗺️ Mapeando', items.length, 'items');
         const startTime = Date.now();
 
+        // Função para normalizar strings (aspas e espaços)
+        const normalizeString = (str) => {
+            if (!str) return '';
+            return str
+                .replace(/[""″]/g, '"')  // Normalizar aspas curvas para retas
+                .replace(/[''′]/g, "'")  // Normalizar apóstrofes
+                .replace(/\s+/g, ' ')     // Normalizar espaços múltiplos
+                .trim();
+        };
+
         // Separar items em QB codes e categorias
         const qbCodes = [];
         const categoryPaths = [];
 
         items.forEach(item => {
-            // CONVERTER SETAS EM BARRAS ANTES DE PROCESSAR!
-            const converted = item.replace(/ → /g, '/');
-            const clean = converted.replace(/\/$/, '').trim();
+            const clean = normalizeString(item);
 
             // QB codes começam com números
             if (/^\d/.test(clean)) {
@@ -803,85 +811,86 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
 
         // 2. Buscar por paths de categoria (se houver)
         if (categoryPaths.length > 0) {
-            // Criar variações para melhor matching
-            const pathVariations = [];
+            // Criar queries para buscar categorias
+            const orConditions = [];
 
             categoryPaths.forEach(path => {
-                // Adicionar path original
-                pathVariations.push(path);
-                pathVariations.push(path + '/');
+                const normalized = normalizeString(path);
 
-                // Se tem seta, converter para barra
+                // Buscar por displayName exato
+                orConditions.push({ displayName: normalized });
+
+                // Se tem seta, também buscar sem normalizar
                 if (path.includes('→')) {
-                    const withSlash = path.replace(/ → /g, '/');
-                    pathVariations.push(withSlash);
-                    pathVariations.push(withSlash + '/');
+                    orConditions.push({ displayName: path });
                 }
+
+                // Buscar por regex para ser mais flexível
+                const escapedPath = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                orConditions.push({ displayName: { $regex: `^${escapedPath}$`, $options: 'i' } });
             });
 
             const pathCategories = await PhotoCategory.find({
-                $or: pathVariations.map(path => ({
-                    $or: [
-                        { googleDrivePath: path },
-                        { googleDrivePath: { $regex: `^${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`, $options: 'i' } },
-                        { displayName: path },
-                        { displayName: { $regex: `^${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
-                        { folderName: path.split('/').pop() }
-                    ]
-                }))
+                $or: orConditions
             }).select('qbItem displayName googleDrivePath photoCount');
 
             allCategories.push(...pathCategories);
             console.log(`✅ Encontradas ${pathCategories.length} categorias por path`);
+
+            // LOG ESPECIAL PARA DEBUG
+            if (pathCategories.length < categoryPaths.length) {
+                console.log('⚠️ Algumas categorias não foram encontradas:');
+                categoryPaths.forEach(path => {
+                    const found = pathCategories.some(cat =>
+                        normalizeString(cat.displayName) === normalizeString(path)
+                    );
+                    if (!found) {
+                        console.log(`  - ${path}`);
+                    }
+                });
+            }
         }
 
-        // Criar mapa para lookup rápido
-        const categoryMapByQB = new Map();
-        const categoryMapByPath = new Map();
+        // Criar mapa para lookup rápido com strings normalizadas
+        const categoryMap = new Map();
 
         allCategories.forEach(cat => {
-            if (cat.qbItem) categoryMapByQB.set(cat.qbItem, cat);
-            if (cat.googleDrivePath) {
-                // Mapear COM e SEM barra final
-                categoryMapByPath.set(cat.googleDrivePath, cat);
-                categoryMapByPath.set(cat.googleDrivePath.replace(/\/$/, ''), cat); // SEM BARRA
+            // Mapear por displayName normalizado
+            if (cat.displayName) {
+                const normalizedDisplay = normalizeString(cat.displayName);
+                categoryMap.set(normalizedDisplay, cat);
+            }
 
-                // Também mapear pelo final do path
-                const folderName = cat.googleDrivePath.split('/').pop();
-                if (folderName) categoryMapByPath.set(folderName, cat);
+            // Mapear por qbItem
+            if (cat.qbItem) {
+                categoryMap.set(cat.qbItem, cat);
             }
         });
 
+        console.log(`📊 Mapa criado com ${categoryMap.size} entradas`);
+
         // Mapear resultados mantendo a ordem original
         const mapped = items.map(item => {
-            const clean = item.replace(/\/$/, '').trim();
+            const normalized = normalizeString(item);
 
-            // Tentar encontrar como QB primeiro
-            let category = categoryMapByQB.get(clean) ||
-                categoryMapByQB.get(clean.replace(/\s+/g, '')) ||
-                categoryMapByQB.get(clean.replace(/(\d+[A-Z])([A-Z]+)/, '$1 $2'));
-
-            // Se não achou, tentar como path
-            if (!category) {
-                category = categoryMapByPath.get(clean) ||
-                    categoryMapByPath.get(clean.split('/').pop());
-            }
+            // Buscar no mapa
+            const category = categoryMap.get(normalized);
 
             if (category) {
                 return {
                     original: item,
                     qbItem: category.qbItem || 'NO-QB',
-                    displayName: category.displayName || category.googleDrivePath,
-                    path: category.googleDrivePath,
+                    displayName: category.displayName || item,
+                    path: category.googleDrivePath || '',
                     photoCount: category.photoCount || 0
                 };
             } else {
-                console.log(`⚠️ Não encontrado: ${clean}`);
+                console.log(`⚠️ Não encontrado: ${item} (normalizado: ${normalized})`);
                 return {
                     original: item,
-                    qbItem: /^\d/.test(clean) ? clean : 'NO-QB',
-                    displayName: clean,
-                    path: clean,
+                    qbItem: 'NO-QB',
+                    displayName: item,
+                    path: '',
                     photoCount: 0
                 };
             }
@@ -889,7 +898,11 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
 
         console.log(`✅ Mapeamento completo em ${Date.now() - startTime}ms`);
         console.log(`📊 Com QB: ${mapped.filter(m => m.qbItem !== 'NO-QB').length}/${mapped.length}`);
-        res.json({ success: true, mapped });
+
+        res.json({
+            success: true,
+            mapped: mapped  // Voltar para 'mapped' que o frontend espera
+        });
 
     } catch (error) {
         console.error('❌ Error mapping categories:', error);

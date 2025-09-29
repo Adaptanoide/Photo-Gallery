@@ -230,9 +230,10 @@ router.post('/finalize', async (req, res) => {
                         productId: product._id,
                         driveFileId: product.driveFileId,
                         fileName: product.fileName,
-                        category: product.category.replace(/ → /g, '/'), // CONVERTER SETAS EM BARRAS!
+                        // SEMPRE usar a categoria do PRODUTO que já tem formato correto com setas
+                        category: product.category,
                         thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
-                        originalPath: product.category.replace(/ → /g, '/'), // CONVERTER AQUI TAMBÉM!
+                        originalPath: product.category,
                         price: cartItem?.price || 0,
                         selectedAt: cartItem?.addedAt || new Date()
                     };

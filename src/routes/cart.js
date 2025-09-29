@@ -64,7 +64,7 @@ router.post('/add', validateRequest, async (req, res) => {
             driveFileId,
             {
                 fileName,
-                category,
+                category,  // Usar direto o que vem do frontend
                 thumbnailUrl,
                 basePrice: basePrice || 0,
                 price: price || 0,
@@ -217,7 +217,7 @@ router.get('/:sessionId/calculate-total', async (req, res) => {
             total: 0,
             discountPercent: 0
         };
-        
+
         res.json({
             success: true,
             data: totals

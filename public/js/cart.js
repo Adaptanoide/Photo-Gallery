@@ -1118,11 +1118,11 @@ window.CartSystem = {
     renderCartItem(item) {
         // Verificar se é um ghost item
         const isGhost = item.ghostStatus === 'ghost';
-        
+
         // URL do thumbnail
-        const thumbnailUrl = item.thumbnailUrl || 
+        const thumbnailUrl = item.thumbnailUrl ||
             `https://images.sunshinecowhides-gallery.com/_thumbnails/${item.driveFileId}`;
-        
+
         // Escapar aspas duplas
         const safeDriveFileId = item.driveFileId.replace(/"/g, '&quot;');
         const timeRemaining = item.timeRemaining || 0;
@@ -1136,7 +1136,7 @@ window.CartSystem = {
 
         // Classe adicional para ghost items
         const itemClass = isGhost ? 'cart-item ghost-item' : 'cart-item';
-        
+
         return `
             <div class="${itemClass}" data-drive-file-id="${safeDriveFileId}">
                 ${isGhost ? `
@@ -1149,31 +1149,31 @@ window.CartSystem = {
                 ` : ''}
                 <div class="cart-item-image" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
                     ${thumbnailUrl ?
-                        `<img src="${thumbnailUrl}" alt="${item.fileName}" loading="lazy">` :
-                        `<div class="placeholder"><i class="fas fa-image"></i></div>`
-                    }
+                `<img src="${thumbnailUrl}" alt="${item.fileName}" loading="lazy">` :
+                `<div class="placeholder"><i class="fas fa-image"></i></div>`
+            }
                 </div>
                 <div class="cart-item-info" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
                     <div class="cart-item-title ${isGhost ? 'ghost-text' : ''}">${item.fileName}</div>
                     <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${item.category}</div>
                     ${!isGhost && (window.shouldShowPrices && window.shouldShowPrices()) ?
-                        `<div class="cart-item-price">
+                `<div class="cart-item-price">
                             ${item.hasPrice ?
-                                `<span class="price-value">${item.formattedPrice}</span>` :
-                                `<span class="price-consult">Check price</span>`
-                            }
+                    `<span class="price-value">${item.formattedPrice}</span>` :
+                    `<span class="price-consult">Check price</span>`
+                }
                         </div>` :
-                        ''
-                    }
-                    ${isGhost ? 
-                        `<div class="ghost-status">
+                ''
+            }
+                    ${isGhost ?
+                `<div class="ghost-status">
                             <i class="fas fa-ban"></i> Not available for selection
                         </div>` :
-                        `<div class="cart-item-timer ${timerClass}">
+                `<div class="cart-item-timer ${timerClass}">
                             <i class="fas fa-clock"></i>
                             <span id="timer-${item.fileName || item.driveFileId.split('/').pop()}">${timeText}</span>
                         </div>`
-                    }
+            }
                 </div>
                 <div class="cart-item-actions">
                     <button class="cart-item-remove ${isGhost ? 'remove-ghost' : ''}" title="${isGhost ? 'Acknowledge and remove' : 'Remove item'}">
@@ -1599,22 +1599,22 @@ async function finalizeSelection() {
             CartSystem.showNotification('Carrinho vazio', 'warning');
             return;
         }
-        
+
         // Filtrar ghost items localmente primeiro
-        const validItems = CartSystem.state.items.filter(item => 
+        const validItems = CartSystem.state.items.filter(item =>
             !item.ghostStatus || item.ghostStatus !== 'ghost'
         );
-        
+
         const ghostCount = CartSystem.state.items.length - validItems.length;
-        
+
         if (validItems.length === 0) {
             CartSystem.showNotification('Todos os itens estão indisponíveis', 'error');
             return;
         }
-        
+
         // NOVO: Mostrar modal de confirmação
         showConfirmationModal(validItems, ghostCount);
-        
+
     } catch (error) {
         console.error('❌ Erro ao iniciar finalização:', error);
         CartSystem.showNotification('Erro ao processar seleção', 'error');
@@ -1683,7 +1683,7 @@ function showConfirmationModal(validItems, ghostCount) {
             </div>
         </div>
     `;
-    
+
     // Adicionar modal ao body
     const modalDiv = document.createElement('div');
     modalDiv.innerHTML = modalHTML;
@@ -1691,64 +1691,74 @@ function showConfirmationModal(validItems, ghostCount) {
 }
 
 // Cancelar confirmação
-window.cancelConfirmation = function() {
+window.cancelConfirmation = function () {
     const modal = document.getElementById('confirmSelectionModal');
     if (modal) modal.remove();
 }
 
 // Prosseguir com a seleção
-window.proceedWithSelection = async function() {
+window.proceedWithSelection = async function () {
     try {
         // Pegar observações
         const observations = document.getElementById('clientObservations')?.value || '';
-        
-        // Fechar modal
+
+        // Fechar modal de confirmação
         cancelConfirmation();
-        
-        // Mostrar loading
-        CartSystem.setLoading(true);
-        
+
         // Buscar dados da sessão
         const clientSession = CartSystem.getClientSession();
         if (!clientSession) {
             console.error('Sessão do cliente não encontrada');
+            CartSystem.showNotification('Session error', 'error');
             return;
         }
-        
+
         const requestData = {
             sessionId: CartSystem.state.sessionId,
             clientCode: clientSession.accessCode,
             clientName: clientSession.user?.name || 'Client',
-            observations: observations  // ADICIONAR OBSERVAÇÕES
+            observations: observations
         };
-        
-        console.log('🎯 Finalizando seleção com observações:', observations);
-        
-        const response = await fetch('/api/selection/finalize', {
+
+        console.log('🎯 Enviando seleção para processamento...');
+
+        // ========== RESPOSTA IMEDIATA ==========
+        // MOSTRAR MODAL DE SUCESSO IMEDIATAMENTE!
+        showSuccessModalWithMessage({
+            selection: {
+                totalItems: CartSystem.state.items.filter(item =>
+                    !item.ghostStatus || item.ghostStatus !== 'ghost'
+                ).length
+            }
+        });
+
+        // ========== PROCESSAR EM BACKGROUND ==========
+        // Enviar para o backend SEM ESPERAR
+        fetch('/api/selection/finalize', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestData)
+        }).then(async response => {
+            const result = await response.json();
+
+            if (response.ok) {
+                console.log('✅ Seleção processada em background:', result);
+                // Limpar carrinho
+                await CartSystem.loadCart();
+            } else {
+                console.error('❌ Erro no processamento background:', result);
+                // Não mostrar erro - cliente já viu sucesso
+            }
+        }).catch(error => {
+            console.error('❌ Erro de rede no background:', error);
+            // Não mostrar erro - cliente já viu sucesso
         });
-        
-        const result = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(result.message || 'Erro ao finalizar');
-        }
-        
-        // Mostrar sucesso
-        showSuccessModalWithMessage(result);
-        
-        // Limpar carrinho
-        await CartSystem.loadCart();
-        
+
     } catch (error) {
         console.error('❌ Erro:', error);
         CartSystem.showNotification(error.message, 'error');
-    } finally {
-        CartSystem.setLoading(false);
     }
 }
 
@@ -1811,7 +1821,7 @@ function showSuccessModalWithMessage(result) {
             </div>
         </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
