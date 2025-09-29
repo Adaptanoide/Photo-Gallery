@@ -96,7 +96,7 @@ async function acquireSyncLock() {
                 $set: {
                     lockedBy: INSTANCE_ID,
                     lockedAt: now,
-                    expiresAt: new Date(now.getTime() + 10 * 60 * 1000), // 10 minutos
+                    expiresAt: new Date(now.getTime() + 5 * 60 * 1000), // 5 minutos ao invés de 10
                     pid: process.pid,
                     host: require('os').hostname()
                 }
@@ -171,29 +171,35 @@ class CDEIncrementalSync {
             return;
         }
 
-        // Determinar qual função de sync usar baseado no horário
-        const decideSyncFunction = () => {
-            if (isBusinessHours()) {
-                console.log('[SYNC] Horário comercial detectado - usando sync RÁPIDO sem R2');
-                return () => this.runSync();  // Sync sem verificar R2 (rápido)
-            } else {
-                console.log('[SYNC] Fora do horário comercial - usando sync com verificação R2');
-                return () => this.runSmartSync();  // Sync com R2 (completo mas lento)
+        console.log(`[SYNC] Sistema iniciado - Verificando a cada ${intervalMinutes} minutos`);
+
+        // Função que verifica se deve executar sync
+        const checkAndRunSync = async () => {
+            const strategy = getSyncStrategy();
+
+            if (strategy.type === 'skip') {
+                console.log('[SYNC] Fora do horário - pulando sync');
+                return;
+            }
+
+            // Executar sync apropriado
+            if (strategy.type === 'business_hours') {
+                console.log('[SYNC] Horário comercial - sync rápido');
+                await this.runSync();
+            } else if (strategy.type === 'nightly') {
+                console.log('[SYNC] Sync noturno');
+                await this.runSync();
+            } else if (strategy.type === 'weekly_full') {
+                console.log('[SYNC] Sync semanal completo');
+                await this.runSmartSync();
             }
         };
 
-        console.log(`[SYNC] Sistema iniciado - Intervalo: ${intervalMinutes} minutos`);
+        // Executar primeira vez após 30 segundos
+        setTimeout(checkAndRunSync, 30000);
 
-        // Executar primeira sincronização após 30 segundos
-        const initialSync = decideSyncFunction();
-        setTimeout(initialSync, 30000);
-
-        // Configurar intervalo regular
-        // A cada intervalo, decide novamente qual sync usar
-        this.syncInterval = setInterval(() => {
-            const syncToRun = decideSyncFunction();
-            syncToRun();
-        }, intervalMinutes * 60 * 1000);
+        // Configurar intervalo regular COM VERIFICAÇÃO
+        this.syncInterval = setInterval(checkAndRunSync, intervalMinutes * 60 * 1000);
     }
 
     stop() {
