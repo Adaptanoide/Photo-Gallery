@@ -26,18 +26,6 @@ class StatusMonitor {
                 })
                 .toArray();
 
-            // 2. Monitorar mudanças em photostatuses (vendas CDE)
-            const photoStatuses = await db.collection('photostatuses')
-                .find({
-                    updatedAt: { $gte: since },
-                    status: 'sold'
-                })
-                .project({
-                    photoId: 1,
-                    status: 1
-                })
-                .toArray();
-
             // Processar products
             for (const product of products) {
                 // Usar photoNumber ao invés de extrair do driveFileId
@@ -52,15 +40,6 @@ class StatusMonitor {
                     status: product.status,
                     source: 'reservation',
                     sessionId: product.reservedBy ? product.reservedBy.sessionId : null
-                });
-            }
-
-            // Processar photostatuses
-            for (const photo of photoStatuses) {
-                changes.push({
-                    id: photo.photoId,
-                    status: photo.status,
-                    source: 'cde'
                 });
             }
 

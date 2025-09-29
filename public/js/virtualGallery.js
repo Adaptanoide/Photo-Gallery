@@ -113,7 +113,13 @@ class VirtualGallery {
             const div = document.createElement('div');
             div.className = 'photo-thumbnail';
             div.setAttribute('data-photo-id', photo.fileName ? photo.fileName.replace('.webp', '') : photo.id);
-            div.setAttribute('data-status', photo.status || 'available');
+            // Determinar status visual
+            let visualStatus = photo.actualStatus || photo.status || 'available';
+            if (photo.isOwnReservation) {
+                visualStatus = 'available';
+            }
+            div.setAttribute('data-status', visualStatus);
+            div.setAttribute('data-own-reservation', photo.isOwnReservation || false);
             div.setAttribute('data-photo-index', photoIndex);
 
             // IMPORTANTE: Manter compatibilidade com openPhotoModal

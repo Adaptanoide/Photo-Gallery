@@ -568,24 +568,73 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         }
         // ========== FIM DA SPECIAL SELECTION ==========
 
-        const result = await StorageService.getPhotos(prefix);
+        // NOVA ABORDAGEM: Buscar direto do MongoDB apenas fotos available
+        console.log(`🔍 Buscando fotos available do MongoDB para: ${prefix}`);
 
-
-
-        // Filtrar fotos que NÃO devem aparecer
-        const unavailablePhotos = await UnifiedProductComplete.find({
-            $or: [
-                { status: { $ne: 'available' } },  // Qualquer status diferente de available
-                { selectionId: { $exists: true, $ne: null } },  // Tem seleção
-                { cdeStatus: 'RETIRADO' }  // Vendida no CDE
+        // Preparar busca - incluir próprias reservas
+        let searchQuery = {
+            $and: [
+                {
+                    $or: [
+                        { status: 'available' },
+                        // ADICIONAR: Mostrar fotos reservadas pelo próprio cliente
+                        {
+                            status: 'reserved',
+                            'reservedBy.clientCode': req.client?.clientCode
+                        }
+                    ]
+                },
+                {
+                    $or: [
+                        { selectionId: { $exists: false } },
+                        { selectionId: null }
+                    ]
+                }
             ]
-        }).select('fileName');
+        };
 
-        const unavailableFileNames = new Set(unavailablePhotos.map(p => p.fileName));
+        // Se não há cliente autenticado, mostrar apenas available
+        if (!req.client?.clientCode) {
+            searchQuery = {
+                status: 'available',
+                $or: [
+                    { selectionId: { $exists: false } },
+                    { selectionId: null }
+                ]
+            };
+        }
+        // Adicionar filtro de path se especificado
+        if (prefix) {
+            // Escapar TODOS os caracteres especiais incluindo aspas
+            const escapedPrefix = prefix
+                .replace(/[.*+?^${}()|[\]\\'"]/g, '\\$&');  // Adicionei ' e "
+            searchQuery.driveFileId = { $regex: escapedPrefix, $options: 'i' };
+        }
 
-        const filteredPhotos = result.photos.filter(photo => {
-            const fileName = photo.fileName || photo.name.split('/').pop();
-            return !unavailableFileNames.has(fileName);
+        // Buscar apenas fotos disponíveis
+        const availablePhotos = await UnifiedProductComplete.find(searchQuery)
+            .select('fileName driveFileId photoNumber photoId r2Path status reservedBy');
+
+        console.log(`✅ ${availablePhotos.length} fotos available encontradas`);
+
+        // Formatar para compatibilidade
+        const filteredPhotos = availablePhotos.map(photo => {
+            // VERIFICAR SE É RESERVA PRÓPRIA
+            const isOwnReservation = photo.status === 'reserved' &&
+                photo.reservedBy?.clientCode === req.client?.clientCode;
+
+            return {
+                id: photo.driveFileId || photo.r2Path,
+                name: photo.fileName,
+                fileName: photo.fileName,
+                r2Key: photo.driveFileId || photo.r2Path,
+                thumbnailUrl: `https://images.sunshinecowhides-gallery.com/_thumbnails/${photo.driveFileId || photo.r2Path}`,
+                webViewLink: `https://images.sunshinecowhides-gallery.com/${photo.driveFileId || photo.r2Path}`,
+                size: 0,
+                mimeType: 'image/webp',
+                isOwnReservation: isOwnReservation,  // NOVA FLAG
+                actualStatus: photo.status           // STATUS REAL
+            };
         });
 
         // Buscar status de todas as fotos

@@ -6,8 +6,146 @@ const mongoose = require('mongoose');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Cart = require('../models/Cart');
 
+// Identificação única da instância
+const INSTANCE_ID = process.env.SYNC_INSTANCE_ID || 'unknown';
+console.log(`[CDE Sync] Instance ID: ${INSTANCE_ID}`);
+
+// Função para verificar horário comercial usando variáveis do .env
+function isBusinessHours() {
+    const now = new Date();
+    const floridaTime = new Date(now.toLocaleString("en-US", {
+        timeZone: process.env.SYNC_TIMEZONE || "America/New_York"
+    }));
+
+    const day = floridaTime.getDay();
+    const hour = floridaTime.getHours();
+    const startHour = parseInt(process.env.SYNC_BUSINESS_START || '7');
+    const endHour = parseInt(process.env.SYNC_BUSINESS_END || '17');
+
+    // Segunda(1) a Sábado(6), dentro do horário configurado
+    return (day >= 1 && day <= 6 && hour >= startHour && hour < endHour);
+}
+
+// Função para determinar o tipo de sync necessário
+function getSyncStrategy() {
+    const now = new Date();
+    const floridaTime = new Date(now.toLocaleString("en-US", {
+        timeZone: process.env.SYNC_TIMEZONE || "America/New_York"
+    }));
+
+    const day = floridaTime.getDay();
+    const hour = floridaTime.getHours();
+    const weeklyDay = parseInt(process.env.SYNC_WEEKLY_DAY || '0');
+    const weeklyHour = parseInt(process.env.SYNC_WEEKLY_HOUR || '3');
+    const nightHour = parseInt(process.env.SYNC_NIGHT_HOUR || '23');
+
+    // Domingo 3am: sync completo com R2
+    if (day === weeklyDay && hour === weeklyHour) {
+        return {
+            type: 'weekly_full',
+            function: 'runSmartSync',
+            description: 'Sync semanal completo com verificação R2'
+        };
+    }
+
+    // Horário comercial: sync rápido frequente
+    if (isBusinessHours()) {
+        return {
+            type: 'business_hours',
+            function: 'runSync',
+            description: 'Sync rápido sem R2 (horário comercial)'
+        };
+    }
+
+    // Fora do horário: apenas às 23h
+    if (hour === nightHour) {
+        return {
+            type: 'nightly',
+            function: 'runSync',
+            description: 'Sync noturno de consolidação'
+        };
+    }
+
+    // Qualquer outro horário: não fazer nada
+    return {
+        type: 'skip',
+        function: null,
+        description: 'Fora do horário de sync'
+    };
+}
+
+// ============================================
+// SISTEMA DE LOCK PARA EVITAR CONFLITOS
+// ============================================
+
+async function acquireSyncLock() {
+    try {
+        const db = mongoose.connection.db;
+        const now = new Date();
+
+        // Tentar adquirir lock
+        const result = await db.collection('sync_locks').findOneAndUpdate(
+            {
+                _id: 'cde_sync',
+                $or: [
+                    { expiresAt: { $lt: now } }, // Lock expirado
+                    { expiresAt: { $exists: false } } // Sem lock
+                ]
+            },
+            {
+                $set: {
+                    lockedBy: INSTANCE_ID,
+                    lockedAt: now,
+                    expiresAt: new Date(now.getTime() + 10 * 60 * 1000), // 10 minutos
+                    pid: process.pid,
+                    host: require('os').hostname()
+                }
+            },
+            {
+                upsert: true,
+                returnDocument: 'after'
+            }
+        );
+
+        if (result && result.value) {
+            console.log(`🔒 [CDE Sync] Lock adquirido por ${INSTANCE_ID}`);
+            return true;
+        }
+
+        // Ver quem tem o lock
+        const currentLock = await db.collection('sync_locks').findOne({ _id: 'cde_sync' });
+        if (currentLock) {
+            console.log(`🔒 [CDE Sync] Lock em uso por ${currentLock.lockedBy} desde ${currentLock.lockedAt}`);
+        }
+
+        return false;
+    } catch (error) {
+        if (error.code === 11000) { // Duplicate key
+            console.log(`🔒 [CDE Sync] Lock já em uso por outra instância`);
+            return false;
+        }
+        console.error('Erro ao adquirir lock:', error);
+        return false;
+    }
+}
+
+async function releaseSyncLock() {
+    try {
+        const db = mongoose.connection.db;
+        await db.collection('sync_locks').deleteOne({
+            _id: 'cde_sync',
+            lockedBy: INSTANCE_ID
+        });
+        console.log(`🔓 [CDE Sync] Lock liberado por ${INSTANCE_ID}`);
+    } catch (error) {
+        console.error('Erro ao liberar lock:', error);
+    }
+}
+
 class CDEIncrementalSync {
     constructor() {
+        this.environment = process.env.NODE_ENV || 'development';
+        this.instanceId = `${this.environment}_${process.env.HOSTNAME || 'local'}`;
         this.lastSyncTime = null;
         this.isRunning = false;
         this.syncInterval = null;
@@ -27,22 +165,35 @@ class CDEIncrementalSync {
         }
     }
 
-    start(intervalMinutes = 2) {
+    start(intervalMinutes = 5) {
         if (this.syncInterval) {
             console.log('[SYNC] Sincronização já está rodando');
             return;
         }
 
-        console.log(`[SYNC] Iniciando sincronização incremental a cada ${intervalMinutes} minutos em modo ${this.mode}`);
+        // Determinar qual função de sync usar baseado no horário
+        const decideSyncFunction = () => {
+            if (isBusinessHours()) {
+                console.log('[SYNC] Horário comercial detectado - usando sync RÁPIDO sem R2');
+                return () => this.runSync();  // Sync sem verificar R2 (rápido)
+            } else {
+                console.log('[SYNC] Fora do horário comercial - usando sync com verificação R2');
+                return () => this.runSmartSync();  // Sync com R2 (completo mas lento)
+            }
+        };
 
-        // Executar primeira sincronização após 30 segundos (dar tempo para sistema inicializar)
-        setTimeout(() => this.runSync(), 30000);
+        console.log(`[SYNC] Sistema iniciado - Intervalo: ${intervalMinutes} minutos`);
+
+        // Executar primeira sincronização após 30 segundos
+        const initialSync = decideSyncFunction();
+        setTimeout(initialSync, 30000);
 
         // Configurar intervalo regular
-        this.syncInterval = setInterval(
-            () => this.runSync(),
-            intervalMinutes * 60 * 1000
-        );
+        // A cada intervalo, decide novamente qual sync usar
+        this.syncInterval = setInterval(() => {
+            const syncToRun = decideSyncFunction();
+            syncToRun();
+        }, intervalMinutes * 60 * 1000);
     }
 
     stop() {
@@ -54,10 +205,193 @@ class CDEIncrementalSync {
         }
     }
 
-    async runSync() {
+    async runSmartSync() {
+        // ADICIONE ESTAS VERIFICAÇÕES NO INÍCIO
+        if (!process.env.ENABLE_CDE_SYNC || process.env.ENABLE_CDE_SYNC === 'false') {
+            console.log('⏸️ [CDE Sync] Desabilitado via ENV');
+            return { success: false, message: 'Sync disabled' };
+        }
+
         if (this.isRunning) {
             console.log('[SYNC] Sincronização já em andamento, pulando...');
             return;
+        }
+
+        // Tentar adquirir lock
+        const lockAcquired = await acquireSyncLock();
+        if (!lockAcquired) {
+            console.log('🔒 [CDE Sync] Não foi possível adquirir lock');
+            return { success: false, message: 'Sync locked by another instance' };
+        }
+
+        this.isRunning = true;
+        const startTime = Date.now();
+        let cdeConnection = null;
+
+        try {
+            console.log('\n' + '='.repeat(60));
+            console.log('[SYNC] SMART SYNC - APENAS FOTOS REAIS NO R2');
+            console.log(`[SYNC] Modo: ${this.mode.toUpperCase()}`);
+            console.log(`[SYNC] Instância: ${this.instanceId}`);
+            console.log('='.repeat(60));
+
+            // Conectar ao CDE
+            cdeConnection = await mysql.createConnection({
+                host: process.env.CDE_HOST,
+                port: process.env.CDE_PORT,
+                user: process.env.CDE_USER,
+                password: process.env.CDE_PASSWORD,
+                database: process.env.CDE_DATABASE
+            });
+
+            // Buscar todas as fotos com driveFileId
+            const allPhotos = await UnifiedProductComplete.find(
+                { driveFileId: { $exists: true, $ne: null } },
+                { photoNumber: 1, status: 1, cdeStatus: 1, driveFileId: 1, selectionId: 1, reservedBy: 1 }
+            );
+
+            console.log(`[SYNC] ${allPhotos.length} registros no MongoDB para verificar`);
+
+            // Configurar S3 para verificar R2
+            const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
+            const s3Client = new S3Client({
+                region: 'auto',
+                endpoint: process.env.R2_ENDPOINT,
+                credentials: {
+                    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+                    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+                }
+            });
+
+            const discrepancies = [];
+            let realPhotos = 0;
+            let skippedNoR2 = 0;
+            let skippedProtected = 0;
+
+            for (const mongoPhoto of allPhotos) {
+                // PRIMEIRO: Verificar se existe no R2
+                let existsInR2 = false;
+
+                try {
+                    await s3Client.send(new HeadObjectCommand({
+                        Bucket: 'sunshine-photos',
+                        Key: mongoPhoto.driveFileId
+                    }));
+                    existsInR2 = true;
+                    realPhotos++;
+                } catch {
+                    skippedNoR2++;
+                    continue; // Não existe no R2, pular
+                }
+
+                // SEGUNDO: Verificar proteções
+                if (mongoPhoto.selectionId || mongoPhoto.reservedBy?.clientCode) {
+                    skippedProtected++;
+                    continue;
+                }
+
+                // TERCEIRO: Verificar no CDE
+                const [cdeResult] = await cdeConnection.execute(
+                    'SELECT AESTADOP FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    [mongoPhoto.photoNumber]
+                );
+
+                if (cdeResult[0]) {
+                    const cdeStatus = cdeResult[0].AESTADOP;
+
+                    // Comparar apenas se diferente
+                    if (mongoPhoto.cdeStatus !== cdeStatus ||
+                        (cdeStatus === 'INGRESADO' && mongoPhoto.status !== 'available') ||
+                        (cdeStatus === 'RETIRADO' && mongoPhoto.status !== 'sold')) {
+
+                        discrepancies.push({
+                            photoNumber: mongoPhoto.photoNumber,
+                            mongoStatus: mongoPhoto.status,
+                            mongoCDEStatus: mongoPhoto.cdeStatus,
+                            realCDEStatus: cdeStatus,
+                            action: this.determineSuggestedAction(mongoPhoto, { AESTADOP: cdeStatus })
+                        });
+
+                        // Aplicar correção se modo safe
+                        if (this.mode === 'safe') {
+                            const correction = await this.applyCorrection(mongoPhoto, { AESTADOP: cdeStatus });
+                            if (correction.applied) {
+                                console.log(`[SYNC] ✅ ${mongoPhoto.photoNumber}: ${correction.action}`);
+                            }
+                        }
+                    }
+                }
+
+                // Mostrar progresso
+                if (realPhotos % 500 === 0) {
+                    console.log(`[SYNC] Progresso: ${realPhotos} fotos reais verificadas`);
+                }
+            }
+
+            // Relatório
+            console.log('\n' + '='.repeat(60));
+            console.log('[SYNC] RELATÓRIO DO SMART SYNC');
+            console.log('='.repeat(60));
+            console.log(`Total de registros no MongoDB: ${allPhotos.length}`);
+            console.log(`Fotos que existem no R2: ${realPhotos}`);
+            console.log(`Ignoradas (não existem no R2): ${skippedNoR2}`);
+            console.log(`Protegidas (seleção/carrinho): ${skippedProtected}`);
+            console.log(`Discrepâncias encontradas: ${discrepancies.length}`);
+
+            if (discrepancies.length > 0 && discrepancies.length <= 10) {
+                console.log('\nDISCREPÂNCIAS:');
+                discrepancies.forEach(d => {
+                    console.log(`\n${d.photoNumber}:`);
+                    console.log(`  MongoDB: ${d.mongoStatus} (cdeStatus: ${d.mongoCDEStatus})`);
+                    console.log(`  CDE Real: ${d.realCDEStatus}`);
+                    console.log(`  Ação: ${d.action}`);
+                });
+            }
+
+            const duration = Date.now() - startTime;
+            console.log(`\n[SYNC] Tempo total: ${Math.round(duration / 1000)}s`);
+            console.log('='.repeat(60));
+
+            // Salvar stats
+            this.stats.lastRun = new Date();
+            this.stats.totalChecked = realPhotos;
+            this.stats.discrepanciesFound = discrepancies.length;
+            this.stats.lastReport = discrepancies;
+
+            return {
+                success: true,
+                duration,
+                realPhotos,
+                discrepancies: discrepancies.length
+            };
+
+        } catch (error) {
+            console.error('[SYNC] ERRO:', error);
+            return { success: false, error: error.message };
+        } finally {
+            this.isRunning = false;
+            if (cdeConnection) await cdeConnection.end();
+            await releaseSyncLock();
+        }
+    }
+
+    async runSync() {
+        // ADICIONE ESTAS VERIFICAÇÕES NO INÍCIO
+        if (!process.env.ENABLE_CDE_SYNC || process.env.ENABLE_CDE_SYNC === 'false') {
+            console.log('⏸️ [CDE Sync] Desabilitado via ENV');
+            return { success: false, message: 'Sync disabled' };
+        }
+
+        if (this.isRunning) {
+            console.log('[SYNC] Sincronização já em andamento, pulando...');
+            return;
+        }
+
+        // Tentar adquirir lock
+        const lockAcquired = await acquireSyncLock();
+        if (!lockAcquired) {
+            console.log('🔒 [CDE Sync] Não foi possível adquirir lock');
+            return { success: false, message: 'Sync locked by another instance' };
         }
 
         this.isRunning = true;
@@ -69,6 +403,7 @@ class CDEIncrementalSync {
             console.log('[SYNC] INICIANDO SINCRONIZAÇÃO INCREMENTAL');
             console.log(`[SYNC] Modo: ${this.mode.toUpperCase()}`);
             console.log(`[SYNC] Timestamp: ${new Date().toISOString()}`);
+            console.log(`[SYNC] Instância: ${this.instanceId}`);
             console.log('='.repeat(60));
 
             // Conectar ao CDE
@@ -85,34 +420,36 @@ class CDEIncrementalSync {
             let syncDescription;
 
             const isFirstSync = !this.lastSyncTime ||
-                (Date.now() - this.lastSyncTime.getTime()) > (24 * 60 * 60 * 1000);
+                (Date.now() - this.lastSyncTime.getTime()) > (7 * 24 * 60 * 60 * 1000);
 
             if (isFirstSync) {
-                const initialDays = parseInt(process.env.SYNC_INITIAL_DAYS || '7');
+                const initialDays = parseInt(process.env.SYNC_INITIAL_DAYS || '1');
                 checkFromTime = new Date(Date.now() - initialDays * 24 * 60 * 60 * 1000);
+                checkFromTime.setHours(0, 0, 0, 0); // Início do dia
                 syncDescription = `últimos ${initialDays} dias (sincronização inicial)`;
             } else {
-                const intervalMinutes = parseInt(process.env.SYNC_INTERVAL_MINUTES || '2');
-                const lookbackMinutes = parseInt(process.env.SYNC_LOOKBACK_MINUTES || '240');
-                checkFromTime = new Date(Date.now() - lookbackMinutes * 60 * 1000);
-                syncDescription = `últimos ${lookbackMinutes} minutos (incremental)`;
+                // Em vez de horas específicas, buscar desde o início de ontem
+                checkFromTime = new Date();
+                checkFromTime.setDate(checkFromTime.getDate() - 1);
+                checkFromTime.setHours(0, 0, 0, 0); // Meia-noite de ontem
+                syncDescription = `desde ontem (incremental)`;
             }
 
             console.log(`[SYNC] Buscando mudanças dos ${syncDescription}`);
             console.log(`[SYNC] Buscando mudanças desde: ${checkFromTime.toISOString()}`);
 
-            // Query para buscar mudanças recentes
+            // Query para buscar mudanças recentes - agora COM filtro de data
             const [cdeChanges] = await cdeConnection.execute(
-                `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA 
-                 FROM tbinventario 
-                 WHERE ATIPOETIQUETA != '0' 
-                 AND ATIPOETIQUETA != ''
-                 AND AFECHA >= ?
-                 ORDER BY AFECHA DESC
-                 LIMIT 500`,
-                [checkFromTime]
+                `SELECT LPAD(ATIPOETIQUETA, 5, '0') as ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA 
+                FROM tbinventario 
+                WHERE ATIPOETIQUETA != '0' 
+                AND ATIPOETIQUETA != ''
+                AND ATIPOETIQUETA IS NOT NULL
+                AND LENGTH(ATIPOETIQUETA) > 0
+                AND AFECHA >= ?
+                ORDER BY AFECHA DESC`,
+                [checkFromTime]  // Agora USA o parâmetro de data!
             );
-
             console.log(`[SYNC] ${cdeChanges.length} mudanças encontradas no CDE`);
 
             // Analisar mudanças
@@ -142,9 +479,8 @@ class CDEIncrementalSync {
 
                 checkedCount++;
 
-                // NOVO: Verificar se está em carrinho ativo
+                // VERIFICAR SE ESTÁ EM CARRINHO ATIVO
                 if (mongoPhoto.reservedBy?.clientCode) {
-                    // Verificar se realmente está em um carrinho ativo
                     const activeCart = await Cart.findOne({
                         clientCode: mongoPhoto.reservedBy.clientCode,
                         'items.fileName': mongoPhoto.fileName,
@@ -152,8 +488,51 @@ class CDEIncrementalSync {
                     });
 
                     if (activeCart) {
-                        skippedInCart++;
-                        continue; // NUNCA mexer em fotos que estão em carrinho ativo
+                        // NOVA LÓGICA: Se CDE diz RESERVED/RETIRADO, marcar como ghost
+                        if (cdeStatus === 'RESERVED' || cdeStatus === 'RETIRADO' || cdeStatus === 'STANDBY') {
+                            console.log(`[SYNC] ⚠️ Conflito detectado: ${photoNumber} em carrinho mas ${cdeStatus} no CDE`);
+
+                            // Importar CartService se ainda não foi importado
+                            const CartService = require('../services/CartService');
+
+                            // Determinar mensagem baseada no status
+                            let ghostReason = 'This item is no longer available';
+                            if (cdeStatus === 'RESERVED') {
+                                ghostReason = 'This item was reserved by another customer';
+                            } else if (cdeStatus === 'RETIRADO') {
+                                ghostReason = 'This item has been sold';
+                            } else if (cdeStatus === 'STANDBY') {
+                                ghostReason = 'This item is temporarily unavailable';
+                            }
+
+                            // Marcar como ghost no carrinho
+                            const marked = await CartService.markItemAsGhost(
+                                mongoPhoto.reservedBy.clientCode,
+                                mongoPhoto.fileName,
+                                ghostReason
+                            );
+
+                            if (marked) {
+                                console.log(`[SYNC] 👻 Item marcado como ghost no carrinho`);
+
+                                // Ainda assim, atualizar o MongoDB para refletir o status real
+                                discrepancies.push({
+                                    photoNumber: photoNumber,
+                                    fileName: mongoPhoto.fileName,
+                                    mongoStatus: mongoPhoto.cdeStatus || 'null',
+                                    cdeStatus: cdeStatus,
+                                    hasSelectionId: false,
+                                    inCart: true,
+                                    cartClient: mongoPhoto.reservedBy.clientCode,
+                                    suggestedAction: 'MARCADO COMO GHOST NO CARRINHO',
+                                    ghostMarked: true
+                                });
+                            }
+                        } else {
+                            // Status normal (PRE-SELECTED), pular
+                            skippedInCart++;
+                        }
+                        continue;
                     }
                 }
 
@@ -247,44 +626,65 @@ class CDEIncrementalSync {
         } finally {
             this.isRunning = false;
             if (cdeConnection) await cdeConnection.end();
+            await releaseSyncLock();
         }
     }
 
     determineSuggestedAction(mongoPhoto, cdeRecord) {
-        // Se tem selectionId, ignorar
+        // PROTEÇÃO 1: Se tem selectionId, ignorar
         if (mongoPhoto.selectionId) {
             return 'IGNORAR - Foto em seleção confirmada';
         }
 
-        // Se está em carrinho, ignorar
+        // PROTEÇÃO 2: Se está em carrinho ativo, ignorar
         if (mongoPhoto.reservedBy?.clientCode) {
             return 'IGNORAR - Foto em carrinho ativo';
         }
 
-        const cdeStatus = cdeRecord.AESTADOP;
+        // PROTEÇÃO 3: Se MongoDB tem status de transação, proteger
+        if (mongoPhoto.cdeStatus === 'CONFIRMED' || mongoPhoto.cdeStatus === 'PRE-SELECTED') {
+            return 'IGNORAR - Foto em processo de venda';
+        }
 
-        // Determinar ação baseada no status do CDE
+        const cdeStatus = cdeRecord.AESTADOP;
+        const mongoStatus = mongoPhoto.status;
+
+        // Determinar ação baseada no status do CDE vs MongoDB
         if (cdeStatus === 'RETIRADO') {
-            return 'MARCAR COMO VENDIDA';
+            if (mongoStatus === 'sold') {
+                return 'JÁ CORRETO - sold';
+            } else {
+                return 'MARCAR COMO VENDIDA';
+            }
         }
 
         if (cdeStatus === 'RESERVED' || cdeStatus === 'STANDBY') {
-            return 'MARCAR COMO INDISPONÍVEL';
+            if (mongoStatus === 'unavailable') {
+                return 'JÁ CORRETO - unavailable';
+            } else {
+                return 'MARCAR COMO INDISPONÍVEL';
+            }
         }
 
         if (cdeStatus === 'INGRESADO') {
-            return 'MARCAR COMO DISPONÍVEL';
+            if (mongoStatus === 'available') {
+                return 'JÁ CORRETO - available';
+            } else {
+                return 'MARCAR COMO DISPONÍVEL';
+            }
         }
 
         if (cdeStatus === 'PRE-SELECTED') {
+            // PRE-SELECTED sem carrinho é suspeito
             return 'VERIFICAR MANUALMENTE - PRE-SELECTED sem carrinho';
         }
 
         if (cdeStatus === 'CONFIRMED') {
+            // CONFIRMED sem seleção é suspeito
             return 'VERIFICAR MANUALMENTE - CONFIRMED sem seleção';
         }
 
-        return 'ANALISAR MANUALMENTE';
+        return 'ANALISAR MANUALMENTE - Status desconhecido';
     }
 
     async applyCorrection(mongoPhoto, cdeRecord) {
@@ -395,4 +795,6 @@ class CDEIncrementalSync {
     }
 }
 
-module.exports = new CDEIncrementalSync();
+const syncInstance = new CDEIncrementalSync();
+module.exports = syncInstance;
+module.exports.isBusinessHours = isBusinessHours;

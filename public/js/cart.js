@@ -1116,43 +1116,68 @@ window.CartSystem = {
      * Renderizar item individual do carrinho
      */
     renderCartItem(item) {
-        // ESCAPAR aspas duplas para uso seguro no HTML
+        // Verificar se é um ghost item
+        const isGhost = item.ghostStatus === 'ghost';
+        
+        // URL do thumbnail
+        const thumbnailUrl = item.thumbnailUrl || 
+            `https://images.sunshinecowhides-gallery.com/_thumbnails/${item.driveFileId}`;
+        
+        // Escapar aspas duplas
         const safeDriveFileId = item.driveFileId.replace(/"/g, '&quot;');
         const timeRemaining = item.timeRemaining || 0;
         const timeText = this.formatTimeReadable(timeRemaining);
 
         let timerClass = '';
-        if (timeRemaining < 300) timerClass = 'critical';
-        else if (timeRemaining < 600) timerClass = 'warning';
+        if (!isGhost) { // Só aplicar classes de timer se não for ghost
+            if (timeRemaining < 300) timerClass = 'critical';
+            else if (timeRemaining < 600) timerClass = 'warning';
+        }
 
+        // Classe adicional para ghost items
+        const itemClass = isGhost ? 'cart-item ghost-item' : 'cart-item';
+        
         return `
-            <div class="cart-item" data-drive-file-id="${safeDriveFileId}">
-                <div class="cart-item-image" style="cursor: pointer;">
-                    ${item.thumbnailUrl ?
-                `<img src="${item.thumbnailUrl}" alt="${item.fileName}" loading="lazy">` :
-                `<div class="placeholder"><i class="fas fa-image"></i></div>`
-            }
-                </div>
-                <div class="cart-item-info" style="cursor: pointer;">
-                    <div class="cart-item-title">${item.fileName}</div>
-                    <div class="cart-item-category">${item.category}</div>
-                    ${(window.shouldShowPrices && window.shouldShowPrices()) ?
-                `<div class="cart-item-price">
-                                ${item.hasPrice ?
-                    `<span class="price-value">${item.formattedPrice}</span>` :
-                    `<span class="price-consult">Check price</span>`
-                }
-                            </div>` :
-                ''
-            }
-                    <div class="cart-item-timer ${timerClass}">
-                        <i class="fas fa-clock"></i>
-                        <span id="timer-${item.fileName || item.driveFileId.split('/').pop()}">${timeText}</span>
+            <div class="${itemClass}" data-drive-file-id="${safeDriveFileId}">
+                ${isGhost ? `
+                    <div class="ghost-overlay">
+                        <div class="ghost-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>${item.ghostReason || 'Item unavailable'}</span>
+                        </div>
                     </div>
+                ` : ''}
+                <div class="cart-item-image" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
+                    ${thumbnailUrl ?
+                        `<img src="${thumbnailUrl}" alt="${item.fileName}" loading="lazy">` :
+                        `<div class="placeholder"><i class="fas fa-image"></i></div>`
+                    }
+                </div>
+                <div class="cart-item-info" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
+                    <div class="cart-item-title ${isGhost ? 'ghost-text' : ''}">${item.fileName}</div>
+                    <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${item.category}</div>
+                    ${!isGhost && (window.shouldShowPrices && window.shouldShowPrices()) ?
+                        `<div class="cart-item-price">
+                            ${item.hasPrice ?
+                                `<span class="price-value">${item.formattedPrice}</span>` :
+                                `<span class="price-consult">Check price</span>`
+                            }
+                        </div>` :
+                        ''
+                    }
+                    ${isGhost ? 
+                        `<div class="ghost-status">
+                            <i class="fas fa-ban"></i> Not available for selection
+                        </div>` :
+                        `<div class="cart-item-timer ${timerClass}">
+                            <i class="fas fa-clock"></i>
+                            <span id="timer-${item.fileName || item.driveFileId.split('/').pop()}">${timeText}</span>
+                        </div>`
+                    }
                 </div>
                 <div class="cart-item-actions">
-                    <button class="cart-item-remove" title="Remove item">
-                        <i class="fas fa-trash-alt"></i>
+                    <button class="cart-item-remove ${isGhost ? 'remove-ghost' : ''}" title="${isGhost ? 'Acknowledge and remove' : 'Remove item'}">
+                        <i class="fas ${isGhost ? 'fa-times-circle' : 'fa-trash-alt'}"></i>
                     </button>
                 </div>
             </div>
@@ -1571,38 +1596,223 @@ async function finalizeSelection() {
     try {
         // Verificar se há itens
         if (CartSystem.state.totalItems === 0) {
-            CartSystem.showNotification('Empty cart', 'warning');
+            CartSystem.showNotification('Carrinho vazio', 'warning');
             return;
         }
+        
+        // Filtrar ghost items localmente primeiro
+        const validItems = CartSystem.state.items.filter(item => 
+            !item.ghostStatus || item.ghostStatus !== 'ghost'
+        );
+        
+        const ghostCount = CartSystem.state.items.length - validItems.length;
+        
+        if (validItems.length === 0) {
+            CartSystem.showNotification('Todos os itens estão indisponíveis', 'error');
+            return;
+        }
+        
+        // NOVO: Mostrar modal de confirmação
+        showConfirmationModal(validItems, ghostCount);
+        
+    } catch (error) {
+        console.error('❌ Erro ao iniciar finalização:', error);
+        CartSystem.showNotification('Erro ao processar seleção', 'error');
+    }
+}
 
-        // MOSTRAR MODAL IMEDIATAMENTE - SEM ESPERAR PROCESSAMENTO
-        showImmediateSuccessModal();
+// NOVA FUNÇÃO: Modal de confirmação
+function showConfirmationModal(validItems, ghostCount) {
+    // Criar HTML do modal melhorado
+    const modalHTML = `
+        <div id="confirmSelectionModal" class="modal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 20000; align-items: center; justify-content: center;">
+            <div class="modal-content" style="background: white; padding: 25px; border-radius: 10px; max-width: 500px; width: 90%; max-height: 60vh; overflow-y: auto; position: relative;">
+                <!-- Header compacto -->
+                <h2 style="margin-bottom: 15px; color: #333; font-size: 1.5rem;">Confirm Your Selection</h2>
+                
+                <!-- Info de itens -->
+                <div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 5px;">
+                    <p style="margin: 0; font-weight: 600;">
+                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                        Items to be reserved: <span style="color: #28a745;">${validItems.length} photos</span>
+                    </p>
+                    ${ghostCount > 0 ? `
+                        <p style="margin: 8px 0 0 0; color: #ff9800; font-size: 14px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            ${ghostCount} unavailable item(s) will be removed
+                        </p>
+                    ` : ''}
+                </div>
+                
+                <!-- AVISO IMPORTANTE COM DESTAQUE -->
+                <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: start; gap: 10px;">
+                        <i class="fas fa-info-circle" style="color: #ff9800; font-size: 20px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: #856404; display: block; margin-bottom: 5px;">Important Notice:</strong>
+                            <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.5;">
+                                After confirming, <strong>your access will be temporarily disabled</strong> while our sales team processes your selection. 
+                                You will be contacted within 24 hours to complete the purchase.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Campo de observações compacto -->
+                <div style="margin-bottom: 20px;">
+                    <label for="clientObservations" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">
+                        Observations (optional):
+                    </label>
+                    <textarea 
+                        id="clientObservations" 
+                        rows="3" 
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; resize: vertical; font-size: 14px; height: 160px;"
+                        placeholder="Add any special requests or notes..."
+                    ></textarea>
+                </div>
+                
+                <!-- Botões -->
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="cancelConfirmation()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                        Cancel
+                    </button>
+                    <button onclick="proceedWithSelection()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                        <i class="fas fa-check"></i> Confirm Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Adicionar modal ao body
+    const modalDiv = document.createElement('div');
+    modalDiv.innerHTML = modalHTML;
+    document.body.appendChild(modalDiv);
+}
 
-        // Fechar carrinho
-        CartSystem.closeSidebar();
+// Cancelar confirmação
+window.cancelConfirmation = function() {
+    const modal = document.getElementById('confirmSelectionModal');
+    if (modal) modal.remove();
+}
 
-        // Buscar dados da sessão do cliente
+// Prosseguir com a seleção
+window.proceedWithSelection = async function() {
+    try {
+        // Pegar observações
+        const observations = document.getElementById('clientObservations')?.value || '';
+        
+        // Fechar modal
+        cancelConfirmation();
+        
+        // Mostrar loading
+        CartSystem.setLoading(true);
+        
+        // Buscar dados da sessão
         const clientSession = CartSystem.getClientSession();
         if (!clientSession) {
             console.error('Sessão do cliente não encontrada');
             return;
         }
-
+        
         const requestData = {
             sessionId: CartSystem.state.sessionId,
             clientCode: clientSession.accessCode,
-            clientName: clientSession.user?.name || 'Client'
+            clientName: clientSession.user?.name || 'Client',
+            observations: observations  // ADICIONAR OBSERVAÇÕES
         };
-
-        console.log('🎯 Iniciando processamento em background:', CartSystem.state.items);
-
-        // PROCESSAMENTO EM BACKGROUND - SEM LOADING PARA O CLIENTE
-        processSelectionInBackground(requestData);
-
+        
+        console.log('🎯 Finalizando seleção com observações:', observations);
+        
+        const response = await fetch('/api/selection/finalize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || 'Erro ao finalizar');
+        }
+        
+        // Mostrar sucesso
+        showSuccessModalWithMessage(result);
+        
+        // Limpar carrinho
+        await CartSystem.loadCart();
+        
     } catch (error) {
-        console.error('❌ Erro ao iniciar finalização:', error);
-        CartSystem.showNotification('Error processing selection. Please try again.', 'error');
+        console.error('❌ Erro:', error);
+        CartSystem.showNotification(error.message, 'error');
+    } finally {
+        CartSystem.setLoading(false);
     }
+}
+
+// Modal de sucesso melhorado
+function showSuccessModalWithMessage(result) {
+    const modalHTML = `
+        <div id="successModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 30000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 20px; border-radius: 12px; max-width: 520px; width: 90%; text-align: center; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <!-- Ícone de sucesso maior -->
+                <i class="fas fa-check-circle" style="color: #28a745; font-size: 70px; margin-bottom: 20px;"></i>
+                
+                <!-- Título principal -->
+                <h2 style="margin-bottom: 10px; font-size: 28px; color: #333;">Selection Confirmed!</h2>
+                
+                <!-- Destaque para número de itens -->
+                <div style="margin: 20px 0; padding: 15px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 8px;">
+                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: white;">
+                        ${result.selection.totalItems} items have been reserved
+                    </p>
+                </div>
+                
+                <!-- Box de próximos passos com mais destaque -->
+                <div style="background: #d4edda; border: 3px solid #28a745; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: left;">
+                    <h4 style="margin: 0 0 15px 0; color: #155724; font-size: 20px; text-align: center;">
+                        <i class="fas fa-info-circle" style="color: #28a745;"></i> Important Information
+                    </h4>
+                    <ul style="margin: 0; padding-left: 25px; color: #155724; font-size: 16px; line-height: 2;">
+                        <li><strong>Our sales team will contact you within 24 hours</strong></li>
+                        <li>This tool was designed to help you pre-select products</li>
+                        <li>Payment methods and shipping options will be discussed with your sales representative</li>
+                        <li>Final pricing may vary based on quantity and negotiation</li>
+                    </ul>
+                </div>
+                
+                <!-- Aviso importante com mais destaque -->
+                <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p style="color: #856404; font-size: 14px; margin: 0; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="color: #ff9800; font-size: 18px;"></i><br>
+                        <strong>Your access has been temporarily disabled.</strong><br>
+                        Contact your sales representative for assistance.
+                    </p>
+                </div>
+                
+                <!-- Botão mais destacado -->
+                <button onclick="location.href='/'" style="
+                    padding: 15px 40px; 
+                    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+                    color: white; 
+                    border: none; 
+                    border-radius: 8px; 
+                    cursor: pointer; 
+                    font-weight: bold; 
+                    font-size: 18px;
+                    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+                    transition: all 0.3s;
+                    margin-top: 10px;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-home"></i> Return to Home
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
 /**

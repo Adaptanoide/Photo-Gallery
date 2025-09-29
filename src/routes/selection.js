@@ -18,7 +18,7 @@ router.post('/finalize', async (req, res) => {
 
     try {
         return await session.withTransaction(async () => {
-            const { sessionId, clientCode, clientName } = req.body;
+            const { sessionId, clientCode, clientName, observations } = req.body;
 
             console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
 
@@ -33,6 +33,60 @@ router.post('/finalize', async (req, res) => {
             }
 
             console.log(`📦 Carrinho encontrado: ${cart.totalItems} itens`);
+
+            // FILTRAR GHOST ITEMS - CRÍTICO!
+            let validItems = cart.items.filter(item =>
+                !item.ghostStatus || item.ghostStatus !== 'ghost'
+            );
+
+            let ghostItems = cart.items.filter(item =>
+                item.ghostStatus === 'ghost'
+            );
+
+            if (ghostItems.length > 0) {
+                console.log(`👻 ${ghostItems.length} ghost items removidos da seleção`);
+                ghostItems.forEach(ghost => {
+                    console.log(`  - ${ghost.fileName}: ${ghost.ghostReason}`);
+                });
+            }
+
+            if (validItems.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Todos os itens estão indisponíveis. Por favor, adicione novos itens ao carrinho.'
+                });
+            }
+
+            // Substituir cart.items pelos validItems
+            cart.items = validItems;
+            cart.totalItems = validItems.length;
+
+            // LIMPAR GHOST ITEMS DO MONGODB - ADICIONAR AQUI!
+            if (ghostItems.length > 0) {
+                console.log(`🧹 Limpando ${ghostItems.length} ghost items do MongoDB...`);
+
+                for (const ghost of ghostItems) {
+                    await UnifiedProductComplete.updateOne(
+                        { driveFileId: ghost.driveFileId },
+                        {
+                            $set: {
+                                status: 'unavailable',     // ADICIONAR ESTAS DUAS LINHAS
+                                cdeStatus: 'RESERVED'       // PARA ATUALIZAR O STATUS
+                            },
+                            $unset: {
+                                reservedBy: 1,
+                                ghostStatus: 1,
+                                ghostReason: 1,
+                                ghostedAt: 1,
+                                cartAddedAt: 1,
+                                reservedAt: 1
+                            }
+                        }
+                    ).session(session);
+
+                    console.log(`  ✓ Ghost item ${ghost.fileName} limpo do MongoDB`);
+                }
+            }
 
             // 2. Buscar produtos detalhados
             const productIds = cart.items.map(item => item.productId);
@@ -168,6 +222,7 @@ router.post('/finalize', async (req, res) => {
                 clientName,
                 clientCompany: companyName,
                 salesRep: salesRep,
+                observations: observations || '',
                 items: products.map(product => {
                     const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
 
@@ -328,6 +383,7 @@ router.post('/finalize', async (req, res) => {
                         salesRep: salesRep,
                         totalItems: cart.totalItems,
                         totalValue: totalValue,
+                        observations: observations || '',
                         googleDriveInfo: {
                             clientFolderName: folderResult.folderName
                         },

@@ -267,8 +267,18 @@
                 const thumbnailUrl = ImageUtils.getThumbnailUrl(photo);
                 const isInCart = window.CartSystem && CartSystem.isInCart(photo.id);
 
+                // NOVO: Determinar status visual correto
+                let visualStatus = photo.actualStatus || photo.status || 'available';
+                if (photo.isOwnReservation) {
+                    visualStatus = 'available'; // Tratar como disponível visualmente
+                }
+
                 return `
-                    <div class="photo-thumbnail" data-photo-id="${photo.id}" data-status="${photo.status || 'available'}" onclick="openPhotoModal(${index})">
+                    <div class="photo-thumbnail" 
+                        data-photo-id="${photo.id}" 
+                        data-status="${visualStatus}" 
+                        data-own-reservation="${photo.isOwnReservation || false}"
+                        onclick="openPhotoModal(${index})">
                         <img src="${thumbnailUrl}" 
                             alt="${photo.name}" 
                             onerror="this.onerror=null; this.src=this.src.replace('/_thumbnails/', '/');"

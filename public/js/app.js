@@ -157,9 +157,10 @@ function showClientLogin() {
 
 // Mostrar modal de verificação de acesso
 function showAccessModal() {
+    console.trace('🔴 showAccessModal foi chamado de:'); // ADICIONE ESTA LINHA
     const modal = document.getElementById('accessModal');
     if (modal) {
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
     }
 }
 
@@ -244,15 +245,26 @@ async function handleAdminLogin(e) {
 
 // Handle login direto do cliente (novo formulário elegante)
 async function handleDirectClientLogin(e) {
-    e.preventDefault();
+    // Prevenir comportamento padrão
+    if (e) e.preventDefault();
 
-    const code = document.getElementById('directClientCode').value.trim();
+    // Pegar o valor do código
+    const codeInput = document.getElementById('directClientCode');
+    const code = codeInput ? codeInput.value.trim() : '';
 
-    if (!code || code.length !== 4) {
-        showNotification('Please enter a valid 4-digit access code', 'error');
+    // PROTEÇÃO ABSOLUTA contra submit vazio/automático
+    if (!code || code === '' || code.length === 0) {
+        console.log('❌ Submit ignorado - campo vazio');
+        return; // Para aqui se não há código
+    }
+
+    // Validar formato do código (4 dígitos numéricos)
+    if (code.length !== 4 || !/^\d{4}$/.test(code)) {
+        showNotification('Please enter a valid 4-digit code', 'error');
         return;
     }
 
+    console.log('✅ Processando código:', code);
     showLoading(true);
 
     try {
@@ -265,6 +277,7 @@ async function handleDirectClientLogin(e) {
         });
 
         const data = await response.json();
+        console.log('Resposta do servidor:', data);  // <-- ADICIONE ESTA LINHA PARA DEBUG
 
         if (response.ok && data.success) {
             // Salvar sessão
@@ -272,7 +285,7 @@ async function handleDirectClientLogin(e) {
                 userType: 'client',
                 user: data.client,
                 accessCode: code,
-                token: data.token,  // <-- ADICIONAR ESTA LINHA
+                token: data.token,
                 allowedCategories: data.allowedCategories,
                 expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 horas
             };
@@ -291,7 +304,17 @@ async function handleDirectClientLogin(e) {
             }, 1000);
 
         } else {
-            showAccessModal();
+            // Detectar se está bloqueado por diferentes mensagens
+            if (data.status === 'blocked' ||
+                data.message?.toLowerCase().includes('blocked') ||
+                data.message?.toLowerCase().includes('desativado') ||
+                data.message?.toLowerCase().includes('expirado') ||
+                response.status === 403) {
+                showAccessModal();
+            } else {
+                // Mostrar mensagem de erro apropriada
+                showNotification(data.message || 'Invalid access code', 'error');
+            }
         }
 
     } catch (error) {

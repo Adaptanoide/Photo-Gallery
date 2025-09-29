@@ -359,6 +359,12 @@ const server = app.listen(PORT, () => {
     const syncInterval = parseInt(process.env.SYNC_INTERVAL_MINUTES) || 2;
     const syncMode = process.env.SYNC_MODE || 'observe';
 
+    // Log de status do sync
+    console.log('='.repeat(50));
+    console.log('🔧 AMBIENTE:', process.env.NODE_ENV || 'development');
+    console.log('🔧 CDE SYNC:', syncEnabled ? '✅ ATIVADO' : '⛔ DESATIVADO');
+    console.log('🔧 INSTANCE ID:', process.env.SYNC_INSTANCE_ID || 'not-set');
+
     if (syncEnabled) {
         console.log('='.repeat(50));
         console.log('SINCRONIZAÇÃO INCREMENTAL CONFIGURADA');

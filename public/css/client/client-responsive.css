@@ -1163,3 +1163,43 @@
         height: 150px;
     }
 }
+
+/* Modal de Confirmação Responsivo */
+@media (max-width: 768px) {
+    #confirmSelectionModal .modal-content {
+        max-width: 95% !important;
+        width: 95% !important;
+        padding: 20px !important;
+        max-height: 90vh !important;
+    }
+    
+    #confirmSelectionModal h2 {
+        font-size: 1.25rem !important;
+    }
+    
+    #confirmSelectionModal textarea {
+        min-height: 60px !important;  /* Altura mínima ao invés de rows */
+        font-size: 16px !important;   /* Previne zoom no iOS */
+    }
+    
+    /* Botões empilhados no mobile */
+    #confirmSelectionModal .modal-content > div:last-child {
+        flex-direction: column-reverse !important;
+    }
+    
+    #confirmSelectionModal button {
+        width: 100% !important;
+        padding: 12px !important;
+    }
+}
+
+/* Telas muito pequenas */
+@media (max-width: 360px) {
+    #confirmSelectionModal .modal-content {
+        padding: 15px !important;
+    }
+    
+    #confirmSelectionModal h2 {
+        font-size: 1.1rem !important;
+    }
+}

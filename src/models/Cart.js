@@ -41,6 +41,24 @@ const cartSchema = new mongoose.Schema({
         price: { type: Number, default: 0 },
         formattedPrice: { type: String, default: 'Sem preço' },
         hasPrice: { type: Boolean, default: false },
+        // Sistema de Ghost Items - para conflitos CDE
+        ghostStatus: {
+            type: String,
+            enum: ['active', 'ghost', null],
+            default: null
+        },
+        ghostReason: {
+            type: String,
+            default: null
+        },
+        ghostedAt: {
+            type: Date,
+            default: null
+        },
+        originalPrice: {
+            type: Number,
+            default: 0
+        },
         addedAt: {
             type: Date,
             default: Date.now

@@ -98,12 +98,12 @@ router.get('/access-codes', async (req, res) => {
     try {
         // Parâmetros de paginação e busca
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 25; // 25 por página como padrão
+        const limit = parseInt(req.query.limit) || 25;
         const search = req.query.search || '';
         const status = req.query.status || 'all';
         const sortBy = req.query.sortBy || 'recent';
-        console.log(`🔍 SortBy recebido: "${sortBy}" | Status: "${status}"`);
 
+        console.log(`🔍 Page ${page}, Limit ${limit}, SortBy: "${sortBy}"`);
 
         // Calcular skip
         const skip = (page - 1) * limit;
@@ -132,7 +132,71 @@ router.get('/access-codes', async (req, res) => {
             query.expiresAt = { $lt: now };
         }
 
-        // Definir ordenação
+        // ============ NOVA LÓGICA DE CARRINHOS ============
+        // Buscar TODOS os carrinhos ativos primeiro
+        const Cart = require('../models/Cart');
+        const activeCarts = await Cart.find({
+            'items.0': { $exists: true },
+            isActive: true,
+            $or: [
+                { expiresAt: { $gt: now } },
+                { expiresAt: { $exists: false } }
+            ]
+        }).select('clientCode items createdAt expiresAt');
+
+        console.log(`🛒 ${activeCarts.length} carrinhos ativos encontrados`);
+
+        // Criar mapa de carrinhos
+        const cartMap = {};
+        const clientsWithCart = new Set();
+
+        activeCarts.forEach(cart => {
+            const validItems = cart.items.filter(item => {
+                if (!item.expiresAt) return true;
+                return new Date(item.expiresAt) > now;
+            });
+
+            if (validItems.length > 0) {
+                cartMap[cart.clientCode] = {
+                    itemCount: validItems.length,
+                    totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0),
+                    isTemporary: true
+                };
+                clientsWithCart.add(cart.clientCode);
+                console.log(`  Cliente ${cart.clientCode}: ${validItems.length} itens no carrinho`);
+            }
+        });
+
+        // ============ BUSCAR CLIENTES EM 2 ETAPAS ============
+        let finalClients = [];
+
+        // ETAPA 1: Buscar TODOS os clientes com carrinho (sem paginação)
+        if (clientsWithCart.size > 0) {
+            const queryWithCart = {
+                ...query,
+                code: { $in: Array.from(clientsWithCart) }
+            };
+
+            const clientsWithCartData = await AccessCode.find(queryWithCart);
+
+            // Ordenar por quantidade de itens no carrinho
+            clientsWithCartData.sort((a, b) => {
+                const aCount = cartMap[a.code]?.itemCount || 0;
+                const bCount = cartMap[b.code]?.itemCount || 0;
+                return bCount - aCount;
+            });
+
+            finalClients = clientsWithCartData;
+            console.log(`✅ ${finalClients.length} clientes com carrinho adicionados ao topo`);
+        }
+
+        // ETAPA 2: Buscar clientes SEM carrinho (com paginação)
+        const queryWithoutCart = {
+            ...query,
+            code: { $nin: Array.from(clientsWithCart) }
+        };
+
+        // Definir ordenação para clientes sem carrinho
         let sortOptions = {};
         switch (sortBy) {
             case 'name':
@@ -150,91 +214,35 @@ router.get('/access-codes', async (req, res) => {
             case 'expires-soon':
                 sortOptions = { expiresAt: 1 };
                 break;
-            case 'active-carts':
-                sortOptions = { createAt: -1 };
-                break;
-            case 'recent':
             default:
                 sortOptions = { createdAt: -1 };
                 break;
         }
 
-        // Buscar total de registros (para calcular total de páginas)
-        const totalCount = await AccessCode.countDocuments(query);
+        // Calcular quantos sem carrinho precisamos
+        const remainingSlots = limit - finalClients.length;
+        const skipAdjusted = Math.max(0, skip - finalClients.length);
 
-        // Buscar códigos com paginação
-        const codes = await AccessCode.find(query)
-            .sort(sortOptions)
-            .skip(skip)
-            .limit(limit);
+        if (remainingSlots > 0) {
+            const clientsWithoutCart = await AccessCode.find(queryWithoutCart)
+                .sort(sortOptions)
+                .skip(skipAdjusted)
+                .limit(remainingSlots);
 
-        // Calcular informações de paginação
-        const totalPages = Math.ceil(totalCount / limit);
-        const hasNextPage = page < totalPages;
-        const hasPrevPage = page > 1;
-
-        // Buscar APENAS carrinhos ativos
-        const Cart = require('../models/Cart');
-        const carts = await Cart.find({
-            'items.0': { $exists: true },
-            isActive: true,
-            $or: [
-                { expiresAt: { $gt: now } },
-                { expiresAt: { $exists: false } }
-            ]
-        }).select('clientCode items createdAt expiresAt');
-
-        console.log(`📊 Pagination: Page ${page}/${totalPages}, Showing ${codes.length} of ${totalCount} total clients`);
-
-        // Criar mapa de carrinhos por cliente
-        const cartMap = {};
-        carts.forEach(cart => {
-            const validItems = cart.items.filter(item => {
-                if (!item.expiresAt) return true;
-                return new Date(item.expiresAt) > now;
-            });
-
-            if (validItems.length > 0) {
-                cartMap[cart.clientCode] = {
-                    itemCount: validItems.length,
-                    totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0),
-                    isTemporary: true
-                };
-            }
-        });
-
-        // ✅ ORDENAÇÃO ESPECIAL: Carrinhos ativos primeiro (quando sortBy = 'recent')
-        let sortedCodes = codes;
-        if (sortBy === 'recent' || !sortBy) {
-            console.log('✅ Aplicando ordenação por carrinho ativo');
-
-            // Separar clientes com e sem carrinho
-            const withCart = [];
-            const withoutCart = [];
-
-            codes.forEach(code => {
-                if (cartMap[code.code]) {
-                    withCart.push({
-                        ...code.toObject(),
-                        cartItemCount: cartMap[code.code].itemCount
-                    });
-                } else {
-                    withoutCart.push(code.toObject());
-                }
-            });
-
-            // Ordenar com carrinho por quantidade (maior → menor)
-            withCart.sort((a, b) => b.cartItemCount - a.cartItemCount);
-
-            // Ordenar sem carrinho por data recente
-            withoutCart.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-            // Juntar: primeiro com carrinho, depois sem
-            sortedCodes = [...withCart, ...withoutCart];
+            finalClients = [...finalClients, ...clientsWithoutCart];
         }
 
+        // Calcular total correto
+        const totalWithCart = clientsWithCart.size;
+        const totalWithoutCart = await AccessCode.countDocuments(queryWithoutCart);
+        const totalCount = totalWithCart + totalWithoutCart;
+        const totalPages = Math.ceil(totalCount / limit);
+
+        console.log(`📊 Total: ${totalCount} (${totalWithCart} com carrinho, ${totalWithoutCart} sem)`);
+        console.log(`📄 Página ${page}/${totalPages}, Mostrando ${finalClients.length} clientes`);
+
         // Adicionar info de carrinho em cada código
-        const codesWithCart = sortedCodes.map(code => ({
+        const codesWithCart = finalClients.map(code => ({
             ...(code.toObject ? code.toObject() : code),
             cartInfo: cartMap[code.code] || null
         }));
@@ -247,8 +255,8 @@ router.get('/access-codes', async (req, res) => {
                 limit,
                 totalCount,
                 totalPages,
-                hasNextPage,
-                hasPrevPage,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
                 startIndex: skip + 1,
                 endIndex: Math.min(skip + limit, totalCount)
             }
@@ -1094,6 +1102,72 @@ router.post('/client/:code/cart/extend', authenticateToken, async (req, res) => 
         res.status(500).json({
             success: false,
             message: error.message || 'Error extending cart time'
+        });
+    }
+});
+
+// ===== ENDPOINT DE STATUS DO SYNC =====
+router.get('/sync-status', authenticateToken, async (req, res) => {
+    try {
+        const db = mongoose.connection.db;
+
+        // Verificar lock atual
+        const lock = await db.collection('sync_locks').findOne({ _id: 'cde_sync' });
+
+        // Buscar último log de sync (se você implementar logs)
+        const lastSync = await db.collection('sync_logs')
+            .findOne({}, { sort: { timestamp: -1 } });
+
+        // Calcular próximo sync
+        const intervalMinutes = parseInt(process.env.SYNC_INTERVAL_MINUTES) || 5;
+        const nextSync = new Date(Date.now() + intervalMinutes * 60000);
+
+        res.json({
+            success: true,
+            status: {
+                syncEnabled: process.env.ENABLE_CDE_SYNC === 'true',
+                mode: process.env.SYNC_MODE || 'not-set',
+                instanceId: process.env.SYNC_INSTANCE_ID,
+                intervalMinutes: intervalMinutes,
+                environment: process.env.NODE_ENV
+            },
+            lock: lock ? {
+                lockedBy: lock.lockedBy,
+                lockedAt: lock.lockedAt,
+                expiresAt: lock.expiresAt,
+                isExpired: new Date() > new Date(lock.expiresAt)
+            } : null,
+            lastSync: lastSync,
+            nextSync: process.env.ENABLE_CDE_SYNC === 'true' ? nextSync : null,
+            businessHours: {
+                timezone: process.env.SYNC_TIMEZONE,
+                start: process.env.SYNC_BUSINESS_START,
+                end: process.env.SYNC_BUSINESS_END
+            }
+        });
+    } catch (error) {
+        console.error('Error getting sync status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching sync status'
+        });
+    }
+});
+
+// ===== REMOVER LOCK MANUALMENTE (EMERGÊNCIA) =====
+router.delete('/sync-lock', authenticateToken, async (req, res) => {
+    try {
+        const db = mongoose.connection.db;
+        const result = await db.collection('sync_locks').deleteOne({ _id: 'cde_sync' });
+
+        res.json({
+            success: true,
+            message: result.deletedCount > 0 ? 'Lock removido' : 'Nenhum lock encontrado'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error removing lock'
         });
     }
 });

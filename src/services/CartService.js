@@ -116,7 +116,7 @@ class CartService {
                 driveFileId: product.driveFileId,
                 fileName: product.fileName,
                 category: product.category,
-                thumbnailUrl: product.thumbnailUrl,
+                thumbnailUrl: itemData.thumbnailUrl || product.thumbnailUrl || `https://images.sunshinecowhides-gallery.com/_thumbnails/${product.driveFileId}`,
                 pathLevels: itemData.pathLevels || [],
                 fullPath: itemData.fullPath || '',
                 price: itemData.price || 0,
@@ -170,38 +170,61 @@ class CartService {
         try {
             console.log(`[CART] Removendo ${driveFileId} - VERSÃO SIMPLIFICADA`);
 
-            // 1. Buscar e atualizar carrinho
+            // 1. Buscar carrinho e verificar se é um ghost item
             const cart = await Cart.findOne({ sessionId, isActive: true });
             if (!cart) throw new Error('Carrinho não encontrado');
 
+            // Encontrar o item específico para verificar se é ghost
+            const itemToRemove = cart.items.find(item => item.driveFileId === driveFileId);
+            const isGhostItem = itemToRemove && itemToRemove.ghostStatus === 'ghost';
+
+            if (isGhostItem) {
+                console.log(`[CART] Item é um ghost - removendo sem alterar CDE`);
+            }
+
+            // 2. Remover do carrinho
             cart.items = cart.items.filter(item => item.driveFileId !== driveFileId);
             await cart.save();
             console.log(`[CART] Carrinho atualizado - ${cart.items.length} items`);
 
-            // 2. Liberar produto
-            await UnifiedProductComplete.updateOne(
-                { driveFileId },
-                {
-                    $set: {
-                        status: 'available',
-                        // REMOVIDO: currentStatus: 'available',
-                        cdeStatus: 'INGRESADO'
-                    },
-                    $unset: { reservedBy: 1 }
-                }
-            );
-            console.log(`[CART] Produto liberado`);
+            // 3. APENAS SE NÃO FOR GHOST: Liberar produto e atualizar CDE
+            if (!isGhostItem) {
+                // Liberar no MongoDB
+                await UnifiedProductComplete.updateOne(
+                    { driveFileId },
+                    {
+                        $set: {
+                            status: 'available',
+                            cdeStatus: 'INGRESADO'
+                        },
+                        $unset: { reservedBy: 1 }
+                    }
+                );
+                console.log(`[CART] Produto liberado`);
 
-            // 3. Atualizar CDE
-            const photoNumber = driveFileId.match(/(\d+)/)?.[1];
-            if (photoNumber) {
-                await CDEWriter.markAsAvailable(photoNumber);
-                console.log(`[CART] CDE atualizado`);
+                // Atualizar CDE
+                const photoNumber = driveFileId.match(/(\d+)/)?.[1];
+                if (photoNumber) {
+                    await CDEWriter.markAsAvailable(photoNumber);
+                    console.log(`[CART] CDE atualizado`);
+                }
+            } else {
+                // Para ghost items, apenas limpar a reserva local sem mudar status
+                await UnifiedProductComplete.updateOne(
+                    { driveFileId },
+                    {
+                        $unset: {
+                            reservedBy: 1,
+                            ghostNotification: 1
+                        }
+                    }
+                );
+                console.log(`[CART] Ghost item removido - CDE mantido como ${itemToRemove.ghostReason}`);
             }
 
             return {
                 success: true,
-                message: 'Item removido',
+                message: isGhostItem ? 'Ghost item acknowledged and removed' : 'Item removed',
                 cart: await this.getCartSummary(sessionId)
             };
 
@@ -359,7 +382,12 @@ class CartService {
                     basePrice: item.basePrice,
                     expiresAt: item.expiresAt,
                     timeRemaining: item.expiresAt ?
-                        Math.max(0, Math.floor((new Date(item.expiresAt) - new Date()) / 1000)) : 0
+                        Math.max(0, Math.floor((new Date(item.expiresAt) - new Date()) / 1000)) : 0,
+                    ghostStatus: item.ghostStatus || null,
+                    ghostReason: item.ghostReason || null,
+                    ghostedAt: item.ghostedAt || null,
+                    hasPrice: item.hasPrice || false,
+                    formattedPrice: item.formattedPrice || ''
                 })),
                 isEmpty: cart.totalItems === 0,
                 lastActivity: cart.lastActivity
@@ -398,6 +426,72 @@ class CartService {
             return null;
         } finally {
             if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * MARCAR ITEM COMO GHOST
+     * Usado quando o sync detecta conflito com CDE
+     */
+    static async markItemAsGhost(clientCode, fileName, reason = 'Item reserved by another channel') {
+        try {
+            console.log(`[GHOST] Marcando ${fileName} como ghost para cliente ${clientCode}`);
+
+            // Buscar carrinho ativo do cliente
+            const cart = await Cart.findOne({
+                clientCode,
+                isActive: true,
+                'items.fileName': fileName
+            });
+
+            if (!cart) {
+                console.log(`[GHOST] Carrinho não encontrado para ${clientCode}`);
+                return false;
+            }
+
+            // Encontrar e marcar o item específico
+            let itemMarked = false;
+            cart.items = cart.items.map(item => {
+                if (item.fileName === fileName) {
+                    item.ghostStatus = 'ghost';
+                    item.ghostReason = reason;
+                    item.ghostedAt = new Date();
+                    item.originalPrice = item.price || item.basePrice;
+                    // Zerar preço para não contar no total
+                    item.price = 0;
+                    item.hasPrice = false;
+                    itemMarked = true;
+                    console.log(`[GHOST] ✓ Item ${fileName} marcado como ghost`);
+                }
+                return item;
+            });
+
+            if (itemMarked) {
+                await cart.save();
+
+                // Notificar o frontend através de uma flag especial
+                // que será detectada no próximo polling
+                await UnifiedProductComplete.updateOne(
+                    { fileName },
+                    {
+                        $set: {
+                            ghostNotification: {
+                                clientCode,
+                                timestamp: new Date(),
+                                reason
+                            }
+                        }
+                    }
+                );
+
+                return true;
+            }
+
+            return false;
+
+        } catch (error) {
+            console.error(`[GHOST] Erro ao marcar item como ghost:`, error);
+            return false;
         }
     }
 

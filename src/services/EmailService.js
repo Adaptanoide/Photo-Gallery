@@ -140,7 +140,8 @@ class EmailService {
                 totalValue: selectionData.totalValue ? `$${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
                 folderName: selectionData.googleDriveInfo?.clientFolderName || 'Folder not specified',
                 selectionId: selectionData.selectionId,
-                createdAt: new Date().toLocaleString('pt-BR')
+                createdAt: new Date().toLocaleString('pt-BR'),
+                observations: selectionData.observations
             };
 
             // Aplicar template
@@ -326,6 +327,13 @@ class EmailService {
                         <p><strong>Total Value:</strong> ${data.totalValue}</p>
                         <p><strong>Date/Time:</strong> ${data.createdAt}</p>
                     </div>
+                    
+                    ${data.observations ? `
+                        <div class="info-box">
+                            <h3>📝 Client Observations</h3>
+                            <p style="font-style: italic; color: #555;">"${data.observations}"</p>
+                        </div>
+                    ` : ''}
                     
                     <p>🔗 <strong>Access the admin panel</strong> to process this selection and contact the customer.</p>
                     
