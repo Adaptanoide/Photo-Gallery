@@ -764,7 +764,10 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
         const categoryPaths = [];
 
         items.forEach(item => {
-            const clean = item.replace(/\/$/, '').trim();
+            // CONVERTER SETAS EM BARRAS ANTES DE PROCESSAR!
+            const converted = item.replace(/ → /g, '/');
+            const clean = converted.replace(/\/$/, '').trim();
+
             // QB codes começam com números
             if (/^\d/.test(clean)) {
                 qbCodes.push(clean);
@@ -800,13 +803,29 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
 
         // 2. Buscar por paths de categoria (se houver)
         if (categoryPaths.length > 0) {
+            // Criar variações para melhor matching
+            const pathVariations = [];
+
+            categoryPaths.forEach(path => {
+                // Adicionar path original
+                pathVariations.push(path);
+                pathVariations.push(path + '/');
+
+                // Se tem seta, converter para barra
+                if (path.includes('→')) {
+                    const withSlash = path.replace(/ → /g, '/');
+                    pathVariations.push(withSlash);
+                    pathVariations.push(withSlash + '/');
+                }
+            });
+
             const pathCategories = await PhotoCategory.find({
-                $or: categoryPaths.map(path => ({
+                $or: pathVariations.map(path => ({
                     $or: [
                         { googleDrivePath: path },
-                        { googleDrivePath: path + '/' },
-                        { googleDrivePath: { $regex: path, $options: 'i' } },
-                        { displayName: { $regex: path, $options: 'i' } },
+                        { googleDrivePath: { $regex: `^${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`, $options: 'i' } },
+                        { displayName: path },
+                        { displayName: { $regex: `^${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
                         { folderName: path.split('/').pop() }
                     ]
                 }))

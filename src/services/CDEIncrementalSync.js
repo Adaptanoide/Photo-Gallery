@@ -96,7 +96,7 @@ async function acquireSyncLock() {
                 $set: {
                     lockedBy: INSTANCE_ID,
                     lockedAt: now,
-                    expiresAt: new Date(now.getTime() + 5 * 60 * 1000), // 5 minutos ao invés de 10
+                    expiresAt: new Date(now.getTime() + 15 * 60 * 1000), // 15 minutos
                     pid: process.pid,
                     host: require('os').hostname()
                 }
@@ -126,6 +126,26 @@ async function acquireSyncLock() {
         }
         console.error('Erro ao adquirir lock:', error);
         return false;
+    }
+}
+
+async function cleanupOldLocks() {
+    try {
+        const db = mongoose.connection.db;
+        const now = new Date();
+
+        // Remover locks expirados há mais de 30 minutos
+        const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+
+        const result = await db.collection('sync_locks').deleteMany({
+            expiresAt: { $lt: thirtyMinutesAgo }
+        });
+
+        if (result.deletedCount > 0) {
+            console.log(`🧹 [CDE Sync] ${result.deletedCount} locks antigos removidos`);
+        }
+    } catch (error) {
+        console.error('Erro ao limpar locks antigos:', error);
     }
 }
 
@@ -173,7 +193,6 @@ class CDEIncrementalSync {
 
         console.log(`[SYNC] Sistema iniciado - Verificando a cada ${intervalMinutes} minutos`);
 
-        // Função que verifica se deve executar sync
         const checkAndRunSync = async () => {
             const strategy = getSyncStrategy();
 
@@ -181,6 +200,9 @@ class CDEIncrementalSync {
                 console.log('[SYNC] Fora do horário - pulando sync');
                 return;
             }
+
+            // ADICIONE ESTA LINHA:
+            await cleanupOldLocks(); // Limpar locks antigos antes de tentar
 
             // Executar sync apropriado
             if (strategy.type === 'business_hours') {
