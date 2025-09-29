@@ -496,6 +496,15 @@ router.get('/categories/filtered', async (req, res) => {
 
                         console.log(`📊 Separados: ${qbCodes.length} QB codes, ${directNames.length} nomes diretos`);
 
+                        // TEMPORÁRIO - Forçar sem preços durante desenvolvimento
+                        const HIDE_ALL_PRICES = true;
+                        if (HIDE_ALL_PRICES) {
+                            categories.forEach(cat => {
+                                cat.price = 0;
+                                cat.formattedPrice = '';
+                            });
+                        }
+
                         // Agora fazer UMA ÚNICA query para TODOS os QB codes
                         if (qbCodes.length > 0) {
                             console.time('⚡ Busca otimizada QB codes');

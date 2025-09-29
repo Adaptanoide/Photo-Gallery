@@ -263,13 +263,18 @@ window.formatFileSize = function (bytes) {
 
 // ===== VERIFICAR PREÇOS =====
 window.shouldShowPrices = function () {
+    // TEMPORARIAMENTE DESABILITADO DURANTE DESENVOLVIMENTO
+    return false;
+
+    /* CÓDIGO ORIGINAL - REATIVAR QUANDO QUISER PREÇOS
     const savedSession = localStorage.getItem('sunshineSession');
     if (savedSession) {
         const session = JSON.parse(savedSession);
-        const showPrices = session.user?.showPrices ?? session.client?.showPrices ?? true;
+        const showPrices = session.user?.showPrices ?? session.client?.showPrices ?? false;
         return showPrices;
     }
-    return true;
+    return false;
+    */
 }
 
 window.updatePriceFilterVisibility = function () {

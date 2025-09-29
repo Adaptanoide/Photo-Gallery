@@ -115,6 +115,9 @@ router.get('/structure', verifyClientToken, async (req, res) => {
 
         console.log(`📂 Buscando estrutura de: ${prefix || '/'}`);
 
+        // TEMPORÁRIO - Desabilitar preços durante desenvolvimento
+        const FORCE_HIDE_PRICES = true;
+
         // ============================================
         // VERIFICAR CACHE INTELIGENTE
         // ============================================
@@ -668,6 +671,15 @@ router.get('/photos', verifyClientToken, async (req, res) => {
                 status: statusMap[photoId] || 'available'  // ADICIONE ESTA LINHA
             };
         });
+
+        // Limpar preços se necessário
+        if (FORCE_HIDE_PRICES) {
+            photos.forEach(photo => {
+                delete photo.customPrice;
+                delete photo.price;
+                delete photo.formattedPrice;
+            });
+        }
 
         res.json({
             success: true,

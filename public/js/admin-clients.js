@@ -1204,7 +1204,7 @@ class AdminClients {
             salesRep: document.getElementById('salesRep').value.trim(),
             allowedCategories: this.selectedCategories.length > 0 ? this.selectedCategories : [],
             expiresInDays: parseInt(document.getElementById('expireDays').value),
-            showPrices: true, // Padrão true para novos clientes
+            showPrices: this.currentClient ? (this.currentClient.showPrices || false) : false,
             accessType: this.currentClient?.accessType || 'normal',
             isActive: true,
             code: this.currentClient ? this.currentClient.code : document.getElementById('codePreview').textContent
@@ -2133,7 +2133,7 @@ class AdminClients {
             state: document.getElementById('state').value,
             zipCode: document.getElementById('zipCode').value,
             expireDays: document.getElementById('expireDays').value,
-            showPrices: true,
+            showPrices: this.currentClient ? (this.currentClient.showPrices || false) : false,
             selectedCategories: [...this.selectedCategories]
         };
 
