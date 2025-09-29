@@ -4,11 +4,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Selection = require('../models/Selection');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
-// const Product = require('../models/Product'); // COMENTAR
-// const PhotoStatus = require('../models/PhotoStatus'); // COMENTAR
 const PhotoTagService = require('../services/PhotoTagService');
 const { authenticateToken } = require('./auth');
 const router = express.Router();
+const processingLocks = new Map();
 
 // Autenticação obrigatória para todas as rotas
 router.use(authenticateToken);
@@ -226,338 +225,373 @@ router.get('/:selectionId', async (req, res) => {
  * Aprovar seleção - mover para SYSTEM_SOLD e marcar produtos como 'sold'
  */
 router.post('/:selectionId/approve', async (req, res) => {
+    const { selectionId } = req.params;
+
+    // PROTEÇÃO CONTRA DUPLO PROCESSAMENTO
+    if (processingLocks.has(selectionId)) {
+        console.log(`⚠️ Aprovação já em andamento para ${selectionId}`);
+        return res.status(409).json({
+            success: false,
+            message: 'Aprovação já está em andamento'
+        });
+    }
+
+    // Adicionar lock
+    processingLocks.set(selectionId, true);
+
     const session = await mongoose.startSession();
 
     try {
-        return await session.withTransaction(async () => {
-            const { selectionId } = req.params;
-            const { adminUser, notes } = req.body;
+        // INICIAR TRANSAÇÃO MANUALMENTE (SEM RETRY)
+        await session.startTransaction({
+            readConcern: { level: "local" },
+            writeConcern: { w: 1 },
+            maxTimeMS: 30000
+        });
 
-            console.log(`✅ Aprovando seleção ${selectionId}...`);
+        const { adminUser, notes } = req.body;
+        console.log(`✅ Aprovando seleção ${selectionId}...`);
 
-            // 1. Buscar seleção
-            const selection = await Selection.findOne({ selectionId }).session(session);
+        // 1. Buscar seleção
+        const selection = await Selection.findOne({ selectionId }).session(session);
 
-            if (!selection) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Seleção não encontrada'
-                });
-            }
-
-            if (selection.status !== 'pending') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Apenas seleções pendentes podem ser aprovadas'
-                });
-            }
-
-            // ========= INÍCIO DO CÓDIGO NOVO =========
-            // NOVO: Marcar como approving ANTES de processar
-            selection.status = 'approving';
-            selection.processStatus = {
-                active: true,
-                type: 'approving',
-                message: `Approving selection...`,
-                totalItems: selection.items.length,
-                startedAt: new Date()
-            };
-            await selection.save({ session });
-
-            console.log('📊 Status atualizado para APPROVING');
-            // ========= FIM DO CÓDIGO NOVO =========
-
-            // 2. SISTEMA DE TAGS: Marcar fotos como vendidas (SEM MOVER!)
-            console.log('🏷️ [TAGS] Marcando fotos como vendidas...');
-
-            // Buscar IDs das fotos do Google Drive
-            const driveFileIds = selection.items.map(item => item.driveFileId);
-
-            // Usar PhotoTagService para marcar como sold
-            const tagResult = await PhotoTagService.approveSelection(selection.selectionId);
-
-            console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como SOLD`);
-            console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
-
-            // Criar objeto moveResult fake para compatibilidade
-            const moveResult = {
-                success: true,
-                finalFolderId: selection.googleDriveInfo.clientFolderId,
-                finalFolderName: selection.googleDriveInfo.clientFolderName
-            };
-
-            // 3. Atualizar produtos: reserved_pending → sold
-            const productIds = selection.items.map(item => item.productId);
-
-            await UnifiedProductComplete.updateMany(
-                { _id: { $in: productIds } },
-                {
-                    $set: {
-                        status: 'sold',
-                        cdeStatus: 'RETIRADO',
-                        soldAt: new Date()
-                    },
-                    $unset: { 'reservedBy': 1 }
-                }
-            ).session(session);
-
-            // 4. Atualizar seleção
-            selection.status = 'finalized';
-            selection.processedBy = adminUser || 'admin';
-            selection.processedAt = new Date();
-            selection.finalizedAt = new Date();
-            selection.adminNotes = notes || '';
-
-            // ========= INÍCIO DO CÓDIGO NOVO =========
-            // NOVO: Limpar processStatus após conclusão
-            selection.processStatus = {
-                active: false
-            };
-            // ========= FIM DO CÓDIGO NOVO =========
-
-            // Atualizar info do Google Drive
-            selection.googleDriveInfo.finalFolderId = moveResult.finalFolderId;
-
-            selection.addMovementLog('approved', `Seleção aprovada por ${adminUser || 'admin'}`);
-
-            await selection.save({ session });
-
-            console.log(`✅ Seleção ${selectionId} aprovada com sucesso`);
-
-            res.json({
-                success: true,
-                message: 'Seleção aprovada com sucesso',
-                selection: selection.getSummary(),
-                googleDrive: {
-                    finalFolderName: moveResult.finalFolderName,
-                    finalFolderId: moveResult.finalFolderId
-                }
+        if (!selection) {
+            await session.abortTransaction();
+            return res.status(404).json({
+                success: false,
+                message: 'Seleção não encontrada'
             });
+        }
+
+        // VERIFICAR SE JÁ ESTÁ PROCESSANDO
+        if (selection.status === 'approving' || selection.status === 'finalized') {
+            await session.abortTransaction();
+            console.log(`⚠️ Seleção ${selectionId} já está ${selection.status}`);
+            return res.status(409).json({
+                success: false,
+                message: `Seleção já está ${selection.status}`
+            });
+        }
+
+        if (selection.status !== 'pending') {
+            await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: 'Apenas seleções pendentes podem ser aprovadas'
+            });
+        }
+
+        // Marcar como approving
+        selection.status = 'approving';
+        selection.processStatus = {
+            active: true,
+            type: 'approving',
+            message: `Approving selection...`,
+            totalItems: selection.items.length,
+            startedAt: new Date()
+        };
+        await selection.save({ session });
+        console.log('📊 Status atualizado para APPROVING');
+
+        // 2. SISTEMA DE TAGS: Marcar fotos como vendidas
+        console.log('🏷️ [TAGS] Marcando fotos como vendidas...');
+
+        // IMPORTANTE: NÃO chamar PhotoTagService dentro da transação
+        // Vamos fazer o update diretamente
+        const updateResult = await UnifiedProductComplete.updateMany(
+            { selectionId: selectionId },
+            {
+                $set: {
+                    status: 'sold',
+                    cdeStatus: 'CONFIRMED',
+                    soldAt: new Date()
+                },
+                $unset: { 'reservedBy': 1 }
+            }
+        ).session(session);
+
+        console.log(`✅ [TAGS] ${updateResult.modifiedCount} fotos marcadas como SOLD`);
+        console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
+
+        // 3. Atualizar seleção para finalized
+        selection.status = 'finalized';
+        selection.processedBy = adminUser || 'admin';
+        selection.processedAt = new Date();
+        selection.finalizedAt = new Date();
+        selection.adminNotes = notes || '';
+        selection.processStatus = { active: false };
+
+        // Adicionar ao log
+        if (selection.addMovementLog) {
+            selection.addMovementLog('approved', `Seleção aprovada por ${adminUser || 'admin'}`);
+        } else {
+            selection.movementLog = selection.movementLog || [];
+            selection.movementLog.push({
+                action: 'approved',
+                timestamp: new Date(),
+                details: `Seleção aprovada por ${adminUser || 'admin'}`
+            });
+        }
+
+        await selection.save({ session });
+
+        // COMMIT MANUAL
+        await session.commitTransaction();
+        console.log(`✅ Seleção ${selectionId} aprovada com sucesso`);
+
+        res.json({
+            success: true,
+            message: 'Seleção aprovada com sucesso',
+            selection: {
+                selectionId: selection.selectionId,
+                status: selection.status,
+                totalItems: selection.totalItems,
+                totalValue: selection.totalValue
+            }
         });
 
     } catch (error) {
         console.error('❌ Erro ao aprovar seleção:', error);
+
+        // Abortar transação se ainda estiver ativa
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+
         res.status(500).json({
             success: false,
             message: 'Erro ao aprovar seleção',
             error: error.message
         });
     } finally {
+        // SEMPRE limpar
+        processingLocks.delete(selectionId);
         await session.endSession();
     }
 });
 
-/**
- * POST /api/selections/:selectionId/cancel
- * Cancelar seleção - voltar fotos para pasta original e marcar como disponível
- */
 router.post('/:selectionId/cancel', async (req, res) => {
+    const { selectionId } = req.params;
+
+    // PROTEÇÃO CONTRA DUPLO PROCESSAMENTO
+    if (processingLocks.has(selectionId)) {
+        console.log(`⚠️ Cancelamento já em andamento para ${selectionId}`);
+        return res.status(409).json({
+            success: false,
+            message: 'Cancelamento já está em andamento'
+        });
+    }
+
+    // Adicionar lock
+    processingLocks.set(selectionId, true);
+
     const session = await mongoose.startSession();
 
     try {
-        return await session.withTransaction(async () => {
-            const { selectionId } = req.params;
-            const { reason, adminUser } = req.body;
-
-            console.log(`❌ Cancelando seleção ${selectionId}...`);
-
-            // 1. Buscar seleção com dados completos
-            const selection = await Selection.findOne({ selectionId })
-                .session(session);
-
-            if (!selection) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Seleção não encontrada'
-                });
-            }
-
-            if (selection.status !== 'pending' && selection.status !== 'finalized') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Only pending or finalized selections can be cancelled'
-                });
-            }
-
-            // NOVO: Marcar como cancelling ANTES de processar
-            selection.status = 'cancelling';
-            selection.processStatus = {
-                active: true,
-                type: 'cancelling',
-                message: `Cancelling selection...`,
-                totalItems: selection.items.length,
-                startedAt: new Date()
-            };
-            await selection.save({ session });
-
-            console.log('📊 Status atualizado para CANCELLING');
-
-            // 2. SISTEMA DE TAGS: Liberar fotos (SEM MOVER!)
-            console.log('🏷️ [TAGS] Liberando fotos para disponível...');
-
-            // Usar PhotoTagService para cancelar seleção
-            const tagResult = await PhotoTagService.cancelSelection(selection.selectionId);
-
-            console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como AVAILABLE`);
-            console.log('📁 [TAGS] Nenhuma reversão física realizada!');
-
-            // 3. Atualizar produtos: reserved_pending → available
-            console.log('🔍 DEBUG CANCEL - Selection items:', selection.items.length);
-            const productIds = selection.items.map(item => item.productId);
-            console.log('🔍 DEBUG CANCEL - ProductIds:', productIds);
-
-            // Debug antes do update
-            console.log('🔍 DEBUG - Buscando produtos com IDs:', productIds);
-
-            const updateResult = await UnifiedProductComplete.updateMany(
-                { _id: { $in: productIds } },
-                {
-                    $set: {
-                        status: 'available',
-                        cdeStatus: 'INGRESADO'
-                    },
-                    $unset: {
-                        'reservedBy': 1,
-                        'reservationInfo': 1,
-                        'soldAt': 1,
-                        'reservedAt': 1,
-                        'cartAddedAt': 1,
-                        'selectionId': 1
-                    }
-                }
-            ).session(session);
-
-            console.log('🔍 DEBUG - UpdateResult:', {
-                acknowledged: updateResult.acknowledged,
-                modifiedCount: updateResult.modifiedCount,
-                matchedCount: updateResult.matchedCount
-            });
-
-            // 4. CRÍTICO: Notificar CDE de forma SÍNCRONA (não mais setImmediate!)
-            console.log('[CANCEL] Liberando fotos no CDE de forma síncrona...');
-            const CDEWriter = require('../services/CDEWriter');
-            const cdeResults = [];
-            const failedReleases = [];
-
-            for (const item of selection.items) {
-                const photoMatch = item.fileName?.match(/(\d+)/);
-                if (!photoMatch) continue;
-
-                const photoNumber = photoMatch[1];
-                let releaseSuccess = false;
-                let attempts = 0;
-                const MAX_ATTEMPTS = 3;
-
-                // Tentar até 3 vezes liberar cada foto
-                while (!releaseSuccess && attempts < MAX_ATTEMPTS) {
-                    attempts++;
-
-                    try {
-                        // Verificar status atual no CDE
-                        const currentCDEStatus = await CDEWriter.checkStatus(photoNumber);
-
-                        if (currentCDEStatus?.status === 'INGRESADO') {
-                            console.log(`[CANCEL] ✅ Foto ${photoNumber} já está INGRESADO`);
-                            releaseSuccess = true;
-                            cdeResults.push({ photo: photoNumber, success: true, alreadyFree: true });
-                        } else {
-                            // Tentar liberar
-                            const released = await CDEWriter.markAsAvailable(photoNumber);
-
-                            if (released) {
-                                console.log(`[CANCEL] ✅ Foto ${photoNumber} liberada no CDE (tentativa ${attempts})`);
-                                releaseSuccess = true;
-                                cdeResults.push({ photo: photoNumber, success: true, attempts });
-                            } else if (attempts < MAX_ATTEMPTS) {
-                                console.log(`[CANCEL] ⚠️ Foto ${photoNumber} falhou, tentativa ${attempts}/${MAX_ATTEMPTS}`);
-                                // Pequena pausa antes de tentar novamente
-                                await new Promise(resolve => setTimeout(resolve, 500));
-                            }
-                        }
-                    } catch (cdeError) {
-                        console.error(`[CANCEL] Erro ao liberar ${photoNumber} (tentativa ${attempts}):`, cdeError.message);
-
-                        if (attempts >= MAX_ATTEMPTS) {
-                            failedReleases.push({
-                                photo: photoNumber,
-                                error: cdeError.message,
-                                attempts
-                            });
-                        }
-                    }
-                }
-
-                if (!releaseSuccess) {
-                    console.error(`[CANCEL] ❌ Foto ${photoNumber} não pôde ser liberada após ${MAX_ATTEMPTS} tentativas`);
-                    cdeResults.push({ photo: photoNumber, success: false, attempts });
-                    failedReleases.push({ photo: photoNumber, attempts });
-                }
-            }
-
-            // Relatório de liberação no CDE
-            const successCount = cdeResults.filter(r => r.success).length;
-            const failedCount = cdeResults.filter(r => !r.success).length;
-
-            console.log(`[CANCEL] Liberação CDE completa: ${successCount}/${selection.items.length} fotos liberadas`);
-
-            if (failedCount > 0) {
-                console.error(`[CANCEL] ⚠️ ${failedCount} fotos falharam:`, failedReleases);
-
-                // Adicionar falhas ao log da seleção
-                selection.movementLog.push({
-                    action: 'cde_release_partial',
-                    timestamp: new Date(),
-                    details: `${failedCount} fotos não foram liberadas no CDE`,
-                    failedPhotos: failedReleases
-                });
-            }
-
-            // 5. Atualizar seleção
-            selection.status = 'cancelled';
-            selection.processedBy = adminUser || 'admin';
-            selection.processedAt = new Date();
-            selection.adminNotes = reason || 'Cancelada pelo admin';
-
-            // Limpar processStatus após conclusão
-            selection.processStatus = {
-                active: false
-            };
-
-            selection.addMovementLog('cancelled', `Seleção cancelada por ${adminUser || 'admin'}: ${reason || 'Sem motivo especificado'}`);
-
-            await selection.save({ session });
-
-            console.log(`✅ Seleção ${selectionId} cancelada com sucesso`);
-
-            // Preparar resposta
-            const responseData = {
-                success: true,
-                message: 'Seleção cancelada com sucesso',
-                selection: selection.getSummary(),
-                cdeRelease: {
-                    total: selection.items.length,
-                    successful: successCount,
-                    failed: failedCount,
-                    details: failedCount > 0 ? failedReleases : undefined
-                }
-            };
-
-            // Se houve falhas no CDE, adicionar aviso
-            if (failedCount > 0) {
-                responseData.warning = `${failedCount} fotos precisam ser liberadas manualmente no CDE`;
-            }
-
-            res.json(responseData);
+        // INICIAR TRANSAÇÃO MANUALMENTE (SEM RETRY)
+        await session.startTransaction({
+            readConcern: { level: "local" },
+            writeConcern: { w: 1 },
+            maxTimeMS: 30000
         });
+
+        const { reason, adminUser } = req.body;
+        console.log(`❌ Cancelando seleção ${selectionId}...`);
+
+        // 1. Buscar seleção
+        const selection = await Selection.findOne({ selectionId }).session(session);
+
+        if (!selection) {
+            await session.abortTransaction();
+            return res.status(404).json({
+                success: false,
+                message: 'Seleção não encontrada'
+            });
+        }
+
+        // VERIFICAR SE JÁ ESTÁ PROCESSANDO
+        if (selection.status === 'cancelling' || selection.status === 'cancelled') {
+            await session.abortTransaction();
+            console.log(`⚠️ Seleção ${selectionId} já está ${selection.status}`);
+            return res.status(409).json({
+                success: false,
+                message: `Seleção já está ${selection.status}`
+            });
+        }
+
+        if (selection.status !== 'pending' && selection.status !== 'finalized') {
+            await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: 'Only pending or finalized selections can be cancelled'
+            });
+        }
+
+        // Marcar como cancelling
+        selection.status = 'cancelling';
+        selection.processStatus = {
+            active: true,
+            type: 'cancelling',
+            message: `Cancelling selection...`,
+            totalItems: selection.items.length,
+            startedAt: new Date()
+        };
+        await selection.save({ session });
+        console.log('📊 Status atualizado para CANCELLING');
+
+        // 2. Liberar fotos no MongoDB
+        console.log('🏷️ [TAGS] Liberando fotos para disponível...');
+
+        const productIds = selection.items.map(item => item.productId);
+
+        const updateResult = await UnifiedProductComplete.updateMany(
+            { _id: { $in: productIds } },
+            {
+                $set: {
+                    status: 'available',
+                    cdeStatus: 'INGRESADO'
+                },
+                $unset: {
+                    'reservedBy': 1,
+                    'reservationInfo': 1,
+                    'soldAt': 1,
+                    'reservedAt': 1,
+                    'cartAddedAt': 1,
+                    'selectionId': 1
+                }
+            }
+        ).session(session);
+
+        console.log(`✅ [TAGS] ${updateResult.modifiedCount} fotos liberadas`);
+
+        // 3. Liberar no CDE (FORA da transação principal para evitar timeout)
+        const CDEWriter = require('../services/CDEWriter');
+        const cdeResults = [];
+        const failedReleases = [];
+
+        for (const item of selection.items) {
+            const photoMatch = item.fileName?.match(/(\d+)/);
+            if (!photoMatch) continue;
+
+            const photoNumber = photoMatch[1];
+            let releaseSuccess = false;
+            let attempts = 0;
+            const MAX_ATTEMPTS = 3;
+
+            while (!releaseSuccess && attempts < MAX_ATTEMPTS) {
+                attempts++;
+
+                try {
+                    const currentCDEStatus = await CDEWriter.checkStatus(photoNumber);
+
+                    if (currentCDEStatus?.status === 'INGRESADO') {
+                        console.log(`[CANCEL] ✅ Foto ${photoNumber} já está INGRESADO`);
+                        releaseSuccess = true;
+                        cdeResults.push({ photo: photoNumber, success: true, alreadyFree: true });
+                    } else {
+                        const released = await CDEWriter.markAsAvailable(photoNumber);
+
+                        if (released) {
+                            console.log(`[CANCEL] ✅ Foto ${photoNumber} liberada no CDE`);
+                            releaseSuccess = true;
+                            cdeResults.push({ photo: photoNumber, success: true, attempts });
+                        } else if (attempts < MAX_ATTEMPTS) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                } catch (cdeError) {
+                    console.error(`[CANCEL] Erro ao liberar ${photoNumber}:`, cdeError.message);
+                    if (attempts >= MAX_ATTEMPTS) {
+                        failedReleases.push({
+                            photo: photoNumber,
+                            error: cdeError.message,
+                            attempts
+                        });
+                    }
+                }
+            }
+
+            if (!releaseSuccess) {
+                cdeResults.push({ photo: photoNumber, success: false, attempts });
+                failedReleases.push({ photo: photoNumber, attempts });
+            }
+        }
+
+        const successCount = cdeResults.filter(r => r.success).length;
+        const failedCount = cdeResults.filter(r => !r.success).length;
+
+        console.log(`[CANCEL] CDE: ${successCount}/${selection.items.length} fotos liberadas`);
+
+        // 4. Atualizar seleção para cancelled
+        selection.status = 'cancelled';
+        selection.processedBy = adminUser || 'admin';
+        selection.processedAt = new Date();
+        selection.adminNotes = reason || 'Cancelada pelo admin';
+        selection.processStatus = { active: false };
+
+        // Adicionar ao log
+        if (selection.addMovementLog) {
+            selection.addMovementLog('cancelled', `Cancelada por ${adminUser || 'admin'}: ${reason || 'Sem motivo'}`);
+        } else {
+            selection.movementLog = selection.movementLog || [];
+            selection.movementLog.push({
+                action: 'cancelled',
+                timestamp: new Date(),
+                details: `Cancelada por ${adminUser || 'admin'}: ${reason || 'Sem motivo'}`
+            });
+        }
+
+        if (failedCount > 0) {
+            selection.movementLog.push({
+                action: 'cde_release_partial',
+                timestamp: new Date(),
+                details: `${failedCount} fotos não liberadas no CDE`,
+                failedPhotos: failedReleases
+            });
+        }
+
+        await selection.save({ session });
+
+        // COMMIT MANUAL
+        await session.commitTransaction();
+        console.log(`✅ Seleção ${selectionId} cancelada com sucesso`);
+
+        // Resposta
+        const responseData = {
+            success: true,
+            message: 'Seleção cancelada com sucesso',
+            selection: {
+                selectionId: selection.selectionId,
+                status: selection.status
+            },
+            cdeRelease: {
+                total: selection.items.length,
+                successful: successCount,
+                failed: failedCount
+            }
+        };
+
+        if (failedCount > 0) {
+            responseData.warning = `${failedCount} fotos precisam ser liberadas manualmente no CDE`;
+            responseData.cdeRelease.details = failedReleases;
+        }
+
+        res.json(responseData);
 
     } catch (error) {
         console.error('❌ Erro ao cancelar seleção:', error);
+
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+
         res.status(500).json({
             success: false,
             message: 'Erro ao cancelar seleção',
             error: error.message
         });
     } finally {
+        processingLocks.delete(selectionId);
         await session.endSession();
     }
 });
