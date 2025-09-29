@@ -441,4 +441,157 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
+// ============================================
+// SISTEMA DE LIMPEZA AUTOMÁTICA DE CARRINHOS
+// ============================================
+// ATENÇÃO: Sistema inicia DESLIGADO por segurança
+// Para ativar: CART_CLEANUP_ENABLED=true no .env
+
+let cartCleanupInterval = null;
+let cartCleanupLastRun = {};
+
+// Função para verificar se deve rodar a limpeza
+function shouldRunCartCleanup() {
+    // Verificação 1: Sistema está habilitado?
+    if (process.env.CART_CLEANUP_ENABLED !== 'true') {
+        return false;
+    }
+
+    // Verificação 2: É hora de rodar?
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const allowedHours = (process.env.CART_CLEANUP_HOURS || '9,12,15').split(',').map(h => parseInt(h));
+
+    // Só roda na primeira meia hora de cada hora configurada
+    if (!allowedHours.includes(currentHour) || currentMinute > 30) {
+        return false;
+    }
+
+    // Verificação 3: Já rodou nesta hora?
+    const lastRunKey = `${currentHour}:${now.getDate()}`;
+    if (cartCleanupLastRun[lastRunKey]) {
+        return false; // Já rodou hoje nesta hora
+    }
+
+    return true;
+}
+
+async function runCartCleanup() {
+    const mode = process.env.CART_CLEANUP_MODE || 'observe';
+    const maxItems = parseInt(process.env.CART_CLEANUP_MAX_ITEMS) || 10;
+
+    console.log('');
+    console.log('============================================');
+    console.log(`🧹 LIMPEZA AUTOMÁTICA - MODO: ${mode.toUpperCase()}`);
+    console.log(`📅 Horário: ${new Date().toLocaleTimeString('pt-BR')}`);
+    console.log('============================================');
+
+    try {
+        const Cart = require('./models/Cart');
+        const now = new Date();
+
+        const cartsWithExpired = await Cart.find({
+            isActive: true,
+            'items.expiresAt': { $lt: now }
+        }).limit(maxItems);
+
+        if (cartsWithExpired.length === 0) {
+            console.log('✅ Nenhum item expirado encontrado');
+            console.log('============================================\n');
+            return;
+        }
+
+        // Se modo observe, só contar
+        if (mode === 'observe') {
+            let totalExpired = 0;
+            for (const cart of cartsWithExpired) {
+                const expiredCount = cart.items.filter(item =>
+                    item.expiresAt && new Date(item.expiresAt) < now
+                ).length;
+                totalExpired += expiredCount;
+            }
+            console.log(`📊 ${totalExpired} items expirados encontrados`);
+            console.log('⚠️  Modo OBSERVE - nenhuma ação tomada');
+        }
+        // Se modo clean, limpar de verdade
+        else if (mode === 'clean') {
+            let cleaned = 0;
+            for (const cart of cartsWithExpired) {
+                const validItems = cart.items.filter(item =>
+                    !item.expiresAt || new Date(item.expiresAt) >= now
+                );
+                const expiredCount = cart.items.length - validItems.length;
+
+                if (expiredCount > 0) {
+                    cart.items = validItems;
+                    cart.totalItems = validItems.length;
+
+                    if (cart.items.length === 0) {
+                        cart.isActive = false;
+                        cart.notes = `Auto-limpeza: ${now.toISOString()}`;
+                    }
+
+                    await cart.save();
+                    cleaned += expiredCount;
+                    console.log(`✅ Cliente ${cart.clientCode}: ${expiredCount} items limpos`);
+                }
+            }
+            console.log(`📊 Total limpo: ${cleaned} items`);
+        }
+
+        console.log('============================================\n');
+
+        // Marcar execução
+        const hour = now.getHours();
+        const day = now.getDate();
+        cartCleanupLastRun[`${hour}:${day}`] = true;
+
+    } catch (error) {
+        console.error('❌ ERRO NA LIMPEZA AUTOMÁTICA:', error.message);
+    }
+}
+
+// Inicializar sistema de limpeza
+function initCartCleanup() {
+    const enabled = process.env.CART_CLEANUP_ENABLED === 'true';
+
+    if (!enabled) {
+        console.log('🧹 Sistema de limpeza de carrinhos: DESLIGADO');
+        return;
+    }
+
+    const mode = process.env.CART_CLEANUP_MODE || 'observe';
+    const hours = process.env.CART_CLEANUP_HOURS || '9,12,15';
+
+    console.log('');
+    console.log('🧹 ===== SISTEMA DE LIMPEZA DE CARRINHOS =====');
+    console.log(`   Status: LIGADO`);
+    console.log(`   Modo: ${mode.toUpperCase()}`);
+    console.log(`   Horários: ${hours}`);
+    console.log(`   Verificação: a cada 10 minutos`);
+    console.log('==============================================');
+    console.log('');
+
+    // Verificar a cada 10 minutos se deve rodar
+    cartCleanupInterval = setInterval(async () => {
+        if (shouldRunCartCleanup()) {
+            await runCartCleanup();
+        }
+    }, 10 * 60 * 1000); // 10 minutos
+
+    // Rodar uma vez no início (após 30 segundos) se estiver no horário
+    setTimeout(async () => {
+        if (shouldRunCartCleanup()) {
+            console.log('🧹 Executando limpeza inicial...');
+            await runCartCleanup();
+        }
+    }, 30000); // 30 segundos após iniciar
+}
+
+// Chamar após MongoDB conectar (adicione esta linha após a linha 465)
+setTimeout(() => {
+    initCartCleanup();
+}, 5000); // Aguardar 5 segundos para garantir que MongoDB está conectado
+
 module.exports = app;

@@ -507,4 +507,72 @@ router.get('/status/:clientCode', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/cart/test/status
+ * Ver status atual de carrinhos e expiração
+ */
+router.get('/test/status', async (req, res) => {
+    // Só funciona em desenvolvimento
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ error: 'Não disponível em produção' });
+    }
+
+    try {
+        const Cart = require('../models/Cart');
+        const now = new Date();
+
+        // Buscar todos os carrinhos ativos
+        const activeCarts = await Cart.find({ isActive: true });
+
+        const status = {
+            timestamp: now.toISOString(),
+            totalCarrinhos: activeCarts.length,
+            carrinhosComItens: 0,
+            carrinhosVazios: 0,
+            totalItens: 0,
+            itensExpirados: 0,
+            itensValidos: 0,
+            carrinhos: []
+        };
+
+        for (const cart of activeCarts) {
+            if (cart.items.length > 0) {
+                status.carrinhosComItens++;
+
+                const expiredItems = cart.items.filter(item =>
+                    item.expiresAt && new Date(item.expiresAt) < now
+                );
+
+                const validItems = cart.items.filter(item =>
+                    !item.expiresAt || new Date(item.expiresAt) >= now
+                );
+
+                status.totalItens += cart.items.length;
+                status.itensExpirados += expiredItems.length;
+                status.itensValidos += validItems.length;
+
+                status.carrinhos.push({
+                    clientCode: cart.clientCode,
+                    sessionId: cart.sessionId,
+                    totalItens: cart.items.length,
+                    expirados: expiredItems.length,
+                    validos: validItems.length,
+                    criadoEm: cart.createdAt,
+                    ultimaAtividade: cart.lastActivity
+                });
+            } else {
+                status.carrinhosVazios++;
+            }
+        }
+
+        res.json(status);
+
+    } catch (error) {
+        console.error('Erro ao buscar status:', error);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
