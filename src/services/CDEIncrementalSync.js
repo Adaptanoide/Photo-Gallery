@@ -245,13 +245,6 @@ class CDEIncrementalSync {
             return;
         }
 
-        // Tentar adquirir lock
-        const lockAcquired = await acquireSyncLock();
-        if (!lockAcquired) {
-            console.log('🔒 [CDE Sync] Não foi possível adquirir lock');
-            return { success: false, message: 'Sync locked by another instance' };
-        }
-
         this.isRunning = true;
         const startTime = Date.now();
         let cdeConnection = null;
@@ -399,7 +392,6 @@ class CDEIncrementalSync {
         } finally {
             this.isRunning = false;
             if (cdeConnection) await cdeConnection.end();
-            await releaseSyncLock();
         }
     }
 
@@ -413,13 +405,6 @@ class CDEIncrementalSync {
         if (this.isRunning) {
             console.log('[SYNC] Sincronização já em andamento, pulando...');
             return;
-        }
-
-        // Tentar adquirir lock
-        const lockAcquired = await acquireSyncLock();
-        if (!lockAcquired) {
-            console.log('🔒 [CDE Sync] Não foi possível adquirir lock');
-            return { success: false, message: 'Sync locked by another instance' };
         }
 
         this.isRunning = true;
@@ -654,7 +639,6 @@ class CDEIncrementalSync {
         } finally {
             this.isRunning = false;
             if (cdeConnection) await cdeConnection.end();
-            await releaseSyncLock();
         }
     }
 
