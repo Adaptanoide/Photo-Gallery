@@ -220,8 +220,9 @@ class DatabaseService {
 
                 // === Localização ===
                 r2Path: photoData.r2Key,
-                category: photoData.category || 'uncategorized',
+                category: (photoData.category || 'uncategorized').replace(/\//g, ' → '),
                 folderPath: photoData.category || 'uncategorized',
+                category: (photoData.category || 'uncategorized').replace(/\//g, ' → '),
 
                 // === Todos os campos de status ===
                 status: mongoStatus,

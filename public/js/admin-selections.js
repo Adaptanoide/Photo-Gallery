@@ -663,7 +663,7 @@ class AdminSelections {
                 <div class="modal-actions">
                     <button class="btn-modal-action btn-download" onclick="adminSelections.openPONumberModal('${selection.selectionId}')">
                         <i class="fas fa-file-excel"></i>
-                        Download Excel
+                        Download CSV
                     </button>
                     <button class="btn-modal-action btn-print" onclick="adminSelections.printSelection('${selection.selectionId}')">
                         <i class="fas fa-print"></i>
@@ -1395,8 +1395,6 @@ class AdminSelections {
         });
     }
 
-    // ===== SUBSTITUIR A FUNÇÃO generateExcelFile NO ARQUIVO admin-selections.js =====
-    // Localizar a função por volta da linha 1290 e substituir TODA ela por esta versão corrigida:
 
     async generateExcelFile(selection, poNumber) {
         try {
@@ -1520,10 +1518,11 @@ class AdminSelections {
             // Adicionar sheet e salvar
             XLSX.utils.book_append_sheet(workbook, worksheet, 'CDE_Order');
 
-            // Nome do arquivo
-            const fileName = `CDE_${poNumber.replace(/[^a-zA-Z0-9]/g, '_')}_${companyName.replace(/[^a-zA-Z0-9]/g, '')}_${this.formatDateForFileName(selection.createdAt)}.xlsx`;
+            // Nome do arquivo - MUDANÇA 1: extensão .csv
+            const fileName = `CDE_${poNumber.replace(/[^a-zA-Z0-9]/g, '_')}_${companyName.replace(/[^a-zA-Z0-9]/g, '')}_${this.formatDateForFileName(selection.createdAt)}.csv`;
 
-            XLSX.writeFile(workbook, fileName);
+            // MUDANÇA 2: Salvar como CSV
+            XLSX.writeFile(workbook, fileName, { bookType: 'csv' });
 
             console.log(`✅ Excel gerado com PO: ${poNumber}`);
             console.log(`✅ RESERVEDUSU aplicado: ${reservedusu}`);
