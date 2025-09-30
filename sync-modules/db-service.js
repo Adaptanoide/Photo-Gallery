@@ -222,7 +222,6 @@ class DatabaseService {
                 r2Path: photoData.r2Key,
                 category: (photoData.category || 'uncategorized').replace(/\//g, ' → '),
                 folderPath: photoData.category || 'uncategorized',
-                category: (photoData.category || 'uncategorized').replace(/\//g, ' → '),
 
                 // === Todos os campos de status ===
                 status: mongoStatus,
@@ -255,13 +254,13 @@ class DatabaseService {
                     locationType: 'stock',
                     currentPath: photoData.r2Key || photoData.category,
                     currentParentId: 'r2',
-                    currentCategory: photoData.category || 'uncategorized'
+                    currentCategory: (photoData.category || 'uncategorized').replace(/\//g, ' → ')
                 },
 
                 originalLocation: {
                     originalPath: photoData.r2Key || photoData.category,
                     originalParentId: 'r2',
-                    originalCategory: photoData.category || 'uncategorized'
+                    originalCategory: (photoData.category || 'uncategorized').replace(/\//g, ' → ')
                 },
 
                 // === Metadata adicional ===

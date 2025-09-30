@@ -187,6 +187,8 @@ router.get('/:selectionId', async (req, res) => {
             selectionId: selection.selectionId,
             clientCode: selection.clientCode,
             clientName: selection.clientName,
+            clientCompany: selection.clientCompany || selection.clientName,
+            salesRep: selection.salesRep || 'Unassigned',
             status: selection.status,
             selectionType: selection.selectionType || 'regular',
             createdAt: selection.createdAt,
