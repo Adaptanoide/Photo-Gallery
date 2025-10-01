@@ -108,7 +108,7 @@ const unifiedProductCompleteSchema = new mongoose.Schema({
         sessionId: { type: String, index: true },
         expiresAt: {
             type: Date,
-            index: { expireAfterSeconds: 0 }  // TTL automático!
+            index: true  // Índice normal, sem TTL
         }
     },
 

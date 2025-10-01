@@ -594,4 +594,61 @@ setTimeout(() => {
     initCartCleanup();
 }, 5000); // Aguardar 5 segundos para garantir que MongoDB está conectado
 
+// ============================================
+// SISTEMA DE EXPIRAÇÃO AUTOMÁTICA DE FOTOS
+// ============================================
+
+let photoExpirationInterval = null;
+
+function isBusinessHours() {
+    const now = new Date();
+    const floridaTime = new Date(now.toLocaleString("en-US", {
+        timeZone: "America/New_York"
+    }));
+
+    const day = floridaTime.getDay();
+    const hour = floridaTime.getHours();
+
+    return (day >= 1 && day <= 6 && hour >= 7 && hour < 17);
+}
+
+function initPhotoExpiration() {
+    const enabled = process.env.PHOTO_EXPIRATION_ENABLED === 'true';
+
+    if (!enabled) {
+        console.log('[EXPIRATION] Sistema desligado');
+        return;
+    }
+
+    const intervalMinutes = parseInt(process.env.PHOTO_EXPIRATION_INTERVAL) || 30;
+
+    console.log('\n===== EXPIRAÇÃO AUTOMÁTICA DE FOTOS =====');
+    console.log(`Status: LIGADO`);
+    console.log(`Intervalo: ${intervalMinutes} minutos`);
+    console.log('==========================================\n');
+
+    photoExpirationInterval = setInterval(async () => {
+        if (isBusinessHours()) {
+            const PhotoExpirationService = require('./services/PhotoExpirationService');
+            await PhotoExpirationService.processExpiredPhotos();
+        } else {
+            console.log('[EXPIRATION] Fora do horário comercial - aguardando');
+        }
+    }, intervalMinutes * 60 * 1000);
+
+    setTimeout(async () => {
+        if (isBusinessHours()) {
+            console.log('[EXPIRATION] Executando verificação inicial...');
+            const PhotoExpirationService = require('./services/PhotoExpirationService');
+            await PhotoExpirationService.processExpiredPhotos();
+        } else {
+            console.log('[EXPIRATION] Fora do horário comercial - verificação inicial cancelada');
+        }
+    }, 30000);
+}
+
+setTimeout(() => {
+    initPhotoExpiration();
+}, 6000);
+
 module.exports = app;
