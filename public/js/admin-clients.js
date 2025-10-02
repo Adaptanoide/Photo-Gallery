@@ -523,7 +523,7 @@ class AdminClients {
                     
                     <div class="client-modal-body">
                         <!-- Show Prices Toggle PRIMEIRO -->
-                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle);">
+                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle); display: none">
                             <label class="form-label-clients">Show Prices to Client</label>
                             <div class="toggle-item">
                                 <label class="toggle-switch">
@@ -545,21 +545,6 @@ class AdminClients {
                                 <i class="fas fa-sitemap"></i>
                                 Select Categories to Allow
                             </h4>
-                            <input type="text" 
-                                id="settingsFolderSearchInput" 
-                                class="form-input-clients" 
-                                placeholder="Search by QB code or category name..."
-                                oninput="adminClients.handleSettingsFolderSearch(this.value)">
-                            
-                            <div id="settingsFolderSearchResults" class="folder-search-results"></div>
-                            
-                            <!-- Tree View Section com título -->
-                            <div class="tree-section-header">
-                                <h5 class="tree-title">
-                                    <i class="fas fa-sitemap"></i>
-                                    Browse All Categories
-                                </h5>
-                            </div>
                             
                             <!-- Tree View Container -->
                             <div id="treeViewContainer" style="display: block; margin: 0.5rem 0; border: 1px solid var(--border-subtle); border-radius: 4px; background: var(--luxury-dark); padding: 1rem;">
@@ -2061,8 +2046,8 @@ class AdminClients {
             city: document.getElementById('city').value,
             state: document.getElementById('state').value,
             zipCode: document.getElementById('zipCode').value,
-            expireDays: document.getElementById('expireDays').value,
-            showPrices: this.currentClient?.showPrices !== false, // Mantém valor existente
+            salesRep: document.getElementById('salesRep').value,
+            showPrices: this.currentClient?.showPrices !== false,
             selectedCategories: [...this.selectedCategories]
         };
         this.hasUnsavedChanges = false;
@@ -2103,7 +2088,7 @@ class AdminClients {
             city: document.getElementById('city').value,
             state: document.getElementById('state').value,
             zipCode: document.getElementById('zipCode').value,
-            expireDays: document.getElementById('expireDays').value,
+            salesRep: document.getElementById('salesRep').value,
             showPrices: this.currentClient ? (this.currentClient.showPrices || false) : false,
             selectedCategories: [...this.selectedCategories]
         };
@@ -2504,81 +2489,6 @@ class AdminClients {
         document.getElementById('clientSettingsModal').classList.remove('active');
         this.currentSettingsClient = null;
         this.selectedFolders = [];
-    }
-
-    // Handler para busca no modal settings
-    async handleSettingsFolderSearch(query) {
-        if (query.length < 2) {
-            document.getElementById('settingsFolderSearchResults').innerHTML = '';
-            return;
-        }
-
-        try {
-            const token = this.getAdminToken();
-            const response = await fetch(`/api/admin/folders-search?query=${encodeURIComponent(query)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.displaySettingsSearchResults(data.results);
-            }
-        } catch (error) {
-            console.error('Search error:', error);
-        }
-    }
-
-    // Display results no modal settings
-    displaySettingsSearchResults(results) {
-        const container = document.getElementById('settingsFolderSearchResults');
-
-        const filteredResults = results.filter(item =>
-            !this.selectedFolders.find(f => f.path === item.path)
-        );
-
-        if (filteredResults.length === 0) {
-            container.innerHTML = '<div class="no-results">No folders found</div>';
-            return;
-        }
-
-        container.innerHTML = filteredResults.map(item => `
-            <div class="search-result-item" onclick="adminClients.addSettingsFolder('${item.qbItem}', '${item.path.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">
-                <span class="folder-qb">${item.qbItem}</span>
-                <span class="folder-path">${item.path}</span>
-                <span class="folder-count">${item.photoCount} photos</span>
-            </div>
-        `).join('');
-    }
-
-    // Adicionar folder no modal settings
-    addSettingsFolder(qbItem, path) {
-        if (this.selectedFolders.find(f => f.path === path)) {
-            return;
-        }
-
-        this.selectedFolders.push({
-            qbItem,
-            path: path.replace(/"/g, '&quot;')
-        });
-        this.updateSettingsFoldersList();
-
-        // Marcar checkbox na árvore
-        setTimeout(() => {
-            const checkbox = document.querySelector(`.tree-checkbox[data-qbitem="${qbItem}"]`);
-            if (checkbox && !checkbox.checked) {
-                checkbox.checked = true;
-                this.updateParentCheckboxes();
-            }
-        }, 100);
-
-        // Re-executar busca para atualizar
-        const searchInput = document.getElementById('settingsFolderSearchInput');
-        if (searchInput.value.length >= 2) {
-            this.handleSettingsFolderSearch(searchInput.value);
-        }
     }
 
     // Atualizar lista no modal settings
