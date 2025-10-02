@@ -98,7 +98,6 @@ router.post('/client/verify', async (req, res) => {
         const accessCode = await AccessCode.findOne({
             code: code,
             isActive: true,
-            expiresAt: { $gt: new Date() }
         });
 
         if (!accessCode) {
@@ -210,8 +209,7 @@ router.post('/client/verify', async (req, res) => {
                 accessType: accessCode.accessType || 'normal',
                 showPrices: accessCode.showPrices
             },
-            allowedCategories: accessCode.allowedCategories,
-            expiresAt: accessCode.expiresAt
+            allowedCategories: accessCode.allowedCategories
         });
 
     } catch (error) {
@@ -238,8 +236,7 @@ router.get('/client/data', async (req, res) => {
         // Buscar dados do cliente
         const accessCode = await AccessCode.findOne({
             code: code,
-            isActive: true,
-            expiresAt: { $gt: new Date() }
+            isActive: true
         });
 
         if (!accessCode) {
@@ -459,7 +456,6 @@ router.get('/debug/accesscode/:code', async (req, res) => {
                 allowedCategories: accessCode.allowedCategories,
                 isActive: accessCode.isActive,
                 createdAt: accessCode.createdAt,
-                expiresAt: accessCode.expiresAt,
                 usageCount: accessCode.usageCount,
                 lastUsed: accessCode.lastUsed
             }

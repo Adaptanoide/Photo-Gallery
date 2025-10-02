@@ -178,7 +178,6 @@ class AdminClients {
                             <option value="all">All</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
-                            <option value="expired">Expired</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -190,7 +189,6 @@ class AdminClients {
                                 <option value="name">Name A-Z</option>
                                 <option value="code">Code</option>
                                 <option value="usage">Most Used</option>
-                                <option value="expires-soon">Expiring Soon</option>
                             </select>
                     </div>
                     <button id="btnApplyFilters" class="btn-filter">
@@ -211,7 +209,6 @@ class AdminClients {
                             <th>Sales Rep</th>
                             <th>Usage</th>
                             <th>Created</th>
-                            <th>Expires</th>
                             <th>Status</th>
                             <th style="text-align: center;">Actions</th>
                         </tr>
@@ -287,9 +284,9 @@ class AdminClients {
                                             placeholder="(555) 123-4567">
                                     </div>
                                     <div class="form-group-clients">
-                                        <label class="form-label-clients">Sales Rep</label>
+                                        <label class="form-label-clients required">Sales Rep</label>
                                         <input type="text" id="salesRep" class="form-input-clients" 
-                                            placeholder="Sales Representative name here">
+                                            placeholder="Sales Representative name here" required>
                                     </div>
                                 </div>
                             </div>
@@ -336,12 +333,6 @@ class AdminClients {
                                     Access Settings
                                 </h4>
                                 <div class="form-grid">
-                                    <div class="form-group-clients">
-                                        <label class="form-label-clients">Expires in (days)</label>
-                                        <input type="number" id="expireDays" class="form-input-clients" 
-                                            value="30" min="1" max="365">
-                                    </div>
-                                    
                                     <div class="form-group-clients">
                                         <label class="form-label-clients">Access Code</label>
                                         <div class="code-input-group">
@@ -441,16 +432,8 @@ class AdminClients {
                                     <div class="view-info-value" id="viewAccessType">-</div>
                                 </div>
                                 <div class="view-info-item">
-                                    <div class="view-info-label">Expiration Date</div>
-                                    <div class="view-info-value" id="viewExpirationDate">-</div>
-                                </div>
-                                <div class="view-info-item">
                                     <div class="view-info-label">Created On</div>
                                     <div class="view-info-value" id="viewCreatedDate">-</div>
-                                </div>
-                                <div class="view-info-item">
-                                    <div class="view-info-label">Days Until Expiry</div>
-                                    <div class="view-info-value" id="viewDaysLeft">-</div>
                                 </div>
                             </div>
                             
@@ -893,7 +876,6 @@ class AdminClients {
                         <div style="font-weight: 500;">${this.formatDate(client.createdAt)}</div>
                         <div style="font-size: 0.85em; color: var(--text-muted);">${this.getDaysAgo(client.createdAt)}</div>
                     </td>
-                    <td>${this.formatDate(client.expiresAt)}</td>
                     <td class="client-status-cell">
                         ${this.renderStatusBadge(client)}
                     </td>
@@ -956,12 +938,7 @@ class AdminClients {
     }
 
     renderStatusBadge(client) {
-        const now = new Date();
-        const isExpired = client.expiresAt && new Date(client.expiresAt) < now;
-
-        if (isExpired) {
-            return '<span class="status-badge-client status-expired">Expired</span>';
-        } else if (client.isActive) {
+        if (client.isActive) {
             return '<span class="status-badge-client status-active">Active</span>';
         } else {
             return '<span class="status-badge-client status-inactive">Inactive</span>';
@@ -987,7 +964,6 @@ class AdminClients {
         document.getElementById('state').value = '';
         document.getElementById('zipCode').value = '';
         document.getElementById('salesRep').value = '';
-        document.getElementById('expireDays').value = '30';
         // showPrices removido - agora está em Permissions
         //document.getElementById('showPricesLabel').textContent = 'Enabled';
 
@@ -1203,7 +1179,6 @@ class AdminClients {
             zipCode: document.getElementById('zipCode').value.trim(),
             salesRep: document.getElementById('salesRep').value.trim(),
             allowedCategories: this.selectedCategories.length > 0 ? this.selectedCategories : [],
-            expiresInDays: parseInt(document.getElementById('expireDays').value),
             showPrices: this.currentClient ? (this.currentClient.showPrices || false) : false,
             accessType: this.currentClient?.accessType || 'normal',
             isActive: true,
@@ -1373,19 +1348,19 @@ class AdminClients {
     validateFormData(formData) {
         const errors = [];
 
-        // Só validar nome (obrigatório)
+        // Validar nome (obrigatório)
         if (!formData.clientName || formData.clientName.length < 2) {
             errors.push('Name must have at least 2 characters');
+        }
+
+        // Validar Sales Rep (obrigatório)
+        if (!formData.salesRep || formData.salesRep.trim().length === 0) {
+            errors.push('Sales Rep is required');
         }
 
         // Validar email SE fornecido
         if (formData.clientEmail && !this.isValidEmail(formData.clientEmail)) {
             errors.push('Invalid email address');
-        }
-
-        // Validar dias de expiração
-        if (!formData.expiresInDays || formData.expiresInDays < 1 || formData.expiresInDays > 365) {
-            errors.push('Expiration days must be between 1 and 365');
         }
 
         return errors;
@@ -1636,9 +1611,6 @@ class AdminClients {
 
         // Access Configuration
         document.getElementById('viewAccessType').textContent = client.accessType || 'Regular';
-        document.getElementById('viewExpirationDate').textContent = this.formatDate(client.expiresAt);
-        document.getElementById('viewCreatedDate').textContent = this.formatDate(client.createdAt);
-        document.getElementById('viewDaysLeft').textContent = this.calculateDaysUntilExpiry(client.expiresAt) + ' days';
 
         // Allowed Categories - COLLAPSIBLE VERSION
         const categoriesContainer = document.getElementById('viewAllowedCategories');
@@ -1840,7 +1812,6 @@ class AdminClients {
         document.getElementById('salesRep').value = client.salesRep || '';
 
         // Fill form - Settings
-        document.getElementById('expireDays').value = this.calculateDaysUntilExpiry(client.expiresAt);
         document.getElementById('codePreview').textContent = client.code;
 
         // Fill Show Prices toggle
@@ -2294,22 +2265,6 @@ class AdminClients {
                 this.renderClientsTable();
             }
         }, 60000); // 60 segundos
-    }
-
-    calculateDaysUntilExpiry(expiresAt) {
-        if (!expiresAt) return 30;
-
-        const today = new Date();
-        const expiry = new Date(expiresAt);
-
-        // Zerar horários
-        today.setHours(0, 0, 0, 0);
-        expiry.setHours(0, 0, 0, 0);
-
-        const diffTime = expiry - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays;
     }
 
     truncateText(text, length) {

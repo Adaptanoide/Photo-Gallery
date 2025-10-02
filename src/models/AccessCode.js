@@ -151,10 +151,6 @@ const accessCodeSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    expiresAt: {
-        type: Date,
-        default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    },
     createdBy: {
         type: String,
         default: 'admin'
@@ -250,7 +246,6 @@ const accessCodeSchema = new mongoose.Schema({
 
 // ===== ÍNDICES =====
 accessCodeSchema.index({ code: 1 });
-accessCodeSchema.index({ expiresAt: 1 });
 accessCodeSchema.index({ accessType: 1 });
 accessCodeSchema.index({ isActive: 1, accessType: 1 });
 accessCodeSchema.index({ 'specialSelection.selectionId': 1 });
@@ -337,11 +332,6 @@ accessCodeSchema.methods.canAccess = function () {
         return { allowed: false, reason: 'Access code is inactive' };
     }
 
-    // Verificar expiração
-    if (this.expiresAt && new Date() > this.expiresAt) {
-        return { allowed: false, reason: 'Access code has expired' };
-    }
-
     // Verificar limite de uso
     if (this.advancedConfig?.maxUsageCount && this.usageCount >= this.advancedConfig.maxUsageCount) {
         return { allowed: false, reason: 'Maximum usage count reached' };
@@ -377,8 +367,7 @@ accessCodeSchema.methods.getClientConfig = function () {
         code: this.code,
         clientName: this.clientName,
         accessType: this.accessType,
-        isActive: this.isActive,
-        expiresAt: this.expiresAt
+        isActive: this.isActive
     };
 
     if (this.isNormalAccess()) {
@@ -410,11 +399,7 @@ accessCodeSchema.methods.getAdminSummary = function () {
         clientEmail: this.clientEmail,
         accessType: this.accessType,
         isActive: this.isActive,
-        expiresAt: this.expiresAt,
         usageCount: this.usageCount,
-        lastUsed: this.lastUsed,
-        createdAt: this.createdAt,
-        updatedAt: this.updatedAt,
 
         // Configuração específica do tipo de acesso
         configuration: this.isNormalAccess() ? {
@@ -461,10 +446,6 @@ accessCodeSchema.statics.findByAccessType = function (accessType, options = {}) 
         query.isActive = options.isActive;
     }
 
-    if (options.notExpired) {
-        query.expiresAt = { $gt: new Date() };
-    }
-
     return this.find(query).sort({ createdAt: -1 });
 };
 
@@ -483,10 +464,6 @@ accessCodeSchema.statics.getStatistics = async function () {
     const normalCodes = await this.countDocuments({ accessType: 'normal' });
     const specialCodes = await this.countDocuments({ accessType: 'special' });
 
-    const expiredCodes = await this.countDocuments({
-        expiresAt: { $lt: new Date() }
-    });
-
     const usageStats = await this.aggregate([
         {
             $group: {
@@ -502,7 +479,6 @@ accessCodeSchema.statics.getStatistics = async function () {
         totalCodes,
         activeCodes,
         inactiveCodes: totalCodes - activeCodes,
-        expiredCodes,
         accessTypes: {
             normal: normalCodes,
             special: specialCodes

@@ -122,18 +122,15 @@ router.get('/access-codes', async (req, res) => {
         }
 
         // Filtro por status
-        const now = new Date();
         if (status === 'active') {
             query.isActive = true;
-            query.expiresAt = { $gt: now };
         } else if (status === 'inactive') {
             query.isActive = false;
-        } else if (status === 'expired') {
-            query.expiresAt = { $lt: now };
         }
 
         // ============ NOVA LÓGICA DE CARRINHOS ============
         // Buscar TODOS os carrinhos ativos primeiro
+        const now = new Date(); // ⚠️ ADICIONAR ESTA LINHA
         const Cart = require('../models/Cart');
         const activeCarts = await Cart.find({
             'items.0': { $exists: true },
@@ -286,14 +283,20 @@ router.post('/access-codes', async (req, res) => {
             zipCode,
             salesRep,
             accessType,
-            allowedCategories,
-            expiresInDays = 30
+            allowedCategories
         } = req.body;
 
         if (!clientName) {
             return res.status(400).json({
                 success: false,
                 message: 'Nome do cliente é obrigatório'
+            });
+        }
+
+        if (!salesRep || salesRep.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Sales Rep é obrigatório'
             });
         }
 
@@ -345,7 +348,6 @@ router.post('/access-codes', async (req, res) => {
             salesRep,
             allowedCategories,
             showPrices: req.body.showPrices !== false,
-            expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
             createdBy: req.user.username
         });
 
@@ -384,7 +386,6 @@ router.put('/access-codes/:id', async (req, res) => {
             zipCode,
             salesRep,
             allowedCategories,
-            expiresInDays,
             isActive
         } = req.body;
 
@@ -399,9 +400,6 @@ router.put('/access-codes/:id', async (req, res) => {
                 message: 'Nome do cliente e categorias são obrigatórios'
             });
         }
-
-        // Calcular nova data de expiração
-        const expiresAt = new Date(Date.now() + (expiresInDays || 30) * 24 * 60 * 60 * 1000);
 
         // Atualizar no banco
         const updatedCode = await AccessCode.findByIdAndUpdate(
@@ -418,7 +416,6 @@ router.put('/access-codes/:id', async (req, res) => {
                 zipCode: zipCode ? zipCode.trim() : undefined,
                 salesRep: salesRep ? salesRep.trim() : undefined,
                 allowedCategories,
-                expiresAt,
                 isActive: isActive !== false, // Default true
                 showPrices: req.body.showPrices !== false,
                 updatedAt: new Date()
@@ -954,8 +951,6 @@ router.put('/clients/:clientId/categories', authenticateToken, async (req, res) 
 // Estatísticas gerais dos códigos
 router.get('/access-codes-stats', async (req, res) => {
     try {
-        const now = new Date();
-
         // Agregação para estatísticas
         const stats = await AccessCode.aggregate([
             {
@@ -964,21 +959,12 @@ router.get('/access-codes-stats', async (req, res) => {
                     total: { $sum: 1 },
                     active: {
                         $sum: {
-                            $cond: [
-                                { $and: [{ $eq: ['$isActive', true] }, { $gt: ['$expiresAt', now] }] },
-                                1,
-                                0
-                            ]
+                            $cond: [{ $eq: ['$isActive', true] }, 1, 0]
                         }
                     },
                     inactive: {
                         $sum: {
                             $cond: [{ $eq: ['$isActive', false] }, 1, 0]
-                        }
-                    },
-                    expired: {
-                        $sum: {
-                            $cond: [{ $lt: ['$expiresAt', now] }, 1, 0]
                         }
                     },
                     totalUsage: { $sum: '$usageCount' },
@@ -996,7 +982,7 @@ router.get('/access-codes-stats', async (req, res) => {
         ]);
 
         const result = {
-            ...(stats[0] || { total: 0, active: 0, inactive: 0, expired: 0, totalUsage: 0, averageUsage: 0 }),
+            ...(stats[0] || { total: 0, active: 0, inactive: 0, totalUsage: 0, averageUsage: 0 }),
             mostUsedCategory: categoryStats[0] ? categoryStats[0]._id : null,
             timestamp: new Date()
         };
