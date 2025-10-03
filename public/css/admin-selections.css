@@ -1359,3 +1359,24 @@
     color: #4a90e2;
     background: rgba(74, 144, 226, 0.1);
 }
+
+/* Bloquear scroll do body quando modal aberto */
+body.modal-open {
+    overflow: hidden;
+    padding-right: 15px; /* Compensa a scrollbar que desaparece */
+}
+
+/* Bloquear scroll do body quando modal aberto */
+body.modal-open {
+    overflow: hidden !important;
+    height: 100vh;
+    position: fixed;
+    width: 100%;
+}
+
+/* Garantir que o modal backdrop ocupe tela inteira e tenha scroll interno */
+.selection-details-modal.active,
+#poNumberModal.active {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}

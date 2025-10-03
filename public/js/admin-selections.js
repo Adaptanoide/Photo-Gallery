@@ -1302,7 +1302,7 @@ class AdminSelections {
                             <i class="fas fa-file-excel"></i>
                             CDE Export - PO Number
                         </h3>
-                        <button class="selection-details-close" onclick="document.getElementById('poNumberModal').classList.remove('active'); document.getElementById('poNumberModal').style.display='none';">
+                        <button class="selection-details-close po-modal-close-btn">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -1324,8 +1324,7 @@ class AdminSelections {
                         </div>
                         <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
                             <button 
-                                class="btn-modal-action" 
-                                onclick="document.getElementById('poNumberModal').classList.remove('active'); document.getElementById('poNumberModal').style.display='none';"
+                                class="btn-modal-action po-modal-cancel-btn" 
                                 style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">
                                 Cancel
                             </button>
@@ -1342,6 +1341,34 @@ class AdminSelections {
         `;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // ✅ Adicionar event listeners para fechar e desbloquear scroll
+        const modal = document.getElementById('poNumberModal');
+
+        // Fechar ao clicar no backdrop
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.classList.remove('modal-open');
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            }
+        });
+
+        // Fechar ao clicar no botão X
+        const closeBtn = modal.querySelector('.po-modal-close-btn');
+        closeBtn.addEventListener('click', () => {
+            document.body.classList.remove('modal-open');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        });
+
+        // Fechar ao clicar no botão Cancel
+        const cancelBtn = modal.querySelector('.po-modal-cancel-btn');
+        cancelBtn.addEventListener('click', () => {
+            document.body.classList.remove('modal-open');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        });
     }
 
     // ===== ABRIR MODAL DO PO NUMBER =====
@@ -1367,6 +1394,13 @@ class AdminSelections {
         modal.classList.add('active');
         modal.style.display = 'flex';
 
+        // ✅ Bloquear scroll do body - INLINE para forçar
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.top = `-${window.scrollY}px`;
+
         // Limpar campo
         document.getElementById('cdePoNumber').value = '';
 
@@ -1391,6 +1425,15 @@ class AdminSelections {
                 document.getElementById('cdePoNumber').focus();
                 return;
             }
+
+            // ✅ Desbloquear scroll do body
+            const scrollY = document.body.style.top;
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.top = '';
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
 
             // Fechar modal
             modal.classList.remove('active');
