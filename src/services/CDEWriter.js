@@ -37,7 +37,7 @@ class CDEWriter {
                      RESERVEDUSU = ?,
                      AFECHA = NOW()
                  WHERE ATIPOETIQUETA = ?
-                 AND AESTADOP = 'INGRESADO'`,
+                 AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
                 [`${clientName}-${clientCode}`, photoNumber]
             );
 

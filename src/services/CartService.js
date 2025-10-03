@@ -202,8 +202,9 @@ class CartService {
                 );
                 console.log(`[CART] Produto liberado`);
 
-                // Atualizar CDE
-                const photoNumber = driveFileId.match(/(\d+)/)?.[1];
+                // Atualizar CDE - extrair número do NOME DO ARQUIVO, não do path
+                const fileName = driveFileId.split('/').pop(); // Pega última parte do path
+                const photoNumber = fileName.match(/(\d+)/)?.[1];
                 if (photoNumber) {
                     await CDEWriter.markAsAvailable(photoNumber);
                     console.log(`[CART] CDE atualizado`);

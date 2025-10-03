@@ -479,10 +479,14 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
             // Importar o modelo Selection
             const Selection = require('../models/Selection');
 
-            // Verificar se tem QUALQUER seleção pendente
+            // Verificar se tem QUALQUER seleção pendente (excluindo deletadas)
             const pendingSelection = await Selection.findOne({
                 clientCode: accessCode.code,
-                status: 'pending'
+                status: 'pending',
+                $or: [
+                    { isDeleted: { $exists: false } },
+                    { isDeleted: false }
+                ]
             });
 
             if (pendingSelection) {
@@ -490,7 +494,7 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
                 console.log(`❌ Bloqueado: Cliente tem seleção ${type} pendente`);
                 return res.status(400).json({
                     success: false,
-                    message: `Cliente tem seleção ${type} pendente (${pendingSelection.selectionId}). Aprove ou cancele antes de reativar.`,
+                    message: `Client has pending ${type} selection (${pendingSelection.selectionId}). Please approve or cancel it before reactivating.`,
                     pendingSelection: pendingSelection.selectionId
                 });
             }
@@ -814,17 +818,26 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
             categoryPaths.forEach(path => {
                 const normalized = normalizeString(path);
 
-                // Buscar por displayName exato
-                orConditions.push({ displayName: normalized });
+                // Converter → para /
+                const withSlash = normalized.replace(/\s*→\s*/g, '/');
 
-                // Se tem seta, também buscar sem normalizar
-                if (path.includes('→')) {
-                    orConditions.push({ displayName: path });
-                }
+                // Criar AMBAS as versões: com e sem espaço após barra
+                const withoutSpaces = withSlash.replace(/\/\s+/g, '/').replace(/\s+\//g, '/');
+                const withSpaceAfterSlash = withSlash.replace(/\//g, '/ ').replace(/\/\s+\//g, '/'); // Mantém espaço
 
-                // Buscar por regex para ser mais flexível
-                const escapedPath = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                orConditions.push({ displayName: { $regex: `^${escapedPath}$`, $options: 'i' } });
+                // Versões com e sem barra final para TODAS as variações
+                [withSlash, withoutSpaces, withSpaceAfterSlash].forEach(variant => {
+                    const withTrailing = variant.endsWith('/') ? variant : variant + '/';
+                    const withoutTrailing = variant.replace(/\/$/, '');
+
+                    orConditions.push(
+                        { displayName: variant },
+                        { displayName: withTrailing },
+                        { displayName: withoutTrailing },
+                        { googleDrivePath: withTrailing },
+                        { googleDrivePath: withoutTrailing }
+                    );
+                });
             });
 
             const pathCategories = await PhotoCategory.find({

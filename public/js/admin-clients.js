@@ -209,7 +209,7 @@ class AdminClients {
                             <th>Sales Rep</th>
                             <th>Usage</th>
                             <th>Created</th>
-                            <th>Status</th>
+                            <th style="text-align: center;">Status</th>
                             <th style="text-align: center;">Actions</th>
                         </tr>
                     </thead>
@@ -2133,7 +2133,16 @@ class AdminClients {
                     console.log(`✅ Client ${isActivating ? 'activated' : 'deactivated'}: ${client.clientName}`);
                 } catch (error) {
                     console.error('❌ Error changing status:', error);
-                    this.showError(`Error ${isActivating ? 'activating' : 'deactivating'} code: ` + error.message);
+
+                    // Se for erro de selection pendente, mostrar modal explicativo
+                    if (error.message.includes('pending')) {
+                        await UISystem.confirm(
+                            'Cannot activate client',
+                            error.message + '\n\nGo to Selection Management to resolve this first.'
+                        );
+                    } else {
+                        this.showError(`Error: ${error.message}`);
+                    }
                 }
             }
         });

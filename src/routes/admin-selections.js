@@ -111,23 +111,39 @@ router.get('/', async (req, res) => {
 router.get('/stats', async (req, res) => {
     try {
         console.log('📊 Carregando estatísticas completas...');
-        // ✅ USAR MESMA LÓGICA: SÓ seleções que cliente processou
-        const query = {};
-        query.$or = [
-            { selectionType: { $ne: 'special' } },
-            {
-                selectionType: 'special',
-                status: { $in: ['pending', 'finalized'] },
-                'movementLog.action': 'finalized'
-            }
-        ];
 
-        const totalSelections = await Selection.countDocuments({
-            ...query,
-            status: { $nin: ['cancelled', 'cancelling'] }  // Excluir cancelled e cancelling
-        });
-        const pendingQuery = { ...query, status: { $in: ['pending'] } };
-        const pendingSelections = await Selection.countDocuments(pendingQuery);
+        const Selection = require('../models/Selection');
+
+        // Filtro base: excluir deletadas E canceladas
+        const baseFilter = {
+            $and: [
+                {
+                    $or: [
+                        { isDeleted: { $exists: false } },
+                        { isDeleted: false }
+                    ]
+                },
+                { status: { $nin: ['cancelled', 'cancelling'] } }
+            ]
+        };
+
+        // PENDING: apenas não deletadas e status pending
+        const pendingFilter = {
+            $and: [
+                {
+                    $or: [
+                        { isDeleted: { $exists: false } },
+                        { isDeleted: false }
+                    ]
+                },
+                { status: 'pending' }
+            ]
+        };
+
+        const totalSelections = await Selection.countDocuments(baseFilter);
+        const pendingSelections = await Selection.countDocuments(pendingFilter);
+
+        console.log(`📊 Total: ${totalSelections}, Pending: ${pendingSelections}`);
 
         // Seleções deste mês
         const startOfMonth = new Date();
@@ -135,16 +151,39 @@ router.get('/stats', async (req, res) => {
         startOfMonth.setHours(0, 0, 0, 0);
 
         const thisMonthSelections = await Selection.countDocuments({
-            createdAt: { $gte: startOfMonth },
-            status: { $nin: ['cancelled', 'cancelling'] }  // Excluir cancelled aqui também
+            ...baseFilter,
+            createdAt: { $gte: startOfMonth }
         });
 
         // Valor médio
         const avgResult = await Selection.aggregate([
-            { $match: { isDeleted: { $ne: true } } },
+            { $match: baseFilter },
             { $group: { _id: null, avg: { $avg: '$totalValue' } } }
         ]);
         const averageValue = avgResult[0]?.avg || 0;
+
+        // SOLD PHOTOS: contar fotos em selections finalizadas (não deletadas)
+        const soldPhotosResult = await Selection.aggregate([
+            {
+                $match: {
+                    status: 'finalized',
+                    $or: [
+                        { isDeleted: { $exists: false } },
+                        { isDeleted: false }
+                    ]
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalItems: { $sum: '$totalItems' }
+                }
+            }
+        ]);
+
+        const soldPhotosCount = soldPhotosResult[0]?.totalItems || 0;
+
+        console.log(`📊 Sold Photos: ${soldPhotosCount}`);
 
         res.json({
             success: true,
@@ -152,7 +191,8 @@ router.get('/stats', async (req, res) => {
                 totalSelections,
                 pendingSelections,
                 thisMonthSelections,
-                averageValue
+                averageValue,
+                soldPhotosCount
             }
         });
 
@@ -594,6 +634,244 @@ router.post('/:selectionId/cancel', async (req, res) => {
         });
     } finally {
         processingLocks.delete(selectionId);
+        await session.endSession();
+    }
+});
+
+/**
+ * POST /api/selections/:selectionId/reopen-cart
+ * Reabrir carrinho para cliente - permitir edição da seleção
+ */
+router.post('/:selectionId/reopen-cart', async (req, res) => {
+    const { selectionId } = req.params;
+
+    // Proteção contra duplo processamento
+    if (processingLocks.has(`reopen_${selectionId}`)) {
+        return res.status(409).json({
+            success: false,
+            message: 'Reabertura já está em andamento'
+        });
+    }
+
+    processingLocks.set(`reopen_${selectionId}`, true);
+
+    const session = await mongoose.startSession();
+
+    try {
+        await session.startTransaction({
+            readConcern: { level: "local" },
+            writeConcern: { w: 1 },
+            maxTimeMS: 30000
+        });
+
+        const { adminUser } = req.body;
+        console.log(`🔄 Reabrindo carrinho para seleção ${selectionId}...`);
+
+        // 1. Buscar seleção
+        const selection = await Selection.findOne({ selectionId }).session(session);
+
+        if (!selection) {
+            await session.abortTransaction();
+            return res.status(404).json({
+                success: false,
+                message: 'Seleção não encontrada'
+            });
+        }
+
+        // Só permite reabrir seleções PENDING
+        if (selection.status !== 'pending') {
+            await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: `Apenas seleções PENDING podem ser reabertas (atual: ${selection.status})`
+            });
+        }
+
+        console.log(`📋 Seleção encontrada: ${selection.totalItems} items`);
+
+        // 2. Verificar status das fotos no CDE
+        const CDEWriter = require('../services/CDEWriter');
+        const photoNumbers = [];
+        const validItems = [];
+        const ghostItems = [];
+
+        for (const item of selection.items) {
+            const photoMatch = item.fileName?.match(/(\d+)/);
+            if (!photoMatch) continue;
+
+            const photoNumber = photoMatch[1].padStart(5, '0');
+            photoNumbers.push(photoNumber);
+
+            // Verificar status atual no CDE
+            const cdeStatus = await CDEWriter.checkStatus(photoNumber);
+
+            if (cdeStatus && cdeStatus.status === 'CONFIRMED') {
+                // Foto está OK para reabrir
+                validItems.push({
+                    productId: item.productId,
+                    driveFileId: item.driveFileId,
+                    fileName: item.fileName,
+                    category: item.category,
+                    thumbnailUrl: item.thumbnailUrl,
+                    price: item.price,
+                    photoNumber: photoNumber
+                });
+            } else if (cdeStatus && cdeStatus.status === 'RETIRADO') {
+                // Foto já foi vendida - virar ghost
+                ghostItems.push({ ...item, photoNumber, reason: 'Já vendida' });
+            } else {
+                // Outros estados - considerar válida por enquanto
+                validItems.push({
+                    productId: item.productId,
+                    driveFileId: item.driveFileId,
+                    fileName: item.fileName,
+                    category: item.category,
+                    thumbnailUrl: item.thumbnailUrl,
+                    price: item.price,
+                    photoNumber: photoNumber
+                });
+            }
+        }
+
+        console.log(`✅ Fotos válidas: ${validItems.length}`);
+        console.log(`👻 Ghost items: ${ghostItems.length}`);
+
+        if (validItems.length === 0) {
+            await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: 'Todas as fotos já foram vendidas. Não é possível reabrir.'
+            });
+        }
+
+        // 3. Reativar cliente
+        const AccessCode = require('../models/AccessCode');
+        await AccessCode.updateOne(
+            { code: selection.clientCode },
+            { $set: { isActive: true } }
+        ).session(session);
+        console.log(`✅ Cliente ${selection.clientCode} reativado`);
+
+        // 4. Criar novo carrinho
+        const Cart = require('../models/Cart');
+        const newSessionId = `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)); // 24h
+
+        const newCart = new Cart({
+            sessionId: newSessionId,
+            clientCode: selection.clientCode,
+            clientName: selection.clientName,
+            items: validItems.map(item => ({
+                productId: item.productId,
+                driveFileId: item.driveFileId,
+                fileName: item.fileName,
+                category: item.category,
+                thumbnailUrl: item.thumbnailUrl,
+                price: item.price || 0,
+                basePrice: item.price || 0,
+                expiresAt: expiresAt,
+                addedAt: new Date()
+            })),
+            totalItems: validItems.length,
+            isActive: true
+        });
+
+        await newCart.save({ session });
+        console.log(`🛒 Novo carrinho criado: ${newSessionId} com ${validItems.length} items`);
+
+        // 5. Atualizar produtos no MongoDB
+        const productIds = validItems.map(item => item.productId);
+
+        await UnifiedProductComplete.updateMany(
+            { _id: { $in: productIds } },
+            {
+                $set: {
+                    status: 'reserved',
+                    cdeStatus: 'PRE-SELECTED',
+                    reservedBy: {
+                        clientCode: selection.clientCode,
+                        sessionId: newSessionId,
+                        expiresAt: expiresAt
+                    }
+                },
+                $unset: {
+                    selectionId: 1,
+                    soldAt: 1
+                }
+            }
+        ).session(session);
+        console.log(`✅ ${productIds.length} produtos atualizados no MongoDB`);
+
+        // 6. Atualizar fotos no CDE: CONFIRMED → PRE-SELECTED
+        let cdeUpdateCount = 0;
+        for (const item of validItems) {
+            try {
+                const success = await CDEWriter.markAsReserved(
+                    item.photoNumber,
+                    selection.clientCode,
+                    selection.clientName
+                );
+                if (success) cdeUpdateCount++;
+            } catch (error) {
+                console.error(`[CDE] Erro ao marcar ${item.photoNumber}:`, error.message);
+            }
+        }
+        console.log(`[CDE] ✅ ${cdeUpdateCount}/${validItems.length} fotos voltaram para PRE-SELECTED`);
+
+        // 7. Marcar Selection como reopened E ocultar da lista
+        selection.reopenedAt = new Date();
+        selection.reopenedBy = adminUser || 'admin';
+        selection.reopenCount = (selection.reopenCount || 0) + 1;
+        selection.isDeleted = true;  // ✅ ADICIONAR ESTA LINHA - Oculta da lista
+        selection.deletedAt = new Date();  // ✅ ADICIONAR ESTA LINHA
+
+        selection.addMovementLog(
+            'auto_return',
+            `Carrinho reaberto para edição pelo admin ${adminUser || 'admin'}`,
+            true,
+            null,
+            {
+                newSessionId: newSessionId,
+                validItems: validItems.length,
+                ghostItems: ghostItems.length
+            }
+        );
+
+        await selection.save({ session });
+        console.log(`✅ Selection marcada como reopened`);
+
+        // Commit da transação
+        await session.commitTransaction();
+        console.log(`✅ Carrinho reaberto com sucesso!`);
+
+        res.json({
+            success: true,
+            message: 'Carrinho reaberto com sucesso',
+            data: {
+                newSessionId: newSessionId,
+                clientCode: selection.clientCode,
+                validItems: validItems.length,
+                ghostItems: ghostItems.length,
+                expiresAt: expiresAt,
+                warning: ghostItems.length > 0 ?
+                    `${ghostItems.length} fotos não puderam ser reabertas (já vendidas)` : null
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao reabrir carrinho:', error);
+
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao reabrir carrinho',
+            error: error.message
+        });
+    } finally {
+        processingLocks.delete(`reopen_${selectionId}`);
         await session.endSession();
     }
 });

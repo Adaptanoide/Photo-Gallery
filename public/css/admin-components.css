@@ -604,3 +604,32 @@
     padding: 0 8px;
     color: #888;
 }
+
+/* Badge de pending no sidebar */
+.pending-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 7px;
+    border-radius: 12px;
+    margin-left: auto;
+    margin-right: -10px;
+    min-width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+.pending-badge:empty,
+.pending-badge[data-count="0"] {
+    display: none;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.pending-badge.updated {
+    animation: badgePulse 0.3s ease-in-out;
+}

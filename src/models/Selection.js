@@ -376,6 +376,18 @@ const selectionSchema = new mongoose.Schema({
     deletedAt: {
         type: Date,
         default: null
+    },
+    reopenedAt: {
+        type: Date,
+        default: null
+    },
+    reopenedBy: {
+        type: String,
+        default: null
+    },
+    reopenCount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

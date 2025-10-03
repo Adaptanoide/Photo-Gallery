@@ -124,6 +124,7 @@ class AdminSelections {
             if (data.success) {
                 this.stats = data.stats;
                 this.renderStatistics();
+                this.updateSidebarBadge(this.stats.pendingSelections);
                 console.log('✅ Statistics loaded:', this.stats);
             } else {
                 throw new Error(data.message || 'Failed to load statistics');
@@ -140,7 +141,7 @@ class AdminSelections {
         // Update stat values
         this.updateStatCard('totalSelections', this.stats.totalSelections, 'All time selections');
         this.updateStatCard('pendingSelections', this.stats.pendingSelections, 'Awaiting approval');
-        this.updateStatCard('thisMonthSelections', this.stats.thisMonthSelections, 'This month');
+        this.updateStatCard('thisMonthSelections', this.stats.soldPhotosCount || 0, 'Photos sold');
         this.updateStatCard('averageSelectionValue',
             this.formatCurrency(this.stats.averageValue), 'Per selection');
     }
@@ -165,7 +166,7 @@ class AdminSelections {
     renderStatisticsError() {
         this.updateStatCard('totalSelections', '?', 'Error loading');
         this.updateStatCard('pendingSelections', '?', 'Error loading');
-        this.updateStatCard('thisMonthSelections', '?', 'Error loading');
+        this.updateStatCard('thisMonthSelections', '?', 'Photos sold');
         this.updateStatCard('averageSelectionValue', '?', 'Error loading');
     }
 
@@ -365,9 +366,14 @@ class AdminSelections {
             </button>
         `;
 
-        // PENDING - adiciona Mark as Sold e Cancel
+        // PENDING - adiciona Reopen, Mark as Sold e Cancel
         if (selection.status === 'pending') {
             buttons += `
+                <button class="special-btn-icon btn-reopen" 
+                        onclick="adminSelections.reopenCart('${selection.selectionId}')"
+                        data-tooltip="Reopen for Client">
+                    <i class="fas fa-undo"></i>
+                </button>
                 <button class="special-btn-icon btn-approve" 
                         onclick="adminSelections.approveSelection('${selection.selectionId}')"
                         data-tooltip="Mark as Sold">
@@ -1658,6 +1664,82 @@ class AdminSelections {
         } catch (error) {
             console.error('Error removing items:', error);
             UISystem.showToast('error', 'Error removing items');
+        }
+    }
+
+    // ===== REOPEN CART FOR CLIENT =====
+    async reopenCart(selectionId) {
+        const confirmed = await UISystem.confirm(
+            'Reopen cart for client?',
+            'This will allow the client to edit their selection. The current selection will be removed from this list and a new cart will be created with 24h expiration.'
+        );
+
+        if (!confirmed) return;
+
+        // Encontrar a linha na tabela
+        const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
+
+        // Atualizar visual para "REOPENING..."
+        if (row) {
+            const statusCell = row.querySelector('.status-cell');
+            if (statusCell) {
+                statusCell.innerHTML = `
+                    <span class="badge badge-approving">
+                        <span class="spinner-inline"></span>
+                        REOPENING...
+                    </span>
+                `;
+            }
+        }
+
+        try {
+            const response = await fetch(`/api/selections/${selectionId}/reopen-cart`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    adminUser: 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Fazer a linha desaparecer com fade
+                if (row) {
+                    row.style.transition = 'opacity 0.5s';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 500);
+                }
+
+                UISystem.showToast('success', `Cart reopened! Client ${result.data.clientCode} can now edit their selection.`);
+
+                // Recarregar lista após 2 segundos
+                setTimeout(() => {
+                    this.loadSelections();
+                    this.loadStatistics();
+                }, 2000);
+            } else {
+                throw new Error(result.message || 'Failed to reopen cart');
+            }
+        } catch (error) {
+            console.error('Error reopening cart:', error);
+            UISystem.showToast('error', `Error: ${error.message}`);
+
+            // Recarregar em caso de erro
+            this.loadSelections();
+        }
+    }
+
+    // ===== ATUALIZAR BADGE DO SIDEBAR =====
+    updateSidebarBadge(count) {
+        const badge = document.getElementById('sidebarPendingBadge');
+        if (badge) {
+            badge.textContent = count || '0';
+            badge.setAttribute('data-count', count || '0');
+
+            // Animação
+            badge.classList.add('updated');
+            setTimeout(() => badge.classList.remove('updated'), 300);
         }
     }
 }
