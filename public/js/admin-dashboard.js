@@ -617,6 +617,138 @@ function logout() {
     window.location.href = '/';
 }
 
+function openProfileModal() {
+    console.log('Opening profile modal...');
+
+    // Get username from header
+    const userName = document.getElementById('userName').textContent;
+
+    // Update in modal
+    const modalUsername = document.getElementById('modalUsername');
+    if (modalUsername) {
+        modalUsername.textContent = userName;
+    }
+
+    // Open modal
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeProfileModal() {
+    console.log('Closing profile modal...');
+
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+
+    // Clear form
+    const form = document.getElementById('changePasswordForm');
+    if (form) {
+        form.reset();
+    }
+}
+
+// ===== FUNCTION TO PROCESS PASSWORD CHANGE =====
+function handleChangePassword(event) {
+    event.preventDefault();
+
+    console.log('Processing password change...');
+
+    // Get field values
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    // Simple validations
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        UISystem.showToast('error', 'Please fill all fields');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        UISystem.showToast('error', 'New password and confirmation do not match');
+        return;
+    }
+
+    if (currentPassword === newPassword) {
+        UISystem.showToast('warning', 'New password must be different from current password');
+        return;
+    }
+
+    // If all validations pass, call API function
+    console.log('Validations OK! Sending to backend...');
+    changePasswordAPI(currentPassword, newPassword);
+}
+
+// ===== FUNCTION TO CALL API =====
+async function changePasswordAPI(currentPassword, newPassword) {
+    try {
+        // Get token from session
+        const sessionData = localStorage.getItem('sunshineSession');
+        if (!sessionData) {
+            UISystem.showToast('error', 'Session not found. Please login again.');
+            return;
+        }
+
+        const session = JSON.parse(sessionData);
+        const token = session.token;
+
+        console.log('Sending request to backend...');
+
+        // Show processing toast
+        UISystem.showToast('info', 'Processing password change...', 0);
+
+        // Make API call
+        const response = await fetch('/api/admin/profile/change-password', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        // Remove processing toast
+        const existingToast = document.querySelector('.ui-toast');
+        if (existingToast) existingToast.remove();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Error changing password');
+        }
+
+        console.log('Password changed successfully!');
+
+        // Show success
+        UISystem.showToast('success', 'Password changed successfully!');
+
+        // Clear form
+        document.getElementById('changePasswordForm').reset();
+
+        // Close modal after 2 seconds
+        setTimeout(() => {
+            closeProfileModal();
+        }, 2000);
+
+    } catch (error) {
+        console.error('Error:', error);
+
+        // Remove processing toast
+        const existingToast = document.querySelector('.ui-toast');
+        if (existingToast) existingToast.remove();
+
+        // Show error
+        UISystem.showToast('error', error.message || 'Error processing request');
+    }
+}
+
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
     // Verificar se estamos na página admin
@@ -629,6 +761,13 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 window.adminDashboard.navigateToSection(hash);
             }, 100);
+        }
+
+        // Conectar formulário de senha
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', handleChangePassword);
+            console.log('✅ Formulário de senha conectado');
         }
     }
 });

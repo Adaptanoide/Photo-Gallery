@@ -112,7 +112,7 @@
                 </div>
 
                 <div class="header-right">
-                    <div class="admin-user">
+                    <div class="admin-user" onclick="openProfileModal()" style="cursor: pointer;">
                         <div class="user-avatar" id="userAvatar">A</div>
                         <span class="user-name" id="userName">Admin</span>
                     </div>
@@ -1295,6 +1295,59 @@
     <div id="loading" class="loading hidden">
         <div class="spinner"></div>
         <p>Loading...</p>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="ui-modal-backdrop profile-modal-backdrop" style="display: none; z-index: 9000;">
+        <div class="ui-modal profile-modal">
+            <div class="ui-modal-header">
+                <span class="modal-icon">👤</span>
+                <h3>My Profile</h3>
+                <button class="modal-close" onclick="closeProfileModal()">✕</button>
+            </div>
+
+            <div class="ui-modal-body">
+                <!-- Basic Information -->
+                <div class="profile-info-box">
+                    <p>
+                        <strong>Username:</strong>
+                        <span id="modalUsername">Admin</span>
+                    </p>
+                </div>
+
+                <hr class="profile-divider">
+
+                <!-- Change Password Form -->
+                <h4 class="profile-section-title">Change Password</h4>
+
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label class="form-label">Current Password:</label>
+                        <input type="password" id="currentPassword" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">New Password:</label>
+                        <input type="password" id="newPassword" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password:</label>
+                        <input type="password" id="confirmPassword" class="form-input" required>
+                    </div>
+                </form>
+            </div>
+
+            <div class="ui-modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeProfileModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-primary"
+                    onclick="document.getElementById('changePasswordForm').dispatchEvent(new Event('submit'))">
+                    Change Password
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->

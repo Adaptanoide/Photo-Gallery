@@ -69,6 +69,63 @@ router.post('/create-test-code', async (req, res) => {
 // Todas as rotas admin precisam de autenticação
 router.use(authenticateToken);
 
+// ===== CHANGE PASSWORD ROUTE =====
+router.put('/profile/change-password', async (req, res) => {
+    try {
+        const Admin = require('../models/Admin');
+        const { currentPassword, newPassword } = req.body;
+
+        console.log('📝 Change password request for:', req.user.username);
+
+        // Validations
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password and new password are required'
+            });
+        }
+
+        // Find admin WITH password (normally we exclude it)
+        const admin = await Admin.findById(req.user.id);
+
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: 'Administrator not found'
+            });
+        }
+
+        // Verify current password
+        const isPasswordValid = await admin.comparePassword(currentPassword);
+
+        if (!isPasswordValid) {
+            console.log('⚠️ Incorrect current password for:', admin.username);
+            return res.status(401).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Update password (the pre-save hook will hash it automatically)
+        admin.password = newPassword;
+        await admin.save();
+
+        console.log('✅ Password changed successfully for:', admin.username);
+
+        res.json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Error changing password:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error changing password'
+        });
+    }
+});
+
 // Status do banco de dados
 router.get('/db-status', async (req, res) => {
     try {

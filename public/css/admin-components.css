@@ -633,3 +633,72 @@
 .pending-badge.updated {
     animation: badgePulse 0.3s ease-in-out;
 }
+
+/* Profile Modal Styles */
+.profile-modal-backdrop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-modal {
+    width: 600px;
+    max-width: 90%;
+    max-height: none;
+}
+
+.profile-info-box {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.profile-info-box p {
+    color: #fff;
+    margin: 0;
+}
+
+.profile-info-box strong {
+    color: #d4af37;
+}
+
+.profile-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 20px 0;
+}
+
+.profile-section-title {
+    color: #d4af37;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    color: #ccc;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #d4af37;
+}
