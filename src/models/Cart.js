@@ -81,6 +81,15 @@ const cartSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true,
+    },
+    // ===== CONTROLE DE NOTIFICAÇÃO DE EXPIRAÇÃO =====
+    expirationWarningSet: {
+        type: Boolean,
+        default: false
+    },
+    expirationWarningSentAt: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true

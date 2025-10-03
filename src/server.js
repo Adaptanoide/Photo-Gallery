@@ -50,6 +50,93 @@ app.use('/api/email-config', require('./routes/email-config'));
 app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
 
+// ============================================
+// ROTAS DE NOTIFICAÇÕES DE EXPIRAÇÃO
+// ============================================
+
+// Iniciar serviço de notificações
+app.post('/api/cart/notifications/start', async (req, res) => {
+    try {
+        const CartExpirationNotificationService = require('./services/CartExpirationNotificationService');
+        const notificationService = CartExpirationNotificationService.getInstance();
+
+        const { intervalMinutes = 30 } = req.body;
+        notificationService.start(intervalMinutes);
+
+        res.json({
+            success: true,
+            message: 'Serviço de notificações iniciado',
+            interval: `${intervalMinutes} minutos`
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Parar serviço de notificações
+app.post('/api/cart/notifications/stop', async (req, res) => {
+    try {
+        const CartExpirationNotificationService = require('./services/CartExpirationNotificationService');
+        const notificationService = CartExpirationNotificationService.getInstance();
+
+        notificationService.stop();
+
+        res.json({
+            success: true,
+            message: 'Serviço de notificações parado'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Ver estatísticas
+app.get('/api/cart/notifications/stats', async (req, res) => {
+    try {
+        const CartExpirationNotificationService = require('./services/CartExpirationNotificationService');
+        const notificationService = CartExpirationNotificationService.getInstance();
+
+        const stats = notificationService.getStats();
+
+        res.json({
+            success: true,
+            stats
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Forçar verificação manual
+app.post('/api/cart/notifications/check-now', async (req, res) => {
+    try {
+        const CartExpirationNotificationService = require('./services/CartExpirationNotificationService');
+        const notificationService = CartExpirationNotificationService.getInstance();
+
+        await notificationService.checkAndNotify();
+
+        res.json({
+            success: true,
+            message: 'Verificação executada',
+            stats: notificationService.getStats()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Páginas principais
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -222,11 +309,12 @@ app.get('/api/status', (req, res) => {
             'R2 Storage Integration',
             'Pricing Management',
             'Client Management',
-            'CDE Incremental Sync'
+            'CDE Incremental Sync',
+            'Cart Expiration Notifications'
         ],
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        version: '2.1.0',
+        version: '2.2.0',
         mode: 'SYNC_DIRECT',
         syncStatus: syncStatus
     });
@@ -393,6 +481,11 @@ const server = app.listen(PORT, () => {
 process.on('SIGTERM', () => {
     console.log('SIGTERM recebido. Encerrando servidor...');
 
+    // Parar notificações se estiver rodando
+    if (CartExpirationNotificationServiceInstance) {
+        CartExpirationNotificationServiceInstance.stop();
+    }
+
     // Parar sincronização se estiver rodando
     if (CDEIncrementalSync) {
         CDEIncrementalSync.stop();
@@ -406,6 +499,11 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
     console.log('\nSIGINT recebido. Encerrando servidor...');
+
+    // Parar notificações se estiver rodando
+    if (CartExpirationNotificationServiceInstance) {
+        CartExpirationNotificationServiceInstance.stop();
+    }
 
     // Parar sincronização se estiver rodando
     if (CDEIncrementalSync) {
@@ -422,6 +520,11 @@ process.on('SIGINT', () => {
 process.on('uncaughtException', (error) => {
     console.error('ERRO NÃO CAPTURADO:', error);
 
+    // Parar notificações se estiver rodando
+    if (CartExpirationNotificationServiceInstance) {
+        CartExpirationNotificationServiceInstance.stop();
+    }
+
     // Tentar parar sincronização antes de sair
     if (CDEIncrementalSync) {
         CDEIncrementalSync.stop();
@@ -432,6 +535,11 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('PROMISE REJEITADA NÃO TRATADA:', reason);
+
+    // Parar notificações se estiver rodando
+    if (CartExpirationNotificationServiceInstance) {
+        CartExpirationNotificationServiceInstance.stop();
+    }
 
     // Tentar parar sincronização antes de sair
     if (CDEIncrementalSync) {
@@ -497,5 +605,35 @@ function initPhotoExpiration() {
 setTimeout(() => {
     initPhotoExpiration();
 }, 6000);
+
+// ============================================
+// SISTEMA DE NOTIFICAÇÕES DE EXPIRAÇÃO DE CARRINHO
+// ============================================
+
+let CartExpirationNotificationServiceInstance = null;
+
+function initCartExpirationNotifications() {
+    const enabled = process.env.CART_EXPIRATION_NOTIFICATIONS_ENABLED === 'true';
+
+    if (!enabled) {
+        console.log('[CART-NOTIFY] Sistema de notificações desabilitado');
+        console.log('[CART-NOTIFY] Defina CART_EXPIRATION_NOTIFICATIONS_ENABLED=true no .env para ativar');
+        return;
+    }
+
+    const intervalMinutes = parseInt(process.env.CART_NOTIFICATION_INTERVAL_MINUTES) || 30;
+
+    const CartExpirationNotificationService = require('./services/CartExpirationNotificationService');
+    CartExpirationNotificationServiceInstance = CartExpirationNotificationService.getInstance();
+
+    CartExpirationNotificationServiceInstance.start(intervalMinutes);
+
+    console.log('[CART-NOTIFY] Serviço de notificações iniciado com sucesso');
+}
+
+// Iniciar após 15 segundos (após o servidor estar estável)
+setTimeout(() => {
+    initCartExpirationNotifications();
+}, 15000);
 
 module.exports = app;
