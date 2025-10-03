@@ -4,6 +4,7 @@
  */
 
 const path = require('path');
+const CategoryChecker = require('./category-checker');
 const fs = require('fs');
 
 class SyncEngine {
@@ -13,6 +14,7 @@ class SyncEngine {
         this.db = services.db;
         this.processor = services.processor;
         this.state = state;
+        this.categoryChecker = new CategoryChecker();
 
         this.analysis = {
             drivePhotos: [],
@@ -142,69 +144,27 @@ class SyncEngine {
         const results = await this.processor.processBatch(downloadedPhotos, 5);
 
         // Adicionar informações necessárias para upload
-        return results.map(result => ({
+        const processedPhotos = results.map(result => ({
             number: this.extractPhotoNumber(result.fileName),
             fileName: result.fileName,
             path: path.dirname(result.relativePath),
-            // ===== MUDANÇA CRÍTICA AQUI - LINHA 272-274 =====
-            // ANTES ERA: category: path.dirname(result.relativePath).split(/[/\\]/)[0] || 'uncategorized',
-            // AGORA É:
-            category: path.dirname(result.relativePath) || 'uncategorized',  // USAR O CAMINHO COMPLETO
+            category: path.dirname(result.relativePath) || 'uncategorized',
             processedPath: this.processor.outputDir,
             relativePath: result.relativePath
         }));
-    }
 
-    // Upload para R2
-    async uploadPhotos(processedPhotos) {
-        if (processedPhotos.length === 0) return [];
+        // Verificar e criar categorias novas
+        console.log('\n' + '='.repeat(60));
+        console.log('VERIFICACAO DE CATEGORIAS');
+        console.log('='.repeat(60));
 
-        console.log(`\n  ☁️  Enviando ${processedPhotos.length} fotos para R2 (4 versões cada)...`);
+        const categoriesOk = await this.categoryChecker.checkAndCreateCategories(processedPhotos);
 
-        const results = await this.r2.uploadBatch(
-            processedPhotos,
-            this.processor.outputDir,
-            3
-        );
+        if (!categoriesOk) {
+            throw new Error('Categorias nao criadas - upload abortado');
+        }
 
-        // Filtrar apenas sucessos completos
-        const successful = results.filter(r =>
-            r.versions.every(v => v.success)
-        );
-
-        console.log(`  ✅ ${successful.length} fotos enviadas com sucesso`);
-
-        // Preparar dados para banco
-        return successful.map(result => {
-            const photo = processedPhotos.find(p => p.number === result.photo);
-            const originalVersion = result.versions.find(v => v.type === 'original');
-
-            return {
-                number: result.photo,
-                fileName: photo.fileName,
-                r2Key: originalVersion.key,
-                category: photo.category  // AGORA PASSA A CATEGORIA COMPLETA
-            };
-        });
-    }
-
-    // Processar imagens (gerar 4 versões)
-    async processPhotos(downloadedPhotos) {
-        if (downloadedPhotos.length === 0) return [];
-
-        console.log(`\n  🎨 Gerando 4 versões WebP para ${downloadedPhotos.length} fotos...`);
-
-        const results = await this.processor.processBatch(downloadedPhotos, 5);
-
-        // Adicionar informações necessárias para upload
-        return results.map(result => ({
-            number: this.extractPhotoNumber(result.fileName),
-            fileName: result.fileName,
-            path: path.dirname(result.relativePath),
-            category: path.dirname(result.relativePath).split(/[/\\]/)[0] || 'uncategorized',
-            processedPath: this.processor.outputDir,
-            relativePath: result.relativePath
-        }));
+        return processedPhotos;
     }
 
     // Upload para R2
