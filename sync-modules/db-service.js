@@ -446,7 +446,7 @@ class DatabaseService {
                 } else {
                     // Criar novo
                     await this.createPhotoStatus(photo);
-                    results.push({ number: photoNumber, status: 'created' });
+                    results.push({ number: photoNumber, success: true, action: 'created' });
                 }
             } catch (error) {
                 console.error(`   Erro ao processar ${photo.number}:`, error.message);
