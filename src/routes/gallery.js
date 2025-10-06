@@ -576,13 +576,21 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         // NOVA ABORDAGEM: Buscar direto do MongoDB apenas fotos available
         console.log(`🔍 Buscando fotos available do MongoDB para: ${prefix}`);
 
-        // Preparar busca - incluir próprias reservas
+        // Preparar busca - EXCLUIR Coming Soon
         let searchQuery = {
             $and: [
                 {
                     $or: [
-                        { status: 'available' },
-                        // ADICIONAR: Mostrar fotos reservadas pelo próprio cliente
+                        {
+                            status: 'available',
+                            // ===== NOVO: EXCLUIR COMING SOON =====
+                            $or: [
+                                { transitStatus: 'available' },
+                                { transitStatus: { $exists: false } },
+                                { transitStatus: null }
+                            ]
+                        },
+                        // Mostrar fotos reservadas pelo próprio cliente
                         {
                             status: 'reserved',
                             'reservedBy.clientCode': req.client?.clientCode
