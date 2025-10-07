@@ -85,6 +85,19 @@ class DatabaseService {
         let mysqlConn = null;
 
         try {
+            // ===== NOVO: DETECTAR SE É COMING SOON =====
+            const isComingSoon = photoData.isComingSoon === true;
+            const qbCode = photoData.qbCode || null;
+
+            // Se é Coming Soon, usar os dados já resolvidos
+            let finalCategory = photoData.category || 'uncategorized';
+
+            if (isComingSoon && !finalCategory) {
+                console.log(`   ⚠️ Foto Coming Soon sem category - usando uncategorized`);
+                finalCategory = 'uncategorized';
+            }
+            // ===== FIM DA ADIÇÃO =====
+
             // Extrair e padronizar número da foto
             let photoNumber = photoData.number;
             if (photoNumber.includes('/')) {
@@ -170,14 +183,24 @@ class DatabaseService {
                 }
             }
 
-            // Determinar status MongoDB baseado no CDE
-            const mongoStatus =
-                cdeStatus === 'RETIRADO' ? 'sold' :
-                    cdeStatus === 'PRE-SELECTED' ? 'reserved' :
-                        cdeStatus === 'RESERVED' ? 'unavailable' :
-                            cdeStatus === 'STANDBY' ? 'unavailable' :
-                                cdeStatus === 'INGRESADO' ? 'available' :
-                                    'available'; // default
+            // Determinar status MongoDB
+            let mongoStatus;
+
+            if (isComingSoon) {
+                // Coming Soon não consulta CDE, sempre available inicialmente
+                mongoStatus = 'available';
+                cdeStatus = null; // Coming Soon não tem status CDE ainda
+                idhCode = idhCode || `2001${photoNumber}`;
+            } else {
+                // Fotos normais - baseado no CDE
+                mongoStatus =
+                    cdeStatus === 'RETIRADO' ? 'sold' :
+                        cdeStatus === 'PRE-SELECTED' ? 'reserved' :
+                            cdeStatus === 'RESERVED' ? 'unavailable' :
+                                cdeStatus === 'STANDBY' ? 'unavailable' :
+                                    cdeStatus === 'INGRESADO' ? 'available' :
+                                        'available';
+            }
 
             // Se já existe, apenas atualizar campos seguros
             if (existingPhoto) {
@@ -208,34 +231,41 @@ class DatabaseService {
                 return null;
             }
 
+            // ===== BLOCO MODIFICADO - INÍCIO =====
             const unifiedProduct = new UnifiedProductComplete({
                 // === Identificação principal ===
                 idhCode: idhCode,
                 photoNumber: photoNumber,
                 fileName: photoData.fileName || `${photoNumber}.webp`,
 
-                // === Campos de compatibilidade (importantes!) ===
-                driveFileId: photoData.r2Key || `${photoData.category}/${photoNumber}.webp`,
-                photoId: photoData.r2Key || `${photoData.category}/${photoNumber}.webp`,
+                // === Campos de compatibilidade ===
+                driveFileId: photoData.r2Key || `${finalCategory}/${photoNumber}.webp`,
+                photoId: photoData.r2Key || `${finalCategory}/${photoNumber}.webp`,
 
                 // === Localização ===
                 r2Path: photoData.r2Key,
-                category: (photoData.category || 'uncategorized').replace(/\//g, ' → '),
-                folderPath: photoData.category || 'uncategorized',
+                category: finalCategory.replace(/\//g, ' → '),
+                folderPath: finalCategory,
 
-                // === Todos os campos de status ===
+                // === Status ===
                 status: mongoStatus,
                 currentStatus: mongoStatus,
                 cdeStatus: cdeStatus,
 
-                // === Virtual status (necessário para compatibilidade) ===
+                // ===== CAMPOS COMING SOON (NOVOS) =====
+                transitStatus: isComingSoon ? 'coming_soon' : 'available',
+                cdeTable: isComingSoon ? 'tbetiqueta' : 'tbinventario',
+                isPreOrder: isComingSoon ? false : null,
+                qbItem: qbCode,
+
+                // === Virtual status ===
                 virtualStatus: {
                     status: mongoStatus,
-                    tags: [],
+                    tags: isComingSoon ? ['coming_soon'] : [],
                     lastStatusChange: new Date()
                 },
 
-                // === Preços (serão configurados depois pelo admin) ===
+                // === Preços ===
                 price: 0,
                 basePrice: 0,
                 currentPricing: {
@@ -244,35 +274,41 @@ class DatabaseService {
                     formattedPrice: 'No price'
                 },
 
-                // === Metadados importantes ===
-                lastCDESync: new Date(),
-                syncedFromCDE: true,
+                // === Metadados ===
+                lastCDESync: isComingSoon ? null : new Date(),
+                syncedFromCDE: !isComingSoon,
                 isActive: true,
 
-                // === Localizações para compatibilidade com PhotoStatus ===
+                // === Localizações ===
                 currentLocation: {
                     locationType: 'stock',
-                    currentPath: photoData.r2Key || photoData.category,
+                    currentPath: photoData.r2Key || finalCategory,
                     currentParentId: 'r2',
-                    currentCategory: (photoData.category || 'uncategorized').replace(/\//g, ' → ')
+                    currentCategory: finalCategory.replace(/\//g, ' → ')
                 },
 
                 originalLocation: {
-                    originalPath: photoData.r2Key || photoData.category,
+                    originalPath: photoData.r2Key || finalCategory,
                     originalParentId: 'r2',
-                    originalCategory: (photoData.category || 'uncategorized').replace(/\//g, ' → ')
+                    originalCategory: finalCategory.replace(/\//g, ' → ')
                 },
 
-                // === Metadata adicional ===
+                // === Metadata ===
                 metadata: {
                     fileType: 'webp',
                     quality: 'standard',
-                    tags: [`sync_${new Date().toISOString().split('T')[0]}`]
+                    tags: isComingSoon
+                        ? ['coming_soon', `sync_${new Date().toISOString().split('T')[0]}`]
+                        : [`sync_${new Date().toISOString().split('T')[0]}`]
                 }
             });
 
             await unifiedProduct.save();
-            console.log(`   ✅ Foto ${photoNumber} criada no MongoDB (Status: ${mongoStatus})`);
+
+            const statusMsg = isComingSoon ? '(Coming Soon)' : `(Status: ${mongoStatus})`;
+            console.log(`   ✅ Foto ${photoNumber} criada no MongoDB ${statusMsg}`);
+            // ===== BLOCO MODIFICADO - FIM =====
+
             return unifiedProduct;
 
         } catch (error) {

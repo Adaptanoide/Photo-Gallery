@@ -691,6 +691,19 @@
         await updateModalPriceInfo(photo);
     }
 
+    // ===== NOVA FUNÇÃO 1: Para SALVAR no banco (com barras) =====
+    window.getCurrentCategoryPath = function () {
+        const currentPath = navigationState.currentPath;
+
+        if (currentPath && currentPath.length > 0) {
+            // Retorna o caminho completo com barras "/"
+            return currentPath.map(p => p.name).join('/');
+        }
+
+        return 'Premium Cowhide Selection';
+    }
+
+    // ===== NOVA FUNÇÃO 2: Para EXIBIR visualmente (com setas) =====
     window.getCurrentCategoryDisplayName = function () {
         const currentPath = navigationState.currentPath;
 
@@ -698,7 +711,7 @@
             if (currentPath.length > 1) {
                 const mainCategory = currentPath[0].name;
                 const subCategory = currentPath[currentPath.length - 1].name;
-                return `${mainCategory} › ${subCategory}`;
+                return `${mainCategory} › ${subCategory}`;  // ✅ Seta apenas para exibição
             } else {
                 return currentPath[0].name;
             }
@@ -1271,7 +1284,7 @@
                     driveFileId: photoId,
                     photoUrl: photo.url,
                     thumbnailUrl: photo.thumbnailUrl,
-                    category: getCurrentCategoryDisplayName(),
+                    category: getCurrentCategoryPath(),  // ✅ Usar path com "/" para salvar
                     price: price,
                     formattedPrice: formattedPrice,
                     photoNumber: photo.photoNumber || photoId.split('.')[0]
@@ -1420,6 +1433,33 @@
             toggleBtn.style.display = 'block';
         }
     });
+
+    // ===== GALLERY MODE SELECTION =====
+    window.selectGalleryMode = function (mode) {
+        console.log(`📍 Modo de galeria selecionado: ${mode}`);
+
+        // Salvar modo no localStorage
+        localStorage.setItem('galleryMode', mode);
+
+        // Esconder selector e mostrar galeria normal
+        document.getElementById('gallerySelector').style.display = 'none';
+        document.getElementById('clientContent').style.display = 'block';
+
+        // Carregar dados baseado no modo
+        if (mode === 'coming-soon') {
+            window.navigationState.isComingSoon = true;
+            loadComingSoonCategories();
+        } else {
+            window.navigationState.isComingSoon = false;
+            loadClientData();
+        }
+    };
+
+    window.loadComingSoonCategories = async function () {
+        console.log('🚢 Carregando categorias Coming Soon');
+        // Por enquanto, apenas simular
+        showNoContent('Coming Soon', 'This feature is under development');
+    };
 
     // ===== INICIALIZAÇÃO =====
     console.log('📸 client-gallery.js carregado - Módulo de galeria pronto');

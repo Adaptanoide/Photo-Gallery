@@ -63,6 +63,23 @@ const unifiedProductCompleteSchema = new mongoose.Schema({
         index: true
     },
 
+    // ===== NOVOS CAMPOS PARA COMING SOON =====
+    transitStatus: {
+        type: String,
+        enum: ['available', 'coming_soon', null],
+        default: null,
+        index: true
+    },
+    cdeTable: {
+        type: String,
+        enum: ['tbinventario', 'tbetiqueta', null],
+        default: null
+    },
+    isPreOrder: {
+        type: Boolean,
+        default: null
+    },
+
     // ===== LOCALIZAÇÃO ATUAL (PhotoStatus) =====
     currentLocation: {
         locationType: {

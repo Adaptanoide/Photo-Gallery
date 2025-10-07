@@ -1523,11 +1523,15 @@ class AdminSelections {
                 // MANTER DESCRIÇÃO COMPLETA
                 let itemName = group.categoryName;
 
-                // Apenas limpar barras extras e formatar melhor
+                // ✅ CORREÇÃO: Converter setas para barras (sem espaços)
                 itemName = itemName
-                    .replace(/\/$/, '') // Remove barra final se existir
-                    .replace(/\//g, ' / ') // Adiciona espaços nas barras para ficar mais legível
+                    .replace(/[›→>]/g, '/')      // Converter setas para barras
+                    .replace(/\s*\/\s*/g, '/')   // Remover espaços ao redor das barras
+                    .replace(/\/+/g, '/')        // Remover barras duplicadas
+                    .replace(/\/$/, '')          // Remover barra final
                     .trim();
+
+                console.log(`✅ Categoria formatada para CSV: ${itemName}`);
 
                 excelData.push([
                     companyName,                              // Customer

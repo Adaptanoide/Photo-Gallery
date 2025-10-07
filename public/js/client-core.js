@@ -293,11 +293,30 @@ window.loadClientData = async function () {
     const loadingEl = document.getElementById('clientLoading');
     const errorEl = document.getElementById('clientError');
     const contentEl = document.getElementById('clientContent');
+    const selectorEl = document.getElementById('gallerySelector');
+
+    // Verificar se já tem modo salvo
+    const savedMode = localStorage.getItem('galleryMode');
+
+    if (!savedMode) {
+        // Primeira vez - mostrar selector
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        contentEl.style.display = 'none';
+        selectorEl.style.display = 'block';
+
+        // Buscar contagens
+        document.getElementById('availablePhotoCount').textContent = 'Loading...';
+        document.getElementById('comingSoonPhotoCount').textContent = '0 photos';
+
+        return;
+    }
 
     // Mostrar loading
     loadingEl.style.display = 'block';
     errorEl.style.display = 'none';
     contentEl.style.display = 'none';
+    selectorEl.style.display = 'none';
 
     try {
         const savedSession = localStorage.getItem('sunshineSession');
@@ -317,26 +336,17 @@ window.loadClientData = async function () {
             throw new Error(data.message || 'Error loading data');
         }
 
-        // Salvar dados no estado
         navigationState.clientData = data;
         navigationState.allowedCategories = data.allowedCategories;
 
-        // Atualizar interface
         updateClientInterface(data);
         updatePriceFilterVisibility();
         showCategories();
 
-        // Atualizar visibilidade dos filtros baseado nas permissões
         if (window.updateFilterVisibility) {
             await window.updateFilterVisibility();
         }
 
-        // Carregar contagens dos filtros
-        //if (window.loadFilterCounts) {
-        //    await window.loadFilterCounts();
-        //}
-
-        // Mostrar conteúdo
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
 
