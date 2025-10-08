@@ -110,7 +110,6 @@ router.get('/', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
     try {
-        console.log('📊 Carregando estatísticas completas...');
 
         const Selection = require('../models/Selection');
 
@@ -142,8 +141,6 @@ router.get('/stats', async (req, res) => {
 
         const totalSelections = await Selection.countDocuments(baseFilter);
         const pendingSelections = await Selection.countDocuments(pendingFilter);
-
-        console.log(`📊 Total: ${totalSelections}, Pending: ${pendingSelections}`);
 
         // Seleções deste mês
         const startOfMonth = new Date();
@@ -182,8 +179,6 @@ router.get('/stats', async (req, res) => {
         ]);
 
         const soldPhotosCount = soldPhotosResult[0]?.totalItems || 0;
-
-        console.log(`📊 Sold Photos: ${soldPhotosCount}`);
 
         res.json({
             success: true,
@@ -333,7 +328,6 @@ router.post('/:selectionId/approve', async (req, res) => {
             startedAt: new Date()
         };
         await selection.save({ session });
-        console.log('📊 Status atualizado para APPROVING');
 
         // 2. SISTEMA DE TAGS: Marcar fotos como vendidas
         console.log('🏷️ [TAGS] Marcando fotos como vendidas...');
@@ -351,9 +345,6 @@ router.post('/:selectionId/approve', async (req, res) => {
                 $unset: { 'reservedBy': 1 }
             }
         ).session(session);
-
-        console.log(`✅ [TAGS] ${updateResult.modifiedCount} fotos marcadas como SOLD`);
-        console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
 
         // 3. Atualizar seleção para finalized
         selection.status = 'finalized';
@@ -479,7 +470,6 @@ router.post('/:selectionId/cancel', async (req, res) => {
             startedAt: new Date()
         };
         await selection.save({ session });
-        console.log('📊 Status atualizado para CANCELLING');
 
         // 2. Liberar fotos no MongoDB
         console.log('🏷️ [TAGS] Liberando fotos para disponível...');
@@ -504,65 +494,43 @@ router.post('/:selectionId/cancel', async (req, res) => {
             }
         ).session(session);
 
-        console.log(`✅ [TAGS] ${updateResult.modifiedCount} fotos liberadas`);
-
-        // 3. Liberar no CDE (FORA da transação principal para evitar timeout)
+        // 3. Liberar no CDE EM BACKGROUND usando BULK UPDATE
+        console.log('📡 Liberando fotos no CDE em background...');
         const CDEWriter = require('../services/CDEWriter');
-        const cdeResults = [];
-        const failedReleases = [];
 
-        for (const item of selection.items) {
-            const photoMatch = item.fileName?.match(/(\d+)/);
-            if (!photoMatch) continue;
+        // Extrair números das fotos
+        const photoNumbers = selection.items
+            .map(item => item.fileName?.match(/(\d+)/)?.[1])
+            .filter(Boolean);
 
-            const photoNumber = photoMatch[1];
-            let releaseSuccess = false;
-            let attempts = 0;
-            const MAX_ATTEMPTS = 3;
+        console.log(`[CANCEL] 🚀 Liberação BULK de ${photoNumbers.length} fotos agendada em background`);
 
-            while (!releaseSuccess && attempts < MAX_ATTEMPTS) {
-                attempts++;
+        // Processar em background usando BULK UPDATE
+        setImmediate(async () => {
+            console.log(`[CANCEL-BG] Iniciando liberação BULK de ${photoNumbers.length} fotos...`);
 
-                try {
-                    const currentCDEStatus = await CDEWriter.checkStatus(photoNumber);
+            const startTime = Date.now();
 
-                    if (currentCDEStatus?.status === 'INGRESADO') {
-                        console.log(`[CANCEL] ✅ Foto ${photoNumber} já está INGRESADO`);
-                        releaseSuccess = true;
-                        cdeResults.push({ photo: photoNumber, success: true, alreadyFree: true });
-                    } else {
-                        const released = await CDEWriter.markAsAvailable(photoNumber);
+            try {
+                // 1 ÚNICA CHAMADA para TODAS as fotos!
+                const releasedCount = await CDEWriter.bulkMarkAsAvailable(photoNumbers);
 
-                        if (released) {
-                            console.log(`[CANCEL] ✅ Foto ${photoNumber} liberada no CDE`);
-                            releaseSuccess = true;
-                            cdeResults.push({ photo: photoNumber, success: true, attempts });
-                        } else if (attempts < MAX_ATTEMPTS) {
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                        }
-                    }
-                } catch (cdeError) {
-                    console.error(`[CANCEL] Erro ao liberar ${photoNumber}:`, cdeError.message);
-                    if (attempts >= MAX_ATTEMPTS) {
-                        failedReleases.push({
-                            photo: photoNumber,
-                            error: cdeError.message,
-                            attempts
-                        });
-                    }
+                const duration = Date.now() - startTime;
+                const failedCount = photoNumbers.length - releasedCount;
+
+                console.log(`[CANCEL-BG] ✅ Liberação BULK concluída em ${duration}ms`);
+                console.log(`[CANCEL-BG] 📊 Resultado: ${releasedCount}/${photoNumbers.length} sucessos, ${failedCount} falhas`);
+
+                if (failedCount > 0) {
+                    console.log(`[CANCEL-BG] ⚠️ ${failedCount} fotos não foram liberadas (sync vai corrigir automaticamente)`);
                 }
+            } catch (error) {
+                console.error(`[CANCEL-BG] ❌ Erro no bulk release:`, error.message);
+                console.log(`[CANCEL-BG] ℹ️ Sync vai corrigir automaticamente em até 5 minutos`);
             }
+        });
 
-            if (!releaseSuccess) {
-                cdeResults.push({ photo: photoNumber, success: false, attempts });
-                failedReleases.push({ photo: photoNumber, attempts });
-            }
-        }
-
-        const successCount = cdeResults.filter(r => r.success).length;
-        const failedCount = cdeResults.filter(r => !r.success).length;
-
-        console.log(`[CANCEL] CDE: ${successCount}/${selection.items.length} fotos liberadas`);
+        console.log('[CANCEL] ⚡ Admin não precisa esperar - resposta imediata');
 
         // 4. Atualizar seleção para cancelled
         selection.status = 'cancelled';
@@ -583,42 +551,23 @@ router.post('/:selectionId/cancel', async (req, res) => {
             });
         }
 
-        if (failedCount > 0) {
-            selection.movementLog.push({
-                action: 'cde_release_partial',
-                timestamp: new Date(),
-                details: `${failedCount} fotos não liberadas no CDE`,
-                failedPhotos: failedReleases
-            });
-        }
-
         await selection.save({ session });
 
         // COMMIT MANUAL
         await session.commitTransaction();
         console.log(`✅ Seleção ${selectionId} cancelada com sucesso`);
 
-        // Resposta
-        const responseData = {
+        // Resposta simplificada (CDE processa em background)
+        res.json({
             success: true,
             message: 'Seleção cancelada com sucesso',
             selection: {
                 selectionId: selection.selectionId,
-                status: selection.status
+                status: selection.status,
+                totalItems: selection.items.length
             },
-            cdeRelease: {
-                total: selection.items.length,
-                successful: successCount,
-                failed: failedCount
-            }
-        };
-
-        if (failedCount > 0) {
-            responseData.warning = `${failedCount} fotos precisam ser liberadas manualmente no CDE`;
-            responseData.cdeRelease.details = failedReleases;
-        }
-
-        res.json(responseData);
+            info: 'CDE está sendo atualizado em background'
+        });
 
     } catch (error) {
         console.error('❌ Erro ao cancelar seleção:', error);
@@ -687,62 +636,21 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
             });
         }
 
-        console.log(`📋 Seleção encontrada: ${selection.totalItems} items`);
-
-        // 2. Verificar status das fotos no CDE
-        const CDEWriter = require('../services/CDEWriter');
-        const photoNumbers = [];
-        const validItems = [];
-        const ghostItems = [];
-
-        for (const item of selection.items) {
+        // 2. Preparar TODAS as fotos para o carrinho
+        const validItems = selection.items.map(item => {
             const photoMatch = item.fileName?.match(/(\d+)/);
-            if (!photoMatch) continue;
+            const photoNumber = photoMatch ? photoMatch[1].padStart(5, '0') : null;
 
-            const photoNumber = photoMatch[1].padStart(5, '0');
-            photoNumbers.push(photoNumber);
-
-            // Verificar status atual no CDE
-            const cdeStatus = await CDEWriter.checkStatus(photoNumber);
-
-            if (cdeStatus && cdeStatus.status === 'CONFIRMED') {
-                // Foto está OK para reabrir
-                validItems.push({
-                    productId: item.productId,
-                    driveFileId: item.driveFileId,
-                    fileName: item.fileName,
-                    category: item.category,
-                    thumbnailUrl: item.thumbnailUrl,
-                    price: item.price,
-                    photoNumber: photoNumber
-                });
-            } else if (cdeStatus && cdeStatus.status === 'RETIRADO') {
-                // Foto já foi vendida - virar ghost
-                ghostItems.push({ ...item, photoNumber, reason: 'Já vendida' });
-            } else {
-                // Outros estados - considerar válida por enquanto
-                validItems.push({
-                    productId: item.productId,
-                    driveFileId: item.driveFileId,
-                    fileName: item.fileName,
-                    category: item.category,
-                    thumbnailUrl: item.thumbnailUrl,
-                    price: item.price,
-                    photoNumber: photoNumber
-                });
-            }
-        }
-
-        console.log(`✅ Fotos válidas: ${validItems.length}`);
-        console.log(`👻 Ghost items: ${ghostItems.length}`);
-
-        if (validItems.length === 0) {
-            await session.abortTransaction();
-            return res.status(400).json({
-                success: false,
-                message: 'Todas as fotos já foram vendidas. Não é possível reabrir.'
-            });
-        }
+            return {
+                productId: item.productId,
+                driveFileId: item.driveFileId,
+                fileName: item.fileName,
+                category: item.category,
+                thumbnailUrl: item.thumbnailUrl,
+                price: item.price,
+                photoNumber: photoNumber
+            };
+        }).filter(item => item.photoNumber !== null);
 
         // 3. Reativar cliente
         const AccessCode = require('../models/AccessCode');
@@ -750,7 +658,6 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
             { code: selection.clientCode },
             { $set: { isActive: true } }
         ).session(session);
-        console.log(`✅ Cliente ${selection.clientCode} reativado`);
 
         // 4. Criar novo carrinho
         const Cart = require('../models/Cart');
@@ -777,7 +684,6 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
         });
 
         await newCart.save({ session });
-        console.log(`🛒 Novo carrinho criado: ${newSessionId} com ${validItems.length} items`);
 
         // 5. Atualizar produtos no MongoDB
         const productIds = validItems.map(item => item.productId);
@@ -800,45 +706,62 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
                 }
             }
         ).session(session);
-        console.log(`✅ ${productIds.length} produtos atualizados no MongoDB`);
 
-        // 6. Atualizar fotos no CDE: CONFIRMED → PRE-SELECTED
-        let cdeUpdateCount = 0;
-        for (const item of validItems) {
+        // 6. Atualizar CDE em BACKGROUND (BULK)
+        const CDEWriter = require('../services/CDEWriter');
+        const photoNumbers = validItems.map(item => item.photoNumber).filter(Boolean);
+
+        console.log(`[REOPEN] 🚀 Reserva BULK de ${photoNumbers.length} fotos agendada em background`);
+
+        // Processar em background (não bloqueia resposta)
+        setImmediate(async () => {
+            console.log(`[REOPEN-BG] Iniciando reserva BULK de ${photoNumbers.length} fotos...`);
+            const startTime = Date.now();
+
             try {
-                const success = await CDEWriter.markAsReserved(
-                    item.photoNumber,
+                const reservedCount = await CDEWriter.bulkMarkAsReserved(
+                    photoNumbers,
                     selection.clientCode,
                     selection.clientName
                 );
-                if (success) cdeUpdateCount++;
+
+                const duration = Date.now() - startTime;
+                console.log(`[REOPEN-BG] ✅ Reserva BULK concluída em ${duration}ms`);
+                console.log(`[REOPEN-BG] 📊 Resultado: ${reservedCount}/${photoNumbers.length} fotos reservadas no CDE`);
             } catch (error) {
-                console.error(`[CDE] Erro ao marcar ${item.photoNumber}:`, error.message);
+                console.error(`[REOPEN-BG] ❌ Erro no bulk reserve:`, error.message);
+                console.log(`[REOPEN-BG] ℹ️ Sync vai corrigir em até 5 minutos`);
             }
-        }
-        console.log(`[CDE] ✅ ${cdeUpdateCount}/${validItems.length} fotos voltaram para PRE-SELECTED`);
+        });
+
+        console.log('[REOPEN] ⚡ Admin não precisa esperar - resposta imediata');
 
         // 7. Marcar Selection como reopened E ocultar da lista
         selection.reopenedAt = new Date();
         selection.reopenedBy = adminUser || 'admin';
         selection.reopenCount = (selection.reopenCount || 0) + 1;
-        selection.isDeleted = true;  // ✅ ADICIONAR ESTA LINHA - Oculta da lista
-        selection.deletedAt = new Date();  // ✅ ADICIONAR ESTA LINHA
+        selection.isDeleted = true;
+        selection.deletedAt = new Date();
 
-        selection.addMovementLog(
-            'auto_return',
-            `Carrinho reaberto para edição pelo admin ${adminUser || 'admin'}`,
-            true,
-            null,
-            {
+        // Adicionar log manualmente (evita problemas com save)
+        if (!selection.movementLog) {
+            selection.movementLog = [];
+        }
+        selection.movementLog.push({
+            action: 'auto_return',
+            timestamp: new Date(),
+            details: `Carrinho reaberto para edição pelo admin ${adminUser || 'admin'}`,
+            success: true,
+            error: null,
+            metadata: {
                 newSessionId: newSessionId,
-                validItems: validItems.length,
-                ghostItems: ghostItems.length
+                validItems: validItems.length
             }
-        );
+        });
 
+        // SALVAR TUDO DE UMA VEZ
         await selection.save({ session });
-        console.log(`✅ Selection marcada como reopened`);
+        console.log(`✅ Selection marcada como reopened (isDeleted=true)`);
 
         // Commit da transação
         await session.commitTransaction();
@@ -850,12 +773,10 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
             data: {
                 newSessionId: newSessionId,
                 clientCode: selection.clientCode,
-                validItems: validItems.length,
-                ghostItems: ghostItems.length,
-                expiresAt: expiresAt,
-                warning: ghostItems.length > 0 ?
-                    `${ghostItems.length} fotos não puderam ser reabertas (já vendidas)` : null
-            }
+                totalItems: validItems.length,
+                expiresAt: expiresAt
+            },
+            info: 'CDE está sendo atualizado em background'
         });
 
     } catch (error) {
@@ -1139,8 +1060,9 @@ router.post('/:selectionId/remove-items', async (req, res) => {
         const UnifiedProductComplete = require('../models/UnifiedProductComplete');
         const CDEWriter = require('../services/CDEWriter');
         const removedItems = [];
+        const photoNumbersToRelease = [];
 
-        // Processar cada item para remoção
+        // PRIMEIRA PASSADA: Identificar items e preparar dados
         for (const itemToRemove of items) {
             const itemIndex = selection.items.findIndex(item =>
                 item.fileName === itemToRemove.fileName
@@ -1148,38 +1070,67 @@ router.post('/:selectionId/remove-items', async (req, res) => {
 
             if (itemIndex !== -1) {
                 const removedItem = selection.items[itemIndex];
-
-                // Liberar a foto no MongoDB
                 const photoNumber = removedItem.fileName.replace('.webp', '');
-                await UnifiedProductComplete.updateOne(
-                    {
-                        $or: [
-                            { photoNumber: photoNumber },
-                            { fileName: removedItem.fileName }
-                        ]
-                    },
-                    {
-                        $set: {
-                            status: 'available',
-                            cdeStatus: 'INGRESADO'
-                        },
-                        $unset: {
-                            selectionId: '',
-                            reservedBy: '',
-                            soldAt: '',
-                            reservedAt: ''
-                        }
-                    }
-                );
 
-                // Atualizar status no CDE para INGRESADO
-                await CDEWriter.markAsAvailable(photoNumber, removedItem.driveFileId);
+                // Guardar para processar
+                removedItems.push(removedItem);
+                photoNumbersToRelease.push(photoNumber);
 
                 // Remover da seleção
                 selection.items.splice(itemIndex, 1);
-                removedItems.push(removedItem);
             }
         }
+
+        if (removedItems.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nenhum item foi encontrado para remover'
+            });
+        }
+
+        console.log(`🗑️ Removendo ${removedItems.length} items da seleção ${selectionId}`);
+
+        // SEGUNDA PASSADA: Atualizar MongoDB (BULK)
+        await UnifiedProductComplete.updateMany(
+            {
+                $or: removedItems.map(item => ({
+                    fileName: item.fileName
+                }))
+            },
+            {
+                $set: {
+                    status: 'available',
+                    cdeStatus: 'INGRESADO'
+                },
+                $unset: {
+                    selectionId: 1,
+                    reservedBy: 1,
+                    soldAt: 1,
+                    reservedAt: 1
+                }
+            }
+        );
+
+        // TERCEIRA PASSADA: Atualizar CDE em BACKGROUND (BULK)
+        console.log(`[REMOVE] 🚀 Liberação BULK de ${photoNumbersToRelease.length} fotos agendada em background`);
+
+        setImmediate(async () => {
+            console.log(`[REMOVE-BG] Iniciando liberação BULK de ${photoNumbersToRelease.length} fotos...`);
+            const startTime = Date.now();
+
+            try {
+                const releasedCount = await CDEWriter.bulkMarkAsAvailable(photoNumbersToRelease);
+
+                const duration = Date.now() - startTime;
+                console.log(`[REMOVE-BG] ✅ Liberação BULK concluída em ${duration}ms`);
+                console.log(`[REMOVE-BG] 📊 Resultado: ${releasedCount}/${photoNumbersToRelease.length} fotos liberadas no CDE`);
+            } catch (error) {
+                console.error(`[REMOVE-BG] ❌ Erro no bulk release:`, error.message);
+                console.log(`[REMOVE-BG] ℹ️ Sync vai corrigir em até 5 minutos`);
+            }
+        });
+
+        console.log('[REMOVE] ⚡ Admin não precisa esperar - resposta imediata');
 
         // Atualizar totais
         selection.totalItems = selection.items.length;
@@ -1203,6 +1154,7 @@ router.post('/:selectionId/remove-items', async (req, res) => {
                 details: 'Selection cancelled - no items remaining',
                 success: true
             });
+            console.log(`❌ Seleção ${selectionId} cancelada - nenhum item restante`);
         }
 
         await selection.save();
@@ -1211,14 +1163,20 @@ router.post('/:selectionId/remove-items', async (req, res) => {
             success: true,
             message: `${removedItems.length} items removed successfully`,
             data: {
-                updatedSelection: selection,
+                updatedSelection: {
+                    selectionId: selection.selectionId,
+                    status: selection.status,
+                    totalItems: selection.totalItems,
+                    totalValue: selection.totalValue
+                },
                 removedCount: removedItems.length,
                 remainingCount: selection.items.length
-            }
+            },
+            info: 'CDE está sendo atualizado em background'
         });
 
     } catch (error) {
-        console.error('Error removing items:', error);
+        console.error('❌ Error removing items:', error);
         res.status(500).json({
             success: false,
             message: 'Error removing items',

@@ -332,27 +332,47 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`📊 Segunda etapa - selectionUpdateResult: ${JSON.stringify(selectionUpdateResult)}`);
 
-            // VERIFICAÇÃO: Confirmar que o selectionId foi salvo
-            // ========== ATUALIZAR CDE PARA CONFIRMED ==========
-            console.log('📡 Atualizando CDE para CONFIRMED...');
+            // ========== ATUALIZAR CDE EM BACKGROUND (NÃO ESPERAR) ==========
+            console.log('📡 Atualizando CDE em background...');
             const CDEWriter = require('../services/CDEWriter');
 
-            let cdeUpdateCount = 0;
-            for (const product of products) {
-                // Extrair número da foto
-                const photoNumber = product.fileName.match(/\d+/)?.[0];
-                if (photoNumber) {
-                    try {
-                        const success = await CDEWriter.markAsConfirmed(photoNumber, clientCode, clientName);
-                        if (success) cdeUpdateCount++;
-                    } catch (error) {
-                        console.error(`[CDE] Erro ao confirmar ${photoNumber}:`, error.message);
-                        // Continuar com as outras fotos mesmo se uma falhar
-                    }
-                }
-            }
+            // Extrair números das fotos
+            const photoNumbers = products
+                .map(p => p.fileName.match(/\d+/)?.[0])
+                .filter(Boolean);
 
-            console.log(`[CDE] ✅ ${cdeUpdateCount}/${products.length} fotos confirmadas no CDE`);
+            console.log(`[CDE] 🚀 Confirmação de ${photoNumbers.length} fotos agendada em background`);
+
+            // Processar em background usando BULK UPDATE
+            setImmediate(async () => {
+                console.log(`[CDE-BG] Iniciando confirmação BULK de ${photoNumbers.length} fotos...`);
+
+                const startTime = Date.now();
+
+                try {
+                    // 1 ÚNICA CHAMADA para TODAS as fotos!
+                    const confirmedCount = await CDEWriter.bulkMarkAsConfirmed(
+                        photoNumbers,
+                        clientCode,
+                        clientName
+                    );
+
+                    const duration = Date.now() - startTime;
+                    const failedCount = photoNumbers.length - confirmedCount;
+
+                    console.log(`[CDE-BG] ✅ Confirmação BULK concluída em ${duration}ms`);
+                    console.log(`[CDE-BG] 📊 Resultado: ${confirmedCount}/${photoNumbers.length} sucessos, ${failedCount} falhas`);
+
+                    if (failedCount > 0) {
+                        console.log(`[CDE-BG] ⚠️ ${failedCount} fotos não foram confirmadas (sync vai corrigir automaticamente)`);
+                    }
+                } catch (error) {
+                    console.error(`[CDE-BG] ❌ Erro no bulk confirm:`, error.message);
+                    console.log(`[CDE-BG] ℹ️ Sync vai corrigir automaticamente em até 5 minutos`);
+                }
+            });
+
+            console.log('[CDE] ⚡ Cliente não precisa esperar - resposta imediata');
             // ========== FIM DA ATUALIZAÇÃO CDE ==========
 
             const verifyUpdate = await UnifiedProductComplete.findOne(

@@ -826,7 +826,7 @@ class AdminClients {
             let cartBadge = '';
             if (client.cartInfo && client.cartInfo.itemCount > 0) {
                 cartBadge = `
-                    <div class="cart-indicator" title="${client.cartInfo.itemCount} items in cart (temporary - 24h) - Total: $${client.cartInfo.totalValue.toFixed(2)}">
+                    <div class="cart-indicator" title="${client.cartInfo.itemCount} items in cart">
                         <i class="fas fa-clock"></i>
                         <span class="cart-badge-count">${client.cartInfo.itemCount}</span>
                     </div>
@@ -1697,12 +1697,6 @@ class AdminClients {
                             <span class="stat-value">${cart.totalItems}</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-label">Total Value:</span>
-                            <span class="stat-value" style="color: var(--success); font-weight: bold;">
-                                $${cart.totalValue.toFixed(2)}
-                            </span>
-                        </div>
-                        <div class="stat">
                             <span class="stat-label">Last Activity:</span>
                             <span class="stat-value">${this.formatDate(cart.lastActivity)}</span>
                         </div>
@@ -1726,7 +1720,6 @@ class AdminClients {
                                         ${item.category}${item.subcategory ? ' / ' + item.subcategory : ''}
                                     </div>
                                 </div>
-                                <div class="item-price">$${item.price}</div>
                                 <div class="item-status">${statusText}</div>
                             </div>
                         `;
@@ -1871,12 +1864,6 @@ class AdminClients {
                     <span class="stat-value">${cart.totalItems}</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">Total Value:</span>
-                    <span class="stat-value" style="color: var(--success); font-weight: bold;">
-                        $${cart.totalValue.toFixed(2)}
-                    </span>
-                </div>
-                <div class="stat">
                     <span class="stat-label">Last Activity:</span>
                     <span class="stat-value">${this.formatDate(cart.lastActivity)}</span>
                 </div>
@@ -1938,7 +1925,6 @@ class AdminClients {
                             ${item.category}${item.subcategory ? ' / ' + item.subcategory : ''}
                         </div>
                     </div>
-                    <div class="item-price" style="width: 80px; text-align: right; color: #daa520; font-weight: bold;">$${item.price}</div>
                     <div class="item-status" style="width: 150px; text-align: right;">${statusText}</div>
                 </div>
             `;
@@ -2455,7 +2441,15 @@ class AdminClients {
     markSavedCheckboxes() {
         const checkboxes = document.querySelectorAll('.tree-checkbox');
 
-        // IMPORTANTE: Primeiro desmarcar TODOS os checkboxes
+        // ✅ CORREÇÃO: PRIMEIRO LIMPAR TODOS
+        console.log('🧹 Limpando todos os checkboxes antes de marcar...');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            checkbox.indeterminate = false;
+        });
+
+        // Agora marcar apenas os que devem estar marcados
+        console.log(`✅ Marcando ${this.selectedFolders.length} checkboxes salvos...`);
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
         });

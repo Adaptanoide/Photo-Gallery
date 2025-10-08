@@ -131,10 +131,14 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
                 throw new Error('Photo not found');
             }
 
+            // ============================================
+            // 🔴 DESABILITADO: Busca de preço (aceleração)
+            // ============================================
+            /*
             // Buscar preço da categoria
             const currentFolderId = navigationState.currentFolderId;
             let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
-
+        
             if (currentFolderId && window.loadCategoryPrice) {
                 try {
                     priceInfo = await window.loadCategoryPrice(currentFolderId);
@@ -142,6 +146,7 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
                     console.warn('Erro ao buscar preço:', error);
                 }
             }
+            */
 
             // Dados do item
             const itemData = {
@@ -152,11 +157,12 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
                         : window.navigationState?.currentPath?.[0]?.name) || 'Category',
                 thumbnailUrl: ImageUtils.getThumbnailUrl(photo),
                 pathLevels: window.navigationState?.currentPath?.map(p => p.name) || [],
-                fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || '',
-                basePrice: priceInfo.basePrice || 0,
-                price: priceInfo.price,
-                formattedPrice: priceInfo.formattedPrice,
-                hasPrice: priceInfo.hasPrice
+                fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || ''
+                // 🔴 REMOVIDO: Campos de preço
+                // basePrice: priceInfo.basePrice || 0,
+                // price: priceInfo.price,
+                // formattedPrice: priceInfo.formattedPrice,
+                // hasPrice: priceInfo.hasPrice
             };
 
             await CartSystem.addItem(photoId, itemData);
@@ -164,10 +170,10 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
             button.innerHTML = '<span>Remove</span>';
         }
 
-        // Atualizar badge de preço
-        if (window.updateCategoryPriceBadge) {
-            setTimeout(() => window.updateCategoryPriceBadge(), 100);
-        }
+        // 🔴 DESABILITADO: Atualizar badge de preço
+        // if (window.updateCategoryPriceBadge) {
+        //     setTimeout(() => window.updateCategoryPriceBadge(), 100);
+        // }
 
     } catch (error) {
         console.error('Erro ao gerenciar carrinho:', error);

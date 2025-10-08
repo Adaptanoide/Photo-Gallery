@@ -140,16 +140,20 @@ class CartService {
             await product.save();
             console.log(`[CART] Produto reservado`);
 
-            // 8. Atualizar CDE
+            // 8. Atualizar CDE EM BACKGROUND (não esperar)
             const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1];
             if (photoNumber) {
-                try {
-                    await CDEWriter.markAsReserved(photoNumber, clientCode, clientName);
-                    console.log(`[CART] CDE atualizado`);
-                } catch (cdeError) {
-                    console.error(`[CART] Erro no CDE: ${cdeError.message}`);
-                    // Continua mesmo se CDE falhar - o sync corrige depois
-                }
+                // 🚀 EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
+                CDEWriter.markAsReserved(photoNumber, clientCode, clientName)
+                    .then(() => {
+                        console.log(`[CDE] ✅ Foto ${photoNumber} reservada em background`);
+                    })
+                    .catch(cdeError => {
+                        console.error(`[CDE] ⚠️ Erro em background: ${cdeError.message}`);
+                        // Sync vai corrigir depois
+                    });
+
+                console.log(`[CART] CDE será atualizado em background`);
             }
 
             return {
@@ -202,12 +206,21 @@ class CartService {
                 );
                 console.log(`[CART] Produto liberado`);
 
-                // Atualizar CDE - extrair número do NOME DO ARQUIVO, não do path
-                const fileName = driveFileId.split('/').pop(); // Pega última parte do path
+                // 🚀 Atualizar CDE EM BACKGROUND (não esperar)
+                const fileName = driveFileId.split('/').pop();
                 const photoNumber = fileName.match(/(\d+)/)?.[1];
                 if (photoNumber) {
-                    await CDEWriter.markAsAvailable(photoNumber);
-                    console.log(`[CART] CDE atualizado`);
+                    // EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
+                    CDEWriter.markAsAvailable(photoNumber)
+                        .then(() => {
+                            console.log(`[CDE] ✅ Foto ${photoNumber} liberada em background`);
+                        })
+                        .catch(cdeError => {
+                            console.error(`[CDE] ⚠️ Erro ao liberar em background: ${cdeError.message}`);
+                            // Sync vai corrigir depois
+                        });
+
+                    console.log(`[CART] CDE será liberado em background`);
                 }
             } else {
                 // Para ghost items, apenas limpar a reserva local sem mudar status
@@ -351,16 +364,9 @@ class CartService {
         }
     }
 
-    /**
-     * RESUMO DO CARRINHO
-     */
     static async getCartSummary(sessionId) {
         try {
             const cart = await this.getCart(sessionId);
-
-            // ADICIONE ESTE DEBUG
-            if (cart) {
-            }
 
             if (!cart) {
                 return {
@@ -370,8 +376,13 @@ class CartService {
                 };
             }
 
+            // ✅ FILTRAR GHOST ITEMS PARA CONTAGEM
+            const validItems = cart.items.filter(item =>
+                !item.ghostStatus || item.ghostStatus !== 'ghost'
+            );
+
             return {
-                totalItems: cart.totalItems || cart.items.length, // MUDE ESTA LINHA
+                totalItems: validItems.length, // ✅ CORRIGIDO - conta só válidos
                 items: cart.items.map(item => ({
                     driveFileId: item.driveFileId,
                     fileName: item.fileName,
@@ -390,7 +401,7 @@ class CartService {
                     hasPrice: item.hasPrice || false,
                     formattedPrice: item.formattedPrice || ''
                 })),
-                isEmpty: cart.totalItems === 0,
+                isEmpty: validItems.length === 0, // ✅ baseado em items válidos
                 lastActivity: cart.lastActivity
             };
 

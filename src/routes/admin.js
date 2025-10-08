@@ -160,8 +160,6 @@ router.get('/access-codes', async (req, res) => {
         const status = req.query.status || 'all';
         const sortBy = req.query.sortBy || 'recent';
 
-        console.log(`🔍 Page ${page}, Limit ${limit}, SortBy: "${sortBy}"`);
-
         // Calcular skip
         const skip = (page - 1) * limit;
 
@@ -198,14 +196,16 @@ router.get('/access-codes', async (req, res) => {
             ]
         }).select('clientCode items createdAt expiresAt');
 
-        console.log(`🛒 ${activeCarts.length} carrinhos ativos encontrados`);
-
         // Criar mapa de carrinhos
         const cartMap = {};
         const clientsWithCart = new Set();
 
         activeCarts.forEach(cart => {
             const validItems = cart.items.filter(item => {
+                // ✅ Excluir ghost items
+                if (item.ghostStatus === 'ghost') return false;
+
+                // Verificar expiração
                 if (!item.expiresAt) return true;
                 return new Date(item.expiresAt) > now;
             });
@@ -217,7 +217,6 @@ router.get('/access-codes', async (req, res) => {
                     isTemporary: true
                 };
                 clientsWithCart.add(cart.clientCode);
-                console.log(`  Cliente ${cart.clientCode}: ${validItems.length} itens no carrinho`);
             }
         });
 
@@ -291,9 +290,6 @@ router.get('/access-codes', async (req, res) => {
         const totalWithoutCart = await AccessCode.countDocuments(queryWithoutCart);
         const totalCount = totalWithCart + totalWithoutCart;
         const totalPages = Math.ceil(totalCount / limit);
-
-        console.log(`📊 Total: ${totalCount} (${totalWithCart} com carrinho, ${totalWithoutCart} sem)`);
-        console.log(`📄 Página ${page}/${totalPages}, Mostrando ${finalClients.length} clientes`);
 
         // Adicionar info de carrinho em cada código
         const codesWithCart = finalClients.map(code => ({
@@ -814,7 +810,6 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
         const { items } = req.body;
         const PhotoCategory = require('../models/PhotoCategory');
 
-        console.log('🗺️ Mapeando', items.length, 'items');
         const startTime = Date.now();
 
         // Função para normalizar strings (aspas e espaços)
@@ -842,8 +837,6 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
             }
         });
 
-        console.log(`📊 Separados: ${qbCodes.length} QB codes, ${categoryPaths.length} categorias`);
-
         // Buscar AMBOS os tipos
         const allCategories = [];
 
@@ -864,7 +857,6 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
             }).select('qbItem displayName googleDrivePath photoCount');
 
             allCategories.push(...qbCategories);
-            console.log(`✅ Encontradas ${qbCategories.length} categorias por QB`);
         }
 
         // 2. Buscar por paths de categoria (se houver)
@@ -902,20 +894,6 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
             }).select('qbItem displayName googleDrivePath photoCount');
 
             allCategories.push(...pathCategories);
-            console.log(`✅ Encontradas ${pathCategories.length} categorias por path`);
-
-            // LOG ESPECIAL PARA DEBUG
-            if (pathCategories.length < categoryPaths.length) {
-                console.log('⚠️ Algumas categorias não foram encontradas:');
-                categoryPaths.forEach(path => {
-                    const found = pathCategories.some(cat =>
-                        normalizeString(cat.displayName) === normalizeString(path)
-                    );
-                    if (!found) {
-                        console.log(`  - ${path}`);
-                    }
-                });
-            }
         }
 
         // Criar mapa para lookup rápido com strings normalizadas
@@ -933,8 +911,6 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
                 categoryMap.set(cat.qbItem, cat);
             }
         });
-
-        console.log(`📊 Mapa criado com ${categoryMap.size} entradas`);
 
         // Mapear resultados mantendo a ordem original
         const mapped = items.map(item => {
@@ -1095,14 +1071,20 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
 
         // Calculate remaining time and format data
         const now = new Date();
+
+        // ✅ FILTRAR GHOST ITEMS
+        const validItems = cart.items.filter(item =>
+            !item.ghostStatus || item.ghostStatus !== 'ghost'
+        );
+
         const cartData = {
             _id: cart._id,
             clientCode: cart.clientCode,
             clientName: cart.clientName,
             createdAt: cart.createdAt,
             lastActivity: cart.lastActivity,
-            totalItems: cart.items.length,
-            items: cart.items.map(item => {
+            totalItems: validItems.length, // ✅ Conta só válidos
+            items: validItems.map(item => { // ✅ Mapeia só válidos
                 const expiresIn = item.expiresAt ?
                     Math.round((new Date(item.expiresAt) - now) / 1000 / 60) : null;
 
@@ -1119,7 +1101,7 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
                     isExpired: expiresIn !== null && expiresIn <= 0
                 };
             }),
-            totalValue: cart.items.reduce((sum, item) => sum + (item.price || 0), 0)
+            totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0) // ✅ Soma só válidos
         };
 
         console.log(`✅ Cart found: ${cartData.totalItems} items, total value: $${cartData.totalValue}`);

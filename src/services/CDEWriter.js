@@ -134,6 +134,163 @@ class CDEWriter {
     }
 
     /**
+     * BULK CONFIRM - Confirmar múltiplas fotos de uma vez
+     * Muito mais rápido que confirmar uma por uma
+     * 
+     * @param {Array<string>} photoNumbers - Array com números das fotos
+     * @param {string} clientCode - Código do cliente
+     * @param {string} clientName - Nome do cliente
+     * @returns {Promise<number>} - Quantidade de fotos confirmadas
+     */
+    static async bulkMarkAsConfirmed(photoNumbers, clientCode, clientName = 'Client') {
+        let connection = null;
+
+        try {
+            if (!Array.isArray(photoNumbers) || photoNumbers.length === 0) {
+                console.log('[CDE] ⚠️ Bulk confirm: array vazio');
+                return 0;
+            }
+
+            connection = await this.getConnection();
+
+            console.log(`[CDE] 📦 Bulk confirm: ${photoNumbers.length} fotos`);
+
+            // Preparar placeholders para query SQL
+            const placeholders = photoNumbers.map(() => '?').join(',');
+
+            // 1 QUERY para TODAS as fotos!
+            const [result] = await connection.execute(
+                `UPDATE tbinventario 
+             SET AESTADOP = 'CONFIRMED',
+                 RESERVEDUSU = ?,
+                 AFECHA = NOW()
+             WHERE ATIPOETIQUETA IN (${placeholders})
+             AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
+                [`${clientName}-${clientCode}`, ...photoNumbers]
+            );
+
+            const confirmedCount = result.affectedRows;
+            console.log(`[CDE] ✅ Bulk confirm: ${confirmedCount}/${photoNumbers.length} fotos confirmadas`);
+
+            if (confirmedCount < photoNumbers.length) {
+                console.log(`[CDE] ⚠️ ${photoNumbers.length - confirmedCount} fotos não estavam disponíveis para confirmar`);
+            }
+
+            return confirmedCount;
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro no bulk confirm:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * BULK RELEASE - Liberar múltiplas fotos de uma vez
+     * Muito mais rápido que liberar uma por uma
+     * 
+     * @param {Array<string>} photoNumbers - Array com números das fotos
+     * @returns {Promise<number>} - Quantidade de fotos liberadas
+     */
+    static async bulkMarkAsAvailable(photoNumbers) {
+        let connection = null;
+
+        try {
+            if (!Array.isArray(photoNumbers) || photoNumbers.length === 0) {
+                console.log('[CDE] ⚠️ Bulk release: array vazio');
+                return 0;
+            }
+
+            connection = await this.getConnection();
+
+            console.log(`[CDE] 📦 Bulk release: ${photoNumbers.length} fotos`);
+
+            // Preparar placeholders para query SQL
+            const placeholders = photoNumbers.map(() => '?').join(',');
+
+            // 1 QUERY para TODAS as fotos!
+            const [result] = await connection.execute(
+                `UPDATE tbinventario 
+             SET AESTADOP = 'INGRESADO',
+                 RESERVEDUSU = NULL,
+                 AFECHA = NOW()
+             WHERE ATIPOETIQUETA IN (${placeholders})
+             AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
+                photoNumbers
+            );
+
+            const releasedCount = result.affectedRows;
+            console.log(`[CDE] ✅ Bulk release: ${releasedCount}/${photoNumbers.length} fotos liberadas`);
+
+            if (releasedCount < photoNumbers.length) {
+                console.log(`[CDE] ⚠️ ${photoNumbers.length - releasedCount} fotos já estavam liberadas`);
+            }
+
+            return releasedCount;
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro no bulk release:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * BULK RESERVE - Reservar múltiplas fotos de uma vez
+     * Muito mais rápido que reservar uma por uma
+     * 
+     * @param {Array<string>} photoNumbers - Array com números das fotos
+     * @param {string} clientCode - Código do cliente
+     * @param {string} clientName - Nome do cliente
+     * @returns {Promise<number>} - Quantidade de fotos reservadas
+     */
+    static async bulkMarkAsReserved(photoNumbers, clientCode, clientName = 'Client') {
+        let connection = null;
+
+        try {
+            if (!Array.isArray(photoNumbers) || photoNumbers.length === 0) {
+                console.log('[CDE] ⚠️ Bulk reserve: array vazio');
+                return 0;
+            }
+
+            connection = await this.getConnection();
+
+            console.log(`[CDE] 📦 Bulk reserve: ${photoNumbers.length} fotos`);
+
+            // Preparar placeholders para query SQL
+            const placeholders = photoNumbers.map(() => '?').join(',');
+
+            // 1 QUERY para TODAS as fotos!
+            const [result] = await connection.execute(
+                `UPDATE tbinventario 
+             SET AESTADOP = 'PRE-SELECTED',
+                 RESERVEDUSU = ?,
+                 AFECHA = NOW()
+             WHERE ATIPOETIQUETA IN (${placeholders})
+             AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
+                [`${clientName}-${clientCode}`, ...photoNumbers]
+            );
+
+            const reservedCount = result.affectedRows;
+            console.log(`[CDE] ✅ Bulk reserve: ${reservedCount}/${photoNumbers.length} fotos reservadas`);
+
+            if (reservedCount < photoNumbers.length) {
+                console.log(`[CDE] ⚠️ ${photoNumbers.length - reservedCount} fotos não estavam disponíveis para reservar`);
+            }
+
+            return reservedCount;
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro no bulk reserve:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
      * Método alternativo para liberarFoto (compatibilidade)
      */
     static async liberarFoto(photoNumber) {

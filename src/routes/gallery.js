@@ -128,11 +128,8 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             const cached = structureCache.get(cacheKey);
 
             if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
-                console.log(`📦 [CACHE HIT] Cliente ${req.client.clientCode} - ${prefix || '/'}`);
-                console.log(`   ⏱️ Idade do cache: ${Math.round((Date.now() - cached.timestamp) / 1000)}s`);
                 return res.json(cached.data);
             } else {
-                console.log(`🔄 [CACHE MISS] Cliente ${req.client.clientCode} - ${prefix || '/'} - Buscando dados novos`);
             }
         }
 
@@ -158,10 +155,8 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                 });
 
                 if (cached && cached.allowedPaths) {
-                    console.log('📦 Usando cache de permissões (economizando 100+ queries)');
                     allowedPaths = new Set(cached.allowedPaths);
                 } else {
-                    console.log('🔄 Cache não encontrado, calculando permissões...');
                     const startCalc = Date.now();
 
                     // Buscar mapeamento de QB items - OTIMIZADO
@@ -186,8 +181,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         const categories = await PhotoCategory.find({
                             qbItem: { $in: qbItems }
                         });
-
-                        console.log(`📊 Encontradas ${categories.length} categorias para ${qbItems.length} QB items`);
 
                         // Processar paths
                         for (const cat of categories) {
@@ -228,11 +221,7 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         },
                         { upsert: true, new: true }
                     );
-
-                    console.log(`✅ Permissões calculadas e cacheadas em ${Date.now() - startCalc}ms`);
                 }
-
-                console.log(`📊 Total de paths permitidos: ${allowedPaths.size}`);
 
                 // Se estamos no root, filtrar categorias
                 if (!prefix || prefix === '') {
@@ -263,7 +252,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                             data: responseData,
                             timestamp: Date.now()
                         });
-                        console.log(`💾 [CACHE SAVE] Root filtrado - Cliente ${req.client.clientCode} - ${result.folders.length} categorias`);
                     }
 
                     return res.json(responseData);
@@ -281,7 +269,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
 
                 // FILTRAR SUBCATEGORIAS - Também usando cache
                 if (prefix) {
-                    console.log(`🔍 Filtrando subcategorias para: ${prefix}`);
 
                     const allowedSubfolders = new Set();
 
@@ -311,11 +298,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                                 const isInAllowed = allowedSubfolders.has(f.name);
                                 return !startsWithUnderscore && isInAllowed;
                             });
-                        }
-
-                        // Log resumido (opcional - comente se quiser zero logs)
-                        if (process.env.NODE_ENV === 'development') {
-                            console.log(`📊 ${result.folders?.length || 0}/${originalCount} subcategorias permitidas em ${prefix}`);
                         }
 
                         // Verificar se ao invés de pastas, temos fotos direto
@@ -465,8 +447,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
             data: responseData,
             timestamp: Date.now()
         });
-
-        console.log(`💾 [CACHE SAVE] Geral - Cliente ${req.client?.clientCode || 'anônimo'} - ${prefix || '/'} - ${result.folders?.length || 0} pastas`);
 
         res.json(responseData);  // Note que aqui não tem return porque é o fim da função
 
@@ -627,8 +607,6 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         // Buscar apenas fotos disponíveis
         const availablePhotos = await UnifiedProductComplete.find(searchQuery)
             .select('fileName driveFileId photoNumber photoId r2Path status reservedBy');
-
-        console.log(`✅ ${availablePhotos.length} fotos available encontradas`);
 
         // Formatar para compatibilidade
         const filteredPhotos = availablePhotos.map(photo => {

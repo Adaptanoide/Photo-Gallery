@@ -307,7 +307,7 @@ class AdminSelections {
                     </span>
                 </td>
                 <td class="total-value-cell">
-                    <strong>${this.formatCurrency(selection.totalValue)}</strong>
+                    <strong>-</strong>
                 </td>
                 <td class="date-cell">
                     <div class="date-created">${this.formatDate(selection.createdAt)}</div>
@@ -608,7 +608,7 @@ class AdminSelections {
                                         <i class="fas fa-chevron-right toggle-icon"></i>
                                         <span class="category-name">${category}</span>
                                         <span class="category-info">
-                                            ${items.length} items | ${this.formatCurrency(items.reduce((sum, item) => sum + item.price, 0))}
+                                            ${items.length} items
                                             ${selection.qbMap && selection.qbMap[category] ? ` | <strong style="color: #d4af37;">QB: ${selection.qbMap[category]}</strong>` : ''}
                                         </span>
                                     </div>
@@ -627,21 +627,19 @@ class AdminSelections {
                                 ` : ''}
                                 <div class="category-items">
                                     ${items.map((item, index) => `
-                                        <div class="item-row">
-                                            <div style="display: flex; align-items: center; flex: 1;">
-                                                <span class="item-name">${item.fileName}</span>
-                                                ${(selection.status === 'pending' || selection.status === 'finalized') ? `
-                                                    <input type="checkbox" 
-                                                        class="item-checkbox" 
-                                                        data-filename="${item.fileName}"
-                                                        data-price="${item.price}"
+                                    <div class="item-row">
+                                        <div style="display: flex; align-items: center; flex: 1;">
+                                            <span class="item-name">${item.fileName}</span>
+                                            ${(selection.status === 'pending' || selection.status === 'finalized') ? `
+                                                <input type="checkbox" 
+                                                    class="item-checkbox" 
+                                                    data-filename="${item.fileName}"
                                                         data-category="${category}"
                                                         id="item-${selection.selectionId}-${category}-${index}"
                                                         style="margin-left: 10px;">
                                                 ` : ''}
-                                            </div>
-                                            <span class="item-price">${this.formatCurrency(item.price)}</span>
                                         </div>
+                                    </div>
                                     `).join('')}
                                 </div>
                             </div>
@@ -654,14 +652,6 @@ class AdminSelections {
                     <div class="summary-row">
                         <span>Total items:</span>
                         <span>${selection.totalItems || selection.items.length}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Subtotal:</span>
-                        <span>${this.formatCurrency(selection.totalValue)}</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>TOTAL:</span>
-                        <span class="total-value">${this.formatCurrency(selection.totalValue)}</span>
                     </div>
                 </div>
 
@@ -1534,16 +1524,15 @@ class AdminSelections {
                 console.log(`✅ Categoria formatada para CSV: ${itemName}`);
 
                 excelData.push([
-                    companyName,                              // Customer
-                    poNumber,                                  // PO. Number (digitado pelo usuário)
-                    reservedusu,                              // RESERVEDUSU
-                    categoryPhotoNumbers,                      // Photo.Number - AGORA ESPECÍFICO DA CATEGORIA!
-                    group.qbCode,                             // ITEM REQ
-                    itemName,                                  // ITEM NAME (descrição completa)
-                    group.totalQty,                           // ITEM QTY
-                    group.unitPrice.toFixed(2),               // RATE
-                    group.totalAmount.toFixed(2),             // AMOUNT
-                    //this.getStatusText(selection.status)      // ESTADO
+                    companyName,
+                    poNumber,
+                    reservedusu,
+                    categoryPhotoNumbers,
+                    group.qbCode,
+                    itemName,
+                    group.totalQty,
+                    0,  // Unit price zerado
+                    0   // Total amount zerado
                 ]);
 
                 // LOG para debug
@@ -1698,10 +1687,9 @@ class AdminSelections {
 
             if (result.success) {
                 UISystem.showToast('success', `Successfully removed ${itemsToRemove.length} items`);
-                // Recarregar o modal com dados atualizados
-                if (result.data && result.data.updatedSelection) {
-                    this.showSelectionModal(selectionId, result.data.updatedSelection);
-                }
+
+                // Recarregar o modal buscando dados completos
+                await this.viewSelection(selectionId);
 
                 // Recarregar a lista principal
                 await this.loadSelections();

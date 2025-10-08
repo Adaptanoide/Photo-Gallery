@@ -123,77 +123,29 @@ router.get('/test/categories', async (req, res) => {
     }
 });
 
-// Buscar preço por Google Drive ID (para cliente) - VERSÃO CORRIGIDA
+// Buscar preço por Google Drive ID (para cliente) - VERSÃO OTIMIZADA (sem cálculos)
 router.get('/category-price', async (req, res) => {
     try {
         const { googleDriveId, prefix, clientCode } = req.query;
 
-        console.log(`🏷️ Buscando preço para categoria ${googleDriveId || prefix}, cliente: ${clientCode || 'ANÔNIMO'}`);
+        console.log(`🏷️ Buscando categoria ${googleDriveId || prefix} (MODO RÁPIDO - sem preços)`);
         const categoryId = googleDriveId || prefix;
 
-        // ===== NOVO: DETECTAR CLIENTE ESPECIAL =====
+        // 🔴 DESABILITADO: Busca de cliente especial
+        // 🔴 DESABILITADO: Cálculo de preços
+        // 🔴 RETORNAR APENAS INFO BÁSICA DA CATEGORIA
+
+        // Buscar categoria básica
         let category = null;
-        let isSpecialClient = false;
+        const cleanPath = categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId;
 
-        if (clientCode) {
-            // Verificar se cliente tem acesso especial
-            const AccessCode = require('../models/AccessCode');
-            const accessCode = await AccessCode.findOne({ code: clientCode });
-
-            if (accessCode && accessCode.accessType === 'special') {
-                console.log(`🔑 Cliente especial detectado: ${clientCode} - buscando preço customizado`);
-                isSpecialClient = true;
-
-                try {
-                    // Buscar seleção especial
-                    const Selection = require('../models/Selection');
-                    const selection = await Selection.findById(accessCode.specialSelection.selectionId);
-
-                    if (selection) {
-                        // Buscar categoria customizada pelo googleDriveFolderId
-                        const customCategory = selection.customCategories.find(
-                            cat => cat.googleDriveFolderId === googleDriveId
-                        );
-
-                        if (customCategory) {
-                            // Converter categoria customizada para formato compatível
-                            category = {
-                                _id: customCategory.categoryId,
-                                displayName: customCategory.categoryDisplayName || customCategory.categoryName,
-                                basePrice: customCategory.baseCategoryPrice || 0,
-                                getPriceForClient: () => customCategory.baseCategoryPrice || 0, // Método mock
-                                isCustomCategory: true,
-                                selectionId: selection.selectionId
-                            };
-
-                            console.log(`✅ Categoria especial encontrada: ${category.displayName} - Preço: $${category.basePrice}`);
-                        } else {
-                            console.log(`❌ Categoria customizada não encontrada: ${googleDriveId}`);
-                        }
-                    } else {
-                        console.log(`❌ Seleção especial não encontrada: ${accessCode.specialSelection.selectionId}`);
-                    }
-                } catch (error) {
-                    console.error('❌ Erro ao buscar categoria especial:', error);
-                }
-            }
-        }
-
-        // Se não é cliente especial ou não encontrou categoria especial, buscar categoria normal
-        if (!category) {
-            console.log(`🔍 Buscando categoria normal: ${categoryId}`);
-            // Remover barra final se existir
-            const cleanPath = categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId;
-
-            // Buscar por folderName ou displayName
-            category = await PhotoCategory.findOne({
-                $or: [
-                    { folderName: cleanPath.split('/').pop() },  // Último segmento do path
-                    { displayName: { $regex: ` → ${cleanPath.split('/').pop().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
-                    { googleDrivePath: cleanPath }
-                ]
-            });
-        }
+        category = await PhotoCategory.findOne({
+            $or: [
+                { folderName: cleanPath.split('/').pop() },
+                { displayName: { $regex: ` → ${cleanPath.split('/').pop().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
+                { googleDrivePath: cleanPath }
+            ]
+        });
 
         if (!category) {
             console.log(`❌ Categoria não encontrada: ${googleDriveId}`);
@@ -203,63 +155,19 @@ router.get('/category-price', async (req, res) => {
             });
         }
 
-        // ===== CORREÇÃO: CALCULAR PREÇO FINAL =====
-
-        let finalPrice = 0;
-        let priceSource = 'base';
-        let hierarchy = null;
-
-        // Se é categoria especial, usar preço customizado diretamente
-        if (category.isCustomCategory) {
-            finalPrice = category.basePrice; // Preço customizado já está em basePrice
-            priceSource = 'special_selection';
-            hierarchy = 'Custom price from special selection';
-
-            console.log(`💰 Usando preço customizado: $${finalPrice} (fonte: special_selection)`);
-        } else {
-            // Lógica normal para categorias regulares
-            finalPrice = category.basePrice;
-            priceSource = 'base';
-
-            if (clientCode) {
-                try {
-                    const priceResult = await category.getPriceForClient(clientCode);
-                    finalPrice = priceResult.finalPrice;
-                    priceSource = priceResult.appliedRule;
-                    hierarchy = PricingService.getHierarchyExplanation(priceResult.appliedRule);
-                } catch (error) {
-                    console.log(`⚠️ Erro ao calcular preço hierárquico, usando base: ${error.message}`);
-                }
-            }
-        }
-
+        // RETORNAR INFO BÁSICA SEM CALCULAR PREÇOS
         const priceInfo = {
             _id: category._id,
             displayName: category.displayName,
-            basePrice: category.basePrice,
-            finalPrice: finalPrice,
-            priceSource: priceSource,
-            hierarchy: hierarchy,
-            formattedPrice: finalPrice > 0 ? `$${finalPrice.toFixed(2)}` : 'No price',
-            hasPrice: finalPrice > 0
+            basePrice: 0,  // 🔴 SEMPRE 0
+            finalPrice: 0,  // 🔴 SEMPRE 0
+            priceSource: 'disabled',
+            hierarchy: null,
+            formattedPrice: '',  // 🔴 VAZIO
+            hasPrice: false  // 🔴 SEMPRE FALSE
         };
 
-        console.log(`✅ Preço calculado:`, {
-            categoria: category.displayName,
-            cliente: clientCode || 'ANÔNIMO',
-            precoBase: category.basePrice,
-            precoFinal: finalPrice,
-            fonte: priceSource,
-            isSpecial: category.isCustomCategory || false
-        });
-
-        console.log(`✅ Preço calculado:`, {
-            categoria: category.displayName,
-            cliente: clientCode,
-            precoBase: category.basePrice,
-            precoFinal: finalPrice,
-            fonte: priceSource
-        });
+        console.log(`✅ Categoria encontrada: ${category.displayName}`);
 
         res.json({
             success: true,
@@ -274,7 +182,6 @@ router.get('/category-price', async (req, res) => {
         });
     }
 });
-
 
 // Buscar faixas de desconto aplicáveis para uma categoria
 router.get('/category-ranges', async (req, res) => {

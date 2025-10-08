@@ -194,8 +194,11 @@ cartSchema.statics.cleanupExpiredCarts = async function () {
 
 // ===== MIDDLEWARE PRE-SAVE =====
 cartSchema.pre('save', function (next) {
-    // Atualizar contadores automaticamente
-    this.totalItems = this.items.length;
+    // Atualizar contadores - EXCLUIR GHOSTS
+    const validItems = this.items.filter(item =>
+        !item.ghostStatus || item.ghostStatus !== 'ghost'
+    );
+    this.totalItems = validItems.length;
     this.lastActivity = new Date();
     next();
 });
