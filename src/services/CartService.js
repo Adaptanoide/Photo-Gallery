@@ -41,11 +41,12 @@ class CartService {
         try {
             console.log(`[CART] Adicionando ${driveFileId} ao carrinho ${clientCode} - VERSÃO SIMPLIFICADA`);
 
-            // 🆕 BUSCAR SALES REP DO CLIENTE LOGO NO INÍCIO
-            console.log(`[CART] 🔍 Buscando Sales Rep para cliente ${clientCode}...`);
+            // 🆕 BUSCAR ACCESSCODE UMA ÚNICA VEZ E PEGAR TUDO
+            console.log(`[CART] 🔍 Buscando configurações do cliente ${clientCode}...`);
             const accessCode = await AccessCode.findOne({ code: clientCode });
             const salesRep = accessCode?.salesRep || 'Unassigned';
-            console.log(`[CART] 👤 Sales Rep encontrado: ${salesRep}`);
+            const ttlHours = accessCode?.cartSettings?.ttlHours || 24; // 🆕 JÁ PEGA AQUI!
+            console.log(`[CART] 👤 Sales Rep: ${salesRep} | TTL: ${ttlHours}h`);
 
             // 1. Buscar ou criar produto
             let product = await UnifiedProductComplete.findOne({ driveFileId });
@@ -91,13 +92,10 @@ class CartService {
                 throw new Error('Item já está no carrinho');
             }
 
-            // 5. Configurar expiração
-            const clientConfig = await AccessCode.findOne({ code: clientCode });
-            const ttlHours = clientConfig?.cartSettings?.ttlHours || 24;
+            // 5. 🆕 USAR TTL JÁ BUSCADO (não buscar novamente!)
             const expiresAt = new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
 
             // ===== PROTEÇÃO CONTRA DUPLICATAS =====
-            // Verificar se este item já está no carrinho
             const itemExistente = cart.items.find(item =>
                 item.fileName === product.fileName ||
                 item.driveFileId === product.driveFileId
@@ -105,13 +103,19 @@ class CartService {
 
             if (itemExistente) {
                 console.log(`[CART] ⚠️ Duplicata detectada: ${product.fileName} já está no carrinho`);
+
+                // 🆕 RETORNAR DADOS SIMPLES (sem buscar novamente!)
                 return {
                     success: true,
                     message: 'Item já está no carrinho',
                     cartId: cart._id,
                     itemCount: cart.items.length,
                     isDuplicate: true,
-                    cart: cart
+                    // 🆕 DADOS DIRETOS (sem query extra!)
+                    cart: {
+                        totalItems: cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost').length,
+                        isEmpty: false
+                    }
                 };
             }
             // ===== FIM DA PROTEÇÃO =====
@@ -149,7 +153,6 @@ class CartService {
             const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1];
             if (photoNumber) {
                 // 🚀 EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
-                // 🆕 AGORA PASSA SALES REP COMO 4º PARÂMETRO
                 CDEWriter.markAsReserved(photoNumber, clientCode, clientName, salesRep)
                     .then(() => {
                         console.log(`[CDE] ✅ Foto ${photoNumber} reservada em background para ${clientName}(${salesRep})`);
@@ -162,10 +165,29 @@ class CartService {
                 console.log(`[CART] CDE será atualizado em background com Sales Rep: ${salesRep}`);
             }
 
+            // 9. 🆕 RETORNAR DADOS DIRETOS (sem getCartSummary!)
+            const validItems = cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+
             return {
                 success: true,
                 message: 'Item adicionado ao carrinho',
-                cart: await this.getCartSummary(sessionId),
+                // 🆕 DADOS CALCULADOS DIRETO (sem query extra!)
+                cart: {
+                    totalItems: validItems.length,
+                    items: cart.items.map(item => ({
+                        driveFileId: item.driveFileId,
+                        fileName: item.fileName,
+                        category: item.category,
+                        thumbnailUrl: item.thumbnailUrl,
+                        price: item.price,
+                        basePrice: item.basePrice,
+                        expiresAt: item.expiresAt,
+                        timeRemaining: Math.max(0, Math.floor((new Date(item.expiresAt) - new Date()) / 1000)),
+                        ghostStatus: item.ghostStatus || null
+                    })),
+                    isEmpty: validItems.length === 0,
+                    lastActivity: cart.lastActivity
+                },
                 expiresAt,
                 timeRemaining: ttlHours * 3600
             };
