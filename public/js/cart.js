@@ -239,24 +239,30 @@ window.CartSystem = {
                 throw new Error(result.message || 'Error adding item');
             }
 
-            // Atualizar estado local
-            await this.loadCart();
-            const t6 = performance.now();
-            console.log(`⏱️ [6] loadCart: ${(t6 - t5).toFixed(0)}ms`);
+            // 🆕 USAR DADOS DA RESPOSTA AO INVÉS DE BUSCAR NOVAMENTE!
+            if (result.success && result.cart) {
+                // Atualizar estado local com dados recebidos
+                this.state.items = result.cart.items || [];
+                this.state.totalItems = result.cart.totalItems || 0;
 
-            // 🔴 DESABILITADO: Atualizar badge de preço
-            /*
-            if (window.updateCategoryPriceBadge) {
-                setTimeout(() => window.updateCategoryPriceBadge(), 100);
+                console.log(`✅ [6] Estado atualizado localmente - ${this.state.totalItems} itens`);
+
+                // Atualizar UI
+                this.updateUI();
+
+                // Iniciar timers para novos itens
+                this.startTimers();
+            } else {
+                // Fallback: se resposta não tem cart, buscar do servidor
+                console.warn('⚠️ Resposta sem dados do cart, fazendo fallback...');
+                await this.loadCart();
             }
-            
-            if (window.updateModalPriceBadge) {
-                setTimeout(() => window.updateModalPriceBadge(), 150);
-            }
-            */
+
+            const t6 = performance.now();
+            console.log(`⏱️ [6] updateState: ${(t6 - t5).toFixed(0)}ms`);
 
             // Feedback visual
-            setTimeout(() => this.updateToggleButton(), 300);
+            setTimeout(() => this.updateToggleButton(), 100);
             const t7 = performance.now();
             console.log(`⏱️ [7] updateButton: ${(t7 - t6).toFixed(0)}ms`);
 
@@ -1859,15 +1865,15 @@ async function generateOrderSummary() {
 
     Object.keys(categories).forEach((category, index) => {
         const allCategoryItems = categories[category];
-        
+
         // ✅ FILTRAR GHOST ITEMS DA CATEGORIA
         const categoryItems = allCategoryItems.filter(item =>
             !item.ghostStatus || item.ghostStatus !== 'ghost'
         );
-        
+
         // Se todos eram ghosts, pular essa categoria
         if (categoryItems.length === 0) return;
-        
+
         let categoryTotal = 0;
 
         // Calcular total da categoria usando preços locais
