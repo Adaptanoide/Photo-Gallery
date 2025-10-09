@@ -233,6 +233,13 @@ router.get('/structure', verifyClientToken, async (req, res) => {
 
                     console.log(`📁 Mostrando ${result.folders.length} categorias permitidas`);
 
+                    // 🆕 INVALIDAR CACHE se houver fotos reserved pelo cliente
+                    if (req.client?.clientCode) {
+                        const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
+                        structureCache.delete(cacheKey);
+                        console.log(`🗑️ Cache invalidado para cliente ${req.client.clientCode}`);
+                    }
+
                     // Preparar resposta para cache - categorias do root
                     const responseData = {
                         success: true,
@@ -604,10 +611,19 @@ router.get('/photos', verifyClientToken, async (req, res) => {
             searchQuery.driveFileId = { $regex: escapedPrefix, $options: 'i' };
         }
 
-        // Buscar apenas fotos disponíveis
-        const availablePhotos = await UnifiedProductComplete.find(searchQuery)
-            .select('fileName driveFileId photoNumber photoId r2Path status reservedBy');
+        // 🔍 DEBUG TEMPORÁRIO - REMOVER DEPOIS
+        console.log('🔍 DEBUG - req.client?.clientCode:', req.client?.clientCode);
+        console.log('🔍 DEBUG - searchQuery:', JSON.stringify(searchQuery, null, 2));
 
+        // Buscar apenas fotos disponíveis - COM ORDENAÇÃO
+        const availablePhotos = await UnifiedProductComplete.find(searchQuery)
+            .sort({ fileName: 1 })  // 🆕 ORDENAR por nome do arquivo
+            .select('fileName driveFileId photoNumber photoId r2Path status reservedBy');
+        // 🔍 DEBUG - Ver o que voltou
+        console.log(`🔍 DEBUG - Encontrou ${availablePhotos.length} fotos`);
+        availablePhotos.filter(p => p.status === 'reserved').forEach(p => {
+            console.log(`  📌 Reserved: ${p.fileName} - reservedBy: ${p.reservedBy?.clientCode}`);
+        });
         // Formatar para compatibilidade
         const filteredPhotos = availablePhotos.map(photo => {
             // VERIFICAR SE É RESERVA PRÓPRIA
@@ -640,7 +656,13 @@ router.get('/photos', verifyClientToken, async (req, res) => {
 
         const statusMap = {};
         photoStatuses.forEach(ps => {
-            statusMap[ps.photoId] = ps.status;
+            // 🆕 Se é reserva própria, tratar como available no mapa
+            if (ps.status === 'reserved' &&
+                ps.reservedBy?.clientCode === req.client?.clientCode) {
+                statusMap[ps.photoId] = 'available';  // ← Truque: força available!
+            } else {
+                statusMap[ps.photoId] = ps.status;
+            }
         });
 
         // Processar fotos
@@ -656,7 +678,10 @@ router.get('/photos', verifyClientToken, async (req, res) => {
                 thumbnailLink: photo.thumbnailUrl,
                 size: photo.size,
                 mimeType: photo.mimeType,
-                status: statusMap[photoId] || 'available'  // ADICIONE ESTA LINHA
+                status: statusMap[photoId] || 'available',
+                // ✅ ADICIONAR: Manter flags importantes
+                isOwnReservation: photo.isOwnReservation || false,
+                actualStatus: photo.actualStatus || photo.status
             };
         });
 
@@ -688,20 +713,45 @@ router.get('/photos', verifyClientToken, async (req, res) => {
     }
 });
 
-// Endpoint para verificar mudanças de status
-router.get('/status-updates', async (req, res) => {
+// Endpoint para verificar mudanças de status - COM AUTENTICAÇÃO
+router.get('/status-updates', verifyClientToken, async (req, res) => {
     try {
         const StatusMonitor = require('../services/StatusMonitor');
         const changes = await StatusMonitor.getRecentChanges(1);
 
-        if (changes.length > 0) {
-            console.log(`📊 Status updates: ${changes.length} mudanças detectadas`);
-            changes.forEach(c => {
-                console.log(`  - Foto ${c.id}: ${c.status} (${c.source})`);
+        // 🆕 ENRIQUECER mudanças com informação de própria reserva
+        const enrichedChanges = await Promise.all(changes.map(async change => {
+            // Se é uma foto reservada, verificar se é do próprio cliente
+            if (change.status === 'reserved' && req.client?.clientCode) {
+                // 🔍 BUSCAR foto no banco para pegar o reservedBy
+                const photoStatus = await UnifiedProductComplete.findOne({
+                    photoId: change.id.replace('.webp', '')
+                }).select('reservedBy');
+
+                if (photoStatus?.reservedBy?.clientCode) {
+                    const isOwnReservation = photoStatus.reservedBy.clientCode === req.client.clientCode;
+
+                    return {
+                        ...change,
+                        isOwnReservation: isOwnReservation,
+                        clientCode: photoStatus.reservedBy.clientCode
+                    };
+                }
+            }
+
+            return change;
+        }));
+
+        if (enrichedChanges.length > 0) {
+            console.log(`📊 Status updates: ${enrichedChanges.length} mudanças detectadas`);
+            enrichedChanges.forEach(c => {
+                const ownTag = c.isOwnReservation ? ' (própria reserva)' : '';
+                const sourceTag = c.source ? ` [${c.source}]` : '';
+                console.log(`  - Foto ${c.id}: ${c.status}${ownTag}${sourceTag}`);
             });
         }
 
-        res.json({ success: true, changes });
+        res.json({ success: true, changes: enrichedChanges });
     } catch (error) {
         console.error('Erro ao buscar status updates:', error);
         res.json({ success: false, changes: [] });

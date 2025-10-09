@@ -312,7 +312,8 @@
 }
 
 /* Photo status badges */
-.photo-thumbnail[data-status="reserved"]::after {
+/* ⚠️ IMPORTANTE: Não mostrar overlay para reservas próprias */
+.photo-thumbnail[data-status="reserved"]:not([data-own-reservation="true"])::after {
     content: "UNAVAILABLE";
     position: absolute;
     top: 50%;
@@ -345,7 +346,7 @@
 }
 
 .photo-thumbnail[data-status="sold"] img,
-.photo-thumbnail[data-status="reserved"] img {
+.photo-thumbnail[data-status="reserved"]:not([data-own-reservation="true"]) img {
     opacity: 0.6;
 }
 

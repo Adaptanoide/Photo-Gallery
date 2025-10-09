@@ -1,4 +1,6 @@
 // src/routes/selection.js
+// ✅ VERSÃO ATUALIZADA - Passa Sales Rep para CDEWriter.bulkMarkAsConfirmed
+// MODIFICAÇÃO PRINCIPAL: Linha ~195 - Passar salesRep para bulkMarkAsConfirmed
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -70,8 +72,8 @@ router.post('/finalize', async (req, res) => {
                         { driveFileId: ghost.driveFileId },
                         {
                             $set: {
-                                status: 'unavailable',     // ADICIONAR ESTAS DUAS LINHAS
-                                cdeStatus: 'RESERVED'       // PARA ATUALIZAR O STATUS
+                                status: 'unavailable',
+                                cdeStatus: 'RESERVED'
                             },
                             $unset: {
                                 reservedBy: 1,
@@ -84,7 +86,7 @@ router.post('/finalize', async (req, res) => {
                         }
                     ).session(session);
 
-                    console.log(`  ✓ Ghost item ${ghost.fileName} limpo do MongoDB`);
+                    console.log(`  ✔ Ghost item ${ghost.fileName} limpo do MongoDB`);
                 }
             }
 
@@ -127,8 +129,8 @@ router.post('/finalize', async (req, res) => {
                 throw new Error('Alguns itens do carrinho não estão mais disponíveis');
             }
 
-            // 3. ✅ NOVA ORDEM: Verificar PRIMEIRO se é cliente especial
-            // Buscar informações do cliente (simplificado)
+            // 3. ✅ BUSCAR SALES REP DO CLIENTE
+            console.log(`🔍 Buscando informações do cliente ${clientCode}...`);
             const AccessCode = require('../models/AccessCode');
             const accessCode = await AccessCode.findOne({ code: clientCode }).session(session);
             const salesRep = accessCode?.salesRep || 'Unassigned';
@@ -152,8 +154,6 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Seleção preparada: ${folderResult.folderName}`);
 
-            console.log(`✅ Seleção preparada: ${folderResult.folderName}`);
-
             // 5. Preparar dados dos produtos para movimentação
             const photosToMove = products.map(product => {
                 const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
@@ -172,7 +172,7 @@ router.post('/finalize', async (req, res) => {
             // Extrair IDs das fotos
             const photoIds = photosToMove.map(p => p.driveFileId);
 
-            // Importar PhotoTagService (adicionar no topo do arquivo se necessário)
+            // Importar PhotoTagService
             const PhotoTagService = require('../services/PhotoTagService');
 
             // Gerar ID da seleção (sempre normal)
@@ -181,12 +181,12 @@ router.post('/finalize', async (req, res) => {
             // Usar tags ao invés de mover
             const tagResult = await PhotoTagService.reservePhotos(
                 photoIds,
-                selectionId,  // Agora usa o ID real!
+                selectionId,
                 clientCode
             );
 
             console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como reservadas`);
-            console.log('📁 [TAGS] Nenhuma movimentação física realizada!');
+            console.log('📍 [TAGS] Nenhuma movimentação física realizada!');
 
             // Criar moveResult fake para compatibilidade com código existente
             const moveResult = {
@@ -203,6 +203,7 @@ router.post('/finalize', async (req, res) => {
                     originalHierarchicalPath: p.category
                 }))
             };
+
             // 7. Calcular valor total dos itens
             let totalValue = 0;
             cart.items.forEach(item => {
@@ -230,7 +231,6 @@ router.post('/finalize', async (req, res) => {
                         productId: product._id,
                         driveFileId: product.driveFileId,
                         fileName: product.fileName,
-                        // SEMPRE usar a categoria do PRODUTO que já tem formato correto com setas
                         category: product.category,
                         thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
                         originalPath: product.category,
@@ -264,7 +264,7 @@ router.post('/finalize', async (req, res) => {
                     { code: clientCode },
                     {
                         $set: {
-                            isActive: false  // DESATIVAR!
+                            isActive: false
                         }
                     },
                     {
@@ -281,7 +281,6 @@ router.post('/finalize', async (req, res) => {
                         console.log(`🗑️ Carrinho ${sessionId} deletado após criar seleção`);
                     } catch (deleteError) {
                         console.error('⚠️ Erro ao deletar carrinho (não crítico):', deleteError.message);
-                        // Não é crítico, seleção já foi criada
                     }
                     console.log(`   ➡️ Cliente precisa contatar vendedor para novo acesso`);
                 }
@@ -291,13 +290,8 @@ router.post('/finalize', async (req, res) => {
             }
             // ===== FIM DA DESATIVAÇÃO =====
 
-            // ========== CORREÇÃO DEFINITIVA: ATUALIZAÇÃO EM DUAS ETAPAS ==========
-            // 9. Atualizar status dos produtos (comum para ambos)
+            // 9. Atualizar status dos produtos
             console.log(`🏷️ Marcando ${productIds.length} produtos com selectionId: ${selectionId}`);
-
-            // DEBUG: Verificar se selectionId está definido
-            console.log(`🔍 DEBUG - selectionId antes do update: "${selectionId}"`);
-            console.log(`🔍 DEBUG - Tipo do selectionId: ${typeof selectionId}`);
 
             // PRIMEIRA ETAPA: Atualizar status e campos básicos incluindo cdeStatus
             const updateResult = await UnifiedProductComplete.updateMany(
@@ -305,10 +299,8 @@ router.post('/finalize', async (req, res) => {
                 {
                     $set: {
                         status: 'in_selection',
-                        status: 'in_selection',
                         cdeStatus: 'CONFIRMED',
                         reservedAt: new Date(),
-                        // Campo removido - virtualStatus não existe mais
                     },
                     $unset: { 'cartAddedAt': 1 }
                 }
@@ -317,13 +309,11 @@ router.post('/finalize', async (req, res) => {
             console.log(`📊 Primeira etapa - updateResult: ${JSON.stringify(updateResult)}`);
 
             // SEGUNDA ETAPA: Adicionar selectionId especificamente
-            // Usando uma abordagem diferente para garantir que o campo seja salvo
             const selectionUpdateResult = await UnifiedProductComplete.updateMany(
                 { _id: { $in: productIds } },
                 {
                     $set: {
-                        'selectionId': String(selectionId),  // Forçar string
-                        // Campo removido - virtualStatus não existe mais,
+                        'selectionId': String(selectionId),
                         'reservedBy.inSelection': true,
                         'reservedBy.selectionId': String(selectionId)
                     }
@@ -332,7 +322,7 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`📊 Segunda etapa - selectionUpdateResult: ${JSON.stringify(selectionUpdateResult)}`);
 
-            // ========== ATUALIZAR CDE EM BACKGROUND (NÃO ESPERAR) ==========
+            // ========== 🆕 ATUALIZAR CDE EM BACKGROUND COM SALES REP ==========
             console.log('📡 Atualizando CDE em background...');
             const CDEWriter = require('../services/CDEWriter');
 
@@ -346,15 +336,17 @@ router.post('/finalize', async (req, res) => {
             // Processar em background usando BULK UPDATE
             setImmediate(async () => {
                 console.log(`[CDE-BG] Iniciando confirmação BULK de ${photoNumbers.length} fotos...`);
+                console.log(`[CDE-BG] 👤 Sales Rep: ${salesRep}`);
 
                 const startTime = Date.now();
 
                 try {
-                    // 1 ÚNICA CHAMADA para TODAS as fotos!
+                    // 🆕 AGORA PASSA SALES REP COMO 4º PARÂMETRO!
                     const confirmedCount = await CDEWriter.bulkMarkAsConfirmed(
                         photoNumbers,
                         clientCode,
-                        clientName
+                        clientName,
+                        salesRep  // 🆕 SALES REP ADICIONADO AQUI!
                     );
 
                     const duration = Date.now() - startTime;
@@ -362,6 +354,7 @@ router.post('/finalize', async (req, res) => {
 
                     console.log(`[CDE-BG] ✅ Confirmação BULK concluída em ${duration}ms`);
                     console.log(`[CDE-BG] 📊 Resultado: ${confirmedCount}/${photoNumbers.length} sucessos, ${failedCount} falhas`);
+                    console.log(`[CDE-BG] 👤 RESERVEDUSU atualizado com Sales Rep: ${salesRep}`);
 
                     if (failedCount > 0) {
                         console.log(`[CDE-BG] ⚠️ ${failedCount} fotos não foram confirmadas (sync vai corrigir automaticamente)`);
@@ -388,7 +381,6 @@ router.post('/finalize', async (req, res) => {
             if (!verifyUpdate?.selectionId) {
                 console.error('⚠️ AVISO: selectionId não foi salvo corretamente!');
             }
-            // ========== FIM DA CORREÇÃO ==========
 
             // 11. Enviar email de notificação (em background)
             setImmediate(async () => {

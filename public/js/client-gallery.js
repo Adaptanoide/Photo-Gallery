@@ -33,6 +33,15 @@
         try {
             showPhotosLoading(true);
 
+            // 🆕 GARANTIR que token está na requisição
+            const savedSession = localStorage.getItem('sunshineSession');
+            if (!savedSession) {
+                throw new Error('Session expired - please login again');
+            }
+
+            const session = JSON.parse(savedSession);
+            console.log('🔑 Cliente identificado:', session.accessCode);
+
             // Limpar rate rules ao mudar de categoria
             window.specialSelectionRateRules = null;
             window.specialSelectionBasePrice = null;
@@ -965,8 +974,20 @@
         // Função de verificação extraída para reutilizar
         const checkStatus = async () => {
             try {
-                // PARTE 1: Verificação de status das fotos (código original)
-                const response = await fetch('/api/gallery/status-updates');
+                // 🔐 DECLARAR UMA ÚNICA VEZ NO INÍCIO
+                const savedSession = localStorage.getItem('sunshineSession');
+                const session = savedSession ? JSON.parse(savedSession) : null;
+                const clientCode = session?.accessCode || session?.user?.code;
+
+                // PARTE 1: Verificação de status das fotos
+                const headers = {};
+                if (session?.token) {
+                    headers['Authorization'] = `Bearer ${session.token}`;
+                }
+
+                const response = await fetch('/api/gallery/status-updates', {
+                    headers: headers
+                });
                 const data = await response.json();
 
                 if (data.success && data.changes) {
@@ -975,8 +996,19 @@
                     }
 
                     data.changes.forEach(photo => {
-                        const savedSession = localStorage.getItem('sunshineSession');
-                        const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
+                        // ✅ CORREÇÃO: Ignorar fotos que estão no carrinho do cliente
+                        const photoIdClean = photo.id.replace('.webp', '');
+                        const isInClientCart = window.CartSystem && (
+                            window.CartSystem.isInCart(photo.id) ||
+                            window.CartSystem.isInCart(photoIdClean) ||
+                            window.CartSystem.isInCart(photoIdClean + '.webp')
+                        );
+
+                        if (isInClientCart) {
+                            console.log(`[Polling] Ignorando ${photo.id} - está no carrinho do cliente`);
+                            return;
+                        }
+
                         const currentSessionId = clientCode ? localStorage.getItem(`cartSessionId_${clientCode}`) : null;
 
                         // PRIMEIRO: Encontrar o elemento da foto no DOM
@@ -993,19 +1025,15 @@
                         if (photo.status === 'reserved' && photo.sessionId === currentSessionId) {
                             console.log(`[Polling] Processando própria reserva: ${photo.id}`);
 
-                            // Remover qualquer overlay UNAVAILABLE que possa existir
                             if (photoElement) {
-                                // Remover overlay na galeria
                                 const unavailableOverlay = photoElement.querySelector('.unavailable-overlay');
                                 if (unavailableOverlay) {
                                     unavailableOverlay.remove();
                                 }
 
-                                // Remover classe de unavailable
                                 photoElement.classList.remove('unavailable');
                                 photoElement.removeAttribute('data-status');
 
-                                // Atualizar botão para mostrar "Remove"
                                 const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
                                 if (cartBtn) {
                                     cartBtn.disabled = false;
@@ -1017,7 +1045,6 @@
                                 }
                             }
 
-                            // Também verificar e limpar no modal se estiver aberto
                             const modalContent = document.querySelector('.modal-content');
                             if (modalContent) {
                                 const modalPhotoId = document.getElementById('modalPhoto')?.getAttribute('data-photo-id');
@@ -1029,7 +1056,7 @@
                                 }
                             }
 
-                            return; // Ainda fazemos return, mas depois de limpar tudo
+                            return;
                         }
 
                         // Processar mudanças de status para outras situações
@@ -1042,7 +1069,6 @@
                                     cartBtn.innerHTML = '<span>Sold Out</span>';
                                 }
                             } else if (photo.status === 'reserved') {
-                                // IMPORTANTE: Verificar se NÃO é uma reserva própria antes de marcar como unavailable
                                 if (photo.sessionId !== currentSessionId) {
                                     photoElement.setAttribute('data-status', 'reserved');
                                     const cartBtn = photoElement.querySelector('.thumbnail-cart-btn');
@@ -1071,111 +1097,86 @@
                     }
                 }
 
-                // PARTE 2: NOVA VERIFICAÇÃO DO CARRINHO
-                // Esta é a parte nova que resolve o problema de sincronização
-                const savedSession = localStorage.getItem('sunshineSession');
-                if (savedSession && window.CartSystem) {
-                    const session = JSON.parse(savedSession);
-                    const clientCode = session.accessCode || session.user?.code;
+                // PARTE 2: VERIFICAÇÃO DO CARRINHO
+                if (session && window.CartSystem && clientCode && session.token) {
+                    const cartResponse = await fetch(`/api/cart/status/${clientCode}`, {
+                        headers: {
+                            'Authorization': `Bearer ${session.token}`
+                        }
+                    });
 
-                    if (clientCode && session.token) {
-                        // Buscar estado atual do carrinho no servidor
-                        const cartResponse = await fetch(`/api/cart/status/${clientCode}`, {
-                            headers: {
-                                'Authorization': `Bearer ${session.token}`
-                            }
-                        });
+                    if (cartResponse.ok) {
+                        const serverCart = await cartResponse.json();
 
-                        if (cartResponse.ok) {
-                            const serverCart = await cartResponse.json();
+                        if (window.CartSystem.state) {
+                            const localItems = window.CartSystem.state.items || [];
+                            const serverItems = serverCart.items || [];
+                            const localCount = localItems.length;
+                            const serverCount = serverItems.length;
 
-                            // Comparar com o estado local
-                            if (window.CartSystem.state) {
-                                const localItems = window.CartSystem.state.items || [];
-                                const serverItems = serverCart.items || [];
-                                const localCount = localItems.length;
-                                const serverCount = serverItems.length;
+                            if (localCount !== serverCount) {
+                                console.log(`[Cart Sync] Detectada mudança no carrinho: Local=${localCount}, Server=${serverCount}`);
 
-                                // Se houver diferença, recarregar o carrinho
-                                if (localCount !== serverCount) {
-                                    console.log(`[Cart Sync] Detectada mudança no carrinho: Local=${localCount}, Server=${serverCount}`);
+                                if (window.CartSystem && window.CartSystem.loadCart) {
+                                    console.log('[Cart Sync] Recarregando carrinho do servidor...');
+                                    await window.CartSystem.loadCart();
+                                    await new Promise(resolve => setTimeout(resolve, 100));
 
-                                    // Identificar itens removidos
-                                    const removedItems = localItems.filter(localItem => {
-                                        return !serverItems.some(serverItem =>
-                                            serverItem.fileName === localItem.fileName
-                                        );
-                                    });
+                                    if (window.CartSystem.rebuildCartInterface) {
+                                        console.log('[Cart Sync] Chamando rebuildCartInterface...');
+                                        window.CartSystem.rebuildCartInterface();
+                                    } else {
+                                        console.log('[Cart Sync] Método rebuildCartInterface não encontrado, fazendo atualização manual...');
 
-                                    // Recarregar o carrinho do servidor
-                                    if (window.CartSystem && window.CartSystem.loadCart) {
-                                        console.log('[Cart Sync] Recarregando carrinho do servidor...');
-                                        await window.CartSystem.loadCart();
+                                        const cartBadge = document.querySelector('.cart-badge');
+                                        const headerBadge = document.getElementById('headerCartBadge');
+                                        const cartItemCount = document.getElementById('cartItemCount');
+                                        const cartEmpty = document.getElementById('cartEmpty');
+                                        const cartItems = document.getElementById('cartItems');
+                                        const cartFooter = document.getElementById('cartFooter');
 
-                                        // Aguardar um momento para garantir que o estado foi atualizado
-                                        await new Promise(resolve => setTimeout(resolve, 100));
-
-                                        // Reconstruir completamente a interface
-                                        if (window.CartSystem.rebuildCartInterface) {
-                                            console.log('[Cart Sync] Chamando rebuildCartInterface...');
-                                            window.CartSystem.rebuildCartInterface();
-                                        } else {
-                                            console.log('[Cart Sync] Método rebuildCartInterface não encontrado, fazendo atualização manual...');
-
-                                            // Fallback manual se o método não existir
-                                            const cartBadge = document.querySelector('.cart-badge');
-                                            const headerBadge = document.getElementById('headerCartBadge');
-                                            const cartItemCount = document.getElementById('cartItemCount');
-                                            const cartEmpty = document.getElementById('cartEmpty');
-                                            const cartItems = document.getElementById('cartItems');
-                                            const cartFooter = document.getElementById('cartFooter');
-
-                                            // Atualizar badges
-                                            if (cartBadge) {
-                                                cartBadge.textContent = serverCount;
-                                                cartBadge.style.display = serverCount > 0 ? 'flex' : 'none';
-                                            }
-
-                                            if (headerBadge) {
-                                                headerBadge.textContent = serverCount;
-                                                headerBadge.classList.toggle('hidden', serverCount === 0);
-                                            }
-
-                                            // Se carrinho ficou vazio
-                                            if (serverCount === 0) {
-                                                if (cartItemCount) {
-                                                    cartItemCount.textContent = 'Empty cart';
-                                                }
-
-                                                if (cartItems) {
-                                                    cartItems.innerHTML = '';
-                                                    cartItems.style.display = 'none';
-                                                }
-
-                                                if (cartEmpty) {
-                                                    cartEmpty.style.display = 'block';
-                                                    cartEmpty.innerHTML = `
-                    <div class="empty-cart-message">
-                        <i class="fas fa-shopping-cart"></i>
-                        <p>Your cart is empty</p>
-                        <small>Add leathers to begin your selection</small>
-                    </div>
-                `;
-                                                }
-
-                                                if (cartFooter) {
-                                                    cartFooter.style.display = 'none';
-                                                }
-                                            }
+                                        if (cartBadge) {
+                                            cartBadge.textContent = serverCount;
+                                            cartBadge.style.display = serverCount > 0 ? 'flex' : 'none';
                                         }
 
-                                        // Atualizar botões das thumbnails
-                                        if (window.syncThumbnailButtons) {
-                                            window.syncThumbnailButtons();
+                                        if (headerBadge) {
+                                            headerBadge.textContent = serverCount;
+                                            headerBadge.classList.toggle('hidden', serverCount === 0);
                                         }
 
-                                        console.log('[Cart Sync] Interface atualizada com sucesso');
+                                        if (serverCount === 0) {
+                                            if (cartItemCount) {
+                                                cartItemCount.textContent = 'Empty cart';
+                                            }
+
+                                            if (cartItems) {
+                                                cartItems.innerHTML = '';
+                                                cartItems.style.display = 'none';
+                                            }
+
+                                            if (cartEmpty) {
+                                                cartEmpty.style.display = 'block';
+                                                cartEmpty.innerHTML = `
+                                            <div class="empty-cart-message">
+                                                <i class="fas fa-shopping-cart"></i>
+                                                <p>Your cart is empty</p>
+                                                <small>Add leathers to begin your selection</small>
+                                            </div>
+                                        `;
+                                            }
+
+                                            if (cartFooter) {
+                                                cartFooter.style.display = 'none';
+                                            }
+                                        }
                                     }
+
+                                    if (window.syncThumbnailButtons) {
+                                        window.syncThumbnailButtons();
+                                    }
+
+                                    console.log('[Cart Sync] Interface atualizada com sucesso');
                                 }
                             }
                         }

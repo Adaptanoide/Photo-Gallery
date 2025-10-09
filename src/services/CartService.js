@@ -1,5 +1,6 @@
 // src/services/CartService.js
-// VERSÃO SIMPLIFICADA - Todas operações são síncronas e instantâneas
+// ✅ VERSÃO ATUALIZADA - Busca Sales Rep e passa para CDEWriter
+// MODIFICAÇÃO PRINCIPAL: Linha ~65 - Buscar AccessCode para obter salesRep
 
 const mongoose = require('mongoose');
 const mysql = require('mysql2/promise');
@@ -40,6 +41,12 @@ class CartService {
         try {
             console.log(`[CART] Adicionando ${driveFileId} ao carrinho ${clientCode} - VERSÃO SIMPLIFICADA`);
 
+            // 🆕 BUSCAR SALES REP DO CLIENTE LOGO NO INÍCIO
+            console.log(`[CART] 🔍 Buscando Sales Rep para cliente ${clientCode}...`);
+            const accessCode = await AccessCode.findOne({ code: clientCode });
+            const salesRep = accessCode?.salesRep || 'Unassigned';
+            console.log(`[CART] 👤 Sales Rep encontrado: ${salesRep}`);
+
             // 1. Buscar ou criar produto
             let product = await UnifiedProductComplete.findOne({ driveFileId });
 
@@ -53,7 +60,6 @@ class CartService {
                     fileName: itemData.fileName || 'Produto',
                     category: itemData.category || 'Categoria',
                     status: 'available',
-                    // REMOVIDO: currentStatus: 'available',
                     thumbnailUrl: itemData.thumbnailUrl || null
                 });
                 await product.save();
@@ -130,7 +136,6 @@ class CartService {
 
             // 7. Marcar produto como reservado
             product.status = 'reserved';
-            // REMOVIDO: product.currentStatus = 'reserved';
             product.cdeStatus = 'PRE-SELECTED';
             product.reservedBy = {
                 clientCode,
@@ -140,20 +145,21 @@ class CartService {
             await product.save();
             console.log(`[CART] Produto reservado`);
 
-            // 8. Atualizar CDE EM BACKGROUND (não esperar)
+            // 8. 🆕 Atualizar CDE EM BACKGROUND COM SALES REP
             const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1];
             if (photoNumber) {
                 // 🚀 EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
-                CDEWriter.markAsReserved(photoNumber, clientCode, clientName)
+                // 🆕 AGORA PASSA SALES REP COMO 4º PARÂMETRO
+                CDEWriter.markAsReserved(photoNumber, clientCode, clientName, salesRep)
                     .then(() => {
-                        console.log(`[CDE] ✅ Foto ${photoNumber} reservada em background`);
+                        console.log(`[CDE] ✅ Foto ${photoNumber} reservada em background para ${clientName}(${salesRep})`);
                     })
                     .catch(cdeError => {
                         console.error(`[CDE] ⚠️ Erro em background: ${cdeError.message}`);
                         // Sync vai corrigir depois
                     });
 
-                console.log(`[CART] CDE será atualizado em background`);
+                console.log(`[CART] CDE será atualizado em background com Sales Rep: ${salesRep}`);
             }
 
             return {
@@ -281,7 +287,6 @@ class CartService {
                 {
                     $set: {
                         status: 'available',
-                        // REMOVIDO: currentStatus: 'available',
                         cdeStatus: 'INGRESADO'
                     },
                     $unset: {
@@ -473,7 +478,7 @@ class CartService {
                     item.price = 0;
                     item.hasPrice = false;
                     itemMarked = true;
-                    console.log(`[GHOST] ✓ Item ${fileName} marcado como ghost`);
+                    console.log(`[GHOST] ✔ Item ${fileName} marcado como ghost`);
                 }
                 return item;
             });

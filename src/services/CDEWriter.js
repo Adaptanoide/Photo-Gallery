@@ -1,5 +1,7 @@
 // src/services/CDEWriter.js
-// VERSÃO SIMPLIFICADA - Operações diretas no CDE sem complexidade
+// ✅ VERSÃO ATUALIZADA - Inclui Sales Rep no RESERVEDUSU
+// Formato: CLIENTNAME-CODE(salesrep)
+// Exemplo: DEVELOPING_TESTE-6753(tiago)
 
 const mysql = require('mysql2/promise');
 require('dotenv').config();
@@ -20,16 +22,34 @@ class CDEWriter {
     }
 
     /**
-     * MARCAR COMO PRE-SELECTED (quando adiciona ao carrinho)
-     * Operação síncrona e direta
+     * 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
+     * Formato: CLIENTNAME-CODE(salesrep)
      */
-    static async markAsReserved(photoNumber, clientCode, clientName = 'Client') {
+    static buildReservedusu(clientName, clientCode, salesRep = 'Unassigned') {
+        // Limpar nome do cliente (maiúsculas, sem espaços)
+        const cleanClientName = clientName.toUpperCase().replace(/\s+/g, '_');
+
+        // Limpar salesRep (remover espaços, converter para lowercase)
+        const cleanSalesRep = (salesRep || 'Unassigned').toLowerCase().replace(/\s+/g, '');
+
+        // Construir no formato: CLIENTNAME-CODE(salesrep)
+        return `${cleanClientName}-${clientCode}(${cleanSalesRep})`;
+    }
+
+    /**
+     * MARCAR COMO PRE-SELECTED (quando adiciona ao carrinho)
+     * 🆕 AGORA INCLUI SALES REP
+     */
+    static async markAsReserved(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
         let connection = null;
 
         try {
             connection = await this.getConnection();
 
-            console.log(`[CDE] Reservando foto ${photoNumber} para ${clientCode}`);
+            // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
+            const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
+
+            console.log(`[CDE] Reservando foto ${photoNumber} para ${reservedusu}`);
 
             const [result] = await connection.execute(
                 `UPDATE tbinventario 
@@ -38,11 +58,11 @@ class CDEWriter {
                      AFECHA = NOW()
                  WHERE ATIPOETIQUETA = ?
                  AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
-                [`${clientName}-${clientCode}`, photoNumber]
+                [reservedusu, photoNumber]
             );
 
             if (result.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} reservada com sucesso`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} reservada com sucesso para ${reservedusu}`);
                 return true;
             } else {
                 console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível`);
@@ -97,15 +117,18 @@ class CDEWriter {
 
     /**
      * MARCAR COMO CONFIRMED (quando cliente confirma seleção)
-     * Estado intermediário entre PRE-SELECTED e SOLD
+     * 🆕 AGORA INCLUI SALES REP
      */
-    static async markAsConfirmed(photoNumber, clientCode, clientName = 'Client') {
+    static async markAsConfirmed(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
         let connection = null;
 
         try {
             connection = await this.getConnection();
 
-            console.log(`[CDE] Confirmando foto ${photoNumber} para ${clientCode}`);
+            // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
+            const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
+
+            console.log(`[CDE] Confirmando foto ${photoNumber} para ${reservedusu}`);
 
             const [result] = await connection.execute(
                 `UPDATE tbinventario 
@@ -114,11 +137,11 @@ class CDEWriter {
                      AFECHA = NOW()
                  WHERE ATIPOETIQUETA = ?
                  AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
-                [`${clientName}-${clientCode}`, photoNumber]
+                [reservedusu, photoNumber]
             );
 
             if (result.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} CONFIRMED`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} CONFIRMED para ${reservedusu}`);
                 return true;
             } else {
                 console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível para confirmar`);
@@ -135,14 +158,9 @@ class CDEWriter {
 
     /**
      * BULK CONFIRM - Confirmar múltiplas fotos de uma vez
-     * Muito mais rápido que confirmar uma por uma
-     * 
-     * @param {Array<string>} photoNumbers - Array com números das fotos
-     * @param {string} clientCode - Código do cliente
-     * @param {string} clientName - Nome do cliente
-     * @returns {Promise<number>} - Quantidade de fotos confirmadas
+     * 🆕 AGORA INCLUI SALES REP
      */
-    static async bulkMarkAsConfirmed(photoNumbers, clientCode, clientName = 'Client') {
+    static async bulkMarkAsConfirmed(photoNumbers, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
         let connection = null;
 
         try {
@@ -153,7 +171,10 @@ class CDEWriter {
 
             connection = await this.getConnection();
 
-            console.log(`[CDE] 📦 Bulk confirm: ${photoNumbers.length} fotos`);
+            // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
+            const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
+
+            console.log(`[CDE] 📦 Bulk confirm: ${photoNumbers.length} fotos para ${reservedusu}`);
 
             // Preparar placeholders para query SQL
             const placeholders = photoNumbers.map(() => '?').join(',');
@@ -161,16 +182,16 @@ class CDEWriter {
             // 1 QUERY para TODAS as fotos!
             const [result] = await connection.execute(
                 `UPDATE tbinventario 
-             SET AESTADOP = 'CONFIRMED',
-                 RESERVEDUSU = ?,
-                 AFECHA = NOW()
-             WHERE ATIPOETIQUETA IN (${placeholders})
-             AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
-                [`${clientName}-${clientCode}`, ...photoNumbers]
+                 SET AESTADOP = 'CONFIRMED',
+                     RESERVEDUSU = ?,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA IN (${placeholders})
+                 AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
+                [reservedusu, ...photoNumbers]
             );
 
             const confirmedCount = result.affectedRows;
-            console.log(`[CDE] ✅ Bulk confirm: ${confirmedCount}/${photoNumbers.length} fotos confirmadas`);
+            console.log(`[CDE] ✅ Bulk confirm: ${confirmedCount}/${photoNumbers.length} fotos confirmadas para ${reservedusu}`);
 
             if (confirmedCount < photoNumbers.length) {
                 console.log(`[CDE] ⚠️ ${photoNumbers.length - confirmedCount} fotos não estavam disponíveis para confirmar`);
@@ -189,9 +210,6 @@ class CDEWriter {
     /**
      * BULK RELEASE - Liberar múltiplas fotos de uma vez
      * Muito mais rápido que liberar uma por uma
-     * 
-     * @param {Array<string>} photoNumbers - Array com números das fotos
-     * @returns {Promise<number>} - Quantidade de fotos liberadas
      */
     static async bulkMarkAsAvailable(photoNumbers) {
         let connection = null;
@@ -212,11 +230,11 @@ class CDEWriter {
             // 1 QUERY para TODAS as fotos!
             const [result] = await connection.execute(
                 `UPDATE tbinventario 
-             SET AESTADOP = 'INGRESADO',
-                 RESERVEDUSU = NULL,
-                 AFECHA = NOW()
-             WHERE ATIPOETIQUETA IN (${placeholders})
-             AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
+                 SET AESTADOP = 'INGRESADO',
+                     RESERVEDUSU = NULL,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA IN (${placeholders})
+                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
                 photoNumbers
             );
 
@@ -239,14 +257,9 @@ class CDEWriter {
 
     /**
      * BULK RESERVE - Reservar múltiplas fotos de uma vez
-     * Muito mais rápido que reservar uma por uma
-     * 
-     * @param {Array<string>} photoNumbers - Array com números das fotos
-     * @param {string} clientCode - Código do cliente
-     * @param {string} clientName - Nome do cliente
-     * @returns {Promise<number>} - Quantidade de fotos reservadas
+     * 🆕 AGORA INCLUI SALES REP
      */
-    static async bulkMarkAsReserved(photoNumbers, clientCode, clientName = 'Client') {
+    static async bulkMarkAsReserved(photoNumbers, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
         let connection = null;
 
         try {
@@ -257,7 +270,10 @@ class CDEWriter {
 
             connection = await this.getConnection();
 
-            console.log(`[CDE] 📦 Bulk reserve: ${photoNumbers.length} fotos`);
+            // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
+            const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
+
+            console.log(`[CDE] 📦 Bulk reserve: ${photoNumbers.length} fotos para ${reservedusu}`);
 
             // Preparar placeholders para query SQL
             const placeholders = photoNumbers.map(() => '?').join(',');
@@ -265,16 +281,16 @@ class CDEWriter {
             // 1 QUERY para TODAS as fotos!
             const [result] = await connection.execute(
                 `UPDATE tbinventario 
-             SET AESTADOP = 'PRE-SELECTED',
-                 RESERVEDUSU = ?,
-                 AFECHA = NOW()
-             WHERE ATIPOETIQUETA IN (${placeholders})
-             AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
-                [`${clientName}-${clientCode}`, ...photoNumbers]
+                 SET AESTADOP = 'PRE-SELECTED',
+                     RESERVEDUSU = ?,
+                     AFECHA = NOW()
+                 WHERE ATIPOETIQUETA IN (${placeholders})
+                 AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
+                [reservedusu, ...photoNumbers]
             );
 
             const reservedCount = result.affectedRows;
-            console.log(`[CDE] ✅ Bulk reserve: ${reservedCount}/${photoNumbers.length} fotos reservadas`);
+            console.log(`[CDE] ✅ Bulk reserve: ${reservedCount}/${photoNumbers.length} fotos reservadas para ${reservedusu}`);
 
             if (reservedCount < photoNumbers.length) {
                 console.log(`[CDE] ⚠️ ${photoNumbers.length - reservedCount} fotos não estavam disponíveis para reservar`);

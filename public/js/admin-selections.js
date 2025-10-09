@@ -1458,11 +1458,36 @@ class AdminSelections {
                 console.log('Usando nome do cliente:', companyName);
             }
 
-            // REMOVER O CÓDIGO ANTIGO QUE COLETAVA TODAS AS FOTOS
-            // NÃO fazer mais isso aqui!
+            // 🆕 FUNÇÃO PARA LIMPAR STRINGS PARA CSV/MYSQL (VERSÃO 2.0)
+            const cleanForCSV = (text) => {
+                if (!text) return '';
+
+                return String(text)
+                    // Remover aspas duplas
+                    .replace(/"/g, '')
+                    // Remover aspas simples (se necessário, descomente a linha abaixo)
+                    // .replace(/'/g, '')
+                    // 🆕 REMOVER PONTOS
+                    .replace(/\./g, '')
+                    // Converter setas para barras
+                    .replace(/[►→'>]/g, '/')
+                    // Remover espaços ao redor das barras
+                    .replace(/\s*\/\s*/g, '/')
+                    // Remover barras duplicadas
+                    .replace(/\/+/g, '/')
+                    // Remover barra final
+                    .replace(/\/$/, '')
+                    // Remover caracteres de controle e especiais problemáticos
+                    .replace(/[\x00-\x1F\x7F]/g, '')
+                    // Remover vírgulas (que quebram CSV)
+                    .replace(/,/g, '-')
+                    // Limpar espaços múltiplos
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
 
             // FORMATO CORRETO: NOMECLIENTE-CÓDIGO
-            const clientNameFormatted = selection.clientName.toUpperCase().replace(/\s+/g, '');
+            const clientNameFormatted = cleanForCSV(selection.clientName.toUpperCase().replace(/\s+/g, ''));
             const reservedusu = `${clientNameFormatted}-${selection.clientCode || '0000'}`;
             console.log('RESERVEDUSU será:', reservedusu);
 
@@ -1476,7 +1501,7 @@ class AdminSelections {
                         qbCode: qbCode,
                         categoryName: item.category,
                         items: [],
-                        photoNumbers: [], // NOVO: Array para fotos desta categoria
+                        photoNumbers: [],
                         totalQty: 0,
                         unitPrice: 0,
                         totalAmount: 0
@@ -1488,7 +1513,7 @@ class AdminSelections {
                 const itemPrice = item.price || 0;
                 qbGroups[qbCode].totalAmount += itemPrice;
 
-                // NOVO: Adicionar número da foto APENAS para esta categoria
+                // Adicionar número da foto APENAS para esta categoria
                 const photoNumber = (item.fileName || '').replace(/\.(webp|jpg|jpeg|png)$/i, '');
                 if (photoNumber) {
                     qbGroups[qbCode].photoNumbers.push(photoNumber);
@@ -1502,33 +1527,31 @@ class AdminSelections {
                 }
             });
 
-            // Criar dados da planilha - FORMATO CORRETO COM 10 COLUNAS
+            // Criar dados da planilha - FORMATO LIMPO SEM CARACTERES PROBLEMÁTICOS
             const excelData = [];
 
             // Adicionar linhas com fotos ESPECÍFICAS de cada categoria
             Object.values(qbGroups).forEach(group => {
-                // NOVO: Criar string de fotos APENAS desta categoria
+                // String de fotos APENAS desta categoria
                 const categoryPhotoNumbers = group.photoNumbers.join('-');
 
-                // MANTER DESCRIÇÃO COMPLETA
-                let itemName = group.categoryName;
+                // 🆕 LIMPAR ITEM NAME - REMOVE ASPAS E CARACTERES PROBLEMÁTICOS
+                let itemName = cleanForCSV(group.categoryName);
 
-                // ✅ CORREÇÃO: Converter setas para barras (sem espaços)
-                itemName = itemName
-                    .replace(/[›→>]/g, '/')      // Converter setas para barras
-                    .replace(/\s*\/\s*/g, '/')   // Remover espaços ao redor das barras
-                    .replace(/\/+/g, '/')        // Remover barras duplicadas
-                    .replace(/\/$/, '')          // Remover barra final
-                    .trim();
+                console.log(`✅ Categoria limpa para CSV: ${itemName}`);
 
-                console.log(`✅ Categoria formatada para CSV: ${itemName}`);
+                // 🆕 LIMPAR TAMBÉM O COMPANY NAME E PO NUMBER
+                const cleanCompanyName = cleanForCSV(companyName);
+                const cleanPoNumber = cleanForCSV(poNumber);
+                const cleanReservedusu = cleanForCSV(reservedusu);
+                const cleanQbCode = cleanForCSV(group.qbCode);
 
                 excelData.push([
-                    companyName,
-                    poNumber,
-                    reservedusu,
+                    cleanCompanyName,
+                    cleanPoNumber,
+                    cleanReservedusu,
                     categoryPhotoNumbers,
-                    group.qbCode,
+                    cleanQbCode,
                     itemName,
                     group.totalQty,
                     0,  // Unit price zerado
@@ -1543,7 +1566,7 @@ class AdminSelections {
             const workbook = XLSX.utils.book_new();
             const worksheet = XLSX.utils.aoa_to_sheet(excelData);
 
-            // Configurar larguras - AJUSTADO PARA 10 COLUNAS
+            // Configurar larguras
             worksheet['!cols'] = [
                 { width: 30 },  // Customer
                 { width: 20 },  // PO. Number
@@ -1554,21 +1577,27 @@ class AdminSelections {
                 { width: 12 },  // ITEM QTY
                 { width: 12 },  // RATE
                 { width: 15 }   // AMOUNT
-                // REMOVIDO: width para ESTADO
             ];
 
             // Adicionar sheet e salvar
             XLSX.utils.book_append_sheet(workbook, worksheet, 'CDE_Order');
 
-            // Nome do arquivo - MUDANÇA 1: extensão .csv
-            const fileName = `CDE_${poNumber.replace(/[^a-zA-Z0-9]/g, '_')}_${companyName.replace(/[^a-zA-Z0-9]/g, '')}_${this.formatDateForFileName(selection.createdAt)}.csv`;
+            // Nome do arquivo
+            const cleanFileName = cleanForCSV(`CDE_${poNumber}_${companyName}_${this.formatDateForFileName(selection.createdAt)}`);
+            const fileName = `${cleanFileName}.csv`;
 
-            // MUDANÇA 2: Salvar como CSV
-            XLSX.writeFile(workbook, fileName, { bookType: 'csv' });
+            // 🆕 SALVAR COMO CSV COM CONFIGURAÇÕES CORRETAS PARA MYSQL
+            XLSX.writeFile(workbook, fileName, {
+                bookType: 'csv',
+                FS: ',',  // Field separator
+                RS: '\n'  // Record separator
+            });
 
             console.log(`✅ Excel gerado com PO: ${poNumber}`);
             console.log(`✅ RESERVEDUSU aplicado: ${reservedusu}`);
             console.log(`✅ Total de categorias: ${Object.keys(qbGroups).length}`);
+            console.log(`✅ Arquivo limpo para import MySQL`);
+
             this.showNotification(`Planilha CDE baixada com PO: ${poNumber} | RESERVEDUSU: ${reservedusu}`, 'success');
 
         } catch (error) {
