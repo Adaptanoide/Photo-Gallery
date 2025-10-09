@@ -1341,7 +1341,7 @@
                     isInCart = window.CartSystem.isInCart(fullPath);
                 }
 
-                console.log(`📌 Foto ${photoId}: está no carrinho? ${isInCart}`);
+                //console.log(`📌 Foto ${photoId}: está no carrinho? ${isInCart}`);
 
                 if (isInCart) {
                     cartBtn.classList.add('in-cart');
