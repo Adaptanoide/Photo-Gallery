@@ -611,19 +611,11 @@ router.get('/photos', verifyClientToken, async (req, res) => {
             searchQuery.driveFileId = { $regex: escapedPrefix, $options: 'i' };
         }
 
-        // 🔍 DEBUG TEMPORÁRIO - REMOVER DEPOIS
-        console.log('🔍 DEBUG - req.client?.clientCode:', req.client?.clientCode);
-        console.log('🔍 DEBUG - searchQuery:', JSON.stringify(searchQuery, null, 2));
-
         // Buscar apenas fotos disponíveis - COM ORDENAÇÃO
         const availablePhotos = await UnifiedProductComplete.find(searchQuery)
             .sort({ fileName: 1 })  // 🆕 ORDENAR por nome do arquivo
             .select('fileName driveFileId photoNumber photoId r2Path status reservedBy');
-        // 🔍 DEBUG - Ver o que voltou
-        console.log(`🔍 DEBUG - Encontrou ${availablePhotos.length} fotos`);
-        availablePhotos.filter(p => p.status === 'reserved').forEach(p => {
-            console.log(`  📌 Reserved: ${p.fileName} - reservedBy: ${p.reservedBy?.clientCode}`);
-        });
+
         // Formatar para compatibilidade
         const filteredPhotos = availablePhotos.map(photo => {
             // VERIFICAR SE É RESERVA PRÓPRIA
