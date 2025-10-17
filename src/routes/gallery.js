@@ -123,14 +123,20 @@ router.get('/structure', verifyClientToken, async (req, res) => {
         // ============================================
         // VERIFICAR CACHE INTELIGENTE
         // ============================================
-        if (req.client && req.client.clientCode) {
+        const noCache = req.query.nocache === 'true';
+
+        if (req.client && req.client.clientCode && !noCache) {
             const cacheKey = `${req.client.clientCode}:${prefix || 'root'}`;
             const cached = structureCache.get(cacheKey);
 
             if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+                console.log('📦 Retornando do cache');
                 return res.json(cached.data);
-            } else {
             }
+        }
+
+        if (noCache) {
+            console.log('🚫 Cache desabilitado - buscando direto do R2');
         }
 
         // ========== FILTRAR POR ALLOWED CATEGORIES ==========
@@ -749,5 +755,329 @@ router.get('/status-updates', verifyClientToken, async (req, res) => {
         res.json({ success: false, changes: [] });
     }
 });
+
+// Listar TODAS as categorias (sem filtro de pricing)
+router.get('/categories-all', verifyClientToken, async (req, res) => {
+    try {
+        const PhotoCategory = require('../models/PhotoCategory');
+
+        const categories = await PhotoCategory.find({
+            isActive: true,
+            photoCount: { $gt: 0 }
+        }).select('displayName qbItem photoCount googleDrivePath');
+
+        res.json({
+            success: true,
+            categories: categories.map(c => ({
+                name: c.displayName,
+                qbItem: c.qbItem,
+                photoCount: c.photoCount,
+                id: c.googleDrivePath
+            }))
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
+// ROTAS PARA GALERIA COMING SOON (TRÂNSITO)
+// ============================================
+
+// Contar fotos em trânsito
+router.get('/transit/count', verifyClientToken, async (req, res) => {
+    try {
+        console.log('📊 Contando fotos em trânsito...');
+
+        // Buscar fotos com transitStatus = 'coming_soon'
+        const count = await UnifiedProductComplete.countDocuments({
+            transitStatus: 'coming_soon',
+            cdeTable: 'tbetiqueta'
+        });
+
+        console.log(`✅ Total de fotos em trânsito: ${count}`);
+
+        res.json({
+            success: true,
+            count: count
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao contar fotos em trânsito:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// NOVA ROTA: /transit/structure COM HIERARQUIA
+// ============================================
+// Substitua a rota existente (linha 816-883 do gallery.js) por esta versão
+
+// ============================================
+// VERSÃO SIMPLIFICADA - /transit/structure
+// ============================================
+// Substitua a rota existente no gallery.js (linha ~816) por esta versão
+
+router.get('/transit/structure', verifyClientToken, async (req, res) => {
+    try {
+        const prefix = req.query.prefix || '';
+        console.log(`🚢 Buscando estrutura Coming Soon: ${prefix || 'raiz'}`);
+
+        // 1. Buscar fotos Coming Soon
+        const photos = await UnifiedProductComplete.find({
+            transitStatus: 'coming_soon',
+            cdeTable: 'tbetiqueta'
+        }).select('qbItem photoNumber');
+
+        if (photos.length === 0) {
+            return res.json({
+                success: true,
+                structure: { hasSubfolders: false, folders: [], hasImages: false, totalImages: 0 },
+                isTransit: true
+            });
+        }
+
+        // 2. Buscar categorias completas
+        const PhotoCategory = require('../models/PhotoCategory');
+        const qbItems = [...new Set(photos.map(p => p.qbItem))];
+        const categories = await PhotoCategory.find({
+            qbItem: { $in: qbItems }
+        }).select('qbItem displayName googleDrivePath folderName');
+
+        // 3. Criar mapa qbItem → categoria
+        const categoryMap = new Map();
+        categories.forEach(cat => {
+            if (cat.googleDrivePath) {
+                const photoCount = photos.filter(p => p.qbItem === cat.qbItem).length;
+                categoryMap.set(cat.qbItem, {
+                    qbItem: cat.qbItem,
+                    path: cat.googleDrivePath,
+                    displayName: cat.displayName,
+                    folderName: cat.folderName,
+                    photoCount: photoCount
+                });
+            }
+        });
+
+        // 4. Filtrar por prefix se necessário
+        let relevantCategories = Array.from(categoryMap.values());
+        
+        if (prefix) {
+            // Tem prefix → filtrar categorias que começam com ele
+            relevantCategories = relevantCategories.filter(cat => 
+                cat.path.startsWith(prefix + '/')
+            );
+        }
+
+        console.log(`📊 ${relevantCategories.length} categorias após filtro de prefix`);
+
+        // 5. Agrupar por próximo nível de path
+        const levelMap = new Map();
+        
+        relevantCategories.forEach(cat => {
+            let pathParts = cat.path.split('/').filter(p => p);
+            
+            if (prefix) {
+                // Remover o prefix do path
+                const prefixParts = prefix.split('/').filter(p => p);
+                pathParts = pathParts.slice(prefixParts.length);
+            }
+            
+            if (pathParts.length === 0) return;
+            
+            // Próximo nível
+            const nextLevel = pathParts[0];
+            
+            if (!levelMap.has(nextLevel)) {
+                levelMap.set(nextLevel, {
+                    name: nextLevel,
+                    photoCount: 0,
+                    categories: []
+                });
+            }
+            
+            const level = levelMap.get(nextLevel);
+            level.photoCount += cat.photoCount;
+            level.categories.push(cat);
+        });
+
+        // 6. Criar folders
+        const folders = Array.from(levelMap.values()).map(level => {
+            // Determinar se é categoria final (tem fotos diretas) ou tem subníveis
+            const isFinal = level.categories.length === 1 && 
+                           level.categories[0].path.split('/').filter(p => p).length === 
+                           (prefix ? prefix.split('/').filter(p => p).length + 1 : 1);
+            
+            const fullPath = prefix ? `${prefix}/${level.name}` : level.name;
+            
+            return {
+                name: level.name,
+                id: isFinal ? level.categories[0].qbItem : fullPath,
+                photoCount: level.photoCount,
+                hasSubfolders: !isFinal,
+                thumbnailUrl: null,
+                isTransit: true
+            };
+        });
+
+        console.log(`✅ ${folders.length} folders no nível atual`);
+        folders.forEach(f => {
+            console.log(`   - ${f.name}: ${f.photoCount} fotos (${f.hasSubfolders ? 'tem sub' : 'final'})`);
+        });
+
+        res.json({
+            success: true,
+            structure: {
+                hasSubfolders: folders.length > 0,
+                folders: folders,
+                hasImages: false,
+                totalImages: 0
+            },
+            isTransit: true,
+            currentPrefix: prefix
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar estrutura de trânsito:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// Para buscar subcategorias de uma categoria principal
+// ============================================
+
+router.get('/transit/subcategories', verifyClientToken, async (req, res) => {
+    try {
+        const mainCategory = req.query.category;
+        console.log(`🚢 Buscando subcategorias de: ${mainCategory}`);
+
+        // Buscar todas categorias que começam com este prefixo
+        const PhotoCategory = require('../models/PhotoCategory');
+        const categories = await PhotoCategory.find({
+            googleDrivePath: new RegExp(`^${mainCategory}/`)
+        }).select('qbItem displayName googleDrivePath');
+
+        // Buscar fotos de cada categoria
+        const qbItems = categories.map(c => c.qbItem);
+        const photoCounts = await UnifiedProductComplete.aggregate([
+            {
+                $match: {
+                    transitStatus: 'coming_soon',
+                    cdeTable: 'tbetiqueta',
+                    qbItem: { $in: qbItems }
+                }
+            },
+            {
+                $group: {
+                    _id: '$qbItem',
+                    count: { $sum: 1 },
+                    firstPhoto: { $first: '$driveFileId' }
+                }
+            }
+        ]);
+
+        const countMap = {};
+        photoCounts.forEach(pc => {
+            countMap[pc._id] = {
+                count: pc.count,
+                firstPhoto: pc.firstPhoto
+            };
+        });
+
+        // Montar folders
+        const folders = categories
+            .filter(cat => countMap[cat.qbItem])
+            .map(cat => ({
+                name: cat.displayName,
+                id: cat.qbItem,
+                photoCount: countMap[cat.qbItem].count,
+                thumbnailUrl: `https://images.sunshinecowhides-gallery.com/_thumbnails/${countMap[cat.qbItem].firstPhoto}`
+            }));
+
+        console.log(`✅ ${folders.length} subcategorias encontradas`);
+
+        res.json({
+            success: true,
+            structure: {
+                hasSubfolders: folders.length > 0,
+                folders: folders,
+                hasImages: false,
+                totalImages: 0
+            },
+            isTransit: true
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar subcategorias:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Buscar fotos em trânsito de uma categoria
+router.get('/transit/photos', verifyClientToken, async (req, res) => {
+    try {
+        const qbItem = req.query.qbItem || req.query.prefix;
+        console.log(`🚢 Buscando fotos em trânsito da categoria: ${qbItem}`);
+
+        // Buscar fotos
+        const photos = await UnifiedProductComplete.find({
+            transitStatus: 'coming_soon',
+            cdeTable: 'tbetiqueta',
+            qbItem: qbItem
+        }).sort({ fileName: 1 });
+
+        // Buscar nome da categoria
+        const PhotoCategory = require('../models/PhotoCategory');
+        const category = await PhotoCategory.findOne({ qbItem: qbItem });
+
+        // Formatar fotos
+        const formattedPhotos = photos.map(photo => ({
+            id: photo.driveFileId || photo.photoId,
+            name: photo.fileName,
+            fileName: photo.fileName,
+            webViewLink: `https://images.sunshinecowhides-gallery.com/${photo.driveFileId || photo.photoId}`,
+            thumbnailLink: `https://images.sunshinecowhides-gallery.com/_thumbnails/${photo.driveFileId || photo.photoId}`,
+            size: 0,
+            mimeType: 'image/webp',
+            status: 'coming_soon',
+            transitStatus: 'coming_soon',
+            cdeStatus: photo.cdeStatus
+        }));
+
+        console.log(`✅ ${formattedPhotos.length} fotos encontradas`);
+
+        res.json({
+            success: true,
+            photos: formattedPhotos,
+            folder: {
+                name: category?.displayName || qbItem || 'Coming Soon'
+            },
+            totalPhotos: formattedPhotos.length,
+            isTransit: true
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar fotos em trânsito:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// FIM DAS ROTAS DE COMING SOON
+// ============================================
 
 module.exports = router;

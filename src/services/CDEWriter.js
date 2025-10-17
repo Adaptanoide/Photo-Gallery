@@ -37,37 +37,108 @@ class CDEWriter {
     }
 
     /**
-     * MARCAR COMO PRE-SELECTED (quando adiciona ao carrinho)
-     * 🆕 AGORA INCLUI SALES REP
+     * 🆕 MÉTODO AUXILIAR: Tentar operação em ambas tabelas
+     * Tenta primeiro na tabela indicada, se falhar, tenta na outra
      */
-    static async markAsReserved(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
+    static async tryBothTables(operation, photoNumber, params, preferredTable = 'tbinventario') {
         let connection = null;
 
         try {
             connection = await this.getConnection();
 
-            // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
+            // 1. Tentar na tabela preferida
+            const firstTable = preferredTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
+            const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
+
+            console.log(`[CDE] Tentando ${operation} foto ${photoNumber} em ${firstTable}`);
+
+            // Executar operação na primeira tabela
+            const query = params.query.replace('${tableName}', firstTable);
+            const [result] = await connection.execute(query, params.values);
+
+            if (result.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} ${operation} com sucesso em ${firstTable}`);
+                return { success: true, table: firstTable, rows: result.affectedRows };
+            }
+
+            // 2. Se não achou, tentar na outra tabela
+            console.log(`[CDE] 🔄 Foto não encontrada em ${firstTable}, tentando ${secondTable}...`);
+
+            const query2 = params.query.replace('${tableName}', secondTable);
+            const [result2] = await connection.execute(query2, params.values);
+
+            if (result2.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} ${operation} com sucesso em ${secondTable}`);
+                return { success: true, table: secondTable, rows: result2.affectedRows };
+            }
+
+            // 3. Não encontrou em nenhuma tabela
+            console.log(`[CDE] ⚠️ Foto ${photoNumber} não encontrada em nenhuma tabela`);
+            return { success: false, table: null, rows: 0 };
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro ao ${operation}:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * MARCAR COMO PRE-SELECTED (quando adiciona ao carrinho)
+     * 🆕 AGORA COM FALLBACK AUTOMÁTICO
+     */
+    static async markAsReserved(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned', cdeTable = 'tbinventario') {
+        let connection = null;
+
+        try {
+            connection = await this.getConnection();
             const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
 
-            console.log(`[CDE] Reservando foto ${photoNumber} para ${reservedusu}`);
+            // Determinar ordem de tentativa
+            const firstTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
+            const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
 
-            const [result] = await connection.execute(
-                `UPDATE tbinventario 
-                 SET AESTADOP = 'PRE-SELECTED',
-                     RESERVEDUSU = ?,
-                     AFECHA = NOW()
-                 WHERE ATIPOETIQUETA = ?
-                 AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
+            console.log(`[CDE] Reservando foto ${photoNumber} para ${reservedusu}`);
+            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable}...`);
+
+            // TENTATIVA 1: Tabela preferida
+            const [result1] = await connection.execute(
+                `UPDATE ${firstTable} 
+                SET AESTADOP = 'PRE-SELECTED',
+                    RESERVEDUSU = ?,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP IN ('INGRESADO', 'WAREHOUSE', 'PRE-TRANSITO', 'TRANSITO')`,
                 [reservedusu, photoNumber]
             );
 
-            if (result.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} reservada com sucesso para ${reservedusu}`);
+            if (result1.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} reservada em ${firstTable}`);
                 return true;
-            } else {
-                console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível`);
-                return false;
             }
+
+            // TENTATIVA 2: Fallback automático
+            console.log(`[CDE] 🔄 Não encontrada em ${firstTable}, tentando ${secondTable}...`);
+
+            const [result2] = await connection.execute(
+                `UPDATE ${secondTable} 
+                SET AESTADOP = 'PRE-SELECTED',
+                    RESERVEDUSU = ?,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP IN ('INGRESADO', 'WAREHOUSE', 'PRE-TRANSITO', 'TRANSITO')`,
+                [reservedusu, photoNumber]
+            );
+
+            if (result2.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} reservada em ${secondTable} (fallback)`);
+                return true;
+            }
+
+            // Não encontrou em nenhuma tabela
+            console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível em nenhuma tabela`);
+            return false;
 
         } catch (error) {
             console.error(`[CDE] ❌ Erro ao reservar ${photoNumber}:`, error.message);
@@ -79,33 +150,58 @@ class CDEWriter {
 
     /**
      * MARCAR COMO INGRESADO (quando remove do carrinho ou expira)
-     * Operação síncrona e direta
+     * 🆕 AGORA COM FALLBACK AUTOMÁTICO
      */
-    static async markAsAvailable(photoNumber) {
+    static async markAsAvailable(photoNumber, cdeTable = 'tbinventario') {
         let connection = null;
 
         try {
             connection = await this.getConnection();
 
-            console.log(`[CDE] Liberando foto ${photoNumber}`);
+            // Determinar ordem de tentativa
+            const firstTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
+            const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
 
-            const [result] = await connection.execute(
-                `UPDATE tbinventario 
-                 SET AESTADOP = 'INGRESADO',
-                     RESERVEDUSU = NULL,
-                     AFECHA = NOW()
-                 WHERE ATIPOETIQUETA = ?
-                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
+            console.log(`[CDE] Liberando foto ${photoNumber}`);
+            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable}...`);
+
+            // TENTATIVA 1: Tabela preferida
+            const [result1] = await connection.execute(
+                `UPDATE ${firstTable} 
+                SET AESTADOP = 'INGRESADO',
+                    RESERVEDUSU = NULL,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
                 [photoNumber]
             );
 
-            if (result.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} liberada com sucesso`);
+            if (result1.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${firstTable}`);
                 return true;
-            } else {
-                console.log(`[CDE] ⚠️ Foto ${photoNumber} já estava liberada`);
-                return false;
             }
+
+            // TENTATIVA 2: Fallback automático
+            console.log(`[CDE] 🔄 Não encontrada em ${firstTable}, tentando ${secondTable}...`);
+
+            const [result2] = await connection.execute(
+                `UPDATE ${secondTable} 
+                SET AESTADOP = 'INGRESADO',
+                    RESERVEDUSU = NULL,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
+                [photoNumber]
+            );
+
+            if (result2.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${secondTable} (fallback)`);
+                return true;
+            }
+
+            // Não encontrou em nenhuma tabela
+            console.log(`[CDE] ⚠️ Foto ${photoNumber} já estava liberada ou não encontrada`);
+            return false;
 
         } catch (error) {
             console.error(`[CDE] ❌ Erro ao liberar ${photoNumber}:`, error.message);
@@ -117,36 +213,59 @@ class CDEWriter {
 
     /**
      * MARCAR COMO CONFIRMED (quando cliente confirma seleção)
-     * 🆕 AGORA INCLUI SALES REP
+     * 🆕 AGORA COM FALLBACK AUTOMÁTICO
      */
-    static async markAsConfirmed(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
+    static async markAsConfirmed(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned', cdeTable = 'tbinventario') {
         let connection = null;
 
         try {
             connection = await this.getConnection();
-
-            // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
             const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
 
-            console.log(`[CDE] Confirmando foto ${photoNumber} para ${reservedusu}`);
+            // Determinar ordem de tentativa
+            const firstTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
+            const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
 
-            const [result] = await connection.execute(
-                `UPDATE tbinventario 
-                 SET AESTADOP = 'CONFIRMED',
-                     RESERVEDUSU = ?,
-                     AFECHA = NOW()
-                 WHERE ATIPOETIQUETA = ?
-                 AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
+            console.log(`[CDE] Confirmando foto ${photoNumber} para ${reservedusu}`);
+            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable}...`);
+
+            // TENTATIVA 1: Tabela preferida
+            const [result1] = await connection.execute(
+                `UPDATE ${firstTable} 
+                SET AESTADOP = 'CONFIRMED',
+                    RESERVEDUSU = ?,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
                 [reservedusu, photoNumber]
             );
 
-            if (result.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} CONFIRMED para ${reservedusu}`);
+            if (result1.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} CONFIRMED em ${firstTable}`);
                 return true;
-            } else {
-                console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível para confirmar`);
-                return false;
             }
+
+            // TENTATIVA 2: Fallback automático
+            console.log(`[CDE] 🔄 Não encontrada em ${firstTable}, tentando ${secondTable}...`);
+
+            const [result2] = await connection.execute(
+                `UPDATE ${secondTable} 
+                SET AESTADOP = 'CONFIRMED',
+                    RESERVEDUSU = ?,
+                    AFECHA = NOW()
+                WHERE ATIPOETIQUETA = ?
+                AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
+                [reservedusu, photoNumber]
+            );
+
+            if (result2.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} CONFIRMED em ${secondTable} (fallback)`);
+                return true;
+            }
+
+            // Não encontrou em nenhuma tabela
+            console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível para confirmar`);
+            return false;
 
         } catch (error) {
             console.error(`[CDE] ❌ Erro ao confirmar ${photoNumber}:`, error.message);

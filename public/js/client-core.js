@@ -295,28 +295,42 @@ window.loadClientData = async function () {
     const contentEl = document.getElementById('clientContent');
     const selectorEl = document.getElementById('gallerySelector');
 
-    // Verificar se já tem modo salvo
-    const savedMode = localStorage.getItem('galleryMode');
+    // ✅ SEMPRE MOSTRAR OS CARDS PRIMEIRO (sem verificar savedMode)
+    loadingEl.style.display = 'none';
+    errorEl.style.display = 'none';
+    contentEl.style.display = 'none';
+    selectorEl.style.display = 'block';
 
-    if (!savedMode) {
-        // Primeira vez - mostrar selector
-        loadingEl.style.display = 'none';
-        errorEl.style.display = 'none';
-        contentEl.style.display = 'none';
-        selectorEl.style.display = 'block';
-
-        // Buscar contagens
+    // Buscar contagens para os cards
+    try {
+        // Contador Available - pode implementar depois
         document.getElementById('availablePhotoCount').textContent = 'Loading...';
-        document.getElementById('comingSoonPhotoCount').textContent = '0 photos';
 
-        return;
+        // Contador Coming Soon
+        const transitResponse = await fetchWithAuth('/api/gallery/transit/count');
+        const transitData = await transitResponse.json();
+
+        if (transitData.success) {
+            document.getElementById('comingSoonPhotoCount').textContent = `${transitData.count} photos`;
+        } else {
+            document.getElementById('comingSoonPhotoCount').textContent = '0 photos';
+        }
+    } catch (error) {
+        console.error('Erro ao buscar contagens:', error);
+        document.getElementById('comingSoonPhotoCount').textContent = '0 photos';
     }
+}
+
+// ===== NOVA FUNÇÃO: Carregar dados APÓS escolher galeria =====
+window.loadClientDataAfterMode = async function () {
+    const loadingEl = document.getElementById('clientLoading');
+    const errorEl = document.getElementById('clientError');
+    const contentEl = document.getElementById('clientContent');
 
     // Mostrar loading
     loadingEl.style.display = 'block';
     errorEl.style.display = 'none';
     contentEl.style.display = 'none';
-    selectorEl.style.display = 'none';
 
     try {
         const savedSession = localStorage.getItem('sunshineSession');
@@ -567,9 +581,21 @@ window.navigateToSubfolder = async function (folderId, folderName) {
 }
 
 window.navigateToRoot = function () {
-    navigationState.currentPath = [];
-    navigationState.currentFolderId = null;
-    showCategories();
+    // ✅ DETECTAR se está em modo Coming Soon
+    if (window.navigationState.isComingSoon) {
+        console.log('🏠 Home → Coming Soon');
+        navigationState.currentPath = [];
+        navigationState.currentFolderId = null;
+        if (window.loadComingSoonCategories) {
+            window.loadComingSoonCategories();
+        }
+    } else {
+        // Comportamento normal (Available Now)
+        console.log('🏠 Home → Available Now');
+        navigationState.currentPath = [];
+        navigationState.currentFolderId = null;
+        showCategories();
+    }
 }
 
 window.navigateBack = async function () {
@@ -592,7 +618,22 @@ window.navigateToBreadcrumb = async function (index) {
     navigationState.currentFolderId = target.id;
 
     updateBreadcrumb();
-    await loadFolderContents(target.id);
+
+    // ✅ DETECTAR se está em Coming Soon
+    if (window.navigationState.isComingSoon) {
+        console.log('🚢 Breadcrumb Coming Soon:', target.id);
+
+        if (target.id === 'transit') {
+            // Voltou para raiz do Coming Soon
+            window.loadComingSoonCategories();
+        } else {
+            // Navegar para subnível
+            window.loadComingSoonSubcategories(target.id, target.name);
+        }
+    } else {
+        // Galeria normal
+        await loadFolderContents(target.id);
+    }
 }
 
 // ===== CARREGAR CONTEÚDO DE PASTAS =====
@@ -689,26 +730,54 @@ window.showSubfolders = function (folders) {
 
         // Cards sempre sem thumbnail - formato limpo
         return `
-        <div class="folder-card" data-folder-id="${folder.id.replace(/"/g, '&quot;')}" data-folder-name="${folder.name.replace(/"/g, '&quot;')}">
-            <h4>${folder.name}</h4>
-            <div class="folder-description">${description}</div>
-            <div class="folder-stats">
-                ${shouldShowPrices() && formattedPrice ?
+            <div class="folder-card" 
+                data-folder-id="${folder.id.replace(/"/g, '&quot;')}" 
+                data-folder-name="${folder.name.replace(/"/g, '&quot;')}"
+                data-has-subfolders="${folder.hasSubfolders || false}">
+                <h4>${folder.name}</h4>
+                <div class="folder-description">${description}</div>
+                <div class="folder-stats">
+                    ${shouldShowPrices() && formattedPrice ?
                 `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
                 (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
+                </div>
             </div>
-        </div>
-    `;
+        `;
     }).join('');
 
-    // Event listeners
     setTimeout(() => {
         containerEl.querySelectorAll('.folder-card').forEach(card => {
             card.addEventListener('click', function () {
                 const folderId = this.dataset.folderId;
                 const folderName = this.dataset.folderName;
+
                 if (folderId && folderName) {
-                    navigateToSubfolder(folderId, folderName);
+                    // ✅ DETECTAR Coming Soon
+                    if (window.navigationState.isComingSoon) {
+                        console.log('🚢 Clique em card Coming Soon:', folderId);
+
+                        // ✅ VERIFICAR atributo do card, não o ID!
+                        const hasSubfolders = this.dataset.hasSubfolders === 'true';
+
+                        if (hasSubfolders) {
+                            // É um path → carregar próximo nível
+                            console.log('   → É path, carregando subnível...');
+                            window.loadComingSoonSubcategories(folderId, folderName);
+                        } else {
+                            // É qbItem final → carregar fotos
+                            console.log('   → É qbItem, carregando fotos...');
+                            navigationState.currentPath.push({
+                                id: folderId,
+                                name: folderName
+                            });
+                            navigationState.currentFolderId = folderId;
+                            updateBreadcrumb();
+                            window.loadPhotos(folderId);
+                        }
+                    } else {
+                        // Navegação normal (Available Now)
+                        navigateToSubfolder(folderId, folderName);
+                    }
                 }
             });
         });

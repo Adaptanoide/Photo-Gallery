@@ -9,6 +9,38 @@
 (function () {
     'use strict';
 
+    // Atualizar contadores dos cards
+    async function updateGalleryCounts() {
+        try {
+            // Buscar contagem de available (já existe no sistema)
+            const availableResponse = await fetchWithAuth('/api/gallery/structure');
+            const availableData = await availableResponse.json();
+
+            // Buscar contagem de coming soon
+            const transitResponse = await fetchWithAuth('/api/gallery/transit/count');
+            const transitData = await transitResponse.json();
+
+            // Atualizar cards
+            const availableCount = document.getElementById('availablePhotoCount');
+            const comingSoonCount = document.getElementById('comingSoonPhotoCount');
+
+            if (availableCount) {
+                // Calcular total de fotos available (você precisa adaptar isso)
+                availableCount.textContent = 'Loading...'; // Substituir pela contagem real
+            }
+
+            if (comingSoonCount && transitData.success) {
+                comingSoonCount.textContent = `${transitData.count} photos`;
+            }
+
+        } catch (error) {
+            console.error('Erro ao atualizar contadores:', error);
+        }
+    }
+
+    // Chamar ao carregar a página
+    document.addEventListener('DOMContentLoaded', updateGalleryCounts);
+
     // Mover zoom para footer APENAS no mobile
     function moveZoomToFooter() {
         if (window.innerWidth <= 768) {
@@ -32,6 +64,23 @@
     window.loadPhotos = async function (folderId) {
         try {
             showPhotosLoading(true);
+
+            // ===== NOVO: Verificar se é Coming Soon =====
+            if (window.navigationState.isComingSoon) {
+                console.log('🚢 Carregando fotos em trânsito');
+
+                const response = await fetchWithAuth(`/api/gallery/transit/photos?qbItem=${encodeURIComponent(folderId)}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Error loading transit photos');
+                }
+
+                navigationState.currentPhotos = data.photos;
+                showPhotosGallery(data.photos, data.folder.name, null);
+                return;
+            }
+            // ===== FIM DO NOVO =====
 
             // 🆕 GARANTIR que token está na requisição
             const savedSession = localStorage.getItem('sunshineSession');
@@ -1437,14 +1486,20 @@
 
     // ===== GALLERY MODE SELECTION =====
     window.selectGalleryMode = function (mode) {
-        console.log(`📍 Modo de galeria selecionado: ${mode}`);
+        console.log(`🎯 Modo de galeria selecionado: ${mode}`);
 
         // Salvar modo no localStorage
         localStorage.setItem('galleryMode', mode);
 
-        // Esconder selector e mostrar galeria normal
+        // Esconder selector
         document.getElementById('gallerySelector').style.display = 'none';
-        document.getElementById('clientContent').style.display = 'block';
+
+        // Mostrar loading
+        const loadingEl = document.getElementById('clientLoading');
+        const contentEl = document.getElementById('clientContent');
+
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (contentEl) contentEl.style.display = 'none';
 
         // Carregar dados baseado no modo
         if (mode === 'coming-soon') {
@@ -1452,14 +1507,93 @@
             loadComingSoonCategories();
         } else {
             window.navigationState.isComingSoon = false;
-            loadClientData();
+            // ✅ USAR A NOVA FUNÇÃO loadClientDataAfterMode ao invés de loadClientData
+            if (window.loadClientDataAfterMode) {
+                loadClientDataAfterMode();
+            } else {
+                // Fallback se a função não existir
+                console.error('loadClientDataAfterMode não encontrada!');
+                loadClientData();
+            }
         }
     };
 
     window.loadComingSoonCategories = async function () {
-        console.log('🚢 Carregando categorias Coming Soon');
-        // Por enquanto, apenas simular
-        showNoContent('Coming Soon', 'This feature is under development');
+        try {
+            console.log('🚢 Carregando categorias Coming Soon');
+            showLoading();
+
+            // Buscar categorias principais (sem prefix)
+            const response = await fetchWithAuth('/api/gallery/transit/structure');
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error('Erro ao carregar categorias em trânsito');
+            }
+
+            console.log(`✅ ${data.structure.folders.length} categorias principais recebidas`);
+
+            // ✅ Definir flag Coming Soon
+            window.navigationState.isComingSoon = true;
+            navigationState.currentPath = []; // ✅ Sem "Coming Soon" visível            navigationState.currentFolderId = null;
+
+            // ✅ Mostrar categorias principais
+            showSubfolders(data.structure.folders);
+
+            const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+            if (breadcrumbContainer) {
+                breadcrumbContainer.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error('Erro ao carregar Coming Soon:', error);
+            showNoContent('Error', 'Unable to load Coming Soon categories');
+        } finally {
+            hideLoading();
+
+            const clientLoading = document.getElementById('clientLoading');
+            if (clientLoading) clientLoading.style.display = 'none';
+
+            const clientContent = document.getElementById('clientContent');
+            if (clientContent) clientContent.style.display = 'block';
+        }
+    };
+
+    // Nova função para navegar em subníveis Coming Soon
+    window.loadComingSoonSubcategories = async function (prefix, displayName) {
+        try {
+            console.log(`🚢 Carregando subnível: ${prefix}`);
+            showLoading();
+
+            // Buscar subcategorias usando prefix
+            const response = await fetchWithAuth(`/api/gallery/transit/structure?prefix=${encodeURIComponent(prefix)}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error('Erro ao carregar subcategorias');
+            }
+
+            console.log(`✅ ${data.structure.folders.length} items encontrados`);
+
+            // ✅ RECONSTRUIR path correto
+            const pathParts = prefix.split('/').filter(p => p);
+            navigationState.currentPath = pathParts.map(part => ({
+                id: pathParts.slice(0, pathParts.indexOf(part) + 1).join('/'),
+                name: part
+            }));
+
+            // Mostrar subcategorias
+            showSubfolders(data.structure.folders);
+
+            // Atualizar breadcrumb
+            updateBreadcrumb();
+
+        } catch (error) {
+            console.error('Erro ao carregar subcategorias:', error);
+            showNoContent('Error', 'Unable to load subcategories');
+        } finally {
+            hideLoading();
+        }
     };
 
     // ===== INICIALIZAÇÃO =====

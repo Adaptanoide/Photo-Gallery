@@ -313,7 +313,7 @@ class CDEIncrementalSync {
 
                 // TERCEIRO: Verificar no CDE
                 const [cdeResult] = await cdeConnection.execute(
-                    'SELECT AESTADOP FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    'SELECT AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ?',
                     [mongoPhoto.photoNumber]
                 );
 
@@ -453,7 +453,7 @@ class CDEIncrementalSync {
 
             // Query para buscar mudanças recentes - agora COM filtro de data
             const [cdeChanges] = await cdeConnection.execute(
-                `SELECT LPAD(ATIPOETIQUETA, 5, '0') as ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA 
+                `SELECT LPAD(ATIPOETIQUETA, 5, '0') as ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA, AQBITEM 
                 FROM tbinventario 
                 WHERE ATIPOETIQUETA != '0' 
                 AND ATIPOETIQUETA != ''
@@ -725,7 +725,7 @@ class CDEIncrementalSync {
                 updateFields = {
                     status: 'sold',
                     cdeStatus: 'RETIRADO',
-                    // Campo removido - virtualStatus
+                    qbItem: cdeRecord.AQBITEM,
                 };
                 actionTaken = 'Marcada como vendida';
                 break;
@@ -735,7 +735,7 @@ class CDEIncrementalSync {
                 updateFields = {
                     status: 'unavailable',
                     cdeStatus: cdeStatus,
-                    // Campo removido - virtualStatus
+                    qbItem: cdeRecord.AQBITEM,
                 };
                 actionTaken = 'Marcada como indisponível';
                 break;
@@ -746,7 +746,7 @@ class CDEIncrementalSync {
                     updateFields = {
                         status: 'available',
                         cdeStatus: 'INGRESADO',
-                        // Campo removido - virtualStatus
+                        qbItem: cdeRecord.AQBITEM,
                     };
                     actionTaken = 'Marcada como disponível';
                 }

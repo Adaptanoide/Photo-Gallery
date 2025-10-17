@@ -22,7 +22,18 @@ class CategoryChecker {
     async checkAndCreateCategories(photos) {
         console.log('\nVerificando categorias...');
 
-        const photoCategories = [...new Set(photos.map(p => p.category))];
+        // ===== CORREÇÃO: Normalizar categorias antes de comparar =====
+        const normalizeCategory = (cat) => {
+            if (!cat) return 'uncategorized';
+            return cat
+                .replace(/\//g, ' → ')      // Converter / para →
+                .replace(/\s*→\s*$/g, '')    // Remover → vazia no final
+                .trim();
+        };
+
+        const photoCategories = [...new Set(photos.map(p => normalizeCategory(p.category)))];
+        // ===== FIM DA CORREÇÃO =====
+
         const registered = await this.PhotoCategory.find({});
         const registeredNames = new Set(registered.map(cat => cat.displayName));
         const newCategories = photoCategories.filter(cat => !registeredNames.has(cat));
@@ -35,15 +46,15 @@ class CategoryChecker {
         console.log(`\nNOVAS CATEGORIAS DETECTADAS: ${newCategories.length}\n`);
 
         for (const catDisplay of newCategories) {
-            const photoCount = photos.filter(p => p.category === catDisplay).length;
-            
+            const photoCount = photos.filter(p => normalizeCategory(p.category) === catDisplay).length;
+
             console.log('='.repeat(60));
             console.log(`Categoria: ${catDisplay}`);
             console.log(`Fotos: ${photoCount}`);
             console.log();
-            
+
             const qbCode = await this.ask('QB Code: ');
-            
+
             if (!qbCode || qbCode.trim() === '') {
                 console.log('QB Code obrigatorio! Categoria nao sera criada.\n');
                 return false;

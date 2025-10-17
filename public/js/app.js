@@ -292,6 +292,9 @@ async function handleDirectClientLogin(e) {
 
             localStorage.setItem('sunshineSession', JSON.stringify(session));
 
+            // ✅ LIMPAR escolha de galeria anterior
+            localStorage.removeItem('galleryMode');
+
             AppState.isLoggedIn = true;
             AppState.userType = 'client';
             AppState.accessCode = code;

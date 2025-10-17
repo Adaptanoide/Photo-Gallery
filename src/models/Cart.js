@@ -65,8 +65,38 @@ const cartSchema = new mongoose.Schema({
         },
         expiresAt: {
             type: Date,
-            required: true,
+            required: false,  // ✅ MODIFICADO: Opcional para Coming Soon
+            default: null,     // ✅ MODIFICADO: Null por padrão
             index: true
+        },
+
+        // ===== CAMPOS COMING SOON (TRANSIT MANAGEMENT) =====
+        transitStatus: {
+            type: String,
+            enum: ['coming_soon', null],
+            default: null,
+            comment: 'Flag para identificar fotos em trânsito'
+        },
+        cdeTable: {
+            type: String,
+            enum: ['tbinventario', 'tbetiqueta'],
+            default: 'tbinventario',
+            comment: 'Tabela CDE onde a foto está registrada'
+        },
+        isComingSoon: {
+            type: Boolean,
+            default: false,
+            comment: 'Indicador rápido se item é Coming Soon'
+        },
+        pathLevels: {
+            type: [String],
+            default: [],
+            comment: 'Caminho completo da categoria'
+        },
+        fullPath: {
+            type: String,
+            default: '',
+            comment: 'Path formatado para display'
         }
     }],
     totalItems: {
@@ -106,7 +136,10 @@ cartSchema.index({ lastActivity: 1 }, { expireAfterSeconds: 86400 }); // 24h TTL
 // Método para limpar itens expirados
 cartSchema.methods.cleanExpiredItems = function () {
     const now = new Date();
-    const validItems = this.items.filter(item => item.expiresAt > now);
+    // ✅ MODIFICADO: Itens sem expiresAt (Coming Soon) NUNCA expiram
+    const validItems = this.items.filter(item =>
+        !item.expiresAt || item.expiresAt > now
+    );
 
     if (validItems.length !== this.items.length) {
         this.items = validItems;
@@ -122,7 +155,7 @@ cartSchema.methods.cleanExpiredItems = function () {
 cartSchema.methods.hasItem = function (driveFileId) {
     return this.items.some(item =>
         item.driveFileId === driveFileId &&
-        item.expiresAt > new Date()
+        (!item.expiresAt || item.expiresAt > new Date())  // ✅ MODIFICADO: Coming Soon sempre válido
     );
 };
 
@@ -130,7 +163,7 @@ cartSchema.methods.hasItem = function (driveFileId) {
 cartSchema.methods.getItem = function (driveFileId) {
     return this.items.find(item =>
         item.driveFileId === driveFileId &&
-        item.expiresAt > new Date()
+        (!item.expiresAt || item.expiresAt > new Date())  // ✅ MODIFICADO: Coming Soon sempre válido
     );
 };
 
@@ -138,6 +171,9 @@ cartSchema.methods.getItem = function (driveFileId) {
 cartSchema.methods.getTimeRemaining = function (driveFileId) {
     const item = this.getItem(driveFileId);
     if (!item) return 0;
+
+    // ✅ MODIFICADO: Coming Soon não tem expiração
+    if (!item.expiresAt) return null;
 
     const now = new Date();
     const remaining = item.expiresAt.getTime() - now.getTime();
@@ -151,9 +187,8 @@ cartSchema.statics.findActiveBySession = function (sessionId) {
     return this.findOne({
         sessionId,
         isActive: true
-    });  // REMOVER O .populate()
+    });
 };
-
 
 // Buscar carrinho ativo por cliente
 cartSchema.statics.findActiveByClient = function (clientCode) {

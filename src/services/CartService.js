@@ -51,6 +51,11 @@ class CartService {
             // 1. Buscar ou criar produto
             let product = await UnifiedProductComplete.findOne({ driveFileId });
 
+            // ✅ NOVO: Detectar se é Coming Soon
+            const isComingSoon = product?.transitStatus === 'coming_soon';
+            const cdeTable = product?.cdeTable || 'tbinventario';
+            console.log(`[CART] 📦 Tipo: ${isComingSoon ? 'COMING SOON' : 'AVAILABLE'} | Tabela: ${cdeTable}`);
+
             if (!product) {
                 const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1] || 'unknown';
                 product = new UnifiedProductComplete({
@@ -92,8 +97,9 @@ class CartService {
                 throw new Error('Item já está no carrinho');
             }
 
-            // 5. 🆕 USAR TTL JÁ BUSCADO (não buscar novamente!)
-            const expiresAt = new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
+            // 5. 🆕 DEFINIR EXPIRAÇÃO (Coming Soon = null)
+            const expiresAt = isComingSoon ? null : new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
+            console.log(`[CART] Expiração: ${expiresAt ? expiresAt.toISOString() : 'SEM EXPIRAÇÃO (Coming Soon)'}`);
 
             // ===== PROTEÇÃO CONTRA DUPLICATAS =====
             const itemExistente = cart.items.find(item =>
@@ -132,7 +138,11 @@ class CartService {
                 price: itemData.price || 0,
                 basePrice: itemData.basePrice || 0,
                 expiresAt,
-                addedAt: new Date()
+                addedAt: new Date(),
+                // ✅ NOVO: Campos Coming Soon
+                transitStatus: product.transitStatus || null,
+                cdeTable: cdeTable,
+                isComingSoon: isComingSoon,
             });
 
             await cart.save();
@@ -152,8 +162,9 @@ class CartService {
             // 8. 🆕 Atualizar CDE EM BACKGROUND COM SALES REP
             const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1];
             if (photoNumber) {
+                console.log(`[CART] 🎯 Vai reservar foto ${photoNumber} em ${cdeTable}`);  // ← ADICIONAR
                 // 🚀 EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
-                CDEWriter.markAsReserved(photoNumber, clientCode, clientName, salesRep)
+                CDEWriter.markAsReserved(photoNumber, clientCode, clientName, salesRep, cdeTable)
                     .then(() => {
                         console.log(`[CDE] ✅ Foto ${photoNumber} reservada em background para ${clientName}(${salesRep})`);
                     })
@@ -238,17 +249,21 @@ class CartService {
                 const fileName = driveFileId.split('/').pop();
                 const photoNumber = fileName.match(/(\d+)/)?.[1];
                 if (photoNumber) {
+                    // ✅ DETECTAR TABELA DO ITEM REMOVIDO
+                    const cdeTable = itemToRemove?.cdeTable || 'tbinventario';
+                    console.log(`[CART] 🎯 Vai liberar foto ${photoNumber} em ${cdeTable}`);
+
                     // EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
-                    CDEWriter.markAsAvailable(photoNumber)
+                    CDEWriter.markAsAvailable(photoNumber, cdeTable)  // ✅ PASSAR TABELA
                         .then(() => {
-                            console.log(`[CDE] ✅ Foto ${photoNumber} liberada em background`);
+                            console.log(`[CDE] ✅ Foto ${photoNumber} liberada em background de ${cdeTable}`);
                         })
                         .catch(cdeError => {
                             console.error(`[CDE] ⚠️ Erro ao liberar em background: ${cdeError.message}`);
                             // Sync vai corrigir depois
                         });
 
-                    console.log(`[CART] CDE será liberado em background`);
+                    console.log(`[CART] CDE será liberado em background de ${cdeTable}`);
                 }
             } else {
                 // Para ghost items, apenas limpar a reserva local sem mudar status

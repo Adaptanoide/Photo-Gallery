@@ -49,6 +49,7 @@ app.use('/api/pricing', pricingRoutes);
 app.use('/api/email-config', require('./routes/email-config'));
 app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
+app.use('/api/chat', require('./routes/chat'));
 
 // ============================================
 // ROTAS DE NOTIFICAÇÕES DE EXPIRAÇÃO
@@ -154,8 +155,9 @@ app.get('/client', (req, res) => {
 // SISTEMA DE SINCRONIZAÇÃO INCREMENTAL
 // ============================================
 
-// Variável para controlar o serviço de sincronização
+// Variáveis para controlar os serviços de sincronização
 let CDEIncrementalSync = null;
+let CDETransitSync = null;
 
 // Rota para iniciar sincronização incremental
 app.post('/api/sync/start', async (req, res) => {
@@ -290,6 +292,115 @@ app.get('/api/sync/last-report', async (req, res) => {
 });
 
 // ============================================
+// SISTEMA DE SINCRONIZAÇÃO DE TRÂNSITO (COMING SOON)
+// ============================================
+
+// Rota para iniciar sincronização de trânsito
+app.post('/api/transit-sync/start', async (req, res) => {
+    try {
+        // Carregar o serviço apenas quando necessário
+        if (!CDETransitSync) {
+            CDETransitSync = require('./services/CDETransitSync');
+        }
+
+        const { intervalMinutes = 10 } = req.body;
+
+        // Iniciar sincronização
+        CDETransitSync.start(intervalMinutes);
+
+        res.json({
+            success: true,
+            message: `Sincronização de trânsito iniciada`,
+            interval: `${intervalMinutes} minutos`
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para parar sincronização de trânsito
+app.post('/api/transit-sync/stop', async (req, res) => {
+    try {
+        if (CDETransitSync) {
+            CDETransitSync.stop();
+            res.json({
+                success: true,
+                message: 'Sincronização de trânsito parada'
+            });
+        } else {
+            res.json({
+                success: false,
+                message: 'Sincronização de trânsito não estava rodando'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para executar sincronização de trânsito uma única vez
+app.post('/api/transit-sync/run-once', async (req, res) => {
+    try {
+        if (!CDETransitSync) {
+            CDETransitSync = require('./services/CDETransitSync');
+        }
+
+        const result = await CDETransitSync.runSync();
+
+        res.json({
+            success: true,
+            message: 'Sincronização de trânsito executada',
+            result
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Rota para obter estatísticas da sincronização de trânsito
+app.get('/api/transit-sync/stats', async (req, res) => {
+    try {
+        if (!CDETransitSync) {
+            return res.json({
+                success: true,
+                stats: {
+                    status: 'not_initialized',
+                    message: 'Sincronização de trânsito ainda não foi iniciada'
+                }
+            });
+        }
+
+        const stats = CDETransitSync.getStats();
+
+        res.json({
+            success: true,
+            stats: {
+                ...stats,
+                status: CDETransitSync.isRunning ? 'running' : 'idle'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// FIM DO SISTEMA DE SINCRONIZAÇÃO DE TRÂNSITO
+// ============================================
+
+// ============================================
 // FIM DO SISTEMA DE SINCRONIZAÇÃO
 // ============================================
 
@@ -310,11 +421,12 @@ app.get('/api/status', (req, res) => {
             'Pricing Management',
             'Client Management',
             'CDE Incremental Sync',
+            'CDE Transit Sync (Coming Soon)',
             'Cart Expiration Notifications'
         ],
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        version: '2.2.0',
+        version: '2.3.0',
         mode: 'SYNC_DIRECT',
         syncStatus: syncStatus
     });
@@ -469,6 +581,22 @@ const server = app.listen(PORT, () => {
             CDEIncrementalSync.start(syncInterval);
             console.log(`[SYNC] Sincronização iniciada em modo ${syncMode}`);
         }, 30000);
+
+        // Iniciar sincronização de trânsito (Coming Soon) após 45 segundos
+        const transitSyncEnabled = process.env.ENABLE_TRANSIT_SYNC === 'true';
+        if (transitSyncEnabled) {
+            console.log('SINCRONIZAÇÃO DE TRÂNSITO (COMING SOON) CONFIGURADA');
+            console.log('Intervalo: 10 minutos');
+            console.log('Iniciando em 45 segundos...');
+
+            setTimeout(() => {
+                if (!CDETransitSync) {
+                    CDETransitSync = require('./services/CDETransitSync');
+                }
+                CDETransitSync.start(10); // A cada 10 minutos
+                console.log('[TRANSIT SYNC] Sincronização de trânsito iniciada');
+            }, 45000);
+        }
     } else {
         console.log('Sincronização automática DESABILITADA');
         console.log('Use /api/sync/start para iniciar manualmente');
@@ -491,6 +619,11 @@ process.on('SIGTERM', () => {
         CDEIncrementalSync.stop();
     }
 
+    // Parar sincronização de trânsito se estiver rodando
+    if (CDETransitSync) {
+        CDETransitSync.stop();
+    }
+
     server.close(() => {
         console.log('Servidor encerrado');
         process.exit(0);
@@ -508,6 +641,11 @@ process.on('SIGINT', () => {
     // Parar sincronização se estiver rodando
     if (CDEIncrementalSync) {
         CDEIncrementalSync.stop();
+    }
+
+    // Parar sincronização de trânsito se estiver rodando
+    if (CDETransitSync) {
+        CDETransitSync.stop();
     }
 
     server.close(() => {
@@ -528,6 +666,11 @@ process.on('uncaughtException', (error) => {
     // Tentar parar sincronização antes de sair
     if (CDEIncrementalSync) {
         CDEIncrementalSync.stop();
+    }
+
+    // Parar sincronização de trânsito se estiver rodando
+    if (CDETransitSync) {
+        CDETransitSync.stop();
     }
 
     process.exit(1);

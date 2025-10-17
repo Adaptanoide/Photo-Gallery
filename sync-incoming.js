@@ -165,13 +165,16 @@ class IncomingSync {
             console.log(`     ${invoices.data.files.length} invoices encontradas`);
 
             for (const invoice of invoices.data.files) {
-                // ===== FILTRO DE TESTE - APENAS INVOICE 1963-25 =====
-                if (invoice.name !== '1963-25') {
-                    console.log(`     Pulando invoice: ${invoice.name}`);
+
+                // ✅ VERIFICAR SE JÁ FOI PROCESSADO
+                const alreadyProcessed = await isInvoiceProcessed(invoice.name);
+
+                if (alreadyProcessed) {
+                    console.log(`     ✅ ${invoice.name} já processado - pulando\n`);
                     continue;
                 }
-                console.log(`     Processando invoice: ${invoice.name}`);
-                // ===== FIM DO FILTRO =====
+
+                console.log(`     📦 Processando invoice: ${invoice.name}`);
 
                 // Listar QB folders
                 const qbFolders = await this.services.drive.drive.files.list({
@@ -365,6 +368,59 @@ class IncomingSync {
             console.error(error.stack);
             process.exit(1);
         }
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA VERIFICAR SE INVOICE JÁ FOI PROCESSADO
+// ============================================
+async function isInvoiceProcessed(invoiceName) {
+    try {
+        const mysql = require('mysql2/promise');
+        const cde = await mysql.createConnection({
+            host: process.env.CDE_HOST,
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE,
+            port: process.env.CDE_PORT
+        });
+
+        // Buscar fotos deste invoice no CDE
+        const [cdePhotos] = await cde.query(`
+            SELECT LPAD(ATIPOETIQUETA, 5, '0') as photoNumber
+            FROM tbetiqueta
+            WHERE AINVOICE = ?
+            AND ATIPOETIQUETA IS NOT NULL
+            AND ATIPOETIQUETA != ''
+            AND ATIPOETIQUETA != '0'
+        `, [invoiceName]);
+
+        await cde.end();
+
+        if (cdePhotos.length === 0) {
+            console.log(`   ⚠️  Invoice ${invoiceName} não encontrado no CDE`);
+            return false;
+        }
+
+        // Buscar quantas dessas fotos existem no MongoDB
+        const UnifiedProductComplete = require('./src/models/UnifiedProductComplete');
+        const photoNumbers = cdePhotos.map(p => p.photoNumber);
+
+        const mongoCount = await UnifiedProductComplete.countDocuments({
+            photoNumber: { $in: photoNumbers },
+            transitStatus: 'coming_soon',
+            cdeTable: 'tbetiqueta'
+        });
+
+        const processed = mongoCount === photoNumbers.length;
+
+        console.log(`   📊 Invoice ${invoiceName}: ${mongoCount}/${photoNumbers.length} fotos ${processed ? '✅ PROCESSADO' : '❌ FALTAM'}`);
+
+        return processed;
+
+    } catch (error) {
+        console.error(`   ❌ Erro ao verificar invoice ${invoiceName}:`, error.message);
+        return false;
     }
 }
 

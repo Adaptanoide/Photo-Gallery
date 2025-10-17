@@ -39,12 +39,19 @@ class DriveService {
         let pageToken = null;
 
         do {
-            const response = await this.drive.files.list({
+            // Montar params condicionalmente
+            const params = {
                 q: `'${folderId}' in parents and trashed = false`,
                 fields: 'nextPageToken, files(id, name, mimeType)',
-                pageSize: 1000,
-                pageToken: pageToken
-            });
+                pageSize: 1000
+            };
+
+            // Só adicionar pageToken se ele existir
+            if (pageToken) {
+                params.pageToken = pageToken;
+            }
+
+            const response = await this.drive.files.list(params);
 
             for (const file of response.data.files) {
                 if (file.mimeType === 'application/vnd.google-apps.folder') {
@@ -56,22 +63,31 @@ class DriveService {
                     // É uma imagem
                     const photoNumber = this.extractPhotoNumber(file.name);
                     if (photoNumber) {
+                        // ===== CORREÇÃO: Converter / para → e remover → vazias no final =====
+                        let categoryPath = folderPath || 'uncategorized';
+
+                        // Converter todas as barras para setas
+                        categoryPath = categoryPath.replace(/\//g, ' → ');
+
+                        // Remover setas vazias no final (caso tenha subpasta vazia)
+                        categoryPath = categoryPath.replace(/\s*→\s*$/, '').trim();
+                        // ===== FIM DA CORREÇÃO =====
+
                         photos.push({
                             number: photoNumber,
                             driveId: file.id,
                             fileName: file.name,
                             path: folderPath,
-                            // ===== MUDANÇA CRÍTICA AQUI - LINHA 73 =====
-                            // ANTES ERA: category: folderPath.split('/')[0] || 'uncategorized',
-                            // AGORA É:
-                            category: folderPath || 'uncategorized',  // USAR O CAMINHO COMPLETO
+                            category: categoryPath,  // Agora usa o path normalizado
                             mimeType: file.mimeType
                         });
                     }
                 }
             }
 
-            pageToken = response.data.nextPageToken;
+            // Garantir que nextPageToken nunca seja string vazia
+            pageToken = response.data.nextPageToken || null;
+
         } while (pageToken);
 
         return photos;
