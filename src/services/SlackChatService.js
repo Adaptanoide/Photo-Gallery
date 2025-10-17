@@ -29,7 +29,16 @@ class SlackChatService {
             const blocks = this._buildSlackMessage(conversation, message, clientInfo, attachments);
 
             console.log('📤 [SLACK] Enviando mensagem...');
-            console.log('📋 Thread TS:', conversation.slackThreadTs || 'NOVA CONVERSA');
+
+            // Validar thread_ts (ignorar valores de teste)
+            let validThreadTs = null;
+            if (conversation.slackThreadTs && !conversation.slackThreadTs.startsWith('test_')) {
+                validThreadTs = conversation.slackThreadTs;
+                console.log('📋 Thread TS válido:', validThreadTs);
+            } else {
+                console.log('📋 Thread TS: NOVA CONVERSA (thread anterior era inválido)');
+                conversation.slackThreadTs = null; // Resetar
+            }
 
             // Usar chat.postMessage em vez de webhook
             const response = await axios.post(
@@ -38,7 +47,7 @@ class SlackChatService {
                     channel: this.defaultChannel,
                     text: `New message from ${clientInfo?.name || conversation.clientCode}`,
                     blocks: blocks,
-                    thread_ts: conversation.slackThreadTs || undefined // Se já tem thread, usar
+                    thread_ts: validThreadTs || undefined // Usar apenas se válido
                 },
                 {
                     headers: {
