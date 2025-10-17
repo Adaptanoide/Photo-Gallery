@@ -41,6 +41,9 @@ class CartService {
         try {
             console.log(`[CART] Adicionando ${driveFileId} ao carrinho ${clientCode} - VERSÃO SIMPLIFICADA`);
 
+            // Extrair número da foto UMA ÚNICA VEZ
+            const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1] || 'unknown';
+
             // 🆕 BUSCAR ACCESSCODE UMA ÚNICA VEZ E PEGAR TUDO
             console.log(`[CART] 🔍 Buscando configurações do cliente ${clientCode}...`);
             const accessCode = await AccessCode.findOne({ code: clientCode });
@@ -57,7 +60,6 @@ class CartService {
             console.log(`[CART] 📦 Tipo: ${isComingSoon ? 'COMING SOON' : 'AVAILABLE'} | Tabela: ${cdeTable}`);
 
             if (!product) {
-                const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1] || 'unknown';
                 product = new UnifiedProductComplete({
                     idhCode: `TEMP_${Date.now()}`,
                     photoNumber: photoNumber,
@@ -92,39 +94,34 @@ class CartService {
                 });
             }
 
-            // 4. Verificar duplicata
-            if (cart.hasItem(driveFileId)) {
-                throw new Error('Item já está no carrinho');
+            // 4. Verificar duplicata (3 formas - mais robusto)
+
+            const isDuplicate = cart.items.some(item =>
+                item.driveFileId === driveFileId ||
+                item.fileName === product.fileName ||
+                (photoNumber && item.fileName?.includes(photoNumber))
+            );
+
+            if (isDuplicate) {
+                console.log(`[CART] ✅ Duplicata ignorada: ${product.fileName}`);
+
+                // Retorna sucesso (não é erro para o cliente)
+                const validItems = cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+                return {
+                    success: true,
+                    message: 'Item já está no carrinho',
+                    isDuplicate: true,
+                    cart: {
+                        totalItems: validItems.length,
+                        items: cart.items,
+                        isEmpty: validItems.length === 0
+                    }
+                };
             }
 
             // 5. 🆕 DEFINIR EXPIRAÇÃO (Coming Soon = null)
             const expiresAt = isComingSoon ? null : new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
             console.log(`[CART] Expiração: ${expiresAt ? expiresAt.toISOString() : 'SEM EXPIRAÇÃO (Coming Soon)'}`);
-
-            // ===== PROTEÇÃO CONTRA DUPLICATAS =====
-            const itemExistente = cart.items.find(item =>
-                item.fileName === product.fileName ||
-                item.driveFileId === product.driveFileId
-            );
-
-            if (itemExistente) {
-                console.log(`[CART] ⚠️ Duplicata detectada: ${product.fileName} já está no carrinho`);
-
-                // 🆕 RETORNAR DADOS SIMPLES (sem buscar novamente!)
-                return {
-                    success: true,
-                    message: 'Item já está no carrinho',
-                    cartId: cart._id,
-                    itemCount: cart.items.length,
-                    isDuplicate: true,
-                    // 🆕 DADOS DIRETOS (sem query extra!)
-                    cart: {
-                        totalItems: cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost').length,
-                        isEmpty: false
-                    }
-                };
-            }
-            // ===== FIM DA PROTEÇÃO =====
 
             // 6. Adicionar ao carrinho
             cart.items.push({
@@ -160,7 +157,6 @@ class CartService {
             console.log(`[CART] Produto reservado`);
 
             // 8. 🆕 Atualizar CDE EM BACKGROUND COM SALES REP
-            const photoNumber = itemData.fileName?.match(/(\d+)/)?.[1];
             if (photoNumber) {
                 console.log(`[CART] 🎯 Vai reservar foto ${photoNumber} em ${cdeTable}`);  // ← ADICIONAR
                 // 🚀 EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
