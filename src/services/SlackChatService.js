@@ -28,19 +28,40 @@ class SlackChatService {
             // Montar mensagem rica para o Slack
             const blocks = this._buildSlackMessage(conversation, message, clientInfo, attachments);
 
-            // Enviar para o Slack
-            const response = await axios.post(this.webhookUrl, {
-                blocks: blocks,
-                text: `New message from ${clientInfo?.name || conversation.clientCode}`
-            });
+            console.log('📤 [SLACK] Enviando mensagem...');
+            console.log('📋 Thread TS:', conversation.slackThreadTs || 'NOVA CONVERSA');
 
-            // Se é a primeira mensagem, salvar o thread_ts
-            if (!conversation.slackThreadTs && response.data.ts) {
-                conversation.slackThreadTs = response.data.ts;
-                await conversation.save();
+            // Usar chat.postMessage em vez de webhook
+            const response = await axios.post(
+                'https://slack.com/api/chat.postMessage',
+                {
+                    channel: this.defaultChannel,
+                    text: `New message from ${clientInfo?.name || conversation.clientCode}`,
+                    blocks: blocks,
+                    thread_ts: conversation.slackThreadTs || undefined // Se já tem thread, usar
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${this.botToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            console.log('📨 [SLACK] Resposta completa:', JSON.stringify(response.data, null, 2));
+
+            if (!response.data.ok) {
+                throw new Error(`Slack error: ${response.data.error}`);
             }
 
-            console.log('✅ Message sent to Slack:', response.data);
+            // SEMPRE salvar o ts (seja primeira mensagem ou não)
+            if (response.data.ts) {
+                conversation.slackThreadTs = response.data.ts;
+                await conversation.save();
+                console.log('✅ [SLACK] Thread TS salvo:', response.data.ts);
+            }
+
+            console.log('✅ Message sent to Slack');
             return response.data;
 
         } catch (error) {
