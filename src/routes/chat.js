@@ -239,7 +239,12 @@ router.post('/slack-webhook', async (req, res) => {
     try {
         const slackEvent = req.body;
 
-        // Verificação do desafio do Slack (primeira configuração)
+        // 🔍 DEBUG: Ver o que o Slack está enviando
+        console.log('📨 [WEBHOOK] Evento recebido do Slack:');
+        console.log('📋 Type:', slackEvent.type);
+        console.log('📋 Event:', JSON.stringify(slackEvent.event, null, 2));
+
+        // Verificação do desafio do Slack
         if (slackEvent.type === 'url_verification') {
             return res.json({ challenge: slackEvent.challenge });
         }
