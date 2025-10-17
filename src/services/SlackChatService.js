@@ -3,6 +3,7 @@ const axios = require('axios');
 const ChatConversation = require('../models/ChatConversation');
 const ChatMessage = require('../models/ChatMessage');
 
+
 class SlackChatService {
     constructor() {
         // Webhook URL do Slack - você vai pegar isso no Slack
@@ -32,15 +33,6 @@ class SlackChatService {
                 blocks: blocks,
                 text: `New message from ${clientInfo?.name || conversation.clientCode}`
             });
-
-            // Se é a primeira mensagem, salvar o thread_ts
-            if (!conversation.slackThreadTs && response.data.ts) {
-                conversation.slackThreadTs = response.data.ts;
-                await conversation.save();
-            }
-
-            console.log('✅ Message sent to Slack:', response.data);
-            return response.data;
 
             // Se é a primeira mensagem, salvar o thread_ts
             if (!conversation.slackThreadTs && response.data.ts) {
