@@ -480,14 +480,11 @@ class ChatManager {
     }
 }
 
-// ============================================
-// CHAT TEMPORARIAMENTE DESABILITADO
-// ============================================
-/*
+// Inicializar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔍 [CHAT] Tentando inicializar...');
     console.log('🔑 Token existe?', !!localStorage.getItem('token'));
-    
+
     const session = localStorage.getItem('sunshineSession');
     if (session) {
         console.log('✅ [CHAT] Sessão encontrada, iniciando...');
@@ -496,4 +493,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('❌ [CHAT] Sem sessão');
     }
 });
-*/

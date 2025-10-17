@@ -237,33 +237,41 @@ router.post('/close/:conversationId', authenticateToken, async (req, res) => {
  */
 router.post('/slack-webhook', async (req, res) => {
     try {
+        console.log('🔴 [WEBHOOK] ROTA CHAMADA!');
+        console.log('🔴 [WEBHOOK] Body completo:', JSON.stringify(req.body, null, 2));
+        console.log('🔴 [WEBHOOK] Headers:', JSON.stringify(req.headers, null, 2));
+
         const slackEvent = req.body;
 
-        // 🔍 DEBUG: Ver o que o Slack está enviando
-        console.log('📨 [WEBHOOK] Evento recebido do Slack:');
-        console.log('📋 Type:', slackEvent.type);
-        console.log('📋 Event:', JSON.stringify(slackEvent.event, null, 2));
-
-        // Verificação do desafio do Slack
+        // Verificação do desafio do Slack (primeira configuração)
         if (slackEvent.type === 'url_verification') {
+            console.log('✅ [WEBHOOK] Challenge recebido');
             return res.json({ challenge: slackEvent.challenge });
         }
 
         // Processar evento de mensagem
         if (slackEvent.event && slackEvent.event.type === 'message') {
+            console.log('📨 [WEBHOOK] Evento de mensagem recebido!');
+            console.log('📋 Event completo:', JSON.stringify(slackEvent.event, null, 2));
+
             // Ignorar mensagens de bots
             if (slackEvent.event.bot_id) {
+                console.log('⚠️ [WEBHOOK] Mensagem de bot - ignorando');
                 return res.json({ ok: true });
             }
 
+            console.log('✅ [WEBHOOK] Processando resposta do vendedor...');
+
             // Processar resposta do vendedor
             await SlackChatService.processSalesRepReply(slackEvent.event);
+        } else {
+            console.log('⚠️ [WEBHOOK] Evento diferente:', slackEvent.type);
         }
 
         res.json({ ok: true });
 
     } catch (error) {
-        console.error('Error processing Slack webhook:', error);
+        console.error('❌ [WEBHOOK] Erro:', error);
         res.status(500).json({ error: error.message });
     }
 });
