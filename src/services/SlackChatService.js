@@ -13,7 +13,7 @@ class SlackChatService {
         this.botToken = process.env.SLACK_BOT_TOKEN;
 
         // Canal padrão
-        this.defaultChannel = 'C09MVML9G7J'; // Seu #customer-chats
+        this.defaultChannel = 'C09N46UKT96'; // Canal #gallery-chat
     }
 
     /**
