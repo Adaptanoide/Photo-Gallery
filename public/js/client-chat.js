@@ -456,17 +456,26 @@ class ChatManager {
             if (data.success && data.hasNew) {
                 console.log(`📨 [CHAT] ${data.messages.length} nova(s) mensagem(ns)`);
 
+                // Contar mensagens do vendedor
+                let newVendorMessages = 0;
+
                 data.messages.forEach(msg => {
                     this.addMessage(msg);
                     this.lastMessageTimestamp = msg.createdAt;
 
-                    // Se for mensagem do vendedor e chat está fechado, incrementar badge
+                    // Contar mensagens do vendedor
                     if (msg.sender === 'salesrep' && !this.isOpen) {
-                        this.unreadCount++;
-                        this.updateUnreadBadge();
-                        this.playNotificationSound();
+                        newVendorMessages++;
                     }
                 });
+
+                // Atualizar badge e tocar som UMA VEZ (se tiver mensagens novas)
+                if (newVendorMessages > 0 && !this.isOpen) {
+                    this.unreadCount += newVendorMessages;
+                    this.updateUnreadBadge();
+                    this.playNotificationSound();
+                    console.log(`🔔 [CHAT] ${newVendorMessages} nova(s) mensagem(ns) do vendedor. Total não lidas: ${this.unreadCount}`);
+                }
             }
 
         } catch (error) {
