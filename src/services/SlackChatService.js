@@ -86,9 +86,9 @@ class SlackChatService {
         const blocks = [];
 
         // Header SIMPLES com nome + company
-        const clientName = clientInfo?.name || 'Unknown Customer';
-        const clientCompany = clientInfo?.company || 'No company';
-
+        const clientName = clientInfo?.clientName || 'Unknown Customer';
+        const clientCompany = clientInfo?.companyName || 'No company';
+        
         blocks.push({
             type: "header",
             text: {
