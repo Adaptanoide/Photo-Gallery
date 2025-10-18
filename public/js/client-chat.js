@@ -13,17 +13,22 @@ class ChatManager {
     }
 
     /**
- * Atualiza o badge de mensagens não lidas
- */
+     * Atualiza o badge de mensagens não lidas
+     */
     updateBadge() {
         const badge = document.getElementById('chatUnreadBadge');
+        const button = document.getElementById('chatFloatBtn');
         if (!badge) return;
 
         if (this.unreadCount > 0) {
             badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
             badge.style.display = 'flex';
+            // Adicionar animação de atenção no botão
+            if (button) button.classList.add('has-notification');
         } else {
             badge.style.display = 'none';
+            // Remover animação
+            if (button) button.classList.remove('has-notification');
         }
     }
 
@@ -89,6 +94,9 @@ class ChatManager {
     resetUnreadCount() {
         this.unreadCount = 0;
         this.updateBadge();
+        // Remover animação ao abrir chat
+        const button = document.getElementById('chatFloatBtn');
+        if (button) button.classList.remove('has-notification');
     }
 
     /**

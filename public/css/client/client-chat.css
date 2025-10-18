@@ -432,3 +432,29 @@
         bottom: 90px;
     }
 }
+
+/* ============================================
+   ANIMAÇÃO DE ATENÇÃO (quando tem notificação)
+   ============================================ */
+
+.chat-float-button.has-notification {
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    40% {
+        transform: translateY(-15px) scale(1.05);
+    }
+    60% {
+        transform: translateY(-8px) scale(1.02);
+    }
+}
+
+/* Parar animação no hover */
+.chat-float-button.has-notification:hover {
+    animation: none;
+    transform: scale(1.1);
+}
