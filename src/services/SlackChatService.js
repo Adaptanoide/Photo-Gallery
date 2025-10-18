@@ -85,13 +85,26 @@ class SlackChatService {
     _buildSlackMessage(conversation, message, clientInfo, attachments) {
         const blocks = [];
 
-        // Header com info do cliente
+        // Header com info completa do cliente
+        const clientName = clientInfo?.name || 'Unknown Customer';
+        const clientCompany = clientInfo?.company || 'No company';
+        const clientCode = conversation.clientCode;
+
         blocks.push({
             type: "header",
             text: {
                 type: "plain_text",
-                text: `💬 ${clientInfo?.name || 'Customer'} (${conversation.clientCode})`,
+                text: `👤 ${clientName} | ${clientCompany}`,
                 emoji: true
+            }
+        });
+
+        // Badge com código de acesso
+        blocks.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `🔑 *Access Code:* \`${clientCode}\``
             }
         });
 
