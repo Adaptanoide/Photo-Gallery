@@ -10,7 +10,7 @@
     left: 30px;
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(135deg, #939393 0%, #757575 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -104,7 +104,7 @@
    ============================================ */
 
 .chat-header {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(135deg, #939393 0%, #757575 100%);
     color: #fbbf24;
     padding: 20px;
     display: flex;
@@ -194,7 +194,7 @@
 
 .chat-message.client .chat-message-bubble {
     background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%);
-    color: #1a1a1a;
+    color: #939393;
     border-bottom-right-radius: 4px;
 }
 
@@ -223,12 +223,12 @@
 }
 
 .chat-message.client .chat-message-avatar {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(135deg, #939393 0%, #757575 100%);
     color: #fbbf24;
 }
 
 .chat-message.salesrep .chat-message-avatar {
-    background: #10b981;
+    background: #d4af37;
     color: white;
 }
 
@@ -313,7 +313,7 @@
 }
 
 .chat-send-btn {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(135deg, #939393 0%, #757575 100%);
     color: #fbbf24;
     border: none;
     width: 40px;
@@ -390,7 +390,7 @@
     position: fixed;
     bottom: 100px;
     left: 30px;
-    background: #1a1a1a;
+    background: #939393;
     padding: 16px 20px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
