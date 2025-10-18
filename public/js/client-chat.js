@@ -232,12 +232,17 @@ class ChatManager {
      * Carrega conversa existente
      */
     async loadExistingConversation() {
-        // Por enquanto, não carrega automaticamente
-        // Apenas quando o usuário abrir o chat
-        console.log('💾 [CHAT] Pronto para carregar conversa');
+        console.log('💾 [CHAT] Carregando/criando conversa automaticamente...');
 
-        // ADICIONAR ESTAS LINHAS:
-        // Iniciar polling mesmo com chat fechado (para notificações)
+        try {
+            // Iniciar ou buscar conversa existente
+            await this.startConversation();
+            console.log('✅ [CHAT] Conversa pronta:', this.conversationId);
+        } catch (error) {
+            console.error('❌ [CHAT] Erro ao carregar conversa:', error);
+        }
+
+        // Iniciar polling (agora com conversationId válido)
         this.startPolling();
     }
 
