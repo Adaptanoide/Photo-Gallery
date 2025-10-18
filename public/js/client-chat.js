@@ -530,7 +530,7 @@ class ChatManager {
                 // Atualizar badge e tocar som UMA VEZ (se tiver mensagens novas)
                 if (newVendorMessages > 0 && !this.isOpen) {
                     this.unreadCount += newVendorMessages;
-                    this.updateUnreadBadge();
+                    this.updateBadge();
                     this.playNotificationSound();
                     console.log(`🔔 [CHAT] ${newVendorMessages} nova(s) mensagem(ns) do vendedor. Total não lidas: ${this.unreadCount}`);
                 }
@@ -546,11 +546,25 @@ class ChatManager {
      */
     updateUnreadBadge() {
         const badge = document.getElementById('chatUnreadBadge');
+        const button = document.getElementById('chatFloatBtn');
+
         if (this.unreadCount > 0) {
             badge.textContent = this.unreadCount;
             badge.style.display = 'flex';
+
+            // Adicionar animação
+            if (button) {
+                button.classList.add('has-notification');
+                console.log('🎯 Animação adicionada ao botão');
+            }
         } else {
             badge.style.display = 'none';
+
+            // Remover animação
+            if (button) {
+                button.classList.remove('has-notification');
+                console.log('⏹️ Animação removida do botão');
+            }
         }
     }
 

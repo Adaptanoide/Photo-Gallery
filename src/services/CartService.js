@@ -402,6 +402,36 @@ class CartService {
         }
     }
 
+    /**
+ * Limpar duplicatas do carrinho (mantém apenas primeira ocorrência)
+ * Retorna: { cleaned: boolean, removedCount: number, uniqueItems: array }
+ */
+    static cleanDuplicates(items) {
+        const seen = new Map(); // fileName -> primeira ocorrência
+        const uniqueItems = [];
+        let removedCount = 0;
+
+        items.forEach(item => {
+            const key = item.fileName;
+
+            if (!seen.has(key)) {
+                // Primeira vez vendo esta foto - manter
+                seen.set(key, true);
+                uniqueItems.push(item);
+            } else {
+                // Duplicata - contar mas não adicionar
+                removedCount++;
+                console.log(`[CART-CLEAN] 🧹 Duplicata removida: ${item.fileName}`);
+            }
+        });
+
+        return {
+            cleaned: removedCount > 0,
+            removedCount,
+            uniqueItems
+        };
+    }
+
     static async getCartSummary(sessionId) {
         try {
             const cart = await this.getCart(sessionId);
@@ -412,6 +442,16 @@ class CartService {
                     items: [],
                     isEmpty: true
                 };
+            }
+
+            // 🆕 AUTO-LIMPEZA DE DUPLICATAS
+            const cleanResult = this.cleanDuplicates(cart.items);
+
+            if (cleanResult.cleaned) {
+                console.log(`[CART-CLEAN] 🧹 ${cleanResult.removedCount} duplicatas removidas do carrinho`);
+                cart.items = cleanResult.uniqueItems;
+                await cart.save();
+                console.log(`[CART-CLEAN] ✅ Carrinho limpo e salvo - ${cart.items.length} items únicos`);
             }
 
             // ✅ FILTRAR GHOST ITEMS PARA CONTAGEM
