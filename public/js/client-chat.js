@@ -61,13 +61,9 @@ class ChatManager {
     }
 
     /**
-     * Shows tutorial tooltip (only first time)
+     * Shows tutorial tooltip (every time user logs in)
      */
     showTooltipTutorial() {
-        // Check if already shown
-        const hasSeenTooltip = localStorage.getItem('chatTooltipSeen');
-        if (hasSeenTooltip) return;
-
         const tooltip = document.getElementById('chatTooltip');
         if (!tooltip) return;
 
@@ -78,9 +74,6 @@ class ChatManager {
             // Hide after 5 seconds
             setTimeout(() => {
                 tooltip.classList.remove('show');
-
-                // Mark as seen
-                localStorage.setItem('chatTooltipSeen', 'true');
 
                 // Remove from DOM after animation
                 setTimeout(() => {
