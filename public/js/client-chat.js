@@ -66,26 +66,35 @@ class ChatManager {
     }
 
     /**
-     * Shows tutorial tooltip (every time user logs in)
+     * Shows tutorial tooltip with close button
      */
     showTooltipTutorial() {
         const tooltip = document.getElementById('chatTooltip');
+        const closeBtn = document.getElementById('chatTooltipClose');
+
         if (!tooltip) return;
 
-        // Show after 3 seconds
+        // Show after 2 seconds
         setTimeout(() => {
             tooltip.classList.add('show');
 
-            // Hide after 5 seconds
-            setTimeout(() => {
-                tooltip.classList.remove('show');
+            // Close button handler
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    tooltip.classList.remove('show');
+                    setTimeout(() => tooltip.remove(), 500);
+                });
+            }
 
-                // Remove from DOM after animation
-                setTimeout(() => {
-                    tooltip.remove();
-                }, 500);
-            }, 5000);
-        }, 3000);
+            // Close when chat is opened
+            const chatButton = document.getElementById('chatFloatBtn');
+            if (chatButton) {
+                chatButton.addEventListener('click', () => {
+                    tooltip.classList.remove('show');
+                    setTimeout(() => tooltip.remove(), 500);
+                }, { once: true });
+            }
+        }, 2000);
     }
 
     /**
@@ -191,7 +200,10 @@ class ChatManager {
         // Adicionar tooltip tutorial
         const tooltipHTML = `
             <div class="chat-tooltip" id="chatTooltip">
-                <p class="chat-tooltip-text">💬 Need help? Click here to chat with us!</p>
+                <div class="chat-tooltip-content">
+                    <p class="chat-tooltip-text">💬 Need help? Have questions? Click here to chat with us!</p>
+                    <button class="chat-tooltip-close" id="chatTooltipClose">×</button>
+                </div>
                 <div class="chat-tooltip-arrow"></div>
             </div>
         `;
