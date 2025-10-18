@@ -235,6 +235,10 @@ class ChatManager {
         // Por enquanto, não carrega automaticamente
         // Apenas quando o usuário abrir o chat
         console.log('💾 [CHAT] Pronto para carregar conversa');
+
+        // ADICIONAR ESTAS LINHAS:
+        // Iniciar polling mesmo com chat fechado (para notificações)
+        this.startPolling();
     }
 
     /**
@@ -462,8 +466,8 @@ class ChatManager {
                     this.addMessage(msg);
                     this.lastMessageTimestamp = msg.createdAt;
 
-                    // Contar mensagens do vendedor
-                    if (msg.sender === 'salesrep' && !this.isOpen) {
+                    // Contar apenas mensagens NÃO LIDAS do vendedor
+                    if (msg.sender === 'salesrep' && !this.isOpen && msg.read === false) {
                         newVendorMessages++;
                     }
                 });
