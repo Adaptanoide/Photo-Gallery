@@ -85,92 +85,28 @@ class SlackChatService {
     _buildSlackMessage(conversation, message, clientInfo, attachments) {
         const blocks = [];
 
-        // Header com info completa do cliente
+        // Header SIMPLES com nome + company
         const clientName = clientInfo?.name || 'Unknown Customer';
         const clientCompany = clientInfo?.company || 'No company';
-        const clientCode = conversation.clientCode;
 
         blocks.push({
             type: "header",
             text: {
                 type: "plain_text",
-                text: `👤 ${clientName} | ${clientCompany}`,
+                text: `${clientName} - ${clientCompany}`,
                 emoji: true
             }
         });
 
-        // Badge com código de acesso
-        blocks.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: `🔑 *Access Code:* \`${clientCode}\``
-            }
-        });
-
-        // Contexto (empresa, foto visualizando, etc)
-        const contextElements = [];
-
-        if (clientInfo?.company) {
-            contextElements.push({
-                type: "mrkdwn",
-                text: `🏢 *${clientInfo.company}*`
-            });
-        }
-
-        if (conversation.context?.photoId) {
-            contextElements.push({
-                type: "mrkdwn",
-                text: `📸 Viewing: *${conversation.context.photoId}*`
-            });
-        }
-
-        if (conversation.context?.category) {
-            contextElements.push({
-                type: "mrkdwn",
-                text: `📁 ${conversation.context.category}`
-            });
-        }
-
-        if (contextElements.length > 0) {
-            blocks.push({
-                type: "context",
-                elements: contextElements
-            });
-        }
-
-        // Divider
         blocks.push({ type: "divider" });
 
-        // Mensagem do cliente
+        // Mensagem direto (sem "Customer says:")
         blocks.push({
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: `*Customer says:*\n${message}`
+                text: message
             }
-        });
-
-        // Se tem foto anexada
-        if (attachments && attachments.length > 0) {
-            attachments.forEach(attachment => {
-                if (attachment.type === 'photo' && attachment.photoUrl) {
-                    blocks.push({
-                        type: "image",
-                        image_url: attachment.photoUrl,
-                        alt_text: `Photo ${attachment.photoId}`
-                    });
-                }
-            });
-        }
-
-        // Footer com instruções
-        blocks.push({
-            type: "context",
-            elements: [{
-                type: "mrkdwn",
-                text: "💡 _Reply in this thread to respond to the customer_"
-            }]
         });
 
         return blocks;
