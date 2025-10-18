@@ -390,7 +390,7 @@
     position: fixed;
     bottom: 100px;
     left: 30px;
-    background: #939393;
+    background: #ffffff;
     padding: 16px 20px;
     border-radius: 12px;
     box-shadow: 0 6px 25px rgba(251, 191, 36, 0.4);
@@ -417,7 +417,7 @@
 }
 
 .chat-tooltip-text {
-    color: #fbbf24;
+    color: #000000;
     font-size: 14px;
     margin: 0;
     font-weight: 500;
