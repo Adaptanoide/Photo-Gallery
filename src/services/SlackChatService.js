@@ -63,11 +63,13 @@ class SlackChatService {
                 throw new Error(`Slack error: ${response.data.error}`);
             }
 
-            // SEMPRE salvar o ts (seja primeira mensagem ou não)
-            if (response.data.ts) {
+            // Salvar thread_ts APENAS na primeira mensagem
+            if (!conversation.slackThreadTs && response.data.ts) {
                 conversation.slackThreadTs = response.data.ts;
                 await conversation.save();
-                console.log('✅ [SLACK] Thread TS salvo:', response.data.ts);
+                console.log('✅ [SLACK] Thread TS salvo (primeira mensagem):', response.data.ts);
+            } else if (conversation.slackThreadTs) {
+                console.log('📌 [SLACK] Usando thread existente:', conversation.slackThreadTs);
             }
 
             console.log('✅ Message sent to Slack');
@@ -88,7 +90,7 @@ class SlackChatService {
         // Header SIMPLES com nome + company
         const clientName = clientInfo?.clientName || 'Unknown Customer';
         const clientCompany = clientInfo?.companyName || 'No company';
-        
+
         blocks.push({
             type: "header",
             text: {
