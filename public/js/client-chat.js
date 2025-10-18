@@ -61,6 +61,36 @@ class ChatManager {
     }
 
     /**
+     * Shows tutorial tooltip (only first time)
+     */
+    showTooltipTutorial() {
+        // Check if already shown
+        const hasSeenTooltip = localStorage.getItem('chatTooltipSeen');
+        if (hasSeenTooltip) return;
+
+        const tooltip = document.getElementById('chatTooltip');
+        if (!tooltip) return;
+
+        // Show after 3 seconds
+        setTimeout(() => {
+            tooltip.classList.add('show');
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                tooltip.classList.remove('show');
+
+                // Mark as seen
+                localStorage.setItem('chatTooltipSeen', 'true');
+
+                // Remove from DOM after animation
+                setTimeout(() => {
+                    tooltip.remove();
+                }, 500);
+            }, 5000);
+        }, 3000);
+    }
+
+    /**
      * Zera o contador de não lidas
      */
     resetUnreadCount() {
@@ -82,6 +112,9 @@ class ChatManager {
 
         // Tentar carregar conversa existente
         await this.loadExistingConversation();
+
+        // Mostrar tooltip tutorial
+        this.showTooltipTutorial();
 
         console.log('✅ [CHAT] Inicializado com sucesso');
     }
@@ -153,6 +186,15 @@ class ChatManager {
         document.body.insertAdjacentHTML('beforeend', chatHTML);
 
         console.log('✅ [CHAT] Elementos criados');
+
+        // Adicionar tooltip tutorial
+        const tooltipHTML = `
+            <div class="chat-tooltip" id="chatTooltip">
+                <p class="chat-tooltip-text">💬 Need help? Click here to chat with us!</p>
+                <div class="chat-tooltip-arrow"></div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', tooltipHTML);
     }
 
     /**
