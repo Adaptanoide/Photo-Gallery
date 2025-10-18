@@ -10,13 +10,13 @@
     left: 30px;
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
     transition: all 0.3s ease;
     z-index: 9998;
     border: none;
@@ -24,13 +24,13 @@
 
 .chat-float-button:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+    box-shadow: 0 6px 30px rgba(251, 191, 36, 0.6);
 }
 
 .chat-float-button svg {
     width: 28px;
     height: 28px;
-    fill: white;
+    fill: #fbbf24;
 }
 
 /* Badge de mensagens não lidas */
@@ -104,12 +104,13 @@
    ============================================ */
 
 .chat-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #fbbf24;
     padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 3px solid #fbbf24;
 }
 
 .chat-header-title {
@@ -136,9 +137,9 @@
 }
 
 .chat-close-btn {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(251, 191, 36, 0.2);
     border: none;
-    color: white;
+    color: #fbbf24;
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -150,7 +151,7 @@
 }
 
 .chat-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(251, 191, 36, 0.3);
 }
 
 /* ============================================
@@ -192,8 +193,8 @@
 }
 
 .chat-message.client .chat-message-bubble {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%);
+    color: #1a1a1a;
     border-bottom-right-radius: 4px;
 }
 
@@ -222,8 +223,8 @@
 }
 
 .chat-message.client .chat-message-avatar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #fbbf24;
 }
 
 .chat-message.salesrep .chat-message-avatar {
@@ -308,12 +309,12 @@
 }
 
 .chat-textarea:focus {
-    border-color: #667eea;
+    border-color: #fbbf24;
 }
 
 .chat-send-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #fbbf24;
     border: none;
     width: 40px;
     height: 40px;
@@ -348,7 +349,7 @@
 @media (max-width: 480px) {
     .chat-window {
         bottom: 0;
-        right: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         border-radius: 0;
@@ -356,7 +357,7 @@
     
     .chat-float-button {
         bottom: 20px;
-        right: 20px;
+        left: 20px;
     }
 }
 
@@ -373,12 +374,12 @@
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #fbbf24;
     border-radius: 3px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: #fcd34d;
 }
 
 /* ============================================
@@ -389,16 +390,17 @@
     position: fixed;
     bottom: 100px;
     left: 30px;
-    background: white;
+    background: #1a1a1a;
     padding: 16px 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
     z-index: 9997;
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.4s ease, transform 0.4s ease;
     pointer-events: none;
     max-width: 250px;
+    border: 2px solid #fbbf24;
 }
 
 .chat-tooltip.show {
@@ -407,7 +409,7 @@
 }
 
 .chat-tooltip-text {
-    color: #333;
+    color: #fbbf24;
     font-size: 14px;
     margin: 0;
     font-weight: 500;
@@ -415,13 +417,13 @@
 
 .chat-tooltip-arrow {
     position: absolute;
-    bottom: -8px;
+    bottom: -10px;
     left: 20px;
     width: 0;
     height: 0;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-top: 8px solid white;
+    border-top: 10px solid #fbbf24;
 }
 
 @media (max-width: 480px) {
