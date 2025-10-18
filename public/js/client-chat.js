@@ -28,16 +28,32 @@ class ChatManager {
     }
 
     /**
-     * Toca som de notificação (tipo Slack - mais suave)
+     * Toca som de notificação (gerado via Web Audio API)
      */
     playNotificationSound() {
         try {
-            // Som de notificação moderno e discreto
-            const audio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-            audio.volume = 0.4;
-            audio.play().catch(e => console.log('🔇 Som bloqueado'));
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            // Configurar som tipo "ding"
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Frequência aguda
+            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+
+            // Volume
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+            // Conectar e tocar
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+
+            console.log('🔔 Som tocado');
         } catch (error) {
-            console.log('🔇 Erro ao tocar som');
+            console.log('🔇 Erro ao tocar som:', error);
         }
     }
 
