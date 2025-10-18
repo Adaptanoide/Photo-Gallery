@@ -7,7 +7,8 @@ class ChatManager {
         this.lastMessageTimestamp = null;
         this.pollingInterval = null;
         this.unreadCount = 0;
-
+        this.clientInitial = 'C'; // Inicial do cliente
+        this.salesRepInitial = 'T'; // Inicial do vendedor (Tiago)
         this.init();
     }
 
@@ -278,13 +279,21 @@ class ChatManager {
 
             if (data.success) {
                 this.conversationId = data.conversation.conversationId;
+                console.log('✅ [CHAT] Conversa iniciada:', this.conversationId);
+
+                // Pegar inicial do cliente
+                if (session) {
+                    const sessionData = JSON.parse(session);
+                    if (sessionData.clientName) {
+                        this.clientInitial = sessionData.clientName[0].toUpperCase();
+                        console.log('👤 [CHAT] Inicial do cliente:', this.clientInitial);
+                    }
+                }
 
                 // Carregar mensagens existentes
                 if (data.messages && data.messages.length > 0) {
                     this.renderMessages(data.messages);
                 }
-
-                console.log('✅ [CHAT] Conversa iniciada:', this.conversationId);
             } else {
                 throw new Error(data.error || 'Failed to start conversation');
             }
@@ -391,7 +400,8 @@ class ChatManager {
         const messageEl = document.createElement('div');
         messageEl.className = `chat-message ${message.sender}`;
 
-        const avatar = message.sender === 'client' ? 'Y' : 'S';
+        const isClient = message.sender === 'client'; // ADICIONAR ESTA LINHA
+        const avatar = isClient ? this.clientInitial : this.salesRepInitial;
         const time = this.formatTime(message.createdAt);
 
         messageEl.innerHTML = `
