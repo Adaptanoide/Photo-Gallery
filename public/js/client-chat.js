@@ -223,8 +223,7 @@ class ChatManager {
         chatWindow.classList.remove('open');
         this.isOpen = false;
 
-        // Parar polling
-        this.stopPolling();
+        // NÃO parar polling - continua rodando para detectar novas mensagens!
 
         console.log('📕 [CHAT] Chat fechado');
     }
