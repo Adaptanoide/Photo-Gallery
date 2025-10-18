@@ -12,6 +12,43 @@ class ChatManager {
     }
 
     /**
+ * Atualiza o badge de mensagens não lidas
+ */
+    updateBadge() {
+        const badge = document.getElementById('chatUnreadBadge');
+        if (!badge) return;
+
+        if (this.unreadCount > 0) {
+            badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    /**
+     * Toca som de notificação
+     */
+    playNotificationSound() {
+        try {
+            // Som de notificação simples em base64
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGWi78OScTgwOUKXh8LhjHAU2jdXzzn0vBSl+zPLaizsKFGS56+mmVBMJQ5zd8sFuJAUrgc7y2Yk2CBlou+/jm08NEFCl4fC3YxwFOI7U8tB+MAUqf83y24s8ChVlueznp1UTCkGa3PLEcSYFK4DN8tmJNggZZ7zw5JxPDBBPpOHwuGMcBjiP1PLRgDIFKn/N8tyMPQoVZbnv6KZUEwpBmtvyxXImBSuAzvLZiTYIGWe88OScTwwQT6Th8LhjHAY4j9Ty0YAyBSp/zfLcjD0KFWa58OilVRMKQJrb8sZzJwUsgM7y2Yk2CBlmu+/km08NEE6j4fC5Yx0GN4/T8tOBMwUrfs3y3I0+ChVmuO/oplUSCj+Z2vLHdCgFLIDO8tmJNQgZZrvv5JtPDBBNo+DwuWMdBjaN0/LVgjQFKn7N8t2OPwoVZbjv6aVVEwlAmtvyyXUpBSyAzvLZiTUHGGa77+SbTwsQTKPg8LpkHQY2jdPy14M0BSt+zfLejz8KFWW48OmlVRIKQJnb8sp2KgUsgM7y2Yk1BxhmvO/lm1ALEFLR8L5nHgY4jdXy2YU1BSp/zfLej0AKFWa48OmnVhIKQJnb8st3KwUsgc7y2Yk1Bxhl');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log('🔇 Som bloqueado pelo navegador'));
+        } catch (error) {
+            console.log('🔇 Erro ao tocar som:', error);
+        }
+    }
+
+    /**
+     * Zera o contador de não lidas
+     */
+    resetUnreadCount() {
+        this.unreadCount = 0;
+        this.updateBadge();
+    }
+
+    /**
      * Inicializa o chat
      */
     async init() {
@@ -143,16 +180,26 @@ class ChatManager {
     }
 
     /**
+ * Toca som de notificação
+ */
+    playNotificationSound() {
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGWi78OScTgwOUKXh8LhjHAU2jdXzzn0vBSl+zPLaizsKFGS56+mmVBMJQ5zd8sFuJAUrgc7y2Yk2CBlou+/jm08NEFCl4fC3YxwFOI7U8tB+MAUqf83y24s8ChVlueznp1UTCkGa3PLEcSYFK4DN8tmJNggZZ7zw5JxPDBBPpOHwuGMcBjiP1PLRgDIFKn/N8tyMPQoVZbnv6KZUEwpBmtvyxXImBSuAzvLZiTYIGWe88OScTwwQT6Th8LhjHAY4j9Ty0YAyBSp/zfLcjD0KFWa58OilVRMKQJrb8sZzJwUsgM7y2Yk2CBlmu+/km08NEE6j4fC5Yx0GN4/T8tOBMwUrfs3y3I0+ChVmuO/oplUSCj+Z2vLHdCgFLIDO8tmJNQgZZrvv5JtPDBBNo+DwuWMdBjaN0/LVgjQFKn7N8t2OPwoVZbjv6aVVEwlAmtvyyXUpBSyAzvLZiTUHGGa77+SbTwsQTKPg8LpkHQY2jdPy14M0BSt+zfLejz8KFWW48OmlVRIKQJnb8sp2KgUsgM7y2Yk1BxhmvO/lm1ALEFLR8L5nHgY4jdXy2YU1BSp/zfLej0AKFWa48OmnVhIKQJnb8st3KwUsgc7y2Yk1Bxhl');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log('🔇 Som bloqueado'));
+        } catch (error) {
+            console.log('🔇 Erro ao tocar som');
+        }
+    }
+
+    /**
      * Abre o chat
      */
     async openChat() {
         const chatWindow = document.getElementById('chatWindow');
         chatWindow.classList.add('open');
         this.isOpen = true;
-
-        // Resetar contador de não lidas
-        this.unreadCount = 0;
-        this.updateUnreadBadge();
+        this.resetUnreadCount();
 
         // Focar no input
         document.getElementById('chatInput').focus();
@@ -417,6 +464,7 @@ class ChatManager {
                     if (msg.sender === 'salesrep' && !this.isOpen) {
                         this.unreadCount++;
                         this.updateUnreadBadge();
+                        this.playNotificationSound();
                     }
                 });
             }
