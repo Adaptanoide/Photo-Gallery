@@ -28,30 +28,33 @@ class ChatManager {
     }
 
     /**
-     * Toca som de notificação (gerado via Web Audio API)
+     * Toca som de notificação (Duplo Beep - WhatsApp style)
      */
     playNotificationSound() {
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-            // Configurar som tipo "ding"
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Frequência aguda
-            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+            // Primeiro beep
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.frequency.value = 800;
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+            osc1.connect(gain1).connect(ctx.destination);
+            osc1.start();
+            osc1.stop(ctx.currentTime + 0.08);
 
-            // Volume
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            // Segundo beep (mais agudo)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.frequency.value = 1000;
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.12);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            osc2.connect(gain2).connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.12);
+            osc2.stop(ctx.currentTime + 0.2);
 
-            // Conectar e tocar
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
-
-            console.log('🔔 Som tocado');
+            console.log('🔔 Som duplo beep tocado');
         } catch (error) {
             console.log('🔇 Erro ao tocar som:', error);
         }
