@@ -14,7 +14,7 @@
 .category-card,
 .folder-card {
     background: var(--luxury-medium);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: var(--border-radius-large);
     box-shadow: var(--shadow);
     cursor: pointer;
@@ -96,7 +96,7 @@
     gap: 0.25rem;
     background: var(--gold-light);
     color: var(--gold-primary);
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem 0.25rem;
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 500;
@@ -646,4 +646,179 @@
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+/* ============================================ */
+/* LAYOUT HORIZONTAL - PREÇO + CONTADOR        */
+/* ============================================ */
+
+.folder-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.folder-card-header h4 {
+    flex: 1;
+    margin: 0;
+}
+
+/* Remover badge do canto */
+.out-of-stock-badge {
+    display: none;
+}
+
+/* Card sem estoque - sutil */
+.folder-card.out-of-stock {
+    opacity: 0.85;
+}
+
+/* ============================================ */
+/* FOLDER STATS - HORIZONTAL SEM QUEBRA        */
+/* ============================================ */
+
+.folder-stats {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    flex-wrap: nowrap; /* Nunca quebrar linha */
+}
+
+/* ============================================ */
+/* PREÇO - À ESQUERDA                          */
+/* ============================================ */
+
+.folder-price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.contact-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ============================================ */
+/* CONTADOR - À DIREITA (CAIXA CHEIA)         */
+/* ============================================ */
+
+.photo-count-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.photo-count-badge i {
+    font-size: 1rem;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.count-text {
+    color: #4b5563;
+    font-weight: 500;
+}
+
+/* ============================================ */
+/* OUT OF STOCK - À DIREITA (CAIXA ABERTA)    */
+/* ============================================ */
+
+.out-of-stock-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(254, 226, 226, 0.6);
+    color: #dc2626;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.out-of-stock-inline i {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.out-text {
+    white-space: nowrap;
+}
+
+/* Hover sutil */
+.folder-card.out-of-stock:hover .out-of-stock-inline {
+    background: rgba(254, 226, 226, 0.8);
+}
+
+/* ============================================ */
+/* RESPONSIVIDADE                              */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    .folder-stats {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .folder-price-badge,
+    .contact-price {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .photo-count-badge,
+    .out-of-stock-inline {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+}
+
+/* Tablets - ajustar fonte */
+@media (min-width: 769px) and (max-width: 1200px) {
+    .folder-price-badge {
+        font-size: 0.95rem;
+        padding: 7px 12px;
+    }
+    
+    .photo-count-badge,
+    .out-of-stock-inline {
+        font-size: 0.85rem;
+    }
 }

@@ -9,6 +9,16 @@ const UnifiedProductComplete = require('../src/models/UnifiedProductComplete');
 const Cart = require('../src/models/Cart');
 const Selection = require('../src/models/Selection');
 
+/**
+ * Sanitiza categoria removendo setas finais
+ * CRÍTICO: Previne categorias com " → " no final que causam NO-QB
+ */
+function sanitizeCategory(category) {
+    if (!category) return category;
+    // Remove " → " ou "→" do final da string
+    return category.replace(/\s*→\s*$/, '').trim();
+}
+
 class DatabaseService {
     constructor() {
         this.connected = false;
@@ -90,7 +100,7 @@ class DatabaseService {
             const qbCode = photoData.qbCode || null;
 
             // Se é Coming Soon, usar os dados já resolvidos
-            let finalCategory = photoData.category || 'uncategorized';
+            let finalCategory = sanitizeCategory(photoData.category) || 'uncategorized';
 
             if (isComingSoon && !finalCategory) {
                 console.log(`   ⚠️ Foto Coming Soon sem category - usando uncategorized`);
@@ -253,7 +263,7 @@ class DatabaseService {
                 cdeStatus: cdeStatus,
 
                 // ===== CAMPOS COMING SOON (NOVOS) =====
-                transitStatus: isComingSoon ? 'coming_soon' : 'available',
+                transitStatus: isComingSoon ? 'coming_soon' : null,
                 cdeTable: isComingSoon ? 'tbetiqueta' : 'tbinventario',
                 isPreOrder: isComingSoon ? false : null,
                 qbItem: qbCode,

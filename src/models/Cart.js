@@ -73,7 +73,7 @@ const cartSchema = new mongoose.Schema({
         // ===== CAMPOS COMING SOON (TRANSIT MANAGEMENT) =====
         transitStatus: {
             type: String,
-            enum: ['coming_soon', null],
+            enum: ['coming_soon', 'available', null],  // ← ADICIONAR 'available'
             default: null,
             comment: 'Flag para identificar fotos em trânsito'
         },

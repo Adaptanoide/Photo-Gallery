@@ -3,6 +3,7 @@
 const express = require('express');
 const PricingService = require('../services/PricingService');
 const PhotoCategory = require('../models/PhotoCategory');
+const AccessCode = require('../models/AccessCode');
 const { authenticateToken } = require('./auth');
 
 const router = express.Router();
@@ -123,23 +124,17 @@ router.get('/test/categories', async (req, res) => {
     }
 });
 
-// Buscar preço por Google Drive ID (para cliente) - VERSÃO OTIMIZADA (sem cálculos)
+// Buscar preço por Google Drive ID (para cliente) - COM CÁLCULO DE PREÇOS
 router.get('/category-price', async (req, res) => {
     try {
         const { googleDriveId, prefix, clientCode } = req.query;
-
-        console.log(`🏷️ Buscando categoria ${googleDriveId || prefix} (MODO RÁPIDO - sem preços)`);
         const categoryId = googleDriveId || prefix;
 
-        // 🔴 DESABILITADO: Busca de cliente especial
-        // 🔴 DESABILITADO: Cálculo de preços
-        // 🔴 RETORNAR APENAS INFO BÁSICA DA CATEGORIA
+        console.log(`🏷️ Buscando preço para categoria ${categoryId}, cliente: ${clientCode || 'ANÔNIMO'}`);
 
-        // Buscar categoria básica
-        let category = null;
+        // Buscar categoria
         const cleanPath = categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId;
-
-        category = await PhotoCategory.findOne({
+        const category = await PhotoCategory.findOne({
             $or: [
                 { folderName: cleanPath.split('/').pop() },
                 { displayName: { $regex: ` → ${cleanPath.split('/').pop().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
@@ -148,26 +143,58 @@ router.get('/category-price', async (req, res) => {
         });
 
         if (!category) {
-            console.log(`❌ Categoria não encontrada: ${googleDriveId}`);
+            console.log(`❌ Categoria não encontrada: ${categoryId}`);
             return res.json({
                 success: false,
                 message: 'Categoria não encontrada'
             });
         }
 
-        // RETORNAR INFO BÁSICA SEM CALCULAR PREÇOS
+        console.log(`✅ Categoria encontrada: ${category.displayName}`);
+
+        // CALCULAR PREÇO
+        let finalPrice = category.basePrice || 0;
+        let priceSource = 'base';
+        let hasPrice = (category.basePrice && category.basePrice > 0);
+
+        // Se tem cliente, verificar Client Rule
+        if (clientCode && category.discountRules && category.discountRules.length > 0) {
+            const clientRule = category.discountRules.find(rule =>
+                rule.clientCode === clientCode && rule.isActive !== false
+            );
+
+            if (clientRule) {
+                console.log(`💰 Client Rule encontrado para ${clientCode}`);
+
+                // Se tem priceRanges customizadas, usar a primeira faixa
+                if (clientRule.priceRanges && clientRule.priceRanges.length > 0) {
+                    finalPrice = clientRule.priceRanges[0].price;
+                    priceSource = 'client-rule-custom';
+                    hasPrice = true;
+                }
+                // Se tem desconto percentual
+                else if (clientRule.discountPercent) {
+                    finalPrice = category.basePrice * (1 - clientRule.discountPercent / 100);
+                    priceSource = 'client-rule-percent';
+                    hasPrice = true;
+                }
+            }
+        }
+
+        // Formatar preço
+        const formattedPrice = hasPrice ? `$${finalPrice.toFixed(2)}` : '';
+
+        console.log(`💵 Preço calculado: ${formattedPrice} (source: ${priceSource})`);
+
         const priceInfo = {
             _id: category._id,
             displayName: category.displayName,
-            basePrice: 0,  // 🔴 SEMPRE 0
-            finalPrice: 0,  // 🔴 SEMPRE 0
-            priceSource: 'disabled',
-            hierarchy: null,
-            formattedPrice: '',  // 🔴 VAZIO
-            hasPrice: false  // 🔴 SEMPRE FALSE
+            basePrice: category.basePrice || 0,
+            finalPrice: finalPrice,
+            priceSource: priceSource,
+            formattedPrice: formattedPrice,
+            hasPrice: hasPrice
         };
-
-        console.log(`✅ Categoria encontrada: ${category.displayName}`);
 
         res.json({
             success: true,
@@ -403,8 +430,8 @@ router.get('/categories/filtered', async (req, res) => {
 
                         console.log(`📊 Separados: ${qbCodes.length} QB codes, ${directNames.length} nomes diretos`);
 
-                        // TEMPORÁRIO - Forçar sem preços durante desenvolvimento
-                        const HIDE_ALL_PRICES = true;
+                        // Verificar se deve esconder preços baseado no cliente
+                        const HIDE_ALL_PRICES = !accessCode?.showPrices;
                         if (HIDE_ALL_PRICES) {
                             categories.forEach(cat => {
                                 cat.price = 0;
@@ -946,6 +973,85 @@ router.get('/categories/all', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao carregar categorias'
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/categories/grouped
+ * Buscar categorias agrupadas por categoria principal
+ */
+router.get('/categories/grouped', authenticateToken, async (req, res) => {
+    try {
+        console.log('📂 Buscando categorias agrupadas...');
+
+        // Buscar todas as categorias ativas
+        const categories = await PhotoCategory.find({
+            isActive: true,
+            photoCount: { $gt: 0 }
+        }).sort({ googleDrivePath: 1 }).lean();
+
+        // Definir categorias principais do Mix & Match (conforme PDF)
+        const mixMatchCategories = [
+            'Colombian Cowhides',
+            'Brazil Best Sellers',
+            'Brazil Top Selected Categories'
+        ];
+
+        // Agrupar por categoria principal
+        const grouped = {};
+
+        categories.forEach(cat => {
+            // Extrair categoria principal do path
+            const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+            const mainCategory = pathParts[0];
+
+            if (!mainCategory) return;
+
+            // Inicializar grupo se não existe
+            if (!grouped[mainCategory]) {
+                grouped[mainCategory] = {
+                    name: mainCategory,
+                    isMixMatch: mixMatchCategories.includes(mainCategory),
+                    subcategories: []
+                };
+            }
+
+            // Adicionar subcategoria
+            grouped[mainCategory].subcategories.push({
+                _id: cat._id,
+                displayName: cat.displayName,
+                folderName: cat.folderName,
+                qbItem: cat.qbItem,
+                photoCount: cat.photoCount,
+                basePrice: cat.basePrice,
+                participatesInMixMatch: cat.participatesInMixMatch || false,
+                volumeRules: cat.discountRules?.find(r => r.clientCode === 'VOLUME')?.priceRanges || []
+            });
+        });
+
+        // Converter para array e ordenar
+        const groupedArray = Object.values(grouped).sort((a, b) => {
+            // Mix & Match primeiro
+            if (a.isMixMatch && !b.isMixMatch) return -1;
+            if (!a.isMixMatch && b.isMixMatch) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        console.log(`✅ ${groupedArray.length} categorias principais encontradas`);
+
+        res.json({
+            success: true,
+            groups: groupedArray,
+            totalCategories: categories.length
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar categorias agrupadas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error loading grouped categories',
+            error: error.message
         });
     }
 });
@@ -1990,6 +2096,265 @@ router.delete('/categories/:id/volume-rules', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error removing volume rules',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/pricing/bulk-update
+ * Atualizar múltiplas categorias em massa
+ */
+router.post('/bulk-update', async (req, res) => {
+    try {
+        const { categoryIds, updates } = req.body;
+
+        console.log('📦 Bulk update iniciado');
+        console.log('Categorias:', categoryIds?.length);
+        console.log('Updates:', updates);
+
+        // Validações
+        if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Category IDs array is required'
+            });
+        }
+
+        if (!updates) {
+            return res.status(400).json({
+                success: false,
+                message: 'Updates object is required'
+            });
+        }
+
+        const results = {
+            success: 0,
+            failed: 0,
+            errors: []
+        };
+
+        // Processar cada categoria
+        for (const categoryId of categoryIds) {
+            try {
+                const category = await PhotoCategory.findById(categoryId);
+
+                if (!category) {
+                    results.failed++;
+                    results.errors.push({
+                        categoryId,
+                        error: 'Category not found'
+                    });
+                    continue;
+                }
+
+                // Atualizar participatesInMixMatch
+                if (updates.participatesInMixMatch !== undefined) {
+                    category.participatesInMixMatch = updates.participatesInMixMatch;
+                }
+
+                // Atualizar basePrice
+                if (updates.basePrice !== undefined && updates.basePrice >= 0) {
+                    category.basePrice = parseFloat(updates.basePrice);
+                }
+
+                // Atualizar Volume Tiers
+                if (updates.volumeTiers && Array.isArray(updates.volumeTiers) && updates.volumeTiers.length > 0) {
+                    // Validar tiers
+                    const processedRanges = [];
+
+                    for (const tier of updates.volumeTiers) {
+                        if (!tier.min || tier.min < 1) {
+                            throw new Error('Minimum quantity must be at least 1');
+                        }
+                        if (tier.price === undefined || tier.price < 0) {
+                            throw new Error('Price must be positive');
+                        }
+
+                        processedRanges.push({
+                            min: parseInt(tier.min),
+                            max: tier.max ? parseInt(tier.max) : null,
+                            price: parseFloat(tier.price)
+                        });
+                    }
+
+                    // Ordenar tiers
+                    processedRanges.sort((a, b) => a.min - b.min);
+
+                    // Remover regra VOLUME existente
+                    category.discountRules = category.discountRules.filter(
+                        rule => rule.clientCode !== 'VOLUME'
+                    );
+
+                    // Adicionar nova regra VOLUME
+                    category.discountRules.push({
+                        clientCode: 'VOLUME',
+                        clientName: 'All Regular Clients',
+                        priceRanges: processedRanges,
+                        isActive: true,
+                        createdAt: new Date()
+                    });
+                }
+
+                await category.save();
+                results.success++;
+
+            } catch (error) {
+                results.failed++;
+                results.errors.push({
+                    categoryId,
+                    error: error.message
+                });
+            }
+        }
+
+        console.log(`✅ Bulk update concluído: ${results.success} sucesso, ${results.failed} falhas`);
+
+        res.json({
+            success: true,
+            message: `Updated ${results.success} categories`,
+            results
+        });
+
+    } catch (error) {
+        console.error('❌ Erro no bulk update:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error in bulk update',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/pricing/bulk-update-individual
+ * Atualizar múltiplas categorias com valores INDIVIDUAIS
+ */
+router.post('/bulk-update-individual', authenticateToken, async (req, res) => {
+    try {
+        const { updates } = req.body;
+
+        console.log('📦 Bulk update individual iniciado');
+        console.log(`Atualizando ${updates?.length || 0} categorias`);
+
+        // Validação
+        if (!updates || !Array.isArray(updates) || updates.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Updates array is required'
+            });
+        }
+
+        const results = {
+            success: 0,
+            failed: 0,
+            errors: []
+        };
+
+        // Processar cada categoria individualmente
+        for (const update of updates) {
+            try {
+                const { categoryId, basePrice, volumeTiers } = update;
+
+                if (!categoryId) {
+                    results.failed++;
+                    results.errors.push({
+                        categoryId: 'unknown',
+                        error: 'Category ID is required'
+                    });
+                    continue;
+                }
+
+                // Buscar categoria
+                const category = await PhotoCategory.findById(categoryId);
+
+                if (!category) {
+                    results.failed++;
+                    results.errors.push({
+                        categoryId,
+                        error: 'Category not found'
+                    });
+                    continue;
+                }
+
+                // Atualizar basePrice
+                if (basePrice !== undefined && basePrice >= 0) {
+                    category.basePrice = parseFloat(basePrice);
+
+                    // Adicionar ao histórico
+                    category.priceHistory.push({
+                        price: parseFloat(basePrice),
+                        changedBy: req.user?.email || 'system',
+                        reason: 'Bulk update'
+                    });
+                }
+
+                // Atualizar Volume Rules (VOLUME discount)
+                if (volumeTiers && Array.isArray(volumeTiers) && volumeTiers.length > 0) {
+                    // Validar tiers
+                    const processedRanges = [];
+
+                    for (const tier of volumeTiers) {
+                        if (!tier.min || tier.min < 1) {
+                            throw new Error(`Invalid min quantity: ${tier.min}`);
+                        }
+                        if (tier.price === undefined || tier.price < 0) {
+                            throw new Error(`Invalid price: ${tier.price}`);
+                        }
+
+                        processedRanges.push({
+                            min: parseInt(tier.min),
+                            max: tier.max ? parseInt(tier.max) : null,
+                            price: parseFloat(tier.price)
+                        });
+                    }
+
+                    // Buscar ou criar regra VOLUME
+                    let volumeRule = category.discountRules.find(r => r.clientCode === 'VOLUME');
+
+                    if (volumeRule) {
+                        // Atualizar existente
+                        volumeRule.priceRanges = processedRanges;
+                        volumeRule.updatedAt = new Date();
+                    } else {
+                        // Criar nova
+                        category.discountRules.push({
+                            clientCode: 'VOLUME',
+                            priceRanges: processedRanges,
+                            isActive: true
+                        });
+                    }
+                }
+
+                // Salvar categoria
+                await category.save();
+
+                results.success++;
+                console.log(`✅ Categoria ${category.displayName} atualizada`);
+
+            } catch (error) {
+                results.failed++;
+                results.errors.push({
+                    categoryId: update.categoryId,
+                    error: error.message
+                });
+                console.error(`❌ Erro ao atualizar ${update.categoryId}:`, error.message);
+            }
+        }
+
+        console.log(`✅ Bulk update concluído: ${results.success} sucesso, ${results.failed} falhas`);
+
+        res.json({
+            success: results.failed === 0,
+            message: `Updated ${results.success} categories`,
+            results: results
+        });
+
+    } catch (error) {
+        console.error('❌ Erro no bulk update:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error processing bulk update',
             error: error.message
         });
     }

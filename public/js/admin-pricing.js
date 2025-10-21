@@ -59,23 +59,14 @@ class AdminPricing {
     setupEventListeners() {
         // Main buttons
         const btnRefreshR2 = document.getElementById('btnSyncDrive');
-        const btnBulkEdit = document.getElementById('btnBulkEdit');
-
         if (btnRefreshR2) {
-            // Trocar texto do botão
             btnRefreshR2.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh from R2';
             btnRefreshR2.addEventListener('click', () => this.refreshFromR2());
         }
-
-        if (btnBulkEdit) {
-            btnBulkEdit.addEventListener('click', () => this.openBulkEditModal());
-        }
-
         // Filters
         const searchInput = document.getElementById('searchCategories');
         const filterPrice = document.getElementById('filterPriceStatus');
         const sortSelect = document.getElementById('sortCategories');
-
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
         }
@@ -86,24 +77,16 @@ class AdminPricing {
             sortSelect.addEventListener('change', (e) => this.handleSort(e.target.value));
         }
 
-        // Pagination
-        const btnPrevPage = document.getElementById('btnPrevPagePricing');
-        const btnNextPage = document.getElementById('btnNextPagePricing');
+        // Botões de Save/Discard (novo footer)
+        const btnSaveChanges = document.getElementById('btnSaveAllChanges');
+        const btnDiscardChanges = document.getElementById('btnDiscardChanges');
 
-        if (btnPrevPage) btnPrevPage.addEventListener('click', () => this.previousPage());
-        if (btnNextPage) btnNextPage.addEventListener('click', () => this.nextPage());
-
-        // Form submit
-        if (this.priceForm) {
-            this.priceForm.addEventListener('submit', (e) => this.handlePriceSubmit(e));
+        if (btnSaveChanges) {
+            btnSaveChanges.addEventListener('click', () => this.saveAllPricingChanges());
         }
-
-        // Close modal with ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.priceModal) {
-                this.closePriceModal();
-            }
-        });
+        if (btnDiscardChanges) {
+            btnDiscardChanges.addEventListener('click', () => this.discardPricingChanges());
+        }
     }
 
     // ===== INITIAL DATA LOADING =====
@@ -302,439 +285,359 @@ class AdminPricing {
 
     // ===== RENDER FROM CACHE =====
     renderFromCache() {
-        // Usar categorias filtradas ou todas se não houver filtros
-        const source = this.filteredCategories.length > 0 ? this.filteredCategories : this.allCategories;
-
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-
-        this.categories = source.slice(startIndex, endIndex);
-        this.renderCategoriesTable();
-
-        const totalPages = Math.ceil(source.length / this.itemsPerPage);
-        this.updatePagination({
-            page: this.currentPage,
-            totalPages: totalPages,
-            hasNext: this.currentPage < totalPages,
-            hasPrev: this.currentPage > 1
-        });
+        // Carregar interface agrupada
+        this.loadAndRenderGrouped();
     }
 
-    renderCategoriesTable() {
-        if (!this.pricingTable) return;
-
-        if (this.categories.length === 0) {
-            this.pricingTable.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center">
-                        <i class="fas fa-inbox"></i>
-                        No categories found
-                        <br><small>Try refreshing from R2</small>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        const rows = this.categories.map(category => `
-            <tr onclick="adminPricing.viewCategoryDetails('${category._id}')">
-                <td class="qb-item-cell">
-                    <div class="qb-item-container">
-                        <span class="qb-item-display">${category.qbItem || 'Not set'}</span>
-                        <button class="btn-edit-qb" 
-                            onclick="event.stopPropagation(); adminPricing.editQBItem('${category._id}', '${(category.qbItem || '').replace(/'/g, '&#39;')}')" 
-                            title="Edit QB Item">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                </td>
-                <td class="category-description-cell">
-                    <strong>${this.cleanCategoryName(category.displayName)}</strong>
-                    <small class="text-muted">${category.folderName}</small>
-                </td>
-                <td class="photos-count-cell">
-                    <span class="photo-count-badge">${category.availableCount || category.photoCount}</span>
-                    <small>photo${(category.availableCount || category.photoCount) !== 1 ? 's' : ''}</small>
-                </td>
-                <td class="price-cell ${category.basePrice > 0 ? 'has-price' : 'no-price'}">
-                    ${category.basePrice > 0 ?
-                `<span class="price-value">$${category.basePrice.toFixed(2)}</span>` :
-                '<span class="no-price-text">No price</span>'}
-                </td>
-                <td class="pricing-actions-cell" onclick="event.stopPropagation();">
-                    <button class="btn-pricing-action btn-edit-price" 
-                        onclick="adminPricing.openPriceModal('${category._id}')"
-                        title="Edit Price">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-
-        this.pricingTable.innerHTML = rows;
-    }
-
-    updateStatistics(categories) {
-        // Update stats cards
-        const totalCount = categories.length;
-        const withPrice = categories.filter(c => c.basePrice > 0).length;
-        const withoutPrice = totalCount - withPrice;
-        const totalPhotos = categories.reduce((sum, c) => sum + c.photoCount, 0);
-
-        // Update DOM elements if they exist
-        const elements = {
-            'totalCategoriesCount': totalCount,
-            'categoriesWithPriceCount': withPrice,
-            'categoriesWithoutPriceCount': withoutPrice,
-            // Linha removida - Total Photos card removido
-        };
-
-        Object.entries(elements).forEach(([id, value]) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = value;
-        });
-    }
-
-    // ===== PRICE MODAL =====
-    async openPriceModal(categoryId) {
+    async loadAndRenderGrouped() {
         try {
-            const response = await fetch(`/api/pricing/categories/${categoryId}`, {
+            // Esconder loading
+            const loading = document.getElementById('pricingConfigLoading');
+            const content = document.getElementById('pricingConfigContent');
+
+            if (loading) loading.style.display = 'flex';
+            if (content) content.style.display = 'none';
+
+            // Buscar categorias agrupadas
+            const response = await fetch('/api/pricing/categories/grouped', {
                 headers: this.getAuthHeaders()
             });
 
             const data = await response.json();
 
-            if (!data.success) {
-                throw new Error(data.message || 'Category not found');
-            }
+            if (data.success) {
+                this.renderGroupedInPage(data.groups);
 
-            this.currentCategory = data.category;
-            this.updatePriceModal();
-            this.showModal();
+                // Mostrar content
+                if (loading) loading.style.display = 'none';
+                if (content) content.style.display = 'block';
+            }
 
         } catch (error) {
-            console.error('❌ Error opening price modal:', error);
-            this.showNotification('Error loading category', 'error');
+            console.error('❌ Error loading grouped categories:', error);
+            this.showNotification('Error loading categories', 'error');
         }
     }
 
-    updatePriceModal() {
-        if (!this.currentCategory) return;
-
-        // Update modal content
-        const modalTitle = document.getElementById('priceModalTitle');
-        const categoryName = document.getElementById('modalCategoryName');
-        const photoCount = document.getElementById('modalPhotoCount');
-        const currentPrice = document.getElementById('modalCurrentPrice');
-        const newPriceInput = document.getElementById('newPrice');
-        const qbItemInput = document.getElementById('qbItem');
-
-        if (modalTitle) modalTitle.textContent = 'Edit Price & Settings';
-        if (categoryName) categoryName.textContent = this.cleanCategoryName(this.currentCategory.displayName);
-        if (photoCount) photoCount.textContent = `${this.currentCategory.availableCount || this.currentCategory.photoCount} photos`;
-
-        if (currentPrice) {
-            currentPrice.textContent = this.currentCategory.basePrice > 0 ?
-                `Current: $${this.currentCategory.basePrice.toFixed(2)}` : 'No price set';
+    renderGroupedInPage(groups) {
+        const container = document.getElementById('pricingConfigContent');
+        if (!container) {
+            console.error('❌ Container #pricingConfigContent não encontrado');
+            return;
         }
 
-        if (newPriceInput) newPriceInput.value = this.currentCategory.basePrice || '';
-        if (qbItemInput) qbItemInput.value = this.currentCategory.qbItem || '';
+        let html = `<div class="bulk-categories-list">`;
 
-        // Load discount rules
-        this.loadCategoryDiscounts();
-        // Carregar volume rules também
-        this.loadVolumeRules();
-        // Carregar clientes no dropdown
-        this.loadAvailableClients();
-    }
+        // Renderizar cada grupo
+        groups.forEach(group => {
+            html += `
+                <div class="category-group">
+                    <div class="category-group-header">
+                        <span class="group-name">
+                            <i class="fas fa-folder"></i>
+                            ${group.name}
+                            ${group.isMixMatch ? '<span class="mix-match-badge">MIX & MATCH</span>' : ''}
+                        </span>
+                        <span class="group-count">${group.subcategories.length} subcategories</span>
+                    </div>
+                    <div class="subcategories-list">
+            `;
 
-    showModal() {
-        if (this.priceModal) {
-            this.priceModal.style.display = 'flex';
-            this.priceModal.classList.add('active');
+            // Renderizar subcategorias
+            group.subcategories.forEach(subcat => {
+                const isMixMatch = subcat.participatesInMixMatch;
+                const tier1 = subcat.volumeRules[0]?.price || subcat.basePrice || '';
+                const tier2 = subcat.volumeRules[1]?.price || '';
+                const tier3 = subcat.volumeRules[2]?.price || '';
+                const tier4 = subcat.volumeRules[3]?.price || '';
 
-            // Focus on price input
-            setTimeout(() => {
-                const priceInput = document.getElementById('newPrice');
-                if (priceInput) priceInput.focus();
-            }, 100);
-
-            // ADICIONAR ESTA LINHA:
-            this.setupBasePriceListener();
-        }
-    }
-
-    // Listener para mudanças no base price
-    setupBasePriceListener() {
-        const basePriceInput = document.getElementById('newPrice');
-        if (!basePriceInput) return;
-
-        // Adicionar listener para atualizar primeira regra de volume
-        basePriceInput.addEventListener('input', (e) => {
-            const newBasePrice = parseFloat(e.target.value) || 0;
-
-            // Atualizar primeira regra de volume automaticamente
-            const firstVolumePrice = document.querySelector('[data-first-rule="true"]');
-            if (firstVolumePrice) {
-                const oldValue = parseFloat(firstVolumePrice.value);
-                firstVolumePrice.value = newBasePrice;
-
-                // Visual feedback
-                firstVolumePrice.style.transition = 'background-color 0.3s';
-                firstVolumePrice.style.backgroundColor = 'rgba(212, 175, 55, 0.2)';
-                setTimeout(() => {
-                    firstVolumePrice.style.backgroundColor = '';
-                }, 300);
-
-                // Remover aviso de erro se existir
-                const warning = firstVolumePrice.parentElement.querySelector('.text-danger');
-                if (warning) warning.remove();
-                firstVolumePrice.classList.remove('is-invalid');
-
-                console.log(`✅ First volume rule auto-updated: $${oldValue} → $${newBasePrice}`);
-            }
-
-            // Atualizar display do current price em tempo real
-            const currentPriceDisplay = document.getElementById('modalCurrentPrice');
-            if (currentPriceDisplay) {
-                if (newBasePrice > 0) {
-                    currentPriceDisplay.innerHTML = `<i class="fas fa-dollar-sign"></i> Current: <strong>$${newBasePrice.toFixed(2)}</strong>`;
-                    currentPriceDisplay.parentElement.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
-                } else {
-                    currentPriceDisplay.innerHTML = '<i class="fas fa-exclamation-circle"></i> <span style="color: #ff6b6b;">No price set</span>';
-                    currentPriceDisplay.parentElement.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
-                }
-            }
-
-            // Marcar como alterado apenas se mudou do valor original
-            if (this.currentCategory && newBasePrice !== this.currentCategory.basePrice) {
-                this.markAsChanged();
-            }
-        });
-    }
-
-    closePriceModal() {
-        // Verificar mudanças não salvas
-        if (this.hasUnsavedChanges) {
-            // Mostrar modal customizado ao invés de alert
-            const modal = document.getElementById('unsavedChangesModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                return; // Não fecha ainda
-            }
-        }
-
-        // Se não tem mudanças, fecha direto
-        this.executeClose();
-    }
-
-    // Nova função para confirmar fechamento
-    confirmClose() {
-        const confirmModal = document.getElementById('unsavedChangesModal');
-        if (confirmModal) {
-            confirmModal.style.display = 'none';
-        }
-        this.executeClose();
-    }
-
-    // Nova função para cancelar fechamento
-    cancelClose() {
-        const confirmModal = document.getElementById('unsavedChangesModal');
-        if (confirmModal) {
-            confirmModal.style.display = 'none';
-        }
-    }
-
-    // Nova função que realmente fecha
-    executeClose() {
-        const modal = document.getElementById('priceModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.remove('active');
-        }
-
-        // Resetar estados
-        this.currentCategory = null;
-        this.hasUnsavedChanges = false;
-    }
-
-    async saveAllPricing() {
-        if (!this.currentCategory) return;
-
-        try {
-            // 1. Pegar valores do formulário
-            const newPrice = parseFloat(document.getElementById('newPrice').value) || 0;
-            const reason = 'Price update via modal';
-            const qbItem = document.getElementById('qbItem')?.value || this.currentCategory.qbItem || '';
-
-            if (newPrice < 0) {
-                this.showNotification('Price must be positive', 'error');
-                return;
-            }
-
-            // 2. Auto-ajustar primeira regra se necessário (apenas se existirem volume rules)
-            const volumeRulesExist = document.querySelectorAll('.volume-rule-row').length > 0;
-            if (volumeRulesExist) {
-                const firstPriceInput = document.querySelector('[data-first-rule="true"]');
-                if (firstPriceInput) {
-                    const firstPrice = parseFloat(firstPriceInput.value);
-                    if (firstPrice !== newPrice) {
-                        // Auto-corrigir ao invés de dar erro
-                        firstPriceInput.value = newPrice;
-                        console.log(`✅ First volume rule auto-adjusted to $${newPrice}`);
-                    }
-                }
-            }
-
-            this.setLoading(true);
-
-            // 3. Salvar base price
-            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/price`, {
-                method: 'PUT',
-                headers: {
-                    ...this.getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    price: newPrice,
-                    qbItem: qbItem,
-                    reason: reason
-                })
+                html += `
+                    <div class="subcategory-row" data-category-id="${subcat._id}">
+                        <div class="subcat-info">
+                            <span class="subcat-name">${subcat.folderName}</span>
+                            <span class="subcat-meta">
+                                <span class="qb-code">${subcat.qbItem || 'No QB'}</span>
+                                <span class="photo-count">${subcat.photoCount} photos</span>
+                            </span>
+                        </div>
+                        <div class="subcat-tiers">
+                            ${isMixMatch ? `
+                                <!-- 4 TIERS para Mix & Match -->
+                                <div class="tier-input-group">
+                                    <label>1-5:</label>
+                                    <input type="number" class="tier-price-input" 
+                                        data-tier="1" 
+                                        data-original="${tier1}"
+                                        value="${tier1}" 
+                                        placeholder="119.00" step="0.01" min="0">
+                                </div>
+                                <div class="tier-input-group">
+                                    <label>6-12:</label>
+                                    <input type="number" class="tier-price-input" 
+                                        data-tier="2" 
+                                        data-original="${tier2}"
+                                        value="${tier2}" 
+                                        placeholder="115.00" step="0.01" min="0">
+                                </div>
+                                <div class="tier-input-group">
+                                    <label>13-36:</label>
+                                    <input type="number" class="tier-price-input" 
+                                        data-tier="3" 
+                                        data-original="${tier3}"
+                                        value="${tier3}" 
+                                        placeholder="105.00" step="0.01" min="0">
+                                </div>
+                                <div class="tier-input-group">
+                                    <label>37+:</label>
+                                    <input type="number" class="tier-price-input" 
+                                        data-tier="4" 
+                                        data-original="${tier4}"
+                                        value="${tier4}" 
+                                        placeholder="99.00" step="0.01" min="0">
+                                </div>
+                            ` : `
+                                <!-- 1 TIER apenas para não-Mix&Match -->
+                                <div class="tier-input-group single-tier">
+                                    <label>Base Price:</label>
+                                    <input type="number" class="tier-price-input" 
+                                        data-tier="base" 
+                                        data-original="${tier1}"
+                                        value="${tier1}" 
+                                        placeholder="0.00" step="0.01" min="0">
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
             });
 
-            const data = await response.json();
+            html += `
+                    </div>
+                </div>
+            `;
+        });
 
-            if (data.success) {
-                // 4. Coletar volume rules
-                const volumeRules = [];
-                const ruleRows = document.querySelectorAll('.volume-rule-row');
+        html += `</div>`;
 
-                ruleRows.forEach(row => {
-                    const from = parseInt(row.querySelector('.volume-from').value);
-                    const to = row.querySelector('.volume-to').value;
-                    const price = parseFloat(row.querySelector('.volume-price').value);
+        container.innerHTML = html;
 
-                    if (from && price) {
-                        volumeRules.push({
-                            min: from,
-                            max: to ? parseInt(to) : null,
-                            price: price
-                        });
+        // Setup event listeners (só para inputs de preço)
+        this.setupPricingPageListeners();
+    }
+
+    setupPricingPageListeners() {
+        // Reset seleções
+        if (!this.selectedCategories) {
+            this.selectedCategories = new Set();
+        }
+        this.selectedCategories.clear();
+
+        // Checkboxes de grupo (selecionar todos)
+        document.querySelectorAll('.group-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                const group = e.target.closest('.category-group');
+
+                group.querySelectorAll('.subcat-checkbox').forEach(subCheckbox => {
+                    subCheckbox.checked = isChecked;
+                    const categoryId = subCheckbox.dataset.categoryId;
+
+                    if (isChecked) {
+                        this.selectedCategories.add(categoryId);
+                    } else {
+                        this.selectedCategories.delete(categoryId);
                     }
                 });
 
-                // 5. Salvar ou deletar volume rules baseado na quantidade
-                if (volumeRules.length > 0) {
-                    // TEM REGRAS - SALVAR
-                    console.log(`💾 Saving ${volumeRules.length} volume rules...`);
-                    const volumeResponse = await fetch(`/api/pricing/categories/${this.currentCategory._id}/volume-rules`, {
-                        method: 'POST',
-                        headers: {
-                            ...this.getAuthHeaders(),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ priceRanges: volumeRules })
-                    });
+                this.updateSelectionCount();
+            });
+        });
 
-                    const volumeResult = await volumeResponse.json();
-                    if (!volumeResult.success) {
-                        this.showNotification('Price saved but volume rules failed', 'warning');
-                    } else {
-                        console.log(`✅ ${volumeRules.length} volume rules saved`);
-                    }
+        // Checkboxes individuais
+        document.querySelectorAll('.subcat-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const categoryId = e.target.dataset.categoryId;
+
+                if (e.target.checked) {
+                    this.selectedCategories.add(categoryId);
                 } else {
-                    // NÃO TEM REGRAS - DELETAR DO BANCO
-                    console.log('🗑️ No volume rules found, deleting from database...');
-                    try {
-                        const deleteResponse = await fetch(`/api/pricing/categories/${this.currentCategory._id}/volume-rules`, {
-                            method: 'DELETE',
-                            headers: this.getAuthHeaders()
-                        });
-
-                        const deleteResult = await deleteResponse.json();
-                        if (deleteResult.success) {
-                            console.log('✅ All volume rules deleted from database');
-                        } else {
-                            console.log('⚠️ Failed to delete volume rules:', deleteResult.message);
-                        }
-                    } catch (deleteError) {
-                        console.error('❌ Error deleting volume rules:', deleteError);
-                        // Não bloquear o fluxo, apenas avisar
-                        console.log('⚠️ Volume rules may not have been deleted');
-                    }
+                    this.selectedCategories.delete(categoryId);
                 }
 
-                // 6. Resetar flag e atualizar botão
-                this.hasUnsavedChanges = false;
-                const saveButton = document.querySelector('[onclick*="saveAllPricing"]');
-                if (saveButton) {
-                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save All Changes';
-                    saveButton.classList.remove('btn-warning');
-                }
+                this.updateSelectionCount();
+            });
+        });
 
-                this.showNotification('All settings saved successfully!', 'success');
-                this.closePriceModal();
-                await this.loadCategories();
+        // Inputs de preço (detectar mudanças)
+        document.querySelectorAll('.tier-price-input').forEach(input => {
+            input.addEventListener('input', () => {
+                this.updateModifiedCount();
+            });
+        });
+    }
 
-            } else {
-                throw new Error(data.message || 'Error saving price');
-            }
-
-        } catch (error) {
-            console.error('Error saving:', error);
-            this.showNotification(error.message, 'error');
-        } finally {
-            this.setLoading(false);
+    updateSelectionCount() {
+        const count = this.selectedCategories ? this.selectedCategories.size : 0;
+        const countEl = document.getElementById('pricingSelectedCount');
+        if (countEl) {
+            countEl.textContent = `${count} ${count === 1 ? 'category' : 'categories'} selected`;
         }
     }
 
-    async handlePriceSubmit(e) {
-        e.preventDefault();
+    updateModifiedCount() {
+        let modifiedCount = 0;
 
-        if (!this.currentCategory) return;
+        // Contar e destacar campos modificados
+        document.querySelectorAll('.tier-price-input').forEach(input => {
+            const original = input.dataset.original || '';
+            const current = input.value || '';
 
+            if (original !== current) {
+                modifiedCount++;
+                // Adicionar classe visual
+                input.classList.add('modified');
+            } else {
+                // Remover classe visual
+                input.classList.remove('modified');
+            }
+        });
+
+        // Atualizar contador no header
+        const countEl = document.getElementById('pricingModifiedCount');
+        const indicator = document.getElementById('pricingModifiedIndicator');
+        const btnSave = document.getElementById('btnSaveAllChanges');
+        const btnDiscard = document.getElementById('btnDiscardChanges');
+
+        if (countEl) {
+            countEl.textContent = modifiedCount;
+        }
+
+        // Mostrar/esconder elementos baseado em mudanças
+        if (modifiedCount > 0) {
+            if (indicator) indicator.style.display = 'inline-flex';
+            if (btnSave) btnSave.style.display = 'inline-flex';
+            if (btnDiscard) btnDiscard.style.display = 'inline-flex';
+        } else {
+            if (indicator) indicator.style.display = 'none';
+            if (btnSave) btnSave.style.display = 'none';
+            if (btnDiscard) btnDiscard.style.display = 'none';
+        }
+    }
+
+    async saveAllPricingChanges() {
         try {
-            const newPrice = parseFloat(document.getElementById('newPrice').value) || 0;
-            const qbItem = document.getElementById('qbItem')?.value || this.currentCategory.qbItem || '';
-            const reason = document.getElementById('priceReason')?.value || 'Price update';
+            // Coletar todas as mudanças
+            const updates = [];
 
-            if (newPrice < 0) {
-                this.showNotification('Price must be positive', 'error');
+            document.querySelectorAll('.subcategory-row').forEach(row => {
+                const categoryId = row.dataset.categoryId;
+                const inputs = row.querySelectorAll('.tier-price-input');
+
+                let hasChanges = false;
+                const tiers = [];
+
+                inputs.forEach(input => {
+                    const original = input.dataset.original || '';
+                    const current = input.value || '';
+
+                    if (original !== current) {
+                        hasChanges = true;
+                    }
+
+                    const tier = parseInt(input.dataset.tier);
+                    const price = parseFloat(current);
+
+                    if (!isNaN(price) && price > 0) {
+                        if (tier === 1) {
+                            tiers.push({ min: 1, max: 12, price });
+                        } else if (tier === 2) {
+                            tiers.push({ min: 13, max: 36, price });
+                        } else if (tier === 3) {
+                            tiers.push({ min: 37, max: null, price });
+                        }
+                    }
+                });
+
+                if (hasChanges && tiers.length > 0) {
+                    updates.push({
+                        categoryId,
+                        basePrice: tiers[0]?.price || 0,
+                        volumeTiers: tiers
+                    });
+                }
+            });
+
+            if (updates.length === 0) {
+                this.showNotification('No changes to save', 'info');
                 return;
             }
 
+            console.log(`💾 Saving ${updates.length} categories...`);
             this.setLoading(true);
 
-            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/price`, {
-                method: 'PUT',
+            // Enviar para o backend
+            const response = await fetch('/api/pricing/bulk-update-individual', {
+                method: 'POST',
                 headers: {
                     ...this.getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    price: newPrice,
-                    qbItem: qbItem,
-                    reason: reason
-                })
+                body: JSON.stringify({ updates })
             });
 
             const data = await response.json();
 
             if (data.success) {
-                this.showNotification('Price updated successfully!', 'success');
-                this.closePriceModal();
-                await this.loadCategories();
+                this.showNotification(`✅ ${updates.length} categories updated successfully!`, 'success');
+
+                // Recarregar
+                await this.loadCategories(true);
+                await this.loadAndRenderGrouped();
+
+                // Limpar indicadores e esconder botões
+                this.updateModifiedCount();
             } else {
-                throw new Error(data.message || 'Error saving price');
+                throw new Error(data.message || 'Failed to save changes');
             }
 
         } catch (error) {
-            console.error('❌ Error saving price:', error);
-            this.showNotification(error.message, 'error');
+            console.error('❌ Error saving changes:', error);
+            this.showNotification(error.message || 'Error saving changes', 'error');
         } finally {
             this.setLoading(false);
         }
+    }
+
+    discardPricingChanges() {
+        if (confirm('Discard all unsaved changes?')) {
+            // Resetar todos os inputs para valores originais
+            document.querySelectorAll('.tier-price-input').forEach(input => {
+                input.value = input.dataset.original || '';
+            });
+
+            // Atualizar contadores
+            this.updateModifiedCount();
+
+            this.showNotification('Changes discarded', 'info');
+        }
+    }
+
+    updateStatistics(categories) {
+        // Calcular estatísticas
+        const totalCount = categories.length;
+        const withPrice = categories.filter(c => c.basePrice > 0).length;
+        const withoutPrice = totalCount - withPrice;
+
+        // Atualizar stats inline no header (novos IDs)
+        const inlineTotal = document.getElementById('inlineTotalCount');
+        const inlinePriced = document.getElementById('inlinePricedCount');
+        const inlineNeedPrice = document.getElementById('inlineNeedPriceCount');
+
+        if (inlineTotal) inlineTotal.textContent = totalCount;
+        if (inlinePriced) inlinePriced.textContent = withPrice;
+        if (inlineNeedPrice) inlineNeedPrice.textContent = withoutPrice;
+
+        console.log(`📊 Stats updated: ${totalCount} total, ${withPrice} priced, ${withoutPrice} need pricing`);
     }
 
     // ===== DISCOUNT MANAGEMENT =====
@@ -1833,28 +1736,6 @@ class AdminPricing {
         }
     }
 
-    // ===== VIEW CATEGORY DETAILS =====
-    async viewCategoryDetails(categoryId) {
-        try {
-            const response = await fetch(`/api/pricing/categories/${categoryId}`, {
-                headers: this.getAuthHeaders()
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // Open price modal with full details
-                this.currentCategory = data.category;
-                this.updatePriceModal();
-                this.showModal();
-            }
-
-        } catch (error) {
-            console.error('❌ Error loading category:', error);
-            this.showNotification('Error loading category details', 'error');
-        }
-    }
-
     // ===== FILTERS =====
     handleSearch(value) {
         this.filters.search = value;
@@ -1896,91 +1777,64 @@ class AdminPricing {
         }
     }
 
-    // ===== PAGINATION =====
-    updatePagination(pagination) {
-        if (!this.pricingPagination || !pagination) return;
+    // ===== SAVE BASE PRICE (SIMPLIFIED) =====
+    async saveBasePrice() {
+        if (!this.currentCategory) return;
 
-        const { page = 1, totalPages = 1, hasNext = false, hasPrev = false } = pagination;
+        try {
+            const newPrice = parseFloat(document.getElementById('newPrice').value) || 0;
 
-        // const paginationInfo = document.getElementById('paginationInfo');  // COMENTAR
-        const btnPrevPage = document.getElementById('btnPrevPagePricing');
-        const btnNextPage = document.getElementById('btnNextPagePricing');
-
-        // if (paginationInfo) paginationInfo.textContent = `Page ${page} of ${totalPages}`;  // COMENTAR
-        if (btnPrevPage) btnPrevPage.disabled = !hasPrev;
-        if (btnNextPage) btnNextPage.disabled = !hasNext;
-
-        // ADICIONAR ESTA LINHA:
-        this.renderPaginationNumbers(page, totalPages);
-
-        this.pricingPagination.style.display = totalPages > 1 ? 'flex' : 'none';
-    }
-
-    previousPage() {
-        if (this.currentPage > 1) {
-            this.currentPage--;
-            this.loadCategories();
-        }
-    }
-
-    nextPage() {
-        this.currentPage++;
-        this.loadCategories();
-    }
-
-    // ===== GO TO PAGE =====
-    goToPage(page) {
-        if (page < 1) return;
-        this.currentPage = page;
-        this.loadCategories();
-    }
-
-    // ===== RENDER PAGINATION NUMBERS =====
-    renderPaginationNumbers(currentPage, totalPages) {
-        const container = document.getElementById('pricingPaginationNumbers');
-        if (!container) return;
-
-        let html = '';
-        const maxButtons = 5;
-        let startPage = 1;
-        let endPage = totalPages;
-
-        if (totalPages > maxButtons) {
-            const halfButtons = Math.floor(maxButtons / 2);
-
-            if (currentPage <= halfButtons + 1) {
-                endPage = maxButtons;
-            } else if (currentPage >= totalPages - halfButtons) {
-                startPage = totalPages - maxButtons + 1;
-            } else {
-                startPage = currentPage - halfButtons;
-                endPage = currentPage + halfButtons;
+            if (newPrice < 0) {
+                this.showNotification('Price must be positive', 'error');
+                return;
             }
-        }
 
-        for (let i = startPage; i <= endPage; i++) {
-            const isActive = i === currentPage ? 'active' : '';
-            html += `
-                <button class="btn-page-number ${isActive}" 
-                        onclick="adminPricing.goToPage(${i})"
-                        ${i === currentPage ? 'disabled' : ''}>
-                    ${i}
-                </button>
-            `;
-        }
+            this.setLoading(true);
 
-        if (endPage < totalPages) {
-            html += `<span class="pagination-dots">...</span>`;
-        }
+            // Salvar apenas o base price
+            const response = await fetch(`/api/pricing/categories/${this.currentCategory._id}/price`, {
+                method: 'PUT',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    price: newPrice,
+                    qbItem: this.currentCategory.qbItem || '',
+                    reason: 'Base price update'
+                })
+            });
 
-        container.innerHTML = html;
+            const data = await response.json();
+
+            if (data.success) {
+                // ✅ RESETAR FLAG DE MUDANÇAS NÃO SALVAS
+                this.hasUnsavedChanges = false;
+
+                this.showNotification('Base price saved successfully!', 'success');
+
+                // Atualizar na lista
+                this.currentCategory.basePrice = newPrice;
+
+                // ✅ FORÇAR RELOAD DA LISTA (true = bypass cache)
+                await this.loadCategories(true);
+
+                // Fechar modal
+                this.closePriceModal();
+            } else {
+                throw new Error(data.message || 'Failed to save price');
+            }
+
+        } catch (error) {
+            console.error('❌ Error saving base price:', error);
+            this.showNotification(error.message || 'Error saving price', 'error');
+        } finally {
+            this.setLoading(false);
+        }
     }
 
     // ===== BULK EDIT =====
-    openBulkEditModal() {
-        this.showNotification('Bulk edit coming soon!', 'info');
-        // TODO: Implement bulk price editing
-    }
+    selectedCategories = new Set(); // Armazenar IDs selecionados
 
     // ===== UTILITIES =====
     cleanCategoryName(displayName) {

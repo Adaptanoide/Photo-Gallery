@@ -263,10 +263,7 @@ window.formatFileSize = function (bytes) {
 
 // ===== VERIFICAR PREÇOS =====
 window.shouldShowPrices = function () {
-    // TEMPORARIAMENTE DESABILITADO DURANTE DESENVOLVIMENTO
-    return false;
-
-    /* CÓDIGO ORIGINAL - REATIVAR QUANDO QUISER PREÇOS
+    // REATIVADO - Verifica se cliente pode ver preços
     const savedSession = localStorage.getItem('sunshineSession');
     if (savedSession) {
         const session = JSON.parse(savedSession);
@@ -274,7 +271,6 @@ window.shouldShowPrices = function () {
         return showPrices;
     }
     return false;
-    */
 }
 
 window.updatePriceFilterVisibility = function () {
@@ -707,6 +703,7 @@ window.loadFolderContents = async function (folderId) {
 }
 
 // ===== MOSTRAR SUBPASTAS =====
+
 window.showSubfolders = function (folders) {
     hideAllContainers();
     hideLoading();
@@ -715,31 +712,59 @@ window.showSubfolders = function (folders) {
 
     const containerEl = document.getElementById('foldersContainer');
 
-
     containerEl.innerHTML = folders.map(folder => {
         const description = generateProductDescription(folder.name);
         const hasPhotos = folder.hasImages || folder.imageCount > 0;
+
+        // ✅ Usar availableCount do backend
+        const availableCount = folder.availableCount || 0;
+        const hasAvailablePhotos = folder.hasAvailablePhotos || availableCount > 0;
+
         const photoCount = folder.imageCount || folder.photoCount || folder.totalFiles || 0;
         const price = folder.price || 0;
         const formattedPrice = shouldShowPrices()
             ? (folder.formattedPrice || (price > 0 ? `$${price.toFixed(2)}` : ''))
             : '';
 
-        // NOVO - Verificar se tem thumbnail
-        const thumbnail = null; // DESATIVADO - Remover fotos sample dos cards
+        // ✅ Verificar se tem subcategorias
+        const hasSubfolders = folder.hasSubfolders || false;
 
-        // Cards sempre sem thumbnail - formato limpo
+        // ✅ Classe CSS para cards sem estoque APENAS em níveis finais
+        const outOfStockClass = (!hasAvailablePhotos && !hasSubfolders) ? 'out-of-stock' : '';
+
         return `
-            <div class="folder-card" 
+            <div class="folder-card ${outOfStockClass}" 
                 data-folder-id="${folder.id.replace(/"/g, '&quot;')}" 
                 data-folder-name="${folder.name.replace(/"/g, '&quot;')}"
-                data-has-subfolders="${folder.hasSubfolders || false}">
-                <h4>${folder.name}</h4>
+                data-has-subfolders="${hasSubfolders}"
+                data-available-count="${availableCount}">
+                
+                <div class="folder-card-header">
+                    <h4>${folder.name}</h4>
+                </div>
+                
                 <div class="folder-description">${description}</div>
+                
                 <div class="folder-stats">
+                    <!-- PREÇO À ESQUERDA -->
                     ${shouldShowPrices() && formattedPrice ?
-                `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
-                (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
+                        `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
+                        (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
+                    
+                    <!-- CONTADOR OU OUT OF STOCK À DIREITA -->
+                    ${!hasSubfolders ? `
+                        ${hasAvailablePhotos ? `
+                            <div class="photo-count-badge">
+                                <i class="fas fa-box"></i>
+                                <span class="count-text">${availableCount} ${availableCount === 1 ? 'product' : 'products'}</span>
+                            </div>
+                        ` : `
+                            <div class="out-of-stock-inline">
+                                <i class="fas fa-box-open"></i>
+                                <span class="out-text">OUT OF STOCK</span>
+                            </div>
+                        `}
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -752,19 +777,14 @@ window.showSubfolders = function (folders) {
                 const folderName = this.dataset.folderName;
 
                 if (folderId && folderName) {
-                    // ✅ DETECTAR Coming Soon
                     if (window.navigationState.isComingSoon) {
                         console.log('🚢 Clique em card Coming Soon:', folderId);
-
-                        // ✅ VERIFICAR atributo do card, não o ID!
                         const hasSubfolders = this.dataset.hasSubfolders === 'true';
 
                         if (hasSubfolders) {
-                            // É um path → carregar próximo nível
                             console.log('   → É path, carregando subnível...');
                             window.loadComingSoonSubcategories(folderId, folderName);
                         } else {
-                            // É qbItem final → carregar fotos
                             console.log('   → É qbItem, carregando fotos...');
                             navigationState.currentPath.push({
                                 id: folderId,
@@ -775,7 +795,6 @@ window.showSubfolders = function (folders) {
                             window.loadPhotos(folderId);
                         }
                     } else {
-                        // Navegação normal (Available Now)
                         navigateToSubfolder(folderId, folderName);
                     }
                 }

@@ -153,7 +153,7 @@ class ChatManager {
                         </svg>
                         <div>
                             <h3>Sales Support</h3>
-                            <div class="chat-header-subtitle">Mon-Fri, 8 AM - 4:30 PM EST (Fort Myers, FL)<br>We'll respond ASAP!</div>                        </div>
+                            <div class="chat-header-subtitle">Mon-Fri, 8 AM - 3:30 PM EST (Fort Myers, FL)<br>We'll respond ASAP!</div>                        </div>
                     </div>
                     <button class="chat-close-btn" id="chatCloseBtn">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">

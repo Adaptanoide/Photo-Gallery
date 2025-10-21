@@ -7,6 +7,16 @@ const path = require('path');
 const CategoryChecker = require('./category-checker');
 const fs = require('fs');
 
+/**
+ * Sanitiza categoria removendo setas finais
+ * CRÍTICO: Previne categorias com " → " no final que causam NO-QB
+ */
+function sanitizeCategory(category) {
+    if (!category) return category;
+    // Remove " → " ou "→" do final da string
+    return category.replace(/\s*→\s*$/, '').trim();
+}
+
 class SyncEngine {
     constructor(services, state) {
         this.drive = services.drive;
@@ -148,7 +158,7 @@ class SyncEngine {
             number: this.extractPhotoNumber(result.fileName),
             fileName: result.fileName,
             path: path.dirname(result.relativePath),
-            category: path.dirname(result.relativePath) || 'uncategorized',
+            category: sanitizeCategory(path.dirname(result.relativePath)) || 'uncategorized',
             processedPath: this.processor.outputDir,
             relativePath: result.relativePath
         }));
@@ -195,7 +205,7 @@ class SyncEngine {
                 number: result.photo,
                 fileName: photo.fileName,
                 r2Key: originalVersion.key,
-                category: photo.category
+                category: sanitizeCategory(photo.category)
             };
         });
     }

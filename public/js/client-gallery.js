@@ -1334,9 +1334,11 @@
                     driveFileId: photoId,
                     photoUrl: photo.url,
                     thumbnailUrl: photo.thumbnailUrl,
-                    category: getCurrentCategoryPath(),  // ✅ Usar path com "/" para salvar
+                    category: getCurrentCategoryPath(),
+                    basePrice: price,
                     price: price,
                     formattedPrice: formattedPrice,
+                    hasPrice: (price > 0),
                     photoNumber: photo.photoNumber || photoId.split('.')[0]
                 });
 

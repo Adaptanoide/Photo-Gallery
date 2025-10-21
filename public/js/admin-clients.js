@@ -523,16 +523,14 @@ class AdminClients {
                     
                     <div class="client-modal-body">
                         <!-- Show Prices Toggle PRIMEIRO -->
-                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle); display: none">
+                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <label class="form-label-clients">Show Prices to Client</label>
                             <div class="toggle-item">
                                 <label class="toggle-switch">
-                                <input type="checkbox" id="showPricesSettings" checked disabled>
-                                <span class="slider round" style="opacity: 0.5; cursor: not-allowed;"></span>
+                                    <input type="checkbox" id="showPricesSettings" checked>
+                                    <span class="toggle-slider"></span>
                                 </label>
-                                <span id="showPricesSettingsLabel" style="margin-left: 10px; color: #999;">
-                                    <i class="fas fa-lock"></i> Temporarily Disabled
-                                </span>
+                                <span id="showPricesSettingsLabel" style="margin-left: 10px;">Enabled</span>
                             </div>
                             <small style="color: var(--text-muted); margin-top: 5px; display: block;">
                                 When disabled, client will see "Contact for Price"
@@ -692,11 +690,10 @@ class AdminClients {
         // Toggle Show Prices no Settings Modal  
         const showPricesSettingsToggle = document.getElementById('showPricesSettings');
         if (showPricesSettingsToggle) {
-            // TEMPORARIAMENTE DESABILITADO - REMOVER QUANDO REATIVAR PREÇOS
-            // showPricesSettingsToggle.addEventListener('change', function () {
-            //     const label = document.getElementById('showPricesSettingsLabel');
-            //     label.textContent = this.checked ? 'Enabled' : 'Disabled';
-            // });
+            showPricesSettingsToggle.addEventListener('change', function () {
+                const label = document.getElementById('showPricesSettingsLabel');
+                label.textContent = this.checked ? 'Enabled' : 'Disabled';
+            });
         }
         // Close modal by clicking outside
         this.modal.addEventListener('click', (e) => {
@@ -2429,7 +2426,7 @@ class AdminClients {
         const showPricesSettings = document.getElementById('showPricesSettings');
         if (showPricesSettings && client) {
             showPricesSettings.checked = client.showPrices !== false;
-            document.getElementById('showPricesSettingsLabel').textContent = client.showPrices !== false ? 'Temporaly Disabled' : 'Temporaly Disabled';
+            document.getElementById('showPricesSettingsLabel').textContent = client.showPrices !== false ? 'Enabled' : 'Disabled';
         }
 
         // Mostrar modal
@@ -2614,8 +2611,13 @@ class AdminClients {
         const indent = level * 20;
         const nodeId = `tree-${node.fullPath || key}`.replace(/[^a-zA-Z0-9]/g, '-');
 
+        // ✅ VERIFICAR SE TEM FOTOS DISPONÍVEIS
+        const hasStock = node.photoCount > 0;
+        const emptyClass = !hasStock && !hasChildren ? 'category-empty' : '';
+        const emptyWarning = !hasStock && !hasChildren ? '<span class="no-stock-warning">⚠️ No stock</span>' : '';
+
         let html = `
-            <div class="tree-node" data-node-id="${nodeId}" style="margin-left: ${indent}px;">
+            <div class="tree-node ${emptyClass}" data-node-id="${nodeId}" style="margin-left: ${indent}px;">
                 <div class="tree-node-content">
                     ${hasChildren ?
                 `<span class="tree-toggle" onclick="adminClients.toggleTreeNode('${nodeId}')">
@@ -2632,7 +2634,8 @@ class AdminClients {
                             onchange="adminClients.handleTreeCheckbox(this)">
                         ${node.qbItem ? `<span class="tree-qb-code">${node.qbItem}</span>` : ''}
                         <span class="tree-name">${key}</span>
-                        <span class="tree-count">(${node.photoCount || Object.keys(node.children || {}).length})</span>
+                        <span class="tree-count ${!hasStock ? 'count-zero' : ''}">(${node.photoCount || 0})</span>
+                        ${emptyWarning}
                         <span class="tree-selection-badge" id="badge-${nodeId}" style="display:none;"></span>
                     </label>
                 </div>
@@ -2824,9 +2827,8 @@ class AdminClients {
             const uniqueCategories = [...new Set(allowedCategories)];
 
             // ⚠️ NOVO - Pegar valor do Show Prices
-            // TEMPORARIAMENTE FORÇANDO FALSE - REMOVER QUANDO REATIVAR PREÇOS
-            const showPrices = false; // document.getElementById('showPricesSettings') ?
-            // document.getElementById('showPricesSettings').checked : true;
+            const showPrices = document.getElementById('showPricesSettings') ?
+                document.getElementById('showPricesSettings').checked : true;
             console.log('📁 Saving categories/QB items:', uniqueCategories);
             console.log('💰 Show Prices:', showPrices);
 

@@ -761,31 +761,65 @@ router.get('/folders-search', authenticateToken, async (req, res) => {
 router.get('/categories-tree', authenticateToken, async (req, res) => {
     try {
         const PhotoCategory = require('../models/PhotoCategory');
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 
-        console.log('🌳 Building categories tree...');
+        console.log('🌳 Building categories tree with AVAILABLE photos only...');
 
-        // Buscar todas as categorias ativas
+        // 1. Buscar todas as categorias ativas
         const categories = await PhotoCategory.find({
-            isActive: true,
-            photoCount: { $gt: 0 }
-        }).select('displayName qbItem photoCount googleDrivePath');
+            isActive: true
+        }).select('displayName qbItem googleDrivePath');
 
-        // Construir estrutura hierárquica
+        console.log(`📁 Found ${categories.length} total categories`);
+
+        // 2. Para cada categoria, contar apenas fotos AVAILABLE
+        const categoriesWithCounts = await Promise.all(
+            categories.map(async (cat) => {
+                // Contar fotos AVAILABLE desta categoria
+                const availableCount = await UnifiedProductComplete.countDocuments({
+                    category: cat.displayName,
+                    status: 'available',  // ← APENAS AVAILABLE!
+                    isActive: true
+                });
+
+                return {
+                    displayName: cat.displayName,
+                    qbItem: cat.qbItem,
+                    googleDrivePath: cat.googleDrivePath,
+                    photoCount: availableCount  // ← Contagem correta!
+                };
+            })
+        );
+
+        console.log(`✅ Counted available photos for ${categoriesWithCounts.length} categories`);
+
+        // 3. Filtrar categorias que TEM fotos disponíveis OU que são pais de outras
+        const categoriesMap = new Map(
+            categoriesWithCounts.map(c => [c.displayName, c])
+        );
+
+        // 4. Construir estrutura hierárquica
         const tree = {};
 
-        categories.forEach(cat => {
+        categoriesWithCounts.forEach(cat => {
             const path = cat.displayName || cat.googleDrivePath || '';
             const parts = path.split(' → ').filter(p => p);
 
             let current = tree;
             parts.forEach((part, index) => {
+                const fullPath = parts.slice(0, index + 1).join(' → ');
+
                 if (!current[part]) {
+                    // Se é o último nível, usar os dados da categoria
+                    const isLeaf = index === parts.length - 1;
+
                     current[part] = {
                         name: part,
-                        fullPath: parts.slice(0, index + 1).join(' → '),
+                        fullPath: fullPath,
                         children: {},
-                        qbItem: index === parts.length - 1 ? cat.qbItem : null,
-                        photoCount: index === parts.length - 1 ? cat.photoCount : 0
+                        qbItem: isLeaf ? cat.qbItem : null,
+                        photoCount: isLeaf ? cat.photoCount : 0,
+                        hasAvailablePhotos: isLeaf ? (cat.photoCount > 0) : null  // ← NOVO CAMPO!
                     };
                 }
                 current = current[part].children;

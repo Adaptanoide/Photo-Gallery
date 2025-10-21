@@ -20,6 +20,16 @@ const ImageProcessor = require('./sync-modules/image-processor');
 const PhotoCategory = require('./src/models/PhotoCategory');
 const mongoose = require('mongoose');
 
+/**
+ * Sanitiza categoria removendo setas finais
+ * CRÍTICO: Previne categorias com " → " no final que causam NO-QB
+ */
+function sanitizeCategory(category) {
+    if (!category) return category;
+    // Remove " → " ou "→" do final da string
+    return category.replace(/\s*→\s*$/, '').trim();
+}
+
 class IncomingSync {
     constructor() {
         this.workDir = path.join(__dirname, 'sync-data');
@@ -133,7 +143,7 @@ class IncomingSync {
             if (path.startsWith('Sunshine Cowhides Actual Pictures/')) {
                 path = path.replace('Sunshine Cowhides Actual Pictures/', '');
             }
-            return path;
+            return sanitizeCategory(path);
         }
 
         return null;
@@ -315,7 +325,7 @@ class IncomingSync {
                 number: result.photo,
                 fileName: `${result.photo}.webp`,
                 r2Key: originalVersion.key,
-                category: photo.category,
+                category: sanitizeCategory(photo.category),
                 qbCode: photo.qbCode,
                 isComingSoon: true
             };

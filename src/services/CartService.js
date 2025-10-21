@@ -137,7 +137,7 @@ class CartService {
                 expiresAt,
                 addedAt: new Date(),
                 // ✅ NOVO: Campos Coming Soon
-                transitStatus: product.transitStatus || null,
+                transitStatus: product.transitStatus === 'coming_soon' ? 'coming_soon' : null,
                 cdeTable: cdeTable,
                 isComingSoon: isComingSoon,
             });

@@ -61,42 +61,42 @@
                         <span class="nav-text">Client Management</span>
                     </a>
                 </div>
-                <!-- <div class="nav-item">
+                <div class="nav-item">
                     <a href="#pricing" class="nav-link" data-section="pricing">
                         <i class="fas fa-dollar-sign"></i>
                         <span class="nav-text">Price Management</span>
                     </a>
-                </div> -->
-                <div class="nav-item">
-                    <a href="#selections" class="nav-link" data-section="selections">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="nav-text">Selection Management</span>
-                        <span class="pending-badge" id="sidebarPendingBadge">0</span>
-                    </a>
-                </div>
-                <div class="nav-item" style="display:none">
-                    <a href="#special-selections" class="nav-link" data-section="special-selections">
-                        <i class="fas fa-star"></i>
-                        <span class="nav-text">Special Selections</span>
-                    </a>
-                </div>
-                <div class="nav-item" style="display:none">
-                    <a href="#reports" class="nav-link" data-section="reports">
-                        <i class="fas fa-chart-bar"></i>
-                        <span class="nav-text">Reports</span>
-                    </a>
-                </div>
-                <div class="nav-item" style="display:none">
-                    <a href="#storage" class="nav-link" data-section="storage">
-                        <span class="nav-text">Storage Management</span>
-                    </a>
-                </div>
-                <div class="nav-item"> <!-- SEM display:none -->
-                    <a href="#settings" class="nav-link" data-section="settings">
-                        <i class="fas fa-cog"></i>
-                        <span class="nav-text">Settings</span>
-                    </a>
-                </div>
+
+                    <div class="nav-item">
+                        <a href="#selections" class="nav-link" data-section="selections">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="nav-text">Selection Management</span>
+                            <span class="pending-badge" id="sidebarPendingBadge">0</span>
+                        </a>
+                    </div>
+                    <div class="nav-item" style="display:none">
+                        <a href="#special-selections" class="nav-link" data-section="special-selections">
+                            <i class="fas fa-star"></i>
+                            <span class="nav-text">Special Selections</span>
+                        </a>
+                    </div>
+                    <div class="nav-item" style="display:none">
+                        <a href="#reports" class="nav-link" data-section="reports">
+                            <i class="fas fa-chart-bar"></i>
+                            <span class="nav-text">Reports</span>
+                        </a>
+                    </div>
+                    <div class="nav-item" style="display:none">
+                        <a href="#storage" class="nav-link" data-section="storage">
+                            <span class="nav-text">Storage Management</span>
+                        </a>
+                    </div>
+                    <div class="nav-item"> <!-- SEM display:none -->
+                        <a href="#settings" class="nav-link" data-section="settings">
+                            <i class="fas fa-cog"></i>
+                            <span class="nav-text">Settings</span>
+                        </a>
+                    </div>
             </nav>
         </aside>
 
@@ -292,15 +292,29 @@
                             <h2 class="selections-title">
                                 <i class="fas fa-dollar-sign"></i>
                                 Price Management
+                                <span class="pricing-stats-inline" id="pricingStatsInline">
+                                    <span class="stat-separator">|</span>
+                                    <span id="inlineTotalCount">-</span> categories
+                                    (<span id="inlinePricedCount" class="stat-success">-</span> priced,
+                                    <span id="inlineNeedPriceCount" class="stat-warning">-</span> need pricing)
+                                </span>
                             </h2>
                             <div class="selections-actions">
-                                <button id="btnBulkEdit" class="btn btn-secondary">
-                                    <i class="fas fa-edit"></i>
-                                    Bulk Edit
+                                <span id="pricingModifiedIndicator" class="modified-indicator" style="display: none;">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span id="pricingModifiedCount">0</span> modified
+                                </span>
+                                <button id="btnDiscardChanges" class="btn btn-secondary" style="display: none;">
+                                    <i class="fas fa-undo"></i>
+                                    Discard
+                                </button>
+                                <button id="btnSaveAllChanges" class="btn btn-success" style="display: none;">
+                                    <i class="fas fa-save"></i>
+                                    Save Changes
                                 </button>
                                 <button id="btnSyncDrive" class="btn btn-primary">
                                     <i class="fas fa-sync-alt"></i>
-                                    Sync with Drive
+                                    Refresh from R2
                                 </button>
                             </div>
                         </div>
@@ -364,90 +378,18 @@
                         </div>
                     </div>
 
-                    <!-- STATS CARDS CORRETOS AQUI! -->
-                    <div id="pricingStats" class="pricing-stats" style="display: block;">
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">Total Categories</div>
-                                        <div class="stat-value" id="totalCategoriesCount">-</div>
-                                        <div class="stat-description">Folders with photos</div>
-                                    </div>
-                                    <div class="stat-icon primary">
-                                        <i class="fas fa-folder"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">With Price Set</div>
-                                        <div class="stat-value" id="categoriesWithPriceCount">-</div>
-                                        <div class="stat-description">Priced categories</div>
-                                    </div>
-                                    <div class="stat-icon success">
-                                        <i class="fas fa-dollar-sign"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-title">Without Price</div>
-                                        <div class="stat-value" id="categoriesWithoutPriceCount">-</div>
-                                        <div class="stat-description">Need pricing</div>
-                                    </div>
-                                    <div class="stat-icon warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tabela (sem botões extras) -->
-                    <div class="pricing-table-container">
-
-                        <table class="pricing-table">
-                            <thead>
-                                <tr>
-                                    <th>QB ITEM</th>
-                                    <th>Description</th>
-                                    <th>Photos</th>
-                                    <th>Base Price</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pricingTableBody">
-                                <tr>
-                                    <td colspan="5" class="text-center">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        Loading categories...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Paginação do Price Management -->
-                    <div id="pricingPagination" class="pricing-pagination" style="display: flex; margin-top: 20px;">
-                        <button id="btnPrevPagePricing" class="btn btn-secondary" onclick="adminPricing.previousPage()">
-                            <i class="fas fa-chevron-left"></i>
-                            Previous
-                        </button>
-
-                        <div id="pricingPaginationNumbers" class="pagination-numbers"
-                            style="display: flex; gap: 5px; margin: 0 15px;">
-                            <!-- Números serão inseridos aqui -->
+                    <!-- ===== INTERFACE TIPO PDF (substitui tabela) ===== -->
+                    <div id="pricingConfigContainer" class="pricing-config-container">
+                        <!-- Loading inicial -->
+                        <div class="pricing-config-loading" id="pricingConfigLoading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading categories...</p>
                         </div>
 
-                        <button id="btnNextPagePricing" class="btn btn-secondary" onclick="adminPricing.nextPage()">
-                            Next
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
+                        <!-- Container da interface (preenchido via JS) -->
+                        <div id="pricingConfigContent" class="pricing-config-content" style="display: none;">
+                            <!-- Será preenchido por renderGroupedCategories() -->
+                        </div>
                     </div>
                 </div>
 
@@ -488,14 +430,14 @@
                 <!-- ===== MODAL DE PREÇOS REDESENHADO ===== -->
                 <div id="priceModal" class="price-modal" style="display: none;">
                     <div class="price-modal-overlay" onclick="adminPricing.closePriceModal()"></div>
-                    <div class="price-modal-content" style="max-width: 1000px;">
+                    <div class="price-modal-content" style="max-width: 600px;">
                         <div class="price-modal-header">
                             <h3 class="modal-title">
                                 <i class="fas fa-dollar-sign"></i>
-                                <span id="priceModalTitle">Edit Price</span>
+                                <span id="priceModalTitle">Set Base Price</span>
                             </h3>
-                            <button class="modal-close" onclick="adminPricing.closePriceModal()"> <i
-                                    class="fas fa-times"></i>
+                            <button class="modal-close" onclick="adminPricing.closePriceModal()">
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
 
@@ -515,60 +457,34 @@
                                 </div>
                             </div>
 
-                            <!-- SEÇÃO 1: Base Price -->
+                            <!-- Base Price ONLY -->
                             <div class="pricing-section">
-                                <h5 class="section-title">💰 Base Pricing</h5>
-                                <div class="section-content">
-                                    <div class="form-row">
-                                        <div class="form-group" style="flex: 1;">
-                                            <label class="form-label">Base Price ($)</label>
-                                            <input type="number" id="newPrice" class="form-input" min="0" step="0.01"
-                                                placeholder="0.00" required>
-                                        </div>
-                                    </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="newPrice">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        Base Price
+                                    </label>
+                                    <input type="number" id="newPrice" class="form-input" min="0" step="0.01"
+                                        placeholder="109.00" required>
+                                    <small class="form-hint">
+                                        Standard price for this category (when not in Mix & Match)
+                                    </small>
                                 </div>
                             </div>
 
-                            <!-- SEÇÃO 2: Volume Discounts -->
-                            <div class="pricing-section">
-                                <h5 class="section-title"
-                                    onclick="adminPricing.toggleSection('volumeDiscountsContent')">
-                                    📊 Volume Discounts (All Regular Clients)
-                                </h5>
-                                <div class="section-content" id="volumeDiscountsContent" style="display: block;">
-                                    <div id="volumeRulesList" class="rules-list">
-                                        <!-- Será preenchido via JS -->
-                                    </div>
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                        onclick="adminPricing.openVolumeRulesManager()">
-                                        <i class="fas fa-cog"></i> Manage Volume Rules
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- SEÇÃO 3: Client Exceptions -->
-                            <div class="pricing-section">
-                                <h5 class="section-title"
-                                    onclick="adminPricing.toggleSection('clientExceptionsContent')">
-                                    👤 Custom Client Rates
-                                </h5>
-                                <div class="section-content" id="clientExceptionsContent" style="display: block;">
-                                    <div id="clientRulesList" class="rules-list">
-                                        <!-- Será preenchido via JS -->
-                                    </div>
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                        onclick="adminPricing.openClientRatesModal()">
-                                        <i class="fas fa-plus"></i> Configure Client Rates
-                                    </button>
-                                </div>
+                            <!-- Info sobre Mix & Match -->
+                            <div class="bulk-edit-info" style="margin-top: 20px;">
+                                <i class="fas fa-info-circle"></i>
+                                <span>To configure volume tiers, use the <strong>Bulk Edit</strong> button</span>
                             </div>
                         </div>
 
                         <div class="price-modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="adminPricing.closePriceModal()"> <i
-                                    class="fas fa-times"></i> Cancel
+                            <button type="button" class="btn btn-secondary" onclick="adminPricing.closePriceModal()">
+                                <i class="fas fa-times"></i> Cancel
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveAllPricing()">
-                                <i class="fas fa-save"></i> Save All Changes
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveBasePrice()">
+                                <i class="fas fa-check"></i> Save Price
                             </button>
                         </div>
                     </div>
@@ -757,6 +673,128 @@
                             </button>
                             <button type="button" class="btn btn-primary" onclick="adminPricing.saveAllClientRates()">
                                 <i class="fas fa-check"></i> Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== BULK EDIT MODAL ===== -->
+                <div id="bulkEditModal" class="price-modal" style="display: none;">
+                    <div class="price-modal-overlay" onclick="adminPricing.closeBulkEditModal()"></div>
+                    <div class="price-modal-content" style="max-width: 1000px;">
+                        <div class="price-modal-header">
+                            <h3 class="modal-title">
+                                <i class="fas fa-edit"></i>
+                                <span>Bulk Edit Categories</span>
+                            </h3>
+                            <button class="modal-close" onclick="adminPricing.closeBulkEditModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="price-modal-body">
+                            <!-- Info de seleção -->
+                            <div class="bulk-edit-info">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="bulkSelectedCount">0 categories selected</span>
+                            </div>
+
+                            <!-- Mix & Match Toggle -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-layer-group"></i>
+                                    Mix & Match Pricing
+                                </label>
+                                <div class="toggle-container">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="bulkMixMatchEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span id="bulkMixMatchLabel" class="toggle-label">Disabled</span>
+                                </div>
+                                <small class="form-hint">
+                                    When enabled, categories participate in global volume pricing
+                                </small>
+                            </div>
+
+                            <!-- Base Price -->
+                            <div class="form-group">
+                                <label class="form-label" for="bulkBasePrice">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    Base Price
+                                </label>
+                                <input type="number" id="bulkBasePrice" class="form-input" placeholder="109.00" min="0"
+                                    step="0.01">
+                                <small class="form-hint">Standard price for 1-12 items</small>
+                            </div>
+
+                            <!-- Volume Tiers -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-chart-line"></i>
+                                    Volume Tiers
+                                </label>
+
+                                <div class="volume-tiers-container">
+                                    <!-- Tier 1 -->
+                                    <div class="volume-tier-row">
+                                        <div class="tier-range">
+                                            <input type="number" class="tier-input" value="1" readonly>
+                                            <span>to</span>
+                                            <input type="number" id="bulkTier1Max" class="tier-input" value="12"
+                                                min="1">
+                                        </div>
+                                        <div class="tier-price">
+                                            <span>$</span>
+                                            <input type="number" id="bulkTier1Price" class="tier-input"
+                                                placeholder="109.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+
+                                    <!-- Tier 2 -->
+                                    <div class="volume-tier-row">
+                                        <div class="tier-range">
+                                            <input type="number" id="bulkTier2Min" class="tier-input" value="13"
+                                                min="1">
+                                            <span>to</span>
+                                            <input type="number" id="bulkTier2Max" class="tier-input" value="36"
+                                                min="1">
+                                        </div>
+                                        <div class="tier-price">
+                                            <span>$</span>
+                                            <input type="number" id="bulkTier2Price" class="tier-input"
+                                                placeholder="105.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+
+                                    <!-- Tier 3 -->
+                                    <div class="volume-tier-row">
+                                        <div class="tier-range">
+                                            <input type="number" id="bulkTier3Min" class="tier-input" value="37"
+                                                min="1">
+                                            <span>to</span>
+                                            <input type="text" class="tier-input" value="∞" readonly>
+                                        </div>
+                                        <div class="tier-price">
+                                            <span>$</span>
+                                            <input type="number" id="bulkTier3Price" class="tier-input"
+                                                placeholder="99.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <small class="form-hint">
+                                    Define pricing based on total quantity purchased
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="price-modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="adminPricing.closeBulkEditModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="adminPricing.saveBulkEdit()">
+                                <i class="fas fa-check"></i> Apply to <span id="bulkApplyCount">0</span> Categories
                             </button>
                         </div>
                     </div>
@@ -1355,7 +1393,7 @@
     <script src="js/app.js"></script>
     <script src="js/admin-dashboard.js"></script>
     <script src="js/admin-clients.js"></script>
-    <!-- <script src="js/admin-pricing.js"></script> -->
+    <script src="js/admin-pricing.js"></script>
     <script src="js/admin-selections.js"></script>
     <script src="js/admin-config.js"></script>
     <!-- <script src="js/admin-special-selections.js"></script> -->

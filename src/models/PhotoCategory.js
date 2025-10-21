@@ -8,7 +8,7 @@ const photoCategorySchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        },
+    },
 
     // Caminho completo no Google Drive
     googleDrivePath: {
@@ -49,18 +49,24 @@ const photoCategorySchema = new mongoose.Schema({
         min: 0
     },
 
+    // Mix & Match: Se true, participa da contagem global e usa tiers
+    participatesInMixMatch: {
+        type: Boolean,
+        default: false
+    },
+
     // Modo de precificação ativo para esta categoria
     pricingMode: {
         type: String,
         enum: ['base', 'client', 'quantity'],
         default: 'base',
-        },
+    },
 
     // Status da categoria
     isActive: {
         type: Boolean,
         default: true,
-        },
+    },
 
     // Metadados da pasta
     metadata: {
@@ -77,7 +83,7 @@ const photoCategorySchema = new mongoose.Schema({
     lastSync: {
         type: Date,
         default: Date.now,
-        },
+    },
 
     // Regras de desconto específicas para esta categoria
     discountRules: [{
@@ -135,7 +141,7 @@ photoCategorySchema.index({ 'discountRules.clientCode': 1 });
 
 // Método principal UNIFICADO - Verifica hierarquia completa
 photoCategorySchema.methods.getPriceForClient = async function (clientCode, quantity = 1) {
-//     console.log(`🎯 Calculando preço: ${this.displayName} | Cliente: ${clientCode} | Qtd: ${quantity}`);
+    //     console.log(`🎯 Calculando preço: ${this.displayName} | Cliente: ${clientCode} | Qtd: ${quantity}`);
 
     // HELPER: Encontrar melhor preço em faixas
     const findBestPrice = (ranges, qty) => {

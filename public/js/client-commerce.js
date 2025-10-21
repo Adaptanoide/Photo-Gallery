@@ -131,22 +131,36 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
                 throw new Error('Photo not found');
             }
 
-            // ============================================
-            // 🔴 DESABILITADO: Busca de preço (aceleração)
-            // ============================================
-            /*
+            console.log('🔍 [THUMBNAIL] Adicionando ao carrinho...');
+            console.log('📸 Photo:', photo);
+            console.log('📁 currentFolderId:', navigationState.currentFolderId);
+
             // Buscar preço da categoria
-            const currentFolderId = navigationState.currentFolderId;
             let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
-        
-            if (currentFolderId && window.loadCategoryPrice) {
+
+            // Verificar se tem customPrice (Special Selection)
+            if (photo.customPrice) {
+                console.log('💰 [THUMBNAIL] Usando customPrice:', photo.customPrice);
+                priceInfo = {
+                    hasPrice: true,
+                    basePrice: parseFloat(photo.customPrice),
+                    price: parseFloat(photo.customPrice),
+                    formattedPrice: `$${parseFloat(photo.customPrice).toFixed(2)}`
+                };
+            } else if (navigationState.currentFolderId && window.loadCategoryPrice) {
+                console.log('🔍 [THUMBNAIL] Buscando preço com loadCategoryPrice...');
                 try {
-                    priceInfo = await window.loadCategoryPrice(currentFolderId);
+                    priceInfo = await window.loadCategoryPrice(navigationState.currentFolderId);
+                    console.log('✅ [THUMBNAIL] Preço carregado:', priceInfo);
                 } catch (error) {
-                    console.warn('Erro ao buscar preço:', error);
+                    console.warn('❌ [THUMBNAIL] Erro ao buscar preço:', error);
                 }
+            } else {
+                console.log('⚠️ [THUMBNAIL] Não foi possível buscar preço');
+                console.log('   - customPrice?', !!photo.customPrice);
+                console.log('   - currentFolderId?', !!navigationState.currentFolderId);
+                console.log('   - loadCategoryPrice?', !!window.loadCategoryPrice);
             }
-            */
 
             // Dados do item
             const itemData = {
@@ -157,26 +171,27 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
                         : window.navigationState?.currentPath?.[0]?.name) || 'Category',
                 thumbnailUrl: ImageUtils.getThumbnailUrl(photo),
                 pathLevels: window.navigationState?.currentPath?.map(p => p.name) || [],
-                fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || ''
-                // 🔴 REMOVIDO: Campos de preço
-                // basePrice: priceInfo.basePrice || 0,
-                // price: priceInfo.price,
-                // formattedPrice: priceInfo.formattedPrice,
-                // hasPrice: priceInfo.hasPrice
+                fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || '',
+                basePrice: priceInfo.basePrice || 0,
+                price: priceInfo.price || 0,
+                formattedPrice: priceInfo.formattedPrice || 'No price',
+                hasPrice: priceInfo.hasPrice || false
             };
+
+            console.log('📦 [THUMBNAIL] Dados do item montados:', itemData);
 
             await CartSystem.addItem(photoId, itemData);
             button.classList.add('in-cart');
             button.innerHTML = '<span>Remove</span>';
         }
 
-        // 🔴 DESABILITADO: Atualizar badge de preço
-        // if (window.updateCategoryPriceBadge) {
-        //     setTimeout(() => window.updateCategoryPriceBadge(), 100);
-        // }
+        // Atualizar badge de preço
+        if (window.updateCategoryPriceBadge) {
+            setTimeout(() => window.updateCategoryPriceBadge(), 100);
+        }
 
     } catch (error) {
-        console.error('Erro ao gerenciar carrinho:', error);
+        console.error('❌ [THUMBNAIL] Erro ao gerenciar carrinho:', error);
         button.innerHTML = originalHTML;
 
         if (window.showNotification) {

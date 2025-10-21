@@ -990,8 +990,8 @@ window.CartSystem = {
                     <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${item.category}</div>
                     ${!isGhost && (window.shouldShowPrices && window.shouldShowPrices()) ?
                 `<div class="cart-item-price">
-                            ${item.hasPrice ?
-                    `<span class="price-value">${item.formattedPrice}</span>` :
+                            ${(item.price > 0 || item.basePrice > 0) ?
+                    `<span class="price-value">$${(item.price || item.basePrice).toFixed(2)}</span>` :
                     `<span class="price-consult">Check price</span>`
                 }
                         </div>` :
@@ -1081,8 +1081,17 @@ window.CartSystem = {
 
         // Criar novos timers
         this.state.items.forEach(item => {
-            if (item.timeRemaining > 0) {
-                this.startItemTimer(item.driveFileId, item.timeRemaining);
+            // Calcular tempo restante baseado em expiresAt
+            if (item.expiresAt) {
+                const now = new Date();
+                const expires = new Date(item.expiresAt);
+                const timeRemaining = Math.floor((expires - now) / 1000);
+
+                if (timeRemaining > 0) {
+                    this.startItemTimer(item.driveFileId, timeRemaining);
+                } else {
+                    console.warn(`⏰ Item ${item.fileName} já expirou`);
+                }
             }
         });
 
@@ -1343,8 +1352,14 @@ window.toggleCartItem = async function () {
             // Buscar preço da categoria
             let priceInfo = { hasPrice: false, basePrice: 0, price: 0, formattedPrice: 'No price' };
 
+            console.log('🔍 [CART DEBUG] Verificando preço...');
+            console.log('📸 photo.customPrice:', photo.customPrice);
+            console.log('📁 navigationState.currentFolderId:', window.navigationState?.currentFolderId);
+            console.log('🔧 loadCategoryPrice existe?', typeof window.loadCategoryPrice);
+
             // Verificar se tem customPrice (Special Selection)
             if (photo.customPrice) {
+                console.log('💰 [CART] Usando customPrice:', photo.customPrice);
                 priceInfo = {
                     hasPrice: true,
                     basePrice: parseFloat(photo.customPrice),
@@ -1352,16 +1367,21 @@ window.toggleCartItem = async function () {
                     formattedPrice: `$${parseFloat(photo.customPrice).toFixed(2)}`
                 };
             }
-            // 🔴 DESABILITADO: Busca de preço
-            /*
             else if (window.navigationState.currentFolderId && window.loadCategoryPrice) {
+                console.log('🔍 [CART] Tentando buscar preço com loadCategoryPrice...');
+                console.log('📁 [CART] currentFolderId:', window.navigationState.currentFolderId);
                 try {
                     priceInfo = await window.loadCategoryPrice(window.navigationState.currentFolderId);
+                    console.log('✅ [CART] Preço carregado:', priceInfo);
                 } catch (error) {
-                    console.warn('Erro ao buscar preço:', error);
+                    console.warn('❌ [CART] Erro ao buscar preço:', error);
                 }
+            } else {
+                console.log('⚠️ [CART] Não entrou em nenhuma condição de preço!');
+                console.log('   - customPrice?', !!photo.customPrice);
+                console.log('   - currentFolderId?', !!window.navigationState?.currentFolderId);
+                console.log('   - loadCategoryPrice?', !!window.loadCategoryPrice);
             }
-            */
 
             // Montar dados completos do item
             const itemData = {

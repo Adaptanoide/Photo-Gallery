@@ -107,6 +107,87 @@ function convertToR2Path(idOrPath) {
     return idOrPath;
 }
 
+/**
+ * Enriquecer pastas com contador de fotos AVAILABLE
+ * Conta apenas fotos com status 'available' no MongoDB
+ */
+async function enrichFoldersWithAvailableCounts(folders, prefix = '') {
+    if (!folders || folders.length === 0) {
+        return folders;
+    }
+
+    const PhotoCategory = require('../models/PhotoCategory');
+    const startTime = Date.now();
+
+    const enrichedFolders = await Promise.all(
+        folders.map(async (folder) => {
+            try {
+                // ✅ SÓ CONTAR SE FOR NÍVEL FINAL (não tem subpastas)
+                if (folder.hasSubfolders) {
+                    console.log(`[ENRICH] ${folder.name}: TEM SUBPASTAS - não conta`);
+                    return {
+                        ...folder,
+                        availableCount: 0,
+                        hasAvailablePhotos: false,
+                        hasSubfolders: true
+                    };
+                }
+
+                // ✅ NORMALIZAR prefix (remover barra(s) do final se houver)
+                const normalizedPrefix = prefix ? prefix.replace(/\/+$/, '') : '';
+
+                // ✅ MONTAR googleDrivePath corretamente (sempre UMA barra no final)
+                const googleDrivePath = normalizedPrefix
+                    ? `${normalizedPrefix}/${folder.name}/`
+                    : `${folder.name}/`;
+
+                console.log(`[ENRICH] ${folder.name}: Buscando googleDrivePath="${googleDrivePath}"`);
+
+                // ✅ BUSCAR POR googleDrivePath
+                const category = await PhotoCategory.findOne({
+                    googleDrivePath: googleDrivePath
+                });
+
+                let availableCount = 0;
+
+                if (category) {
+                    // ✅ CONTAR usando o displayName da categoria encontrada
+                    availableCount = await UnifiedProductComplete.countDocuments({
+                        category: category.displayName,
+                        status: 'available',
+                        isActive: true
+                    });
+
+                    console.log(`[ENRICH] ${folder.name}: ✅ Encontrado! ${availableCount} fotos available (qbItem: ${category.qbItem})`);
+                } else {
+                    console.log(`[ENRICH] ${folder.name}: ⚠️ NÃO encontrado no PhotoCategory`);
+                }
+
+                return {
+                    ...folder,
+                    availableCount: availableCount,
+                    hasAvailablePhotos: availableCount > 0,
+                    hasSubfolders: false
+                };
+
+            } catch (error) {
+                console.error(`Erro ao contar fotos para ${folder.name}:`, error);
+                return {
+                    ...folder,
+                    availableCount: 0,
+                    hasAvailablePhotos: false,
+                    hasSubfolders: folder.hasSubfolders || false
+                };
+            }
+        })
+    );
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Contadores calculados para ${folders.length} pastas em ${duration}ms`);
+
+    return enrichedFolders;
+}
+
 // Buscar estrutura de pastas - COM AUTENTICAÇÃO
 router.get('/structure', verifyClientToken, async (req, res) => {
     try {
@@ -237,7 +318,10 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         !f.name.startsWith('_') && allowedPaths.has(f.name)
                     );
 
-                    console.log(`📁 Mostrando ${result.folders.length} categorias permitidas`);
+                    // ✅ ADICIONAR contadores de fotos available
+                    result.folders = await enrichFoldersWithAvailableCounts(result.folders, prefix);
+
+                    console.log(`📁 Mostrando ${result.folders.length} categorias permitidas com contadores`);
 
                     // 🆕 INVALIDAR CACHE se houver fotos reserved pelo cliente
                     if (req.client?.clientCode) {
@@ -305,12 +389,14 @@ router.get('/structure', verifyClientToken, async (req, res) => {
                         const originalCount = result.folders ? result.folders.length : 0;
 
                         if (result.folders) {
-                            // Filtrar pastas permitidas (sem logs verbosos)
                             result.folders = result.folders.filter(f => {
                                 const startsWithUnderscore = f.name.startsWith('_');
                                 const isInAllowed = allowedSubfolders.has(f.name);
                                 return !startsWithUnderscore && isInAllowed;
                             });
+
+                            // ✅ ADICIONAR contadores de fotos available
+                            result.folders = await enrichFoldersWithAvailableCounts(result.folders, prefix);
                         }
 
                         // Verificar se ao invés de pastas, temos fotos direto
@@ -405,6 +491,9 @@ router.get('/structure', verifyClientToken, async (req, res) => {
 
         if (result.folders) {
             result.folders = result.folders.filter(f => !f.name.startsWith('_'));
+
+            // ✅ ADICIONAR contadores de fotos available
+            result.folders = await enrichFoldersWithAvailableCounts(result.folders, prefix);
         }
 
         if (!result.folders || result.folders.length === 0) {
@@ -865,10 +954,10 @@ router.get('/transit/structure', verifyClientToken, async (req, res) => {
 
         // 4. Filtrar por prefix se necessário
         let relevantCategories = Array.from(categoryMap.values());
-        
+
         if (prefix) {
             // Tem prefix → filtrar categorias que começam com ele
-            relevantCategories = relevantCategories.filter(cat => 
+            relevantCategories = relevantCategories.filter(cat =>
                 cat.path.startsWith(prefix + '/')
             );
         }
@@ -877,21 +966,21 @@ router.get('/transit/structure', verifyClientToken, async (req, res) => {
 
         // 5. Agrupar por próximo nível de path
         const levelMap = new Map();
-        
+
         relevantCategories.forEach(cat => {
             let pathParts = cat.path.split('/').filter(p => p);
-            
+
             if (prefix) {
                 // Remover o prefix do path
                 const prefixParts = prefix.split('/').filter(p => p);
                 pathParts = pathParts.slice(prefixParts.length);
             }
-            
+
             if (pathParts.length === 0) return;
-            
+
             // Próximo nível
             const nextLevel = pathParts[0];
-            
+
             if (!levelMap.has(nextLevel)) {
                 levelMap.set(nextLevel, {
                     name: nextLevel,
@@ -899,7 +988,7 @@ router.get('/transit/structure', verifyClientToken, async (req, res) => {
                     categories: []
                 });
             }
-            
+
             const level = levelMap.get(nextLevel);
             level.photoCount += cat.photoCount;
             level.categories.push(cat);
@@ -908,12 +997,12 @@ router.get('/transit/structure', verifyClientToken, async (req, res) => {
         // 6. Criar folders
         const folders = Array.from(levelMap.values()).map(level => {
             // Determinar se é categoria final (tem fotos diretas) ou tem subníveis
-            const isFinal = level.categories.length === 1 && 
-                           level.categories[0].path.split('/').filter(p => p).length === 
-                           (prefix ? prefix.split('/').filter(p => p).length + 1 : 1);
-            
+            const isFinal = level.categories.length === 1 &&
+                level.categories[0].path.split('/').filter(p => p).length ===
+                (prefix ? prefix.split('/').filter(p => p).length + 1 : 1);
+
             const fullPath = prefix ? `${prefix}/${level.name}` : level.name;
-            
+
             return {
                 name: level.name,
                 id: isFinal ? level.categories[0].qbItem : fullPath,

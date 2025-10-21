@@ -161,6 +161,7 @@ router.post('/finalize', async (req, res) => {
                     driveFileId: product.driveFileId,
                     fileName: product.fileName,
                     category: product.category,
+                    qbItem: product.qbItem,  // ← ADICIONAR ESTA LINHA!
                     productId: product._id,
                     thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl
                 };

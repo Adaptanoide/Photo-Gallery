@@ -1,0 +1,37 @@
+qbItem,displayName,basePrice,hasVolume
+# GOATSKINS (Size 6.0-8.0 Sqft) - Qty tiers: 1-12, 13-24, 24+
+# Medium - Solid and Exotic Tones
+,Goatskins Medium Solid,24,true
+# Medium - Spotted
+,Goatskins Medium Spotted,29,true
+# Large - Solid and Exotic
+,Goatskins Large Solid,27,true
+# Large - Spotted
+,Goatskins Large Spotted,32,true
+# Extra Large - Solid and Exotic
+,Goatskins XL Solid,29,true
+# Extra Large - Spotted
+,Goatskins XL Spotted,35,true
+# CALFSKINS (Size 6.0-8.0 Sqft)
+# Natural Tones
+,Calfskin Natural Tones,45,true
+# Tricolor Exotic
+,Calfskin Tricolor Exotic,49,true
+# MINI COWHIDES (Size 24"x35")
+# Tricolor, B&W, Brindle
+,Mini Hides Colombia,29,true
+# Brazil Natural Tones
+,Mini Hides Brazil,39,true
+# NZ SHEEPSKIN RUGS
+# Single - Natural Butter White
+,Sheepskin Single Natural,59,true
+# Single - Charcoal/Tipped
+,Sheepskin Single Tipped,59,true
+# Double
+,Sheepskin Double,129,true
+# Quattro
+,Sheepskin Quattro,189,true
+# Six
+,Sheepskin Six,309,true
+# Eight
+,Sheepskin Eight,369,true
