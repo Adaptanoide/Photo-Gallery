@@ -523,7 +523,7 @@ class AdminClients {
                     
                     <div class="client-modal-body">
                         <!-- Show Prices Toggle PRIMEIRO -->
-                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle);">
+                        <div class="form-group-clients" style="display: none; margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <label class="form-label-clients">Show Prices to Client</label>
                             <div class="toggle-item">
                                 <label class="toggle-switch">
