@@ -789,7 +789,7 @@ window.CartSystem = {
                         const tierText = ` `;
 
                         totalHTML += `
-                        <div class="mix-match-info" style="margin: 8px 0; padding: 8px; background: rgba(255, 193, 7, 0.1); border-radius: 4px; font-size: 13px;">
+                        <div class="mix-match-info" style="padding: 2px; background: rgba(255, 193, 7, 0.1); border-radius: 4px; font-size: 13px;">
                             <div style="color: #856404;">
                                 ${tierText}
                             </div>`;
@@ -797,7 +797,7 @@ window.CartSystem = {
                         // Mostrar incentivo para próximo tier
                         if (mmInfo.nextTier && mmInfo.itemsToNextTier > 0) {
                             totalHTML += `
-                            <div style="color: #28a745; margin-top: 4px; font-size: 12px;">
+                            <div style="color: #28a745; margin-top: 4px; font-size: 14px;">
                                 💡 Add ${mmInfo.itemsToNextTier} more for ${mmInfo.nextTier.name}!
                             </div>`;
                         }
@@ -899,19 +899,6 @@ window.CartSystem = {
         // Renderizar com separadores e collapse
         let html = '';
 
-        html = `
-        <div style="
-            background: #f5e9c1;
-            color: #4b4747;
-            padding: 4px;
-            border-radius: 100px;
-            text-align: center;
-            font-weight: 400;
-            font-size: 15px;
-        ">
-            Special pricing available for 12+ photos
-        </div>
-    `;
 
         // Para cada categoria
         Object.keys(categories).sort().forEach(category => {
