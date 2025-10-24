@@ -786,7 +786,7 @@ window.CartSystem = {
                     // ============================================
                     if (cartTotal.mixMatchInfo) {
                         const mmInfo = cartTotal.mixMatchInfo;
-                        const tierText = `${mmInfo.itemCount} item${mmInfo.itemCount > 1 ? 's' : ''} (🌟 ${mmInfo.currentTier.name})`;
+                        const tierText = ` `;
 
                         totalHTML += `
                         <div class="mix-match-info" style="margin: 8px 0; padding: 8px; background: rgba(255, 193, 7, 0.1); border-radius: 4px; font-size: 13px;">

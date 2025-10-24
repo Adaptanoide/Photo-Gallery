@@ -54,7 +54,7 @@
 .folder-card h4 {
     color: var(--text-primary);
     margin: 0 0 1rem 0;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -212,8 +212,8 @@
 .gallery-header h3 {
     color: var(--text-primary);
     margin: 0;
-    font-size: 1.3rem;
-    font-weight: 560;
+    font-size: 1.2rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -831,8 +831,6 @@
 /* Barra de Progresso */
 .progress-bar-container {
     padding: 10px 15px;
-    background: var(--luxury-dark);
-    border-radius: 8px 8px 0 0;
 }
 
 .progress-bar-label {
@@ -862,8 +860,6 @@
     display: flex;
     gap: 8px;
     padding: 1px 14px 1px 14px;
-    background: var(--luxury-dark);
-    border-radius: 0 0 8px 8px;
 }
 
 /* Tiers compactos */
@@ -938,7 +934,7 @@
     }
     
     .tier-label {
-        font-size: 10px;
+        font-size: 18px;
     }
     
     .tier-price {
