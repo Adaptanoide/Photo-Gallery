@@ -252,6 +252,15 @@ window.CartSystem = {
 
                 // Iniciar timers para novos itens
                 this.startTimers();
+
+                // ✅ NOVO: Disparar evento para atualizar tiers globalmente
+                window.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: {
+                        itemCount: this.state.totalItems,
+                        items: this.state.items
+                    }
+                }));
+                console.log('🔔 Evento cartUpdated disparado:', this.state.totalItems, 'items');
             } else {
                 // Fallback: se resposta não tem cart, buscar do servidor
                 console.warn('⚠️ Resposta sem dados do cart, fazendo fallback...');
@@ -320,6 +329,15 @@ window.CartSystem = {
 
             // Atualizar estado local
             await this.loadCart();
+
+            // ✅ NOVO: Disparar evento para atualizar tiers globalmente
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: {
+                    itemCount: this.state.totalItems,
+                    items: this.state.items
+                }
+            }));
+            console.log('🔔 Evento cartUpdated disparado:', this.state.totalItems, 'items');
 
             // 🔴 DESABILITADO: Atualizar badge de preço
             /*
@@ -619,38 +637,63 @@ window.CartSystem = {
         }
     },
 
-    /**
-     * Calcular total do carrinho - VERSÃO OTIMIZADA (sem backend)
-     */
     async calculateCartTotal() {
-        // 🔴 REMOVIDO: Fetch para backend
-        // Cálculo SIMPLES e RÁPIDO usando apenas dados locais
+        try {
+            // Buscar do endpoint /summary (que já carrega os totals)
+            const response = await fetch(`${this.config.apiBaseUrl}/${this.state.sessionId}/summary`);
 
-        let total = 0;
-        let itemsWithPrice = 0;
-
-        this.state.items.forEach(item => {
-            if (item.price > 0) {
-                total += item.price;
-                itemsWithPrice++;
+            if (!response.ok) {
+                throw new Error('Falha ao buscar totais');
             }
-        });
 
-        return {
-            totalItems: this.state.items.length,
-            itemsWithPrice,
-            discountSource: 'none',
-            subtotal: total,
-            discountPercent: 0,
-            discountAmount: 0,
-            total: total,
-            hasDiscount: false,
-            discountDescription: '',
-            formattedSubtotal: total > 0 ? `$${total.toFixed(2)}` : '$0.00',
-            formattedDiscountAmount: '$0.00',
-            formattedTotal: total > 0 ? `$${total.toFixed(2)}` : '$0.00',
-            hasIncompletePrice: itemsWithPrice < this.state.items.length
-        };
+            const data = await response.json();
+            const totals = data.totals || {};
+
+            return {
+                totalItems: this.state.items.length,
+                itemsWithPrice: this.state.items.length,
+                discountSource: totals.discount > 0 ? 'volume' : 'none',
+                subtotal: totals.subtotal || 0,
+                discountPercent: totals.discountPercent || 0,
+                discountAmount: totals.discount || 0,
+                total: totals.total || 0,
+                hasDiscount: (totals.discount || 0) > 0,
+                discountDescription: '',
+                formattedSubtotal: `$${(totals.subtotal || 0).toFixed(2)}`,
+                formattedDiscountAmount: `$${(totals.discount || 0).toFixed(2)}`,
+                formattedTotal: `$${(totals.total || 0).toFixed(2)}`,
+                hasIncompletePrice: false,
+                mixMatchInfo: totals.mixMatchInfo || null // ✅ MIX&MATCH INFO!
+            };
+
+        } catch (error) {
+            console.error('❌ Erro ao calcular total:', error);
+
+            // Fallback: cálculo local
+            let total = 0;
+            this.state.items.forEach(item => {
+                if (item.price > 0) {
+                    total += item.price;
+                }
+            });
+
+            return {
+                totalItems: this.state.items.length,
+                itemsWithPrice: this.state.items.length,
+                discountSource: 'none',
+                subtotal: total,
+                discountPercent: 0,
+                discountAmount: 0,
+                total: total,
+                hasDiscount: false,
+                discountDescription: '',
+                formattedSubtotal: `$${total.toFixed(2)}`,
+                formattedDiscountAmount: '$0.00',
+                formattedTotal: `$${total.toFixed(2)}`,
+                hasIncompletePrice: false,
+                mixMatchInfo: null
+            };
+        }
     },
 
     /**
@@ -738,6 +781,31 @@ window.CartSystem = {
                             <span>${cartTotal.formattedSubtotal}</span>
                         </div>`;
 
+                    // ============================================
+                    // MIX & MATCH INFO (NOVO!)
+                    // ============================================
+                    if (cartTotal.mixMatchInfo) {
+                        const mmInfo = cartTotal.mixMatchInfo;
+                        const tierText = `${mmInfo.itemCount} item${mmInfo.itemCount > 1 ? 's' : ''} (🌟 ${mmInfo.currentTier.name})`;
+
+                        totalHTML += `
+                        <div class="mix-match-info" style="margin: 8px 0; padding: 8px; background: rgba(255, 193, 7, 0.1); border-radius: 4px; font-size: 13px;">
+                            <div style="color: #856404;">
+                                ${tierText}
+                            </div>`;
+
+                        // Mostrar incentivo para próximo tier
+                        if (mmInfo.nextTier && mmInfo.itemsToNextTier > 0) {
+                            totalHTML += `
+                            <div style="color: #28a745; margin-top: 4px; font-size: 12px;">
+                                💡 Add ${mmInfo.itemsToNextTier} more for ${mmInfo.nextTier.name}!
+                            </div>`;
+                        }
+
+                        totalHTML += `</div>`;
+                    }
+                    // ============================================
+
                     // Se há desconto, mostrar valor economizado
                     if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
                         // Determinar o texto baseado na fonte do desconto
@@ -764,7 +832,7 @@ window.CartSystem = {
             this.elements.itemCount.innerHTML = totalHTML;
         }
     },
-
+    
     // Adicionar ANTES de renderCartItems()
     saveCollapseStates() {
         const states = {};
@@ -861,12 +929,17 @@ window.CartSystem = {
             const categoryId = category.replace(/[^a-zA-Z0-9]/g, '_');
 
             // Cabeçalho da categoria
+            // Verificar se categoria participa do Mix & Match
+            const fullPath = items[0].category || items[0].fullPath || category;
+            const isMixMatch = window.isGlobalMixMatch && window.isGlobalMixMatch(fullPath);
+
             html += `
             <div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')" style="cursor: pointer;">
                 <div class="category-left">
                     <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
+                    ${isMixMatch ? '<span class="category-badge mix-match">🎯 Mix & Match</span>' : '<span class="category-badge regular">📦 Regular</span>'}
                     <span class="category-label" title="${items[0].fullPath || category}">${category}</span>
-                    <span class="category-count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</span>
+                    <span class="category-count">${itemCount}</span>
                 </div>
                 <div class="category-right">
                     ${(window.shouldShowPrices && window.shouldShowPrices() && categoryTotal > 0) ?

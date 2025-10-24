@@ -830,12 +830,12 @@ router.get('/status-updates', verifyClientToken, async (req, res) => {
         }));
 
         if (enrichedChanges.length > 0) {
-            console.log(`📊 Status updates: ${enrichedChanges.length} mudanças detectadas`);
-            enrichedChanges.forEach(c => {
-                const ownTag = c.isOwnReservation ? ' (própria reserva)' : '';
-                const sourceTag = c.source ? ` [${c.source}]` : '';
-                console.log(`  - Foto ${c.id}: ${c.status}${ownTag}${sourceTag}`);
-            });
+            // console.log(`📊 Status updates: ${enrichedChanges.length} mudanças detectadas`);
+            // enrichedChanges.forEach(c => {
+            //     const ownTag = c.isOwnReservation ? ' (própria reserva)' : '';
+            //     const sourceTag = c.source ? ` [${c.source}]` : '';
+            //     console.log(`  - Foto ${c.id}: ${c.status}${ownTag}${sourceTag}`);
+            // });
         }
 
         res.json({ success: true, changes: enrichedChanges });

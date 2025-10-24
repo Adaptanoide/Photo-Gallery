@@ -253,7 +253,7 @@
 }
 
 .price-value {
-    color: var(--gold-primary);
+    color: #28a745;
     font-weight: 600;
 }
 
@@ -356,7 +356,7 @@
 
 .category-subtotal {
     font-weight: 600;
-    color: var(--text-primary);
+    color: #28a745;
     font-size: 1rem;
 }
 
@@ -713,4 +713,42 @@
 
 .ghost-item {
     animation: becomeGhost 0.5s ease-out;
+}
+
+/* ============================================
+   BADGE MIX & MATCH (Laranja)
+   ============================================ */
+.category-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 6px;
+    display: inline-block;
+}
+
+.category-badge.mix-match {
+    background: #ff9800;
+    color: white;
+}
+
+.category-badge.regular {
+    display: none; /* Esconder badge Regular */
+}
+
+/* Badge de contagem (dourado) */
+.category-count {
+    background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%) !important;
+    color: white !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 2px 8px !important;
+    border-radius: 12px !important;
+    margin-left: 10px !important;
+    min-width: 24px !important;
+    text-align: center !important;
+    display: inline-block !important;
+    box-shadow: 0 2px 4px rgba(184, 148, 31, 0.3) !important;
 }

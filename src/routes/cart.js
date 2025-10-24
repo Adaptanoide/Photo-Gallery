@@ -100,11 +100,15 @@ router.post('/add', validateRequest, async (req, res) => {
         );
 
         // ⭐ RECALCULAR preços e totais antes de retornar
+        let totals = null;
         if (result.success && result.cart) {
-            await calculateCartTotals(result.cart);
+            totals = await calculateCartTotals(result.cart);
         }
 
-        res.status(201).json(result);
+        res.status(201).json({
+            ...result,
+            totals: totals // ✅ ADICIONAR TOTALS!
+        });
 
     } catch (error) {
         console.error('[ROUTE] Erro ao adicionar:', error.message);
@@ -258,19 +262,26 @@ router.get('/:sessionId/summary', async (req, res) => {
                 success: true,
                 totalItems: 0,
                 items: [],
-                isEmpty: true
+                isEmpty: true,
+                totals: {
+                    subtotal: 0,
+                    discount: 0,
+                    total: 0,
+                    mixMatchInfo: null
+                }
             });
         }
 
-        // ⭐ RECALCULAR preços antes de retornar
-        await calculateCartTotals(cart);
+        // ⭐ RECALCULAR preços E capturar totals
+        const totals = await calculateCartTotals(cart);
 
         res.json({
             success: true,
             sessionId: cart.sessionId,
             totalItems: cart.totalItems,
             items: cart.items, // Com preços recalculados!
-            isEmpty: cart.totalItems === 0
+            isEmpty: cart.totalItems === 0,
+            totals: totals // ✅ ADICIONAR TOTALS COM mixMatchInfo!
         });
 
     } catch (error) {
@@ -279,7 +290,13 @@ router.get('/:sessionId/summary', async (req, res) => {
             success: false,
             totalItems: 0,
             items: [],
-            isEmpty: true
+            isEmpty: true,
+            totals: {
+                subtotal: 0,
+                discount: 0,
+                total: 0,
+                mixMatchInfo: null
+            }
         });
     }
 });
@@ -467,7 +484,8 @@ async function calculateCartTotals(cart) {
         return {
             subtotal: 0,
             discount: 0,
-            total: 0
+            total: 0,
+            mixMatchInfo: null
         };
     }
 
@@ -507,26 +525,37 @@ async function calculateCartTotals(cart) {
     // ============================================
     // PROCESSAR GRUPO GLOBAL MIX & MATCH
     // ============================================
-    if (Object.keys(globalMixMatchItems).length > 0) {
-        // Contar TOTAL de items nas 4 categorias
-        const globalQuantity = Object.values(globalMixMatchItems)
-            .reduce((sum, items) => sum + items.length, 0);
+    const globalQuantity = Object.keys(globalMixMatchItems).length > 0
+        ? Object.values(globalMixMatchItems).reduce((sum, items) => sum + items.length, 0)
+        : 0;
 
+    if (globalQuantity > 0) {
         console.log(`🌍 [MIX&MATCH GLOBAL] ${globalQuantity} items no total`);
 
         // Processar cada subcategoria com a quantidade GLOBAL
+        // Processar cada subcategoria com a quantidade GLOBAL
         for (const [categoryPath, items] of Object.entries(globalMixMatchItems)) {
-            const categoryName = categoryPath.split('/').pop().replace('/', '');
+            // Limpar path (remover trailing slash se existir)
+            const cleanPath = categoryPath.endsWith('/')
+                ? categoryPath.slice(0, -1)
+                : categoryPath;
+
+            console.log(`🔍 Buscando categoria: "${cleanPath}"`);
+
+            // Buscar por PATH COMPLETO (mais confiável)
             const category = await PhotoCategory.findOne({
                 $or: [
-                    { folderName: categoryName },
-                    { displayName: { $regex: categoryName } }
+                    { googleDrivePath: cleanPath },
+                    { googleDrivePath: cleanPath + '/' },
+                    { displayName: cleanPath.split('/').join(' → ') }
                 ]
             });
 
             let pricePerItem = items[0].price || items[0].basePrice || 0;
 
             if (category) {
+                console.log(`✅ Categoria encontrada: ${category.displayName} (QB: ${category.qbItem})`);
+
                 // Usar quantidade GLOBAL para calcular tier
                 const priceResult = await category.getPriceForClient(
                     cart.clientCode,
@@ -534,7 +563,9 @@ async function calculateCartTotals(cart) {
                 );
                 pricePerItem = priceResult.finalPrice;
 
-                console.log(`   📦 ${categoryName}: ${items.length} items × $${pricePerItem} (tier global: ${globalQuantity})`);
+                console.log(`   📦 ${category.displayName}: ${items.length} items × $${pricePerItem} (tier global: ${globalQuantity})`);
+            } else {
+                console.warn(`⚠️ Categoria NÃO encontrada para path: "${cleanPath}"`);
             }
 
             // Atualizar preço de cada item
@@ -579,11 +610,51 @@ async function calculateCartTotals(cart) {
         total += quantity * pricePerItem;
     }
 
+    // ============================================
+    // CALCULAR TIER INFO (PARA EXIBIR NO FRONTEND)
+    // ============================================
+    let mixMatchInfo = null;
+
+    if (globalQuantity > 0) {
+        let currentTier = null;
+        let nextTier = null;
+        let itemsToNextTier = 0;
+
+        // Determinar tier atual e próximo
+        if (globalQuantity >= 37) {
+            currentTier = { level: 4, min: 37, max: null, name: "Tier 4" };
+            nextTier = null; // Já está no tier máximo
+            itemsToNextTier = 0;
+        } else if (globalQuantity >= 13) {
+            currentTier = { level: 3, min: 13, max: 36, name: "Tier 3" };
+            nextTier = { level: 4, min: 37, name: "Tier 4" };
+            itemsToNextTier = 37 - globalQuantity;
+        } else if (globalQuantity >= 6) {
+            currentTier = { level: 2, min: 6, max: 12, name: "Tier 2" };
+            nextTier = { level: 3, min: 13, name: "Tier 3" };
+            itemsToNextTier = 13 - globalQuantity;
+        } else {
+            currentTier = { level: 1, min: 1, max: 5, name: "Tier 1" };
+            nextTier = { level: 2, min: 6, name: "Tier 2" };
+            itemsToNextTier = 6 - globalQuantity;
+        }
+
+        mixMatchInfo = {
+            itemCount: globalQuantity,
+            currentTier: currentTier,
+            nextTier: nextTier,
+            itemsToNextTier: itemsToNextTier
+        };
+
+        console.log(`🎯 Tier Info: ${currentTier.name} (${globalQuantity} items) - ${itemsToNextTier} to ${nextTier?.name || 'max'}`);
+    }
+
     return {
         subtotal: subtotal,
         discount: subtotal - total,
         total: total,
-        discountPercent: subtotal > 0 ? Math.round(((subtotal - total) / subtotal) * 100) : 0
+        discountPercent: subtotal > 0 ? Math.round(((subtotal - total) / subtotal) * 100) : 0,
+        mixMatchInfo: mixMatchInfo
     };
 }
 

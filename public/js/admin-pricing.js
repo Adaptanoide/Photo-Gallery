@@ -56,6 +56,65 @@ class AdminPricing {
         this.loading = document.getElementById('loading');
     }
 
+
+    // ============================================
+    // VALIDAÇÃO DE TIERS
+    // ============================================
+    validateTierPrices(row) {
+        const inputs = row.querySelectorAll('.tier-price-input');
+
+        // Se tem só 1 input (não-Mix&Match), não valida
+        if (inputs.length === 1) {
+            row.classList.remove('has-error');
+            const errorDiv = row.querySelector('.tier-error-message');
+            if (errorDiv) errorDiv.remove();
+            return true;
+        }
+
+        const prices = Array.from(inputs).map(input => parseFloat(input.value) || 0);
+        let isValid = true;
+        let errorMessage = '';
+
+        // Limpar erros anteriores
+        inputs.forEach(input => input.classList.remove('error'));
+
+        // Validação: Preços devem ser decrescentes
+        for (let i = 0; i < prices.length - 1; i++) {
+            if (prices[i] > 0 && prices[i + 1] > 0 && prices[i] < prices[i + 1]) {
+                isValid = false;
+                errorMessage = `Tier ${i + 2} ($${prices[i + 1]}) cannot be higher than Tier ${i + 1} ($${prices[i]})`;
+
+                // Marcar inputs com erro
+                inputs[i].classList.add('error');
+                inputs[i + 1].classList.add('error');
+                break;
+            }
+        }
+
+        // Aplicar feedback visual
+        if (!isValid) {
+            row.classList.add('has-error');
+
+            // Criar/atualizar mensagem de erro
+            let errorDiv = row.querySelector('.tier-error-message');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'tier-error-message';
+                const tiersDiv = row.querySelector('.subcat-tiers');
+                if (tiersDiv) {
+                    tiersDiv.appendChild(errorDiv);
+                }
+            }
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + errorMessage;
+        } else {
+            row.classList.remove('has-error');
+            const errorDiv = row.querySelector('.tier-error-message');
+            if (errorDiv) errorDiv.remove();
+        }
+
+        return isValid;
+    }
+
     setupEventListeners() {
         // Main buttons
         const btnRefreshR2 = document.getElementById('btnSyncDrive');
@@ -468,9 +527,15 @@ class AdminPricing {
             });
         });
 
-        // Inputs de preço (detectar mudanças)
+        // Inputs de preço (detectar mudanças e validar)
         document.querySelectorAll('.tier-price-input').forEach(input => {
             input.addEventListener('input', () => {
+                // Validar tiers da linha
+                const row = input.closest('.subcategory-row');
+                if (row) {
+                    this.validateTierPrices(row);
+                }
+                // Atualizar contador
                 this.updateModifiedCount();
             });
         });
@@ -532,7 +597,6 @@ class AdminPricing {
             document.querySelectorAll('.subcategory-row').forEach(row => {
                 const categoryId = row.dataset.categoryId;
                 const inputs = row.querySelectorAll('.tier-price-input');
-
                 let hasChanges = false;
                 const tiers = [];
 
@@ -544,16 +608,26 @@ class AdminPricing {
                         hasChanges = true;
                     }
 
-                    const tier = parseInt(input.dataset.tier);
+                    const tierStr = input.dataset.tier;
                     const price = parseFloat(current);
 
                     if (!isNaN(price) && price > 0) {
-                        if (tier === 1) {
-                            tiers.push({ min: 1, max: 12, price });
-                        } else if (tier === 2) {
-                            tiers.push({ min: 13, max: 36, price });
-                        } else if (tier === 3) {
-                            tiers.push({ min: 37, max: null, price });
+                        // Produto com apenas Base Price (não-Mix&Match)
+                        if (tierStr === 'base') {
+                            tiers.push({ min: 1, max: null, price });
+                        }
+                        // Produtos Mix&Match com 4 tiers
+                        else {
+                            const tier = parseInt(tierStr);
+                            if (tier === 1) {
+                                tiers.push({ min: 1, max: 5, price });
+                            } else if (tier === 2) {
+                                tiers.push({ min: 6, max: 12, price });
+                            } else if (tier === 3) {
+                                tiers.push({ min: 13, max: 36, price });
+                            } else if (tier === 4) {
+                                tiers.push({ min: 37, max: null, price });
+                            }
                         }
                     }
                 });

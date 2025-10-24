@@ -5,7 +5,6 @@
  * Parte 3/3 da modularização do client.js
  */
 
-
 // ===== INTERCEPTAR CLIQUES NOS FILTROS IMEDIATAMENTE =====
 document.addEventListener('click', function (e) {
     // Se clicou em qualquer input dentro do filterSidebar
@@ -356,22 +355,38 @@ window.PriceProgressBar = {
             return;
         }
 
-        // HTML normal
-        let html = '<div class="price-progress-wrapper">';
+        // HTML com barra de progresso visual + medalhas
+        let html = `
+
+        <div class="progress-bar-container">
+            <div class="progress-bar-label" id="progressLabel">Your Progress: 0 items</div>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="price-progress-wrapper">
+        `;
+
+        // Medalhas para cada tier
+        const medals = ['🥉', '🥈', '🥇', '💎'];
 
         this.rateRules.forEach((rule, index) => {
             const label = rule.to === 999 ? `${rule.from}+` : `${rule.from}-${rule.to}`;
             const isFirst = index === 0;
+            const medal = medals[index] || '⭐';
 
             html += `
                 <div class="price-tier ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}">
-                    <div class="tier-label">${label} photos</div>
-                    <div class="tier-price">$${rule.price}/each</div>
+                    <div class="tier-medal">${medal}</div>
+                    <div class="tier-label">${label}</div>
+                    <div class="tier-price">$${rule.price}</div>
                 </div>
             `;
         });
 
-        html += '</div>';
+        html += '</div>'; // Fecha price-progress-wrapper
+
         priceBarContainer.innerHTML = html;
         priceBarContainer.style.display = 'block';
     },
@@ -458,6 +473,115 @@ window.PriceProgressBar = {
                 priceEl.textContent = `Unit price: $${currentPrice}`;
             }
         }
+
+        // ============================================
+        // ATUALIZAR BADGE MIX & MATCH GAMIFICADO
+        // ============================================
+        const tierIncentiveEl = document.getElementById('tierIncentive');
+        if (tierIncentiveEl && this.rateRules.length > 0) {
+            let incentiveHTML = '';
+
+            // Encontrar tier ativo e próximo tier
+            let currentTier = null;
+            let nextTier = null;
+            let tierIndex = -1;
+
+            for (let i = 0; i < this.rateRules.length; i++) {
+                const rule = this.rateRules[i];
+                if (relevantItemCount >= rule.from && relevantItemCount <= rule.to) {
+                    currentTier = rule;
+                    tierIndex = i;
+                    if (i < this.rateRules.length - 1) {
+                        nextTier = this.rateRules[i + 1];
+                    }
+                    break;
+                }
+            }
+
+            // Se tem items no carrinho
+            if (relevantItemCount > 0 && currentTier) {
+                const tierName = currentTier.to === 999 ? `Tier ${tierIndex + 1}` : `Tier ${tierIndex + 1}`;
+                const nextTierTarget = nextTier ? nextTier.from : currentTier.to;
+
+                incentiveHTML = `
+                    <div style="margin-bottom: 8px;">
+                        <strong>🎯 ${relevantItemCount}/${nextTierTarget} items</strong><br>
+                        <span style="color: #4CAF50;">🌟 ${tierName} Active</span>
+                    </div>
+                `;
+
+                // Calcular quantos faltam para próximo tier
+                if (nextTier) {
+                    const itemsNeeded = nextTier.from - relevantItemCount;
+                    incentiveHTML += `
+                        <div style="font-size: 11px;">
+                            💡 <strong>Add ${itemsNeeded} more</strong><br>
+                            to unlock Tier ${tierIndex + 2}!
+                        </div>
+                    `;
+                } else {
+                    // Último tier - melhor preço
+                    incentiveHTML += `
+                        <div style="font-size: 11px; color: #4CAF50;">
+                            🎉 <strong>Best price<br>unlocked!</strong>
+                        </div>
+                    `;
+                }
+            } else if (relevantItemCount === 0) {
+                // Carrinho vazio - incentivo inicial
+                incentiveHTML = `
+                    <div style="font-size: 11px;">
+                        💡 <strong>Add ${this.rateRules[0].from} item${this.rateRules[0].from > 1 ? 's' : ''}</strong><br>
+                        to start saving!
+                    </div>
+                `;
+            }
+
+            tierIncentiveEl.innerHTML = incentiveHTML;
+        }
+
+        // ============================================
+        // ATUALIZAR BARRA DE PROGRESSO VISUAL
+        // ============================================
+        const progressLabel = document.getElementById('progressLabel');
+        const progressBarFill = document.getElementById('progressBarFill');
+
+        if (progressLabel && progressBarFill && this.rateRules.length > 0) {
+            // Encontrar próximo tier
+            let nextTierTarget = this.rateRules[this.rateRules.length - 1].from; // Último tier por padrão
+            let currentTierName = 'Bronze';
+            const tierNames = ['Bronze', 'Silver', 'Gold', 'Diamond'];
+
+            for (let i = 0; i < this.rateRules.length; i++) {
+                const rule = this.rateRules[i];
+                if (relevantItemCount >= rule.from && relevantItemCount <= rule.to) {
+                    currentTierName = tierNames[i] || `Tier ${i + 1}`;
+                    if (i < this.rateRules.length - 1) {
+                        nextTierTarget = this.rateRules[i + 1].from;
+                    }
+                    break;
+                }
+            }
+
+            // Calcular porcentagem
+            let percentage = 0;
+            if (relevantItemCount > 0) {
+                percentage = Math.min((relevantItemCount / nextTierTarget) * 100, 100);
+            }
+
+            // Atualizar label
+            if (relevantItemCount === 0) {
+                progressLabel.textContent = `Your Progress: Start adding photos!`;
+            } else if (percentage >= 100) {
+                progressLabel.textContent = `Your Progress: ${relevantItemCount} items • ${currentTierName} tier (Best price!)`;
+            } else {
+                progressLabel.textContent = `Your Progress: ${relevantItemCount}/${nextTierTarget} items to ${tierNames[Math.min(this.rateRules.findIndex(r => r.from > relevantItemCount), tierNames.length - 1)]} tier`;
+            }
+
+            // Animar barra
+            progressBarFill.style.width = `${percentage}%`;
+        }
+        // ============================================
     },
 
     hide() {

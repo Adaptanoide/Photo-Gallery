@@ -1601,4 +1601,71 @@
     // ===== INICIALIZAÇÃO =====
     console.log('📸 client-gallery.js carregado - Módulo de galeria pronto');
 
+    // ============================================
+    // ATUALIZAÇÃO AUTOMÁTICA DE TIERS
+    // ============================================
+    /**
+     * Escuta mudanças no carrinho e atualiza barras de tiers
+     * Resolve bug: tier não atualiza quando remove item de outra categoria
+     */
+    window.addEventListener('cartUpdated', function (event) {
+        console.log('🔄 [TIER UPDATE] Carrinho atualizado, recalculando tiers...');
+        const itemCount = event.detail.itemCount || 0;
+        console.log(`🎯 [TIER UPDATE] Quantidade global: ${itemCount}`);
+
+        // Atualizar classes dos tiers
+        updateAllTierBars(itemCount);
+
+        // Atualizar barra de progresso e label
+        if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
+            window.PriceProgressBar.updateProgress();
+        }
+    });
+
+    /**
+     * Atualiza todos os tiers de preço visíveis na página
+     */
+    function updateAllTierBars(globalCount) {
+        // Buscar todos os tiers de preço na página
+        const priceTiers = document.querySelectorAll('.price-tier');
+
+        console.log(`📊 [TIER UPDATE] Encontrados ${priceTiers.length} tiers para atualizar`);
+
+        priceTiers.forEach((tier, index) => {
+            updateSingleTier(tier, globalCount, index);
+        });
+    }
+
+    /**
+     * Atualiza um único tier de preço
+     */
+    function updateSingleTier(tier, globalCount, tierIndex = 0) {
+        // Extrair min/max dos atributos data
+        const min = parseInt(tier.getAttribute('data-min'));
+        const max = parseInt(tier.getAttribute('data-max'));
+
+        if (!min && min !== 0) {
+            console.log(`⚠️ [TIER UPDATE] Tier ${tierIndex}: sem data-min`);
+            return;
+        }
+
+        // Determinar se este tier está ativo
+        const isActive = globalCount >= min && (!max || globalCount <= max || max === 999);
+
+        console.log(`🔍 [TIER UPDATE] Tier ${tierIndex}: min=${min}, max=${max}, globalCount=${globalCount}, isActive=${isActive}`);
+
+        // Atualizar classes
+        if (isActive) {
+            if (!tier.classList.contains('active')) {
+                tier.classList.add('active');
+                console.log(`✅ [TIER UPDATE] Tier ${tierIndex} (${min}-${max || '∞'}) ATIVADO`);
+            }
+        } else {
+            if (tier.classList.contains('active')) {
+                tier.classList.remove('active');
+                console.log(`⭕ [TIER UPDATE] Tier ${tierIndex} (${min}-${max || '∞'}) DESATIVADO`);
+            }
+        }
+    }
+
 })();
