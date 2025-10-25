@@ -218,6 +218,37 @@ window.syncCartUIFromRemove = function (photoId) {
     }
 }
 
+// ===== CATEGORIAS MIX & MATCH (GLOBAL TIERS) =====
+const GLOBAL_MIX_MATCH_CATEGORIES = [
+    'Brazilian Cowhides',
+    'Brazil Best Sellers',
+    'Brazil Top Selected Categories',
+    'Colombian Cowhides'
+];
+
+/**
+ * Verifica se a categoria atual participa do Mix & Match global
+ */
+function isCurrentCategoryMixMatch() {
+    if (!window.navigationState || !window.navigationState.currentPath || window.navigationState.currentPath.length === 0) {
+        return false;
+    }
+
+    // Pegar a categoria principal (primeiro nível)
+    const mainCategory = window.navigationState.currentPath[0].name;
+
+    console.log('🔍 Verificando Mix & Match:', mainCategory);
+
+    // Verificar se está na lista
+    const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
+        mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
+    );
+
+    console.log('   → É Mix & Match?', isMixMatch);
+
+    return isMixMatch;
+}
+
 // ===== PRICE PROGRESS BAR =====
 window.PriceProgressBar = {
     currentCategoryId: null,
@@ -350,6 +381,13 @@ window.PriceProgressBar = {
             return;
         }
 
+        // ✅ NOVO: Verificar se é categoria Mix & Match
+        if (!isCurrentCategoryMixMatch()) {
+            console.log('⚠️ Categoria NÃO é Mix & Match - ocultando barra de tiers');
+            priceBarContainer.style.display = 'none';
+            return;
+        }
+
         if (this.rateRules.length === 0) {
             priceBarContainer.style.display = 'none';
             return;
@@ -359,7 +397,10 @@ window.PriceProgressBar = {
         let html = `
 
         <div class="progress-bar-container">
-            <div class="progress-bar-label" id="progressLabel">Your Progress: 0 items</div>
+            <div class="progress-bar-header">
+                <div class="progress-bar-label" id="progressLabel">Your Progress: 0 items</div>
+                <div class="progress-bar-incentive" id="progressIncentive"></div>
+            </div>
             <div class="progress-bar-track">
                 <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
             </div>
@@ -545,11 +586,13 @@ window.PriceProgressBar = {
         // ============================================
         const progressLabel = document.getElementById('progressLabel');
         const progressBarFill = document.getElementById('progressBarFill');
+        const progressIncentive = document.getElementById('progressIncentive');
 
         if (progressLabel && progressBarFill && this.rateRules.length > 0) {
             // Encontrar próximo tier
             let nextTierTarget = this.rateRules[this.rateRules.length - 1].from; // Último tier por padrão
             let currentTierName = 'Bronze';
+            let nextTierName = '';
             const tierNames = ['Bronze', 'Silver', 'Gold', 'Diamond'];
 
             for (let i = 0; i < this.rateRules.length; i++) {
@@ -558,6 +601,7 @@ window.PriceProgressBar = {
                     currentTierName = tierNames[i] || `Tier ${i + 1}`;
                     if (i < this.rateRules.length - 1) {
                         nextTierTarget = this.rateRules[i + 1].from;
+                        nextTierName = tierNames[i + 1] || `Tier ${i + 2}`;
                     }
                     break;
                 }
@@ -580,6 +624,20 @@ window.PriceProgressBar = {
 
             // Animar barra
             progressBarFill.style.width = `${percentage}%`;
+
+            // ✅ NOVO: Atualizar incentivo para próximo tier
+            if (progressIncentive) {
+                let incentiveText = '';
+
+                if (relevantItemCount > 0 && percentage < 100 && nextTierName) {
+                    const itemsNeeded = nextTierTarget - relevantItemCount;
+                    incentiveText = `💡 Add ${itemsNeeded} more for ${nextTierName}!`;
+                } else if (percentage >= 100) {
+                    incentiveText = `🎉 Best price unlocked!`;
+                }
+
+                progressIncentive.textContent = incentiveText;
+            }
         }
         // ============================================
     },

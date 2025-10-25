@@ -781,31 +781,6 @@ window.CartSystem = {
                             <span>${cartTotal.formattedSubtotal}</span>
                         </div>`;
 
-                    // ============================================
-                    // MIX & MATCH INFO (NOVO!)
-                    // ============================================
-                    if (cartTotal.mixMatchInfo) {
-                        const mmInfo = cartTotal.mixMatchInfo;
-                        const tierText = ` `;
-
-                        totalHTML += `
-                        <div class="mix-match-info" style="padding: 2px; background: rgba(255, 193, 7, 0.1); border-radius: 4px; font-size: 13px;">
-                            <div style="color: #856404;">
-                                ${tierText}
-                            </div>`;
-
-                        // Mostrar incentivo para próximo tier
-                        if (mmInfo.nextTier && mmInfo.itemsToNextTier > 0) {
-                            totalHTML += `
-                            <div style="color: #28a745; margin-top: 4px; font-size: 14px;">
-                                💡 Add ${mmInfo.itemsToNextTier} more for ${mmInfo.nextTier.name}!
-                            </div>`;
-                        }
-
-                        totalHTML += `</div>`;
-                    }
-                    // ============================================
-
                     // Se há desconto, mostrar valor economizado
                     if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
                         // Determinar o texto baseado na fonte do desconto
@@ -832,7 +807,7 @@ window.CartSystem = {
             this.elements.itemCount.innerHTML = totalHTML;
         }
     },
-    
+
     // Adicionar ANTES de renderCartItems()
     saveCollapseStates() {
         const states = {};
@@ -941,6 +916,15 @@ window.CartSystem = {
 
             // Renderizar cada item
             items.forEach(item => {
+                // ✅ CALCULAR timeRemaining ANTES de renderizar
+                if (item.expiresAt) {
+                    const now = Date.now();
+                    const expires = new Date(item.expiresAt);
+                    item.timeRemaining = Math.max(0, Math.floor((expires - now) / 1000));
+                } else {
+                    item.timeRemaining = 0;
+                }
+
                 html += this.renderCartItem(item);
             });
 
@@ -1048,24 +1032,27 @@ window.CartSystem = {
                 <div class="cart-item-info" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
                     <div class="cart-item-title ${isGhost ? 'ghost-text' : ''}">${item.fileName}</div>
                     <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${item.category}</div>
-                    ${!isGhost && (window.shouldShowPrices && window.shouldShowPrices()) ?
-                `<div class="cart-item-price">
-                            ${(item.price > 0 || item.basePrice > 0) ?
-                    `<span class="price-value">$${(item.price || item.basePrice).toFixed(2)}</span>` :
-                    `<span class="price-consult">Check price</span>`
-                }
-                        </div>` :
-                ''
-            }
-                    ${isGhost ?
-                `<div class="ghost-status">
+                    
+                    ${!isGhost ? `
+                        <div class="cart-item-bottom" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px;">
+                            ${(window.shouldShowPrices && window.shouldShowPrices()) ? `
+                                <div class="cart-item-price">
+                                    ${(item.price > 0 || item.basePrice > 0) ?
+                        `<span class="price-value">$${(item.price || item.basePrice).toFixed(2)}</span>` :
+                        `<span class="price-consult">Check price</span>`
+                    }
+                                </div>
+                            ` : ''}
+                            <div class="cart-item-timer ${timerClass}">
+                                <i class="fas fa-clock"></i>
+                                <span id="timer-${item.fileName || item.driveFileId.split('/').pop()}">${timeText}</span>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="ghost-status">
                             <i class="fas fa-ban"></i> Not available for selection
-                        </div>` :
-                `<div class="cart-item-timer ${timerClass}">
-                            <i class="fas fa-clock"></i>
-                            <span id="timer-${item.fileName || item.driveFileId.split('/').pop()}">${timeText}</span>
-                        </div>`
-            }
+                        </div>
+                    `}
                 </div>
                 <div class="cart-item-actions">
                     <button class="cart-item-remove ${isGhost ? 'remove-ghost' : ''}" title="${isGhost ? 'Acknowledge and remove' : 'Remove item'}">
@@ -1462,6 +1449,17 @@ window.toggleCartItem = async function () {
 
             // Adicionar ao carrinho COM OS DADOS COMPLETOS
             await CartSystem.addItem(currentPhoto, itemData);
+
+            // ✅ NOVO: Recalcular preço do badge no modal após adicionar
+            setTimeout(async () => {
+                const modal = document.getElementById('photoModal');
+                if (modal && modal.style.display === 'flex') {
+                    console.log('💰 [MODAL] Recalculando preço após adicionar ao carrinho...');
+                    if (window.updateModalPriceInfo) {
+                        await window.updateModalPriceInfo();
+                    }
+                }
+            }, 200);
 
             // Sincronizar thumbnails após adicionar
             setTimeout(() => {

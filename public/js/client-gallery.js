@@ -1620,6 +1620,15 @@
         if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
             window.PriceProgressBar.updateProgress();
         }
+
+        // ✅ NOVO: Atualizar badge de preço no modal (se estiver aberto)
+        const modal = document.getElementById('photoModal');
+        if (modal && modal.style.display === 'flex') {
+            console.log('🔄 [TIER UPDATE] Modal aberto - atualizando preço...');
+            if (window.updateModalPriceInfo) {
+                window.updateModalPriceInfo();
+            }
+        }
     });
 
     /**

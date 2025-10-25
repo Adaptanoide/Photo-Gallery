@@ -13,10 +13,9 @@ const router = express.Router();
 // GLOBAL MIX & MATCH CONFIGURATION
 // ============================================
 const GLOBAL_MIX_MATCH_CATEGORIES = [
-    'Colombia Cowhides',
+    'Colombian Cowhides',
     'Brazil Best Sellers',
-    'Brazil Cowhides - Selected Categories Small',
-    'Brazil Cowhides - Selected Categories ML & XL'
+    'Brazil Top Selected Categories'
 ];
 
 /**
@@ -489,8 +488,10 @@ async function calculateCartTotals(cart) {
         };
     }
 
-    let subtotal = 0;
-    let total = 0;
+    let subtotalMixMatch = 0;      // Subtotal Mix & Match (Tier 1)
+    let subtotalOthers = 0;        // Subtotal outras categorias
+    let totalMixMatch = 0;         // Total Mix & Match (com tier)
+    let totalOthers = 0;           // Total outras categorias
 
     // Verificar se é Special Selection
     const accessCode = await AccessCode.findOne({ code: cart.clientCode });
@@ -499,22 +500,18 @@ async function calculateCartTotals(cart) {
     // ============================================
     // SEPARAR ITEMS EM 2 GRUPOS
     // ============================================
-    const globalMixMatchItems = {}; // Items das 4 categorias principais
+    const globalMixMatchItems = {}; // Items das 3 categorias principais
     const separateItems = {};       // Items de outras categorias
 
     cart.items.forEach(item => {
         const categoryPath = item.category || 'uncategorized';
 
-        subtotal += item.basePrice || 0;
-
         if (isGlobalMixMatch(categoryPath)) {
-            // Vai para grupo Mix & Match GLOBAL
             if (!globalMixMatchItems[categoryPath]) {
                 globalMixMatchItems[categoryPath] = [];
             }
             globalMixMatchItems[categoryPath].push(item);
         } else {
-            // Vai para grupo SEPARADO
             if (!separateItems[categoryPath]) {
                 separateItems[categoryPath] = [];
             }
@@ -532,17 +529,13 @@ async function calculateCartTotals(cart) {
     if (globalQuantity > 0) {
         console.log(`🌍 [MIX&MATCH GLOBAL] ${globalQuantity} items no total`);
 
-        // Processar cada subcategoria com a quantidade GLOBAL
-        // Processar cada subcategoria com a quantidade GLOBAL
         for (const [categoryPath, items] of Object.entries(globalMixMatchItems)) {
-            // Limpar path (remover trailing slash se existir)
             const cleanPath = categoryPath.endsWith('/')
                 ? categoryPath.slice(0, -1)
                 : categoryPath;
 
             console.log(`🔍 Buscando categoria: "${cleanPath}"`);
 
-            // Buscar por PATH COMPLETO (mais confiável)
             const category = await PhotoCategory.findOne({
                 $or: [
                     { googleDrivePath: cleanPath },
@@ -551,30 +544,39 @@ async function calculateCartTotals(cart) {
                 ]
             });
 
-            let pricePerItem = items[0].price || items[0].basePrice || 0;
-
             if (category) {
                 console.log(`✅ Categoria encontrada: ${category.displayName} (QB: ${category.qbItem})`);
 
-                // Usar quantidade GLOBAL para calcular tier
-                const priceResult = await category.getPriceForClient(
-                    cart.clientCode,
-                    globalQuantity // ✅ QUANTIDADE GLOBAL!
-                );
-                pricePerItem = priceResult.finalPrice;
+                // ✅ SUBTOTAL: Usar preço Tier 1 (quantidade = 1)
+                const tier1Result = await category.getPriceForClient(cart.clientCode, 1);
+                const tier1Price = tier1Result.finalPrice;
 
-                console.log(`   📦 ${category.displayName}: ${items.length} items × $${pricePerItem} (tier global: ${globalQuantity})`);
+                // ✅ TOTAL: Usar preço com tier global
+                const currentTierResult = await category.getPriceForClient(cart.clientCode, globalQuantity);
+                const currentTierPrice = currentTierResult.finalPrice;
+
+                console.log(`   💰 Tier 1 Price: $${tier1Price} | Current Tier Price: $${currentTierPrice}`);
+                console.log(`   📦 ${category.displayName}: ${items.length} items (tier global: ${globalQuantity})`);
+
+                // Acumular valores
+                subtotalMixMatch += items.length * tier1Price;
+                totalMixMatch += items.length * currentTierPrice;
+
+                // Atualizar preço de cada item no carrinho
+                items.forEach(item => {
+                    item.price = currentTierPrice;
+                    item.basePrice = tier1Price;  // ✅ basePrice = Tier 1
+                    item.formattedPrice = `$${currentTierPrice.toFixed(2)}`;
+                });
+
             } else {
                 console.warn(`⚠️ Categoria NÃO encontrada para path: "${cleanPath}"`);
+
+                // Fallback: usar preço do item
+                const fallbackPrice = items[0].price || items[0].basePrice || 0;
+                subtotalMixMatch += items.length * fallbackPrice;
+                totalMixMatch += items.length * fallbackPrice;
             }
-
-            // Atualizar preço de cada item
-            items.forEach(item => {
-                item.price = pricePerItem;
-                item.formattedPrice = `$${pricePerItem.toFixed(2)}`;
-            });
-
-            total += items.length * pricePerItem;
         }
     }
 
@@ -582,32 +584,49 @@ async function calculateCartTotals(cart) {
     // PROCESSAR CATEGORIAS SEPARADAS
     // ============================================
     for (const [categoryPath, items] of Object.entries(separateItems)) {
-        const quantity = items.length; // Quantidade própria
+        const quantity = items.length;
 
-        const categoryName = categoryPath.split('/').pop().replace('/', '');
+        const cleanPath = categoryPath.endsWith('/')
+            ? categoryPath.slice(0, -1)
+            : categoryPath;
+
+        console.log(`🔍 [SEPARADO] Buscando categoria: "${cleanPath}"`);
+
         const category = await PhotoCategory.findOne({
             $or: [
-                { folderName: categoryName },
-                { displayName: { $regex: categoryName } }
+                { googleDrivePath: cleanPath },
+                { googleDrivePath: cleanPath + '/' },
+                { displayName: cleanPath.split('/').join(' → ') }
             ]
         });
 
         let pricePerItem = items[0].price || items[0].basePrice || 0;
 
         if (category) {
+            console.log(`✅ [SEPARADO] Categoria encontrada: ${category.displayName} (QB: ${category.qbItem || 'N/A'})`);
+
             const priceResult = await category.getPriceForClient(cart.clientCode, quantity);
             pricePerItem = priceResult.finalPrice;
 
-            console.log(`   🔸 ${categoryName}: ${quantity} items × $${pricePerItem} (tier próprio)`);
+            console.log(`   🔸 ${category.displayName}: ${quantity} items × $${pricePerItem} (tier próprio)`);
+
+            // Para categorias separadas: subtotal = total (sem desconto de tier global)
+            subtotalOthers += quantity * pricePerItem;
+            totalOthers += quantity * pricePerItem;
+
+            // Atualizar preço de cada item
+            items.forEach(item => {
+                item.price = pricePerItem;
+                item.basePrice = pricePerItem;  // Para não Mix & Match, base = current
+                item.formattedPrice = `$${pricePerItem.toFixed(2)}`;
+            });
+
+        } else {
+            console.warn(`⚠️ [SEPARADO] Categoria NÃO encontrada para path: "${cleanPath}"`);
+
+            subtotalOthers += quantity * pricePerItem;
+            totalOthers += quantity * pricePerItem;
         }
-
-        // Atualizar preço de cada item
-        items.forEach(item => {
-            item.price = pricePerItem;
-            item.formattedPrice = `$${pricePerItem.toFixed(2)}`;
-        });
-
-        total += quantity * pricePerItem;
     }
 
     // ============================================
@@ -623,7 +642,7 @@ async function calculateCartTotals(cart) {
         // Determinar tier atual e próximo
         if (globalQuantity >= 37) {
             currentTier = { level: 4, min: 37, max: null, name: "Tier 4" };
-            nextTier = null; // Já está no tier máximo
+            nextTier = null;
             itemsToNextTier = 0;
         } else if (globalQuantity >= 13) {
             currentTier = { level: 3, min: 13, max: 36, name: "Tier 3" };
@@ -649,11 +668,25 @@ async function calculateCartTotals(cart) {
         console.log(`🎯 Tier Info: ${currentTier.name} (${globalQuantity} items) - ${itemsToNextTier} to ${nextTier?.name || 'max'}`);
     }
 
+    // ============================================
+    // TOTAIS FINAIS
+    // ============================================
+    const subtotal = subtotalMixMatch + subtotalOthers;
+    const total = totalMixMatch + totalOthers;
+    const discount = subtotal - total;
+
+    console.log(`\n💰 RESUMO DO CARRINHO:`);
+    console.log(`   Subtotal Mix & Match: $${subtotalMixMatch.toFixed(2)}`);
+    console.log(`   Subtotal Others: $${subtotalOthers.toFixed(2)}`);
+    console.log(`   SUBTOTAL TOTAL: $${subtotal.toFixed(2)}`);
+    console.log(`   Discount: -$${discount.toFixed(2)}`);
+    console.log(`   TOTAL FINAL: $${total.toFixed(2)}\n`);
+
     return {
         subtotal: subtotal,
-        discount: subtotal - total,
+        discount: discount,
         total: total,
-        discountPercent: subtotal > 0 ? Math.round(((subtotal - total) / subtotal) * 100) : 0,
+        discountPercent: subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0,
         mixMatchInfo: mixMatchInfo
     };
 }

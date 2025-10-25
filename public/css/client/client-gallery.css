@@ -941,3 +941,26 @@
         font-size: 12px;
     }
 }
+
+/* Barra de progresso com incentivo */
+.progress-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progress-bar-incentive {
+    font-size: 14px;
+    font-weight: 600;
+    color: #10b981;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .progress-bar-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
