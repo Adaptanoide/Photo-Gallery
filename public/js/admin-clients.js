@@ -285,8 +285,37 @@ class AdminClients {
                                     </div>
                                     <div class="form-group-clients">
                                         <label class="form-label-clients required">Sales Rep</label>
-                                        <input type="text" id="salesRep" class="form-input-clients" 
-                                            placeholder="Sales Representative name here" required>
+                                        <select id="salesRep" class="form-input-clients" required>
+                                            <option value="">Select Sales Rep...</option>
+                                            
+                                            <!-- Individuais -->
+                                            <option value="Keith">Keith</option>
+                                            <option value="Karen">Karen</option>
+                                            <option value="Eddie">Eddie</option>
+                                            <option value="Andy">Andy</option>
+                                            <option value="Vicky">Vicky</option>
+                                            <option value="Eduarda">Eduarda</option>
+                                            
+                                            <!-- Duplas do Grupo Principal -->
+                                            <option value="Eddie / Keith">Eddie / Keith</option>
+                                            <option value="Eddie / Karen">Eddie / Karen</option>
+                                            <option value="Eddie / Andy">Eddie / Andy</option>
+                                            <option value="Keith / Karen">Keith / Karen</option>
+                                            <option value="Keith / Andy">Keith / Andy</option>
+                                            <option value="Karen / Andy">Karen / Andy</option>
+                                            
+                                            <!-- Trios do Grupo Principal -->
+                                            <option value="Eddie / Keith / Karen">Eddie / Keith / Karen</option>
+                                            <option value="Eddie / Keith / Andy">Eddie / Keith / Andy</option>
+                                            <option value="Eddie / Karen / Andy">Eddie / Karen / Andy</option>
+                                            <option value="Keith / Karen / Andy">Keith / Karen / Andy</option>
+                                            
+                                            <!-- Todos do Grupo Principal -->
+                                            <option value="Eddie / Keith / Karen / Andy">Eddie / Keith / Karen / Andy</option>
+                                            
+                                            <!-- Dupla Especial -->
+                                            <option value="Vicky / Eduarda">Vicky / Eduarda</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

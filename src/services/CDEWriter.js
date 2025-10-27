@@ -37,6 +37,29 @@ class CDEWriter {
     }
 
     /**
+     * 🆕 DETERMINAR STATUS CDE BASEADO NO SALES REP
+     * RETAIL (Vicky/Eduarda) → RESERVED
+     * WHOLESALE (outros) → CONFIRMED
+     */
+    static getCDEStatusForConfirmation(salesRep) {
+        const retailSalesReps = ['Vicky', 'Eduarda', 'Vicky / Eduarda'];
+
+        const normalizedSalesRep = (salesRep || '').trim();
+
+        const isRetail = retailSalesReps.some(rep =>
+            normalizedSalesRep.toLowerCase() === rep.toLowerCase()
+        );
+
+        if (isRetail) {
+            console.log(`[CDE] 🏪 RETAIL (${salesRep}) → RESERVED`);
+            return 'RESERVED';
+        } else {
+            console.log(`[CDE] 🏢 WHOLESALE (${salesRep}) → CONFIRMED`);
+            return 'CONFIRMED';
+        }
+    }
+
+    /**
      * 🆕 MÉTODO AUXILIAR: Tentar operação em ambas tabelas
      * Tenta primeiro na tabela indicada, se falhar, tenta na outra
      */
@@ -293,24 +316,28 @@ class CDEWriter {
             // 🆕 CONSTRUIR RESERVEDUSU COM SALES REP
             const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
 
+            // 🆕 DETERMINAR STATUS BASEADO NO SALES REP
+            const cdeStatus = this.getCDEStatusForConfirmation(salesRep);
+
             console.log(`[CDE] 📦 Bulk confirm: ${photoNumbers.length} fotos para ${reservedusu}`);
+            console.log(`[CDE] 📊 Status: ${cdeStatus} (Sales Rep: ${salesRep})`);
 
             // Preparar placeholders para query SQL
             const placeholders = photoNumbers.map(() => '?').join(',');
 
-            // 1 QUERY para TODAS as fotos!
+            // 1 QUERY para TODAS as fotos! (AGORA COM STATUS DINÂMICO)
             const [result] = await connection.execute(
                 `UPDATE tbinventario 
-                 SET AESTADOP = 'CONFIRMED',
+                 SET AESTADOP = ?,
                      RESERVEDUSU = ?,
                      AFECHA = NOW()
                  WHERE ATIPOETIQUETA IN (${placeholders})
                  AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
-                [reservedusu, ...photoNumbers]
+                [cdeStatus, reservedusu, ...photoNumbers]
             );
 
             const confirmedCount = result.affectedRows;
-            console.log(`[CDE] ✅ Bulk confirm: ${confirmedCount}/${photoNumbers.length} fotos confirmadas para ${reservedusu}`);
+            console.log(`[CDE] ✅ Bulk confirm: ${confirmedCount}/${photoNumbers.length} fotos → ${cdeStatus} para ${reservedusu}`);
 
             if (confirmedCount < photoNumbers.length) {
                 console.log(`[CDE] ⚠️ ${photoNumbers.length - confirmedCount} fotos não estavam disponíveis para confirmar`);
@@ -404,7 +431,7 @@ class CDEWriter {
                      RESERVEDUSU = ?,
                      AFECHA = NOW()
                  WHERE ATIPOETIQUETA IN (${placeholders})
-                 AND AESTADOP IN ('INGRESADO', 'CONFIRMED')`,
+                 AND AESTADOP IN ('INGRESADO', 'CONFIRMED', 'RESERVED')`,
                 [reservedusu, ...photoNumbers]
             );
 

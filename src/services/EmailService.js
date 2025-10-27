@@ -141,7 +141,8 @@ class EmailService {
                 folderName: selectionData.googleDriveInfo?.clientFolderName || 'Folder not specified',
                 selectionId: selectionData.selectionId,
                 createdAt: new Date().toLocaleString('pt-BR'),
-                observations: selectionData.observations
+                observations: selectionData.observations,
+                salesRep: selectionData.salesRep || 'Unassigned'
             };
 
             // Aplicar template
@@ -323,8 +324,9 @@ class EmailService {
                     <div class="info-box">
                         <h3>📋 Selection Details</h3>
                         <p><strong>Customer:</strong> ${data.clientName} (${data.clientCode})</p>
+                        <p><strong>Sales Rep:</strong> ${data.salesRep}</p>
                         <p><strong>Selected Items:</strong> ${data.totalItems} photos</p>
-                        <p><strong>Total Value:</strong> ${data.totalValue}</p>
+                        <p><strong>Total Value:</strong> ${data.totalValue}${['Vicky', 'Eduarda', 'Vicky / Eduarda'].some(rep => rep.toLowerCase() === (data.salesRep || '').toLowerCase()) ? ' <span style="color: #dc3545; font-style: italic;">(Retail - Prices subject to change)</span>' : ''}</p>
                         <p><strong>Date/Time:</strong> ${data.createdAt}</p>
                     </div>
                     
