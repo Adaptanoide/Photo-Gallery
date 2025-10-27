@@ -1448,23 +1448,15 @@ class AdminSelections {
         try {
             console.log('Gerando Excel com PO:', poNumber);
 
-            // Buscar nome da empresa
-            let companyName = selection.clientName;
-            try {
-                const response = await fetch('/api/admin/access-codes', {
-                    headers: this.getAuthHeaders()
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.codes) {
-                        const client = data.codes.find(ac => ac.code === selection.clientCode);
-                        if (client?.companyName) {
-                            companyName = client.companyName;
-                        }
-                    }
-                }
-            } catch (error) {
-                console.log('Usando nome do cliente:', companyName);
+            // ✅ Usar company direto da seleção (já vem da API)
+            let companyName = 'NO COMPANY';
+
+            if (selection.clientCompany && selection.clientCompany.trim() !== '' && selection.clientCompany !== '-') {
+                companyName = selection.clientCompany;
+                console.log('✅ Company encontrada na seleção:', companyName);
+            } else {
+                console.log('⚠️ Company não encontrada, usando: NO COMPANY');
+                console.log('   selection.clientCompany =', selection.clientCompany);
             }
 
             // 🆕 FUNÇÃO PARA LIMPAR STRINGS PARA CSV/MYSQL (VERSÃO 2.0)
@@ -1556,15 +1548,15 @@ class AdminSelections {
                 const cleanQbCode = cleanForCSV(group.qbCode);
 
                 excelData.push([
-                    cleanCompanyName,
-                    cleanPoNumber,
-                    cleanReservedusu,
-                    categoryPhotoNumbers,
-                    cleanQbCode,
-                    itemName,
-                    group.totalQty,
-                    0,  // Unit price zerado
-                    0   // Total amount zerado
+                    selection.clientName,    // ✅ Coluna 1: Nome do cliente (Mary Devos)
+                    cleanPoNumber,           // ✅ Coluna 2: PO Number (COLUNA CDE)
+                    cleanCompanyName,        // ✅ Coluna 3: Company (Gastamo Group)
+                    categoryPhotoNumbers,    // ✅ Coluna 4: Foto numbers
+                    cleanQbCode,             // ✅ Coluna 5: QB Code
+                    itemName,                // ✅ Coluna 6: Categoria
+                    group.totalQty,          // ✅ Coluna 7: Quantidade
+                    group.unitPrice.toFixed(2),    // ✅ Coluna 8: Preço unitário
+                    group.totalAmount.toFixed(2)   // ✅ Coluna 9: Total
                 ]);
 
                 // LOG para debug
