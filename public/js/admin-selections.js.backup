@@ -366,17 +366,6 @@ class AdminSelections {
             </button>
         `;
 
-        // DOWNLOAD PHOTOS - para PENDING e FINALIZED
-        if (selection.status === 'pending' || selection.status === 'finalized') {
-            buttons += `
-                <button class="special-btn-icon btn-download" 
-                        onclick="adminSelections.downloadSelectionPhotos('${selection.selectionId}')" 
-                        data-tooltip="Download Photos">
-                    <i class="fas fa-download"></i>
-                </button>
-            `;
-        }
-
         // PENDING - adiciona Reopen, Mark as Sold e Cancel
         if (selection.status === 'pending') {
             buttons += `
@@ -1803,92 +1792,6 @@ class AdminSelections {
 
             // Recarregar em caso de erro
             this.loadSelections();
-        }
-    }
-
-    // ===== DOWNLOAD SELECTION PHOTOS AS ZIP =====
-    async downloadSelectionPhotos(selectionId) {
-        // Encontrar a linha na tabela
-        const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
-        let originalStatusHTML = '';
-
-        try {
-            console.log(`📥 Downloading photos for selection: ${selectionId}`);
-
-            // Salvar status original e atualizar visual para "DOWNLOADING..."
-            if (row) {
-                const statusCell = row.querySelector('.status-cell');
-                if (statusCell) {
-                    originalStatusHTML = statusCell.innerHTML;
-                    statusCell.innerHTML = `
-                        <span class="badge badge-approving">
-                            <span class="spinner-inline"></span>
-                            DOWNLOADING...
-                        </span>
-                    `;
-                }
-            }
-
-            // Mostrar toast
-            UISystem.showToast('info', 'Preparing photos for download...');
-
-            // Fazer download via backend COM autenticação
-            const downloadUrl = `/api/selections/${selectionId}/download-zip`;
-
-            const response = await fetch(downloadUrl, {
-                headers: this.getAuthHeaders()
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            // Converter resposta para blob
-            const blob = await response.blob();
-
-            // Extrair nome do arquivo do header Content-Disposition
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let fileName = 'selection.zip';
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
-                if (match) fileName = match[1];
-            }
-
-            // Criar URL temporária e fazer download
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Limpar URL temporária
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-
-            // Restaurar status original
-            if (row && originalStatusHTML) {
-                const statusCell = row.querySelector('.status-cell');
-                if (statusCell) {
-                    statusCell.innerHTML = originalStatusHTML;
-                }
-            }
-
-            UISystem.showToast('success', 'ZIP downloaded successfully!');
-            console.log(`✅ Download completed: ${fileName}`);
-
-        } catch (error) {
-            console.error('❌ Error downloading photos:', error);
-
-            // Restaurar status original em caso de erro
-            if (row && originalStatusHTML) {
-                const statusCell = row.querySelector('.status-cell');
-                if (statusCell) {
-                    statusCell.innerHTML = originalStatusHTML;
-                }
-            }
-
-            UISystem.showToast('error', `Error downloading photos: ${error.message}`);
         }
     }
 

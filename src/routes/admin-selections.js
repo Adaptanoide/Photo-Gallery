@@ -1222,4 +1222,119 @@ router.delete('/:selectionId', async (req, res) => {
     }
 });
 
+/**
+ * @route   GET /api/selections/:selectionId/download-zip
+ * @desc    Download all photos from a selection as ZIP
+ * @access  Admin only
+ */
+router.get('/:selectionId/download-zip', async (req, res) => {
+    try {
+        const { selectionId } = req.params;
+        const JSZip = require('jszip');
+
+        console.log(`📥 Backend: Downloading ZIP for selection: ${selectionId}`);
+
+        // Buscar seleção no banco
+        const Selection = require('../models/Selection');
+        const selection = await Selection.findOne({ selectionId });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Selection not found'
+            });
+        }
+
+        // Validar se tem itens
+        if (!selection.items || selection.items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No photos in this selection'
+            });
+        }
+
+        console.log(`📸 Processing ${selection.items.length} photos...`);
+
+        // Criar ZIP
+        const zip = new JSZip();
+        let successCount = 0;
+        let errorCount = 0;
+
+        // Baixar cada foto
+        for (let i = 0; i < selection.items.length; i++) {
+            const item = selection.items[i];
+
+            try {
+                // Construir URL da foto original
+                let photoUrl;
+                if (item.thumbnailUrl) {
+                    photoUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
+                } else {
+                    const path = item.originalPath ? item.originalPath.replace(/→/g, '/').trim() : '';
+                    photoUrl = `https://images.sunshinecowhides-gallery.com/${path}/${item.fileName}`;
+                }
+
+                console.log(`📸 Fetching ${i + 1}/${selection.items.length}: ${item.fileName}`);
+
+                // Baixar foto (servidor tem acesso direto, sem CORS!)
+                const response = await fetch(photoUrl);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+
+                // Adicionar ao ZIP
+                zip.file(item.fileName, buffer);
+
+                successCount++;
+
+            } catch (error) {
+                console.error(`❌ Error downloading ${item.fileName}:`, error.message);
+                errorCount++;
+            }
+        }
+
+        // Verificar se conseguiu baixar pelo menos uma foto
+        if (successCount === 0) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to download any photos'
+            });
+        }
+
+        console.log(`📦 Generating ZIP... (${successCount} photos, ${errorCount} errors)`);
+
+        // Gerar ZIP
+        const zipBuffer = await zip.generateAsync({
+            type: 'nodebuffer',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+        });
+
+        // Criar nome do arquivo
+        const date = new Date(selection.createdAt).toISOString().split('T')[0];
+        const clientName = (selection.clientName || 'client').replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `selection-${clientName}-${selection.clientCode}-${date}.zip`;
+
+        console.log(`✅ ZIP created: ${fileName} (${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+
+        // Enviar arquivo
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Length', zipBuffer.length);
+
+        res.send(zipBuffer);
+
+    } catch (error) {
+        console.error('❌ Error creating ZIP:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 module.exports = router;
