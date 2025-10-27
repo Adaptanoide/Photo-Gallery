@@ -420,7 +420,7 @@ window.PriceProgressBar = {
             html += `
                 <div class="price-tier ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}">
                     <div class="tier-medal">${medal}</div>
-                    <div class="tier-label">${label}</div>
+                    <div class="tier-label">${label} hides</div>
                     <div class="tier-price">$${rule.price}</div>
                 </div>
             `;
@@ -480,17 +480,12 @@ window.PriceProgressBar = {
                     infoBadge.textContent = `${currentPrice}/each`;
                 }
 
-                // Atualizar modal se estiver aberto
-                const modalBadge = document.querySelector('.modal-price-badge');
-                if (modalBadge && !modalBadge.classList.contains('contact-price')) {
-                    modalBadge.textContent = `${currentPrice}/each`;
-                }
-
-                // ADICIONAR PARA DESKTOP - Atualizar título da galeria
-                const galleryBadge = document.querySelector('.gallery-header .category-price-badge');
-                if (galleryBadge && !galleryBadge.classList.contains('no-price')) {
-                    galleryBadge.textContent = `${currentPrice}/each`;
-                }
+                // ❌ REMOVIDO: Badge da galeria será atualizado SOMENTE por loadCategoryPrice
+                // Esse código pegava preço do tier visual e sobrescrevia incorretamente
+                // const galleryBadge = document.querySelector('.gallery-header .category-price-badge');
+                // if (galleryBadge && !galleryBadge.classList.contains('no-price')) {
+                //     galleryBadge.textContent = `${currentPrice}/each`;
+                // }
             }
         }
 

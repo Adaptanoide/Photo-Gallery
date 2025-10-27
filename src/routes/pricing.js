@@ -133,14 +133,14 @@ router.get('/category-price', async (req, res) => {
         console.log(`🏷️ Buscando preço para categoria ${categoryId}, cliente: ${clientCode || 'ANÔNIMO'}`);
 
         // Buscar categoria
-        const cleanPath = categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId;
+        // ✅ BUSCAR por PATH COMPLETO (match exato)
         const category = await PhotoCategory.findOne({
             $or: [
-                { folderName: cleanPath.split('/').pop() },
-                { displayName: { $regex: ` → ${cleanPath.split('/').pop().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` } },
-                { googleDrivePath: cleanPath }
+                { googleDrivePath: categoryId },
+                { googleDrivePath: categoryId.endsWith('/') ? categoryId : categoryId + '/' },
+                { googleDrivePath: categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId }
             ]
-        });
+        }).sort({ googleDrivePath: -1 }); // Priorizar path mais longo
 
         if (!category) {
             console.log(`❌ Categoria não encontrada: ${categoryId}`);

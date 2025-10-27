@@ -1417,6 +1417,13 @@ window.toggleCartItem = async function () {
             else if (window.navigationState.currentFolderId && window.loadCategoryPrice) {
                 console.log('🔍 [CART] Tentando buscar preço com loadCategoryPrice...');
                 console.log('📁 [CART] currentFolderId:', window.navigationState.currentFolderId);
+
+                // ✅ LIMPAR CACHE ANTES de buscar preço
+                if (window.categoryPrices && window.categoryPrices.has(window.navigationState.currentFolderId)) {
+                    console.log('🗑️ [CART] Limpando cache de preço desta categoria');
+                    window.categoryPrices.delete(window.navigationState.currentFolderId);
+                }
+
                 try {
                     priceInfo = await window.loadCategoryPrice(window.navigationState.currentFolderId);
                     console.log('✅ [CART] Preço carregado:', priceInfo);
@@ -1450,16 +1457,20 @@ window.toggleCartItem = async function () {
             // Adicionar ao carrinho COM OS DADOS COMPLETOS
             await CartSystem.addItem(currentPhoto, itemData);
 
-            // ✅ NOVO: Recalcular preço do badge no modal após adicionar
-            setTimeout(async () => {
-                const modal = document.getElementById('photoModal');
-                if (modal && modal.style.display === 'flex') {
-                    console.log('💰 [MODAL] Recalculando preço após adicionar ao carrinho...');
-                    if (window.updateModalPriceInfo) {
-                        await window.updateModalPriceInfo();
-                    }
+            // ✅ LIMPAR cache e forçar atualização IMEDIATA
+            if (window.categoryPrices && window.navigationState.currentFolderId) {
+                window.categoryPrices.delete(window.navigationState.currentFolderId);
+            }
+
+            // ✅ Atualizar badge IMEDIATAMENTE (não esperar 200ms)
+            const modal = document.getElementById('photoModal');
+            if (modal && modal.style.display === 'flex') {
+                console.log('💰 [MODAL] Atualizando preço após adicionar...');
+                if (window.updateModalPriceInfo) {
+                    // Usar await para garantir atualização ANTES de continuar
+                    await window.updateModalPriceInfo();
                 }
-            }, 200);
+            }
 
             // Sincronizar thumbnails após adicionar
             setTimeout(() => {

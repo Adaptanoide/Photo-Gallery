@@ -307,7 +307,7 @@ class AdminSelections {
                     </span>
                 </td>
                 <td class="total-value-cell">
-                    <strong>-</strong>
+                    <strong>${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : '-'}</strong>
                 </td>
                 <td class="date-cell">
                     <div class="date-created">${this.formatDate(selection.createdAt)}</div>
@@ -627,19 +627,22 @@ class AdminSelections {
                                 ` : ''}
                                 <div class="category-items">
                                     ${items.map((item, index) => `
-                                    <div class="item-row">
-                                        <div style="display: flex; align-items: center; flex: 1;">
-                                            <span class="item-name">${item.fileName}</span>
-                                            ${(selection.status === 'pending' || selection.status === 'finalized') ? `
-                                                <input type="checkbox" 
-                                                    class="item-checkbox" 
-                                                    data-filename="${item.fileName}"
-                                                        data-category="${category}"
-                                                        id="item-${selection.selectionId}-${category}-${index}"
-                                                        style="margin-left: 10px;">
-                                                ` : ''}
+                                        <div class="item-row">
+                                            <div style="display: flex; align-items: center; flex: 1;">
+                                                <span class="item-name">${item.fileName}</span>
+                                                <span class="item-price" style="margin-left: auto; color: #d4af37; font-weight: bold; margin-right: 15px;">
+                                                    ${item.price > 0 ? '$' + item.price.toFixed(2) : '-'}
+                                                </span>
+                                                ${(selection.status === 'pending' || selection.status === 'finalized') ? `
+                                                    <input type="checkbox" 
+                                                        class="item-checkbox" 
+                                                        data-filename="${item.fileName}"
+                                                            data-category="${category}"
+                                                            id="item-${selection.selectionId}-${category}-${index}"
+                                                            style="margin-left: 10px;">
+                                                    ` : ''}
+                                            </div>
                                         </div>
-                                    </div>
                                     `).join('')}
                                 </div>
                             </div>
@@ -652,6 +655,12 @@ class AdminSelections {
                     <div class="summary-row">
                         <span>Total items:</span>
                         <span>${selection.totalItems || selection.items.length}</span>
+                    </div>
+                    <div class="summary-row" style="border-top: 2px solid #d4af37; padding-top: 10px; margin-top: 10px;">
+                        <span style="font-size: 1.2em; font-weight: bold;">Total Value:</span>
+                        <span style="font-size: 1.2em; font-weight: bold; color: #d4af37;">
+                            ${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}
+                        </span>
                     </div>
                 </div>
 

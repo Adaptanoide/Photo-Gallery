@@ -9,6 +9,8 @@ const Selection = require('../models/Selection');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const EmailService = require('../services/EmailService');
 const PhotoTagService = require('../services/PhotoTagService');
+const PricingService = require('../services/PricingService');
+const { calculateCartTotals } = require('./cart');
 const router = express.Router();
 
 /**
@@ -205,13 +207,15 @@ router.post('/finalize', async (req, res) => {
                 }))
             };
 
-            // 7. Calcular valor total dos itens
-            let totalValue = 0;
-            cart.items.forEach(item => {
-                if (item.hasPrice && item.price > 0) {
-                    totalValue += item.price;
-                }
-            });
+            // 7. 🆕 Recalcular preços usando a mesma função do carrinho
+            console.log('🧮 Recalculando preços para seleção...');
+
+            const pricingResult = await calculateCartTotals(cart);
+            const totalValue = pricingResult.total;
+
+            console.log(`💰 Total Value calculado: $${totalValue.toFixed(2)}`);
+            console.log(`   - Subtotal: $${pricingResult.subtotal.toFixed(2)}`);
+            console.log(`   - Discount: $${pricingResult.discount.toFixed(2)}`);
 
             // 8. ✅ CRIAR SELEÇÃO NORMAL (SEMPRE)
             console.log(`📋 Criando nova seleção para cliente ${clientName}...`);
@@ -235,7 +239,7 @@ router.post('/finalize', async (req, res) => {
                         category: product.category,
                         thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
                         originalPath: product.category,
-                        price: cartItem?.price || 0,
+                        price: cartItem?.price || 0,  // ✅ Preço já foi recalculado por calculateCartTotals
                         selectedAt: cartItem?.addedAt || new Date()
                     };
                 }),

@@ -812,7 +812,9 @@
                 };
                 console.log('💰 Usando customPrice da Special Selection:', photo.customPrice);
             } else {
+                console.log('🔍 [MODAL] Buscando preço para:', currentFolderId);
                 priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
+                console.log('💰 [MODAL] Preço retornado:', priceInfo);
             }
 
             const savedSession = localStorage.getItem('sunshineSession');
@@ -839,35 +841,60 @@
             const totalPhotos = navigationState.currentPhotos.length;
 
             if (priceInfo && priceInfo.hasPrice) {
+                document.getElementById('modalPhotoSize').innerHTML = '';
+                document.getElementById('modalPhotoDate').innerHTML = '';
+
+                // ✅ CALCULAR cartCount
+                let cartCount = 0;
+                if (window.CartSystem && window.CartSystem.state && window.CartSystem.state.items) {
+                    cartCount = window.CartSystem.state.totalItems;
+                }
+
+                // ✅ VERIFICAR se é Mix & Match (múltiplos tiers) ou categoria regular (1 tier)
+                const hasMultipleTiers = rangeData.success &&
+                    rangeData.data &&
+                    rangeData.data.ranges &&
+                    rangeData.data.ranges.length > 1;
+
+                let currentTierPrice = priceInfo.formattedPrice; // fallback para categorias regulares
+
+                if (hasMultipleTiers) {
+                    // ✅ É MIX & MATCH - calcular tier baseado em cartCount
+                    for (const range of rangeData.data.ranges) {
+                        let isCurrentTier = false;
+                        if (cartCount > 0) {
+                            if (range.max) {
+                                isCurrentTier = cartCount >= range.min && cartCount <= range.max;
+                            } else {
+                                isCurrentTier = cartCount >= range.min;
+                            }
+                        } else {
+                            // Se carrinho vazio, usar primeiro tier
+                            isCurrentTier = range.min === 1;
+                        }
+
+                        if (isCurrentTier) {
+                            currentTierPrice = `$${range.price}/each`;
+                            console.log(`💰 [MODAL] Mix&Match Tier ativo: ${range.min}-${range.max || '∞'} = ${currentTierPrice}`);
+                            break;
+                        }
+                    }
+                } else {
+                    // ✅ É CATEGORIA REGULAR - usar preço fixo do backend
+                    console.log(`💰 [MODAL] Categoria regular: ${currentTierPrice}`);
+                }
+
+                // ✅ ATUALIZAR badge com preço correto
                 document.getElementById('modalPhotoCounter').innerHTML = `
-                    <span class="modal-price-badge">${priceInfo.formattedPrice}</span>
+                    <span class="modal-price-badge">${currentTierPrice}</span>
                     <span style="margin: 0 10px;">-</span>
                     ${photoIndex + 1} / ${totalPhotos}
                 `;
 
-                document.getElementById('modalPhotoSize').innerHTML = '';
-                document.getElementById('modalPhotoDate').innerHTML = '';
-
+                // ✅ MOSTRAR tiers SOMENTE se for Mix & Match
                 const gridEl = document.getElementById('modalDiscountGrid');
-                if (gridEl && rangeData.success && rangeData.data && rangeData.data.ranges && rangeData.data.ranges.length > 0) {
-                    let cartCount = 0;
-                    if (window.CartSystem && window.CartSystem.state && window.CartSystem.state.items) {
-                        if (window.specialSelectionRateRules) {
-                            cartCount = window.CartSystem.state.totalItems;
-                        } else {
-                            let currentCategoryName = null;
-                            if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
-                                const lastPath = window.navigationState.currentPath[window.navigationState.currentPath.length - 1];
-                                currentCategoryName = lastPath.name;
-                            }
-
-                            // Contar TODOS os itens (global) como nas thumbnails
-                            cartCount = window.CartSystem.state.totalItems;
-                        }
-                    }
-
+                if (gridEl && hasMultipleTiers) {
                     let volumeHTML = '<div class="modal-volume-pricing">';
-                    // Removido "Volume Pricing:" para ficar igual às thumbnails
 
                     rangeData.data.ranges.forEach((range, index) => {
                         let isCurrentTier = false;
@@ -887,7 +914,6 @@
                                 <span class="tier-price">$${range.price}/each</span>
                             </span>
                         `;
-                        // Sem separador, vai usar gap no CSS
                     });
 
                     volumeHTML += `
@@ -898,6 +924,7 @@
 
                     volumeHTML += '</div>';
                     gridEl.innerHTML = volumeHTML;
+
                     // Criar barra compacta para mobile
                     if (window.innerWidth <= 768) {
                         let rateBar = document.querySelector('.modal-rate-rules-bar');
@@ -921,6 +948,7 @@
                     }
                     gridEl.style.display = window.innerWidth <= 768 ? 'none' : 'block';
                 } else if (gridEl) {
+                    // Ocultar grid para categorias regulares
                     gridEl.style.display = 'none';
                 }
 
@@ -930,7 +958,7 @@
                 if (gridEl) gridEl.style.display = 'none';
             }
         } catch (error) {
-            console.error('Erro:', error);
+            console.error('Erro ao atualizar preço do modal:', error);
         }
     }
 
@@ -959,8 +987,13 @@
 
     window.loadCategoryPrice = async function (folderId) {
         try {
+            // ✅ LOG 1: O que está sendo buscado
+            console.log('🔍 [LOAD PRICE] Buscando preço para:', folderId);
+
             if (window.categoryPrices.has(folderId)) {
-                return window.categoryPrices.get(folderId);
+                const cached = window.categoryPrices.get(folderId);
+                console.log('📦 [LOAD PRICE] Retornando do CACHE:', cached);
+                return cached;
             }
 
             let clientCode = null;
@@ -972,9 +1005,22 @@
 
             console.log(`🏷️ Loading price for category ${folderId}, client: ${clientCode || 'ANONYMOUS'}`);
 
-            const url = `/api/pricing/category-price?prefix=${encodeURIComponent(folderId)}${clientCode ? `&clientCode=${clientCode}` : ''}`;
+            // ✅ ADICIONAR cartQuantity aqui
+            let cartQuantity = 0;
+            if (window.CartSystem && window.CartSystem.state) {
+                cartQuantity = window.CartSystem.state.totalItems || 0;
+            }
+
+            const url = `/api/pricing/category-price?prefix=${encodeURIComponent(folderId)}${clientCode ? `&clientCode=${clientCode}` : ''}&cartQuantity=${cartQuantity}`;
+
+            // ✅ LOG 2: URL completa
+            console.log('🌐 [LOAD PRICE] URL:', url);
+
             const response = await fetch(url);
             const data = await response.json();
+
+            // ✅ LOG 3: O que a API retornou
+            console.log('📥 [LOAD PRICE] Resposta da API:', data);
 
             let priceInfo = {
                 hasPrice: false,

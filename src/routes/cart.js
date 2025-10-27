@@ -820,3 +820,6 @@ router.get('/test/status', async (req, res) => {
 });
 
 module.exports = router;
+
+// Exportar função para uso em selection.js
+module.exports.calculateCartTotals = calculateCartTotals;
