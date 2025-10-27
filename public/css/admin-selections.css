@@ -366,7 +366,6 @@
 }
 
 .status-badge {
-    padding: 0.5rem 1rem;
     border-radius: 25px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -507,11 +506,15 @@
     border: 1px solid var(--border-subtle);
     border-radius: var(--border-radius-large);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    width: 100%;
-    max-width: 1200px;
+    width: 95vw;
+    max-width: 95vw;
+    height: 90vh;
     max-height: 90vh;
-    overflow-y: auto;
     animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* ⭐ FLEXBOX PARA FOOTER FIXO */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .selection-details-header {
@@ -560,6 +563,10 @@
 
 .selection-details-body {
     padding: 2rem;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
 }
 
 /* Loading states */
@@ -1247,16 +1254,13 @@
     align-items: center;
     gap: 0.5rem;
     transition: all 0.2s;
+    background-color: #d4af37;
 }
 
-.btn-download {
-    background: var(--gold-primary);
-    color: var(--luxury-dark);
-}
-
-.btn-download:hover {
-    background: var(--gold-hover);
-    transform: translateY(-1px);
+.special-btn-icon.btn-download:hover {
+    border-color: #a855f7;
+    color: #a855f7;
+    background: rgba(168, 85, 247, 0.1);
 }
 
 .btn-print {
@@ -1347,17 +1351,11 @@
 .selections-table th:nth-child(7) { width: 12%; }  /* STATUS - mais largo */
 .selections-table th:nth-child(8) { width: 11%; }  /* ACTIONS - mais estreito */
 
-/* Botão Reopen - estilo igual aos outros */
-.btn-reopen {
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(74, 144, 226, 0.1));
-    border-color: rgba(74, 144, 226, 0.3);
-    color: #4a90e2;
-}
-
+/* Botão Reopen - estilo padrão */
 .special-btn-icon.btn-reopen:hover {
-    border-color: #4a90e2;
-    color: #4a90e2;
-    background: rgba(74, 144, 226, 0.1);
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
 }
 
 /* Bloquear scroll do body quando modal aberto */
@@ -1379,4 +1377,547 @@ body.modal-open {
 #poNumberModal.active {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+}
+/* ============================================
+   MODAL FULLSCREEN + GRID VIEW + LIGHTBOX
+   Adicionado em 27/10/2025
+   ============================================ */
+
+/* MODAL FULLSCREEN */
+.selection-details-content {
+    max-width: 80vw !important;
+    width: 80vw !important;
+    max-height: 95vh !important;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER COMPACTO */
+.selection-info-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10.75rem !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.info-item label {
+    font-size: 1.0rem !important;
+    font-weight: 600;
+}
+
+.info-item span {
+    font-size: 0.9rem !important;
+    max-width: 160px;
+}
+
+/* LISTA EXPANDIDA - USA TODO ESPAÇO */
+.selection-details-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0rem 2rem !important;
+}
+
+.items-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.categories-list {
+    height: auto !important;
+    flex: 1 !important;
+    min-height: 400px !important;
+    max-height: none !important;
+}
+
+/* FOOTER COMPACTO */
+.selection-summary-footer {
+    height: auto !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0 !important;
+}
+
+.modal-actions {
+    margin-bottom: 0 !important;
+}
+
+/* TOGGLE BUTTONS */
+.view-toggle-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    justify-content: flex-end;
+}
+
+.btn-view-toggle {
+    padding: 0.5rem 1rem;
+    background: rgba(44, 44, 52, 0.5);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-view-toggle:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.3);
+}
+
+.btn-view-toggle.active {
+    background: var(--gold-primary);
+    color: var(--luxury-dark);
+    border-color: var(--gold-primary);
+}
+
+.category-items.grid-view {
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.category-group.expanded .category-items.grid-view {
+    display: grid;
+}
+
+.item-card {
+    background: rgba(44, 44, 52, 0.8);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 175, 55, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.item-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(30, 30, 35, 0.5);
+    position: relative;
+}
+
+.item-card-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.item-card:hover .item-card-thumbnail img {
+    transform: scale(1.05);
+}
+
+.item-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.item-card-name {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-card-price {
+    color: var(--gold-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.item-card-checkbox {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 20px;
+    height: 20px;
+    z-index: 10;
+}
+
+/* LIST VIEW - ADICIONAR THUMBNAIL PEQUENO */
+.item-row.list-view {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.item-list-thumbnail {
+    width: 50px;
+    height: 50px;
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(30, 30, 35, 0.5);
+    cursor: pointer;
+}
+
+.item-list-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-list-thumbnail:hover {
+    opacity: 0.8;
+}
+
+/* LIGHTBOX */
+.photo-lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 20000;
+    padding: 2rem;
+}
+
+.photo-lightbox.active {
+    display: flex;
+}
+
+.lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.lightbox-image-container {
+    position: relative;
+    max-width: 100%;
+    max-height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lightbox-image {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -3rem;
+    right: 0;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: var(--danger);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.lightbox-close:hover {
+    background: rgba(239, 68, 68, 0.4);
+    transform: scale(1.1);
+}
+
+.lightbox-nav {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.lightbox-nav-btn {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lightbox-nav-btn:hover:not(:disabled) {
+    background: rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+}
+
+.lightbox-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.lightbox-info {
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.lightbox-filename {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gold-primary);
+    margin-bottom: 0.5rem;
+}
+
+.lightbox-meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+/* ANIMATIONS */
+@keyframes lightboxFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.photo-lightbox.active .lightbox-content {
+    animation: lightboxFadeIn 0.3s ease-out;
+}
+
+/* RESPONSIVO */
+@media (max-width: 1400px) {
+    .category-items.grid-view {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    .category-items.grid-view {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .selection-info-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .selection-details-content {
+        max-width: 98vw !important;
+        width: 98vw !important;
+    }
+    
+    .category-items.grid-view {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .selection-info-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ============================================
+   CORREÇÕES - Modal Fullscreen
+   Adicione NO FINAL do admin-selections.css
+   ============================================ */
+
+/* 1. FIX: SCROLL INTERNO DA LISTA */
+.categories-list {
+    height: auto !important;
+    flex: 1 !important;
+    min-height: 400px !important;
+    max-height: calc(85vh - 350px) !important; /* LIMITA ALTURA! */
+    overflow-y: auto !important;
+}
+
+/* Garantir que o body do modal não tenha scroll */
+.selection-details-body {
+    overflow: hidden !important;
+}
+
+/* 2. FIX: FOTOS MENORES NO GRID */
+.item-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 1;
+    height: 150px !important; /* REDUZIDO de 180px */
+}
+
+.category-items.grid-view {
+    grid-template-columns: repeat(6, 1fr) !important; /* 6 fotos por linha */
+    gap: 0.75rem !important;
+}
+
+.item-card {
+    padding: 0.5rem !important;
+}
+
+.item-card-name {
+    font-size: 0.75rem !important;
+}
+
+.item-card-price {
+    font-size: 0.8rem !important;
+}
+
+/* 3. FIX: LIGHTBOX - BOTÕES NÃO CORTADOS */
+.lightbox-image {
+    max-width: 100%;
+    max-height: 65vh !important; /* REDUZIDO de 80vh */
+    object-fit: contain;
+}
+
+.lightbox-content {
+    max-width: 90%;
+    max-height: 85vh; /* LIMITAR */
+    gap: 1rem !important;
+}
+
+.photo-lightbox {
+    padding: 1rem !important;
+}
+
+.lightbox-nav {
+    margin-bottom: 1rem; /* ESPAÇO NO FINAL */
+}
+
+/* 4. FIX: FOOTER SEMPRE VISÍVEL */
+.selection-summary-footer,
+.modal-actions {
+    flex-shrink: 0 !important;
+    position: relative !important;
+}
+
+/* 5. RESPONSIVO AJUSTADO */
+@media (max-width: 1600px) {
+    .category-items.grid-view {
+        grid-template-columns: repeat(5, 1fr) !important;
+    }
+}
+
+@media (max-width: 1400px) {
+    .category-items.grid-view {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+    
+    .categories-list {
+        max-height: calc(90vh - 380px) !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .category-items.grid-view {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .category-items.grid-view {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .item-card-thumbnail {
+        height: 120px !important;
+    }
+}
+
+/* ===== FOOTER FIXO DO MODAL (SIMPLES E COMPACTO) ===== */
+.selection-details-footer {
+    flex-shrink: 0;
+    background: rgba(44, 44, 52, 0.8);
+    border-top: 1px solid rgba(74, 85, 104, 0.3);
+    padding: 0.4rem 2rem;
+}
+
+.selection-summary-footer {
+    margin-bottom: 0.5rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: right;
+    gap: 1rem;
+    padding: 0.5rem;
+}
+
+/* ===== LOADING SPINNER NO LIGHTBOX ===== */
+.lightbox-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.lightbox-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(212, 175, 55, 0.2);
+    border-top-color: var(--gold-primary);
+    border-radius: 50%;
+    animation: lightbox-spin 0.8s linear infinite;
+}
+
+@keyframes lightbox-spin {
+    to { transform: rotate(360deg); }
+}
+
+.lightbox-image {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.lightbox-image.loaded {
+    opacity: 1;
+}
+
+/* ⭐ ESCONDER INFO E BOTÕES DURANTE LOADING */
+.lightbox-content.is-loading .lightbox-info,
+.lightbox-content.is-loading .lightbox-nav {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lightbox-info,
+.lightbox-nav {
+    transition: opacity 0.3s ease;
 }
