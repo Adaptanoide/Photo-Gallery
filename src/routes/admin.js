@@ -515,8 +515,16 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
 
         console.log(`🔄 Toggle status código: ${id} → ${isActive ? 'ATIVAR' : 'DESATIVAR'}`);
 
-        // Buscar código atual
-        const accessCode = await AccessCode.findById(id);
+        // Buscar código atual (aceita _id ou code)
+        let accessCode;
+
+        // Se tem 24 caracteres, é ObjectId MongoDB
+        if (id.length === 24) {
+            accessCode = await AccessCode.findById(id);
+        } else {
+            // Caso contrário, busca pelo código de 4 dígitos
+            accessCode = await AccessCode.findOne({ code: id });
+        }
 
         if (!accessCode) {
             return res.status(404).json({

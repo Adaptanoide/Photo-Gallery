@@ -1048,15 +1048,146 @@ class AdminSelections {
         }
     }
 
+    // ===== CONFIRM COM CHECKBOX (ESTILO UISystem PADRÃO) =====
+    confirmWithCheckbox(title, message, checkboxLabel, action) {
+        return new Promise((resolve) => {
+            const modalId = 'confirm-checkbox-' + Date.now();
+            const modal = document.createElement('div');
+            modal.className = 'ui-modal-backdrop';
+            modal.id = modalId;
+
+            modal.innerHTML = `
+                <div class="ui-modal">
+                    <div class="ui-modal-header">
+                        <span class="modal-icon">⚠️</span>
+                        <h3>${title}</h3>
+                        <button class="modal-close" id="btnClose_${modalId}">✕</button>
+                    </div>
+                    <div class="ui-modal-body">
+                        <p class="confirm-message">${message}</p>
+                        
+                        <div style="margin-top: 20px; padding: 12px; background: rgba(23, 162, 184, 0.1); border-radius: 4px; border-left: 3px solid #17a2b8;">
+                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                <input 
+                                    type="checkbox" 
+                                    id="restoreAccessCheckbox_${modalId}"
+                                    checked
+                                    style="width: 18px; height: 18px; margin-right: 10px; cursor: pointer;"
+                                />
+                                <span>
+                                    <i class="fas fa-unlock-alt" style="margin-right: 6px; color: #17a2b8;"></i>
+                                    ${checkboxLabel}
+                                </span>
+                            </label>
+                        <p style="margin: 8px 0 0 28px; font-size: 13px; opacity: 0.7;">
+                            Enable client login and system access again
+                        </p>
+                        </div>
+                    </div>
+                    <div class="ui-modal-footer">
+                        <button class="btn-secondary" id="btnCancel_${modalId}">
+                            Cancel
+                        </button>
+                        <button class="btn-primary" id="btnConfirm_${modalId}">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Event listeners
+            const checkbox = modal.querySelector(`#restoreAccessCheckbox_${modalId}`);
+            const btnClose = modal.querySelector(`#btnClose_${modalId}`);
+            const btnCancel = modal.querySelector(`#btnCancel_${modalId}`);
+            const btnConfirm = modal.querySelector(`#btnConfirm_${modalId}`);
+
+            const cleanup = () => {
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve({ confirmed: false, restoreAccess: false });
+            };
+
+            const handleConfirm = () => {
+                const restoreAccess = checkbox.checked;
+                cleanup();
+                resolve({ confirmed: true, restoreAccess });
+            };
+
+            btnClose.onclick = handleCancel;
+            btnCancel.onclick = handleCancel;
+            btnConfirm.onclick = handleConfirm;
+
+            // ESC para cancelar
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    cleanup();
+                    resolve({ confirmed: false, restoreAccess: false });
+                    document.removeEventListener('keydown', handleEsc);
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
+        });
+    }
+
+    // ===== HELPER: TOGGLE CLIENT ACCESS =====
+    async toggleClientAccess(clientCode, isActive) {
+        try {
+            console.log(`🔑 ${isActive ? 'Activating' : 'Deactivating'} access for client ${clientCode}...`);
+
+            // Tentar usar o CODE diretamente no endpoint de toggle
+            const toggleResponse = await fetch(`/api/admin/access-codes/${clientCode}/toggle`, {
+                method: 'PATCH',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({ isActive })
+            });
+
+            const toggleData = await toggleResponse.json();
+
+            if (!toggleData.success) {
+                throw new Error(toggleData.message || 'Failed to toggle access');
+            }
+
+            console.log(`✅ Client access ${isActive ? 'restored' : 'disabled'} successfully`);
+            UISystem.showToast('success', `Client ${clientCode} access ${isActive ? 'restored' : 'disabled'}`);
+            return true;
+
+        } catch (error) {
+            console.error('❌ Error toggling client access:', error);
+            UISystem.showToast('warning', `Could not ${isActive ? 'restore' : 'disable'} client access: ${error.message}`);
+            return false;
+        }
+    }
+
     // ===== APPROVE SELECTION =====
     async approveSelection(selectionId) {
-        // Confirm com modal bonito
-        const confirmed = await UISystem.confirm(
-            'Approve this selection?',
-            'This will move photos to SOLD folder and finalize the transaction.'
+        // ✅ BUSCAR clientCode PRIMEIRO
+        let clientCode = null;
+        try {
+            const selectionResponse = await fetch(`/api/selections/${selectionId}`, {
+                headers: this.getAuthHeaders()
+            });
+            const selectionData = await selectionResponse.json();
+            clientCode = selectionData.selection?.clientCode;
+        } catch (error) {
+            console.warn('Could not fetch clientCode:', error);
+        }
+
+        // ✅ MODAL COM CHECKBOX
+        const result = await this.confirmWithCheckbox(
+            'Confirmation Required',
+            'Approve this selection? This will mark all photos as SOLD and finalize the transaction.',
+            'Restore client access',
+            'approve'
         );
 
-        if (!confirmed) return;
+        if (!result.confirmed) return;
 
         // Encontrar a linha na tabela
         const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
@@ -1067,7 +1198,7 @@ class AdminSelections {
         }
 
         // Atualizar status visual para "APPROVING..."
-        const statusCell = row.querySelector('td:nth-child(5)'); // 5ª coluna é status
+        const statusCell = row.querySelector('td:nth-child(5)');
         const originalStatus = statusCell ? statusCell.innerHTML : '';
 
         if (statusCell) {
@@ -1079,7 +1210,7 @@ class AdminSelections {
             `;
         }
 
-        // NOVO: Esconder botões durante processamento
+        // Esconder botões durante processamento
         const actionsCell = row.querySelector('td:last-child');
         const originalActions = actionsCell ? actionsCell.innerHTML : '';
 
@@ -1094,6 +1225,7 @@ class AdminSelections {
         }
 
         try {
+            // 1. Aprovar seleção
             const response = await fetch(`/api/selections/${selectionId}/approve`, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
@@ -1103,20 +1235,38 @@ class AdminSelections {
                 })
             });
 
-            if (response.ok) {
-                UISystem.showToast('success', 'Selection approved successfully! Products marked as SOLD.');
+            const approveResult = await response.json();
 
-                // Recarregar tabela após 2 segundos
-                setTimeout(() => {
-                    this.loadSelections();
-                    this.loadStatistics(); // ADICIONE ESTA LINHA
-                }, 2000);
-            } else {
-                throw new Error('Failed to approve');
+            if (!response.ok) {
+                throw new Error(approveResult.message || 'Failed to approve');
             }
+
+            // ✅ BUSCAR clientCode do BACKEND (não da tabela!)
+            const selectionResponse = await fetch(`/api/selections/${selectionId}`, {
+                headers: this.getAuthHeaders()
+            });
+            const selectionData = await selectionResponse.json();
+            const clientCode = selectionData.selection?.clientCode;
+
+            console.log('✅ Selection approved! ClientCode:', clientCode);
+
+            // ✅ Restaurar acesso se checkbox marcado
+            if (result.restoreAccess && clientCode) {
+                console.log('🔓 Restoring client access...');
+                await this.toggleClientAccess(clientCode, true);
+            }
+
+            UISystem.showToast('success', 'Selection approved successfully! Products marked as SOLD.');
+
+            // Recarregar tabela após 2 segundos
+            setTimeout(() => {
+                this.loadSelections();
+                this.loadStatistics();
+            }, 2000);
+
         } catch (error) {
             console.error('Error approving:', error);
-            UISystem.showToast('error', 'Error approving selection');
+            UISystem.showToast('error', `Error approving selection: ${error.message}`);
 
             // Reverter status visual em caso de erro
             if (statusCell) {
@@ -1129,13 +1279,27 @@ class AdminSelections {
     }
 
     async cancelSelection(selectionId) {
-        // Confirm com modal bonito
-        const confirmed = await UISystem.confirm(
-            'Cancel this selection?',
-            'All photos will be returned to their original locations. This may take a few minutes.'
+        // ✅ BUSCAR clientCode PRIMEIRO
+        let clientCode = null;
+        try {
+            const selectionResponse = await fetch(`/api/selections/${selectionId}`, {
+                headers: this.getAuthHeaders()
+            });
+            const selectionData = await selectionResponse.json();
+            clientCode = selectionData.selection?.clientCode;
+        } catch (error) {
+            console.warn('Could not fetch clientCode:', error);
+        }
+
+        // ✅ MODAL COM CHECKBOX
+        const result = await this.confirmWithCheckbox(
+            'Confirmation Required',
+            'Cancel this selection? All photos will be released and marked as available again.',
+            'Restore client access',
+            'cancel'
         );
 
-        if (!confirmed) return;
+        if (!result.confirmed) return;
 
         // Encontrar a linha na tabela
         const row = document.querySelector(`tr[data-selection-id="${selectionId}"]`);
@@ -1146,7 +1310,7 @@ class AdminSelections {
         }
 
         // Atualizar status visual para "CANCELLING..."
-        const statusCell = row.querySelector('td:nth-child(5)'); // 5ª coluna é status
+        const statusCell = row.querySelector('td:nth-child(5)');
         const originalStatus = statusCell ? statusCell.innerHTML : '';
 
         if (statusCell) {
@@ -1158,8 +1322,8 @@ class AdminSelections {
             `;
         }
 
-        // NOVO: Esconder botões durante processamento
-        const actionsCell = row.querySelector('td:last-child'); // Última coluna são as ações
+        // Esconder botões durante processamento
+        const actionsCell = row.querySelector('td:last-child');
         const originalActions = actionsCell ? actionsCell.innerHTML : '';
 
         if (actionsCell) {
@@ -1173,6 +1337,7 @@ class AdminSelections {
         }
 
         try {
+            // 1. Cancelar seleção
             const response = await fetch(`/api/selections/${selectionId}/cancel`, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
@@ -1182,27 +1347,34 @@ class AdminSelections {
                 })
             });
 
-            if (response.ok) {
-                UISystem.showToast('success', 'Selection cancelled successfully!');
+            const cancelResult = await response.json();
 
-                // Recarregar tabela após 2 segundos
-                setTimeout(() => {
-                    this.loadSelections();
-                    this.loadStatistics(); // ADICIONE ESTA LINHA
-                }, 2000);
-            } else {
-                throw new Error('Failed to cancel');
+            if (!response.ok) {
+                throw new Error(cancelResult.message || 'Failed to cancel');
             }
+
+            // ✅ Restaurar acesso se checkbox marcado
+            if (result.restoreAccess && clientCode) {
+                console.log('🔓 Restoring client access...');
+                await this.toggleClientAccess(clientCode, true);
+            }
+
+            UISystem.showToast('success', 'Selection cancelled successfully!');
+
+            // Recarregar tabela após 2 segundos
+            setTimeout(() => {
+                this.loadSelections();
+                this.loadStatistics();
+            }, 2000);
+
         } catch (error) {
             console.error('Error cancelling:', error);
-            UISystem.showToast('error', 'Error cancelling selection');
+            UISystem.showToast('error', `Error cancelling selection: ${error.message}`);
 
             // Reverter status visual em caso de erro
             if (statusCell) {
                 statusCell.innerHTML = originalStatus;
             }
-
-            // NOVO: Restaurar botões em caso de erro
             if (actionsCell) {
                 actionsCell.innerHTML = originalActions;
             }
