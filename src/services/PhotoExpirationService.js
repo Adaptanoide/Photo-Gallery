@@ -31,7 +31,7 @@ class PhotoExpirationService {
         this.isRunning = true;
         const startTime = Date.now();
         const now = new Date();
-        
+
         console.log('\n' + '='.repeat(60));
         console.log('[EXPIRATION] PROCESSANDO FOTOS EXPIRADAS');
         console.log(`[EXPIRATION] Timestamp: ${now.toISOString()}`);
@@ -42,7 +42,7 @@ class PhotoExpirationService {
             const expiredPhotos = await UnifiedProductComplete.find({
                 'reservedBy.expiresAt': { $lt: now },
                 'reservedBy.clientCode': { $exists: true }
-            }).limit(50); // Processar 50 por vez
+            }).limit(100); // Processar 100 por vez (aumentado para melhor performance)
 
             console.log(`[EXPIRATION] ${expiredPhotos.length} fotos expiradas encontradas`);
 
@@ -98,7 +98,7 @@ class PhotoExpirationService {
 
                     if (cartUpdate.modifiedCount > 0) {
                         console.log(`[EXPIRATION] Removido de ${cartUpdate.modifiedCount} carrinho(s)`);
-                        
+
                         // Atualizar totalItems dos carrinhos afetados
                         await Cart.updateMany(
                             { isActive: true },

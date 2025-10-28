@@ -194,27 +194,18 @@ class CDEIncrementalSync {
         console.log(`[SYNC] Sistema iniciado - Verificando a cada ${intervalMinutes} minutos`);
 
         const checkAndRunSync = async () => {
-            const strategy = getSyncStrategy();
+            // COMENTADO: Restrição de horário removida para sync 24/7
+            // const strategy = getSyncStrategy();
+            // if (strategy.type === 'skip') {
+            //     console.log('[SYNC] Fora do horário - pulando sync');
+            //     return;
+            // }
 
-            if (strategy.type === 'skip') {
-                console.log('[SYNC] Fora do horário - pulando sync');
-                return;
-            }
-
-            // ADICIONE ESTA LINHA:
             await cleanupOldLocks(); // Limpar locks antigos antes de tentar
 
-            // Executar sync apropriado
-            if (strategy.type === 'business_hours') {
-                console.log('[SYNC] Horário comercial - sync rápido');
-                await this.runSync();
-            } else if (strategy.type === 'nightly') {
-                console.log('[SYNC] Sync noturno');
-                await this.runSync();
-            } else if (strategy.type === 'weekly_full') {
-                console.log('[SYNC] Sync semanal completo');
-                await this.runSmartSync();
-            }
+            // Executar sync sempre (sem restrição de horário)
+            console.log('[SYNC] Executando sincronização incremental...');
+            await this.runSync();
         };
 
         // Executar primeira vez após 30 segundos

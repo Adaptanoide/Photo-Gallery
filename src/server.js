@@ -726,12 +726,8 @@ function initPhotoExpiration() {
     console.log('==========================================\n');
 
     photoExpirationInterval = setInterval(async () => {
-        if (isBusinessHours()) {
-            const PhotoExpirationService = require('./services/PhotoExpirationService');
-            await PhotoExpirationService.processExpiredPhotos();
-        } else {
-            console.log('[EXPIRATION] Fora do horário comercial - aguardando');
-        }
+        const PhotoExpirationService = require('./services/PhotoExpirationService');
+        await PhotoExpirationService.processExpiredPhotos();
     }, intervalMinutes * 60 * 1000);
 
     setTimeout(async () => {
@@ -778,5 +774,40 @@ function initCartExpirationNotifications() {
 setTimeout(() => {
     initCartExpirationNotifications();
 }, 15000);
+
+// ============================================
+// ENDPOINT DE STATUS DE EXPIRAÇÃO
+// Adicionado em: 28/10/2025
+// ============================================
+app.get('/api/expiration/stats', async (req, res) => {
+    try {
+        const PhotoExpirationService = require('./services/PhotoExpirationService');
+        const UnifiedProductComplete = require('./models/UnifiedProductComplete');
+        const stats = PhotoExpirationService.getStats();
+
+        // Buscar fotos atualmente expiradas (pendentes de processamento)
+        const now = new Date();
+        const expiredCount = await UnifiedProductComplete.countDocuments({
+            'reservedBy.expiresAt': { $lt: now },
+            'reservedBy.clientCode': { $exists: true }
+        });
+
+        res.json({
+            success: true,
+            stats: {
+                ...stats,
+                currentlyExpired: expiredCount,
+                systemRunning: photoExpirationInterval !== null,
+                timestamp: new Date()
+            }
+        });
+    } catch (error) {
+        console.error('[EXPIRATION] Erro ao buscar stats:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
 module.exports = app;
