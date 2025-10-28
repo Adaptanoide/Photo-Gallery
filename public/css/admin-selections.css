@@ -1154,6 +1154,8 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .toggle-icon {
@@ -1171,10 +1173,10 @@
 }
 
 .category-info {
+    white-space: nowrap;
     color: #ffffff;
     font-size: 0.875rem;
     margin-left: 0rem;
-    margin-bottom: 17px;
 }
 
 .category-items {

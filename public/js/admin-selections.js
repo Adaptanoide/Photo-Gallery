@@ -21,6 +21,14 @@ class AdminSelections {
         this.currentSelection = null;
         this.lightboxIndex = 0;
         this.lightboxPhotos = [];
+
+        // Estado do zoom (COMEÇA AMPLIADO)
+        this.zoomState = {
+            scale: 1.5,  // ← MUDOU!
+            panX: 0,
+            panY: 0,
+            isDragging: false
+        };
         this.init();
     }
 
@@ -677,10 +685,12 @@ class AdminSelections {
                         ${Object.entries(itemsByCategory).map(([category, items]) => `
                             <div class="category-group">
                                 <div class="category-header" onclick="adminSelections.toggleCategory(this.parentElement, '${category}')">
-                                    <div class="category-title">
-                                        <i class="fas fa-chevron-right toggle-icon"></i>
-                                        <span class="category-name">${category}</span>
-                                        <span class="category-info">
+                                    <div class="category-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-chevron-right toggle-icon"></i>
+                                            <span class="category-name">${category}</span>
+                                        </div>
+                                        <span class="category-info" style="white-space: nowrap;">
                                             ${items.length} items
                                             ${selection.qbMap && selection.qbMap[category] ? ` | <strong style="color: #d4af37;">QB: ${selection.qbMap[category]}</strong>` : ''}
                                         </span>
@@ -867,6 +877,11 @@ class AdminSelections {
         if (window.ImageUtils && window.ImageUtils.getFullImageUrl) {
             return window.ImageUtils.getFullImageUrl(item);
         }
+        // Fallback
+        if (item.r2Key || item.id) {
+            const key = item.r2Key || item.id;
+            return `https://images.sunshinecowhides-gallery.com/${key}`;
+        }
         return '';
     }
 
@@ -913,6 +928,16 @@ class AdminSelections {
 
         this.renderLightbox();
         lightbox.classList.add('active');
+
+        // Inicializar zoom
+        if (typeof initializePhotoZoom === 'function') {
+            initializePhotoZoom();
+        }
+
+        // APLICAR ZOOM INICIAL (foto começa grande)
+        setTimeout(() => {
+            this.updateZoom();
+        }, 100);
     }
 
     // ===== RENDER LIGHTBOX =====
@@ -929,31 +954,48 @@ class AdminSelections {
         if (!img) {
             // ⭐ PRIMEIRA VEZ: CRIAR ESTRUTURA COMPLETA
             lightbox.innerHTML = `
-                <div class="lightbox-content">
-                    <div class="lightbox-image-container">
-                        <button class="lightbox-close" onclick="adminSelections.closeLightbox()">
+                <div class="lightbox-content" style="padding: 0; max-width: 95vw; max-height: 95vh;">
+                    <div class="lightbox-image-container" style="position: relative; display: flex; align-items: center; justify-content: center; min-height: 85vh;">
+                        
+                        <!-- BOTÃO CLOSE (EXTREMIDADE) -->
+                        <button class="lightbox-close" onclick="adminSelections.closeLightbox()" style="position: absolute; top: -15px; right: -150px; z-index: 1001; width: 45px; height: 45px;">
                             <i class="fas fa-times"></i>
                         </button>
+                        
+                        <!-- BOTÕES DE ZOOM (EXTREMIDADE) -->
+                        <div class="lightbox-zoom-controls" style="position: absolute; top: 60px; right: -150px; z-index: 1000; display: flex; flex-direction: column; gap: 8px;">
+                            <button onclick="adminSelections.zoomIn()" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 1px solid #d4af37; cursor: pointer; font-size: 18px;">+</button>
+                            <button onclick="adminSelections.zoomOut()" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 1px solid #d4af37; cursor: pointer; font-size: 18px;">−</button>
+                            <button onclick="adminSelections.resetZoom()" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 1px solid #d4af37; cursor: pointer; font-size: 14px;">↔</button>
+                        </div>
+                        
+                        <!-- BOTÃO PREVIOUS (MAIS AFASTADO) -->
+                        <button onclick="adminSelections.lightboxPrev()" id="lightbox-btn-prev" style="position: absolute; left: -150px; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 1px solid #d4af37; cursor: pointer; font-size: 24px; z-index: 100;">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        
+                        <!-- BOTÃO NEXT (MAIS AFASTADO) -->
+                        <button onclick="adminSelections.lightboxNext()" id="lightbox-btn-next" style="position: absolute; right: -150px; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 1px solid #d4af37; cursor: pointer; font-size: 24px; z-index: 100;">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        
+                        <!-- LOADING -->
                         <div class="lightbox-loading" id="lightbox-spinner">
                             <div class="lightbox-spinner"></div>
                         </div>
-                        <img src="${originalUrl}" alt="${item.fileName}" class="lightbox-image" id="lightbox-current-img">
+                        
+                        <!-- IMAGEM (MAIOR - 90vh) -->
+                        <img src="${originalUrl}" alt="${item.fileName}" class="lightbox-image" id="lightbox-current-img" style="max-width: 90vw; max-height: 90vh; width: auto; height: auto; object-fit: contain;">
                     </div>
-                    <div class="lightbox-info">
-                        <div class="lightbox-filename" id="lightbox-filename">${item.fileName}</div>
-                        <div class="lightbox-meta">
+                    
+                    <!-- INFO EMBAIXO (SEMPRE VISÍVEL) -->
+                    <div class="lightbox-info" id="lightbox-info" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; padding: 10px 20px; background: rgba(0,0,0,0.8); border-radius: 8px; z-index: 1000;">
+                        <div class="lightbox-filename" id="lightbox-filename" style="color: #d4af37; font-weight: bold;">${item.fileName}</div>
+                        <div class="lightbox-meta" style="color: #fff; margin-top: 5px;">
                             <span id="lightbox-price">${item.price > 0 ? '$' + item.price.toFixed(2) : '-'}</span>
                             <span>•</span>
                             <span id="lightbox-counter">${this.lightboxIndex + 1} / ${this.lightboxPhotos.length}</span>
                         </div>
-                    </div>
-                    <div class="lightbox-nav">
-                        <button class="lightbox-nav-btn" id="lightbox-btn-prev" onclick="adminSelections.lightboxPrev()">
-                            <i class="fas fa-chevron-left"></i> Previous
-                        </button>
-                        <button class="lightbox-nav-btn" id="lightbox-btn-next" onclick="adminSelections.lightboxNext()">
-                            Next <i class="fas fa-chevron-right"></i>
-                        </button>
                     </div>
                 </div>
             `;
@@ -1028,15 +1070,83 @@ class AdminSelections {
     closeLightbox() {
         const lightbox = document.getElementById('photoLightbox');
         if (lightbox) {
+            this.resetZoom();  // ← ADICIONAR: Reset zoom ao fechar
             lightbox.classList.remove('active');
         }
+    }
+
+    // ===== ZOOM IN =====
+    zoomIn() {
+        this.zoomState.scale = Math.min(3, this.zoomState.scale + 0.5);
+        this.updateZoom();
+    }
+
+    // ===== ZOOM OUT =====
+    zoomOut() {
+        this.zoomState.scale = Math.max(1.5, this.zoomState.scale - 0.5);  // ← MUDOU de 0.8 para 1.5
+        this.updateZoom();
+    }
+
+    // ===== RESET ZOOM =====
+    resetZoom() {
+        this.zoomState.scale = 1.5;  // ← MUDOU de 1 para 1.5
+        this.zoomState.panX = 0;
+        this.zoomState.panY = 0;
+        this.hdLoaded = false;  // ← ADICIONAR (limpar flag HD)
+        this.updateZoom();
+    }
+
+    // ===== UPDATE ZOOM =====
+    updateZoom() {
+        const img = document.getElementById('lightbox-current-img');
+        if (!img) return;
+
+        img.style.transform = `scale(${this.zoomState.scale}) translate(${this.zoomState.panX}px, ${this.zoomState.panY}px)`;
+        img.style.transition = 'transform 0.3s ease';
+        img.style.cursor = this.zoomState.scale > 1 ? 'grab' : 'default';
+
+        // Carregar HD quando zoom > 1.5x
+        if (this.zoomState.scale >= 1.5 && !this.hdLoaded) {
+            this.loadHDImage();
+        }
+
+        console.log('🔍 Zoom:', this.zoomState.scale);
+    }
+
+    // ===== LOAD HD IMAGE =====
+    loadHDImage() {
+        this.hdLoaded = true; // Marcar como carregada (evita recarregar)
+
+        const img = document.getElementById('lightbox-current-img');
+        if (!img) return;
+
+        const currentItem = this.lightboxPhotos[this.lightboxIndex];
+        const hdUrl = this.getOriginalUrl(currentItem);
+
+        console.log('🔍 Zoom 1.5x+! Carregando HD:', hdUrl);
+
+        // Carregar em background
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            // Trocar para HD
+            img.src = hdUrl;
+            console.log('✅ HD carregada!');
+        };
+
+        tempImg.onerror = () => {
+            console.error('❌ Erro ao carregar HD');
+        };
+
+        tempImg.src = hdUrl;
     }
 
     // ===== LIGHTBOX PREVIOUS =====
     lightboxPrev() {
         if (this.lightboxIndex > 0) {
             this.lightboxIndex--;
+            this.resetZoom();  // ← ADICIONAR: Reset zoom
             this.renderLightbox();
+            setTimeout(() => this.updateZoom(), 100);  // ← ADICIONAR: Aplicar 1.5x
         }
     }
 
@@ -1044,7 +1154,9 @@ class AdminSelections {
     lightboxNext() {
         if (this.lightboxIndex < this.lightboxPhotos.length - 1) {
             this.lightboxIndex++;
+            this.resetZoom();  // ← ADICIONAR: Reset zoom
             this.renderLightbox();
+            setTimeout(() => this.updateZoom(), 100);  // ← ADICIONAR: Aplicar 1.5x
         }
     }
 
