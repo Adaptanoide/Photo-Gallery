@@ -2247,9 +2247,58 @@
     background: rgba(0, 0, 0, 0.2);
 }
 
-.subcategory-row {
+/* ===== CABEÇALHO DE TABELA ===== */
+.subcategories-table-header {
+    display: grid;
+    grid-template-columns: 2fr 140px 2fr;
+    gap: 16px;
+    padding: 10px 16px;
+    background: rgba(212, 175, 55, 0.1);
+    border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.subcategories-table-header .col-name {
+    text-align: left;
+}
+
+.subcategories-table-header .col-qb {
+    text-align: center;
+}
+
+.subcategories-table-header .col-pricing {
+    text-align: center;
+    padding-left: 130px;
+}
+
+/* ===== COLUNAS DAS LINHAS ===== */
+.subcategory-row .col-name {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.subcategory-row .col-qb {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.subcategory-row .col-pricing {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.subcategory-row {
+    display: grid;
+    grid-template-columns: 2fr 140px 2fr;
+    gap: 16px;
     align-items: center;
     padding: 12px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -2286,8 +2335,8 @@
 
 .subcat-name {
     color: #fff;
-    font-weight: 500;
-    font-size: 14px;
+    font-weight: 600;
+    font-size: 16px;
 }
 
 .subcat-meta {
@@ -2301,7 +2350,7 @@
     color: #d4af37;
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 600;
     font-family: monospace;
 }
@@ -2325,7 +2374,7 @@
 
 .tier-input-group label {
     color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 500;
     min-width: 45px;
 }
@@ -2334,12 +2383,31 @@
     width: 80px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
+    color: #22c55e;
     padding: 6px 10px;
+    padding-left: 18px;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 16px;
     text-align: right;
+    font-weight: 600;
     transition: all 0.3s ease;
+    position: relative;
+}
+
+.tier-input-group {
+    position: relative;
+}
+
+.tier-input-group::before {
+    content: '$';
+    position: absolute;
+    left: 57px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #22c55e;
+    font-size: 13px;
+    font-weight: 600;
+    pointer-events: none;
 }
 
 .tier-price-input:focus {
@@ -2510,7 +2578,7 @@
     display: inline-block;
     background: #f59e0b;
     color: #000;
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 4px;

@@ -342,10 +342,66 @@ class AdminPricing {
         console.log(`🔍 Filtrados: ${filtered.length} de ${this.allCategories.length}`);
     }
 
-    // ===== RENDER FROM CACHE =====
     renderFromCache() {
-        // Carregar interface agrupada
-        this.loadAndRenderGrouped();
+        console.log('🔍 Renderizando com', this.filteredCategories.length, 'categorias filtradas');
+
+        // ✅ USAR DADOS LOCAIS ao invés de buscar backend
+        const groups = this.groupFilteredCategories(this.filteredCategories);
+
+        // Renderizar diretamente
+        const loading = document.getElementById('pricingConfigLoading');
+        const content = document.getElementById('pricingConfigContent');
+
+        if (loading) loading.style.display = 'none';
+        if (content) content.style.display = 'block';
+
+        this.renderGroupedInPage(groups);
+    }
+
+    // ===== AGRUPAR CATEGORIAS LOCALMENTE (sem buscar backend) =====
+    groupCategoriesLocally(categories) {
+        const groupMap = new Map();
+
+        categories.forEach(cat => {
+            // Extrair grupo principal (primeira parte do path)
+            const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+            const groupName = pathParts[0] || 'Other';
+
+            if (!groupMap.has(groupName)) {
+                groupMap.set(groupName, {
+                    name: groupName,
+                    isMixMatch: groupName === 'Brazil Best Sellers' || groupName === 'Brazil Top Selected Categories',
+                    subcategories: []
+                });
+            }
+
+            const group = groupMap.get(groupName);
+
+            // Extrair volume rules da categoria
+            let volumeRules = [];
+            if (cat.discountRules && cat.discountRules.length > 0) {
+                const volumeRule = cat.discountRules.find(r => r.clientCode === 'VOLUME');
+                if (volumeRule && volumeRule.priceRanges) {
+                    volumeRules = volumeRule.priceRanges.sort((a, b) => a.min - b.min);
+                }
+            }
+
+            group.subcategories.push({
+                _id: cat._id,
+                folderName: cat.folderName,
+                displayName: cat.displayName,
+                qbItem: cat.qbItem || '',
+                photoCount: cat.photoCount,
+                basePrice: cat.basePrice || 0,
+                participatesInMixMatch: cat.participatesInMixMatch || false,
+                volumeRules: volumeRules
+            });
+        });
+
+        // Converter Map para Array e ordenar
+        return Array.from(groupMap.values()).sort((a, b) =>
+            a.name.localeCompare(b.name)
+        );
     }
 
     async loadAndRenderGrouped() {
@@ -365,6 +421,11 @@ class AdminPricing {
             const data = await response.json();
 
             if (data.success) {
+                // ✅ LOGS DE DEBUG
+                console.log('📦 Dados do backend:', data.groups.length, 'grupos');
+                console.log('📦 Primeiro grupo:', data.groups[0]);
+                console.log('📦 Primeira subcategoria:', data.groups[0]?.subcategories[0]);
+
                 this.renderGroupedInPage(data.groups);
 
                 // Mostrar content
@@ -376,6 +437,60 @@ class AdminPricing {
             console.error('❌ Error loading grouped categories:', error);
             this.showNotification('Error loading categories', 'error');
         }
+    }
+
+    // ===== AGRUPAR CATEGORIAS FILTRADAS LOCALMENTE =====
+    groupFilteredCategories(categories) {
+        console.log('🔨 Agrupando', categories.length, 'categorias localmente...');
+
+        const groupMap = new Map();
+
+        categories.forEach(cat => {
+            // Extrair grupo (primeira parte do path)
+            const pathParts = cat.googleDrivePath.split('/').filter(p => p);
+            const groupName = pathParts[0] || 'Other';
+
+            // Criar grupo se não existe
+            if (!groupMap.has(groupName)) {
+                const isMixMatch = groupName === 'Brazil Best Sellers' ||
+                    groupName === 'Brazil Top Selected Categories';
+
+                groupMap.set(groupName, {
+                    name: groupName,
+                    isMixMatch: isMixMatch,
+                    subcategories: []
+                });
+            }
+
+            // Extrair volumeRules do discountRules
+            let volumeRules = [];
+            if (cat.discountRules && cat.discountRules.length > 0) {
+                const volumeRule = cat.discountRules.find(r => r.clientCode === 'VOLUME');
+                if (volumeRule && volumeRule.priceRanges) {
+                    volumeRules = volumeRule.priceRanges.sort((a, b) => a.min - b.min);
+                }
+            }
+
+            // Adicionar subcategoria ao grupo
+            groupMap.get(groupName).subcategories.push({
+                _id: cat._id,
+                displayName: cat.displayName,
+                folderName: cat.folderName,
+                qbItem: cat.qbItem || '',
+                photoCount: cat.photoCount,
+                basePrice: cat.basePrice || 0,
+                participatesInMixMatch: cat.participatesInMixMatch || false,
+                volumeRules: volumeRules
+            });
+        });
+
+        // Converter para array e ordenar
+        const groups = Array.from(groupMap.values()).sort((a, b) =>
+            a.name.localeCompare(b.name)
+        );
+
+        console.log('✅ Grupos criados:', groups.length);
+        return groups;
     }
 
     renderGroupedInPage(groups) {
@@ -398,8 +513,16 @@ class AdminPricing {
                             ${group.isMixMatch ? '<span class="mix-match-badge">MIX & MATCH</span>' : ''}
                         </span>
                         <span class="group-count">${group.subcategories.length} subcategories</span>
-                    </div>
-                    <div class="subcategories-list">
+                        </div>
+
+                        <!-- ✅ CABEÇALHO DA TABELA -->
+                        <div class="subcategories-table-header">
+                            <div class="col-name">SUBCATEGORY NAME</div>
+                            <div class="col-qb">QB ITEM</div>
+                            <div class="col-pricing">PRICING TIERS</div>
+                        </div>
+
+                        <div class="subcategories-list">
             `;
 
             // Renderizar subcategorias
@@ -412,14 +535,14 @@ class AdminPricing {
 
                 html += `
                     <div class="subcategory-row" data-category-id="${subcat._id}">
-                        <div class="subcat-info">
+                        <div class="col-name">
                             <span class="subcat-name">${subcat.folderName}</span>
-                            <span class="subcat-meta">
-                                <span class="qb-code">${subcat.qbItem || 'No QB'}</span>
-                                <span class="photo-count">${subcat.photoCount} photos</span>
-                            </span>
+                            <span class="photo-count">${subcat.photoCount} photos</span>
                         </div>
-                        <div class="subcat-tiers">
+                        <div class="col-qb">
+                            <span class="qb-code">${subcat.qbItem || 'No QB'}</span>
+                        </div>
+                        <div class="col-pricing">
                             ${isMixMatch ? `
                                 <!-- 4 TIERS para Mix & Match -->
                                 <div class="tier-input-group">
