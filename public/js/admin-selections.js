@@ -606,7 +606,7 @@ class AdminSelections {
                         </div>
                         <div class="summary-row" style="border-top: 2px solid #d4af37; padding-top: 10px; margin-top: 10px;">
                             <span style="font-size: 1.2em; font-weight: bold;">Total Value:</span>
-                            <span style="font-size: 1.2em; font-weight: bold; color: #d4af37;">
+                            <span style="font-size: 1.2em; font-weight: bold; color: #16a34a;">
                                 ${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}
                             </span>
                         </div>
@@ -656,6 +656,17 @@ class AdminSelections {
                     </div>
                 </div>
 
+                <!-- Customer Notes -->
+                ${selection.customerNotes ? `
+                    <div class="customer-notes-section" style="background: #FFF9C4; border-left: 4px solid #FFC107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                        <h4 style="margin: 0 0 10px 0; color: #F57C00; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-comment-dots"></i>
+                            Customer Notes
+                        </h4>
+                        <p style="margin: 0; color: #333; white-space: pre-wrap; font-style: italic;">${selection.customerNotes}</p>
+                    </div>
+                ` : ''}
+
                 <!-- Items by Category -->
                 <div class="items-section">
                     <div class="items-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -686,12 +697,12 @@ class AdminSelections {
                             <div class="category-group">
                                 <div class="category-header" onclick="adminSelections.toggleCategory(this.parentElement, '${category}')">
                                     <div class="category-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
                                             <i class="fas fa-chevron-right toggle-icon"></i>
                                             <span class="category-name">${category}</span>
                                         </div>
-                                        <span class="category-info" style="white-space: nowrap;">
-                                            ${items.length} items
+                                        <span class="category-info" style="white-space: nowrap !important; margin-left: auto !important; margin-bottom: 0 !important;">
+                                            ${items.length} items | <strong style="color: #4CAF50;">$${items.reduce((sum, item) => sum + (item.price || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                                             ${selection.qbMap && selection.qbMap[category] ? ` | <strong style="color: #d4af37;">QB: ${selection.qbMap[category]}</strong>` : ''}
                                         </span>
                                     </div>
@@ -815,7 +826,7 @@ class AdminSelections {
                     </div>
                     <div style="display: flex; align-items: center; flex: 1;">
                         <span class="item-name">${item.fileName}</span>
-                        <span class="item-price" style="margin-left: auto; color: #d4af37; font-weight: bold; margin-right: 15px;">
+                        <span class="item-price" style="margin-left: auto; color: #16a34a; font-weight: bold; margin-right: 15px;">
                             ${item.price > 0 ? '$' + item.price.toFixed(2) : '-'}
                         </span>
                         ${(selection.status === 'pending' || selection.status === 'finalized') ? `

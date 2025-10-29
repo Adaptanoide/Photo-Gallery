@@ -37,6 +37,11 @@ const selectionSchema = new mongoose.Schema({
         trim: true,
         default: null
     },
+    customerNotes: {
+        type: String,
+        trim: true,
+        default: null
+    },
     // ===== NOVO: TIPO DE SELEÇÃO =====
     selectionType: {
         type: String,
@@ -593,7 +598,8 @@ selectionSchema.methods.getSummary = function () {
         categories: categoryCounts,
         createdAt: this.createdAt,
         isExpired: this.isExpired(),
-        selectionType: this.selectionType // NOVO
+        selectionType: this.selectionType,
+        customerNotes: this.customerNotes
     };
 };
 

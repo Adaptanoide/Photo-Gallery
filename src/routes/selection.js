@@ -228,7 +228,7 @@ router.post('/finalize', async (req, res) => {
                 clientName,
                 clientCompany: companyName,
                 salesRep: salesRep,
-                observations: observations || '',
+                customerNotes: observations || null,
                 items: products.map(product => {
                     const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
 

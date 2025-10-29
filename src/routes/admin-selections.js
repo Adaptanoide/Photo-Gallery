@@ -229,6 +229,7 @@ router.get('/:selectionId', async (req, res) => {
             createdAt: selection.createdAt,
             updatedAt: selection.updatedAt,
             expiresAt: selection.expiresAt,
+            customerNotes: selection.customerNotes,
             items: selection.items.map(item => ({
                 productId: item.productId?._id,
                 fileName: item.fileName,
