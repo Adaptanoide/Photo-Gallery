@@ -598,34 +598,28 @@ class AdminSelections {
             const footerContainer = document.querySelector('.selection-details-footer');
             if (footerContainer) {
                 footerContainer.innerHTML = `
-                    <!-- Summary -->
-                    <div class="selection-summary-footer">
-                        <div class="summary-row">
-                            <span>Total items:</span>
-                            <span>${selection.totalItems || selection.items.length}</span>
+                    <!-- Compact Footer: Summary + Buttons -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 2px solid #d4af37;">
+                        <!-- Left: Summary -->
+                        <div style="display: flex; gap: 30px; align-items: center;">
+                            <span style="color: #999;">Total items: <strong style="color: #fff;">${selection.totalItems || selection.items.length}</strong></span>
+                            <span style="color: #999;">Total Value: <strong style="font-size: 1.2em; color: #16a34a;">${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}</strong></span>
                         </div>
-                        <div class="summary-row" style="border-top: 2px solid #d4af37; padding-top: 10px; margin-top: 10px;">
-                            <span style="font-size: 1.2em; font-weight: bold;">Total Value:</span>
-                            <span style="font-size: 1.2em; font-weight: bold; color: #16a34a;">
-                                ${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}
-                            </span>
+                        <!-- Right: Buttons -->
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-modal-action btn-download" onclick="adminSelections.openPONumberModal('${selection.selectionId}')">
+                                <i class="fas fa-file-excel"></i>
+                                Download CSV
+                            </button>
+                            <button class="btn-modal-action btn-print" onclick="adminSelections.printSelection('${selection.selectionId}')">
+                                <i class="fas fa-print"></i>
+                                Print
+                            </button>
+                            <button class="btn-modal-action btn-close" onclick="adminSelections.hideSelectionModal()">
+                                <i class="fas fa-times"></i>
+                                Close
+                            </button>
                         </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="modal-actions">
-                        <button class="btn-modal-action btn-download" onclick="adminSelections.openPONumberModal('${selection.selectionId}')">
-                            <i class="fas fa-file-excel"></i>
-                            Download CSV
-                        </button>
-                        <button class="btn-modal-action btn-print" onclick="adminSelections.printSelection('${selection.selectionId}')">
-                            <i class="fas fa-print"></i>
-                            Print
-                        </button>
-                        <button class="btn-modal-action btn-close" onclick="adminSelections.hideSelectionModal()">
-                            <i class="fas fa-times"></i>
-                            Close
-                        </button>
                     </div>
                 `;
             }
@@ -658,7 +652,7 @@ class AdminSelections {
 
                 <!-- Customer Notes -->
                 ${selection.customerNotes ? `
-                    <div class="customer-notes-section" style="background: #FFF9C4; border-left: 4px solid #FFC107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                    <div class="customer-notes-section" style="background: #FFF9C4; border-left: 4px solid #FFC107; padding: 15px; margin: 0px 0px 10px 0px; border-radius: 4px;">
                         <h4 style="margin: 0 0 10px 0; color: #F57C00; display: flex; align-items: center; gap: 8px;">
                             <i class="fas fa-comment-dots"></i>
                             Customer Notes

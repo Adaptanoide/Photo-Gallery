@@ -1399,7 +1399,7 @@ body.modal-open {
 .selection-info-grid {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 10.75rem !important;
-    padding: 0.75rem 1rem !important;
+    padding: 10px 1px 1px 1px !important;
 }
 
 .info-item label {
@@ -1761,7 +1761,7 @@ body.modal-open {
 .categories-list {
     height: auto !important;
     flex: 1 !important;
-    min-height: 400px !important;
+    min-height: 520px !important;
     max-height: calc(85vh - 350px) !important; /* LIMITA ALTURA! */
     overflow-y: auto !important;
 }
