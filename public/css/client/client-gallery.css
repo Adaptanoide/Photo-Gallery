@@ -964,3 +964,126 @@
         gap: 4px;
     }
 }
+
+/* ============================================
+   MOBILE: TIER PRICING SUPER COMPACTO
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Container sticky mais fino */
+    #priceProgressContainer,
+    .price-info-container {
+        top: 120px !important;
+        padding: 8px 12px !important;
+    }
+    
+    /* Barra de progresso menor */
+    .progress-bar-container {
+        padding: 6px 12px !important;
+    }
+    
+    .progress-bar-label {
+        font-size: 14px !important;
+    }
+    
+    .progress-bar-track {
+        height: 8px !important;
+    }
+    
+    /* Wrapper dos tiers - ESCONDER por padrão */
+    .price-progress-wrapper {
+        display: none;
+        padding: 8px 12px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    /* TODOS os tiers centralizados HORIZONTAL */
+    .price-tier {
+        display: none !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 10px !important;
+        background: rgba(212, 175, 55, 0.08) !important;
+        border: 1.5px solid rgba(212, 175, 55, 0.25) !important;
+        border-radius: 6px !important;
+        text-align: center !important;
+    }
+    
+    /* Tier ATIVO - destaque amarelo */
+    .price-tier.active {
+        display: flex !important;
+        background: rgba(255, 215, 0, 0.15) !important;
+        border: 2px solid #d4af37 !important;
+    }
+    
+    .price-tier .tier-medal {
+        font-size: 18px !important;
+        margin: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .price-tier .tier-label {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: #666 !important;
+        margin: 0 !important;
+        white-space: nowrap;
+    }
+    
+    .price-tier.active .tier-label {
+        color: #333 !important;
+        font-weight: 700 !important;
+    }
+    
+    .price-tier .tier-price {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #28a745 !important;
+        margin: 0 !important;
+    }
+    
+    .price-tier.active .tier-price {
+        font-size: 18px !important;
+        font-weight: 800 !important;
+    }
+    
+    /* Quando expandido - mostrar TODOS centralizados */
+    .price-progress-wrapper.expanded {
+        display: flex !important;
+    }
+    
+    .price-progress-wrapper.expanded .price-tier {
+        display: flex !important;
+    }
+    
+    /* Botão toggle */
+    .toggle-tiers-btn {
+        width: 100%;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 6px;
+    }
+    
+    .toggle-tiers-btn:active {
+        background: rgba(212, 175, 55, 0.2);
+    }
+    
+    /* Fotos grid - mais espaço */
+    .photos-grid {
+        padding-top: 12px !important;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}

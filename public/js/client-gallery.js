@@ -1724,3 +1724,45 @@
     }
 
 })();
+
+// ===== MOBILE: TOGGLE TIERS =====
+function initMobileTierToggle() {
+    if (window.innerWidth > 768) return;
+
+    const priceContainer = document.getElementById('priceProgressContainer');
+    if (!priceContainer) return;
+
+    const wrapper = priceContainer.querySelector('.price-progress-wrapper');
+    if (!wrapper) return;
+
+    // Criar botão toggle se não existir
+    let toggleBtn = priceContainer.querySelector('.toggle-tiers-btn');
+    if (!toggleBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.className = 'toggle-tiers-btn';
+        toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> View all prices';
+
+        toggleBtn.addEventListener('click', function () {
+            wrapper.classList.toggle('expanded');
+            if (wrapper.classList.contains('expanded')) {
+                this.innerHTML = '<i class="fas fa-chevron-up"></i> Hide';
+            } else {
+                this.innerHTML = '<i class="fas fa-chevron-down"></i> View all prices';
+            }
+        });
+
+        priceContainer.appendChild(toggleBtn);
+    }
+}
+
+// Chamar quando carregar fotos
+const originalLoadPhotos = window.loadPhotos;
+window.loadPhotos = async function (folderId) {
+    await originalLoadPhotos(folderId);
+    setTimeout(initMobileTierToggle, 500);
+};
+
+// Inicializar ao carregar
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initMobileTierToggle, 1000);
+});
