@@ -1074,6 +1074,7 @@
         justify-content: center;
         gap: 6px;
         margin-top: 6px;
+        margin-bottom: 5px;
     }
     
     .toggle-tiers-btn:active {

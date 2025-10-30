@@ -519,7 +519,7 @@
         background: white;
         border-bottom: 1px solid #e0e0e0;
         position: fixed !important;
-        top: 154px !important;
+        top: 140px !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 83;
@@ -559,16 +559,11 @@
 
     .price-tier {
         width: 100% !important;
-        /* Largura total */
-        padding: 10px 15px !important;
-        /* Mais espaço interno */
+        padding: 3px 15px !important;
         font-size: 0.85rem !important;
-        /* Fonte um pouco maior */
         text-align: left !important;
-        /* Alinhado à esquerda */
         display: flex !important;
         justify-content: space-between !important;
-        /* Espaço entre texto e preço */
         background: white;
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -604,7 +599,7 @@
         /* Sempre 2 colunas */
         gap: 1rem;
         padding: 15px;
-        margin-top: 185px;
+        margin-top: 166px;
         padding-left: 35px;
         padding-right: 35px;
     }

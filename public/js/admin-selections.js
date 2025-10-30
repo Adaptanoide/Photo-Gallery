@@ -602,8 +602,8 @@ class AdminSelections {
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 2px solid #d4af37;">
                         <!-- Left: Summary -->
                         <div style="display: flex; gap: 30px; align-items: center;">
-                            <span style="color: #999;">Total items: <strong style="color: #fff;">${selection.totalItems || selection.items.length}</strong></span>
-                            <span style="color: #999;">Total Value: <strong style="font-size: 1.2em; color: #16a34a;">${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}</strong></span>
+                            <span style="color: #999; font-size: 20px">Total items: <strong style="color: #fff;">${selection.totalItems || selection.items.length}</strong></span>
+                            <span style="color: #999; font-size: 20px">Total Value: <strong style="font-size: 1.0em; color: #16a34a;">${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}</strong></span>
                         </div>
                         <!-- Right: Buttons -->
                         <div style="display: flex; gap: 10px;">

@@ -1177,6 +1177,7 @@
     color: #ffffff;
     font-size: 1.0rem;
     margin-left: 0rem;
+    max-width: 320px;
 }
 
 .category-items {
@@ -1452,6 +1453,7 @@ body.modal-open {
     gap: 0.5rem;
     margin-bottom: 1rem;
     justify-content: flex-end;
+    padding-top: 10px;
 }
 
 .btn-view-toggle {
@@ -1761,7 +1763,7 @@ body.modal-open {
 .categories-list {
     height: auto !important;
     flex: 1 !important;
-    min-height: 520px !important;
+    min-height: 570px !important;
     max-height: calc(85vh - 350px) !important; /* LIMITA ALTURA! */
     overflow-y: auto !important;
 }
@@ -1861,7 +1863,7 @@ body.modal-open {
     flex-shrink: 0;
     background: rgba(44, 44, 52, 0.8);
     border-top: 1px solid rgba(74, 85, 104, 0.3);
-    padding: 0.4rem 2rem;
+    padding: 1.0rem 2rem;
 }
 
 .selection-summary-footer {
