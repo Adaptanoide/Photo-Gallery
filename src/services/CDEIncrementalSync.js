@@ -174,7 +174,8 @@ class CDEIncrementalSync {
             totalChecked: 0,
             discrepanciesFound: 0,
             lastRun: null,
-            lastReport: []
+            lastReport: [],
+            executionCount: 0
         };
     }
 
@@ -419,43 +420,50 @@ class CDEIncrementalSync {
                 database: process.env.CDE_DATABASE
             });
 
-            // Determinar período de busca
-            let checkFromTime;
-            let syncDescription;
+            // Incrementar contador de execuções
+            this.stats.executionCount = (this.stats.executionCount || 0) + 1;
 
-            const isFirstSync = !this.lastSyncTime ||
-                (Date.now() - this.lastSyncTime.getTime()) > (7 * 24 * 60 * 60 * 1000);
+            // A cada 20 execuções (~60 minutos), fazer sync completo
+            const shouldDoFullSync = this.stats.executionCount % 20 === 0;
 
-            if (isFirstSync) {
-                const initialDays = parseInt(process.env.SYNC_INITIAL_DAYS || '1');
-                checkFromTime = new Date(Date.now() - initialDays * 24 * 60 * 60 * 1000);
-                checkFromTime.setHours(0, 0, 0, 0); // Início do dia
-                syncDescription = `últimos ${initialDays} dias (sincronização inicial)`;
-            } else {
-                // Em vez de horas específicas, buscar desde o início de ontem
-                checkFromTime = new Date();
-                checkFromTime.setDate(checkFromTime.getDate() - 1);
-                checkFromTime.setHours(0, 0, 0, 0); // Meia-noite de ontem
-                syncDescription = `desde ontem (incremental)`;
+            console.log(`[SYNC] Execução #${this.stats.executionCount}`);
+
+            if (shouldDoFullSync) {
+                console.log(`[SYNC] 🔄 Executando SYNC COMPLETO (a cada 20 execuções)`);
+                // Fechar conexão do runSync antes de chamar runSmartSync
+                if (cdeConnection) await cdeConnection.end();
+                this.isRunning = false;
+                return await this.runSmartSync();
             }
 
-            console.log(`[SYNC] Buscando mudanças dos ${syncDescription}`);
-            console.log(`[SYNC] Buscando mudanças desde: ${checkFromTime.toISOString()}`);
+            console.log(`[SYNC] ⚡ Sync incremental - verificando fotos available`);
 
-            // Query para buscar mudanças recentes - agora COM filtro de data
-            const [cdeChanges] = await cdeConnection.execute(
-                `SELECT LPAD(ATIPOETIQUETA, 5, '0') as ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AFECHA, AQBITEM 
-                FROM tbinventario 
-                WHERE ATIPOETIQUETA != '0' 
-                AND ATIPOETIQUETA != ''
-                AND ATIPOETIQUETA IS NOT NULL
-                AND LENGTH(ATIPOETIQUETA) > 0
-                AND AFECHA >= ?
-                ORDER BY AFECHA DESC`,
-                [checkFromTime]  // Agora USA o parâmetro de data!
-            );
-            console.log(`[SYNC] ${cdeChanges.length} mudanças encontradas no CDE`);
+            // Buscar fotos available no MongoDB (amostra)
+            const mongoPhotosAvailable = await UnifiedProductComplete.find({
+                status: 'available',
+                photoNumber: { $exists: true, $ne: null }
+            }).limit(300).select('photoNumber');
 
+            console.log(`[SYNC] Verificando ${mongoPhotosAvailable.length} fotos available`);
+
+            // Verificar status de cada foto no CDE
+            const cdeChanges = [];
+
+            for (const mongoPhoto of mongoPhotosAvailable) {
+                const [result] = await cdeConnection.execute(
+                    `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AQBITEM 
+                    FROM tbinventario 
+                    WHERE ATIPOETIQUETA = ?`,
+                    [mongoPhoto.photoNumber]
+                );
+
+                if (result.length > 0) {
+                    cdeChanges.push(result[0]);
+                }
+            }
+
+            console.log(`[SYNC] ${cdeChanges.length} fotos verificadas no CDE`);
+            
             // Analisar mudanças
             const discrepancies = [];
             let checkedCount = 0;

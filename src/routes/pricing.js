@@ -227,12 +227,11 @@ router.get('/category-ranges', async (req, res) => {
 
         const category = await PhotoCategory.findOne({
             $or: [
-                { googleDriveId: cleanId },
-                { googleDriveId: cleanId + '/' },
-                { googleDrivePath: { $regex: cleanId, $options: 'i' } },
-                { displayName: { $regex: cleanId, $options: 'i' } }
+                { googleDrivePath: categoryId },
+                { googleDrivePath: categoryId.endsWith('/') ? categoryId : categoryId + '/' },
+                { googleDrivePath: categoryId.endsWith('/') ? categoryId.slice(0, -1) : categoryId }
             ]
-        });
+        }).sort({ googleDrivePath: -1 });
 
         if (!category) {
             console.log('❌ Categoria não encontrada para:', categoryId);
