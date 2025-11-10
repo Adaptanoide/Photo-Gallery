@@ -438,11 +438,21 @@ class CDEIncrementalSync {
 
             console.log(`[SYNC] ⚡ Sync incremental - verificando fotos available`);
 
-            // Buscar fotos available no MongoDB (amostra)
+            // Calcular offset aleatório para variar as fotos verificadas
+            const totalAvailable = await UnifiedProductComplete.countDocuments({
+                status: 'available',
+                photoNumber: { $exists: true, $ne: null }
+            });
+
+            const maxOffset = Math.max(0, totalAvailable - 300);
+            const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+
             const mongoPhotosAvailable = await UnifiedProductComplete.find({
                 status: 'available',
                 photoNumber: { $exists: true, $ne: null }
-            }).limit(300).select('photoNumber');
+            }).skip(randomOffset).limit(300).select('photoNumber');
+
+            console.log(`[SYNC] Verificando fotos ${randomOffset} a ${randomOffset + 300} de ${totalAvailable}`);
 
             console.log(`[SYNC] Verificando ${mongoPhotosAvailable.length} fotos available`);
 
@@ -463,7 +473,7 @@ class CDEIncrementalSync {
             }
 
             console.log(`[SYNC] ${cdeChanges.length} fotos verificadas no CDE`);
-            
+
             // Analisar mudanças
             const discrepancies = [];
             let checkedCount = 0;

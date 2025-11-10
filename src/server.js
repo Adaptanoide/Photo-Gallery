@@ -731,13 +731,9 @@ function initPhotoExpiration() {
     }, intervalMinutes * 60 * 1000);
 
     setTimeout(async () => {
-        if (isBusinessHours()) {
-            console.log('[EXPIRATION] Executando verificação inicial...');
-            const PhotoExpirationService = require('./services/PhotoExpirationService');
-            await PhotoExpirationService.processExpiredPhotos();
-        } else {
-            console.log('[EXPIRATION] Fora do horário comercial - verificação inicial cancelada');
-        }
+        console.log('[EXPIRATION] Executando verificação inicial...');
+        const PhotoExpirationService = require('./services/PhotoExpirationService');
+        await PhotoExpirationService.processExpiredPhotos();
     }, 30000);
 }
 
