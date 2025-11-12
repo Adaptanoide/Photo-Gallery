@@ -17,6 +17,7 @@ const selectionRoutes = require('./routes/selection');
 const pricingRoutes = require('./routes/pricing');
 const marketingRoutes = require('./routes/marketing');
 const storageRoutes = require('./routes/storage');
+const trackingRoutes = require('./routes/tracking');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,9 @@ connectDB();
 console.log('Sistema inicializando...');
 console.log('MongoDB configurado');
 console.log('Modo: ' + (process.env.NODE_ENV || 'development'));
+
+// ===== PUBLIC TRACKING ROUTES (NO AUTH) =====
+app.use('/', trackingRoutes);
 
 // Rotas da API
 app.use('/api/auth', authRoutes);

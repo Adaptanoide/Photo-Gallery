@@ -244,6 +244,40 @@ const accessCodeSchema = new mongoose.Schema({
     lastMarketingEmailSent: {
         type: Date,
         default: null
+    },
+    // ===== MARKETING UNSUBSCRIBE =====
+    marketingUnsubscribed: {
+        type: Boolean,
+        default: false
+    },
+    marketingUnsubscribedAt: {
+        type: Date,
+        default: null
+    },
+    // ===== MARKETING TRACKING =====
+    marketingEmailOpened: {
+        type: Boolean,
+        default: false
+    },
+    marketingEmailOpenedAt: {
+        type: Date,
+        default: null
+    },
+    marketingEmailOpenCount: {
+        type: Number,
+        default: 0
+    },
+    marketingEmailClicked: {
+        type: Boolean,
+        default: false
+    },
+    marketingEmailClickedAt: {
+        type: Date,
+        default: null
+    },
+    marketingEmailClickCount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true
