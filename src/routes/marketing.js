@@ -721,4 +721,95 @@ function generateMarketingEmailHtml({ subject, message, clientName, clientCode, 
     `;
 }
 
+// ===== ROTA DE TESTE: ENVIAR PARA 1 CLIENTE ESPECÍFICO =====
+router.post('/test-single/:code', async (req, res) => {
+    try {
+        const code = req.params.code;
+        const { subject, message } = req.body;
+
+        console.log(`📧 Test email for client code: ${code}`);
+
+        // Buscar cliente específico
+        const client = await AccessCode.findOne({ code: code });
+
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: 'Client not found'
+            });
+        }
+
+        if (!client.clientEmail || !client.clientEmail.includes('@')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client does not have valid email'
+            });
+        }
+
+        console.log(`📧 Sending to: ${client.clientEmail} (${client.clientName})`);
+
+        // Pegar config do email
+        const config = await EmailConfig.findOne();
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+                user: config.smtpUser,
+                pass: config.smtpPassword
+            }
+        });
+
+        // Gerar HTML com tracking
+        const html = generateMarketingEmailHtml({
+            subject,
+            message,
+            clientName: client.clientName,
+            clientCode: client.code,
+            encryptedCode: encryptCode(client.code)
+        });
+
+        // Enviar email
+        const mailOptions = {
+            from: 'Sunshine Cowhides <sales@sunshinecowhides-gallery.com>',
+            to: `${client.clientName} <${client.clientEmail}>`,
+            subject: subject,
+            html: html,
+            headers: {
+                'List-Unsubscribe': '<mailto:sales@sunshinecowhides.com?subject=Unsubscribe>',
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                'X-Mailer': 'Sunshine Cowhides Marketing System'
+            }
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        // Registrar envio
+        await AccessCode.findOneAndUpdate(
+            { code: client.code },
+            { lastMarketingEmailSent: new Date() }
+        );
+
+        console.log(`✅ Test email sent to ${client.clientEmail}`);
+
+        res.json({
+            success: true,
+            message: `Email sent to ${client.clientName} (${client.clientEmail})`,
+            client: {
+                code: client.code,
+                name: client.clientName,
+                email: client.clientEmail
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error sending test email:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error sending test email',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
