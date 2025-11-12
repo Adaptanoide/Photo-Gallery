@@ -89,7 +89,7 @@ router.post('/add', validateRequest, async (req, res) => {
             driveFileId,
             {
                 fileName,
-                category,
+                category: category ? category.replace(/\//g, ' → ') : category,  // ✅ Sempre converte
                 thumbnailUrl,
                 basePrice: basePrice || 0,
                 price: price || 0,

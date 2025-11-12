@@ -128,7 +128,7 @@ class CartService {
                 productId: product._id,
                 driveFileId: product.driveFileId,
                 fileName: product.fileName,
-                category: itemData.category || product.category,
+                category: (itemData.category || product.category || '').replace(/\//g, ' → '),
                 thumbnailUrl: itemData.thumbnailUrl || product.thumbnailUrl || `https://images.sunshinecowhides-gallery.com/_thumbnails/${product.driveFileId}`,
                 pathLevels: itemData.pathLevels || [],
                 fullPath: itemData.fullPath || '',

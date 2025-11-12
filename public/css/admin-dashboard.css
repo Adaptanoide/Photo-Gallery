@@ -337,7 +337,7 @@
 }
 
 .stat-icon.warning {
-    background: linear-gradient(135deg, var(--warning), #d97706);
+    background: linear-gradient(135deg, #ef4444, #d97706);
 }
 
 .stat-value {

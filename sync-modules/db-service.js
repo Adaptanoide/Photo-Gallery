@@ -164,15 +164,15 @@ class DatabaseService {
                 });
 
                 const [rows] = await mysqlConn.execute(
-                    'SELECT AIDH, AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    'SELECT AIDH, AESTADOP, RESERVEDUSU, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ?',
                     [photoNumber]
                 );
 
                 if (rows.length > 0) {
                     idhCode = rows[0].AIDH;
                     cdeStatus = rows[0].AESTADOP;
-                    console.log(`   📋 CDE: Foto ${photoNumber} → IDH: ${idhCode}, Status: ${cdeStatus}`);
-
+                    qbCode = rows[0].AQBITEM || null;  // ← ADICIONAR ESTA LINHA
+                    console.log(`   📋 CDE: Foto ${photoNumber} → IDH: ${idhCode}, Status: ${cdeStatus}, QB: ${qbCode}`);
                     // Se está PRE-SELECTED no CDE, verificar se é para algum cliente nosso
                     if (cdeStatus === 'PRE-SELECTED' && rows[0].RESERVEDUSU) {
                         console.log(`      Reservada no CDE para: ${rows[0].RESERVEDUSU}`);
@@ -181,6 +181,7 @@ class DatabaseService {
                     console.log(`   ⚠️ Foto ${photoNumber} não encontrada no CDE - criando com valores padrão`);
                     idhCode = `2001${photoNumber}`;
                     cdeStatus = 'INGRESADO';
+                    qbCode = null;  // ← ADICIONAR ESTA LINHA
                 }
             } catch (cdeError) {
                 console.error(`   ⚠️ Erro ao consultar CDE:`, cdeError.message);

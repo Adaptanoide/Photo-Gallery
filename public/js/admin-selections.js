@@ -689,7 +689,7 @@ class AdminSelections {
                     <div class="categories-list">
                         ${Object.entries(itemsByCategory).map(([category, items]) => `
                             <div class="category-group">
-                                <div class="category-header" onclick="adminSelections.toggleCategory(this.parentElement, '${category}')">
+                                <div class="category-header" onclick="adminSelections.toggleCategory(this.parentElement, '${category.replace(/'/g, '\\\'')}')">
                                     <div class="category-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
                                             <i class="fas fa-chevron-right toggle-icon"></i>

@@ -239,6 +239,11 @@ const accessCodeSchema = new mongoose.Schema({
         // Última modificação
         lastModifiedBy: String,
         lastModifiedAt: Date
+    },
+    // ===== EMAIL MARKETING TRACKING =====
+    lastMarketingEmailSent: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true

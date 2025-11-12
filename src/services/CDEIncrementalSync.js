@@ -438,22 +438,39 @@ class CDEIncrementalSync {
 
             console.log(`[SYNC] ⚡ Sync incremental - verificando fotos available`);
 
-            // Calcular offset aleatório para variar as fotos verificadas
+            // Calcular offset SEQUENCIAL com rotação automática
             const totalAvailable = await UnifiedProductComplete.countDocuments({
                 status: 'available',
                 photoNumber: { $exists: true, $ne: null }
             });
 
-            const maxOffset = Math.max(0, totalAvailable - 300);
-            const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+            // Buscar último offset da collection sync_locks
+            const db = mongoose.connection.db;
+            const lockDoc = await db.collection('sync_locks').findOne({ _id: 'cde_sync' });
+            const lastOffset = lockDoc?.lastOffset || 0;
+
+            // Calcular próximo offset
+            let nextOffset = lastOffset + 300;
+
+            // Se passou do total, voltar para o início
+            if (nextOffset >= totalAvailable) {
+                nextOffset = 0;
+                console.log(`[SYNC] 🔄 Rotação completa - voltando ao início`);
+            }
+
+            // Salvar próximo offset para próxima execução
+            await db.collection('sync_locks').updateOne(
+                { _id: 'cde_sync' },
+                { $set: { lastOffset: nextOffset, lastRotationAt: new Date() } }
+            );
 
             const mongoPhotosAvailable = await UnifiedProductComplete.find({
                 status: 'available',
                 photoNumber: { $exists: true, $ne: null }
-            }).skip(randomOffset).limit(300).select('photoNumber');
+            }).skip(nextOffset).limit(300).select('photoNumber');
 
-            console.log(`[SYNC] Verificando fotos ${randomOffset} a ${randomOffset + 300} de ${totalAvailable}`);
-
+            console.log(`[SYNC] ⚡ Verificando fotos ${nextOffset} a ${nextOffset + 300} de ${totalAvailable} (sequencial)`);
+            console.log(`[SYNC] Próxima execução começará em: ${nextOffset + 300}`);
             console.log(`[SYNC] Verificando ${mongoPhotosAvailable.length} fotos available`);
 
             // Verificar status de cada foto no CDE

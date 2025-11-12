@@ -74,6 +74,12 @@
                             <span class="pending-badge" id="sidebarPendingBadge">0</span>
                         </a>
                     </div>
+                    <div class="nav-item">
+                        <a href="#inventory-monitor" class="nav-link" data-section="inventoryMonitor">
+                            <i class="fas fa-search"></i>
+                            <span class="nav-text">Inventory Monitor(NO ESTA LISTO)</span>
+                        </a>
+                    </div>
                     <div class="nav-item" style="display:none">
                         <a href="#special-selections" class="nav-link" data-section="special-selections">
                             <i class="fas fa-star"></i>
@@ -89,6 +95,12 @@
                     <div class="nav-item" style="display:none">
                         <a href="#storage" class="nav-link" data-section="storage">
                             <span class="nav-text">Storage Management</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#marketing" class="nav-link" data-section="marketing">
+                            <i class="fas fa-envelope"></i>
+                            <span class="nav-text">Email Marketing</span>
                         </a>
                     </div>
                     <div class="nav-item"> <!-- SEM display:none -->
@@ -112,6 +124,10 @@
                 </div>
 
                 <div class="header-right">
+                    <button id="headerScanBtn" onclick="window.monitor && window.monitor.scan()"
+                        style="padding: 8px 16px; border-radius: 8px; color: #000000; font: normal 12pt Arial; font-weight: 600; background: #d4af37; border: none; cursor: pointer; margin-right: 15px; display: none;">
+                        <i class="fas fa-search"></i> Scan Now
+                    </button>
                     <div class="admin-user" onclick="openProfileModal()" style="cursor: pointer;">
                         <div class="user-avatar" id="userAvatar">A</div>
                         <span class="user-name" id="userName">Admin</span>
@@ -180,24 +196,6 @@
                             <div class="stat-trend">
                                 <i class="fas fa-minus"></i>
                                 <span>Stable</span>
-                            </div>
-                        </div>
-
-                        <!-- Card: Seleções Pendentes -->
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-title">Pending Selections</div>
-                                    <div class="stat-value" id="pendingSelections">-</div>
-                                    <div class="stat-description">Awaiting contact</div>
-                                </div>
-                                <div class="stat-icon secondary">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </div>
-                            </div>
-                            <div class="stat-trend trend-down">
-                                <i class="fas fa-arrow-down"></i>
-                                <span>-3% today</span>
                             </div>
                         </div>
                     </div>
@@ -1287,6 +1285,444 @@
                     </div>
                 </div>
 
+                <!-- INVENTORY MONITOR SECTION -->
+                <div id="section-inventoryMonitor" class="content-section" style="display: none;">
+                    <div class="section-header-card">
+                        <button id="scanBtn" onclick="monitor.scan()"
+                            style="padding: 8px; border-radius: 8px; color: #000000; font: normal 12pt Arial; font-weight: 600; margin-bottom: 15px; background: #d4af37; border: none; cursor: pointer;">
+                            <i class="fas fa-search"></i> Scan Now
+                        </button>
+                        <span id="scanStatus" style="margin-left: 10px; color: #666;"></span>
+                        <h2 style="margin-top: 15px;">📊 Inventory Status Monitor</h2>
+                        <p>Real-time synchronization check between CDE and MongoDB</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="stats-container"
+                        style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 30px;">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Total Scanned</div>
+                                    <div class="stat-value" id="totalScanned">-</div>
+                                    <div class="stat-description">Photos checked</div>
+                                </div>
+                                <div class="stat-icon primary">
+                                    <i class="fas fa-images"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Discrepancies</div>
+                                    <div class="stat-value" id="totalDiscrepancies">-</div>
+                                    <div class="stat-description">Issues found</div>
+                                </div>
+                                <div class="stat-icon warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Critical</div>
+                                    <div class="stat-value" id="criticalCount" style="color: #b72424e0;">-</div>
+                                    <div class="stat-description">Sold appearing available</div>
+                                </div>
+                                <div class="stat-icon danger" style="color: black; background-color: #b72424e0;">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Medium</div>
+                                    <div class="stat-value" id="mediumCount" style="color: #ffc107;">-</div>
+                                    <div class="stat-description">Status conflicts</div>
+                                </div>
+                                <div class="stat-icon warning">
+                                    <i class="fas fa-exclamation"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Warnings</div>
+                                    <div class="stat-value" id="warningCount" style="color: #ffc107;">-</div>
+                                    <div class="stat-description">QB Item missing</div>
+                                </div>
+                                <div class="stat-icon info" style="color: #000000; background: #d4af37;">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discrepancies Table -->
+                    <div class="data-table-container">
+                        <div class="table-header">
+                            <h3 class="table-title">Discrepancies Found</h3>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>CDE Status</th>
+                                    <th>Gallery Status</th>
+                                    <th>QB Item (CDE)</th>
+                                    <th>Severity</th>
+                                    <th>Issue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="discrepanciesTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                                        Click "Scan Now" to check inventory status
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- ============================================ -->
+                <!-- SEÇÃO EMAIL MARKETING -->
+                <!-- ============================================ -->
+                <div id="section-marketing" class="content-section" style="display: none;">
+                    <div class="section-header" style="margin-bottom: 30px;">
+                        <h2 style="font-size: 28px; color: #ffffff; margin-bottom: 10px;">
+                            📧 Email Marketing
+                        </h2>
+                        <p style="color: #ffffff; font-size: 16px;">
+                            Send marketing emails to notify clients about new products
+                        </p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="stats-grid" style="margin-bottom: 30px;">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Total Recipients</div>
+                                    <div class="stat-value" id="marketingRecipientsCount" style="color: #28a745;">-
+                                    </div>
+                                    <div class="stat-description">Clients with email registered</div>
+                                </div>
+                                <div class="stat-icon success">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Without Email</div>
+                                    <div class="stat-value" id="marketingWithoutEmail" style="color: #dc3545;">-</div>
+                                    <div class="stat-description">Clients missing email address</div>
+                                </div>
+                                <div class="stat-icon" style="background: #dc3545; color: white;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Emails Sent</div>
+                                    <div class="stat-value" id="marketingTotalSent" style="color: #D4AF37;">-</div>
+                                    <div class="stat-description">From email configuration</div>
+                                </div>
+                                <div class="stat-icon primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-title">Last Email Sent</div>
+                                    <div class="stat-value" id="marketingLastSent"
+                                        style="color: #6c757d; font-size: 18px;">Never</div>
+                                    <div class="stat-description">Most recent campaign</div>
+                                </div>
+                                <div class="stat-icon info" style="color: #000000; background: #d4af37;">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Recipients List -->
+                    <div class="data-table-container" style="margin-bottom: 30px;">
+                        <div class="table-header">
+                            <h3 class="table-title">
+                                <i class="fas fa-users"></i> Email Recipients Preview
+                            </h3>
+                            <button id="loadRecipientsBtn" class="btn btn-secondary" onclick="loadRecipientsList()"
+                                style="background: #6c757d; padding: 8px 16px;">
+                                <i class="fas fa-list"></i> View First 50 Clients
+                            </button>
+                        </div>
+
+                        <div id="recipientsListContainer" style="padding: 20px; display: none;">
+                            <!-- Loading -->
+                            <div id="recipientsListLoading" style="text-align: center; padding: 40px;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #D4AF37;"></i>
+                                <p style="margin-top: 15px; color: #666;">Loading recipients...</p>
+                            </div>
+
+                            <!-- List -->
+                            <div id="recipientsListContent" style="display: none;">
+                                <div
+                                    style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+                                    <p style="margin: 0; color: #1976D2;">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Showing first 50 clients with registered email addresses.</strong>
+                                        Review this list before sending your campaign to ensure accuracy.
+                                    </p>
+                                </div>
+
+                                <div
+                                    style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                                    <table class="data-table" style="margin: 0;">
+                                        <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 1;">
+                                            <tr
+                                                style="background: rgb(81 79 75); font-weight: 600; color: #ffffff; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid rgb(255 255 255 / 20%);">
+                                                <th style="width: 60px;">Code</th>
+                                                <th>Client Name</th>
+                                                <th>Email</th>
+                                                <th>Company</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recipientsTableBody" style="color: white;">
+                                            <!-- Will be populated by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div
+                                    style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #666; font-size: 14px;">
+                                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                        Showing <strong id="recipientsShowingCount">0</strong> of <strong
+                                            id="recipientsTotalCount">0</strong> clients with email
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Composer -->
+                    <div class="data-table-container" style="margin-bottom: 30px;">
+                        <div class="table-header">
+                            <h3 class="table-title">
+                                <i class="fas fa-edit"></i> Compose Marketing Email
+                            </h3>
+                        </div>
+
+                        <div style="padding: 30px;">
+                            <!-- Subject Field -->
+                            <div class="form-group" style="margin-bottom: 25px;">
+                                <label
+                                    style="display: block; margin-bottom: 10px; font-weight: 600; font-size: 15px; color: #ffffff;">
+                                    Subject Line:
+                                </label>
+                                <input type="text" id="marketingEmailSubject" class="form-input"
+                                    value="🐮 New Premium Cowhides Just Arrived at Sunshine Gallery!"
+                                    style="width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; transition: border-color 0.3s;"
+                                    onfocus="this.style.borderColor='#D4AF37'" onblur="this.style.borderColor='#ddd'">
+                            </div>
+
+                            <!-- Message Field -->
+                            <div class="form-group" style="margin-bottom: 25px;">
+                                <label
+                                    style="display: block; margin-bottom: 10px; font-weight: 600; font-size: 15px; color: #ffffff;">
+                                    Message:
+                                </label>
+                                <textarea id="marketingEmailMessage" rows="10" class="form-input"
+                                    placeholder="Enter your marketing message here..."
+                                    style="width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 8px; resize: vertical; font-size: 15px; line-height: 1.6; font-family: Arial, sans-serif; transition: border-color 0.3s;"
+                                    onfocus="this.style.borderColor='#D4AF37'"
+                                    onblur="this.style.borderColor='#ddd'">We're excited to announce that our latest collection of premium cowhides has just arrived at Sunshine Gallery!
+
+Each cowhide is ONE-OF-A-KIND and completely unique. Don't miss your chance to secure the perfect pieces for your business!</textarea>
+                                <small style="color: #ffffff; display: block; margin-top: 8px;">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Personalization:</strong> Each email will include the client's name and
+                                    their unique access code.
+                                </small>
+                            </div>
+
+                            <!-- Preview Button -->
+                            <div style="margin-bottom: 25px;">
+                                <button id="marketingPreviewBtn" class="btn btn-secondary"
+                                    style="padding: 12px 24px; font-size: 15px;" onclick="generateEmailPreview()">
+                                    <i class="fas fa-eye"></i> Preview Email
+                                </button>
+                            </div>
+
+                            <!-- Preview Area -->
+                            <div id="marketingPreviewArea" style="display: none; margin-bottom: 30px;">
+                                <div
+                                    style="background: #f8f9fa; border: 2px solid #D4AF37; border-radius: 8px; padding: 20px;">
+                                    <h4
+                                        style="margin: 0 0 15px 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-desktop"></i> Email Preview
+                                    </h4>
+                                    <div id="marketingPreviewContent"
+                                        style="background: #e3e3e3; border-radius: 4px; padding: 20px; max-height: 600px; overflow-y: auto;">
+                                        <!-- Preview HTML will be inserted here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div style="display: flex; gap: 15px; border-top: 2px solid #eee; padding-top: 25px; flex-wrap: wrap; justify-content: space-around"
+                                ;>
+                                <!-- Test Email Section -->
+                                <div
+                                    style="background: rgba(212, 175, 55, 0.05); border: 2px solid #ffffff; border-radius: 8px; padding: 20px; margin-bottom: 0px;">
+                                    <h4
+                                        style="margin: 0 0 15px 0; color: #ffffff; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-flask"></i> Send Test Email
+                                    </h4>
+                                    <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <label
+                                                style="display: block; margin-bottom: 8px; font-weight: 600; color: #ffffff; font-size: 14px;">
+                                                Test Email Address:
+                                            </label>
+                                            <input type="email" id="marketingTestEmail" class="form-input"
+                                                placeholder="Enter email to receive test"
+                                                style="width: 100%; padding: 12px; border: 2px solid #ffffff; border-radius: 6px; font-size: 15px;">
+                                        </div>
+                                        <button id="marketingSendTestBtn" class="btn btn-primary"
+                                            style="background: #d4af37; padding: 12px 28px; font-size: 15px; min-width: 200px; height: 48px;"
+                                            onclick="sendTestEmail()">
+                                            <i class="fas fa-paper-plane"></i> Send Test
+                                        </button>
+                                    </div>
+                                    <small style="display: block; margin-top: 10px; color: #ffffff;">
+                                        <i class="fas fa-info-circle"></i> Enter any email address to preview how
+                                        clients will receive the campaign
+                                    </small>
+                                </div>
+
+                                <!-- Send Campaign Button -->
+                                <div
+                                    style="background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%); border-radius: 8px; padding: 10px; margin-bottom: 0px; text-align: left; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3); border: solid 2pt white;">
+                                    <div style="margin-bottom: 20px;">
+                                        <i class="fas fa-paper-plane"
+                                            style="font-size: 30px; color: white; margin-bottom: 15px;"></i>
+                                        <h3
+                                            style="margin: 0 0 10px 0; color: white; font-size: 24px; font-weight: bold;">
+                                            Ready to Send Campaign?
+                                        </h3>
+                                        <p style="margin: 0; color: white; opacity: 0.95; font-size: 16px;">
+                                            This will send your marketing email to all <strong
+                                                id="marketingFinalCount">279</strong> clients with registered email
+                                            addresses
+                                        </p>
+                                    </div>
+
+                                    <button id="marketingSendAllBtn" class="btn btn-primary"
+                                        style="background: white; color: #D4AF37; padding: 12px 40px; font-size: 18px; font-weight: bold; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: transform 0.2s;"
+                                        onmouseover="this.style.transform='translateY(-2px)'"
+                                        onmouseout="this.style.transform='translateY(0)'" onclick="confirmSendToAll()">
+                                        <i class="fas fa-rocket"></i> Send to All Clients Now
+                                    </button>
+
+                                    <p style="margin: 15px 0 0 0; color: white; opacity: 0.8; font-size: 13px;">
+                                        <i class="fas fa-shield-alt"></i> You will be asked to confirm before sending
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Status Messages -->
+                            <div id="marketingStatus" style="margin-top: 25px; display: none;">
+                                <!-- Status messages will appear here -->
+                            </div>
+
+                            <!-- Loading Overlay -->
+                            <div id="marketingLoadingOverlay"
+                                style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+                                <div
+                                    style="background: white; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                                    <div
+                                        style="width: 60px; height: 60px; border: 5px solid #f3f3f3; border-top: 5px solid #D4AF37; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;">
+                                    </div>
+                                    <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 20px;"
+                                        id="marketingLoadingTitle">Sending Email...</h3>
+                                    <p style="margin: 0; color: #666; font-size: 14px;" id="marketingLoadingText">Please
+                                        wait...</p>
+                                </div>
+                            </div>
+
+                            <style>
+                                @keyframes spin {
+                                    0% {
+                                        transform: rotate(0deg);
+                                    }
+
+                                    100% {
+                                        transform: rotate(360deg);
+                                    }
+                                }
+                            </style>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="data-table-container">
+                        <div class="table-header">
+                            <h3 class="table-title">
+                                <i class="fas fa-question-circle"></i> How to Use
+                            </h3>
+                        </div>
+                        <div style="padding: 25px;">
+                            <div
+                                style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 20px; border-radius: 4px; margin-bottom: 15px;">
+                                <h4 style="margin: 0 0 10px 0; color: #1976D2;">
+                                    <i class="fas fa-lightbulb"></i> Email Personalization
+                                </h4>
+                                <p style="margin: 0; line-height: 1.6; color: #555;">
+                                    Each email is automatically personalized with:
+                                </p>
+                                <ul style="margin: 10px 0 0 20px; color: #555;">
+                                    <li><strong>Client Name:</strong> "Hello [Client Name]!"</li>
+                                    <li><strong>Access Code:</strong> Displayed in the email</li>
+                                    <li><strong>Direct Link:</strong> Button to access the gallery</li>
+                                </ul>
+                            </div>
+
+                            <div
+                                style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 4px;">
+                                <h4 style="margin: 0 0 10px 0; color: #856404;">
+                                    <i class="fas fa-exclamation-triangle"></i> Important Notes
+                                </h4>
+                                <ul style="margin: 10px 0 0 20px; color: #856404; line-height: 1.8;">
+                                    <li>Always send a <strong>test email</strong> first to verify content and formatting
+                                    </li>
+                                    <li>Only clients with registered email addresses will receive the campaign</li>
+                                    <li>Emails are sent in batches to avoid spam filters (5 per batch, 2-second delay)
+                                    </li>
+                                    <li>Check the "Total Recipients" card to see how many clients will receive the email
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- FIM SEÇÃO EMAIL MARKETING -->
             </div>
         </main>
     </div>
@@ -1397,7 +1833,9 @@
     <script src="js/admin-pricing.js"></script>
     <script src="js/admin-selections.js"></script>
     <script src="js/admin-config.js"></script>
+    <script src="js/admin-marketing.js"></script>
     <script src="js/admin-storage.js"></script>
+    <script src="js/inventory-monitor.js"></script>
     <script src="/js/ui-system.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>

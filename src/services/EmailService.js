@@ -79,7 +79,15 @@ class EmailService {
                 to: recipients,
                 subject: subject,
                 html: html,
-                text: text || this.stripHtml(html)
+                text: text || this.stripHtml(html),
+                // HEADERS ANTI-SPAM
+                headers: {
+                    'List-Unsubscribe': `<mailto:sales@sunshinecowhides.com?subject=Unsubscribe>`,
+                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                    'X-Entity-Ref-ID': `sunshine-${Date.now()}`,
+                    'Precedence': 'bulk',
+                    'X-Mailer': 'Sunshine Cowhides Marketing System'
+                }
             };
 
             console.log(`📧 Enviando email: "${subject}" para ${recipients}`);

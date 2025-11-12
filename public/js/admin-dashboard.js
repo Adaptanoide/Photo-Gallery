@@ -216,6 +216,8 @@ class AdminDashboard {
             selections: 'Selection Management',
             'special-selections': 'Special Selections', // NOVO
             reports: 'Reports',
+            marketing: 'Email Marketing',
+            'inventoryMonitor': 'Inventory Status Monitor',
             settings: 'Settings'
         };
 
@@ -264,6 +266,14 @@ class AdminDashboard {
                     window.adminSpecialSelections = window.initSpecialSelections();
                 } else {
                     console.warn('⚠️ AdminSpecialSelections não disponível');
+                }
+                break;
+            case 'inventoryMonitor':
+                console.log('📊 Inventory Monitor ativado - disparando scan...');
+                if (window.monitor) {
+                    await window.monitor.scan();
+                } else {
+                    console.warn('⚠️ Monitor não disponível');
                 }
                 break;
             default:

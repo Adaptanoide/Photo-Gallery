@@ -299,7 +299,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    /*background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));*/
     color: var(--text-primary);
     padding: 1rem;
     font-size: 0.85rem;
