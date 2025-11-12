@@ -295,9 +295,10 @@ async function confirmSendToAll() {
     }
 
     // Usar UISystem.confirm (retorna Promise)
+    const batchSize = parseInt(document.getElementById('marketingBatchSize').value);
     const confirmed = await UISystem.confirm(
-        `You are about to send this email to ALL ${marketingRecipientsCount} clients with registered email.`,
-        `Subject: ${subject}\n\nThis action cannot be undone. Are you SURE you want to proceed?`
+        `You are about to send this email to ${batchSize} clients.`,
+        `Subject: ${subject}\n\nAre you sure you want to proceed?`
     );
 
     if (confirmed) {
@@ -331,7 +332,7 @@ async function sendMassEmailToAll() {
                 subject: subject,
                 message: message,
                 sendToAll: true,
-                limit: 'all' // Sempre enviar para todos
+                limit: parseInt(document.getElementById('marketingBatchSize').value) || 'all'
             })
         });
 
