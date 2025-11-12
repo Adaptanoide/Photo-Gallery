@@ -5,8 +5,9 @@ const nodemailer = require('nodemailer');
 const AccessCode = require('../models/AccessCode');
 const EmailConfig = require('../models/EmailConfig');
 const { authenticateToken } = require('./auth');
-
 const router = express.Router();
+const trackingRoutes = require('./tracking');
+const encryptCode = trackingRoutes.encryptCode;
 
 // Todas as rotas precisam de autenticação admin
 router.use(authenticateToken);
@@ -82,12 +83,41 @@ router.get('/marketing-stats', async (req, res) => {
             clientEmail: { $exists: true, $ne: '', $ne: null, $regex: /@/ }
         });
 
+        // ===== TRACKING STATISTICS =====
+
+        // Contar quantos abriram o email
+        const emailsOpened = await AccessCode.countDocuments({
+            marketingEmailOpened: true
+        });
+
+        // Contar quantos clicaram
+        const emailsClicked = await AccessCode.countDocuments({
+            marketingEmailClicked: true
+        });
+
+        // Contar quantos se desinscreveram
+        const unsubscribedCount = await AccessCode.countDocuments({
+            marketingUnsubscribed: true
+        });
+
+        // Calcular taxas (percentuais)
+        const openRate = sentCount > 0 ? ((emailsOpened / sentCount) * 100).toFixed(1) : 0;
+        const clickRate = sentCount > 0 ? ((emailsClicked / sentCount) * 100).toFixed(1) : 0;
+        const unsubscribeRate = sentCount > 0 ? ((unsubscribedCount / sentCount) * 100).toFixed(1) : 0;
+
         const stats = {
             totalMarketingEmailsSent: sentCount,
             lastCampaignDate: lastCampaign ? lastCampaign.lastMarketingEmailSent : null,
             totalRecipients: totalWithEmail,
             protectedClients: sentCount,
-            availableToSend: availableToSend
+            availableToSend: availableToSend,
+            // Tracking statistics
+            emailsOpened: emailsOpened,
+            emailsClicked: emailsClicked,
+            unsubscribedCount: unsubscribedCount,
+            openRate: openRate,
+            clickRate: clickRate,
+            unsubscribeRate: unsubscribeRate
         };
 
         console.log('✅ Marketing stats loaded:', stats);
@@ -116,7 +146,8 @@ router.get('/recipients-list', async (req, res) => {
 
         const clients = await AccessCode.find({
             isActive: true,
-            clientEmail: { $exists: true, $ne: '', $ne: null, $regex: /@/ }
+            clientEmail: { $exists: true, $ne: '', $ne: null, $regex: /@/ },
+            marketingUnsubscribed: { $ne: true } // ← Excluir quem se desinscreveu
         })
             .select('code clientName clientEmail companyName')
             .sort({ clientName: 1 })
@@ -172,7 +203,8 @@ router.post('/preview', async (req, res) => {
             subject,
             message,
             clientName,
-            clientCode
+            clientCode,
+            encryptedCode: encryptCode(clientCode)
         });
 
         console.log('✅ Preview generated');
@@ -241,7 +273,8 @@ router.post('/send-test-email', async (req, res) => {
             subject,
             message,
             clientName: 'Test Customer',
-            clientCode: '1234'
+            clientCode: '1234',
+            encryptedCode: encryptCode('1234')
         });
 
         // Enviar email com o NOVO domínio
@@ -313,6 +346,7 @@ router.post('/send-mass-email', async (req, res) => {
         let query = AccessCode.find({
             isActive: true,
             clientEmail: { $exists: true, $ne: '', $ne: null, $regex: /@/ },
+            marketingUnsubscribed: { $ne: true }, // ← NOVA LINHA: Excluir quem se desinscreveu
             // Pular quem recebeu email nas últimas 24h
             $or: [
                 { lastMarketingEmailSent: { $exists: false } },
@@ -320,7 +354,6 @@ router.post('/send-mass-email', async (req, res) => {
                 { lastMarketingEmailSent: { $lt: twentyFourHoursAgo } }
             ]
         }).select('clientName clientEmail code').sort({ clientName: 1 });
-
         // Aplicar limite se especificado
         if (limit && limit !== 'all') {
             query = query.limit(parseInt(limit));
@@ -379,7 +412,8 @@ router.post('/send-mass-email', async (req, res) => {
                         subject,
                         message,
                         clientName: client.clientName,
-                        clientCode: client.code
+                        clientCode: client.code,
+                        encryptedCode: encryptCode(client.code)
                     });
 
                     const mailOptions = {
@@ -455,7 +489,7 @@ router.post('/send-mass-email', async (req, res) => {
 });
 
 // ===== EMAIL TEMPLATE =====
-function generateMarketingEmailHtml({ subject, message, clientName, clientCode }) {
+function generateMarketingEmailHtml({ subject, message, clientName, clientCode, encryptedCode }) {
     const formattedMessage = message.replace(/\n/g, '<br>');
 
     return `
@@ -647,12 +681,9 @@ function generateMarketingEmailHtml({ subject, message, clientName, clientCode }
             <div class="divider"></div>
             
             <div class="cta-section">
-                <a href="https://sunshinecowhides-gallery.com/" class="cta-button" target="_blank">
+                <a href="https://sunshinecowhides-gallery.com/track/click/${encryptedCode}" class="cta-button" target="_blank">
                     Browse New Collection
                 </a>
-                <p style="color: #6c757d; font-size: 14px; margin-top: 15px;">
-                    Click the button above to access your exclusive gallery
-                </p>
             </div>
         </div>
         
@@ -671,7 +702,7 @@ function generateMarketingEmailHtml({ subject, message, clientName, clientCode }
                 <p>
                     This email was sent to you because you are a valued Sunshine Cowhides customer.<br>
                     If you wish to unsubscribe from marketing emails, please 
-                    <a href="mailto:sales@sunshinecowhides.com?subject=Unsubscribe%20from%20Marketing%20Emails&body=Please%20unsubscribe%20me%20from%20future%20marketing%20emails.%0A%0AAccess%20Code:%20${clientCode}%0AName:%20${clientName}" class="unsubscribe-link">
+                    <a href="https://sunshinecowhides-gallery.com/unsubscribe?code=${encryptedCode}" class="unsubscribe-link">
                         click here to unsubscribe
                     </a>.
                 </p>
@@ -683,7 +714,9 @@ function generateMarketingEmailHtml({ subject, message, clientName, clientCode }
             </div>
         </div>
     </div>
-</body>
+    <!-- Tracking Pixel -->
+        <img src="https://sunshinecowhides-gallery.com/track/open/${encryptedCode}" width="1" height="1" style="display:none;" alt="">
+    </body>
 </html>
     `;
 }

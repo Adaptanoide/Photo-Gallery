@@ -102,6 +102,46 @@ async function loadMarketingStats() {
                 finalCountEl.textContent = stats.availableToSend; // Mostra quantos VÃO receber (não os já protegidos)
             }
 
+            // ===== ATUALIZAR CARDS DE TRACKING =====
+
+            // Open Rate Card
+            const openRateEl = document.getElementById('trackingOpenRate');
+            if (openRateEl) {
+                openRateEl.textContent = stats.openRate + '%';
+            }
+            const emailsOpenedEl = document.getElementById('trackingEmailsOpened');
+            if (emailsOpenedEl) {
+                emailsOpenedEl.textContent = stats.emailsOpened || 0;
+            }
+            const totalSent1El = document.getElementById('trackingTotalSent1');
+            if (totalSent1El) {
+                totalSent1El.textContent = stats.totalMarketingEmailsSent || 0;
+            }
+
+            // Click Rate Card
+            const clickRateEl = document.getElementById('trackingClickRate');
+            if (clickRateEl) {
+                clickRateEl.textContent = stats.clickRate + '%';
+            }
+            const emailsClickedEl = document.getElementById('trackingEmailsClicked');
+            if (emailsClickedEl) {
+                emailsClickedEl.textContent = stats.emailsClicked || 0;
+            }
+            const totalSent2El = document.getElementById('trackingTotalSent2');
+            if (totalSent2El) {
+                totalSent2El.textContent = stats.totalMarketingEmailsSent || 0;
+            }
+
+            // Unsubscribe Card
+            const unsubscribeRateEl = document.getElementById('trackingUnsubscribeRate');
+            if (unsubscribeRateEl) {
+                unsubscribeRateEl.textContent = stats.unsubscribeRate + '%';
+            }
+            const unsubscribedEl = document.getElementById('trackingUnsubscribed');
+            if (unsubscribedEl) {
+                unsubscribedEl.textContent = stats.unsubscribedCount || 0;
+            }
+
             console.log('✅ Marketing stats loaded:', stats);
         } else {
             throw new Error(data.message || 'Failed to load stats');
