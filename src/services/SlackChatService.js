@@ -64,7 +64,7 @@ class SlackChatService {
             }
 
             // 🔧 DETECTAR SE SLACK CRIOU NOVA THREAD
-            const returnedThreadTs = response.data.ts;
+            const returnedThreadTs = response.data.message?.thread_ts || response.data.ts;
 
             // Caso 1: Primeira mensagem
             if (!conversation.slackThreadTs && returnedThreadTs) {
