@@ -63,29 +63,13 @@ class SlackChatService {
                 throw new Error(`Slack error: ${response.data.error}`);
             }
 
-            // 🔧 DETECTAR SE SLACK CRIOU NOVA THREAD
-            const returnedThreadTs = response.data.ts;
-
-            // Caso 1: Primeira mensagem
-            if (!conversation.slackThreadTs && returnedThreadTs) {
-                conversation.slackThreadTs = returnedThreadTs;
+            // Salvar thread_ts APENAS na primeira mensagem
+            if (!conversation.slackThreadTs && response.data.ts) {
+                conversation.slackThreadTs = response.data.ts;
                 await conversation.save();
-                console.log('✅ [SLACK] Thread TS salvo (primeira mensagem):', returnedThreadTs);
-            }
-            // Caso 2: Thread existente - verificar se mudou
-            else if (conversation.slackThreadTs && returnedThreadTs) {
-                if (returnedThreadTs !== validThreadTs && returnedThreadTs !== conversation.slackThreadTs) {
-                    console.log('⚠️  [SLACK] NOVA THREAD DETECTADA!');
-                    console.log(`   Thread antiga: ${conversation.slackThreadTs}`);
-                    console.log(`   Thread nova: ${returnedThreadTs}`);
-
-                    conversation.slackThreadTs = returnedThreadTs;
-                    await conversation.save();
-
-                    console.log('✅ [SLACK] Thread atualizada!');
-                } else {
-                    console.log('📌 [SLACK] Usando thread existente:', conversation.slackThreadTs);
-                }
+                console.log('✅ [SLACK] Thread TS salvo (primeira mensagem):', response.data.ts);
+            } else if (conversation.slackThreadTs) {
+                console.log('📌 [SLACK] Usando thread existente:', conversation.slackThreadTs);
             }
 
             console.log('✅ Message sent to Slack');

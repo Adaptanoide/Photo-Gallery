@@ -1,0 +1,932 @@
+{
+  "mode": "DRY-RUN",
+  "timestamp": "2025-11-13T16:18:04.817Z",
+  "summary": {
+    "totalFound": 132,
+    "foundInTbetiqueta": 128,
+    "inferredByCategory": 1,
+    "couldNotResolve": 0,
+    "corrected": 0,
+    "errors": 0
+  },
+  "details": [
+    {
+      "photoNumber": "28495",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28494",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28493",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28492",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28491",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28490",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28489",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28488",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28487",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28486",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28485",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28484",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28483",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28482",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28481",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28480",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28479",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28478",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28477",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28476",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28475",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28474",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28473",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28472",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28471",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28470",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28469",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28468",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28467",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28466",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28465",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28464",
+      "status": "skipped",
+      "reason": "Em carrinho ativo"
+    },
+    {
+      "photoNumber": "28463",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28462",
+      "status": "skipped",
+      "reason": "Em carrinho ativo"
+    },
+    {
+      "photoNumber": "28461",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28460",
+      "status": "skipped",
+      "reason": "Em carrinho ativo"
+    },
+    {
+      "photoNumber": "28459",
+      "status": "would_correct",
+      "qbItem": "5365",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28633",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28632",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28631",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28630",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28629",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28628",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28627",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28626",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28625",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28624",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28623",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28622",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28621",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28620",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28619",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28618",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28617",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28616",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28615",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28614",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28613",
+      "status": "would_correct",
+      "qbItem": "5375EXO",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28424",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28423",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28422",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28421",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28420",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28419",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28418",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28417",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28416",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28415",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28414",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28413",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28412",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28411",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28410",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28409",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28408",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28407",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28406",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28405",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28404",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28403",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28402",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28401",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28400",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28399",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28398",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28397",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28396",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28395",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28394",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28393",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28392",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28391",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28390",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28389",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28388",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28387",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28386",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28385",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28384",
+      "status": "would_correct",
+      "qbItem": "5475BR",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28360",
+      "status": "would_correct",
+      "qbItem": "5302B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28359",
+      "status": "would_correct",
+      "qbItem": "5302B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28358",
+      "status": "would_correct",
+      "qbItem": "5302B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28458",
+      "status": "would_correct",
+      "qbItem": "5301PE",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28450",
+      "status": "would_correct",
+      "qbItem": "5301PE",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28449",
+      "status": "would_correct",
+      "qbItem": "5301PE",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28452",
+      "status": "would_correct",
+      "qbItem": "5301PE",
+      "source": "category_inference",
+      "sourceDetail": "Brazil Top Selected Categories → Small → Palomino Exotic Small"
+    },
+    {
+      "photoNumber": "28436",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28435",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28434",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28433",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28432",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28431",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28430",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28429",
+      "status": "would_correct",
+      "qbItem": "5301CH",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28454",
+      "status": "would_correct",
+      "qbItem": "5301GB",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28453",
+      "status": "would_correct",
+      "qbItem": "5301GB",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28457",
+      "status": "would_correct",
+      "qbItem": "6001",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28456",
+      "status": "would_correct",
+      "qbItem": "6001",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28455",
+      "status": "would_correct",
+      "qbItem": "6001",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28448",
+      "status": "would_correct",
+      "qbItem": "5301BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28451",
+      "status": "would_correct",
+      "qbItem": "5301BL",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28371",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28370",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28369",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28368",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28367",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28366",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28365",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28364",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28363",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28362",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    },
+    {
+      "photoNumber": "28361",
+      "status": "would_correct",
+      "qbItem": "5303B BW",
+      "source": "tbetiqueta",
+      "sourceDetail": "ATIPOETIQUETA"
+    }
+  ]
+}
