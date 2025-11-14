@@ -477,15 +477,46 @@ class CDEIncrementalSync {
             const cdeChanges = [];
 
             for (const mongoPhoto of mongoPhotosAvailable) {
-                const [result] = await cdeConnection.execute(
+                // PASSO 1: Verificar em tbinventario
+                const [invResult] = await cdeConnection.execute(
                     `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AQBITEM 
-                    FROM tbinventario 
-                    WHERE ATIPOETIQUETA = ?`,
+        FROM tbinventario 
+        WHERE ATIPOETIQUETA = ?`,
                     [mongoPhoto.photoNumber]
                 );
 
-                if (result.length > 0) {
-                    cdeChanges.push(result[0]);
+                if (invResult.length > 0) {
+                    // ✅ Encontrou em tbinventario - foto aberta
+                    cdeChanges.push(invResult[0]);
+                } else {
+                    // ❌ NÃO encontrou em tbinventario
+                    // PASSO 2: Verificar se está em tbetiqueta (pallet fechado)
+                    const [etiqResult] = await cdeConnection.execute(
+                        `SELECT ATIPOETIQUETA, AESTADOP, AQBITEM 
+            FROM tbetiqueta 
+            WHERE ATIPOETIQUETA = ?`,
+                        [mongoPhoto.photoNumber]
+                    );
+
+                    if (etiqResult.length > 0) {
+                        // 🚨 FOTO EM PALLET FECHADO!
+                        console.log(`[SYNC] 🚨 ${mongoPhoto.photoNumber} em PALLET FECHADO - marcando unavailable`);
+
+                        // Marcar como unavailable imediatamente
+                        await UnifiedProductComplete.updateOne(
+                            { _id: mongoPhoto._id },
+                            {
+                                $set: {
+                                    status: 'unavailable',
+                                    cdeTable: 'tbetiqueta',
+                                    cdeStatus: etiqResult[0].AESTADOP || 'WAREHOUSE',
+                                    qbItem: etiqResult[0].AQBITEM,
+                                    lastCDESync: new Date()
+                                }
+                            }
+                        );
+                    }
+                    // Se não está em nenhuma tabela, não faz nada (mantém available)
                 }
             }
 

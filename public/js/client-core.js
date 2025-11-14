@@ -295,8 +295,8 @@ window.loadClientData = async function () {
     loadingEl.style.display = 'none';
     errorEl.style.display = 'none';
     contentEl.style.display = 'none';
-    selectorEl.style.display = 'block';
-
+    // selectorEl.style.display = 'block';  // Oculto: não mostrar seletor
+    selectGalleryMode('available');  // IR DIRETO para Available Now
     // Buscar contagens para os cards
     try {
         // Contador Available - pode implementar depois
@@ -748,8 +748,8 @@ window.showSubfolders = function (folders) {
                 <div class="folder-stats">
                     <!-- PREÇO À ESQUERDA -->
                     ${shouldShowPrices() && formattedPrice ?
-                        `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
-                        (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
+                `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${formattedPrice}</span>` :
+                (!shouldShowPrices() ? '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
                     
                     <!-- CONTADOR OU OUT OF STOCK À DIREITA -->
                     ${!hasSubfolders ? `

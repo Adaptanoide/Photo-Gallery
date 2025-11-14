@@ -153,6 +153,8 @@ class DatabaseService {
             // Buscar informações no CDE
             let idhCode = null;
             let cdeStatus = null;
+            let cdeTable = null;
+            let inPallet = false;
 
             try {
                 mysqlConn = await mysql.createConnection({
@@ -163,31 +165,47 @@ class DatabaseService {
                     database: process.env.CDE_DATABASE
                 });
 
-                const [rows] = await mysqlConn.execute(
+                // PASSO 1: Buscar em tbinventario
+                const [inventarioRows] = await mysqlConn.execute(
                     'SELECT AIDH, AESTADOP, RESERVEDUSU, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ?',
                     [photoNumber]
                 );
 
-                if (rows.length > 0) {
-                    idhCode = rows[0].AIDH;
-                    cdeStatus = rows[0].AESTADOP;
-                    qbCode = rows[0].AQBITEM || null;  // ← ADICIONAR ESTA LINHA
-                    console.log(`   📋 CDE: Foto ${photoNumber} → IDH: ${idhCode}, Status: ${cdeStatus}, QB: ${qbCode}`);
-                    // Se está PRE-SELECTED no CDE, verificar se é para algum cliente nosso
-                    if (cdeStatus === 'PRE-SELECTED' && rows[0].RESERVEDUSU) {
-                        console.log(`      Reservada no CDE para: ${rows[0].RESERVEDUSU}`);
-                    }
+                if (inventarioRows.length > 0) {
+                    idhCode = inventarioRows[0].AIDH;
+                    cdeStatus = inventarioRows[0].AESTADOP;
+                    qbCode = inventarioRows[0].AQBITEM || qbCode;
+                    cdeTable = 'tbinventario';
+                    console.log(`   ✅ CDE (tbinventario): ${photoNumber} → ${cdeStatus}, QB: ${qbCode}`);
                 } else {
-                    console.log(`   ⚠️ Foto ${photoNumber} não encontrada no CDE - criando com valores padrão`);
-                    idhCode = `2001${photoNumber}`;
-                    cdeStatus = 'INGRESADO';
-                    qbCode = null;  // ← ADICIONAR ESTA LINHA
+                    // PASSO 2: Buscar em tbetiqueta
+                    console.log(`   ⚠️ ${photoNumber} não em tbinventario, verificando tbetiqueta...`);
+
+                    const [etiquetaRows] = await mysqlConn.execute(
+                        'SELECT AQBITEM, AESTADOP FROM tbetiqueta WHERE ATIPOETIQUETA = ?',
+                        [photoNumber]
+                    );
+
+                    if (etiquetaRows.length > 0) {
+                        qbCode = etiquetaRows[0].AQBITEM || qbCode;
+                        cdeStatus = etiquetaRows[0].AESTADOP || 'RESERVED';
+                        cdeTable = 'tbetiqueta';
+                        inPallet = true;
+                        idhCode = `2001${photoNumber}`;
+                        console.log(`   🚨 PALLET FECHADO: ${photoNumber} - QB: ${qbCode}`);
+                    } else {
+                        console.log(`   ⚠️ ${photoNumber} não encontrada no CDE`);
+                        idhCode = `2001${photoNumber}`;
+                        cdeStatus = 'INGRESADO';
+                        cdeTable = null;
+                        qbCode = null;
+                    }
                 }
             } catch (cdeError) {
-                console.error(`   ⚠️ Erro ao consultar CDE:`, cdeError.message);
-                // CDE offline - usar valores padrão
+                console.error(`   ⚠️ Erro CDE:`, cdeError.message);
                 idhCode = idhCode || `2001${photoNumber}`;
                 cdeStatus = cdeStatus || 'INGRESADO';
+                cdeTable = null;
             } finally {
                 if (mysqlConn) {
                     await mysqlConn.end();
@@ -197,13 +215,14 @@ class DatabaseService {
             // Determinar status MongoDB
             let mongoStatus;
 
-            if (isComingSoon) {
-                // Coming Soon não consulta CDE, sempre available inicialmente
+            if (inPallet) {
+                mongoStatus = 'unavailable';
+                console.log(`   🔒 ${photoNumber} marcada como UNAVAILABLE (pallet)`);
+            } else if (isComingSoon) {
                 mongoStatus = 'available';
-                cdeStatus = null; // Coming Soon não tem status CDE ainda
+                cdeStatus = null;
                 idhCode = idhCode || `2001${photoNumber}`;
             } else {
-                // Fotos normais - baseado no CDE
                 mongoStatus =
                     cdeStatus === 'RETIRADO' ? 'sold' :
                         cdeStatus === 'PRE-SELECTED' ? 'reserved' :
@@ -265,8 +284,8 @@ class DatabaseService {
 
                 // ===== CAMPOS COMING SOON (NOVOS) =====
                 transitStatus: isComingSoon ? 'coming_soon' : null,
-                cdeTable: isComingSoon ? 'tbetiqueta' : 'tbinventario',
-                isPreOrder: isComingSoon ? false : null,
+                cdeTable: cdeTable || (isComingSoon ? 'tbetiqueta' : 'tbinventario'),
+                waitingPalletOpen: inPallet ? true : undefined, isPreOrder: isComingSoon ? false : null,
                 qbItem: qbCode,
 
                 // === Virtual status ===
