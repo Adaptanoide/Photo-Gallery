@@ -58,7 +58,7 @@ const unifiedProductCompleteSchema = new mongoose.Schema({
     },
     cdeStatus: {
         type: String,
-        enum: ['INGRESADO', 'PRE-SELECTED', 'RETIRADO', 'RESERVED', 'STANDBY', null],
+        enum: ['INGRESADO', 'PRE-SELECTED', 'CONFIRMED', 'RETIRADO', 'RESERVED', 'STANDBY', 'PRE-TRANSITO', 'TRANSITO', 'WAREHOUSE', null],
         default: null,
         index: true
     },

@@ -97,7 +97,7 @@ class DatabaseService {
         try {
             // ===== NOVO: DETECTAR SE É COMING SOON =====
             const isComingSoon = photoData.isComingSoon === true;
-            const qbCode = photoData.qbCode || null;
+            let qbCode = photoData.qbCode || null;
 
             // Se é Coming Soon, usar os dados já resolvidos
             let finalCategory = sanitizeCategory(photoData.category) || 'uncategorized';
@@ -214,10 +214,13 @@ class DatabaseService {
 
             // Determinar status MongoDB
             let mongoStatus;
+            let transitStatus = null;
 
             if (inPallet) {
-                mongoStatus = 'unavailable';
-                console.log(`   🔒 ${photoNumber} marcada como UNAVAILABLE (pallet)`);
+                // 🚢 FOTO EM PALLET = COMING SOON!
+                mongoStatus = 'available';  // ← MUDOU!
+                transitStatus = 'coming_soon';  // ← NOVO!
+                console.log(`   🚢 ${photoNumber} marcada como COMING SOON (pallet fechado)`);
             } else if (isComingSoon) {
                 mongoStatus = 'available';
                 cdeStatus = null;
@@ -283,9 +286,8 @@ class DatabaseService {
                 cdeStatus: cdeStatus,
 
                 // ===== CAMPOS COMING SOON (NOVOS) =====
-                transitStatus: isComingSoon ? 'coming_soon' : null,
+                transitStatus: transitStatus || (isComingSoon ? 'coming_soon' : null),
                 cdeTable: cdeTable || (isComingSoon ? 'tbetiqueta' : 'tbinventario'),
-                waitingPalletOpen: inPallet ? true : undefined, isPreOrder: isComingSoon ? false : null,
                 qbItem: qbCode,
 
                 // === Virtual status ===
