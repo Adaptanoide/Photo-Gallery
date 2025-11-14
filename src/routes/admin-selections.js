@@ -477,12 +477,17 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
         const productIds = selection.items.map(item => item.productId);
 
+        // ✅ DETECTAR SE É COMING SOON
+        const isComingSoon = selection.galleryType === 'coming_soon';
+        const correctCDEStatus = isComingSoon ? 'PRE-TRANSITO' : 'INGRESADO';
+        console.log(`🚢 Tipo: ${selection.galleryType} → Status CDE: ${correctCDEStatus}`);
+
         const updateResult = await UnifiedProductComplete.updateMany(
             { _id: { $in: productIds } },
             {
                 $set: {
                     status: 'available',
-                    cdeStatus: 'INGRESADO'
+                    cdeStatus: correctCDEStatus  // ✅ PRE-TRANSITO ou INGRESADO
                 },
                 $unset: {
                     'reservedBy': 1,
@@ -491,20 +496,26 @@ router.post('/:selectionId/cancel', async (req, res) => {
                     'reservedAt': 1,
                     'cartAddedAt': 1,
                     'selectionId': 1
+                    // ✅ NÃO remove transitStatus nem cdeTable!
                 }
             }
         ).session(session);
+
+        console.log(`✅ ${updateResult.modifiedCount} fotos liberadas com status: ${correctCDEStatus}`);
 
         // 3. Liberar no CDE EM BACKGROUND usando BULK UPDATE
         console.log('📡 Liberando fotos no CDE em background...');
         const CDEWriter = require('../services/CDEWriter');
 
-        // Extrair números das fotos
+        // ✅ Extrair números E TABELAS das fotos
         const photoNumbers = selection.items
             .map(item => item.fileName?.match(/(\d+)/)?.[1])
             .filter(Boolean);
 
+        const cdeTables = selection.items.map(item => item.cdeTable || 'tbinventario');
+
         console.log(`[CANCEL] 🚀 Liberação BULK de ${photoNumbers.length} fotos agendada em background`);
+        console.log(`[CANCEL] 📊 Tabelas: ${cdeTables.filter(t => t === 'tbetiqueta').length} em tbetiqueta, ${cdeTables.filter(t => t === 'tbinventario').length} em tbinventario`);
 
         // Processar em background usando BULK UPDATE
         setImmediate(async () => {
@@ -513,8 +524,8 @@ router.post('/:selectionId/cancel', async (req, res) => {
             const startTime = Date.now();
 
             try {
-                // 1 ÚNICA CHAMADA para TODAS as fotos!
-                const releasedCount = await CDEWriter.bulkMarkAsAvailable(photoNumbers);
+                // ✅ PASSAR cdeTables!
+                const releasedCount = await CDEWriter.bulkMarkAsAvailable(photoNumbers, cdeTables);
 
                 const duration = Date.now() - startTime;
                 const failedCount = photoNumbers.length - releasedCount;

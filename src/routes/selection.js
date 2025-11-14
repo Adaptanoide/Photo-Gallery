@@ -217,10 +217,15 @@ router.post('/finalize', async (req, res) => {
             console.log(`   - Subtotal: $${pricingResult.subtotal.toFixed(2)}`);
             console.log(`   - Discount: $${pricingResult.discount.toFixed(2)}`);
 
-            // 8. ✅ CRIAR SELEÇÃO NORMAL (SEMPRE)
+            // 8. ✅ CRIAR SELEÇÃO (DETECTAR COMING SOON)
             console.log(`📋 Criando nova seleção para cliente ${clientName}...`);
 
-            // Criar nova seleção normal
+            // ✅ DETECTAR SE É COMING SOON
+            const hasComingSoon = cart.items.some(item => item.transitStatus === 'coming_soon');
+            const galleryType = hasComingSoon ? 'coming_soon' : 'available';
+            console.log(`🚢 Tipo de galeria: ${galleryType} (${hasComingSoon ? 'TEM' : 'NÃO TEM'} items em trânsito)`);
+
+            // Criar nova seleção
             const selectionData = {
                 selectionId,
                 sessionId,
@@ -229,6 +234,7 @@ router.post('/finalize', async (req, res) => {
                 clientCompany: companyName,
                 salesRep: salesRep,
                 customerNotes: observations || null,
+                galleryType: galleryType,  // ✅ NOVO!
                 items: products.map(product => {
                     const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
 
@@ -239,8 +245,11 @@ router.post('/finalize', async (req, res) => {
                         category: product.category,
                         thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
                         originalPath: product.category,
-                        price: cartItem?.price || 0,  // ✅ Preço já foi recalculado por calculateCartTotals
-                        selectedAt: cartItem?.addedAt || new Date()
+                        price: cartItem?.price || 0,
+                        selectedAt: cartItem?.addedAt || new Date(),
+                        // ✅ NOVO: Campos Coming Soon
+                        transitStatus: cartItem?.transitStatus || null,
+                        cdeTable: cartItem?.cdeTable || 'tbinventario'
                     };
                 }),
                 totalItems: cart.totalItems,
@@ -331,12 +340,16 @@ router.post('/finalize', async (req, res) => {
             console.log('📡 Atualizando CDE em background...');
             const CDEWriter = require('../services/CDEWriter');
 
-            // Extrair números das fotos
+            // Extrair números das fotos E TABELAS CDE
             const photoNumbers = products
                 .map(p => p.fileName.match(/\d+/)?.[0])
                 .filter(Boolean);
 
+            // ✅ EXTRAIR cdeTables DOS PRODUTOS
+            const cdeTables = products.map(p => p.cdeTable || 'tbinventario');
+
             console.log(`[CDE] 🚀 Confirmação de ${photoNumbers.length} fotos agendada em background`);
+            console.log(`[CDE] 📊 Tabelas: ${cdeTables.filter(t => t === 'tbetiqueta').length} em tbetiqueta, ${cdeTables.filter(t => t === 'tbinventario').length} em tbinventario`);
 
             // Processar em background usando BULK UPDATE
             setImmediate(async () => {
@@ -346,12 +359,13 @@ router.post('/finalize', async (req, res) => {
                 const startTime = Date.now();
 
                 try {
-                    // 🆕 AGORA PASSA SALES REP COMO 4º PARÂMETRO!
+                    // ✅ AGORA PASSA cdeTables COMO 5º PARÂMETRO!
                     const confirmedCount = await CDEWriter.bulkMarkAsConfirmed(
                         photoNumbers,
                         clientCode,
                         clientName,
-                        salesRep  // 🆕 SALES REP ADICIONADO AQUI!
+                        salesRep,
+                        cdeTables  // ✅ NOVO: Array de tabelas CDE!
                     );
 
                     const duration = Date.now() - startTime;

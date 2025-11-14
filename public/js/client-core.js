@@ -289,32 +289,14 @@ window.loadClientData = async function () {
     const loadingEl = document.getElementById('clientLoading');
     const errorEl = document.getElementById('clientError');
     const contentEl = document.getElementById('clientContent');
-    const selectorEl = document.getElementById('gallerySelector');
 
-    // ✅ SEMPRE MOSTRAR OS CARDS PRIMEIRO (sem verificar savedMode)
+    // Ocultar loading/error
     loadingEl.style.display = 'none';
     errorEl.style.display = 'none';
     contentEl.style.display = 'none';
-    // selectorEl.style.display = 'block';  // Oculto: não mostrar seletor
-    selectGalleryMode('available');  // IR DIRETO para Available Now
-    // Buscar contagens para os cards
-    try {
-        // Contador Available - pode implementar depois
-        document.getElementById('availablePhotoCount').textContent = 'Loading...';
 
-        // Contador Coming Soon
-        const transitResponse = await fetchWithAuth('/api/gallery/transit/count');
-        const transitData = await transitResponse.json();
-
-        if (transitData.success) {
-            document.getElementById('comingSoonPhotoCount').textContent = `${transitData.count} photos`;
-        } else {
-            document.getElementById('comingSoonPhotoCount').textContent = '0 photos';
-        }
-    } catch (error) {
-        console.error('Erro ao buscar contagens:', error);
-        document.getElementById('comingSoonPhotoCount').textContent = '0 photos';
-    }
+    // ✅ IR DIRETO PARA GALERIA AVAILABLE (Coming Soon desabilitado)
+    selectGalleryMode('available');
 }
 
 // ===== NOVA FUNÇÃO: Carregar dados APÓS escolher galeria =====

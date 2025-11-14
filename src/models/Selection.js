@@ -49,6 +49,14 @@ const selectionSchema = new mongoose.Schema({
         default: 'normal',
     },
 
+    // ===== NOVO: TIPO DE GALERIA (COMING SOON vs AVAILABLE) =====
+    galleryType: {
+        type: String,
+        enum: ['available', 'coming_soon'],
+        default: 'available',
+        comment: 'Indica se seleção é de galeria normal ou Coming Soon'
+    },
+
     // ===== NOVO: CONFIGURAÇÕES PARA SELEÇÕES ESPECIAIS =====
     specialSelectionConfig: {
         // Informações básicas da seleção especial
@@ -234,6 +242,19 @@ const selectionSchema = new mongoose.Schema({
         },
         movedAt: {
             type: Date
+        },
+        // ===== COMING SOON FIELDS =====
+        transitStatus: {
+            type: String,
+            enum: ['coming_soon', null],
+            default: null,
+            comment: 'Flag para items em trânsito'
+        },
+        cdeTable: {
+            type: String,
+            enum: ['tbinventario', 'tbetiqueta', null],
+            default: null,
+            comment: 'Tabela CDE onde item está registrado'
         }
     }],
     totalItems: {

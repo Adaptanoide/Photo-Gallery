@@ -304,7 +304,7 @@ class CDEWriter {
      * BULK CONFIRM - Confirmar múltiplas fotos de uma vez
      * 🆕 AGORA INCLUI SALES REP
      */
-    static async bulkMarkAsConfirmed(photoNumbers, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
+    static async bulkMarkAsConfirmed(photoNumbers, clientCode, clientName = 'Client', salesRep = 'Unassigned', cdeTables = []) {
         let connection = null;
 
         try {
@@ -327,25 +327,64 @@ class CDEWriter {
             // Preparar placeholders para query SQL
             const placeholders = photoNumbers.map(() => '?').join(',');
 
-            // 1 QUERY para TODAS as fotos! (AGORA COM STATUS DINÂMICO)
-            const [result] = await connection.execute(
-                `UPDATE tbinventario 
-                 SET AESTADOP = ?,
-                     RESERVEDUSU = ?,
-                     AFECHA = NOW()
-                 WHERE ATIPOETIQUETA IN (${placeholders})
-                 AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
-                [cdeStatus, reservedusu, ...photoNumbers]
-            );
+            // ✅ AGRUPAR FOTOS POR TABELA
+            const photosByTable = {
+                tbinventario: [],
+                tbetiqueta: []
+            };
 
-            const confirmedCount = result.affectedRows;
-            console.log(`[CDE] ✅ Bulk confirm: ${confirmedCount}/${photoNumbers.length} fotos → ${cdeStatus} para ${reservedusu}`);
+            photoNumbers.forEach((photoNum, index) => {
+                const table = cdeTables[index] || 'tbinventario';
+                photosByTable[table].push(photoNum);
+            });
 
-            if (confirmedCount < photoNumbers.length) {
-                console.log(`[CDE] ⚠️ ${photoNumbers.length - confirmedCount} fotos não estavam disponíveis para confirmar`);
+            console.log(`[CDE] 📊 Distribuição: ${photosByTable.tbinventario.length} em tbinventario, ${photosByTable.tbetiqueta.length} em tbetiqueta`);
+
+            let totalConfirmed = 0;
+
+            // ✅ ATUALIZAR tbinventario (se houver fotos)
+            if (photosByTable.tbinventario.length > 0) {
+                const placeholders1 = photosByTable.tbinventario.map(() => '?').join(',');
+
+                const [result1] = await connection.execute(
+                    `UPDATE tbinventario 
+                    SET AESTADOP = ?,
+                        RESERVEDUSU = ?,
+                        AFECHA = NOW()
+                    WHERE ATIPOETIQUETA IN (${placeholders1})
+                    AND AESTADOP IN ('PRE-SELECTED', 'INGRESADO')`,
+                    [cdeStatus, reservedusu, ...photosByTable.tbinventario]
+                );
+
+                totalConfirmed += result1.affectedRows;
+                console.log(`[CDE] ✅ tbinventario: ${result1.affectedRows}/${photosByTable.tbinventario.length} confirmadas`);
             }
 
-            return confirmedCount;
+            // ✅ ATUALIZAR tbetiqueta (se houver fotos)
+            if (photosByTable.tbetiqueta.length > 0) {
+                const placeholders2 = photosByTable.tbetiqueta.map(() => '?').join(',');
+
+                const [result2] = await connection.execute(
+                    `UPDATE tbetiqueta 
+                    SET AESTADOP = ?,
+                        RESERVEDUSU = ?,
+                        AFECHA = NOW()
+                    WHERE ATIPOETIQUETA IN (${placeholders2})
+                    AND AESTADOP IN ('PRE-SELECTED', 'PRE-TRANSITO')`,
+                    [cdeStatus, reservedusu, ...photosByTable.tbetiqueta]
+                );
+
+                totalConfirmed += result2.affectedRows;
+                console.log(`[CDE] ✅ tbetiqueta: ${result2.affectedRows}/${photosByTable.tbetiqueta.length} confirmadas`);
+            }
+
+            console.log(`[CDE] ✅ Total: ${totalConfirmed}/${photoNumbers.length} fotos → ${cdeStatus}`);
+
+            if (totalConfirmed < photoNumbers.length) {
+                console.log(`[CDE] ⚠️ ${photoNumbers.length - totalConfirmed} fotos não estavam disponíveis para confirmar`);
+            }
+
+            return totalConfirmed;
 
         } catch (error) {
             console.error(`[CDE] ❌ Erro no bulk confirm:`, error.message);
@@ -356,58 +395,10 @@ class CDEWriter {
     }
 
     /**
-     * BULK RELEASE - Liberar múltiplas fotos de uma vez
-     * Muito mais rápido que liberar uma por uma
-     */
-    static async bulkMarkAsAvailable(photoNumbers) {
-        let connection = null;
-
-        try {
-            if (!Array.isArray(photoNumbers) || photoNumbers.length === 0) {
-                console.log('[CDE] ⚠️ Bulk release: array vazio');
-                return 0;
-            }
-
-            connection = await this.getConnection();
-
-            console.log(`[CDE] 📦 Bulk release: ${photoNumbers.length} fotos`);
-
-            // Preparar placeholders para query SQL
-            const placeholders = photoNumbers.map(() => '?').join(',');
-
-            // 1 QUERY para TODAS as fotos!
-            const [result] = await connection.execute(
-                `UPDATE tbinventario 
-                 SET AESTADOP = 'INGRESADO',
-                     RESERVEDUSU = NULL,
-                     AFECHA = NOW()
-                 WHERE ATIPOETIQUETA IN (${placeholders})
-                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
-                photoNumbers
-            );
-
-            const releasedCount = result.affectedRows;
-            console.log(`[CDE] ✅ Bulk release: ${releasedCount}/${photoNumbers.length} fotos liberadas`);
-
-            if (releasedCount < photoNumbers.length) {
-                console.log(`[CDE] ⚠️ ${photoNumbers.length - releasedCount} fotos já estavam liberadas`);
-            }
-
-            return releasedCount;
-
-        } catch (error) {
-            console.error(`[CDE] ❌ Erro no bulk release:`, error.message);
-            throw error;
-        } finally {
-            if (connection) await connection.end();
-        }
-    }
-
-    /**
      * BULK RESERVE - Reservar múltiplas fotos de uma vez
-     * 🆕 AGORA INCLUI SALES REP
+     * 🆕 AGORA INCLUI SALES REP E MÚLTIPLAS TABELAS
      */
-    static async bulkMarkAsReserved(photoNumbers, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
+    static async bulkMarkAsReserved(photoNumbers, clientCode, clientName = 'Client', salesRep = 'Unassigned', cdeTables = []) {
         let connection = null;
 
         try {
@@ -423,22 +414,59 @@ class CDEWriter {
 
             console.log(`[CDE] 📦 Bulk reserve: ${photoNumbers.length} fotos para ${reservedusu}`);
 
-            // Preparar placeholders para query SQL
-            const placeholders = photoNumbers.map(() => '?').join(',');
+            // ✅ AGRUPAR FOTOS POR TABELA
+            const photosByTable = {
+                tbinventario: [],
+                tbetiqueta: []
+            };
 
-            // 1 QUERY para TODAS as fotos!
-            const [result] = await connection.execute(
-                `UPDATE tbinventario 
-                 SET AESTADOP = 'PRE-SELECTED',
-                     RESERVEDUSU = ?,
-                     AFECHA = NOW()
-                 WHERE ATIPOETIQUETA IN (${placeholders})
-                 AND AESTADOP IN ('INGRESADO', 'CONFIRMED', 'RESERVED')`,
-                [reservedusu, ...photoNumbers]
-            );
+            photoNumbers.forEach((photoNum, index) => {
+                const table = cdeTables[index] || 'tbinventario';
+                photosByTable[table].push(photoNum);
+            });
 
-            const reservedCount = result.affectedRows;
-            console.log(`[CDE] ✅ Bulk reserve: ${reservedCount}/${photoNumbers.length} fotos reservadas para ${reservedusu}`);
+            console.log(`[CDE] 📊 Distribuição: ${photosByTable.tbinventario.length} em tbinventario, ${photosByTable.tbetiqueta.length} em tbetiqueta`);
+
+            let totalReserved = 0;
+
+            // ✅ RESERVAR tbinventario (se houver fotos)
+            if (photosByTable.tbinventario.length > 0) {
+                const placeholders1 = photosByTable.tbinventario.map(() => '?').join(',');
+
+                const [result1] = await connection.execute(
+                    `UPDATE tbinventario 
+                    SET AESTADOP = 'PRE-SELECTED',
+                        RESERVEDUSU = ?,
+                        AFECHA = NOW()
+                    WHERE ATIPOETIQUETA IN (${placeholders1})
+                    AND AESTADOP IN ('INGRESADO', 'CONFIRMED', 'RESERVED')`,
+                    [reservedusu, ...photosByTable.tbinventario]
+                );
+
+                totalReserved += result1.affectedRows;
+                console.log(`[CDE] ✅ tbinventario: ${result1.affectedRows}/${photosByTable.tbinventario.length} reservadas`);
+            }
+
+            // ✅ RESERVAR tbetiqueta (se houver fotos)
+            if (photosByTable.tbetiqueta.length > 0) {
+                const placeholders2 = photosByTable.tbetiqueta.map(() => '?').join(',');
+
+                const [result2] = await connection.execute(
+                    `UPDATE tbetiqueta 
+                    SET AESTADOP = 'PRE-SELECTED',
+                        RESERVEDUSU = ?,
+                        AFECHA = NOW()
+                    WHERE ATIPOETIQUETA IN (${placeholders2})
+                    AND AESTADOP IN ('PRE-TRANSITO', 'CONFIRMED', 'RESERVED')`,
+                    [reservedusu, ...photosByTable.tbetiqueta]
+                );
+
+                totalReserved += result2.affectedRows;
+                console.log(`[CDE] ✅ tbetiqueta: ${result2.affectedRows}/${photosByTable.tbetiqueta.length} reservadas`);
+            }
+
+            const reservedCount = totalReserved;
+            console.log(`[CDE] ✅ Total: ${reservedCount}/${photoNumbers.length} fotos reservadas para ${reservedusu}`);
 
             if (reservedCount < photoNumbers.length) {
                 console.log(`[CDE] ⚠️ ${photoNumbers.length - reservedCount} fotos não estavam disponíveis para reservar`);
@@ -448,6 +476,91 @@ class CDEWriter {
 
         } catch (error) {
             console.error(`[CDE] ❌ Erro no bulk reserve:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+         * BULK RELEASE - Liberar múltiplas fotos de uma vez
+         * Muito mais rápido que liberar uma por uma
+         */
+    static async bulkMarkAsAvailable(photoNumbers, cdeTables = []) {
+        let connection = null;
+
+        try {
+            if (!Array.isArray(photoNumbers) || photoNumbers.length === 0) {
+                console.log('[CDE] ⚠️ Bulk release: array vazio');
+                return 0;
+            }
+
+            connection = await this.getConnection();
+
+            console.log(`[CDE] 📦 Bulk release: ${photoNumbers.length} fotos`);
+
+            // ✅ AGRUPAR FOTOS POR TABELA
+            const photosByTable = {
+                tbinventario: [],
+                tbetiqueta: []
+            };
+
+            photoNumbers.forEach((photoNum, index) => {
+                const table = cdeTables[index] || 'tbinventario';
+                photosByTable[table].push(photoNum);
+            });
+
+            console.log(`[CDE] 📊 Distribuição: ${photosByTable.tbinventario.length} em tbinventario, ${photosByTable.tbetiqueta.length} em tbetiqueta`);
+
+            let totalReleased = 0;
+
+            // ✅ LIBERAR tbinventario (se houver fotos)
+            if (photosByTable.tbinventario.length > 0) {
+                const placeholders1 = photosByTable.tbinventario.map(() => '?').join(',');
+
+                const [result1] = await connection.execute(
+                    `UPDATE tbinventario 
+                     SET AESTADOP = 'INGRESADO',
+                         RESERVEDUSU = NULL,
+                         AFECHA = NOW()
+                     WHERE ATIPOETIQUETA IN (${placeholders1})
+                     AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
+                    photosByTable.tbinventario
+                );
+
+                totalReleased += result1.affectedRows;
+                console.log(`[CDE] ✅ tbinventario: ${result1.affectedRows}/${photosByTable.tbinventario.length} liberadas → INGRESADO`);
+            }
+
+            // ✅ LIBERAR tbetiqueta (se houver fotos)
+            if (photosByTable.tbetiqueta.length > 0) {
+                const placeholders2 = photosByTable.tbetiqueta.map(() => '?').join(',');
+
+                const [result2] = await connection.execute(
+                    `UPDATE tbetiqueta 
+                     SET AESTADOP = 'PRE-TRANSITO',
+                         RESERVEDUSU = NULL,
+                         AFECHA = NOW()
+                     WHERE ATIPOETIQUETA IN (${placeholders2})
+                     AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
+                    photosByTable.tbetiqueta
+                );
+
+                totalReleased += result2.affectedRows;
+                console.log(`[CDE] ✅ tbetiqueta: ${result2.affectedRows}/${photosByTable.tbetiqueta.length} liberadas → PRE-TRANSITO`);
+            }
+
+            const releasedCount = totalReleased;
+            console.log(`[CDE] ✅ Total: ${releasedCount}/${photoNumbers.length} fotos liberadas`);
+
+            if (releasedCount < photoNumbers.length) {
+                console.log(`[CDE] ⚠️ ${photoNumbers.length - releasedCount} fotos já estavam liberadas`);
+            }
+
+            return releasedCount;
+
+        } catch (error) {
+            console.error(`[CDE] ❌ Erro no bulk release:`, error.message);
             throw error;
         } finally {
             if (connection) await connection.end();
