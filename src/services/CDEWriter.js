@@ -171,10 +171,6 @@ class CDEWriter {
         }
     }
 
-    /**
-     * MARCAR COMO INGRESADO (quando remove do carrinho ou expira)
-     * 🆕 AGORA COM FALLBACK AUTOMÁTICO
-     */
     static async markAsAvailable(photoNumber, cdeTable = 'tbinventario') {
         let connection = null;
 
@@ -185,40 +181,46 @@ class CDEWriter {
             const firstTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
             const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
 
+            // ✅ DETERMINAR STATUS CORRETO BASEADO NA TABELA
+            const availableStatus = firstTable === 'tbetiqueta' ? 'PRE-TRANSITO' : 'INGRESADO';
+
             console.log(`[CDE] Liberando foto ${photoNumber}`);
-            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable}...`);
+            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable} → ${availableStatus}...`);
 
             // TENTATIVA 1: Tabela preferida
             const [result1] = await connection.execute(
                 `UPDATE ${firstTable} 
-                SET AESTADOP = 'INGRESADO',
+                SET AESTADOP = ?,
                     RESERVEDUSU = NULL,
                     AFECHA = NOW()
                 WHERE ATIPOETIQUETA = ?
                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
-                [photoNumber]
+                [availableStatus, photoNumber]
             );
 
             if (result1.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${firstTable}`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${firstTable} → ${availableStatus}`);
                 return true;
             }
 
             // TENTATIVA 2: Fallback automático
             console.log(`[CDE] 🔄 Não encontrada em ${firstTable}, tentando ${secondTable}...`);
 
+            // ✅ STATUS CORRETO PARA A SEGUNDA TABELA
+            const fallbackStatus = secondTable === 'tbetiqueta' ? 'PRE-TRANSITO' : 'INGRESADO';
+
             const [result2] = await connection.execute(
                 `UPDATE ${secondTable} 
-                SET AESTADOP = 'INGRESADO',
+                SET AESTADOP = ?,
                     RESERVEDUSU = NULL,
                     AFECHA = NOW()
                 WHERE ATIPOETIQUETA = ?
                 AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
-                [photoNumber]
+                [fallbackStatus, photoNumber]
             );
 
             if (result2.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${secondTable} (fallback)`);
+                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${secondTable} (fallback) → ${fallbackStatus}`);
                 return true;
             }
 

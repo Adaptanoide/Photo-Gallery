@@ -228,18 +228,22 @@ class CartService {
 
             // 3. APENAS SE NÃO FOR GHOST: Liberar produto e atualizar CDE
             if (!isGhostItem) {
+                // ✅ DETECTAR SE É COMING SOON
+                const isComingSoonItem = itemToRemove?.transitStatus === 'coming_soon';
+                const correctCDEStatus = isComingSoonItem ? 'PRE-TRANSITO' : 'INGRESADO';
+
                 // Liberar no MongoDB
                 await UnifiedProductComplete.updateOne(
                     { driveFileId },
                     {
                         $set: {
                             status: 'available',
-                            cdeStatus: 'INGRESADO'
+                            cdeStatus: correctCDEStatus  // ✅ MUDOU AQUI!
                         },
                         $unset: { reservedBy: 1 }
                     }
                 );
-                console.log(`[CART] Produto liberado`);
+                console.log(`[CART] Produto liberado com status: ${correctCDEStatus}`);  // ✅ MUDOU AQUI!
 
                 // 🚀 Atualizar CDE EM BACKGROUND (não esperar)
                 const fileName = driveFileId.split('/').pop();
