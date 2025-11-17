@@ -462,26 +462,78 @@ class DatabaseService {
                     // Buscar status atualizado no CDE se tiver conexão
                     if (mysqlConn && !this.dryRun) {
                         try {
-                            const [rows] = await mysqlConn.execute(
-                                'SELECT AIDH, AESTADOP FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                            // PASSO 1: Buscar em tbinventario
+                            const [inventarioRows] = await mysqlConn.execute(
+                                'SELECT AIDH, AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ?',
                                 [photoNumber]
                             );
 
-                            if (rows.length > 0) {
-                                const cdeStatus = rows[0].AESTADOP;
-                                const mongoStatus =
+                            let cdeStatus = null;
+                            let cdeTable = null;
+                            let transitStatus = null;
+                            let mongoStatus = null;
+                            let qbCode = null;
+
+                            if (inventarioRows.length > 0) {
+                                // Foto está em tbinventario (já chegou)
+                                cdeStatus = inventarioRows[0].AESTADOP;
+                                cdeTable = 'tbinventario';
+                                qbCode = inventarioRows[0].AQBITEM;
+                                transitStatus = null; // Não está em trânsito
+
+                                mongoStatus =
                                     cdeStatus === 'RETIRADO' ? 'sold' :
                                         cdeStatus === 'INGRESADO' ? 'available' :
                                             cdeStatus === 'PRE-SELECTED' ? 'reserved' :
-                                                'unavailable';
+                                                cdeStatus === 'STANDBY' ? 'unavailable' :
+                                                    'unavailable';
 
-                                if (existing.cdeStatus !== cdeStatus || existing.status !== mongoStatus) {
-                                    existing.idhCode = rows[0].AIDH;
+                            } else {
+                                // PASSO 2: Buscar em tbetiqueta
+                                const [etiquetaRows] = await mysqlConn.execute(
+                                    'SELECT AQBITEM, AESTADOP FROM tbetiqueta WHERE ATIPOETIQUETA = ?',
+                                    [photoNumber]
+                                );
+
+                                if (etiquetaRows.length > 0) {
+                                    // Foto está em tbetiqueta (em trânsito/pallet fechado)
+                                    cdeStatus = etiquetaRows[0].AESTADOP;
+                                    cdeTable = 'tbetiqueta';
+                                    qbCode = etiquetaRows[0].AQBITEM;
+                                    transitStatus = 'coming_soon'; // Em trânsito!
+                                    mongoStatus = 'available'; // Status no MongoDB
+
+                                    console.log(`   🚢 ${photoNumber} em pallet (tbetiqueta) - marcando coming_soon`);
+                                }
+                            }
+
+                            // Se encontrou em alguma tabela, atualizar
+                            if (cdeStatus) {
+                                let needsUpdate = false;
+
+                                // Verificar o que mudou
+                                if (existing.cdeStatus !== cdeStatus ||
+                                    existing.status !== mongoStatus ||
+                                    existing.transitStatus !== transitStatus ||
+                                    existing.cdeTable !== cdeTable) {
+                                    needsUpdate = true;
+                                }
+
+                                if (needsUpdate) {
+                                    if (inventarioRows.length > 0) {
+                                        existing.idhCode = inventarioRows[0].AIDH;
+                                    }
                                     existing.cdeStatus = cdeStatus;
+                                    existing.cdeTable = cdeTable;
+                                    existing.transitStatus = transitStatus;
                                     existing.status = mongoStatus;
                                     existing.currentStatus = mongoStatus;
                                     existing.virtualStatus.status = mongoStatus;
                                     existing.lastCDESync = new Date();
+
+                                    if (qbCode) {
+                                        existing.qbItem = qbCode;
+                                    }
 
                                     if (!this.dryRun) {
                                         await existing.save();
@@ -490,11 +542,14 @@ class DatabaseService {
                                     results.push({
                                         number: photoNumber,
                                         status: 'updated',
-                                        newStatus: mongoStatus
+                                        newStatus: mongoStatus,
+                                        transitStatus: transitStatus,
+                                        cdeTable: cdeTable
                                     });
                                     continue;
                                 }
                             }
+
                         } catch (error) {
                             console.error(`   Erro ao consultar CDE para ${photoNumber}:`, error.message);
                         }
