@@ -166,6 +166,20 @@ class CDETransitSync {
                 cdeTable: 'tbetiqueta'
             }).read('primary');  // ← FORÇA LER DO PRIMARY!
 
+            // ===== DEBUG LOG - TEMPORÁRIO =====
+            console.log(`[Transit Sync] 📊 Query retornou ${comingSoonPhotos.length} fotos`);
+
+            // Se 28541 está na lista, logar detalhes
+            const photo28541 = comingSoonPhotos.find(p => p.photoNumber === '28541');
+            if (photo28541) {
+                console.log('[Transit Sync] ⚠️ FOTO 28541 ENCONTRADA NA QUERY!');
+                console.log(`   transitStatus: ${photo28541.transitStatus}`);
+                console.log(`   cdeTable: ${photo28541.cdeTable}`);
+                console.log(`   status: ${photo28541.status}`);
+                console.log(`   _id: ${photo28541._id}`);
+            }
+            // ===== FIM DEBUG =====
+
             console.log(`[Transit Sync] Verificando ${comingSoonPhotos.length} fotos coming soon...`);
 
             let arrivedCount = 0;
