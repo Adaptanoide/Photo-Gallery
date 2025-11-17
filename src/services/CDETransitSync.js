@@ -288,14 +288,18 @@ class CDETransitSync {
                     }
 
                     // Atualizar MongoDB - remover flags de trânsito
-                    await UnifiedProductComplete.updateOne(
+                    console.log(`[Transit Sync] 🔧 Atualizando foto ${mongoPhoto.photoNumber}...`);
+                    console.log(`   DE: transitStatus=${mongoPhoto.transitStatus}, cdeTable=${mongoPhoto.cdeTable}`);
+                    console.log(`   PARA: transitStatus=null, cdeTable=tbinventario, status=${mongoStatus}`);
+
+                    const updateResult = await UnifiedProductComplete.updateOne(
                         { _id: mongoPhoto._id },
                         {
                             $set: {
                                 transitStatus: null,
                                 cdeTable: 'tbinventario',
                                 cdeStatus: correctStatus || currentCDEStatus,
-                                status: mongoStatus,  // ✅ Usa status determinado pela lógica
+                                status: mongoStatus,
                                 currentStatus: mongoStatus,
                                 'virtualStatus.status': mongoStatus,
                                 lastCDESync: new Date()
@@ -303,7 +307,13 @@ class CDETransitSync {
                         }
                     );
 
-                    console.log(`   ✅ MongoDB atualizado - foto agora disponível`);
+                    console.log(`   📊 Update result: matched=${updateResult.matchedCount}, modified=${updateResult.modifiedCount}`);
+
+                    if (updateResult.modifiedCount === 0) {
+                        console.log(`   ⚠️ WARNING: Nenhum documento modificado!`);
+                    }
+
+                    console.log(`   ✅ MongoDB atualizado - foto agora ${mongoStatus}`);
                 }
             }
 
