@@ -112,6 +112,22 @@ class CDETransitSync {
             for (const cdePhoto of transitPhotos) {
                 const photoNumber = cdePhoto.ATIPOETIQUETA;
 
+                // ===== VERIFICAR SE JÁ ESTÁ EM tbinventario (CHEGOU) =====
+                // Se está em tbinventario = Foto já chegou no warehouse
+                // tbinventario é fonte da verdade para status atual
+                const [invCheck] = await cdeConnection.execute(
+                    'SELECT ATIPOETIQUETA FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    [photoNumber]
+                );
+
+                if (invCheck.length > 0) {
+                    // Foto JÁ está em tbinventario (chegou!)
+                    // Etapa 3 vai processar ela corretamente
+                    // Não marcar como coming_soon aqui
+                    continue;
+                }
+                // ========================================================
+
                 // Buscar no MongoDB
                 const mongoPhoto = await UnifiedProductComplete.findOne({
                     $or: [
@@ -121,8 +137,6 @@ class CDETransitSync {
                 });
 
                 if (!mongoPhoto) {
-                    // Foto não existe no MongoDB - pode ser que não tenha sido processada ainda
-                    // Não fazemos nada, deixamos o sync-incoming ou outro processo cuidar
                     continue;
                 }
 
