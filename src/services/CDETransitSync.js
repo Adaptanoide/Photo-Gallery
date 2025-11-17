@@ -189,24 +189,49 @@ class CDETransitSync {
                     console.log(`   Status atual no CDE: ${currentCDEStatus}`);
                     console.log(`   Verificando reservas...`);
 
-                    // Determinar status correto baseado em reservas/seleções
+                    // Determinar status correto baseado NO STATUS DO CDE PRIMEIRO
                     let correctStatus = null;
+                    let mongoStatus = null;
                     let reason = '';
 
-                    // PRIORIDADE 1: Se tem seleção confirmada
-                    if (mongoPhoto.selectionId) {
-                        correctStatus = 'CONFIRMED';
-                        reason = `Foto tem selectionId: ${mongoPhoto.selectionId}`;
+                    // PRIORIDADE 1: Se CDE diz RETIRADO → foto vendida!
+                    if (currentCDEStatus === 'RETIRADO') {
+                        correctStatus = 'RETIRADO';
+                        mongoStatus = 'sold';
+                        reason = 'Foto vendida no CDE (RETIRADO)';
                     }
-                    // PRIORIDADE 2: Se tem reserva (carrinho ativo)
-                    else if (mongoPhoto.reservedBy?.clientCode) {
-                        correctStatus = 'PRE-SELECTED';
-                        reason = `Foto reservada por cliente: ${mongoPhoto.reservedBy.clientCode}`;
+                    // PRIORIDADE 2: Se CDE diz STANDBY/RESERVED → indisponível
+                    else if (currentCDEStatus === 'STANDBY' || currentCDEStatus === 'RESERVED') {
+                        correctStatus = currentCDEStatus;
+                        mongoStatus = 'unavailable';
+                        reason = `Foto ${currentCDEStatus} no CDE`;
                     }
-                    // PRIORIDADE 3: Sem reserva - deixar como está
+                    // PRIORIDADE 3: CDE diz INGRESADO → verificar reservas MongoDB
+                    else if (currentCDEStatus === 'INGRESADO') {
+                        // Se tem seleção confirmada
+                        if (mongoPhoto.selectionId) {
+                            correctStatus = 'CONFIRMED';
+                            mongoStatus = 'in_selection';
+                            reason = `Foto tem selectionId: ${mongoPhoto.selectionId}`;
+                        }
+                        // Se tem reserva (carrinho ativo)
+                        else if (mongoPhoto.reservedBy?.clientCode) {
+                            correctStatus = 'PRE-SELECTED';
+                            mongoStatus = 'reserved';
+                            reason = `Foto reservada por cliente: ${mongoPhoto.reservedBy.clientCode}`;
+                        }
+                        // Sem reserva - deixar disponível
+                        else {
+                            correctStatus = 'INGRESADO';
+                            mongoStatus = 'available';
+                            reason = 'Sem reserva - disponível';
+                        }
+                    }
+                    // Qualquer outro status do CDE
                     else {
-                        correctStatus = null;
-                        reason = 'Sem reserva - mantém INGRESADO';
+                        correctStatus = currentCDEStatus;
+                        mongoStatus = 'unavailable';
+                        reason = `Status desconhecido no CDE: ${currentCDEStatus}`;
                     }
 
                     console.log(`   Decisão: ${reason}`);
@@ -257,8 +282,9 @@ class CDETransitSync {
                                 transitStatus: null,
                                 cdeTable: 'tbinventario',
                                 cdeStatus: correctStatus || currentCDEStatus,
-                                status: mongoPhoto.selectionId ? 'in_selection' :
-                                    (mongoPhoto.reservedBy?.clientCode ? 'reserved' : 'available'),
+                                status: mongoStatus,  // ✅ Usa status determinado pela lógica
+                                currentStatus: mongoStatus,
+                                'virtualStatus.status': mongoStatus,
                                 lastCDESync: new Date()
                             }
                         }

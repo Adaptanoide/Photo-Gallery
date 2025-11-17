@@ -61,6 +61,9 @@ async function loadConfiguration() {
         // Show content
         showContent();
 
+        // Carregar contagem de clientes
+        loadClientsWithEmailCount();
+
         console.log('✅ Configuration loaded');
 
     } catch (error) {
@@ -489,5 +492,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// ===================================
+// EXPORTAR CLIENTES CSV
+// ===================================
+
+// Exportar clientes CSV
+async function exportClientsCSV() {
+    try {
+        showNotification('Generating CSV...', 'info');
+
+        const response = await fetch('/api/admin/export-clients-csv', {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Error downloading CSV');
+        }
+
+        // Converter para blob
+        const blob = await response.blob();
+
+        // Criar link de download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sunshine-clients.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        showNotification('CSV downloaded successfully!', 'success');
+
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        showNotification('Error exporting CSV: ' + error.message, 'error');
+    }
+}
+
+// Carregar estatística de clientes com email
+async function loadClientsWithEmailCount() {
+    try {
+        const response = await fetch('/api/admin/clients-with-email-count', {
+            headers: getAuthHeaders()
+        });
+
+        const data = await response.json();
+
+        if (data.success && document.getElementById('clientsWithEmail')) {
+            document.getElementById('clientsWithEmail').textContent = data.count;
+        }
+    } catch (error) {
+        console.error('Error loading clients count:', error);
+    }
+}
 
 console.log('🔧 Configuration observer configured');

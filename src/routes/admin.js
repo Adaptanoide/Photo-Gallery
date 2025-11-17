@@ -7,7 +7,6 @@ const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const { authenticateToken } = require('./auth');
 const CartService = require('../services/CartService');
 
-
 const router = express.Router();
 
 // ROTA TEMPORÁRIA PARA CRIAR CÓDIGO (sem auth)
@@ -1281,6 +1280,64 @@ router.delete('/sync-lock', authenticateToken, async (req, res) => {
             success: false,
             message: 'Error removing lock'
         });
+    }
+});
+
+// Exportar clientes para CSV (Constant Contact)
+router.get('/export-clients-csv', authenticateToken, async (req, res) => {
+    try {
+        const AccessCode = require('../models/AccessCode');
+
+        // Buscar clientes ativos com email
+        const clients = await AccessCode.find({
+            isActive: true,
+            clientEmail: { $exists: true, $ne: '', $ne: null, $regex: /@/ }
+        }).select('clientName clientEmail code').sort({ clientName: 1 });
+
+        // Criar CSV
+        let csv = 'First Name,Last Name,Email Address,Access Code\n';
+
+        clients.forEach(client => {
+            const [firstName, ...lastNameParts] = client.clientName.split(' ');
+            const lastName = lastNameParts.join(' ') || '';
+
+            // Escapar vírgulas e aspas
+            const escapeCsv = (str) => {
+                if (str.includes(',') || str.includes('"')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            };
+
+            csv += `${escapeCsv(firstName)},${escapeCsv(lastName)},${client.clientEmail},${client.code}\n`;
+        });
+
+        // Enviar CSV
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=sunshine-clients.csv');
+        res.send(csv);
+
+        console.log(`📊 [ADMIN] CSV exportado com ${clients.length} clientes`);
+
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro ao exportar CSV:', error);
+        res.status(500).json({ success: false, message: 'Erro ao exportar CSV' });
+    }
+});
+
+// Contar clientes com email
+router.get('/clients-with-email-count', authenticateToken, async (req, res) => {
+    try {
+        const count = await AccessCode.countDocuments({
+            isActive: true,
+            clientEmail: { $exists: true, $ne: '', $ne: null, $regex: /@/ }
+        });
+
+        res.json({ success: true, count });
+
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro ao contar clientes:', error);
+        res.status(500).json({ success: false, message: 'Erro ao contar clientes' });
     }
 });
 

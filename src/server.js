@@ -15,7 +15,6 @@ const clientRoutes = require('./routes/client');
 const cartRoutes = require('./routes/cart');
 const selectionRoutes = require('./routes/selection');
 const pricingRoutes = require('./routes/pricing');
-const marketingRoutes = require('./routes/marketing');
 const storageRoutes = require('./routes/storage');
 const trackingRoutes = require('./routes/tracking');
 
@@ -43,7 +42,7 @@ console.log('Modo: ' + (process.env.NODE_ENV || 'development'));
 app.use('/', trackingRoutes);
 
 // Rotas da API
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);  // ← ADICIONAR DE VOLTA!
 app.use('/api/selections', require('./routes/admin-selections'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
@@ -56,7 +55,6 @@ app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/inventory-monitor', require('./routes/inventory-monitor'));
-app.use('/api/admin/marketing', marketingRoutes);
 
 // ============================================
 // ROTAS DE NOTIFICAÇÕES DE EXPIRAÇÃO
