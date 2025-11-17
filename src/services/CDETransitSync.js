@@ -161,11 +161,10 @@ class CDETransitSync {
             // ===== ETAPA 3: DETECTAR FOTOS QUE CHEGARAM =====
             console.log('\n[Transit Sync] Etapa 3: Detectando fotos que chegaram...');
 
-            // Buscar fotos que estão marcadas como coming_soon no MongoDB
             const comingSoonPhotos = await UnifiedProductComplete.find({
                 transitStatus: 'coming_soon',
                 cdeTable: 'tbetiqueta'
-            });
+            }).read('primary');  // ← FORÇA LER DO PRIMARY!
 
             console.log(`[Transit Sync] Verificando ${comingSoonPhotos.length} fotos coming soon...`);
 
