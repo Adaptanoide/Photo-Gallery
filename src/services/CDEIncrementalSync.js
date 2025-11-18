@@ -421,12 +421,12 @@ class CDEIncrementalSync {
             });
 
             // Incrementar contador de execuções
-            this.stats.executionCount = (this.stats.executionCount || 0) + 1;
+            this.stats.executionCount = executionCount;
 
             // A cada 20 execuções (~60 minutos), fazer sync completo
-            const shouldDoFullSync = this.stats.executionCount % 20 === 0;
+            const shouldDoFullSync = executionCount % 20 === 0;
 
-            console.log(`[SYNC] Execução #${this.stats.executionCount}`);
+            console.log(`[SYNC] Execução #${executionCount}`);
 
             if (shouldDoFullSync) {
                 console.log(`[SYNC] 🔄 Executando SYNC COMPLETO (a cada 20 execuções)`);
@@ -448,6 +448,7 @@ class CDEIncrementalSync {
             const db = mongoose.connection.db;
             const lockDoc = await db.collection('sync_locks').findOne({ _id: 'cde_sync' });
             const lastOffset = lockDoc?.lastOffset || 0;
+            const executionCount = (lockDoc?.executionCount || 0) + 1;
 
             // Calcular próximo offset
             let nextOffset = lastOffset + 300;
@@ -461,7 +462,7 @@ class CDEIncrementalSync {
             // Salvar próximo offset para próxima execução
             await db.collection('sync_locks').updateOne(
                 { _id: 'cde_sync' },
-                { $set: { lastOffset: nextOffset, lastRotationAt: new Date() } }
+                { $set: { lastOffset: nextOffset, executionCount: executionCount, lastRotationAt: new Date() } }
             );
 
             const mongoPhotosAvailable = await UnifiedProductComplete.find({
