@@ -83,6 +83,18 @@ router.get('/scan', async (req, res) => {
             const mongoPhoto = mongoMap.get(cdePhoto.ATIPOETIQUETA);
 
             if (!mongoPhoto) {
+                // Verificar se existe mas está inativa
+                const inactivePhoto = await UnifiedProductComplete.findOne({
+                    photoNumber: cdePhoto.ATIPOETIQUETA,
+                    isActive: false
+                }).select('photoNumber isActive status').lean();
+
+                // Se existe mas está inativa, ignorar (não é erro!)
+                if (inactivePhoto) {
+                    continue;
+                }
+
+                // Se realmente não existe, aí sim reportar
                 missingInMongo.push({
                     photoNumber: cdePhoto.ATIPOETIQUETA,
                     issue: 'Foto existe mas não aparece',
