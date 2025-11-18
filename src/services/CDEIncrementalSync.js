@@ -420,6 +420,11 @@ class CDEIncrementalSync {
                 database: process.env.CDE_DATABASE
             });
 
+            // Buscar estado do sync no MongoDB
+            const db = mongoose.connection.db;
+            const lockDoc = await db.collection('sync_locks').findOne({ _id: 'cde_sync' });
+            const executionCount = (lockDoc?.executionCount || 0) + 1;
+
             // Incrementar contador de execuções
             this.stats.executionCount = executionCount;
 
@@ -444,11 +449,8 @@ class CDEIncrementalSync {
                 photoNumber: { $exists: true, $ne: null }
             });
 
-            // Buscar último offset da collection sync_locks
-            const db = mongoose.connection.db;
-            const lockDoc = await db.collection('sync_locks').findOne({ _id: 'cde_sync' });
+            // Pegar offset do lockDoc já carregado
             const lastOffset = lockDoc?.lastOffset || 0;
-            const executionCount = (lockDoc?.executionCount || 0) + 1;
 
             // Calcular próximo offset
             let nextOffset = lastOffset + 300;
@@ -462,7 +464,8 @@ class CDEIncrementalSync {
             // Salvar próximo offset para próxima execução
             await db.collection('sync_locks').updateOne(
                 { _id: 'cde_sync' },
-                { $set: { lastOffset: nextOffset, executionCount: executionCount, lastRotationAt: new Date() } }
+                { $set: { lastOffset: nextOffset, executionCount: executionCount, lastRotationAt: new Date() } },
+                { upsert: true }
             );
 
             const mongoPhotosAvailable = await UnifiedProductComplete.find({
@@ -481,8 +484,8 @@ class CDEIncrementalSync {
                 // PASSO 1: Verificar em tbinventario
                 const [invResult] = await cdeConnection.execute(
                     `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AQBITEM 
-                    FROM tbinventario 
-                    WHERE ATIPOETIQUETA = ?`,
+                FROM tbinventario 
+                WHERE ATIPOETIQUETA = ?`,
                     [mongoPhoto.photoNumber]
                 );
 
