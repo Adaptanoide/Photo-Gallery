@@ -76,7 +76,7 @@ router.get('/scan', async (req, res) => {
             mongoMap.set(p.photoNumber, p);
         });
 
-        // ===== VERIFICAÇÃO: CDE → MONGODB =====
+        // ===== VERIFICAÇÃO: CDE → MONGODB ======
         const missingInMongo = [];
 
         for (const cdePhoto of allCdeIngresado) {
