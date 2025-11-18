@@ -617,14 +617,11 @@ window.navigateToBreadcrumb = async function (index) {
 // ===== CARREGAR CONTEÚDO DE PASTAS =====
 window.loadFolderContents = async function (folderId) {
     try {
-        console.time('⏱️ Total loadFolderContents');
         showLoading();
 
         // Buscar estrutura - USANDO fetchWithAuth
-        console.time('  📡 Fetch structure');
         const response = await fetchWithAuth(`/api/gallery/structure?prefix=${encodeURIComponent(folderId)}`);
         const data = await response.json();
-        console.timeEnd('  📡 Fetch structure');
 
         if (!data.success) {
             throw new Error(data.message || 'Error loading folder');
@@ -636,9 +633,7 @@ window.loadFolderContents = async function (folderId) {
         if (folderData.hasSubfolders && folderData.folders.length > 0) {
             try {
                 // Buscar dados com preços
-                console.time('  💰 Cache preços');
                 const priceData = await CategoriesCache.fetch();
-                console.timeEnd('  💰 Cache preços');
 
                 // Criar mapa de preços
                 const priceMap = {};
@@ -665,9 +660,7 @@ window.loadFolderContents = async function (folderId) {
                 console.error('Erro ao buscar preços:', error);
             }
 
-            console.time('  🖼️ Render subfolders');
             showSubfolders(folderData.folders);
-            console.timeEnd('  🖼️ Render subfolders');
 
         } else if (folderData.hasImages || folderData.totalImages > 0) {
             // Tem fotos - chamar loadPhotos do gallery module
@@ -677,7 +670,6 @@ window.loadFolderContents = async function (folderId) {
         } else {
             showNoContent('Empty folder', 'This category has no content at the moment.');
         }
-        console.timeEnd('⏱️ Total loadFolderContents');
     } catch (error) {
         console.error('Error loading folder:', error);
         showNoContent('Error loading content', error.message);

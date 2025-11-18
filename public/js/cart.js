@@ -196,20 +196,15 @@ window.CartSystem = {
      * Adicionar item ao carrinho
      */
     async addItem(driveFileId, itemData = {}) {
-        const t0 = performance.now(); // ⏱️ INÍCIO
 
         try {
             this.setLoading(true);
-            const t1 = performance.now();
-            console.log(`⏱️ [1] setLoading: ${(t1 - t0).toFixed(0)}ms`);
 
             // Buscar dados da sessão do cliente
             const clientSession = this.getClientSession();
             if (!clientSession) {
                 throw new Error('Client session not found');
             }
-            const t2 = performance.now();
-            console.log(`⏱️ [2] getSession: ${(t2 - t1).toFixed(0)}ms`);
 
             const requestData = {
                 sessionId: this.state.sessionId,
@@ -218,8 +213,6 @@ window.CartSystem = {
                 driveFileId,
                 ...itemData
             };
-            const t3 = performance.now();
-            console.log(`⏱️ [3] prepareData: ${(t3 - t2).toFixed(0)}ms`);
 
             const response = await fetch(`${this.config.apiBaseUrl}/add`, {
                 method: 'POST',
@@ -228,12 +221,8 @@ window.CartSystem = {
                 },
                 body: JSON.stringify(requestData)
             });
-            const t4 = performance.now();
-            console.log(`⏱️ [4] HTTP POST (backend): ${(t4 - t3).toFixed(0)}ms`);
 
             const result = await response.json();
-            const t5 = performance.now();
-            console.log(`⏱️ [5] parse JSON: ${(t5 - t4).toFixed(0)}ms`);
 
             if (!response.ok) {
                 throw new Error(result.message || 'Error adding item');
@@ -267,25 +256,16 @@ window.CartSystem = {
                 await this.loadCart();
             }
 
-            const t6 = performance.now();
-            console.log(`⏱️ [6] updateState: ${(t6 - t5).toFixed(0)}ms`);
 
             // Feedback visual
             setTimeout(() => this.updateToggleButton(), 100);
-            const t7 = performance.now();
-            console.log(`⏱️ [7] updateButton: ${(t7 - t6).toFixed(0)}ms`);
 
             const tTotal = performance.now();
             const totalTime = (tTotal - t0).toFixed(0);
 
-            console.log(`⏱️ =============================`);
-            console.log(`⏱️ [TOTAL] addItem: ${totalTime}ms`);
-            console.log(`⏱️ =============================`);
 
             if (totalTime > 1000) {
-                console.warn(`🐌 LENTO! Total: ${totalTime}ms (> 1 segundo)`);
             } else if (totalTime > 500) {
-                console.warn(`⚠️ RAZOÁVEL: ${totalTime}ms (pode melhorar)`);
             } else {
                 console.log(`✅ RÁPIDO! Total: ${totalTime}ms`);
             }
@@ -1406,7 +1386,6 @@ window.toggleCartItem = async function () {
 
             // Verificar se tem customPrice (Special Selection)
             if (photo.customPrice) {
-                console.log('💰 [CART] Usando customPrice:', photo.customPrice);
                 priceInfo = {
                     hasPrice: true,
                     basePrice: parseFloat(photo.customPrice),
@@ -1465,7 +1444,6 @@ window.toggleCartItem = async function () {
             // ✅ Atualizar badge IMEDIATAMENTE (não esperar 200ms)
             const modal = document.getElementById('photoModal');
             if (modal && modal.style.display === 'flex') {
-                console.log('💰 [MODAL] Atualizando preço após adicionar...');
                 if (window.updateModalPriceInfo) {
                     // Usar await para garantir atualização ANTES de continuar
                     await window.updateModalPriceInfo();

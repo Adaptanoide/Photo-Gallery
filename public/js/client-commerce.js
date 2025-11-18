@@ -139,7 +139,6 @@ window.addToCartFromThumbnail = async function (photoId, photoIndex) {
 
             // Verificar se tem customPrice (Special Selection)
             if (photo.customPrice) {
-                console.log('💰 [THUMBNAIL] Usando customPrice:', photo.customPrice);
                 priceInfo = {
                     hasPrice: true,
                     basePrice: parseFloat(photo.customPrice),
@@ -479,13 +478,6 @@ window.PriceProgressBar = {
                 if (infoBadge && !infoBadge.classList.contains('no-price')) {
                     infoBadge.textContent = `${currentPrice}/each`;
                 }
-
-                // ❌ REMOVIDO: Badge da galeria será atualizado SOMENTE por loadCategoryPrice
-                // Esse código pegava preço do tier visual e sobrescrevia incorretamente
-                // const galleryBadge = document.querySelector('.gallery-header .category-price-badge');
-                // if (galleryBadge && !galleryBadge.classList.contains('no-price')) {
-                //     galleryBadge.textContent = `${currentPrice}/each`;
-                // }
             }
         }
 
@@ -887,7 +879,6 @@ function debounce(func, wait) {
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('💰 Client Commerce carregado');
 
     // Setup filtros
     setupFilters();
