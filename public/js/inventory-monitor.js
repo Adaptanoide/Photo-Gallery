@@ -7,11 +7,31 @@ class InventoryMonitor {
     async scan() {
         if (this.isScanning) return;
 
+        // ✅ VERIFICAR SE HÁ SESSÃO ANTES DE ESCANEAR
+        const sessionData = localStorage.getItem('sunshineSession');
+        if (!sessionData) {
+            console.log('⚠️ Scan cancelado - sem sessão ativa');
+            return;
+        }
+
+        let session;
+        try {
+            session = JSON.parse(sessionData);
+        } catch (error) {
+            console.error('⚠️ Erro ao parsear sessão:', error);
+            return;
+        }
+
+        if (!session || !session.token) {
+            console.log('⚠️ Scan cancelado - sessão inválida');
+            return;
+        }
+
         this.isScanning = true;
         this.updateUI('scanning');
 
         try {
-            const token = JSON.parse(localStorage.getItem('sunshineSession')).token;
+            const token = session.token;
             const response = await fetch('/api/inventory-monitor/scan', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -38,15 +58,19 @@ class InventoryMonitor {
         const status = document.getElementById('scanStatus');
 
         if (state === 'scanning') {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            }
             if (status) {
                 status.textContent = '🔍 Scanning inventory...';
                 status.classList.add('scanning');
             }
         } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-search"></i> Scan Now';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> Scan Now';
+            }
             if (status) {
                 status.textContent = '';
                 status.classList.remove('scanning');
@@ -58,11 +82,17 @@ class InventoryMonitor {
         console.log('📊 Exibindo resultados:', data);
 
         // Atualizar contadores
-        document.getElementById('totalScanned').textContent = data.summary.totalScanned;
-        document.getElementById('totalDiscrepancies').textContent = data.summary.totalDiscrepancies;
-        document.getElementById('criticalCount').textContent = data.summary.critical;
-        document.getElementById('mediumCount').textContent = data.summary.medium;
-        document.getElementById('warningCount').textContent = data.summary.warnings;
+        const totalScanned = document.getElementById('totalScanned');
+        const totalDiscrepancies = document.getElementById('totalDiscrepancies');
+        const criticalCount = document.getElementById('criticalCount');
+        const mediumCount = document.getElementById('mediumCount');
+        const warningCount = document.getElementById('warningCount');
+
+        if (totalScanned) totalScanned.textContent = data.summary.totalScanned;
+        if (totalDiscrepancies) totalDiscrepancies.textContent = data.summary.totalDiscrepancies;
+        if (criticalCount) criticalCount.textContent = data.summary.critical;
+        if (mediumCount) mediumCount.textContent = data.summary.medium;
+        if (warningCount) warningCount.textContent = data.summary.warnings;
 
         // Combinar todos os problemas
         const allIssues = [
@@ -75,6 +105,8 @@ class InventoryMonitor {
 
         // Atualizar tabela
         const tbody = document.getElementById('discrepanciesTable');
+        if (!tbody) return;
+
         tbody.innerHTML = '';
 
         if (allIssues.length === 0) {
@@ -126,10 +158,20 @@ class InventoryMonitor {
 // Inicializar
 window.monitor = new InventoryMonitor();
 
-// Auto-scan quando página carregar
+// ✅ Auto-scan SOMENTE se houver sessão válida
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📊 Inventory Monitor ativado - disparando scan...');
-    if (window.monitor && typeof window.monitor.scan === 'function') {
-        window.monitor.scan();
+    const sessionData = localStorage.getItem('sunshineSession');
+    if (sessionData) {
+        try {
+            const session = JSON.parse(sessionData);
+            if (session && session.token && session.userType === 'admin') {
+                console.log('📊 Inventory Monitor ativado - disparando scan...');
+                if (window.monitor && typeof window.monitor.scan === 'function') {
+                    window.monitor.scan();
+                }
+            }
+        } catch (error) {
+            console.log('⚠️ Sessão inválida - scan não será executado');
+        }
     }
 });

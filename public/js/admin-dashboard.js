@@ -362,7 +362,13 @@ class AdminDashboard {
     async fetchStats() {
         try {
             const sessionData = localStorage.getItem('sunshineSession');
+            if (!sessionData) {
+                return null; // ✅ Retorna null se não há sessão
+            }
             const session = JSON.parse(sessionData);
+            if (!session || !session.token) {
+                return null; // ✅ Retorna null se sessão inválida
+            }
             const token = session.token;
             const response = await fetch('/api/cart/stats/system', {
                 headers: {

@@ -2,6 +2,14 @@
 <html lang="pt-BR">
 
 <head>
+    <!-- Disable console.log in production only -->
+    <script>
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            console.log = function () { };
+            console.debug = function () { };
+            console.info = function () { };
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sunshine Cowhides - Dashboard</title>
@@ -154,7 +162,7 @@
                     cursor: pointer;
                     z-index: 10;
                 ">&times;</span>
-                
+
                 <!-- Ícone de cadeado -->
                 <div style="text-align: center; margin-bottom: 20px; padding-top: 10px;">
                     <i class="fas fa-lock" style="color: #ffc107; font-size: 60px;"></i>
