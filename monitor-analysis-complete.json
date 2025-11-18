@@ -1,0 +1,213 @@
+{
+  "lorettaSelection": [
+    {
+      "photoNumber": "25571",
+      "mongoExists": true,
+      "mongoStatus": "in_selection",
+      "mongoQB": "5375DRK",
+      "selectionId": "SEL_MHXU17ET_H7KDM",
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5375DRK",
+      "cdeReserved": null,
+      "selectionStatus": "pending",
+      "clientName": "Loretta Barrett"
+    },
+    {
+      "photoNumber": "26289",
+      "mongoExists": true,
+      "mongoStatus": "in_selection",
+      "mongoQB": "5301PE",
+      "selectionId": "SEL_MHXU17ET_H7KDM",
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5301PE",
+      "cdeReserved": null,
+      "selectionStatus": "pending",
+      "clientName": "Loretta Barrett"
+    },
+    {
+      "photoNumber": "26625",
+      "mongoExists": true,
+      "mongoStatus": "in_selection",
+      "mongoQB": "5375LGT",
+      "selectionId": "SEL_MHXU17ET_H7KDM",
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5375LGT",
+      "cdeReserved": null,
+      "selectionStatus": "pending",
+      "clientName": "Loretta Barrett"
+    },
+    {
+      "photoNumber": "26705",
+      "mongoExists": true,
+      "mongoStatus": "in_selection",
+      "mongoQB": "5365",
+      "selectionId": "SEL_MHXU17ET_H7KDM",
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5365",
+      "cdeReserved": null,
+      "selectionStatus": "pending",
+      "clientName": "Loretta Barrett"
+    }
+  ],
+  "needPhotograph": [],
+  "qb8203Issues": [
+    {
+      "photoNumber": "29316",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "8203",
+      "cdeReserved": null
+    },
+    {
+      "photoNumber": "29317",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "8203",
+      "cdeReserved": null
+    },
+    {
+      "photoNumber": "29559",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "8203",
+      "cdeReserved": null
+    },
+    {
+      "photoNumber": "29560",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "8203",
+      "cdeReserved": null
+    },
+    {
+      "photoNumber": "29561",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "8203",
+      "cdeReserved": null
+    }
+  ],
+  "canFix": [
+    {
+      "photoNumber": "02936",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5303B TP",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Brazil Top Selected Categories → Extra Large → Taupe XL",
+      "price": 169
+    },
+    {
+      "photoNumber": "02937",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5302B SP",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Brazil Top Selected Categories → Medium Large → Salt & Pepper - Tricolor, Brown and White ML",
+      "price": 189
+    },
+    {
+      "photoNumber": "18945",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5302B SP",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Brazil Top Selected Categories → Medium Large → Salt & Pepper - Tricolor, Brown and White ML",
+      "price": 189
+    },
+    {
+      "photoNumber": "22434",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5202TRS",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Colombian Cowhides → 2. Large → Tricolor Spotted L",
+      "price": 125
+    },
+    {
+      "photoNumber": "30168",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5203TRI",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Colombian Cowhides → 3. X-Large → Tricolor Mix XL",
+      "price": 129
+    },
+    {
+      "photoNumber": "30169",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5203TRS",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Colombian Cowhides → 3. X-Large → Tricolor Spotted XL",
+      "price": 129
+    },
+    {
+      "photoNumber": "30170",
+      "mongoExists": false,
+      "mongoStatus": "N/A",
+      "mongoQB": "N/A",
+      "selectionId": null,
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5203TRI",
+      "cdeReserved": null,
+      "action": "CRIAR_REGISTRO",
+      "category": "Colombian Cowhides → 3. X-Large → Tricolor Mix XL",
+      "price": 129
+    },
+    {
+      "photoNumber": "71022",
+      "mongoExists": true,
+      "mongoStatus": "sold",
+      "mongoQB": "5204",
+      "selectionId": "SEL_MI27LTNX_DZTXK",
+      "cdeStatus": "INGRESADO",
+      "cdeQB": "5204",
+      "cdeReserved": null,
+      "selectionStatus": "finalized",
+      "clientName": "Calvin Wilson",
+      "action": "LIBERAR_RETORNO",
+      "reason": "Seleção finalizada mas CDE INGRESADO"
+    }
+  ],
+  "alreadyOk": []
+}

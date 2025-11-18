@@ -1,215 +1,255 @@
-// src/routes/inventory-monitor.js
+// src/routes/inventory-monitor.js - COM COMPARAÇÃO DE TOTAIS
 const express = require('express');
 const router = express.Router();
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+const Selection = require('../models/Selection');
 const { authenticateToken } = require('./auth');
 const mysql = require('mysql2/promise');
 
-// Proteger rota - apenas admins
 router.use(authenticateToken);
 
-// ===== ROTA DE TESTE: Scan Básico =====
+async function connectCDE() {
+    return await mysql.createConnection({
+        host: process.env.CDE_HOST,
+        port: process.env.CDE_PORT,
+        user: process.env.CDE_USER,
+        password: process.env.CDE_PASSWORD,
+        database: process.env.CDE_DATABASE
+    });
+}
+
 router.get('/scan', async (req, res) => {
     let cdeConnection = null;
+    const startTime = Date.now();
 
     try {
-        console.log('[INVENTORY-MONITOR] 🔍 Iniciando scan básico...');
+        console.log('[MONITOR] 🔍 Scan iniciado...');
 
-        // 1. Conectar no CDE
-        cdeConnection = await mysql.createConnection({
-            host: process.env.CDE_HOST,
-            port: process.env.CDE_PORT,
-            user: process.env.CDE_USER,
-            password: process.env.CDE_PASSWORD,
-            database: process.env.CDE_DATABASE
-        });
+        const critical = [];
+        const medium = [];
+        const warnings = [];
 
-        console.log('[INVENTORY-MONITOR] ✅ Conectado ao CDE');
+        cdeConnection = await connectCDE();
 
-        // 2. Buscar 10 fotos available no MongoDB (para teste)
+        // ===== BUSCAR FOTOS AVAILABLE/RESERVED NO MONGODB =====
         const mongoPhotos = await UnifiedProductComplete.find({
-            status: 'available',
-            photoNumber: { $exists: true, $ne: null, $ne: '0', $ne: '' },
-            isActive: true
+            photoNumber: {
+                $exists: true,
+                $ne: null,
+                $ne: '0',
+                $ne: '',
+                $regex: /^\d{5}$/
+            },
+            isActive: true,
+            status: { $in: ['available', 'reserved'] }
         })
-            .select('photoNumber status cdeStatus qbItem category fileName');
+            .select('photoNumber status qbItem category selectionId')
+            .lean();
 
-        console.log(`[INVENTORY-MONITOR] 📸 Encontradas ${mongoPhotos.length} fotos no MongoDB`);
+        console.log(`[MONITOR] 📸 ${mongoPhotos.length} fotos MongoDB (available/reserved)`);
 
-        // 3. Preparar lista de números de fotos
-        const photoNumbers = mongoPhotos.map(p => p.photoNumber);
-        console.log(`[INVENTORY-MONITOR] 🔍 Buscando ${photoNumbers.length} fotos no CDE...`);
-
-        // 4. Buscar TODAS de uma vez no CDE (Query Única)
-        const placeholders = photoNumbers.map(() => '?').join(',');
-        const [cdeResults] = await cdeConnection.execute(
-            `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AQBITEM 
+        // ===== BUSCAR TOTAIS NO CDE =====
+        const [cdeCount] = await cdeConnection.execute(
+            `SELECT COUNT(*) as total
              FROM tbinventario 
-             WHERE ATIPOETIQUETA IN (${placeholders})
-             AND ATIPOETIQUETA != '0'
-             AND ATIPOETIQUETA != ''
-             AND ATIPOETIQUETA IS NOT NULL`,
-            photoNumbers
+             WHERE AESTADOP = 'INGRESADO'
+             AND ATIPOETIQUETA REGEXP '^[0-9]{5}$'`
         );
 
-        console.log(`[INVENTORY-MONITOR] 📊 CDE retornou ${cdeResults.length} registros`);
+        const totalCdeIngresado = cdeCount[0].total;
+        console.log(`[MONITOR] 📦 ${totalCdeIngresado} fotos CDE (INGRESADO)`);
 
-        // 5. Criar mapa para lookup rápido (APENAS photoNumber como chave)
-        const cdeMap = new Map();
-        cdeResults.forEach(row => {
-            const key = row.ATIPOETIQUETA;  // ← Chave = apenas número da foto
+        // ===== BUSCAR FOTOS INGRESADO NO CDE =====
+        const [allCdeIngresado] = await cdeConnection.execute(
+            `SELECT ATIPOETIQUETA, AQBITEM
+             FROM tbinventario 
+             WHERE AESTADOP = 'INGRESADO'
+             AND ATIPOETIQUETA REGEXP '^[0-9]{5}$'
+             ORDER BY ATIPOETIQUETA`
+        );
 
-            // Se não existe, criar array vazio
-            if (!cdeMap.has(key)) {
-                cdeMap.set(key, []);
-            }
+        console.log(`[MONITOR] 📋 ${allCdeIngresado.length} fotos INGRESADO para verificar`);
 
-            // Adicionar ao array (pode ter múltiplas entradas)
-            cdeMap.get(key).push({
-                photoNumber: row.ATIPOETIQUETA,
-                status: row.AESTADOP,
-                reservedBy: row.RESERVEDUSU,
-                qbItem: row.AQBITEM
-            });
+        // Criar mapa MongoDB (rápido)
+        const mongoMap = new Map();
+        mongoPhotos.forEach(p => {
+            mongoMap.set(p.photoNumber, p);
         });
 
-        // 6. Array para guardar divergências
-        const discrepancies = [];
+        // ===== VERIFICAÇÃO: CDE → MONGODB =====
+        const missingInMongo = [];
 
-        // 7. Comparar cada foto do MongoDB com o CDE
-        for (const mongoPhoto of mongoPhotos) {
-            // Buscar por photoNumber apenas
-            const cdeDataArray = cdeMap.get(mongoPhoto.photoNumber);
+        for (const cdePhoto of allCdeIngresado) {
+            const mongoPhoto = mongoMap.get(cdePhoto.ATIPOETIQUETA);
 
-            if (!cdeDataArray || cdeDataArray.length === 0) {
-                // Foto existe no MongoDB mas não encontrada no CDE
-                console.log(`[INVENTORY-MONITOR] ⚠️ Foto ${mongoPhoto.photoNumber} não encontrada no CDE`);
-                continue;
-            }
-
-            // Tentar encontrar match exato por qbItem
-            let cdeData;
-            if (mongoPhoto.qbItem) {
-                // MongoDB tem qbItem, buscar match exato
-                cdeData = cdeDataArray.find(d => d.qbItem === mongoPhoto.qbItem);
-
-                if (!cdeData) {
-                    // Não achou match, pegar o primeiro (mas marcar como warning)
-                    cdeData = cdeDataArray[0];
-                }
-            } else {
-                // MongoDB não tem qbItem, pegar o primeiro do CDE
-                cdeData = cdeDataArray[0];
-            }
-
-            // Agora verificar divergências
-            const cdeStatus = cdeData.status;
-            let hasProblem = false;
-            let severity = 'ok';
-            let issue = '';
-
-            // 🔴 CRÍTICAS - Status
-            if (cdeStatus === 'RETIRADO') {
-                hasProblem = true;
-                severity = 'critical';
-                issue = 'Sold in CDE but available in gallery';
-            }
-
-            // 🟡 MÉDIAS - Status
-            if (cdeStatus === 'STANDBY') {
-                hasProblem = true;
-                severity = 'medium';
-                issue = 'Standby in CDE but available in gallery';
-            }
-
-            if (cdeStatus === 'PRE-SELECTED') {
-                hasProblem = true;
-                severity = 'medium';
-                issue = 'In cart (CDE) but available in MongoDB';
-            }
-
-            if (cdeStatus === 'CONFIRMED' || cdeStatus === 'RESERVED') {
-                hasProblem = true;
-                severity = 'medium';
-                issue = 'Selection confirmed but available in gallery';
-            }
-
-            // ⚠️ AVISOS - QB Item
-            if (!mongoPhoto.qbItem && cdeData.qbItem) {
-                hasProblem = true;
-                severity = 'warning';
-                issue = `QB Item missing in MongoDB (CDE has ${cdeData.qbItem})`;
-            }
-
-            if (mongoPhoto.qbItem && cdeData.qbItem && mongoPhoto.qbItem !== cdeData.qbItem) {
-                hasProblem = true;
-                severity = 'warning';
-                issue = `QB Item mismatch: MongoDB=${mongoPhoto.qbItem} vs CDE=${cdeData.qbItem}`;
-            }
-
-            // Se tem problema, adicionar à lista
-            if (hasProblem) {
-                discrepancies.push({
-                    photoNumber: mongoPhoto.photoNumber,
-                    fileName: mongoPhoto.fileName,
-                    mongoStatus: mongoPhoto.status,
-                    mongoQbItem: mongoPhoto.qbItem || 'null',
-                    cdeStatus: cdeStatus,
-                    cdeQbItem: cdeData.qbItem || 'null',
-                    category: mongoPhoto.category,
-                    severity: severity,
-                    issue: issue
+            if (!mongoPhoto) {
+                missingInMongo.push({
+                    photoNumber: cdePhoto.ATIPOETIQUETA,
+                    issue: 'Foto existe mas não aparece',
+                    description: 'CDE tem INGRESADO mas MongoDB não tem available',
+                    mongoStatus: 'NÃO EXISTE',
+                    cdeStatus: 'INGRESADO',
+                    mongoQb: '-',
+                    cdeQb: cdePhoto.AQBITEM || '-',
+                    category: 'Desconhecida'
                 });
             }
         }
 
-        console.log(`[INVENTORY-MONITOR] ✅ Scan completo. ${discrepancies.length} divergências encontradas`);
+        console.log(`[MONITOR] ⚠️ ${missingInMongo.length} fotos INGRESADO não aparecem na galeria`);
 
-        // 8. Agrupar por severidade
-        const bySeverity = {
-            critical: discrepancies.filter(d => d.severity === 'critical'),
-            medium: discrepancies.filter(d => d.severity === 'medium'),
-            warning: discrepancies.filter(d => d.severity === 'warning')
-        };
+        // Adicionar aos críticos
+        critical.push(...missingInMongo);
 
-        // 9. Agrupar por QB Item (categoria)
-        const byCategory = {};
-        discrepancies.forEach(d => {
-            const qb = d.cdeQbItem || 'Unknown';
-            if (!byCategory[qb]) {
-                byCategory[qb] = {
-                    qbItem: qb,
-                    count: 0,
-                    photos: []
-                };
-            }
-            byCategory[qb].count++;
-            byCategory[qb].photos.push(d);
+        // ===== BUSCAR NO CDE (BATCH PARA FOTOS MONGODB) =====
+        const photoNumbers = mongoPhotos.map(p => p.photoNumber);
+        const placeholders = photoNumbers.map(() => '?').join(',');
+
+        const [cdeResults] = await cdeConnection.execute(
+            `SELECT 
+                ATIPOETIQUETA,
+                AESTADOP,
+                AQBITEM
+            FROM (
+                SELECT 
+                    ATIPOETIQUETA,
+                    AESTADOP,
+                    AQBITEM,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ATIPOETIQUETA 
+                        ORDER BY 
+                            CASE AESTADOP 
+                                WHEN 'INGRESADO' THEN 1
+                                WHEN 'PRE-SELECTED' THEN 2
+                                WHEN 'CONFIRMED' THEN 3
+                                WHEN 'RETIRADO' THEN 4
+                                ELSE 5
+                            END,
+                            AFECHA DESC
+                    ) as rn
+                FROM tbinventario 
+                WHERE ATIPOETIQUETA IN (${placeholders})
+            ) ranked
+            WHERE rn = 1`,
+            photoNumbers
+        );
+
+        const cdeMap = new Map();
+        cdeResults.forEach(row => {
+            cdeMap.set(row.ATIPOETIQUETA, {
+                status: row.AESTADOP,
+                qbItem: row.AQBITEM
+            });
         });
 
-        // 10. Retornar resultado completo
+        // ===== BUSCAR SELEÇÕES ATIVAS =====
+        const activeSelections = await Selection.find({
+            status: { $in: ['pending', 'confirmed', 'approving'] }
+        }).select('_id items.fileName').lean();
+
+        // ===== VERIFICAR CADA FOTO MONGODB =====
+        for (const photo of mongoPhotos) {
+            const cdeData = cdeMap.get(photo.photoNumber);
+
+            // 🔴 CRÍTICO: Foto vendida aparecendo
+            if (cdeData && cdeData.status === 'RETIRADO' && photo.status === 'available') {
+                critical.push({
+                    photoNumber: photo.photoNumber,
+                    issue: 'Foto vendida aparecendo disponível',
+                    description: 'Cliente pode comprar foto que já foi vendida',
+                    mongoStatus: photo.status,
+                    cdeStatus: cdeData.status,
+                    mongoQb: photo.qbItem || '-',
+                    cdeQb: cdeData.qbItem || '-',
+                    category: photo.category
+                });
+            }
+
+            // 🔴 CRÍTICO: Seleção órfã
+            if (photo.selectionId) {
+                const selectionExists = activeSelections.find(
+                    s => s._id.toString() === photo.selectionId
+                );
+                if (!selectionExists) {
+                    critical.push({
+                        photoNumber: photo.photoNumber,
+                        issue: 'Foto travada em seleção cancelada',
+                        description: 'Foto não liberou depois que seleção foi cancelada',
+                        mongoStatus: photo.status,
+                        cdeStatus: cdeData ? cdeData.status : 'N/A',
+                        mongoQb: photo.qbItem || '-',
+                        cdeQb: cdeData ? cdeData.qbItem : '-',
+                        category: photo.category
+                    });
+                }
+            }
+
+            // 🟡 MÉDIO: Pass pendente
+            if (cdeData && photo.qbItem && cdeData.qbItem &&
+                photo.qbItem !== cdeData.qbItem &&
+                cdeData.qbItem.match(/^[0-9]{4}/)) {
+                medium.push({
+                    photoNumber: photo.photoNumber,
+                    issue: 'Foto mudou de categoria (Pass pendente)',
+                    description: 'Foto passou para outra categoria mas sistema não atualizou',
+                    mongoStatus: photo.status,
+                    cdeStatus: cdeData.status,
+                    mongoQb: photo.qbItem,
+                    cdeQb: cdeData.qbItem,
+                    category: photo.category
+                });
+            }
+
+            // 🟢 AVISO: Sem QB Code
+            if (!photo.qbItem && cdeData && cdeData.qbItem &&
+                cdeData.qbItem.match(/^[0-9]{4}/)) {
+                warnings.push({
+                    photoNumber: photo.photoNumber,
+                    issue: 'Foto sem preço definido',
+                    description: 'MongoDB não tem QB Code mas CDE tem',
+                    mongoStatus: photo.status,
+                    cdeStatus: cdeData ? cdeData.status : 'N/A',
+                    mongoQb: 'NULL',
+                    cdeQb: cdeData.qbItem,
+                    category: photo.category
+                });
+            }
+        }
+
+        // ===== RESULTADO =====
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        const difference = totalCdeIngresado - mongoPhotos.length;
+
+        console.log(`[MONITOR] ✅ Scan completo`);
+        console.log(`[MONITOR] 📊 CDE: ${totalCdeIngresado} | MongoDB: ${mongoPhotos.length} | Diferença: ${difference}`);
+        console.log(`[MONITOR] 🔴 ${critical.length} críticos | 🟡 ${medium.length} médios | 🟢 ${warnings.length} avisos`);
+
         res.json({
             success: true,
             data: {
                 summary: {
                     totalScanned: mongoPhotos.length,
-                    totalDiscrepancies: discrepancies.length,
-                    critical: bySeverity.critical.length,
-                    medium: bySeverity.medium.length,
-                    warning: bySeverity.warning.length,
-                    scanTime: new Date().toISOString()
+                    totalCdeIngresado: totalCdeIngresado,
+                    totalMongoAvailable: mongoPhotos.length,
+                    difference: difference,
+                    totalDiscrepancies: critical.length + medium.length + warnings.length,
+                    critical: critical.length,
+                    medium: medium.length,
+                    warnings: warnings.length,
+                    scanTime: new Date().toISOString(),
+                    duration: `${elapsed}s`
                 },
-                bySeverity: bySeverity,
-                byCategory: byCategory,
-                discrepancies: discrepancies
+                critical,
+                medium,
+                warnings
             }
         });
 
     } catch (error) {
-        console.error('[INVENTORY-MONITOR] ❌ Erro:', error);
+        console.error('[MONITOR] ❌ Erro:', error);
         res.status(500).json({
             success: false,
-            message: 'Error scanning inventory',
+            message: 'Erro ao escanear',
             error: error.message
         });
     } finally {
