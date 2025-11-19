@@ -1,4 +1,4 @@
-// public/js/inventory-monitor.js
+// public/js/inventory-monitor.js - VERSÃO ESPANHOL COMPLETA
 class InventoryMonitor {
     constructor() {
         this.isScanning = false;
@@ -7,7 +7,6 @@ class InventoryMonitor {
     async scan() {
         if (this.isScanning) return;
 
-        // ✅ VERIFICAR SE HÁ SESSÃO ANTES DE ESCANEAR
         const sessionData = localStorage.getItem('sunshineSession');
         if (!sessionData) {
             console.log('⚠️ Scan cancelado - sem sessão ativa');
@@ -39,14 +38,14 @@ class InventoryMonitor {
             const result = await response.json();
 
             if (!result.success) {
-                throw new Error(result.message || 'Erro ao escanear');
+                throw new Error(result.message || 'Error al escanear');
             }
 
             this.displayResults(result.data);
 
         } catch (error) {
             console.error('Scan error:', error);
-            alert('Erro ao escanear: ' + error.message);
+            alert('Error al escanear: ' + error.message);
         } finally {
             this.isScanning = false;
             this.updateUI('idle');
@@ -60,16 +59,16 @@ class InventoryMonitor {
         if (state === 'scanning') {
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Escaneando...';
             }
             if (status) {
-                status.textContent = '🔍 Scanning inventory...';
+                status.textContent = '🔍 Escaneando inventario...';
                 status.classList.add('scanning');
             }
         } else {
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-search"></i> Scan Now';
+                btn.innerHTML = '<i class="fas fa-search"></i> Escanear Ahora';
             }
             if (status) {
                 status.textContent = '';
@@ -81,7 +80,6 @@ class InventoryMonitor {
     displayResults(data) {
         console.log('📊 Exibindo resultados:', data);
 
-        // Atualizar contadores
         const totalScanned = document.getElementById('totalScanned');
         const totalDiscrepancies = document.getElementById('totalDiscrepancies');
         const criticalCount = document.getElementById('criticalCount');
@@ -94,16 +92,14 @@ class InventoryMonitor {
         if (mediumCount) mediumCount.textContent = data.summary.medium;
         if (warningCount) warningCount.textContent = data.summary.warnings;
 
-        // Combinar todos os problemas
         const allIssues = [
-            ...data.critical.map(i => ({ ...i, severity: 'critical' })),
-            ...data.medium.map(i => ({ ...i, severity: 'medium' })),
-            ...data.warnings.map(i => ({ ...i, severity: 'warning' }))
+            ...data.critical.map(i => ({ ...i, severity: i.severity || 'critical' })),
+            ...data.medium.map(i => ({ ...i, severity: 'autofix' })), // ← MUDANÇA AQUI
+            ...data.warnings.map(i => ({ ...i, severity: i.severity || 'warning' }))
         ];
 
         console.log(`📊 Total de problemas: ${allIssues.length}`);
 
-        // Atualizar tabela
         const tbody = document.getElementById('discrepanciesTable');
         if (!tbody) return;
 
@@ -112,39 +108,47 @@ class InventoryMonitor {
         if (allIssues.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="empty-state">
+                    <td colspan="6" class="empty-state">
                         <div class="empty-state-icon">✅</div>
-                        <div class="empty-state-text">Nenhuma inconsistência encontrada</div>
-                        <div class="empty-state-subtext">Todo o inventário está sincronizado</div>
+                        <div class="empty-state-text">No se encontraron inconsistencias</div>
+                        <div class="empty-state-subtext">Todo el inventario está sincronizado</div>
                     </td>
                 </tr>
             `;
             return;
         }
 
-        // Criar linhas da tabela
         allIssues.forEach(issue => {
             const tr = document.createElement('tr');
 
-            // Ícone e cor por severidade
-            let severityIcon, severityClass;
+            let severityIcon, severityClass, severityText;
             if (issue.severity === 'critical') {
                 severityIcon = '🔴';
                 severityClass = 'severity-critical';
-            } else if (issue.severity === 'medium') {
+                severityText = 'crítico';
+            } else if (issue.severity === 'autofix') { // ← NOVO
+                severityIcon = '🔧';
+                severityClass = 'severity-autofix';
+                severityText = 'auto-corrección';
+            } else if (issue.severity === 'warning') {
                 severityIcon = '🟡';
-                severityClass = 'severity-medium';
+                severityClass = 'severity-warning';
+                severityText = 'advertencia';
             } else {
                 severityIcon = '🟢';
-                severityClass = 'severity-warning';
+                severityClass = 'severity-info';
+                severityText = 'información';
             }
+
+            const cdeStatus = this.translateStatus(issue.cdeStatus);
+            const mongoStatus = this.translateStatus(issue.mongoStatus);
 
             tr.innerHTML = `
                 <td>${issue.photoNumber}</td>
-                <td>${issue.cdeStatus || '-'}</td>
-                <td>${issue.mongoStatus || '-'}</td>
+                <td>${cdeStatus}</td>
+                <td>${mongoStatus}</td>
                 <td>${issue.cdeQb || '-'}</td>
-                <td><span class="severity-badge ${severityClass}">${severityIcon} ${issue.severity}</span></td>
+                <td><span class="severity-badge ${severityClass}">${severityIcon} ${severityText}</span></td>
                 <td><strong>${issue.issue}</strong><br><small>${issue.description}</small></td>
             `;
 
@@ -153,12 +157,23 @@ class InventoryMonitor {
 
         console.log('✅ Tabela atualizada com', allIssues.length, 'linhas');
     }
+
+    translateStatus(status) {
+        const translations = {
+            'INGRESADO': 'INGRESADO',
+            'RETIRADO': 'RETIRADO',
+            'available': 'disponible',
+            'sold': 'vendido',
+            'reserved': 'reservado',
+            'NÃO EXISTE': 'NO EXISTE',
+            'NO EXISTE': 'NO EXISTE'
+        };
+        return translations[status] || status || '-';
+    }
 }
 
-// Inicializar
 window.monitor = new InventoryMonitor();
 
-// ✅ Auto-scan SOMENTE se houver sessão válida
 document.addEventListener('DOMContentLoaded', () => {
     const sessionData = localStorage.getItem('sunshineSession');
     if (sessionData) {

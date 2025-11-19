@@ -1,10 +1,11 @@
-// src/routes/inventory-monitor.js - COM COMPARAÇÃO DE TOTAIS
+// src/routes/inventory-monitor.js - VERSÃO ESPANHOL COMPLETA
 const express = require('express');
 const router = express.Router();
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Selection = require('../models/Selection');
 const { authenticateToken } = require('./auth');
 const mysql = require('mysql2/promise');
+const syncInstance = require('../services/CDEIncrementalSync');
 
 router.use(authenticateToken);
 
@@ -18,6 +19,31 @@ async function connectCDE() {
     });
 }
 
+router.get('/sync-status', async (req, res) => {
+    try {
+        const stats = syncInstance.getStats();
+
+        res.json({
+            success: true,
+            data: {
+                isRunning: stats.isRunning,
+                lastRun: stats.lastRun,
+                nextRun: stats.lastRun ?
+                    new Date(stats.lastRun.getTime() + 5 * 60 * 1000) : null,
+                totalChecked: stats.totalChecked,
+                discrepanciesFound: stats.discrepanciesFound,
+                mode: stats.mode,
+                executionCount: stats.executionCount
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 router.get('/scan', async (req, res) => {
     let cdeConnection = null;
     const startTime = Date.now();
@@ -25,13 +51,14 @@ router.get('/scan', async (req, res) => {
     try {
         console.log('[MONITOR] 🔍 Scan iniciado...');
 
-        const critical = [];
-        const medium = [];
-        const warnings = [];
+        const issues = {
+            critical: [],
+            warnings: [],
+            autoFixable: []
+        };
 
         cdeConnection = await connectCDE();
 
-        // ===== BUSCAR FOTOS AVAILABLE/RESERVED NO MONGODB =====
         const mongoPhotos = await UnifiedProductComplete.find({
             photoNumber: {
                 $exists: true,
@@ -43,12 +70,11 @@ router.get('/scan', async (req, res) => {
             isActive: true,
             status: { $in: ['available', 'reserved'] }
         })
-            .select('photoNumber status qbItem category selectionId')
+            .select('photoNumber status qbItem category selectionId specialFlags')
             .lean();
 
         console.log(`[MONITOR] 📸 ${mongoPhotos.length} fotos MongoDB (available/reserved)`);
 
-        // ===== BUSCAR TOTAIS NO CDE =====
         const [cdeCount] = await cdeConnection.execute(
             `SELECT COUNT(*) as total
              FROM tbinventario 
@@ -59,7 +85,6 @@ router.get('/scan', async (req, res) => {
         const totalCdeIngresado = cdeCount[0].total;
         console.log(`[MONITOR] 📦 ${totalCdeIngresado} fotos CDE (INGRESADO)`);
 
-        // ===== BUSCAR FOTOS INGRESADO NO CDE =====
         const [allCdeIngresado] = await cdeConnection.execute(
             `SELECT ATIPOETIQUETA, AQBITEM
              FROM tbinventario 
@@ -70,50 +95,59 @@ router.get('/scan', async (req, res) => {
 
         console.log(`[MONITOR] 📋 ${allCdeIngresado.length} fotos INGRESADO para verificar`);
 
-        // Criar mapa MongoDB (rápido)
         const mongoMap = new Map();
         mongoPhotos.forEach(p => {
             mongoMap.set(p.photoNumber, p);
         });
 
-        // ===== VERIFICAÇÃO: CDE → MONGODB ======
-        const missingInMongo = [];
-
+        // VERIFICACIÓN: CDE → MONGODB
         for (const cdePhoto of allCdeIngresado) {
             const mongoPhoto = mongoMap.get(cdePhoto.ATIPOETIQUETA);
 
             if (!mongoPhoto) {
-                // Verificar se existe mas está inativa
                 const inactivePhoto = await UnifiedProductComplete.findOne({
                     photoNumber: cdePhoto.ATIPOETIQUETA,
                     isActive: false
                 }).select('photoNumber isActive status').lean();
 
-                // Se existe mas está inativa, ignorar (não é erro!)
                 if (inactivePhoto) {
                     continue;
                 }
 
-                // Se realmente não existe, aí sim reportar
-                missingInMongo.push({
+                const photoWithFlags = await UnifiedProductComplete.findOne({
+                    photoNumber: cdePhoto.ATIPOETIQUETA
+                }).select('specialFlags').lean();
+
+                if (photoWithFlags?.specialFlags?.preventAutoSold) {
+                    continue;
+                }
+
+                issues.critical.push({
                     photoNumber: cdePhoto.ATIPOETIQUETA,
-                    issue: 'Foto existe mas não aparece',
-                    description: 'CDE tem INGRESADO mas MongoDB não tem available',
-                    mongoStatus: 'NÃO EXISTE',
+                    severity: 'critical',
+                    issue: 'Foto no aparece en la galería',
+                    description: `La foto ${cdePhoto.ATIPOETIQUETA} está INGRESADO en CDE pero no está visible en la galería.`,
+                    possibleCauses: [
+                        { cause: 'Número reutilizado (foto antigua vendida)', probability: 'Probable' },
+                        { cause: 'Error de sincronización', probability: 'Posible' },
+                        { cause: 'Foto creada recientemente', probability: 'Menos probable' }
+                    ],
+                    suggestedActions: [
+                        'Verificar si existe foto antigua vendida con mismo número',
+                        'Aguardar próximo sync automático (5 min)',
+                        'Verificar historial en CDE'
+                    ],
+                    mongoStatus: 'NO EXISTE',
                     cdeStatus: 'INGRESADO',
                     mongoQb: '-',
                     cdeQb: cdePhoto.AQBITEM || '-',
-                    category: 'Desconhecida'
+                    category: 'Desconocida',
+                    syncCanFix: false,
+                    needsManualReview: true
                 });
             }
         }
 
-        console.log(`[MONITOR] ⚠️ ${missingInMongo.length} fotos INGRESADO não aparecem na galeria`);
-
-        // Adicionar aos críticos
-        critical.push(...missingInMongo);
-
-        // ===== BUSCAR NO CDE (BATCH PARA FOTOS MONGODB) =====
         const photoNumbers = mongoPhotos.map(p => p.photoNumber);
         const placeholders = photoNumbers.map(() => '?').join(',');
 
@@ -154,87 +188,141 @@ router.get('/scan', async (req, res) => {
             });
         });
 
-        // ===== BUSCAR SELEÇÕES ATIVAS =====
-        const activeSelections = await Selection.find({
-            status: { $in: ['pending', 'confirmed', 'approving'] }
-        }).select('_id items.fileName').lean();
+        const allSelections = await Selection.find({
+            status: { $in: ['pending', 'confirmed', 'approving', 'finalized'] }
+        }).select('_id status clientName items.fileName selectionId').lean();
 
-        // ===== VERIFICAR CADA FOTO MONGODB =====
+        // VERIFICAR CADA FOTO MONGODB
         for (const photo of mongoPhotos) {
             const cdeData = cdeMap.get(photo.photoNumber);
 
-            // 🔴 CRÍTICO: Foto vendida aparecendo
+            // CRÍTICO: Foto vendida apareciendo
             if (cdeData && cdeData.status === 'RETIRADO' && photo.status === 'available') {
-                critical.push({
+                issues.critical.push({
                     photoNumber: photo.photoNumber,
-                    issue: 'Foto vendida aparecendo disponível',
-                    description: 'Cliente pode comprar foto que já foi vendida',
+                    severity: 'critical',
+                    issue: 'Inconsistencia crítica detectada',
+                    description: `Foto ${photo.photoNumber}: Sistema CDE registra como RETIRADO (vendida), pero galería muestra como disponible para compra.`,
+                    possibleCauses: [
+                        { cause: 'Venta reciente no sincronizada', probability: 'Probable' },
+                        { cause: 'Reversión manual sin actualizar galería', probability: 'Posible' },
+                        { cause: 'Error en procesamiento', probability: 'Improbable' }
+                    ],
+                    suggestedActions: [
+                        'Aguardar próximo ciclo de sincronización (5 min)',
+                        'Verificar historial de movimiento en CDE',
+                        'Si persiste, investigar manualmente'
+                    ],
                     mongoStatus: photo.status,
                     cdeStatus: cdeData.status,
                     mongoQb: photo.qbItem || '-',
                     cdeQb: cdeData.qbItem || '-',
-                    category: photo.category
+                    category: photo.category,
+                    syncCanFix: true,
+                    needsManualReview: false
                 });
             }
 
-            // 🔴 CRÍTICO: Seleção órfã
+            // AVISO: Foto con referencia a pedido
             if (photo.selectionId) {
-                const selectionExists = activeSelections.find(
-                    s => s._id.toString() === photo.selectionId
+                const selection = allSelections.find(
+                    s => s.selectionId === photo.selectionId || s._id.toString() === photo.selectionId
                 );
-                if (!selectionExists) {
-                    critical.push({
+
+                if (selection) {
+                    if (selection.status === 'finalized') {
+                        if (cdeData?.status === 'INGRESADO') {
+                            issues.warnings.push({
+                                photoNumber: photo.photoNumber,
+                                severity: 'warning',
+                                issue: 'Divergencia en pedido finalizado',
+                                description: `Foto ${photo.photoNumber} consta en pedido finalizado (Cliente: ${selection.clientName}), pero sistema CDE registra estado INGRESADO en lugar de RETIRADO.`,
+                                possibleCauses: [
+                                    { cause: 'Foto puede haber sido sustituida durante embalaje', probability: 'Probable' },
+                                    { cause: 'Posible devolución no registrada', probability: 'Posible' },
+                                    { cause: 'Salida no registrada en sistema', probability: 'Menos probable' }
+                                ],
+                                suggestedActions: [
+                                    `Verificar con almacén si foto ${photo.photoNumber} fue realmente enviada`,
+                                    `Buscar registro de posible sustituta`,
+                                    `Revisar documentación de salida del pedido`,
+                                    `Si confirmado no-envío, considerar liberar para venta`
+                                ],
+                                mongoStatus: photo.status,
+                                cdeStatus: cdeData.status,
+                                mongoQb: photo.qbItem || '-',
+                                cdeQb: cdeData ? cdeData.qbItem : '-',
+                                category: photo.category,
+                                selectionInfo: {
+                                    client: selection.clientName,
+                                    status: 'Finalizado'
+                                },
+                                syncCanFix: false,
+                                needsManualReview: true
+                            });
+                        }
+                    }
+                } else {
+                    issues.warnings.push({
                         photoNumber: photo.photoNumber,
-                        issue: 'Foto travada em seleção cancelada',
-                        description: 'Foto não liberou depois que seleção foi cancelada',
+                        severity: 'warning',
+                        issue: 'Referencia a pedido no localizado',
+                        description: `Foto ${photo.photoNumber} posee marcación de pedido, pero el pedido correspondiente no fue encontrado en el sistema.`,
+                        possibleCauses: [
+                            { cause: 'Pedido puede haber sido cancelado', probability: 'Probable' },
+                            { cause: 'Posible error en limpieza tras cancelación', probability: 'Posible' },
+                            { cause: 'Inconsistencia en base de datos', probability: 'Menos probable' }
+                        ],
+                        suggestedActions: [
+                            'Verificar historial de pedidos cancelados',
+                            'Considerar remover marcación de pedido',
+                            'Liberar foto para venta si apropiado'
+                        ],
                         mongoStatus: photo.status,
                         cdeStatus: cdeData ? cdeData.status : 'N/A',
                         mongoQb: photo.qbItem || '-',
                         cdeQb: cdeData ? cdeData.qbItem : '-',
-                        category: photo.category
+                        category: photo.category,
+                        syncCanFix: false,
+                        needsManualReview: true
                     });
                 }
             }
 
-            // 🟡 MÉDIO: Pass pendente
+            // INFO: Categoría desactualizada
             if (cdeData && photo.qbItem && cdeData.qbItem &&
                 photo.qbItem !== cdeData.qbItem &&
                 cdeData.qbItem.match(/^[0-9]{4}/)) {
-                medium.push({
+                issues.autoFixable.push({
                     photoNumber: photo.photoNumber,
-                    issue: 'Foto mudou de categoria (Pass pendente)',
-                    description: 'Foto passou para outra categoria mas sistema não atualizou',
+                    severity: 'info',
+                    issue: 'Categoría puede estar desactualizada',
+                    description: `Foto ${photo.photoNumber}: CDE indica categoría ${cdeData.qbItem}, pero galería muestra ${photo.qbItem}.`,
+                    possibleCauses: [
+                        { cause: 'Cambio reciente aguardando sincronización', probability: 'Muy probable' },
+                        { cause: 'Proceso de sincronización en curso', probability: 'Probable' }
+                    ],
+                    suggestedActions: [
+                        'Aguardar ciclo de sincronización automática',
+                        'Si persiste después de 15 minutos, investigar'
+                    ],
                     mongoStatus: photo.status,
                     cdeStatus: cdeData.status,
                     mongoQb: photo.qbItem,
                     cdeQb: cdeData.qbItem,
-                    category: photo.category
-                });
-            }
-
-            // 🟢 AVISO: Sem QB Code
-            if (!photo.qbItem && cdeData && cdeData.qbItem &&
-                cdeData.qbItem.match(/^[0-9]{4}/)) {
-                warnings.push({
-                    photoNumber: photo.photoNumber,
-                    issue: 'Foto sem preço definido',
-                    description: 'MongoDB não tem QB Code mas CDE tem',
-                    mongoStatus: photo.status,
-                    cdeStatus: cdeData ? cdeData.status : 'N/A',
-                    mongoQb: 'NULL',
-                    cdeQb: cdeData.qbItem,
-                    category: photo.category
+                    category: photo.category,
+                    syncCanFix: true,
+                    needsManualReview: false
                 });
             }
         }
 
-        // ===== RESULTADO =====
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         const difference = totalCdeIngresado - mongoPhotos.length;
+        const totalIssues = issues.critical.length + issues.warnings.length + issues.autoFixable.length;
 
         console.log(`[MONITOR] ✅ Scan completo`);
         console.log(`[MONITOR] 📊 CDE: ${totalCdeIngresado} | MongoDB: ${mongoPhotos.length} | Diferença: ${difference}`);
-        console.log(`[MONITOR] 🔴 ${critical.length} críticos | 🟡 ${medium.length} médios | 🟢 ${warnings.length} avisos`);
 
         res.json({
             success: true,
@@ -244,16 +332,14 @@ router.get('/scan', async (req, res) => {
                     totalCdeIngresado: totalCdeIngresado,
                     totalMongoAvailable: mongoPhotos.length,
                     difference: difference,
-                    totalDiscrepancies: critical.length + medium.length + warnings.length,
-                    critical: critical.length,
-                    medium: medium.length,
-                    warnings: warnings.length,
-                    scanTime: new Date().toISOString(),
-                    duration: `${elapsed}s`
+                    totalDiscrepancies: totalIssues,
+                    critical: issues.critical.length,
+                    medium: issues.autoFixable.length, // ← AUTO-FIX aqui
+                    warnings: issues.warnings.length
                 },
-                critical,
-                medium,
-                warnings
+                critical: issues.critical,
+                medium: issues.autoFixable, // ← AUTO-FIX aqui
+                warnings: issues.warnings
             }
         });
 
@@ -261,7 +347,7 @@ router.get('/scan', async (req, res) => {
         console.error('[MONITOR] ❌ Erro:', error);
         res.status(500).json({
             success: false,
-            message: 'Erro ao escanear',
+            message: 'Error al escanear',
             error: error.message
         });
     } finally {

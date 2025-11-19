@@ -83,7 +83,7 @@
                     <div class="nav-item">
                         <a href="#inventory-monitor" class="nav-link" data-section="inventoryMonitor">
                             <i class="fas fa-search"></i>
-                            <span class="nav-text">Inventory Monitor(NO ESTA LISTO)</span>
+                            <span class="nav-text">Inventory Monitor</span>
                         </a>
                     </div>
                     <div class="nav-item" style="display:none">
@@ -1341,14 +1341,32 @@
 
                 <!-- INVENTORY MONITOR SECTION -->
                 <div id="section-inventoryMonitor" class="content-section" style="display: none;">
-                    <div class="section-header-card">
-                        <button id="scanBtn" onclick="monitor.scan()"
-                            style="padding: 8px; border-radius: 8px; color: #000000; font: normal 12pt Arial; font-weight: 600; margin-bottom: 15px; background: #d4af37; border: none; cursor: pointer;">
-                            <i class="fas fa-search"></i> Scan Now
-                        </button>
-                        <span id="scanStatus" style="margin-left: 10px; color: #666;"></span>
-                        <h2 style="margin-top: 15px;">📊 Inventory Status Monitor</h2>
-                        <p>Real-time synchronization check between CDE and MongoDB</p>
+                    <div class="section-header-card"
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                        <div>
+                            <button id="scanBtn" onclick="monitor.scan()"
+                                style="padding: 8px; border-radius: 8px; color: #000000; font: normal 12pt Arial; font-weight: 600; margin-bottom: 15px; background: #d4af37; border: none; cursor: pointer;">
+                                <i class="fas fa-search"></i> Escanear Ahora
+                            </button>
+                            <span id="scanStatus" style="margin-left: 10px; color: #666;"></span>
+                            <h2 style="margin-top: 15px;">📊 Monitor de Estado de Inventario</h2>
+                            <p>Verificación de sincronización en tiempo real entre CDE y MongoDB</p>
+                        </div>
+
+                        <div class="sync-info-badge"
+                            style="background: rgba(255, 193, 7, 0.1); border: 2px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 15px 20px; min-width: 400px;">
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <i class="fas fa-sync-alt"
+                                    style="font-size: 2rem; color: #ffc107; animation: rotate-sync 3s linear infinite;"></i>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <strong style="font-size: 0.9rem; color: #ffc107;">Sincronización
+                                        Automática Habilitada</strong>
+                                    <span style="font-size: 0.75rem; color: #aaa;">• Cada 5 minutos</span>
+                                    <span style="font-size: 0.75rem; color: #aaa;">• 300 fotos por ciclo</span>
+                                    <span style="font-size: 0.75rem; color: #aaa;">• Ciclo completo: ~30 min</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Stats Cards -->
@@ -1357,9 +1375,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Total Scanned</div>
+                                    <div class="stat-title">Total Escaneado</div>
                                     <div class="stat-value" id="totalScanned">-</div>
-                                    <div class="stat-description">Photos checked</div>
+                                    <div class="stat-description">Fotos verificadas</div>
                                 </div>
                                 <div class="stat-icon primary">
                                     <i class="fas fa-images"></i>
@@ -1370,9 +1388,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Discrepancies</div>
+                                    <div class="stat-title">Discrepancias</div>
                                     <div class="stat-value" id="totalDiscrepancies">-</div>
-                                    <div class="stat-description">Issues found</div>
+                                    <div class="stat-description">Problemas encontrados</div>
                                 </div>
                                 <div class="stat-icon warning">
                                     <i class="fas fa-exclamation-triangle"></i>
@@ -1383,9 +1401,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Critical</div>
+                                    <div class="stat-title">Crítico</div>
                                     <div class="stat-value" id="criticalCount" style="color: #b72424e0;">-</div>
-                                    <div class="stat-description">Sold appearing available</div>
+                                    <div class="stat-description">Vendidas apareciendo disponibles</div>
                                 </div>
                                 <div class="stat-icon danger" style="color: black; background-color: #b72424e0;">
                                     <i class="fas fa-times-circle"></i>
@@ -1396,12 +1414,12 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Medium</div>
-                                    <div class="stat-value" id="mediumCount" style="color: #ffc107;">-</div>
-                                    <div class="stat-description">Status conflicts</div>
+                                    <div class="stat-title">Auto-corrección</div>
+                                    <div class="stat-value" id="mediumCount" style="color: #2196f3;">-</div>
+                                    <div class="stat-description">Sync resolverá automáticamente</div>
                                 </div>
-                                <div class="stat-icon warning">
-                                    <i class="fas fa-exclamation"></i>
+                                <div class="stat-icon" style="background: #2196f3; color: #fff;">
+                                    <i class="fas fa-magic"></i>
                                 </div>
                             </div>
                         </div>
@@ -1409,9 +1427,9 @@
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title">Warnings</div>
+                                    <div class="stat-title">Advertencias</div>
                                     <div class="stat-value" id="warningCount" style="color: #ffc107;">-</div>
-                                    <div class="stat-description">QB Item missing</div>
+                                    <div class="stat-description">Requiere investigación</div>
                                 </div>
                                 <div class="stat-icon info" style="color: #000000; background: #d4af37;">
                                     <i class="fas fa-info-circle"></i>
@@ -1423,23 +1441,23 @@
                     <!-- Discrepancies Table -->
                     <div class="data-table-container">
                         <div class="table-header">
-                            <h3 class="table-title">Discrepancies Found</h3>
+                            <h3 class="table-title">Discrepancias Encontradas</h3>
                         </div>
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Photo</th>
-                                    <th>CDE Status</th>
-                                    <th>Gallery Status</th>
-                                    <th>QB Item (CDE)</th>
-                                    <th>Severity</th>
-                                    <th>Issue</th>
+                                    <th>Foto</th>
+                                    <th>Estado CDE</th>
+                                    <th>Estado Galería</th>
+                                    <th>Artículo QB (CDE)</th>
+                                    <th>Severidad</th>
+                                    <th>Problema</th>
                                 </tr>
                             </thead>
                             <tbody id="discrepanciesTable">
                                 <tr>
                                     <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                                        Click "Scan Now" to check inventory status
+                                        Haga clic en "Escanear Ahora" para verificar el estado del inventario
                                     </td>
                                 </tr>
                             </tbody>
@@ -1447,8 +1465,31 @@
                     </div>
                 </div>
 
+                <style>
+                    @keyframes rotate-sync {
+                        from {
+                            transform: rotate(0deg);
+                        }
+
+                        to {
+                            transform: rotate(360deg);
+                        }
+                    }
+
+                    .sync-info-badge {
+                        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+                        transition: all 0.3s ease;
+                    }
+
+                    .sync-info-badge:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+                    }
+                </style>
             </div>
-        </main>
+
+    </div>
+    </main>
     </div>
 
     <!-- Modal de Confirmação para Mudanças Não Salvas -->

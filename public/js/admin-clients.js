@@ -274,9 +274,9 @@ class AdminClients {
                                             placeholder="e.g. ABC Industries LLC">
                                     </div>
                                     <div class="form-group-clients">
-                                        <label class="form-label-clients">Email</label>
+                                        <label class="form-label-clients required">Email</label>
                                         <input type="email" id="clientEmail" class="form-input-clients" 
-                                            placeholder="e.g. contact@company.com">
+                                            placeholder="e.g. contact@company.com" required>
                                     </div>
                                     <div class="form-group-clients">
                                         <label class="form-label-clients">Phone</label>

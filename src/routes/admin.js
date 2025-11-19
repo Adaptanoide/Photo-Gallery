@@ -345,6 +345,23 @@ router.post('/access-codes', async (req, res) => {
             });
         }
 
+        // 🆕 NOVA VALIDAÇÃO DE EMAIL
+        if (!clientEmail || clientEmail.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email do cliente é obrigatório'
+            });
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(clientEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email inválido'
+            });
+        }
+
         if (!salesRep || salesRep.trim().length === 0) {
             return res.status(400).json({
                 success: false,
@@ -450,6 +467,23 @@ router.put('/access-codes/:id', async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Nome do cliente e categorias são obrigatórios'
+            });
+        }
+
+        // 🆕 ADICIONAR AQUI - VALIDAÇÃO DE EMAIL
+        if (!clientEmail || clientEmail.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email do cliente é obrigatório'
+            });
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(clientEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email inválido'
             });
         }
 

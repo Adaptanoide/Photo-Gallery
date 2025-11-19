@@ -581,23 +581,23 @@
     .admin-sidebar {
         transform: translateX(-100%);
     }
-    
+
     .admin-sidebar.open {
         transform: translateX(0);
     }
-    
+
     .admin-main {
         margin-left: 0;
     }
-    
+
     .sidebar-toggle {
         display: flex;
     }
-    
+
     .stats-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
-    
+
     .admin-content {
         padding: 1.5rem;
     }
@@ -607,43 +607,43 @@
     .admin-header {
         padding: 1rem 1.5rem;
     }
-    
+
     .admin-content {
         padding: 1rem;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .stat-card {
         padding: 1.25rem;
     }
-    
+
     .stat-value {
         font-size: 2.25rem;
     }
-    
+
     .header-right {
         gap: 1rem;
     }
-    
+
     .admin-user .user-name {
         display: none;
     }
-    
+
     .table-header {
         flex-direction: column;
         gap: 1rem;
         align-items: stretch;
         padding: 1.25rem;
     }
-    
+
     .table-actions {
         justify-content: center;
     }
-    
+
     .data-table th,
     .data-table td {
         padding: 0.75rem 1rem;
@@ -654,35 +654,35 @@
     .sidebar-header {
         padding: 1rem;
     }
-    
+
     .nav-link {
         padding: 0.875rem 1rem;
     }
-    
+
     .nav-text {
         font-size: 0.9rem;
     }
-    
+
     .stat-card {
         padding: 1rem;
     }
-    
+
     .stat-header {
         flex-direction: column;
         gap: 1rem;
         align-items: flex-start;
     }
-    
+
     .stat-icon {
         width: 44px;
         height: 44px;
         font-size: 1.1rem;
     }
-    
+
     .data-table-container {
         overflow-x: auto;
     }
-    
+
     .data-table {
         min-width: 600px;
     }
@@ -713,6 +713,7 @@
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -723,6 +724,7 @@
     0% {
         background-position: -200% 0;
     }
+
     100% {
         background-position: 200% 0;
     }
@@ -862,8 +864,13 @@
 }
 
 @keyframes luxury-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Loading para seções específicas */
@@ -916,4 +923,28 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+}
+
+/* ===== INVENTORY MONITOR - AUTO-FIX ===== */
+.severity-autofix {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196f3;
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sync-info-badge {
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+    transition: all 0.3s ease;
+}
+
+.sync-info-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
 }
