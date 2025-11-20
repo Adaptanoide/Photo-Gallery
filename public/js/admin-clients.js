@@ -1190,7 +1190,7 @@ class AdminClients {
             zipCode: document.getElementById('zipCode').value.trim(),
             salesRep: document.getElementById('salesRep').value.trim(),
             allowedCategories: this.selectedCategories.length > 0 ? this.selectedCategories : [],
-            showPrices: this.currentClient ? (this.currentClient.showPrices || false) : false,
+            showPrices: this.currentClient ? (this.currentClient.showPrices !== false) : true,  // ← PADRÃO TRUE!
             accessType: this.currentClient?.accessType || 'normal',
             isActive: true,
             code: this.currentClient ? this.currentClient.code : document.getElementById('codePreview').textContent
@@ -2101,8 +2101,7 @@ class AdminClients {
             state: document.getElementById('state').value,
             zipCode: document.getElementById('zipCode').value,
             salesRep: document.getElementById('salesRep').value,
-            showPrices: this.currentClient ? (this.currentClient.showPrices || false) : false,
-            selectedCategories: [...this.selectedCategories]
+            showPrices: this.currentClient ? (this.currentClient.showPrices !== false) : true,  // ← PADRÃO TRUE!            selectedCategories: [...this.selectedCategories]
         };
 
         // Compara cada campo
@@ -2425,8 +2424,6 @@ class AdminClients {
                     }
                 }
 
-                console.log(`📁 Loaded ${this.selectedFolders.length} categories (${qbItems.length} QB items, ${otherItems.length} mapped)`);
-
             } catch (error) {
                 console.error('Error loading saved categories:', error);
                 // Fallback
@@ -2439,17 +2436,67 @@ class AdminClients {
             }
         }
 
+        // ===== NOVO: HABILITAR TODAS AS CATEGORIAS POR PADRÃO PARA CLIENTES NOVOS =====
+        if (this.selectedFolders.length === 0) {
+            console.log('🆕 Cliente sem categorias salvas - habilitando TODAS por padrão...');
+
+            try {
+                const token = this.getAdminToken();
+                const response = await fetch('/api/pricing/categories/all', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.categories) {
+                    // Adicionar todas as categorias que têm QB item
+                    data.categories.forEach(cat => {
+                        if (cat.qbItem && cat.qbItem.trim() !== '') {
+                            this.selectedFolders.push({
+                                qbItem: cat.qbItem,
+                                path: cat.displayName
+                            });
+                        }
+                    });
+
+                    console.log(`✅ ${this.selectedFolders.length} categorias habilitadas por padrão`);
+                } else {
+                    console.warn('⚠️ Endpoint não retornou categorias - cliente ficará sem permissões');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar categorias padrão:', error);
+            }
+        }
+
         this.updateSettingsFoldersList();
+
+        // ===== ADICIONAR LOADING NA TREE =====
+        const treeContainer = document.querySelector('.tree-view-container') ||
+            document.getElementById('treeViewContent')?.parentElement;
+
+        if (treeContainer) {
+            treeContainer.classList.add('tree-view-loading');
+        }
 
         // Carregar tree
         if (!this.treeLoaded) {
-            this.loadTreeView();
+            await this.loadTreeView();  // ← ADICIONAR await!
         }
 
-        // Marcar checkboxes das categorias salvas
+        // Marcar checkboxes das categorias salvas (esperar tree carregar completamente)
         setTimeout(() => {
             this.markSavedCheckboxes();
-        }, 500);
+
+            // ===== REMOVER LOADING DEPOIS DE MARCAR =====
+            setTimeout(() => {
+                const treeContainer = document.querySelector('.tree-view-container') ||
+                    document.getElementById('treeViewContent')?.parentElement;
+                if (treeContainer) {
+                    treeContainer.classList.remove('tree-view-loading');
+                }
+                console.log('✅ Permissions loaded - ready to use!');
+            }, 300);  // Pequeno delay para suavizar
+        }, 2000);
 
         // Carregar valor do showPrices
         const showPricesSettings = document.getElementById('showPricesSettings');

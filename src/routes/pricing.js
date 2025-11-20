@@ -945,7 +945,7 @@ router.get('/categories/all', async (req, res) => {
         // Buscar TODAS as categorias ativas
         const categories = await PhotoCategory.find({
             isActive: true,
-            photoCount: { $gt: 0 }  // Apenas com fotos
+            photoCount: { $gte: 0 }  // ← MUDOU: Incluir TODAS (até vazias)
         })
             .sort({ displayName: 1 })
             .lean();

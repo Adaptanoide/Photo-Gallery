@@ -2300,3 +2300,48 @@ tr:has(.cart-indicator):hover {
 .time-btn.active::after {
     content: " ✓";
 }
+
+/* Loading overlay para tree view */
+.tree-view-loading {
+    position: relative;
+}
+
+.tree-view-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tree-view-loading::after {
+    content: '🔄 Loading permissions...\A Please wait...';
+    white-space: pre;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    color: #d4af37;
+    font-size: 1.1rem;
+    text-align: center;
+    font-weight: 500;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Esconder conteúdo enquanto loading */
+.tree-view-loading #treeViewContent {
+    opacity: 0.3;
+    pointer-events: none;
+}
