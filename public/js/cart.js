@@ -198,6 +198,7 @@ window.CartSystem = {
     async addItem(driveFileId, itemData = {}) {
 
         try {
+            const t0 = performance.now();
             this.setLoading(true);
 
             // Buscar dados da sessão do cliente
