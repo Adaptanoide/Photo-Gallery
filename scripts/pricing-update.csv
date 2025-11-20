@@ -1,0 +1,98 @@
+qbItem,displayName,category,tier1_price,tier2_price,tier3_price,tier4_price,mixMatch
+# BRAZIL BEST SELLERS (Mix & Match Global)
+5475BR,Brindle ML-XL,Brazil Best Sellers,129,125,115,109,true
+5475SB,S&P Black & White ML-XL,Brazil Best Sellers,179,175,165,159,true
+5475SP,S&P Brown & Tricolor ML-XL,Brazil Best Sellers,179,175,165,159,true
+5475SC,S&P Chocolate & White ML-XL,Brazil Best Sellers,179,175,165,159,true
+5375DRK,Dark Tones Mix ML-XL,Brazil Best Sellers,119,115,105,99,true
+5375EXO,Exotic Tones ML-XL,Brazil Best Sellers,125,119,109,105,true
+5375LGT,Light Tones Mix ML-XL,Brazil Best Sellers,119,115,105,99,true
+5365,Super Promo Small,Brazil Best Sellers,109,105,95,89,true
+5300,Super Promo XS,Brazil Best Sellers,105,99,89,85,true
+5375SP,Tannery Salt & Pepper ML-XL,Brazil Best Sellers,179,175,165,159,true
+5365SP,Tannery Salt & Pepper Small,Brazil Best Sellers,179,175,165,159,true
+# COLOMBIA COWHIDES - MEDIUM (Mix & Match Global)
+5201BRW,Brown & White M,Colombia Cowhides,119,115,105,95,true
+5201EXO,Exotic M,Colombia Cowhides,119,115,105,95,true
+5201TRI,Tricolor M,Colombia Cowhides,119,115,105,95,true
+5201BRI,Brindle M,Colombia Cowhides,99,95,85,79,true
+5201BLW,Black & White M,Colombia Cowhides,99,95,85,79,true
+# COLOMBIA COWHIDES - LARGE (Mix & Match Global)
+5202BLW,Black & White L,Colombia Cowhides,105,99,89,85,true
+5202BRI,Brindle L,Colombia Cowhides,105,99,89,85,true
+5202BRW,Brown & White L,Colombia Cowhides,105,99,89,85,true
+5202EXO,Exotic L,Colombia Cowhides,125,119,109,99,true
+5202TRC,Tricolor Clouded L,Colombia Cowhides,125,119,109,99,true
+5202TRI,Tricolor Mix L,Colombia Cowhides,125,119,109,99,true
+5202TRS,Tricolor Spotted L,Colombia Cowhides,125,119,109,99,true
+# COLOMBIA COWHIDES - XL (Mix & Match Global)
+5203BRW,Brown & White XL,Colombia Cowhides,109,105,95,89,true
+5203EXO,Exotic XL,Colombia Cowhides,129,125,115,105,true
+5203TRC,Tricolor Clouded XL,Colombia Cowhides,129,125,115,105,true
+5203TRI,Tricolor Mix XL,Colombia Cowhides,129,125,115,105,true
+5203TRS,Tricolor Spotted XL,Colombia Cowhides,129,125,115,105,true
+# COLOMBIA VALUE (Mix & Match Global)
+5204,Value Tricolor S-M,Colombia Cowhides,95,89,79,75,true
+5205,Value Tricolor L-XL,Colombia Cowhides,105,99,89,85,true
+# BRAZIL SELECTED CATEGORIES - SMALL (Mix & Match Global)
+5301WR,Black & White Reddish Small,Brazil Selected Small,119,115,105,99,true
+5301BW,Black & White Small,Brazil Selected Small,139,135,125,119,true
+5301BL,Brindle Light Beige-Grey Small,Brazil Selected Small,169,165,155,149,true
+5301MB,Brindle Medium Tone Small,Brazil Selected Small,119,115,105,99,true
+5301WB,Brindle White Backbone Small,Brazil Selected Small,149,145,135,129,true
+5301BB,Brindle White Belly Small,Brazil Selected Small,119,115,105,99,true
+5301BR,Brown & White Small,Brazil Selected Small,139,135,125,119,true
+5301CH,Champagne Small,Brazil Selected Small,139,135,125,119,true
+5301GB,Grey Beige Small,Brazil Selected Small,139,135,125,119,true
+6001,Grey Small,Brazil Selected Small,169,165,155,149,true
+5301HF,Hereford Small,Brazil Selected Small,119,115,105,99,true
+6011,Natural White Small,Brazil Selected Small,489,479,459,449,true
+5301PE,Palomino Exotic Small,Brazil Selected Small,119,115,105,99,true
+5301SP,Salt & Pepper Tricolor Small,Brazil Selected Small,139,135,125,119,true
+5301SB,Salt & Pepper Black & White Small,Brazil Selected Small,139,135,125,119,true
+5301TP,Taupe Small,Brazil Selected Small,139,135,125,119,true
+5311,Tricolor Small,Brazil Selected Small,139,135,125,119,true
+# BRAZIL SELECTED CATEGORIES - ML (Mix & Match Global)
+5302B BW,Black & White ML,Brazil Selected ML,149,145,135,129,true
+5302B WR,Black & White Reddish ML,Brazil Selected ML,159,155,135,139,true
+5302C GR,Brindle Grey ML,Brazil Selected ML,219,215,205,199,true
+5302C BL,Brindle Light Beige-Grey ML,Brazil Selected ML,219,215,205,199,true
+5302B WB,Brindle White Backbone ML,Brazil Selected ML,169,165,155,149,true
+5302A BB,Brindle White Belly ML,Brazil Selected ML,139,135,125,119,true
+5302B BR,Brown & White ML,Brazil Selected ML,219,215,205,199,true
+5302B CH,Champagne ML,Brazil Selected ML,189,185,175,169,true
+5302C GB,Grey Beige ML,Brazil Selected ML,189,185,175,169,true
+6002,Grey ML,Brazil Selected ML,209,205,195,189,true
+5302A HF,Hereford ML,Brazil Selected ML,129,125,115,109,true
+6012,Natural White ML,Brazil Selected ML,489,479,459,449,true
+5302A PE,Palomino Exotic ML,Brazil Selected ML,129,125,115,109,true
+5302B PA,Palomino Solid ML,Brazil Selected ML,149,145,135,129,true
+5302B SP,Salt & Pepper Tricolor ML,Brazil Selected ML,189,185,175,169,true
+5302B SB,Salt & Pepper Black & White ML,Brazil Selected ML,189,185,175,169,true
+5302B SC,Salt & Pepper Chocolate ML,Brazil Selected ML,189,185,175,169,true
+5302B TP,Taupe ML,Brazil Selected ML,159,155,145,139,true
+5312,Tricolor ML,Brazil Selected ML,189,185,175,169,true
+# BRAZIL SELECTED CATEGORIES - XL (Mix & Match Global)
+5303B BW,Black & White XL,Brazil Selected XL,159,155,145,139,true
+5303B WR,Black & White Reddish XL,Brazil Selected XL,169,165,155,149,true
+5303C GR,Brindle Grey XL,Brazil Selected XL,229,225,215,209,true
+5303C BL,Brindle Light Beige-Grey XL,Brazil Selected XL,229,225,215,209,true
+5303B WB,Brindle White Backbone XL,Brazil Selected XL,179,175,165,159,true
+5303A BB,Brindle White Belly XL,Brazil Selected XL,139,135,129,129,true
+5303B BR,Brown & White XL,Brazil Selected XL,229,225,215,209,true
+5303B CH,Champagne XL,Brazil Selected XL,199,195,185,179,true
+5303C GB,Grey Beige XL,Brazil Selected XL,199,195,185,179,true
+6003,Grey XL,Brazil Selected XL,229,225,215,209,true
+5303A HF,Hereford XL,Brazil Selected XL,139,135,125,119,true
+6013,Natural White XL,Brazil Selected XL,499,479,469,459,true
+5303A PE,Palomino Exotic XL,Brazil Selected XL,139,135,125,119,true
+5303B PA,Palomino Solid XL,Brazil Selected XL,159,155,145,139,true
+5303B SP,Salt & Pepper Tricolor XL,Brazil Selected XL,199,195,185,179,true
+5303B SB,Salt & Pepper Black & White XL,Brazil Selected XL,199,195,185,179,true
+5303B SC,Salt & Pepper Chocolate XL,Brazil Selected XL,199,195,185,179,true
+5303B TP,Taupe XL,Brazil Selected XL,169,165,155,149,true
+5313,Tricolor XL,Brazil Selected XL,199,195,185,179,true
+# FALTARAM - Brazil Selected ML
+5302M SP,Salt & Pepper Tricolor Medium,Brazil Selected ML,169,165,155,149,true
+6022,Buttercream ML,Brazil Selected ML,179,175,165,159,true
+5302B BK,Brindle Blackish ML,Brazil Selected ML,219,215,205,199,true

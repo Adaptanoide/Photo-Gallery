@@ -1,0 +1,470 @@
+/* public/css/home-light-theme.css */
+/* ===== HOME PAGE - TEMA LIGHT E LAYOUT FIXO ===== */
+/* Aplicar apenas na página inicial/login */
+
+/* ===== RESET E LAYOUT FIXO ===== */
+body.home-page {
+    /* Remover padding do header */
+    padding-top: 0 !important;
+    
+    /* Prevenir scroll - página estática */
+    overflow: hidden;
+    height: 100vh;
+    position: fixed;
+    width: 100%;
+    
+    /* Tema Light */
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* ===== ESCONDER HEADER NA HOME ===== */
+body.home-page .luxury-header {
+    display: none !important;
+}
+
+/* ===== TEMA LIGHT - CORES ===== */
+body.home-page {
+    /* Sobrescrever cores para light */
+    --luxury-dark: #ffffff;
+    --luxury-medium: rgba(255, 255, 255, 0.95);
+    --text-primary: #2c2c34;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --border-subtle: rgba(212, 175, 55, 0.2);
+    
+    /* Dourado mantém */
+    --gold-primary: #d4af37;
+    --gold-hover: #b8941f;
+    --gold-light: rgba(212, 175, 55, 0.08);
+    
+    /* Sombras suaves */
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.1);
+    --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.3);
+}
+
+/* Remover textura escura do fundo */
+body.home-page::before {
+    display: none;
+}
+
+/* ===== SECTION PRINCIPAL - CENTRALIZAÇÃO PERFEITA ===== */
+body.home-page .luxury-welcome-section {
+    /* Ocupar tela toda sem scroll */
+    min-height: 100vh;
+    max-height: 100vh;
+    height: 100vh;
+    
+    /* Centralização perfeita */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Remover padding que pode causar scroll */
+    padding: 1rem;
+    margin: 0;
+    
+    /* Garantir que não ultrapasse a tela */
+    box-sizing: border-box;
+}
+
+/* ===== CONTAINER CENTRAL ===== */
+body.home-page .luxury-container {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ===== BRANDING - SOL E TÍTULO ===== */
+body.home-page .luxury-brand {
+    margin-bottom: 2.5rem;
+    animation: fadeInDown 0.8s ease;
+}
+
+body.home-page .luxury-logo i {
+    font-size: 4rem;
+    color: var(--gold-primary);
+    filter: drop-shadow(0 4px 15px rgba(212, 175, 55, 0.25));
+    animation: sunRotate 20s linear infinite;
+}
+
+@keyframes sunRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+body.home-page .luxury-title {
+    font-size: 2.8rem;
+    font-weight: 300;
+    color: #515151;
+    margin: 1.5rem 0 1rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+body.home-page .luxury-subtitle {
+    font-size: 1rem;
+    color: #4a5568;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+/* ===== FORMULÁRIO DE ACESSO - CARD ELEGANTE ===== */
+body.home-page .luxury-access-form {
+    background: white;
+    backdrop-filter: none;
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    animation: fadeInUp 0.8s ease 0.2s both;
+}
+
+/* ===== INPUT DE CÓDIGO ===== */
+body.home-page .luxury-code-input {
+    width: 100%;
+    height: 56px;
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    color: #1a1a1a;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 10px;
+    transition: all 0.3s ease;
+}
+
+body.home-page .luxury-code-input::placeholder {
+    color: #cbd5e0;
+    letter-spacing: 6px;
+}
+
+body.home-page .luxury-code-input:focus {
+    border-color: var(--gold-primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+    transform: translateY(-2px);
+}
+
+/* ===== BOTÃO ENTER GALLERY ===== */
+body.home-page .luxury-btn-primary {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    transition: all 0.3s ease;
+}
+
+body.home-page .luxury-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
+    background: linear-gradient(135deg, var(--gold-hover), #9e7e1a);
+}
+
+body.home-page .luxury-btn-primary:active {
+    transform: translateY(0);
+}
+
+/* ===== LINK ADMIN - MAIS DISCRETO ===== */
+body.home-page .luxury-admin-access {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+body.home-page .luxury-admin-link {
+    color: #718096;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    transition: all 0.2s ease;
+}
+
+body.home-page .luxury-admin-link:hover {
+    color: var(--gold-primary);
+    background: rgba(212, 175, 55, 0.08);
+    transform: translateY(-1px);
+}
+
+/* ===== FOOTER - INTEGRADO E FIXO ===== */
+body.home-page .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: transparent;
+    color: #718096;
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.75rem;
+    z-index: 10;
+}
+
+body.home-page .footer p {
+    margin: 0;
+    opacity: 0.7;
+}
+
+/* ===== MODAL DE LOGIN ADMIN - TEMA LIGHT ===== */
+body.home-page .modal-content {
+    background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+body.home-page .modal-content h2 {
+    color: #1a1a1a;
+}
+
+body.home-page .close {
+    color: #718096;
+}
+
+body.home-page .close:hover {
+    color: var(--gold-primary);
+}
+
+body.home-page .form-group label {
+    color: #4a5568;
+}
+
+body.home-page .form-group input {
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    color: #1a1a1a;
+}
+
+body.home-page .form-group input:focus {
+    border-color: var(--gold-primary);
+    background: white;
+}
+
+/* ===== ANIMAÇÕES ===== */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== RESPONSIVE - MANTÉM FIXO ===== */
+@media (max-width: 768px) {
+    body.home-page .luxury-welcome-section {
+        padding: 1rem;
+    }
+    
+    body.home-page .luxury-logo i {
+        font-size: 3rem;
+    }
+    
+    body.home-page .luxury-title {
+        font-size: 2.2rem;
+        letter-spacing: 2px;
+    }
+    
+    body.home-page .luxury-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    body.home-page .luxury-access-form {
+        padding: 1.5rem;
+    }
+    
+    body.home-page .luxury-code-input {
+        height: 50px;
+        font-size: 1.2rem;
+        letter-spacing: 8px;
+    }
+    
+    body.home-page .footer {
+        font-size: 0.7rem;
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body.home-page .luxury-container {
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+    
+    body.home-page .luxury-logo i {
+        font-size: 2.5rem;
+    }
+    
+    body.home-page .luxury-title {
+        font-size: 1.8rem;
+    }
+    
+    body.home-page .luxury-code-input {
+        font-size: 1.1rem;
+        letter-spacing: 6px;
+    }
+}
+
+/* ===== PREVENIR QUALQUER SCROLL ===== */
+body.home-page,
+body.home-page .luxury-welcome-section,
+body.home-page .main {
+    overflow: hidden !important;
+    max-height: 100vh !important;
+}
+
+/* ===== LOADING SPINNER LIGHT ===== */
+body.home-page .spinner {
+    border-color: #e2e8f0;
+    border-top-color: var(--gold-primary);
+}
+
+body.home-page .loading {
+    background: rgba(255, 255, 255, 0.95);
+    color: #4a5568;
+}
+
+/* ===== LOGO DA EMPRESA - TAMANHO MAIOR ===== */
+body.home-page .company-logo {
+    width: 180px;  /* AUMENTADO de 120px para 180px */
+    height: 180px; /* AUMENTADO de 120px para 180px */
+    object-fit: contain;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.08));
+    transition: transform 0.3s ease;
+}
+
+body.home-page .company-logo:hover {
+    transform: scale(1.08);
+}
+
+/* Animação suave de flutuação */
+@keyframes logoFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    body.home-page .company-logo {
+        width: 140px;  /* AUMENTADO */
+        height: 140px; /* AUMENTADO */
+    }
+}
+
+@media (max-width: 480px) {
+    body.home-page .company-logo {
+        width: 110px;  /* AUMENTADO */
+        height: 110px; /* AUMENTADO */
+    }
+}
+
+/* ===== HEADER LOGO (se quiser usar em outras páginas) ===== */
+.luxury-header-logo img {
+    height: 40px;
+    width: auto;
+    margin-right: 10px;
+}
+
+.client-header-logo img {
+    height: 35px;
+    width: auto;
+    margin-right: 10px;
+}
+
+body.home-page #accessModal .modal-message {
+    padding: 1.5rem 0;
+}
+
+body.home-page #accessModal .modal-message p {
+    margin-bottom: 1rem;
+    color: #4a5568;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+body.home-page #accessModal .modal-message .help-text {
+    color: #718096;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+body.home-page #accessModal h2 i {
+    color: var(--gold-primary);
+    margin-right: 0.5rem;
+}
+/* ===== ACCESS VERIFICATION MODAL ===== */
+body.home-page #accessModal .modal-content {
+    max-width: 450px;
+    text-align: left; /* Mudado de center para left */
+    position: relative;
+    padding: 2.5rem 2rem 2rem; /* Mais espaço no topo para o X */
+}
+
+body.home-page #accessModal .close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: normal;
+    color: #718096;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    line-height: 1;
+    opacity: 1;
+}
+
+body.home-page #accessModal .close:hover {
+    color: var(--gold-primary);
+}
+
+body.home-page #accessModal h2 {
+    text-align: left; /* Título à esquerda */
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+body.home-page #accessModal h2 i {
+    color: var(--gold-primary);
+    margin-right: 0.5rem;
+}
+
+body.home-page #accessModal .modal-message {
+    padding: 1rem 0;
+    text-align: left; /* Mensagens à esquerda */
+}
+
+body.home-page #accessModal .modal-message p {
+    margin-bottom: 1rem;
+    color: #4a5568;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: left; /* Parágrafo à esquerda */
+}
+
+body.home-page #accessModal .modal-message .help-text {
+    color: #718096;
+    font-style: italic;
+    font-size: 0.9rem;
+    text-align: left; /* Help text à esquerda */
+}
+
+body.home-page #accessModal .btn-primary {
+    width: 100%;
+    margin-top: 1rem;
+}

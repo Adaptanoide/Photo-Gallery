@@ -1,0 +1,1090 @@
+/* public/css/client/client-gallery.css */
+/* ===== GALLERY - CARDS, GRIDS, PHOTOS ===== */
+
+/* === CATEGORIES & FOLDERS GRID === */
+.categories-grid,
+.folders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Category cards */
+.category-card,
+.folder-card {
+    background: var(--luxury-medium);
+    padding: 1.5rem;
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    animation: slideIn 0.3s ease forwards;
+}
+
+.category-card::before,
+.folder-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--gold-primary);
+    transition: var(--transition);
+}
+
+.category-card:hover,
+.folder-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--gold-primary);
+}
+
+
+
+/* Card content */
+.category-card h3,
+.folder-card h4 {
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-card h3 i,
+.folder-card h4 i {
+    color: var(--gold-primary);
+    font-size: 1.1rem;
+}
+
+.category-card p,
+.folder-description {
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+    min-height: 48px;
+    max-height: 48px;
+    overflow: hidden;
+}
+
+/* Category metadata */
+.folder-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(212, 165, 116, 0.2);
+    flex-wrap: wrap;
+}
+
+.folder-stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--gold-light);
+    color: var(--gold-primary);
+    padding: 0.25rem 0.25rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Price badges GREEN - nas categorias principais */
+.category-price-badge,
+.folder-price-badge {
+    background: #27ae60 !important;
+    color: white !important;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+/* Contact for price - verde também */
+.contact-price {
+    background: #22c55e;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Badge no título da galeria */
+.gallery-header .category-price-badge {
+    display: inline-block;
+    background: #22c55e;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 1.0rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    vertical-align: middle;
+}
+
+/* Price badges in cards */
+.folder-stats span:has(.fa-tag) {
+    background: #27ae60;
+    color: white !important;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.folder-stats .fa-tag {
+    color: white !important;
+    font-size: 0.9rem;
+}
+
+/* Category action */
+.category-action {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    color: #999;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Collection label */
+.category-collection {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* === PHOTOS GALLERY === */
+.photos-gallery {
+    background: var(--luxury-medium);
+    border-radius: var(--border-radius-large);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    overflow: visible;
+}
+
+/* Gallery header */
+.gallery-header {
+    position: sticky;
+    top: 165px;
+    z-index: 90;
+    background: white;
+    padding: 20px 20px;
+    margin: -2rem -1.1rem 0 -1.1rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 8px 8px 1px 1px;
+    border: 1px solid #e0e0e0;
+}
+
+.gallery-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.gallery-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+/* Photos grid */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    background: white;
+    padding-top: 20px;
+    margin: 0 -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+/* Photo thumbnails */
+.photo-thumbnail {
+    position: relative;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--luxury-dark);
+    aspect-ratio: 1;
+    border: 1px solid var(--border-subtle);
+    animation: slideIn 0.3s ease forwards;
+}
+
+.photo-thumbnail:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--gold-primary);
+}
+
+.photo-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+/* Photo placeholder */
+.photo-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--luxury-dark);
+    color: var(--text-muted);
+}
+
+.photo-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+/* Photo overlay */
+.photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    /*background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));*/
+    color: var(--text-primary);
+    padding: 1rem;
+    font-size: 0.85rem;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+}
+
+.photo-thumbnail:hover .photo-overlay {
+    transform: translateY(0);
+}
+
+/* Photo status badges */
+/* ⚠️ IMPORTANTE: Não mostrar overlay para reservas próprias */
+.photo-thumbnail[data-status="reserved"]:not([data-own-reservation="true"])::after {
+    content: "UNAVAILABLE";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 152, 0, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.photo-thumbnail[data-status="sold"]::after {
+    content: "SOLD OUT";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(211, 47, 47, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.photo-thumbnail[data-status="sold"] img,
+.photo-thumbnail[data-status="reserved"]:not([data-own-reservation="true"]) img {
+    opacity: 0.6;
+}
+
+/* Price info container - Volume pricing */
+#priceProgressContainer,
+.price-info-container {
+    position: sticky;
+    top: 230px;
+    /* VOLTAR para 220px como estava */
+    background: #f8f9fa;
+    padding: 12px 8px;
+    margin: 0px 0rem 0rem 0rem;
+    border-bottom: 1px solid #dee2e6;
+    box-sizing: border-box;
+    z-index: 85;
+    /* VOLTAR para 85 como estava */
+    width: auto;
+    display: block;
+}
+
+/* Forçar posição correta com sidebar */
+.photos-gallery #priceProgressContainer,
+.photos-gallery .price-info-container {
+    margin-left: -1rem;
+    margin-right: -1rem;
+}
+
+.price-info-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 6px;
+    font-size: 14px;
+    border: 1px solid #e0e0e0;
+}
+
+.price-info-label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+.price-info-label i {
+    color: #f4a020;
+    margin-right: 5px;
+}
+
+.price-range-item {
+    font-size: 14px;
+    padding: 6px 12px;
+    font-weight: 500;
+    color: #999;
+    transition: all 0.3s;
+    border-radius: 4px;
+}
+
+.price-range-item.active {
+    background: #fff3cd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.price-range-item strong {
+    color: #f4a020;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.price-range-separator {
+    color: #ddd;
+    margin: 0 5px;
+}
+
+.cart-progress {
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: auto;
+    padding-left: 15px;
+    border-left: 1px solid #dee2e6;
+    color: #666;
+}
+
+.cart-progress .savings {
+    color: #28a745;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* Estilos para o price progress real */
+.price-progress-wrapper {
+    display: flex;
+    align-items: left;
+    justify-content: lefte;
+    gap: 18px;
+    padding: 8px 15px;
+    background: transparent;
+    font-size: 18px;
+}
+
+.price-tier {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    padding: 4px 8px;
+    color: #666;
+    transition: all 0.3s;
+    justify-content: center;
+}
+
+/* Estado ativo para tier de desconto */
+.price-tier.active {
+    background: #fff3cd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.price-tier.active .tier-price {
+    color: #333;
+    font-weight: 700;
+}
+
+.price-tier.completed {
+    opacity: 0.6;
+}
+
+.price-tier .tier-price {
+    font-weight: 700;
+    color: #28a745;
+    font-size: 18px;
+}
+
+/* Loading states */
+.photos-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.photos-loading i {
+    color: var(--gold-primary);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Garantir que info bar não apareça no desktop */
+@media (min-width: 769px) {
+    .mobile-info-bar {
+        display: none !important;
+    }
+}
+
+/* Desktop - manter zoom controls normal */
+@media (min-width: 769px) {
+    .zoom-controls-simple {
+        display: block !important;
+        position: absolute !important;
+        top: 80px !important;
+        right: 20px !important;
+    }
+}
+
+/* Garantir que a barra de rate rules NUNCA apareça no desktop */
+@media (min-width: 769px) {
+    .modal-rate-rules-bar {
+        display: none !important;
+    }
+}
+
+/* Otimização de espaço no desktop */
+@media (min-width: 1024px) {
+    .photos-gallery {
+        padding: 1rem;
+        /* Reduz de 2rem para 1rem */
+    }
+
+    .photos-grid {
+        margin: 0;
+        padding: 1rem 0.5rem;
+        /* Menos padding lateral */
+        gap: 1rem;
+        /* Gap menor entre fotos */
+    }
+}
+
+/* Category Thumbnails - AJUSTADO */
+.folder-card.has-thumbnail {
+    padding-top: 0;
+    overflow: hidden;
+}
+
+.category-thumbnail {
+    width: calc(100% + 4rem);
+    height: 120px;
+    /* REDUZIDO de 200px para 120px */
+    margin: -2rem -2rem 1rem -2rem;
+    overflow: hidden;
+    background: #f8f8f8;
+    border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+}
+
+.category-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Mantém proporção e corta excesso */
+    object-position: center;
+    /* Centraliza a imagem */
+    transition: transform 0.3s ease;
+    background-color: white;
+}
+
+.folder-card:hover .category-thumbnail img {
+    transform: scale(1.05);
+}
+
+/* Ajustar título quando tem thumbnail */
+.folder-card.has-thumbnail h4 {
+    margin-top: 0.5rem;
+}
+
+/* Card com thumbnail - layout novo */
+.folder-card.has-thumbnail {
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.folder-card.has-thumbnail .category-thumbnail {
+    width: 100%;
+    height: 250px;
+    margin: 0;
+    position: relative;
+}
+
+/* Preço no canto superior direito */
+.price-corner {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #27ae60;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Rodapé com info */
+.card-footer-info {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+.card-footer-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.card-footer-info .photo-count {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* Badge Sample Photo */
+.sample-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.404);
+    color: white;
+    padding: 2px 2px;
+    font-size: 11px;
+    border-radius: 3px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================ */
+/* LAYOUT HORIZONTAL - PREÇO + CONTADOR        */
+/* ============================================ */
+
+.folder-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.folder-card-header h4 {
+    flex: 1;
+    margin: 0;
+}
+
+/* Remover badge do canto */
+.out-of-stock-badge {
+    display: none;
+}
+
+/* Card sem estoque - sutil */
+.folder-card.out-of-stock {
+    opacity: 0.85;
+}
+
+/* ============================================ */
+/* FOLDER STATS - HORIZONTAL SEM QUEBRA        */
+/* ============================================ */
+
+.folder-stats {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    flex-wrap: nowrap; /* Nunca quebrar linha */
+}
+
+/* ============================================ */
+/* PREÇO - À ESQUERDA                          */
+/* ============================================ */
+
+.folder-price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.contact-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ============================================ */
+/* CONTADOR - À DIREITA (CAIXA CHEIA)         */
+/* ============================================ */
+
+.photo-count-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.photo-count-badge i {
+    font-size: 1rem;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.count-text {
+    color: #4b5563;
+    font-weight: 500;
+}
+
+/* ============================================ */
+/* OUT OF STOCK - À DIREITA (CAIXA ABERTA)    */
+/* ============================================ */
+
+.out-of-stock-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(254, 226, 226, 0.6);
+    color: #dc2626;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.out-of-stock-inline i {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.out-text {
+    white-space: nowrap;
+}
+
+/* Hover sutil */
+.folder-card.out-of-stock:hover .out-of-stock-inline {
+    background: rgba(254, 226, 226, 0.8);
+}
+
+/* ============================================ */
+/* RESPONSIVIDADE                              */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    .folder-stats {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .folder-price-badge,
+    .contact-price {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .photo-count-badge,
+    .out-of-stock-inline {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+}
+
+/* Tablets - ajustar fonte */
+@media (min-width: 769px) and (max-width: 1200px) {
+    .folder-price-badge {
+        font-size: 0.95rem;
+        padding: 7px 12px;
+    }
+    
+    .photo-count-badge,
+    .out-of-stock-inline {
+        font-size: 0.85rem;
+    }
+}
+
+/* ============================================
+   MIX & MATCH - COMPACTO E DISCRETO
+   ============================================ */
+
+/* Barra de Progresso */
+.progress-bar-container {
+    padding: 10px 15px;
+}
+
+.progress-bar-label {
+    font-size: 16px;
+    color: #4a5568;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.progress-bar-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(212, 175, 55, 0.15);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Wrapper dos tiers - HORIZONTAL COMPACTO */
+.price-progress-wrapper {
+    display: flex;
+    gap: 8px;
+    padding: 1px 14px 1px 14px;
+}
+
+/* Tiers compactos */
+.price-tier {
+    flex: 1;
+    padding: 8px 6px;
+    background: rgba(212, 175, 55, 0.08);
+    border: 1.5px solid rgba(212, 175, 55, 0.25);
+    border-radius: 6px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.price-tier.active {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: #d4af37;
+    border-width: 2px;
+}
+
+.price-tier.completed {
+    opacity: 0.6;
+}
+
+/* Medalha e label na mesma linha */
+.tier-medal {
+    font-size: 20px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.tier-label {
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    display: block;
+    margin: 0px 6px 0px 6px;
+}
+
+.price-tier.active .tier-label {
+    color: #4a5568;
+}
+
+.tier-price {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 700;
+    display: block;
+}
+
+.price-tier.active .tier-price {
+    color: #28a745;
+    font-size: 18px;
+}
+
+/* Mobile - ainda mais compacto */
+@media (max-width: 768px) {
+    .progress-bar-container {
+        padding: 8px 12px;
+    }
+    
+    .price-progress-wrapper {
+        padding: 8px 12px 12px 12px;
+        gap: 6px;
+    }
+    
+    .price-tier {
+        padding: 6px 4px;
+    }
+    
+    .tier-medal {
+        font-size: 16px;
+    }
+    
+    .tier-label {
+        font-size: 18px;
+    }
+    
+    .tier-price {
+        font-size: 12px;
+    }
+}
+
+/* Barra de progresso com incentivo */
+.progress-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progress-bar-incentive {
+    font-size: 14px;
+    font-weight: 600;
+    color: #10b981;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .progress-bar-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+/* ============================================
+   MOBILE: TIER PRICING SUPER COMPACTO
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Container sticky mais fino */
+    #priceProgressContainer,
+    .price-info-container {
+        top: 120px !important;
+        padding: 8px 12px !important;
+    }
+    
+    /* Barra de progresso menor */
+    .progress-bar-container {
+        padding: 6px 12px !important;
+    }
+    
+    .progress-bar-label {
+        font-size: 14px !important;
+    }
+    
+    .progress-bar-track {
+        height: 8px !important;
+    }
+    
+    /* Wrapper dos tiers - ESCONDER por padrão */
+    .price-progress-wrapper {
+        display: none;
+        padding: 8px 12px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    /* TODOS os tiers centralizados HORIZONTAL */
+    .price-tier {
+        display: none !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 10px !important;
+        background: rgba(212, 175, 55, 0.08) !important;
+        border: 1.5px solid rgba(212, 175, 55, 0.25) !important;
+        border-radius: 6px !important;
+        text-align: center !important;
+    }
+    
+    /* Tier ATIVO - destaque amarelo */
+    .price-tier.active {
+        display: flex !important;
+        background: rgba(255, 215, 0, 0.15) !important;
+        border: 2px solid #d4af37 !important;
+    }
+    
+    .price-tier .tier-medal {
+        font-size: 18px !important;
+        margin: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .price-tier .tier-label {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: #666 !important;
+        margin: 0 !important;
+        white-space: nowrap;
+    }
+    
+    .price-tier.active .tier-label {
+        color: #333 !important;
+        font-weight: 700 !important;
+    }
+    
+    .price-tier .tier-price {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #28a745 !important;
+        margin: 0 !important;
+    }
+    
+    .price-tier.active .tier-price {
+        font-size: 18px !important;
+        font-weight: 800 !important;
+    }
+    
+    /* Quando expandido - mostrar TODOS centralizados */
+    .price-progress-wrapper.expanded {
+        display: flex !important;
+    }
+    
+    .price-progress-wrapper.expanded .price-tier {
+        display: flex !important;
+    }
+    
+    /* Botão toggle */
+    .toggle-tiers-btn {
+        width: 100%;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 6px;
+        margin-bottom: 5px;
+    }
+    
+    .toggle-tiers-btn:active {
+        background: rgba(212, 175, 55, 0.2);
+    }
+    
+    /* Fotos grid - mais espaço */
+    .photos-grid {
+        padding-top: 12px !important;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}

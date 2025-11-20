@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <!-- Disable console.log in production only -->
+    <script>
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            console.log = function () { };
+            console.debug = function () { };
+            console.info = function () { };
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunshine Cowhides - Dashboard</title>
+
+    <!-- ADICIONAR ESTAS 3 LINHAS AQUI -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/images/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/images/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/images/favicon/site.webmanifest" />
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/home-light-theme.css">
+    <link rel="stylesheet" href="css/toast-notifications.css">
+    <link rel="stylesheet" href="css/admin-modal-dark.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+</head>
+
+<body class="home-page">
+    <!-- Header Simplificado -->
+    <header class="luxury-header">
+        <div class="container">
+            <div class="luxury-header-logo">
+                <i class="fas fa-sun"></i>
+                <span>Sunshine Cowhides</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Welcome Section Luxuosa -->
+        <section id="welcome" class="luxury-welcome-section">
+            <div class="luxury-container">
+                <!-- Logo e Título Elegante -->
+                <div class="luxury-brand">
+                    <div class="luxury-logo">
+                        <img src="/images/logo-transparent.png" alt="Sunshine Cowhides Logo" class="company-logo">
+                    </div>
+                    <h1 class="luxury-title">Welcome</h1>
+                    <p class="luxury-subtitle">
+                        Please enter your access code to view our premium collection.
+                    </p>
+                </div>
+
+                <!-- Formulário de Acesso Direto -->
+                <div class="luxury-access-form">
+                    <form id="directClientForm" class="direct-access-form">
+                        <div class="code-input-group">
+                            <input type="text" id="directClientCode" class="luxury-code-input" placeholder="0 0 0 0"
+                                maxlength="4" pattern="[0-9]{4}" autocomplete="off" required>
+                        </div>
+                        <button type="submit" class="luxury-btn-primary">
+                            <i class="fas fa-unlock"></i>
+                            <span>Enter Gallery</span>
+                        </button>
+                    </form>
+
+                    <!-- Link discreto para admin -->
+                    <div class="luxury-admin-access">
+                        <button class="luxury-admin-link" onclick="showAdminLogin()">
+                            <i class="fas fa-cog"></i>
+                            Administrative Access
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Login Modal -->
+        <div id="adminModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('adminModal')">&times;</span>
+                <h2><i class="fas fa-shield-alt"></i> Administrative Login</h2>
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <input type="text" id="adminUser" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="adminPass" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+                </form>
+            </div>
+        </div>
+
+        <!-- Client Login Modal -->
+        <div id="clientModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('clientModal')">&times;</span>
+                <h2><i class="fas fa-key"></i> Código de Acesso</h2>
+                <form id="clientLoginForm">
+                    <div class="form-group">
+                        <label>Digite seu código de 4 dígitos:</label>
+                        <input type="text" id="clientCode" maxlength="4" pattern="[0-9]{4}" required placeholder="0000">
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-full">
+                        <i class="fas fa-unlock"></i> Acessar Catálogo
+                    </button>
+                </form>
+                <p>We are here to help.</p>
+                <i class="fas fa-info-circle"></i>
+                Código fornecido pela equipe Sunshine Cowhides
+                </p>
+            </div>
+        </div>
+        <!-- Access Verification Modal -->
+        <div id="accessModal" class="modal" style="
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            overflow: auto;
+            align-items: center;
+            justify-content: center;
+        ">
+            <div class="modal-content" style="
+                position: relative;
+                max-width: 520px;
+                width: 90%;
+                padding: 30px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                max-height: 90vh;
+                overflow-y: auto;
+                margin: auto;
+            ">
+                <span class="close" onclick="closeModal('accessModal')" style="
+                    position: absolute;
+                    right: 20px;
+                    top: 20px;
+                    font-size: 28px;
+                    color: #999;
+                    cursor: pointer;
+                    z-index: 10;
+                ">&times;</span>
+
+                <!-- Ícone de cadeado -->
+                <div style="text-align: center; margin-bottom: 20px; padding-top: 10px;">
+                    <i class="fas fa-lock" style="color: #ffc107; font-size: 60px;"></i>
+                </div>
+
+                <!-- Título -->
+                <h2 style="text-align: center; margin-bottom: 25px; color: #333;">Access Temporarily Disabled</h2>
+
+                <!-- Explicação principal -->
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #856404; font-size: 16px;">
+                        <i class="fas fa-info-circle"></i> Why is my access blocked?
+                    </h4>
+                    <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                        If you <strong>recently completed a selection</strong>, your access has been temporarily
+                        disabled while our team processes your order internally.
+                    </p>
+                    <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                        This is a <strong>standard procedure</strong> that ensures your selection is properly handled
+                        and prepared for invoicing.
+                    </p>
+                </div>
+
+                <!-- Como obter acesso novamente -->
+                <div style="background: #f0f8ff; border-left: 4px solid #0066cc; padding: 15px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #004080; font-size: 16px;">
+                        <i class="fas fa-unlock-alt"></i> How to regain access?
+                    </h4>
+                    <p style="margin: 0 0 10px 0; color: #004080; font-size: 14px;">
+                        Contact your sales representative who can:
+                    </p>
+                    <ul style="margin: 0; padding-left: 20px; color: #004080; font-size: 14px; line-height: 1.8;">
+                        <li>Enable temporary access for new selections</li>
+                        <li>Update you on your order status</li>
+                        <li>Assist with any modifications needed</li>
+                    </ul>
+                </div>
+
+                <!-- Tempo estimado -->
+                <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin-bottom: 25px;">
+                    <p style="margin: 0; color: #2e7d32; font-size: 14px;">
+                        <i class="fas fa-clock"></i> <strong>Processing Time:</strong> Your order is typically processed
+                        within 24 hours. You will be contacted by our team shortly.
+                    </p>
+                </div>
+
+                <!-- Mensagem de suporte -->
+                <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; font-style: italic;">
+                    We appreciate your patience. Our team is working to provide you with the best service.
+                </p>
+
+                <!-- Botão -->
+                <button onclick="closeModal('accessModal')" class="btn btn-primary btn-full"
+                    style="background: #d4af37; border: none; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%;">
+                    <i class="fas fa-check"></i> OK, I Understand
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Sunshine Cowhides. All rights reserved worldwide.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js?v=1755889230412"></script>
+</body>
+
+</html>
