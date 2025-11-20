@@ -119,7 +119,7 @@ class AdminPricing {
         // Main buttons
         const btnRefreshR2 = document.getElementById('btnSyncDrive');
         if (btnRefreshR2) {
-            btnRefreshR2.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh from R2';
+            btnRefreshR2.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
             btnRefreshR2.addEventListener('click', () => this.refreshFromR2());
         }
         // Filters
@@ -180,7 +180,7 @@ class AdminPricing {
     async refreshFromR2() {
         try {
             this.showSyncLoading(true);
-            this.updateSyncProgress('Connecting to R2 Storage...', 20);
+            this.updateSyncProgress('Updating photo counts...', 20);
 
             const response = await fetch('/api/pricing/sync', {
                 method: 'POST',
@@ -195,24 +195,24 @@ class AdminPricing {
             const data = await response.json();
 
             if (data.success) {
-                const { created, updated, deactivated } = data.summary || data.data || {};
-                const message = `R2 Sync: ${created || 0} new, ${updated || 0} updated, ${deactivated || 0} removed`;
+                const { updated, unchanged } = data.summary || data || {};
+                const message = `Updated: ${updated || 0} categories, ${unchanged || 0} unchanged`;
 
                 this.showSyncStatus(message, 'success');
-                this.updateSyncProgress('Sync complete!', 100);
+                this.updateSyncProgress('Refresh complete!', 100);
 
                 // Reload categories
-                await this.loadCategories();
+                await this.loadCategories(true);
 
-                this.showNotification('Categories refreshed from R2!', 'success');
+                this.showNotification('Photo counts updated successfully!', 'success');
 
             } else {
-                throw new Error(data.message || 'Sync error');
+                throw new Error(data.message || 'Refresh error');
             }
 
         } catch (error) {
-            console.error('❌ R2 sync error:', error);
-            this.showNotification('Error syncing with R2', 'error');
+            console.error('❌ Refresh error:', error);
+            this.showNotification('Error updating counts', 'error');
         } finally {
             setTimeout(() => this.showSyncLoading(false), 2000);
         }
