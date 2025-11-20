@@ -15,25 +15,69 @@ class PricingService {
      */
     static async scanAndSyncR2(forceRefresh = false) {
         try {
-            console.log('🔄 Iniciando sincronização com R2...');
+            console.log('🔄 Atualizando contadores de fotos disponíveis...');
 
-            // USAR NOVO MÉTODO QUE DETECTA PASTAS VAZIAS TAMBÉM
-            const categories = await this.buildR2StructureComplete();
+            // Importar UnifiedProductComplete
+            const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 
-            console.log(`📂 ${categories.length} categorias encontradas no R2 (incluindo vazias)`);
+            // Buscar todas as categorias ativas
+            const categories = await PhotoCategory.find({ isActive: true });
+            console.log(`📂 ${categories.length} categorias encontradas no sistema`);
 
-            // Sincronizar com MongoDB
-            const syncResult = await this.syncWithDatabase(categories, forceRefresh);
+            let updated = 0;
+            let unchanged = 0;
+
+            // Para cada categoria, contar fotos available do tbinventario
+            for (const category of categories) {
+                try {
+                    // Contar fotos disponíveis para o cliente
+                    const count = await UnifiedProductComplete.countDocuments({
+                        category: category.displayName,
+                        status: 'available',
+                        currentStatus: 'available',
+                        isActive: true,
+                        cdeTable: 'tbinventario'
+                    });
+
+                    // Atualizar se mudou
+                    if (category.photoCount !== count) {
+                        const oldCount = category.photoCount;
+                        category.photoCount = count;
+                        category.lastSync = new Date();
+                        await category.save();
+                        
+                        console.log(`✅ ${category.displayName}: ${oldCount} → ${count} fotos`);
+                        updated++;
+                    } else {
+                        unchanged++;
+                    }
+
+                } catch (error) {
+                    console.error(`❌ Erro ao atualizar ${category.displayName}:`, error.message);
+                }
+            }
+
+            const summary = {
+                total: categories.length,
+                updated,
+                unchanged,
+                timestamp: new Date()
+            };
+
+            console.log(`✅ Atualização concluída: ${updated} atualizadas, ${unchanged} sem mudanças`);
 
             return {
                 success: true,
                 categoriesFound: categories.length,
-                ...syncResult,
-                timestamp: new Date()
+                created: 0,
+                updated,
+                skipped: unchanged,
+                deactivated: 0,
+                ...summary
             };
 
         } catch (error) {
-            console.error('❌ Erro na sincronização R2:', error);
+            console.error('❌ Erro na atualização:', error);
             throw error;
         }
     }

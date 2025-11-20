@@ -155,6 +155,8 @@ async function enrichFoldersWithAvailableCounts(folders, prefix = '') {
                     availableCount = await UnifiedProductComplete.countDocuments({
                         category: category.displayName,
                         status: 'available',
+                        transitStatus: { $ne: 'coming_soon' },
+                        cdeTable: { $ne: 'tbetiqueta' },
                         isActive: true
                     });
 
@@ -670,6 +672,14 @@ router.get('/photos', verifyClientToken, async (req, res) => {
                                 { transitStatus: 'available' },
                                 { transitStatus: { $exists: false } },
                                 { transitStatus: null }
+                            ],
+                            // ===== EXCLUIR tbetiqueta =====
+                            $and: [
+                                { $or: [
+                                    { cdeTable: { $ne: 'tbetiqueta' } },
+                                    { cdeTable: { $exists: false } },
+                                    { cdeTable: null }
+                                ]}
                             ]
                         },
                         // Mostrar fotos reservadas pelo próprio cliente
@@ -692,6 +702,8 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         if (!req.client?.clientCode) {
             searchQuery = {
                 status: 'available',
+                transitStatus: { $ne: 'coming_soon' },
+                cdeTable: { $ne: 'tbetiqueta' },
                 $or: [
                     { selectionId: { $exists: false } },
                     { selectionId: null }
