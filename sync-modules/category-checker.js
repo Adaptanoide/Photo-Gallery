@@ -26,11 +26,11 @@ class CategoryChecker {
         const normalizeCategory = (cat) => {
             if (!cat) return 'uncategorized';
             return cat
-                .replace(/\//g, ' → ')      // Converter / para →
+                .replace(/\//g, ' → ')       // Converter / para →
+                .replace(/\\/g, ' → ')       // Converter \ para → (WINDOWS)
                 .replace(/\s*→\s*$/g, '')    // Remover → vazia no final
                 .trim();
         };
-
         const photoCategories = [...new Set(photos.map(p => normalizeCategory(p.category)))];
         // ===== FIM DA CORREÇÃO =====
 

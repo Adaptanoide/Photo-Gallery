@@ -13,8 +13,10 @@ const fs = require('fs');
  */
 function sanitizeCategory(category) {
     if (!category) return category;
-    // Remove " → " ou "→" do final da string
-    return category.replace(/\s*→\s*$/, '').trim();
+    return category
+        .replace(/\//g, ' → ')       // Converter / para →
+        .replace(/\\/g, ' → ')       // Converter \ para → (WINDOWS)
+        .replace(/\s*→\s*$/, '').trim();
 }
 
 class SyncEngine {
