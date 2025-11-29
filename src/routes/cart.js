@@ -530,17 +530,21 @@ async function calculateCartTotals(cart) {
         console.log(`🌍 [MIX&MATCH GLOBAL] ${globalQuantity} items no total`);
 
         for (const [categoryPath, items] of Object.entries(globalMixMatchItems)) {
-            const cleanPath = categoryPath.endsWith('/')
+            let cleanPath = categoryPath.endsWith('/')
                 ? categoryPath.slice(0, -1)
                 : categoryPath;
 
+            // ✅ CORREÇÃO: Converter setas de volta para barras para busca no MongoDB
+            const normalizedPath = cleanPath.replace(/ → /g, '/');
+
             console.log(`🔍 Buscando categoria: "${cleanPath}"`);
+            console.log(`🔍 Path normalizado: "${normalizedPath}"`);
 
             const category = await PhotoCategory.findOne({
                 $or: [
-                    { googleDrivePath: cleanPath },
-                    { googleDrivePath: cleanPath + '/' },
-                    { displayName: cleanPath.split('/').join(' → ') }
+                    { googleDrivePath: normalizedPath },
+                    { googleDrivePath: normalizedPath + '/' },
+                    { displayName: cleanPath }  // displayName já usa setas
                 ]
             });
 
@@ -586,17 +590,21 @@ async function calculateCartTotals(cart) {
     for (const [categoryPath, items] of Object.entries(separateItems)) {
         const quantity = items.length;
 
-        const cleanPath = categoryPath.endsWith('/')
+        let cleanPath = categoryPath.endsWith('/')
             ? categoryPath.slice(0, -1)
             : categoryPath;
 
+        // ✅ CORREÇÃO: Converter setas de volta para barras para busca no MongoDB
+        const normalizedPath = cleanPath.replace(/ → /g, '/');
+
         console.log(`🔍 [SEPARADO] Buscando categoria: "${cleanPath}"`);
+        console.log(`🔍 [SEPARADO] Path normalizado: "${normalizedPath}"`);
 
         const category = await PhotoCategory.findOne({
             $or: [
-                { googleDrivePath: cleanPath },
-                { googleDrivePath: cleanPath + '/' },
-                { displayName: cleanPath.split('/').join(' → ') }
+                { googleDrivePath: normalizedPath },
+                { googleDrivePath: normalizedPath + '/' },
+                { displayName: cleanPath }  // displayName já usa setas
             ]
         });
 
