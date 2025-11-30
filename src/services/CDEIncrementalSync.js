@@ -5,6 +5,7 @@ const mysql = require('mysql2/promise');
 const mongoose = require('mongoose');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Cart = require('../models/Cart');
+const Selection = require('../models/Selection');
 
 // Identificação única da instância
 const INSTANCE_ID = process.env.SYNC_INSTANCE_ID || 'unknown';
@@ -613,6 +614,11 @@ class CDEIncrementalSync {
             this.stats.discrepanciesFound = discrepancies.length;
             this.stats.lastRun = new Date();
 
+            // ============================================
+            // VERIFICAR SELEÇÕES PENDING
+            // ============================================
+            const selectionCheckResult = await this.verificarSelecoesPending(cdeConnection);
+
             // Relatório no console
             console.log('\n' + '='.repeat(60));
             console.log('[SYNC] RELATÓRIO DA SINCRONIZAÇÃO');
@@ -826,6 +832,157 @@ class CDEIncrementalSync {
         }
 
         return { applied: false, reason: 'Nenhuma correção necessária' };
+    }
+
+    // ============================================
+    // VERIFICAÇÃO DE SELEÇÕES PENDING
+    // ============================================
+    async verificarSelecoesPending(cdeConnection) {
+        console.log('\n' + '='.repeat(60));
+        console.log('[SYNC] 🔍 VERIFICANDO SELEÇÕES PENDING');
+        console.log('='.repeat(60));
+
+        try {
+            // Buscar todas as seleções PENDING
+            const selecoesPending = await Selection.find({
+                status: 'pending',
+                isDeleted: { $ne: true }
+            });
+
+            console.log(`[SYNC] 📋 Encontradas ${selecoesPending.length} seleções PENDING`);
+
+            if (selecoesPending.length === 0) {
+                console.log('[SYNC] ✅ Nenhuma seleção PENDING para verificar');
+                return { checked: 0, problems: 0, details: [] };
+            }
+
+            let totalProblemas = 0;
+            const detalhesProblemas = [];
+
+            for (const selecao of selecoesPending) {
+                const clientCode = selecao.clientCode;
+                const selectionId = selecao.selectionId;
+
+                console.log(`\n[SYNC] 📦 Verificando: ${selecao.clientName} (${clientCode}) - ${selecao.items.length} fotos`);
+
+                const fotosProblema = [];
+
+                for (const item of selecao.items) {
+                    const photoNumber = item.fileName?.replace('.webp', '').replace('.jpg', '').replace('.png', '') || '';
+
+                    if (!photoNumber) continue;
+
+                    // Buscar no CDE
+                    const [result] = await cdeConnection.execute(
+                        'SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                        [photoNumber]
+                    );
+
+                    if (result.length === 0) {
+                        // Foto não encontrada no CDE
+                        fotosProblema.push({
+                            foto: photoNumber,
+                            problema: 'NÃO ENCONTRADA NO CDE',
+                            estadoCDE: null,
+                            reservedusu: null,
+                            acao: 'REMOVER'
+                        });
+                        continue;
+                    }
+
+                    const cdeRecord = result[0];
+                    const estado = cdeRecord.AESTADOP || '';
+                    const reservedusu = cdeRecord.RESERVEDUSU || '';
+
+                    // Verificar se pertence ao cliente
+                    const pertenceAoCliente = reservedusu.includes(`-${clientCode}`);
+
+                    // Analisar estado
+                    if (estado === 'INGRESADO') {
+                        // Foto voltou para disponível - PROBLEMA!
+                        fotosProblema.push({
+                            foto: photoNumber,
+                            problema: 'VOLTOU PARA INGRESADO',
+                            estadoCDE: estado,
+                            reservedusu: reservedusu || '(vazio)',
+                            acao: 'REMOVER'
+                        });
+                    } else if (estado === 'PRE-SELECTED' || estado === 'CONFIRMED' || estado === 'RESERVED') {
+                        if (!pertenceAoCliente) {
+                            // Foto está com outro cliente - PROBLEMA!
+                            fotosProblema.push({
+                                foto: photoNumber,
+                                problema: `${estado} PARA OUTRO CLIENTE`,
+                                estadoCDE: estado,
+                                reservedusu: reservedusu || '(vazio)',
+                                acao: 'REMOVER'
+                            });
+                        }
+                        // Se pertence ao cliente, está OK - não faz nada
+                    } else if (estado === 'STANDBY') {
+                        // Foto em standby - alertar
+                        fotosProblema.push({
+                            foto: photoNumber,
+                            problema: 'EM STANDBY',
+                            estadoCDE: estado,
+                            reservedusu: reservedusu || '(vazio)',
+                            acao: 'ALERTAR'
+                        });
+                    }
+                    // RETIRADO: ignoramos por enquanto (não temos certeza)
+                }
+
+                // Se encontrou problemas nesta seleção
+                if (fotosProblema.length > 0) {
+                    totalProblemas += fotosProblema.length;
+
+                    console.log(`[SYNC] ⚠️ PROBLEMAS em ${selecao.clientName}:`);
+                    fotosProblema.forEach(p => {
+                        console.log(`   - Foto ${p.foto}: ${p.problema} | CDE: ${p.estadoCDE} | RESERVEDUSU: ${p.reservedusu} | Ação: ${p.acao}`);
+                    });
+
+                    detalhesProblemas.push({
+                        selectionId: selectionId,
+                        clientName: selecao.clientName,
+                        clientCode: clientCode,
+                        totalFotos: selecao.items.length,
+                        fotosProblema: fotosProblema,
+                        tierAtual: selecao.totalItems >= 37 ? 'Tier 4' : selecao.totalItems >= 13 ? 'Tier 3' : selecao.totalItems >= 6 ? 'Tier 2' : 'Tier 1',
+                        tierNovo: (selecao.totalItems - fotosProblema.filter(f => f.acao === 'REMOVER').length) >= 37 ? 'Tier 4' :
+                            (selecao.totalItems - fotosProblema.filter(f => f.acao === 'REMOVER').length) >= 13 ? 'Tier 3' :
+                                (selecao.totalItems - fotosProblema.filter(f => f.acao === 'REMOVER').length) >= 6 ? 'Tier 2' : 'Tier 1'
+                    });
+                } else {
+                    console.log(`[SYNC] ✅ ${selecao.clientName}: Todas as ${selecao.items.length} fotos OK`);
+                }
+            }
+
+            // Resumo final
+            console.log('\n' + '-'.repeat(60));
+            console.log('[SYNC] 📊 RESUMO DA VERIFICAÇÃO DE SELEÇÕES:');
+            console.log(`   Seleções verificadas: ${selecoesPending.length}`);
+            console.log(`   Total de problemas: ${totalProblemas}`);
+
+            if (detalhesProblemas.length > 0) {
+                console.log('\n[SYNC] ⚠️ SELEÇÕES COM PROBLEMAS:');
+                detalhesProblemas.forEach(d => {
+                    const fotosRemover = d.fotosProblema.filter(f => f.acao === 'REMOVER').length;
+                    console.log(`   - ${d.clientName} (${d.clientCode}): ${fotosRemover} fotos para remover`);
+                    console.log(`     Tier: ${d.tierAtual} → ${d.tierNovo}`);
+                });
+            }
+            console.log('-'.repeat(60));
+
+            return {
+                checked: selecoesPending.length,
+                problems: totalProblemas,
+                details: detalhesProblemas
+            };
+
+        } catch (error) {
+            console.error('[SYNC] ❌ Erro ao verificar seleções:', error.message);
+            return { checked: 0, problems: 0, error: error.message };
+        }
     }
 
     getStats() {
