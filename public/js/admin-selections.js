@@ -314,10 +314,10 @@ class AdminSelections {
                             </button>
                         ` : ''}
                         ${selection.hasRetiredPhotos ? `
-                            <button class="alert-badge-btn retired-badge" 
+                            <button class="alert-badge-btn" 
                                     onclick="adminSelections.showRetiredPhotosAlert('${selection.selectionId}')"
                                     title="Photos marked as RETIRED in CDE - verify if should be SOLD">
-                                <i class="fas fa-clipboard-check"></i>
+                                <i class="fas fa-exclamation-triangle"></i>
                             </button>
                         ` : ''}
                     </div>
