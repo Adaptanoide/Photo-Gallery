@@ -445,6 +445,14 @@ class CDEIncrementalSync {
 
             if (shouldDoFullSync) {
                 console.log(`[SYNC] 🔄 Executando SYNC COMPLETO (a cada 20 execuções)`);
+
+                // IMPORTANTE: Salvar o executionCount ANTES de sair para runSmartSync
+                await db.collection('sync_locks').updateOne(
+                    { _id: 'cde_sync' },
+                    { $set: { executionCount: executionCount } },
+                    { upsert: true }
+                );
+
                 // Fechar conexão do runSync antes de chamar runSmartSync
                 if (cdeConnection) await cdeConnection.end();
                 this.isRunning = false;
