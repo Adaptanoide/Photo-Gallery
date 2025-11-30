@@ -429,7 +429,18 @@ const selectionSchema = new mongoose.Schema({
     lastAutoCorrection: {
         type: Date,
         default: null
-    }
+    },
+    // ===== FOTOS RETIRADO (vendidas mas não finalizadas) =====
+    hasRetiredPhotos: {
+        type: Boolean,
+        default: false
+    },
+    retiredPhotosDetails: [{
+        fileName: String,
+        photoNumber: String,
+        reservedUsu: String,
+        detectedAt: { type: Date, default: Date.now }
+    }]
 }, {
     timestamps: true
 });

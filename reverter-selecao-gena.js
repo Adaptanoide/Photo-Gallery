@@ -27,16 +27,16 @@ const PRECOS_TIER_2 = {
 async function reverterSelecaoGena() {
     let mongoConnection = null;
     let cdeConnection = null;
-    
+
     try {
         console.log('🔄 REVERTENDO SELEÇÃO DA GENA AO ESTADO ORIGINAL');
         console.log('='.repeat(60));
-        
+
         // 1. Conectar ao MongoDB
         console.log('\n📦 Conectando ao MongoDB...');
         await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://easyadmin:2NwxuiOlK57wH8cY@cluster.tsbl7y8.mongodb.net/sunshine_cowhides?retryWrites=true&w=majority&appName=Cluster');
         console.log('✅ MongoDB conectado!');
-        
+
         // 2. Conectar ao CDE
         console.log('\n🔌 Conectando ao CDE...');
         cdeConnection = await mysql.createConnection({
@@ -47,24 +47,24 @@ async function reverterSelecaoGena() {
             database: process.env.CDE_DATABASE || 'tzwgctib_inventario'
         });
         console.log('✅ CDE conectado!');
-        
+
         // 3. Verificar estado atual no CDE
         console.log('\n📊 ESTADO ATUAL NO CDE:');
         const [rowsAntes] = await cdeConnection.execute(
             'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
             [FOTO_REMOVIDA.photoNumber.padStart(5, '0')]
         );
-        
+
         if (rowsAntes.length > 0) {
             console.log(`   Foto: ${FOTO_REMOVIDA.photoNumber}`);
             console.log(`   Estado: ${rowsAntes[0].AESTADOP}`);
             console.log(`   RESERVEDUSU: ${rowsAntes[0].RESERVEDUSU || '(vazio)'}`);
         }
-        
+
         // 4. Reverter CDE para CONFIRMED
         console.log('\n🔧 REVERTENDO CDE...');
         const reservedUsu = `${CLIENT_NAME}-${CLIENT_CODE}(${SALES_REP})`;
-        
+
         await cdeConnection.execute(
             `UPDATE tbinventario 
              SET AESTADOP = 'CONFIRMED', RESERVEDUSU = ?
@@ -72,41 +72,41 @@ async function reverterSelecaoGena() {
             [reservedUsu, FOTO_REMOVIDA.photoNumber.padStart(5, '0')]
         );
         console.log(`✅ CDE revertido: CONFIRMED | ${reservedUsu}`);
-        
+
         // 5. Buscar a seleção no MongoDB
         console.log('\n📋 BUSCANDO SELEÇÃO NO MONGODB...');
         const Selection = require('./src/models/Selection');
         const UnifiedProductComplete = require('./src/models/UnifiedProductComplete');
-        
+
         const selecao = await Selection.findOne({ selectionId: SELECAO_ID });
-        
+
         if (!selecao) {
             throw new Error(`Seleção ${SELECAO_ID} não encontrada!`);
         }
-        
+
         console.log(`✅ Seleção encontrada: ${selecao.clientName}`);
         console.log(`   Items atuais: ${selecao.items.length}`);
         console.log(`   Total atual: $${selecao.totalValue}`);
-        
+
         // 6. Verificar se a foto já está na seleção
         const fotoJaExiste = selecao.items.some(item => item.fileName === FOTO_REMOVIDA.fileName);
-        
+
         if (fotoJaExiste) {
             console.log(`⚠️ Foto ${FOTO_REMOVIDA.fileName} já existe na seleção!`);
         } else {
             // 7. Buscar o produto no MongoDB
             console.log('\n🔍 BUSCANDO PRODUTO NO MONGODB...');
-            let produto = await UnifiedProductComplete.findOne({ 
-                fileName: FOTO_REMOVIDA.fileName 
+            let produto = await UnifiedProductComplete.findOne({
+                fileName: FOTO_REMOVIDA.fileName
             });
-            
+
             if (!produto) {
                 // Tentar buscar por driveFileId
                 produto = await UnifiedProductComplete.findOne({
                     driveFileId: FOTO_REMOVIDA.driveFileId
                 });
             }
-            
+
             if (!produto) {
                 console.log(`⚠️ Produto não encontrado, criando referência...`);
                 // Usar dados mínimos
@@ -114,10 +114,10 @@ async function reverterSelecaoGena() {
             } else {
                 console.log(`✅ Produto encontrado: ${produto.fileName}`);
             }
-            
+
             // 8. Adicionar foto de volta à seleção
             console.log('\n➕ ADICIONANDO FOTO À SELEÇÃO...');
-            
+
             const novoItem = {
                 productId: produto._id,
                 driveFileId: FOTO_REMOVIDA.driveFileId,
@@ -128,10 +128,10 @@ async function reverterSelecaoGena() {
                 price: PRECOS_TIER_2['Brazil Best Sellers'], // $105 para Tier 2
                 selectedAt: new Date()
             };
-            
+
             selecao.items.push(novoItem);
             console.log(`✅ Foto adicionada: ${FOTO_REMOVIDA.fileName}`);
-            
+
             // 9. Atualizar produto no MongoDB
             if (produto.fileName) {
                 await UnifiedProductComplete.updateOne(
@@ -150,15 +150,15 @@ async function reverterSelecaoGena() {
                 console.log(`✅ Produto atualizado no MongoDB`);
             }
         }
-        
+
         // 10. Recalcular TODOS os preços para Tier 2
         console.log('\n🧮 RECALCULANDO PREÇOS PARA TIER 2...');
-        
+
         let novoTotal = 0;
         for (const item of selecao.items) {
             const categoria = item.category || '';
             let novoPreco;
-            
+
             if (categoria.includes('Brazil Best Sellers')) {
                 novoPreco = PRECOS_TIER_2['Brazil Best Sellers']; // $105
             } else if (categoria.includes('Brazil Top Selected')) {
@@ -166,21 +166,28 @@ async function reverterSelecaoGena() {
             } else {
                 novoPreco = item.price; // Manter preço atual
             }
-            
+
             if (item.price !== novoPreco) {
                 console.log(`   📝 ${item.fileName}: $${item.price} → $${novoPreco}`);
             }
-            
+
             item.price = novoPreco;
             novoTotal += novoPreco;
         }
-        
+
         // 11. Atualizar totais
         selecao.totalItems = selecao.items.length;
         selecao.totalValue = novoTotal;
         selecao.priceReviewRequired = false;
         selecao.priceReviewReason = null;
-        
+        selecao.lastAutoCorrection = null;
+
+        // 11.1 Limpar histórico de correções automáticas (para remover o badge)
+        selecao.movementLog = selecao.movementLog.filter(log =>
+            log.action !== 'item_auto_removed' && log.action !== 'prices_recalculated'
+        );
+        console.log('🧹 Histórico de correções automáticas limpo');
+
         // 12. Adicionar log de reversão
         selecao.movementLog.push({
             action: 'reverted',
@@ -193,10 +200,10 @@ async function reverterSelecaoGena() {
                 novoTotal: novoTotal
             }
         });
-        
+
         // 13. Salvar seleção
         await selecao.save();
-        
+
         // 14. Verificar resultado final
         console.log('\n' + '='.repeat(60));
         console.log('✅ REVERSÃO COMPLETA!');
@@ -207,23 +214,23 @@ async function reverterSelecaoGena() {
         console.log(`   Total Items: ${selecao.totalItems}`);
         console.log(`   Total Value: $${selecao.totalValue.toFixed(2)}`);
         console.log(`   Tier: Tier 2 (6-12)`);
-        
+
         console.log(`\n📦 ITEMS:`);
         selecao.items.forEach((item, i) => {
-            console.log(`   ${i+1}. ${item.fileName} - $${item.price}`);
+            console.log(`   ${i + 1}. ${item.fileName} - $${item.price}`);
         });
-        
+
         // Verificar CDE final
         const [rowsDepois] = await cdeConnection.execute(
             'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
             [FOTO_REMOVIDA.photoNumber.padStart(5, '0')]
         );
-        
+
         console.log(`\n📊 ESTADO FINAL NO CDE:`);
         console.log(`   Foto: ${FOTO_REMOVIDA.photoNumber}`);
         console.log(`   Estado: ${rowsDepois[0].AESTADOP}`);
         console.log(`   RESERVEDUSU: ${rowsDepois[0].RESERVEDUSU}`);
-        
+
     } catch (error) {
         console.error('\n❌ ERRO:', error.message);
         console.error(error.stack);

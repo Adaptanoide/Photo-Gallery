@@ -313,6 +313,13 @@ class AdminSelections {
                                 <i class="fas fa-exclamation-triangle"></i>
                             </button>
                         ` : ''}
+                        ${selection.hasRetiredPhotos ? `
+                            <button class="alert-badge-btn retired-badge" 
+                                    onclick="adminSelections.showRetiredPhotosAlert('${selection.selectionId}')"
+                                    title="Photos marked as RETIRED in CDE - verify if should be SOLD">
+                                <i class="fas fa-clipboard-check"></i>
+                            </button>
+                        ` : ''}
                     </div>
                     <div class="client-code">Code: ${selection.clientCode}</div>
                 </td>
@@ -2644,6 +2651,102 @@ class AdminSelections {
         if (event && event.target !== event.currentTarget) return;
 
         const modal = document.getElementById('correctionAlertModal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.remove(), 300);
+        }
+    }
+
+    // ===== SHOW RETIRED PHOTOS ALERT MODAL =====
+    showRetiredPhotosAlert(selectionId) {
+        const selection = this.selectionsData[selectionId];
+
+        if (!selection || !selection.retiredPhotosDetails || selection.retiredPhotosDetails.length === 0) {
+            UISystem.showToast('info', 'No retired photos details available');
+            return;
+        }
+
+        // Construir lista de fotos
+        const photosHTML = selection.retiredPhotosDetails.map(photo => `
+            <li>
+                <span class="photo-name">${photo.fileName}</span>
+                <span class="photo-info">CDE: ${photo.reservedUsu || 'N/A'}</span>
+            </li>
+        `).join('');
+
+        // Criar modal
+        const modalHTML = `
+            <div class="modal-overlay" id="retiredPhotosModal" onclick="adminSelections.closeRetiredPhotosModal(event)">
+                <div class="modal-content correction-modal retired-modal" onclick="event.stopPropagation()">
+                    <div class="modal-header retired-header">
+                        <h3>
+                            <i class="fas fa-clipboard-check"></i>
+                            Photos Already Retired in CDE
+                        </h3>
+                        <button class="modal-close-btn" onclick="adminSelections.closeRetiredPhotosModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="correction-info-box retired-info-box">
+                            <p>
+                                <i class="fas fa-info-circle"></i>
+                                The following photos from this selection are already marked as <strong>RETIRED</strong> 
+                                in the CDE system. This usually means they were sold via phone or another channel.
+                            </p>
+                        </div>
+                        
+                        <div class="correction-client">
+                            <strong>Client:</strong> ${selection.clientName} (${selection.clientCode})
+                            <br>
+                            <strong>Company:</strong> ${selection.clientCompany}
+                        </div>
+                        
+                        <h4>Retired Photos (${selection.retiredPhotosDetails.length})</h4>
+                        <div class="retired-photos-container">
+                            <ul class="retired-photos-list-modal">
+                                ${photosHTML}
+                            </ul>
+                        </div>
+                        
+                        <div class="correction-note retired-note">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>
+                                <strong>Suggestion:</strong> If these photos were sold to this client, 
+                                please mark this selection as <strong>SOLD</strong> to keep records accurate.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" onclick="adminSelections.closeRetiredPhotosModal()">
+                            <i class="fas fa-check"></i> Got it
+                        </button>
+                        <button class="btn btn-secondary" onclick="adminSelections.viewSelection('${selectionId}'); adminSelections.closeRetiredPhotosModal();">
+                            <i class="fas fa-eye"></i> View Selection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remover modal existente se houver
+        const existingModal = document.getElementById('retiredPhotosModal');
+        if (existingModal) existingModal.remove();
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Animar entrada
+        setTimeout(() => {
+            document.getElementById('retiredPhotosModal').classList.add('show');
+        }, 10);
+    }
+
+    // ===== CLOSE RETIRED PHOTOS MODAL =====
+    closeRetiredPhotosModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+
+        const modal = document.getElementById('retiredPhotosModal');
         if (modal) {
             modal.classList.remove('show');
             setTimeout(() => modal.remove(), 300);

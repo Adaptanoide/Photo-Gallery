@@ -94,7 +94,7 @@ router.get('/', async (req, res) => {
                     status: s.status,
                     createdAt: s.createdAt,
                     googleDriveInfo: s.googleDriveInfo,
-                    // Novos campos para alertas
+                    // Alertas de correção automática
                     hasAutoCorrection: hasAutoCorrection,
                     lastAutoCorrection: s.lastAutoCorrection,
                     priceReviewRequired: s.priceReviewRequired || false,
@@ -102,7 +102,10 @@ router.get('/', async (req, res) => {
                         timestamp: ac.timestamp,
                         details: ac.details,
                         extraData: ac.extraData || {}
-                    }))
+                    })),
+                    // Alertas de fotos RETIRADO
+                    hasRetiredPhotos: s.hasRetiredPhotos || false,
+                    retiredPhotosDetails: s.retiredPhotosDetails || []
                 };
             }),
             pagination: {

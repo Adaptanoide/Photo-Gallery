@@ -1103,6 +1103,22 @@ class CDEIncrementalSync {
                         console.log(`   - Foto ${p.foto}: ${p.problema} | CDE: ${p.estadoCDE} | RESERVEDUSU: ${p.reservedUsu} | Ação: ${p.acao}`);
                     });
 
+                    // Separar: itens para REMOVER vs itens para ALERTAR (RETIRADO)
+                    const itensRetirado = problemasDestaSelecao.filter(p => p.acao === 'ALERTAR' && p.estadoCDE === 'RETIRADO');
+
+                    // SALVAR INFO DE FOTOS RETIRADO
+                    if (itensRetirado.length > 0) {
+                        selecao.hasRetiredPhotos = true;
+                        selecao.retiredPhotosDetails = itensRetirado.map(p => ({
+                            fileName: p.fileName,
+                            photoNumber: p.foto,
+                            reservedUsu: p.reservedUsu,
+                            detectedAt: new Date()
+                        }));
+                        await selecao.save();
+                        console.log(`[SYNC] 📝 Salvo alerta de ${itensRetirado.length} fotos RETIRADO para ${clientName}`);
+                    }
+
                     // APLICAR REMOÇÕES
                     if (itensParaRemover.length > 0) {
                         console.log(`[SYNC] 🔧 Removendo ${itensParaRemover.length} fotos problemáticas...`);
@@ -1185,6 +1201,7 @@ class CDEIncrementalSync {
                         clientCode,
                         problemas: problemasDestaSelecao.length,
                         correcoes: itensParaRemover.length,
+                        alertas: itensRetirado.length,
                         tierChange: itensParaRemover.length > 0 ?
                             `${this.calcularTier(items.length)} → ${this.calcularTier(selecao.items.length)}` : null
                     });
