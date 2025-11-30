@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Cart = require('../models/Cart');
 const Selection = require('../models/Selection');
+const PhotoCategory = require('../models/PhotoCategory');
 
 // Identificação única da instância
 const INSTANCE_ID = process.env.SYNC_INSTANCE_ID || 'unknown';
@@ -852,154 +853,385 @@ class CDEIncrementalSync {
     }
 
     // ============================================
-    // VERIFICAÇÃO DE SELEÇÕES PENDING
+    // RECALCULAR PREÇOS DA SELEÇÃO APÓS REMOÇÃO
     // ============================================
-    async verificarSelecoesPending(cdeConnection) {
-        console.log('\n' + '='.repeat(60));
-        console.log('[SYNC] 🔍 VERIFICANDO SELEÇÕES PENDING');
-        console.log('='.repeat(60));
+    async recalcularPrecosSelecao(selection) {
+        console.log(`[SYNC] 🧮 Recalculando preços para seleção ${selection.selectionId}...`);
+
+        // Categorias Mix & Match (contagem global)
+        const GLOBAL_MIX_MATCH_CATEGORIES = [
+            'Colombian Cowhides',
+            'Brazil Best Sellers',
+            'Brazil Top Selected Categories'
+        ];
+
+        const isGlobalMixMatch = (categoryPath) => {
+            if (!categoryPath) return false;
+            const mainCategory = categoryPath.split('/')[0].split(' → ')[0].trim();
+            return GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
+                mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
+            );
+        };
 
         try {
-            // Buscar todas as seleções PENDING
+            // Separar items em Mix & Match vs Outros
+            const mixMatchItems = [];
+            const otherItems = [];
+
+            for (const item of selection.items) {
+                const categoryPath = item.category || '';
+                if (isGlobalMixMatch(categoryPath)) {
+                    mixMatchItems.push(item);
+                } else {
+                    otherItems.push(item);
+                }
+            }
+
+            const globalQuantity = mixMatchItems.length;
+            console.log(`[SYNC]    Mix & Match: ${globalQuantity} items | Outros: ${otherItems.length} items`);
+
+            let totalRecalculado = 0;
+            let errosRecalculo = 0;
+
+            // Recalcular preços dos items Mix & Match (tier global)
+            for (const item of mixMatchItems) {
+                try {
+                    // Normalizar o path para busca
+                    let cleanPath = (item.category || '').replace(/ → /g, '/');
+                    if (cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+
+                    const category = await PhotoCategory.findOne({
+                        $or: [
+                            { googleDrivePath: cleanPath },
+                            { googleDrivePath: cleanPath + '/' },
+                            { displayName: item.category }
+                        ]
+                    });
+
+                    if (category) {
+                        const priceResult = await category.getPriceForClient(selection.clientCode, globalQuantity);
+                        const oldPrice = item.price;
+                        item.price = priceResult.finalPrice;
+                        totalRecalculado += priceResult.finalPrice;
+
+                        if (oldPrice !== priceResult.finalPrice) {
+                            console.log(`[SYNC]    📝 ${item.fileName}: $${oldPrice} → $${priceResult.finalPrice} (${priceResult.appliedRule})`);
+                        }
+                    } else {
+                        console.log(`[SYNC]    ⚠️ Categoria não encontrada para: ${item.category}`);
+                        totalRecalculado += item.price || 0;
+                        errosRecalculo++;
+                    }
+                } catch (err) {
+                    console.error(`[SYNC]    ❌ Erro ao recalcular ${item.fileName}:`, err.message);
+                    totalRecalculado += item.price || 0;
+                    errosRecalculo++;
+                }
+            }
+
+            // Recalcular preços dos items separados (tier próprio por categoria)
+            const othersByCategory = {};
+            for (const item of otherItems) {
+                const cat = item.category || 'Uncategorized';
+                if (!othersByCategory[cat]) othersByCategory[cat] = [];
+                othersByCategory[cat].push(item);
+            }
+
+            for (const [categoryPath, items] of Object.entries(othersByCategory)) {
+                const quantity = items.length;
+
+                try {
+                    let cleanPath = categoryPath.replace(/ → /g, '/');
+                    if (cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+
+                    const category = await PhotoCategory.findOne({
+                        $or: [
+                            { googleDrivePath: cleanPath },
+                            { googleDrivePath: cleanPath + '/' },
+                            { displayName: categoryPath }
+                        ]
+                    });
+
+                    if (category) {
+                        const priceResult = await category.getPriceForClient(selection.clientCode, quantity);
+
+                        for (const item of items) {
+                            const oldPrice = item.price;
+                            item.price = priceResult.finalPrice;
+                            totalRecalculado += priceResult.finalPrice;
+
+                            if (oldPrice !== priceResult.finalPrice) {
+                                console.log(`[SYNC]    📝 ${item.fileName}: $${oldPrice} → $${priceResult.finalPrice}`);
+                            }
+                        }
+                    } else {
+                        for (const item of items) {
+                            totalRecalculado += item.price || 0;
+                        }
+                        errosRecalculo++;
+                    }
+                } catch (err) {
+                    console.error(`[SYNC]    ❌ Erro ao recalcular categoria ${categoryPath}:`, err.message);
+                    for (const item of items) {
+                        totalRecalculado += item.price || 0;
+                    }
+                    errosRecalculo++;
+                }
+            }
+
+            return {
+                success: errosRecalculo === 0,
+                totalRecalculado,
+                errosRecalculo,
+                mixMatchCount: mixMatchItems.length,
+                othersCount: otherItems.length
+            };
+
+        } catch (error) {
+            console.error(`[SYNC] ❌ Erro geral no recálculo:`, error.message);
+            return {
+                success: false,
+                totalRecalculado: selection.totalValue,
+                errosRecalculo: 1,
+                error: error.message
+            };
+        }
+    }
+
+    // ============================================
+    // VERIFICAR E CORRIGIR SELEÇÕES PENDING
+    // ============================================
+    async verificarSelecoesPending(cdeConnection) {
+        console.log(`============================================================`);
+        console.log(`[SYNC] 🔍 VERIFICANDO SELEÇÕES PENDING`);
+        console.log(`============================================================`);
+
+        try {
+            // Buscar seleções PENDING não deletadas
             const selecoesPending = await Selection.find({
                 status: 'pending',
                 isDeleted: { $ne: true }
             });
 
-            console.log(`[SYNC] 📋 Encontradas ${selecoesPending.length} seleções PENDING`);
-
             if (selecoesPending.length === 0) {
-                console.log('[SYNC] ✅ Nenhuma seleção PENDING para verificar');
-                return { checked: 0, problems: 0, details: [] };
+                console.log(`[SYNC] ✅ Nenhuma seleção PENDING encontrada`);
+                return { verificadas: 0, problemas: 0 };
             }
 
+            console.log(`[SYNC] 📋 Encontradas ${selecoesPending.length} seleções PENDING`);
+
             let totalProblemas = 0;
-            const detalhesProblemas = [];
+            let totalCorrecoes = 0;
+            const selecoesComProblemas = [];
 
             for (const selecao of selecoesPending) {
                 const clientCode = selecao.clientCode;
-                const selectionId = selecao.selectionId;
+                const clientName = selecao.clientName;
+                const items = selecao.items || [];
 
-                console.log(`\n[SYNC] 📦 Verificando: ${selecao.clientName} (${clientCode}) - ${selecao.items.length} fotos`);
+                console.log(`[SYNC] 📦 Verificando: ${clientName} (${clientCode}) - ${items.length} fotos`);
 
-                const fotosProblema = [];
+                const problemasDestaSelecao = [];
+                const itensParaRemover = [];
 
-                for (const item of selecao.items) {
-                    const photoNumber = item.fileName?.replace('.webp', '').replace('.jpg', '').replace('.png', '') || '';
+                for (const item of items) {
+                    const fileName = item.fileName || '';
+                    const photoNumber = fileName.match(/(\d+)/)?.[1];
 
                     if (!photoNumber) continue;
 
-                    // Buscar no CDE
-                    const [result] = await cdeConnection.execute(
-                        'SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
-                        [photoNumber]
+                    // Consultar estado no CDE
+                    const [rows] = await cdeConnection.execute(
+                        'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                        [photoNumber.padStart(5, '0')]
                     );
 
-                    if (result.length === 0) {
-                        // Foto não encontrada no CDE
-                        fotosProblema.push({
-                            foto: photoNumber,
-                            problema: 'NÃO ENCONTRADA NO CDE',
-                            estadoCDE: null,
-                            reservedusu: null,
-                            acao: 'REMOVER'
-                        });
-                        continue;
-                    }
+                    if (rows.length === 0) continue;
 
-                    const cdeRecord = result[0];
-                    const estado = cdeRecord.AESTADOP || '';
-                    const reservedusu = cdeRecord.RESERVEDUSU || '';
+                    const estadoCDE = rows[0].AESTADOP;
+                    const reservedUsu = rows[0].RESERVEDUSU || '';
 
-                    // Verificar se pertence ao cliente
-                    const pertenceAoCliente = reservedusu.includes(`-${clientCode}`);
+                    // Verificar se RESERVEDUSU contém o código do cliente
+                    const pertenceAoCliente = reservedUsu.includes(`-${clientCode}`);
 
-                    // Analisar estado
-                    if (estado === 'INGRESADO') {
-                        // Foto voltou para disponível - PROBLEMA!
-                        fotosProblema.push({
-                            foto: photoNumber,
-                            problema: 'VOLTOU PARA INGRESADO',
-                            estadoCDE: estado,
-                            reservedusu: reservedusu || '(vazio)',
-                            acao: 'REMOVER'
-                        });
-                    } else if (estado === 'PRE-SELECTED' || estado === 'CONFIRMED' || estado === 'RESERVED') {
-                        if (!pertenceAoCliente) {
-                            // Foto está com outro cliente - PROBLEMA!
-                            fotosProblema.push({
-                                foto: photoNumber,
-                                problema: `${estado} PARA OUTRO CLIENTE`,
-                                estadoCDE: estado,
-                                reservedusu: reservedusu || '(vazio)',
-                                acao: 'REMOVER'
-                            });
+                    let problema = null;
+                    let acao = null;
+
+                    // LÓGICA DE DETECÇÃO
+                    if (estadoCDE === 'INGRESADO') {
+                        problema = 'VOLTOU PARA INGRESADO';
+                        acao = 'REMOVER';
+                    } else if (estadoCDE === 'RETIRADO') {
+                        // RETIRADO é inconclusivo - não remover automaticamente
+                        // mas alertar se não pertence ao cliente
+                        if (!pertenceAoCliente && reservedUsu) {
+                            problema = 'RETIRADO POR OUTRO';
+                            acao = 'ALERTAR';
                         }
-                        // Se pertence ao cliente, está OK - não faz nada
-                    } else if (estado === 'STANDBY') {
-                        // Foto em standby - alertar
-                        fotosProblema.push({
-                            foto: photoNumber,
-                            problema: 'EM STANDBY',
-                            estadoCDE: estado,
-                            reservedusu: reservedusu || '(vazio)',
-                            acao: 'ALERTAR'
-                        });
+                    } else if (['CONFIRMED', 'PRE-SELECTED', 'RESERVED'].includes(estadoCDE)) {
+                        if (!pertenceAoCliente) {
+                            problema = 'RESERVADO POR OUTRO CLIENTE';
+                            acao = 'REMOVER';
+                        }
+                    } else if (estadoCDE === 'STANDBY') {
+                        problema = 'EM STANDBY';
+                        acao = 'ALERTAR';
                     }
-                    // RETIRADO: ignoramos por enquanto (não temos certeza)
+
+                    if (problema) {
+                        problemasDestaSelecao.push({
+                            foto: photoNumber,
+                            fileName: fileName,
+                            problema,
+                            acao,
+                            estadoCDE,
+                            reservedUsu: reservedUsu || '(vazio)'
+                        });
+
+                        if (acao === 'REMOVER') {
+                            itensParaRemover.push(item);
+                        }
+                    }
                 }
 
-                // Se encontrou problemas nesta seleção
-                if (fotosProblema.length > 0) {
-                    totalProblemas += fotosProblema.length;
+                // SE HOUVER PROBLEMAS, APLICAR CORREÇÕES
+                if (problemasDestaSelecao.length > 0) {
+                    totalProblemas += problemasDestaSelecao.length;
 
-                    console.log(`[SYNC] ⚠️ PROBLEMAS em ${selecao.clientName}:`);
-                    fotosProblema.forEach(p => {
-                        console.log(`   - Foto ${p.foto}: ${p.problema} | CDE: ${p.estadoCDE} | RESERVEDUSU: ${p.reservedusu} | Ação: ${p.acao}`);
+                    console.log(`[SYNC] ⚠️ PROBLEMAS em ${clientName}:`);
+                    problemasDestaSelecao.forEach(p => {
+                        console.log(`   - Foto ${p.foto}: ${p.problema} | CDE: ${p.estadoCDE} | RESERVEDUSU: ${p.reservedUsu} | Ação: ${p.acao}`);
                     });
 
-                    detalhesProblemas.push({
-                        selectionId: selectionId,
-                        clientName: selecao.clientName,
-                        clientCode: clientCode,
-                        totalFotos: selecao.items.length,
-                        fotosProblema: fotosProblema,
-                        tierAtual: selecao.totalItems >= 37 ? 'Tier 4' : selecao.totalItems >= 13 ? 'Tier 3' : selecao.totalItems >= 6 ? 'Tier 2' : 'Tier 1',
-                        tierNovo: (selecao.totalItems - fotosProblema.filter(f => f.acao === 'REMOVER').length) >= 37 ? 'Tier 4' :
-                            (selecao.totalItems - fotosProblema.filter(f => f.acao === 'REMOVER').length) >= 13 ? 'Tier 3' :
-                                (selecao.totalItems - fotosProblema.filter(f => f.acao === 'REMOVER').length) >= 6 ? 'Tier 2' : 'Tier 1'
+                    // APLICAR REMOÇÕES
+                    if (itensParaRemover.length > 0) {
+                        console.log(`[SYNC] 🔧 Removendo ${itensParaRemover.length} fotos problemáticas...`);
+
+                        const tierAntes = this.calcularTier(items.length);
+
+                        // Remover itens do array
+                        const fileNamesToRemove = itensParaRemover.map(i => i.fileName);
+                        selecao.items = selecao.items.filter(item => !fileNamesToRemove.includes(item.fileName));
+
+                        const tierDepois = this.calcularTier(selecao.items.length);
+
+                        // Recalcular preços
+                        const recalcResult = await this.recalcularPrecosSelecao(selecao);
+
+                        // Atualizar totais
+                        selecao.totalItems = selecao.items.length;
+                        selecao.totalValue = recalcResult.totalRecalculado;
+                        selecao.lastAutoCorrection = new Date();
+
+                        // Marcar para revisão se houve erros no recálculo
+                        if (!recalcResult.success) {
+                            selecao.priceReviewRequired = true;
+                            selecao.priceReviewReason = `Recálculo automático falhou para ${recalcResult.errosRecalculo} categoria(s)`;
+                        } else {
+                            selecao.priceReviewRequired = false;
+                            selecao.priceReviewReason = null;
+                        }
+
+                        // Adicionar ao log
+                        selecao.addMovementLog(
+                            'item_auto_removed',
+                            `${itensParaRemover.length} foto(s) removida(s) automaticamente pelo sync. Fotos: ${fileNamesToRemove.join(', ')}. Tier: ${tierAntes} → ${tierDepois}. Novo total: $${recalcResult.totalRecalculado.toFixed(2)}`,
+                            true,
+                            null,
+                            {
+                                removedPhotos: fileNamesToRemove,
+                                tierChange: { from: tierAntes, to: tierDepois },
+                                recalculation: recalcResult
+                            }
+                        );
+
+                        // Limpar selectionId dos produtos removidos no MongoDB
+                        for (const item of itensParaRemover) {
+                            await UnifiedProductComplete.updateOne(
+                                { driveFileId: item.driveFileId },
+                                {
+                                    $set: {
+                                        status: 'available',
+                                        cdeStatus: 'INGRESADO'
+                                    },
+                                    $unset: {
+                                        selectionId: 1,
+                                        reservedBy: 1
+                                    }
+                                }
+                            );
+                        }
+
+                        // Se não sobrou nenhum item, cancelar a seleção
+                        if (selecao.items.length === 0) {
+                            selecao.status = 'cancelled';
+                            selecao.addMovementLog(
+                                'cancelled',
+                                'Seleção cancelada automaticamente - todas as fotos foram removidas',
+                                true
+                            );
+                            console.log(`[SYNC] ❌ Seleção ${selecao.selectionId} CANCELADA - sem itens restantes`);
+                        }
+
+                        // Salvar seleção
+                        await selecao.save();
+
+                        totalCorrecoes += itensParaRemover.length;
+                        console.log(`[SYNC] ✅ Correção aplicada: ${itensParaRemover.length} fotos removidas, novo total: $${selecao.totalValue.toFixed(2)}`);
+                    }
+
+                    selecoesComProblemas.push({
+                        clientName,
+                        clientCode,
+                        problemas: problemasDestaSelecao.length,
+                        correcoes: itensParaRemover.length,
+                        tierChange: itensParaRemover.length > 0 ?
+                            `${this.calcularTier(items.length)} → ${this.calcularTier(selecao.items.length)}` : null
                     });
                 } else {
-                    console.log(`[SYNC] ✅ ${selecao.clientName}: Todas as ${selecao.items.length} fotos OK`);
+                    console.log(`[SYNC] ✅ ${clientName}: Todas as ${items.length} fotos OK`);
                 }
             }
 
-            // Resumo final
-            console.log('\n' + '-'.repeat(60));
-            console.log('[SYNC] 📊 RESUMO DA VERIFICAÇÃO DE SELEÇÕES:');
+            // RESUMO
+            console.log(`------------------------------------------------------------`);
+            console.log(`[SYNC] 📊 RESUMO DA VERIFICAÇÃO DE SELEÇÕES:`);
             console.log(`   Seleções verificadas: ${selecoesPending.length}`);
             console.log(`   Total de problemas: ${totalProblemas}`);
+            console.log(`   Correções aplicadas: ${totalCorrecoes}`);
 
-            if (detalhesProblemas.length > 0) {
-                console.log('\n[SYNC] ⚠️ SELEÇÕES COM PROBLEMAS:');
-                detalhesProblemas.forEach(d => {
-                    const fotosRemover = d.fotosProblema.filter(f => f.acao === 'REMOVER').length;
-                    console.log(`   - ${d.clientName} (${d.clientCode}): ${fotosRemover} fotos para remover`);
-                    console.log(`     Tier: ${d.tierAtual} → ${d.tierNovo}`);
+            if (selecoesComProblemas.length > 0) {
+                console.log(`[SYNC] ⚠️ SELEÇÕES COM PROBLEMAS:`);
+                selecoesComProblemas.forEach(s => {
+                    console.log(`   - ${s.clientName} (${s.clientCode}): ${s.problemas} problemas, ${s.correcoes} correções`);
+                    if (s.tierChange) {
+                        console.log(`     Tier: ${s.tierChange}`);
+                    }
                 });
             }
-            console.log('-'.repeat(60));
+            console.log(`------------------------------------------------------------`);
 
             return {
-                checked: selecoesPending.length,
-                problems: totalProblemas,
-                details: detalhesProblemas
+                verificadas: selecoesPending.length,
+                problemas: totalProblemas,
+                correcoes: totalCorrecoes,
+                selecoesAfetadas: selecoesComProblemas
             };
 
         } catch (error) {
-            console.error('[SYNC] ❌ Erro ao verificar seleções:', error.message);
-            return { checked: 0, problems: 0, error: error.message };
+            console.error(`[SYNC] ❌ Erro ao verificar seleções:`, error.message);
+            return { verificadas: 0, problemas: 0, erro: error.message };
         }
+    }
+
+    // ============================================
+    // HELPER: CALCULAR TIER BASEADO NA QUANTIDADE
+    // ============================================
+    calcularTier(quantidade) {
+        if (quantidade >= 37) return 'Tier 4 (37+)';
+        if (quantidade >= 13) return 'Tier 3 (13-36)';
+        if (quantidade >= 6) return 'Tier 2 (6-12)';
+        return 'Tier 1 (1-5)';
     }
 
     getStats() {

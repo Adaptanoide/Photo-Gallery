@@ -351,7 +351,9 @@ const selectionSchema = new mongoose.Schema({
                 'special_selection_activated',
                 'special_selection_deactivated',
                 'photo_returned',
-                'auto_return'  // ← ADICIONE ESTA LINHA!
+                'auto_return',
+                'item_auto_removed',
+                'prices_recalculated'
             ],
             required: true
         },
@@ -414,6 +416,19 @@ const selectionSchema = new mongoose.Schema({
     reopenCount: {
         type: Number,
         default: 0
+    },
+    // ===== FLAG PARA REVISÃO DE PREÇOS =====
+    priceReviewRequired: {
+        type: Boolean,
+        default: false
+    },
+    priceReviewReason: {
+        type: String,
+        default: null
+    },
+    lastAutoCorrection: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true
