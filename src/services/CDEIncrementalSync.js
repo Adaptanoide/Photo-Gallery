@@ -342,6 +342,15 @@ class CDEIncrementalSync {
                 }
             }
 
+            // ============================================
+            // VERIFICAR SELEÇÕES PENDING
+            // ============================================
+            const selectionCheckResult = await this.verificarSelecoesPending(cdeConnection);
+
+            // Relatório
+            console.log('\n' + '='.repeat(60));
+            console.log('[SYNC] RELATÓRIO DO SMART SYNC');
+
             // Relatório
             console.log('\n' + '='.repeat(60));
             console.log('[SYNC] RELATÓRIO DO SMART SYNC');
