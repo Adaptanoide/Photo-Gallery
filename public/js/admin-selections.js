@@ -304,7 +304,16 @@ class AdminSelections {
         tableBody.innerHTML = selections.map(selection => `
             <tr data-selection-id="${selection.selectionId}">
                 <td class="client-info-cell">
-                    <div class="client-name">${selection.clientName}</div>
+                    <div class="client-name-row">
+                        <span class="client-name">${selection.clientName}</span>
+                        ${selection.hasAutoCorrection ? `
+                            <button class="alert-badge-btn" 
+                                    onclick="adminSelections.showCorrectionAlert('${selection.selectionId}')"
+                                    title="Selection was auto-corrected">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </button>
+                        ` : ''}
+                    </div>
                     <div class="client-code">Code: ${selection.clientCode}</div>
                 </td>
                 <td class="company-cell">
@@ -338,6 +347,12 @@ class AdminSelections {
                 </td>
             </tr>
         `).join('');
+
+        // Guardar dados das seleções para acesso no modal
+        this.selectionsData = {};
+        selections.forEach(s => {
+            this.selectionsData[s.selectionId] = s;
+        });
 
         // Configure event listeners after rendering
         console.log('🔗 Event listeners configured after rendering');
@@ -2503,6 +2518,135 @@ class AdminSelections {
             // Animação
             badge.classList.add('updated');
             setTimeout(() => badge.classList.remove('updated'), 300);
+        }
+    }
+
+    // ===== SHOW AUTO-CORRECTION ALERT MODAL =====
+    showCorrectionAlert(selectionId) {
+        const selection = this.selectionsData[selectionId];
+
+        if (!selection || !selection.autoCorrections || selection.autoCorrections.length === 0) {
+            UISystem.showToast('info', 'No correction details available');
+            return;
+        }
+
+        // Construir conteúdo do modal
+        let correctionsHTML = '';
+
+        selection.autoCorrections.forEach((correction, index) => {
+            const date = new Date(correction.timestamp).toLocaleString();
+            const extraData = correction.extraData || {};
+            const removedPhotos = extraData.removedPhotos || [];
+            const tierChange = extraData.tierChange || {};
+            const recalc = extraData.recalculation || {};
+
+            correctionsHTML += `
+                <div class="correction-item ${index === 0 ? 'latest' : ''}">
+                    ${index === 0 ? '<span class="latest-badge">Latest</span>' : ''}
+                    <div class="correction-date">
+                        <i class="fas fa-clock"></i> ${date}
+                    </div>
+                    <div class="correction-details">
+                        ${removedPhotos.length > 0 ? `
+                            <div class="correction-section">
+                                <strong><i class="fas fa-times-circle text-danger"></i> Photos Removed:</strong>
+                                <ul class="removed-photos-list">
+                                    ${removedPhotos.map(photo => `<li>${photo}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        ${tierChange.from && tierChange.to ? `
+                            <div class="correction-section">
+                                <strong><i class="fas fa-layer-group"></i> Tier Change:</strong>
+                                <span class="tier-change">
+                                    <span class="tier-old">${tierChange.from}</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                    <span class="tier-new">${tierChange.to}</span>
+                                </span>
+                            </div>
+                        ` : ''}
+                        
+                        ${recalc.totalRecalculado !== undefined ? `
+                            <div class="correction-section">
+                                <strong><i class="fas fa-calculator"></i> New Total:</strong>
+                                <span class="new-total">$${recalc.totalRecalculado.toFixed(2)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        // Criar modal
+        const modalHTML = `
+            <div class="modal-overlay" id="correctionAlertModal" onclick="adminSelections.closeCorrectionModal(event)">
+                <div class="modal-content correction-modal" onclick="event.stopPropagation()">
+                    <div class="modal-header correction-header">
+                        <h3>
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            Selection Auto-Corrected
+                        </h3>
+                        <button class="modal-close-btn" onclick="adminSelections.closeCorrectionModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="correction-info-box">
+                            <p>
+                                <i class="fas fa-info-circle"></i>
+                                This selection was automatically corrected because some photos 
+                                were no longer available in the CDE system (sold via phone, warehouse, etc.).
+                            </p>
+                        </div>
+                        
+                        <div class="correction-client">
+                            <strong>Client:</strong> ${selection.clientName} (${selection.clientCode})
+                        </div>
+                        
+                        <h4>Correction History</h4>
+                        <div class="corrections-list">
+                            ${correctionsHTML}
+                        </div>
+                        
+                        <div class="correction-note">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Prices have been automatically recalculated based on the new quantity tier.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" onclick="adminSelections.closeCorrectionModal()">
+                            <i class="fas fa-check"></i> Got it
+                        </button>
+                        <button class="btn btn-secondary" onclick="adminSelections.viewSelection('${selectionId}'); adminSelections.closeCorrectionModal();">
+                            <i class="fas fa-eye"></i> View Selection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remover modal existente se houver
+        const existingModal = document.getElementById('correctionAlertModal');
+        if (existingModal) existingModal.remove();
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Animar entrada
+        setTimeout(() => {
+            document.getElementById('correctionAlertModal').classList.add('show');
+        }, 10);
+    }
+
+    // ===== CLOSE CORRECTION MODAL =====
+    closeCorrectionModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+
+        const modal = document.getElementById('correctionAlertModal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.remove(), 300);
         }
     }
 }

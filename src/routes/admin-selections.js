@@ -74,18 +74,37 @@ router.get('/', async (req, res) => {
 
         res.json({
             success: true,
-            selections: paginatedSelections.map(s => ({
-                selectionId: s.selectionId,
-                clientCode: s.clientCode,
-                clientName: s.clientName,
-                clientCompany: s.clientCompany || '-',
-                salesRep: s.salesRep || 'Unassigned',
-                totalItems: s.totalItems,
-                totalValue: s.totalValue,
-                status: s.status,
-                createdAt: s.createdAt,
-                googleDriveInfo: s.googleDriveInfo
-            })),
+            selections: paginatedSelections.map(s => {
+                // Buscar últimas correções automáticas no movementLog
+                const autoCorrections = (s.movementLog || []).filter(log =>
+                    log.action === 'item_auto_removed'
+                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                const hasAutoCorrection = autoCorrections.length > 0;
+                const lastCorrection = hasAutoCorrection ? autoCorrections[0] : null;
+
+                return {
+                    selectionId: s.selectionId,
+                    clientCode: s.clientCode,
+                    clientName: s.clientName,
+                    clientCompany: s.clientCompany || '-',
+                    salesRep: s.salesRep || 'Unassigned',
+                    totalItems: s.totalItems,
+                    totalValue: s.totalValue,
+                    status: s.status,
+                    createdAt: s.createdAt,
+                    googleDriveInfo: s.googleDriveInfo,
+                    // Novos campos para alertas
+                    hasAutoCorrection: hasAutoCorrection,
+                    lastAutoCorrection: s.lastAutoCorrection,
+                    priceReviewRequired: s.priceReviewRequired || false,
+                    autoCorrections: autoCorrections.map(ac => ({
+                        timestamp: ac.timestamp,
+                        details: ac.details,
+                        extraData: ac.extraData || {}
+                    }))
+                };
+            }),
             pagination: {
                 total,
                 page: parseInt(page),
