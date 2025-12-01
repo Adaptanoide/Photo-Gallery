@@ -1391,8 +1391,19 @@ router.post('/:selectionId/send-download-link', async (req, res) => {
             });
         }
 
-        // 2. Verificar se tem email
-        const emailTo = customEmail || selection.clientEmail;
+        // 2. Verificar se tem email (buscar no AccessCode se não tiver na Selection)
+        let emailTo = customEmail || selection.clientEmail;
+
+        if (!emailTo) {
+            // Buscar email no AccessCode (cadastro do cliente)
+            const AccessCode = require('../models/AccessCode');
+            const accessCode = await AccessCode.findOne({ code: selection.clientCode });
+
+            if (accessCode && accessCode.clientEmail) {
+                emailTo = accessCode.clientEmail;
+                console.log(`📧 Email encontrado no AccessCode: ${emailTo}`);
+            }
+        }
 
         if (!emailTo) {
             return res.status(400).json({
@@ -1438,7 +1449,7 @@ router.post('/:selectionId/send-download-link', async (req, res) => {
 
         // 7. Log
         selection.addMovementLog(
-            'download_link_sent',
+            'email_sent',
             `Download link sent to ${emailTo}`,
             true,
             null,

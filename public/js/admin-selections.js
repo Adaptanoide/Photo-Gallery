@@ -2571,12 +2571,21 @@ class AdminSelections {
             const selectionData = await selectionResponse.json();
             const selection = selectionData.selection;
 
-            // Verificar se tem email
-            let emailTo = selection?.clientEmail;
+            // Mostrar loading
+            UISystem.showToast('info', 'Checking email...');
 
-            // Se não tem email, pedir ao usuário
-            if (!emailTo) {
-                emailTo = prompt(`No email found for ${selection?.clientName || 'this client'}.\n\nPlease enter the email address:`);
+            // Tentar enviar primeiro - backend vai buscar email no AccessCode se necessário
+            const response = await fetch(`/api/selections/${selectionId}/send-download-link`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({})
+            });
+
+            const result = await response.json();
+
+            // Se backend não encontrou email em lugar nenhum, pedir ao usuário
+            if (result.needsEmail) {
+                const emailTo = prompt(`No email found for ${selection?.clientName || 'this client'}.\n\nPlease enter the email address:`);
 
                 if (!emailTo) {
                     UISystem.showToast('info', 'Cancelled - no email provided');
@@ -2588,28 +2597,36 @@ class AdminSelections {
                     UISystem.showToast('error', 'Invalid email format');
                     return;
                 }
+
+                // Confirmar envio
+                const confirmed = await UISystem.confirm(
+                    'Send Download Link',
+                    `Send download link to:\n\n📧 ${emailTo}\n\nThe client will receive an email with a link to download their ${selection?.totalItems || ''} photos.`
+                );
+
+                if (!confirmed) return;
+
+                // Mostrar loading
+                UISystem.showToast('info', 'Sending download link...');
+
+                // Enviar com email manual
+                const retryResponse = await fetch(`/api/selections/${selectionId}/send-download-link`, {
+                    method: 'POST',
+                    headers: this.getAuthHeaders(),
+                    body: JSON.stringify({ customEmail: emailTo })
+                });
+
+                const retryResult = await retryResponse.json();
+
+                if (retryResult.success) {
+                    UISystem.showToast('success', `✅ Download link sent to ${retryResult.sentTo}`);
+                } else {
+                    UISystem.showToast('error', `Failed: ${retryResult.message}`);
+                }
+                return;
             }
 
-            // Confirmar envio
-            const confirmed = await UISystem.confirm(
-                'Send Download Link',
-                `Send download link to:\n\n📧 ${emailTo}\n\nThe client will receive an email with a link to download their ${selection?.totalItems || ''} photos.`
-            );
-
-            if (!confirmed) return;
-
-            // Mostrar loading
-            UISystem.showToast('info', 'Sending download link...');
-
-            // Enviar
-            const response = await fetch(`/api/selections/${selectionId}/send-download-link`, {
-                method: 'POST',
-                headers: this.getAuthHeaders(),
-                body: JSON.stringify({ customEmail: emailTo })
-            });
-
-            const result = await response.json();
-
+            // Sucesso na primeira tentativa (backend encontrou email)
             if (result.success) {
                 UISystem.showToast('success', `✅ Download link sent to ${result.sentTo}`);
             } else {
