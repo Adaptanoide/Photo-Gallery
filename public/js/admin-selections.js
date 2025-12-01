@@ -316,7 +316,7 @@ class AdminSelections {
                         ${selection.hasRetiredPhotos ? `
                             <button class="alert-badge-btn" 
                                     onclick="adminSelections.showRetiredPhotosAlert('${selection.selectionId}')"
-                                    title="Photos marked as RETIRED in CDE - verify if should be SOLD">
+                                    title="Photos marked as RETIRADO in CDE - verify if should be SOLD">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </button>
                         ` : ''}
@@ -388,7 +388,6 @@ class AdminSelections {
         return statusMap[status] || status;
     }
 
-    // ===== GET ACTION BUTTONS =====
     getActionButtons(selection) {
         let buttons = '';
 
@@ -401,6 +400,17 @@ class AdminSelections {
             </button>
         `;
 
+        // APPROVE (Mark as Sold) - segundo botão, só para PENDING
+        if (selection.status === 'pending') {
+            buttons += `
+                <button class="special-btn-icon btn-approve" 
+                        onclick="adminSelections.approveSelection('${selection.selectionId}')"
+                        data-tooltip="Mark as Sold">
+                    <i class="fas fa-check-circle"></i>
+                </button>
+            `;
+        }
+
         // SEND DOWNLOAD LINK - para PENDING e FINALIZED
         if (selection.status === 'pending' || selection.status === 'finalized') {
             buttons += `
@@ -412,18 +422,13 @@ class AdminSelections {
             `;
         }
 
-        // PENDING - adiciona Reopen, Mark as Sold e Cancel
+        // PENDING - adiciona Reopen e Cancel
         if (selection.status === 'pending') {
             buttons += `
                 <button class="special-btn-icon btn-reopen" 
                         onclick="adminSelections.reopenCart('${selection.selectionId}')"
                         data-tooltip="Reopen for Client">
                     <i class="fas fa-undo"></i>
-                </button>
-                <button class="special-btn-icon btn-approve" 
-                        onclick="adminSelections.approveSelection('${selection.selectionId}')"
-                        data-tooltip="Mark as Sold">
-                    <i class="fas fa-check-circle"></i>
                 </button>
                 <button class="special-btn-icon btn-cancel" 
                         onclick="adminSelections.cancelSelection('${selection.selectionId}')"
@@ -2805,7 +2810,7 @@ class AdminSelections {
                     <div class="modal-header retired-header">
                         <h3>
                             <i class="fas fa-clipboard-check"></i>
-                            Photos Already Retired in CDE
+                            Photos Already RETIRADO in CDE
                         </h3>
                         <button class="modal-close-btn" onclick="adminSelections.closeRetiredPhotosModal()">
                             <i class="fas fa-times"></i>
@@ -2815,8 +2820,8 @@ class AdminSelections {
                         <div class="correction-info-box retired-info-box">
                             <p>
                                 <i class="fas fa-info-circle"></i>
-                                The following photos from this selection are already marked as <strong>RETIRED</strong> 
-                                in the CDE system. This usually means they were sold via phone or another channel.
+                                The following photos from this selection are already marked as <strong>RETIRADO</strong> 
+                                in the CDE system. This usually means they were already scanned and removed from CDE.
                             </p>
                         </div>
                         
@@ -2826,7 +2831,7 @@ class AdminSelections {
                             <strong>Company:</strong> ${selection.clientCompany}
                         </div>
                         
-                        <h4>Retired Photos (${selection.retiredPhotosDetails.length})</h4>
+                        <h4>RETIRADO Photos (${selection.retiredPhotosDetails.length})</h4>
                         <div class="retired-photos-container">
                             <ul class="retired-photos-list-modal">
                                 ${photosHTML}
