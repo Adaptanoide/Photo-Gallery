@@ -1190,7 +1190,7 @@ class CDEIncrementalSync {
                             selecao.priceReviewRequired = true;
                             selecao.priceReviewReason = 'Todas as fotos foram removidas - verificar se deve cancelar ou restaurar';
                             selecao.addMovementLog(
-                                'needs_review',
+                                'prices_recalculated',
                                 '⚠️ ATENÇÃO: Todas as fotos foram removidas automaticamente. Seleção precisa de revisão manual.',
                                 true
                             );
