@@ -327,7 +327,7 @@
             }
 
             try {
-                const response = await fetch(`/api/selections/public/download/${downloadToken}`);
+                const response = await fetch(`/api/public/download/${downloadToken}`);
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
@@ -376,7 +376,7 @@
             }, 500);
 
             try {
-                const response = await fetch(`/api/selections/public/download/${downloadToken}/zip`);
+                const response = await fetch(`/api/public/download/${downloadToken}/zip`);
 
                 clearInterval(progressInterval);
 

@@ -94,18 +94,18 @@ router.get('/', async (req, res) => {
                     status: s.status,
                     createdAt: s.createdAt,
                     googleDriveInfo: s.googleDriveInfo,
-                    // Alertas de correção automática
-                    hasAutoCorrection: hasAutoCorrection,
-                    lastAutoCorrection: s.lastAutoCorrection,
-                    priceReviewRequired: s.priceReviewRequired || false,
-                    autoCorrections: autoCorrections.map(ac => ({
+                    // Alertas de correção automática - SÓ PARA PENDING
+                    hasAutoCorrection: s.status === 'pending' ? hasAutoCorrection : false,
+                    lastAutoCorrection: s.status === 'pending' ? s.lastAutoCorrection : null,
+                    priceReviewRequired: s.status === 'pending' ? (s.priceReviewRequired || false) : false,
+                    autoCorrections: s.status === 'pending' ? autoCorrections.map(ac => ({
                         timestamp: ac.timestamp,
                         details: ac.details,
                         extraData: ac.extraData || {}
-                    })),
-                    // Alertas de fotos RETIRADO
-                    hasRetiredPhotos: s.hasRetiredPhotos || false,
-                    retiredPhotosDetails: s.retiredPhotosDetails || []
+                    })) : [],
+                    // Alertas de fotos RETIRADO - SÓ PARA PENDING
+                    hasRetiredPhotos: s.status === 'pending' ? (s.hasRetiredPhotos || false) : false,
+                    retiredPhotosDetails: s.status === 'pending' ? (s.retiredPhotosDetails || []) : []
                 };
             }),
             pagination: {

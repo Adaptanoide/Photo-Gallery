@@ -41,6 +41,127 @@ console.log('Modo: ' + (process.env.NODE_ENV || 'development'));
 // ===== PUBLIC TRACKING ROUTES (NO AUTH) =====
 app.use('/', trackingRoutes);
 
+// ===== PUBLIC DOWNLOAD ROUTES (NO AUTH) =====
+const Selection = require('./models/Selection');
+const JSZip = require('jszip');
+
+// Validar token de download
+app.get('/api/public/download/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({ success: false, message: 'Invalid download link' });
+        }
+
+        // Verificar expiração (7 dias)
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({ success: false, message: 'Download link has expired' });
+        }
+
+        res.json({
+            success: true,
+            selection: {
+                clientName: selection.clientName,
+                totalItems: selection.totalItems,
+                totalValue: selection.totalValue,
+                createdAt: selection.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao validar token:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Gerar ZIP para download
+app.get('/api/public/download/:token/zip', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({ success: false, message: 'Invalid download link' });
+        }
+
+        // Verificar expiração
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({ success: false, message: 'Download link has expired' });
+        }
+
+        // Incrementar contador de downloads
+        selection.downloadCount = (selection.downloadCount || 0) + 1;
+        await selection.save();
+
+        // Criar ZIP
+        const zip = new JSZip();
+
+        for (const item of selection.items) {
+            try {
+                // Construir URL da foto
+                let photoUrl;
+                if (item.thumbnailUrl) {
+                    photoUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
+                } else {
+                    let categoryPath = (item.originalPath || item.category || '')
+                        .replace(/\s*→\s*/g, '/')  // "A → B" vira "A/B"
+                        .replace(/\s*\/\s*/g, '/')  // "A / B" vira "A/B"
+                        .trim();
+
+                    // Encode cada parte do path
+                    const encodedPath = categoryPath.split('/').map(part => encodeURIComponent(part.trim())).join('/');
+                    photoUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}/${item.fileName}`;
+                }
+
+                console.log(`📥 Baixando: ${item.fileName} de ${photoUrl}`);
+
+                // Baixar foto
+                const response = await fetch(photoUrl);
+                if (response.ok) {
+                    const buffer = await response.arrayBuffer();
+                    zip.file(item.fileName, buffer);
+                } else {
+                    console.warn(`⚠️ Não conseguiu baixar: ${item.fileName}`);
+                }
+            } catch (err) {
+                console.error(`❌ Erro ao baixar ${item.fileName}:`, err.message);
+            }
+        }
+
+        // Gerar ZIP
+        const zipBuffer = await zip.generateAsync({
+            type: 'nodebuffer',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+        });
+
+        // Enviar resposta
+        const fileName = `Sunshine_Cowhides_${selection.clientName.replace(/\s+/g, '_')}_${selection.totalItems}_photos.zip`;
+
+        res.set({
+            'Content-Type': 'application/zip',
+            'Content-Disposition': `attachment; filename="${fileName}"`,
+            'Content-Length': zipBuffer.length
+        });
+
+        res.send(zipBuffer);
+
+    } catch (error) {
+        console.error('Erro ao gerar ZIP:', error);
+        res.status(500).json({ success: false, message: 'Error generating download' });
+    }
+});
+
 // Rotas da API
 app.use('/api/auth', authRoutes);  // ← ADICIONAR DE VOLTA!
 app.use('/api/selections', require('./routes/admin-selections'));
