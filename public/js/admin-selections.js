@@ -401,13 +401,13 @@ class AdminSelections {
             </button>
         `;
 
-        // DOWNLOAD PHOTOS - para PENDING e FINALIZED
+        // SEND DOWNLOAD LINK - para PENDING e FINALIZED
         if (selection.status === 'pending' || selection.status === 'finalized') {
             buttons += `
-                <button class="special-btn-icon btn-download" 
-                        onclick="adminSelections.downloadSelectionPhotos('${selection.selectionId}')" 
-                        data-tooltip="Download Photos">
-                    <i class="fas fa-download"></i>
+                <button class="special-btn-icon btn-send-link" 
+                        onclick="adminSelections.sendDownloadLink('${selection.selectionId}')" 
+                        data-tooltip="Send Download Link to Client">
+                    <i class="fas fa-paper-plane"></i>
                 </button>
             `;
         }
@@ -1187,13 +1187,15 @@ class AdminSelections {
         }
     }
 
-    // ===== CONFIRM COM CHECKBOX (ESTILO UISystem PADRÃO) =====
     confirmWithCheckbox(title, message, checkboxLabel, action) {
         return new Promise((resolve) => {
             const modalId = 'confirm-checkbox-' + Date.now();
             const modal = document.createElement('div');
             modal.className = 'ui-modal-backdrop';
             modal.id = modalId;
+
+            // Mostrar checkbox de download apenas para approve
+            const showDownloadCheckbox = action === 'approve';
 
             modal.innerHTML = `
                 <div class="ui-modal">
@@ -1218,10 +1220,29 @@ class AdminSelections {
                                     ${checkboxLabel}
                                 </span>
                             </label>
-                        <p style="margin: 8px 0 0 28px; font-size: 13px; opacity: 0.7;">
-                            Enable client login and system access again
-                        </p>
+                            <p style="margin: 8px 0 0 28px; font-size: 13px; opacity: 0.7;">
+                                Enable client login and system access again
+                            </p>
                         </div>
+
+                        ${showDownloadCheckbox ? `
+                        <div style="margin-top: 15px; padding: 12px; background: rgba(212, 175, 55, 0.1); border-radius: 4px; border-left: 3px solid #D4AF37;">
+                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                <input 
+                                    type="checkbox" 
+                                    id="sendDownloadLinkCheckbox_${modalId}"
+                                    style="width: 18px; height: 18px; margin-right: 10px; cursor: pointer;"
+                                />
+                                <span>
+                                    <i class="fas fa-paper-plane" style="margin-right: 6px; color: #D4AF37;"></i>
+                                    Send download link to client
+                                </span>
+                            </label>
+                            <p style="margin: 8px 0 0 28px; font-size: 13px; opacity: 0.7;">
+                                Client will receive an email with a link to download their photos
+                            </p>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="ui-modal-footer">
                         <button class="btn-secondary" id="btnCancel_${modalId}">
@@ -1238,6 +1259,7 @@ class AdminSelections {
 
             // Event listeners
             const checkbox = modal.querySelector(`#restoreAccessCheckbox_${modalId}`);
+            const downloadCheckbox = modal.querySelector(`#sendDownloadLinkCheckbox_${modalId}`);
             const btnClose = modal.querySelector(`#btnClose_${modalId}`);
             const btnCancel = modal.querySelector(`#btnCancel_${modalId}`);
             const btnConfirm = modal.querySelector(`#btnConfirm_${modalId}`);
@@ -1250,13 +1272,14 @@ class AdminSelections {
 
             const handleCancel = () => {
                 cleanup();
-                resolve({ confirmed: false, restoreAccess: false });
+                resolve({ confirmed: false, restoreAccess: false, sendDownloadLink: false });
             };
 
             const handleConfirm = () => {
                 const restoreAccess = checkbox.checked;
+                const sendDownloadLink = downloadCheckbox ? downloadCheckbox.checked : false;
                 cleanup();
-                resolve({ confirmed: true, restoreAccess });
+                resolve({ confirmed: true, restoreAccess, sendDownloadLink });
             };
 
             btnClose.onclick = handleCancel;
@@ -1267,7 +1290,7 @@ class AdminSelections {
             const handleEsc = (e) => {
                 if (e.key === 'Escape') {
                     cleanup();
-                    resolve({ confirmed: false, restoreAccess: false });
+                    resolve({ confirmed: false, restoreAccess: false, sendDownloadLink: false });
                     document.removeEventListener('keydown', handleEsc);
                 }
             };
@@ -1395,8 +1418,31 @@ class AdminSelections {
                 await this.toggleClientAccess(clientCode, true);
             }
 
-            UISystem.showToast('success', 'Selection approved successfully! Products marked as SOLD.');
+            // ✅ Enviar link de download se checkbox marcado
+            if (result.sendDownloadLink) {
+                console.log('📧 Sending download link to client...');
+                try {
+                    const emailResponse = await fetch(`/api/selections/${selectionId}/send-download-link`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders(),
+                        body: JSON.stringify({})
+                    });
+                    const emailResult = await emailResponse.json();
 
+                    if (emailResult.success) {
+                        UISystem.showToast('success', `Download link sent to ${emailResult.sentTo}`);
+                    } else if (emailResult.needsEmail) {
+                        UISystem.showToast('warning', 'Client has no email. Use "Send Download Link" button to provide one.');
+                    } else {
+                        UISystem.showToast('warning', 'Could not send download link: ' + emailResult.message);
+                    }
+                } catch (emailError) {
+                    console.error('Error sending download link:', emailError);
+                    UISystem.showToast('warning', 'Approved but could not send download link');
+                }
+            }
+
+            UISystem.showToast('success', 'Selection approved successfully! Products marked as SOLD.');
             // Recarregar tabela após 2 segundos
             setTimeout(() => {
                 this.loadSelections();
@@ -2512,6 +2558,67 @@ class AdminSelections {
             }
 
             UISystem.showToast('error', `Error downloading photos: ${error.message}`);
+        }
+    }
+
+    // ===== SEND DOWNLOAD LINK TO CLIENT =====
+    async sendDownloadLink(selectionId) {
+        try {
+            // Buscar dados da seleção primeiro
+            const selectionResponse = await fetch(`/api/selections/${selectionId}`, {
+                headers: this.getAuthHeaders()
+            });
+            const selectionData = await selectionResponse.json();
+            const selection = selectionData.selection;
+
+            // Verificar se tem email
+            let emailTo = selection?.clientEmail;
+
+            // Se não tem email, pedir ao usuário
+            if (!emailTo) {
+                emailTo = prompt(`No email found for ${selection?.clientName || 'this client'}.\n\nPlease enter the email address:`);
+
+                if (!emailTo) {
+                    UISystem.showToast('info', 'Cancelled - no email provided');
+                    return;
+                }
+
+                // Validar formato básico de email
+                if (!emailTo.includes('@') || !emailTo.includes('.')) {
+                    UISystem.showToast('error', 'Invalid email format');
+                    return;
+                }
+            }
+
+            // Confirmar envio
+            const confirmed = await UISystem.confirm(
+                'Send Download Link',
+                `Send download link to:\n\n📧 ${emailTo}\n\nThe client will receive an email with a link to download their ${selection?.totalItems || ''} photos.`
+            );
+
+            if (!confirmed) return;
+
+            // Mostrar loading
+            UISystem.showToast('info', 'Sending download link...');
+
+            // Enviar
+            const response = await fetch(`/api/selections/${selectionId}/send-download-link`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({ customEmail: emailTo })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UISystem.showToast('success', `✅ Download link sent to ${result.sentTo}`);
+            } else {
+                UISystem.showToast('error', `Failed: ${result.message}`);
+            }
+
+        } catch (error) {
+            console.error('Error sending download link:', error);
+            UISystem.showToast('error', `Error: ${error.message}`);
         }
     }
 

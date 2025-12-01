@@ -1057,21 +1057,27 @@ class CDEIncrementalSync {
                     let problema = null;
                     let acao = null;
 
-                    // LÓGICA DE DETECÇÃO
+                    // LÓGICA DE DETECÇÃO - OPÇÃO B (CONSERVADORA)
+                    // Apenas INGRESADO remove automaticamente
+                    // Todo o resto apenas ALERTA para o admin decidir
+
                     if (estadoCDE === 'INGRESADO') {
+                        // Foto voltou para estoque disponível - pode remover
                         problema = 'VOLTOU PARA INGRESADO';
                         acao = 'REMOVER';
                     } else if (estadoCDE === 'RETIRADO') {
-                        // RETIRADO é inconclusivo - não remover automaticamente
-                        // mas alertar se não pertence ao cliente
-                        if (!pertenceAoCliente && reservedUsu) {
-                            problema = 'RETIRADO POR OUTRO';
+                        // RETIRADO - pode ter sido vendida para o mesmo cliente
+                        // Apenas alertar, admin decide
+                        if (reservedUsu) {
+                            problema = pertenceAoCliente ? 'RETIRADO (mesmo cliente)' : 'RETIRADO (verificar)';
                             acao = 'ALERTAR';
                         }
                     } else if (['CONFIRMED', 'PRE-SELECTED', 'RESERVED'].includes(estadoCDE)) {
+                        // Reservado/Confirmado - pode ser do mesmo cliente por outro canal
+                        // Apenas alertar, NÃO remover automaticamente
                         if (!pertenceAoCliente) {
-                            problema = 'RESERVADO POR OUTRO CLIENTE';
-                            acao = 'REMOVER';
+                            problema = 'RESERVADO (verificar proprietário)';
+                            acao = 'ALERTAR';
                         }
                     } else if (estadoCDE === 'STANDBY') {
                         problema = 'EM STANDBY';
@@ -1178,15 +1184,17 @@ class CDEIncrementalSync {
                             );
                         }
 
-                        // Se não sobrou nenhum item, cancelar a seleção
+                        // Se não sobrou nenhum item, NÃO cancelar - apenas alertar
+                        // Admin deve revisar e decidir manualmente
                         if (selecao.items.length === 0) {
-                            selecao.status = 'cancelled';
+                            selecao.priceReviewRequired = true;
+                            selecao.priceReviewReason = 'Todas as fotos foram removidas - verificar se deve cancelar ou restaurar';
                             selecao.addMovementLog(
-                                'cancelled',
-                                'Seleção cancelada automaticamente - todas as fotos foram removidas',
+                                'needs_review',
+                                '⚠️ ATENÇÃO: Todas as fotos foram removidas automaticamente. Seleção precisa de revisão manual.',
                                 true
                             );
-                            console.log(`[SYNC] ❌ Seleção ${selecao.selectionId} CANCELADA - sem itens restantes`);
+                            console.log(`[SYNC] ⚠️ Seleção ${selecao.selectionId} COM 0 ITENS - precisa revisão manual (NÃO cancelada automaticamente)`);
                         }
 
                         // Salvar seleção

@@ -440,7 +440,28 @@ const selectionSchema = new mongoose.Schema({
         photoNumber: String,
         reservedUsu: String,
         detectedAt: { type: Date, default: Date.now }
-    }]
+    }],
+    // ===== DOWNLOAD TOKEN PARA CLIENTE =====
+    downloadToken: {
+        type: String,
+        default: null
+    },
+    downloadTokenCreatedAt: {
+        type: Date,
+        default: null
+    },
+    downloadLinkSentAt: {
+        type: Date,
+        default: null
+    },
+    downloadLinkSentTo: {
+        type: String,
+        default: null
+    },
+    downloadCount: {
+        type: Number,
+        default: 0
+    }
 }, {
     timestamps: true
 });

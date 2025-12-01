@@ -446,6 +446,97 @@ class EmailService {
     }
 
     /**
+     * Enviar link de download para cliente
+     */
+    async sendDownloadLink({ to, clientName, totalItems, downloadUrl }) {
+        try {
+            // Garantir que o service está inicializado
+            if (!this.isReady()) {
+                const initialized = await this.initialize();
+                if (!initialized) {
+                    throw new Error('EmailService não pôde ser inicializado');
+                }
+            }
+
+            const subject = `Your Sunshine Cowhides Photos Are Ready for Download!`;
+            const html = this.generateDownloadLinkHtml({ clientName, totalItems, downloadUrl });
+
+            return await this.sendEmail({
+                to: [{ name: clientName, email: to }],
+                subject: subject,
+                html: html
+            });
+
+        } catch (error) {
+            console.error('❌ Erro ao enviar link de download:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Gerar HTML para email de download
+     */
+    generateDownloadLinkHtml({ clientName, totalItems, downloadUrl }) {
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 0 auto; }
+                    .header { background: linear-gradient(135deg, #D4AF37, #8b7355); color: white; padding: 30px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 24px; }
+                    .content { padding: 30px; background: #fff; }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    .download-btn { display: inline-block; background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin: 25px 0; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
+                    .download-btn:hover { background: linear-gradient(135deg, #b8960c, #D4AF37); }
+                    .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                    .note { font-size: 13px; color: #666; margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>📦 Your Photos Are Ready!</h1>
+                    </div>
+                    
+                    <div class="content">
+                        <p>Hello <strong>${clientName}</strong>,</p>
+                        
+                        <p>Great news! Your selected cowhide photos are ready for download.</p>
+                        
+                        <div class="info-box">
+                            <p style="margin: 0;"><strong>📸 Total Photos:</strong> ${totalItems}</p>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                            <a href="${downloadUrl}" class="download-btn">
+                                ⬇️ Download Your Photos
+                            </a>
+                        </div>
+                        
+                        <div class="note">
+                            <strong>⏰ Note:</strong> This download link will expire in 7 days. 
+                            If you need a new link, please contact us.
+                        </div>
+                        
+                        <p style="margin-top: 30px;">Thank you for choosing Sunshine Cowhides!</p>
+                        
+                        <p>Best regards,<br><strong>Sunshine Cowhides Team</strong></p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>© ${new Date().getFullYear()} Sunshine Cowhides. All rights reserved.</p>
+                        <p>This email was sent because you made a purchase with us.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    /**
      * Remover HTML de texto
      */
     stripHtml(html) {

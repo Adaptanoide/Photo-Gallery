@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Your Photos - Sunshine Cowhides</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #D4AF37, #8b7355);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header img {
+            max-width: 180px;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .client-name {
+            color: #D4AF37;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #D4AF37, #b8960c);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(212, 175, 55, 0.5);
+        }
+
+        .download-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .download-btn .icon {
+            font-size: 22px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-text {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(135deg, #D4AF37, #b8960c);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-percent {
+            color: #D4AF37;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* States */
+        .state {
+            display: none;
+        }
+
+        .state.active {
+            display: block;
+        }
+
+        .error-state {
+            color: #dc3545;
+        }
+
+        .error-state h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .error-state p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .success-state {
+            color: #28a745;
+        }
+
+        .success-state h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .success-state p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #D4AF37;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #D4AF37;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/images/logo-transparent.png" alt="Sunshine Cowhides" onerror="this.style.display='none'">
+            <h1>📦 Your Photos Are Ready!</h1>
+        </div>
+
+        <div class="content">
+            <!-- Loading State -->
+            <div id="loadingState" class="state active">
+                <div class="loading-spinner"></div>
+                <p style="color: #666;">Validating your download link...</p>
+            </div>
+
+            <!-- Ready State -->
+            <div id="readyState" class="state">
+                <p class="welcome-text">Hello,</p>
+                <p class="client-name" id="clientName">-</p>
+
+                <div class="info-box">
+                    <div class="info-item">
+                        <span class="info-label">Total Photos</span>
+                        <span class="info-value" id="totalItems">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Order Date</span>
+                        <span class="info-value" id="orderDate">-</span>
+                    </div>
+                </div>
+
+                <button class="download-btn" id="downloadBtn" onclick="startDownload()">
+                    <span class="icon">⬇️</span>
+                    Download Photos
+                </button>
+
+                <div class="progress-container" id="progressContainer">
+                    <p class="progress-text">Preparing your photos...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-percent" id="progressPercent">0%</p>
+                </div>
+            </div>
+
+            <!-- Success State -->
+            <div id="successState" class="state success-state">
+                <h2>✅ Download Complete!</h2>
+                <p>Your photos have been downloaded successfully.</p>
+                <p style="margin-top: 15px;">Thank you for choosing Sunshine Cowhides!</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="state error-state">
+                <h2>❌ Oops!</h2>
+                <p id="errorMessage">Something went wrong.</p>
+                <p style="margin-top: 15px;">Please contact us if the problem persists.</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 <a href="https://sunshinecowhides.com" target="_blank">Sunshine Cowhides</a>. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        let downloadToken = null;
+
+        // Pegar token da URL
+        function getTokenFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('token');
+        }
+
+        // Mostrar estado
+        function showState(stateId) {
+            document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+            document.getElementById(stateId).classList.add('active');
+        }
+
+        // Mostrar erro
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            showState('errorState');
+        }
+
+        // Validar token e carregar info
+        async function validateToken() {
+            downloadToken = getTokenFromUrl();
+
+            if (!downloadToken) {
+                showError('Invalid download link. No token provided.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/selections/public/download/${downloadToken}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showError(data.message || 'Invalid or expired download link.');
+                    return;
+                }
+
+                // Preencher informações
+                document.getElementById('clientName').textContent = data.selection.clientName;
+                document.getElementById('totalItems').textContent = data.selection.totalItems + ' photos';
+                document.getElementById('orderDate').textContent = new Date(data.selection.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                showState('readyState');
+
+            } catch (error) {
+                console.error('Error validating token:', error);
+                showError('Could not connect to server. Please try again later.');
+            }
+        }
+
+        // Iniciar download
+        async function startDownload() {
+            const btn = document.getElementById('downloadBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+
+            // Desabilitar botão
+            btn.disabled = true;
+            btn.innerHTML = '<span class="icon">⏳</span> Preparing...';
+
+            // Mostrar progresso
+            progressContainer.classList.add('active');
+
+            // Simular progresso (já que não temos progresso real do fetch)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressFill.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress) + '%';
+            }, 500);
+
+            try {
+                const response = await fetch(`/api/selections/public/download/${downloadToken}/zip`);
+
+                clearInterval(progressInterval);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Download failed');
+                }
+
+                // Completar progresso
+                progressFill.style.width = '100%';
+                progressPercent.textContent = '100%';
+
+                // Baixar arquivo
+                const blob = await response.blob();
+                
+                // Extrair nome do arquivo
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'Sunshine_Cowhides_Photos.zip';
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="(.+)"/);
+                    if (match) fileName = match[1];
+                }
+
+                // Criar link de download
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Mostrar sucesso
+                setTimeout(() => {
+                    showState('successState');
+                }, 1000);
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                console.error('Download error:', error);
+                showError(error.message || 'Download failed. Please try again.');
+            }
+        }
+
+        // Iniciar ao carregar página
+        document.addEventListener('DOMContentLoaded', validateToken);
+    </script>
+</body>
+</html>

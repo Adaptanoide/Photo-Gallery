@@ -1371,4 +1371,257 @@ router.get('/:selectionId/download-zip', async (req, res) => {
     }
 });
 
+// ============================================
+// ENVIAR LINK DE DOWNLOAD POR EMAIL
+// ============================================
+router.post('/:selectionId/send-download-link', async (req, res) => {
+    try {
+        const { selectionId } = req.params;
+        const { customEmail } = req.body; // Email opcional diferente do cadastrado
+
+        console.log(`📧 Enviando link de download para seleção: ${selectionId}`);
+
+        // 1. Buscar seleção
+        const selection = await Selection.findOne({ selectionId });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Selection not found'
+            });
+        }
+
+        // 2. Verificar se tem email
+        const emailTo = customEmail || selection.clientEmail;
+
+        if (!emailTo) {
+            return res.status(400).json({
+                success: false,
+                message: 'No email address found for this client. Please provide an email.',
+                needsEmail: true
+            });
+        }
+
+        // 3. Gerar token único
+        const crypto = require('crypto');
+        const downloadToken = crypto.randomBytes(32).toString('hex');
+
+        // 4. Salvar token na seleção
+        selection.downloadToken = downloadToken;
+        selection.downloadTokenCreatedAt = new Date();
+        selection.downloadLinkSentAt = new Date();
+        selection.downloadLinkSentTo = emailTo;
+        await selection.save();
+
+        // 5. Gerar URL de download
+        const baseUrl = process.env.BASE_URL || 'https://sunshinecowhides-gallery.com';
+        const downloadUrl = `${baseUrl}/download.html?token=${downloadToken}`;
+
+        // 6. Enviar email
+        const EmailService = require('../services/EmailService');
+        const emailService = EmailService.getInstance();
+
+        const emailResult = await emailService.sendDownloadLink({
+            to: emailTo,
+            clientName: selection.clientName,
+            totalItems: selection.totalItems,
+            downloadUrl: downloadUrl
+        });
+
+        if (!emailResult.success) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to send email',
+                error: emailResult.error
+            });
+        }
+
+        // 7. Log
+        selection.addMovementLog(
+            'download_link_sent',
+            `Download link sent to ${emailTo}`,
+            true,
+            null,
+            { email: emailTo, token: downloadToken.substring(0, 8) + '...' }
+        );
+        await selection.save();
+
+        console.log(`✅ Link de download enviado para ${emailTo}`);
+
+        res.json({
+            success: true,
+            message: `Download link sent to ${emailTo}`,
+            sentTo: emailTo
+        });
+
+    } catch (error) {
+        console.error('❌ Error sending download link:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error sending download link',
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// ROTA PÚBLICA - DOWNLOAD COM TOKEN (SEM AUTH)
+// ============================================
+router.get('/public/download/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        console.log(`📥 Download público solicitado com token: ${token.substring(0, 8)}...`);
+
+        // 1. Buscar seleção pelo token
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invalid or expired download link'
+            });
+        }
+
+        // 2. Verificar se token não expirou (7 dias)
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias em ms
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({
+                success: false,
+                message: 'Download link has expired. Please request a new one.'
+            });
+        }
+
+        // 3. Retornar informações da seleção (sem gerar ZIP ainda)
+        res.json({
+            success: true,
+            selection: {
+                clientName: selection.clientName,
+                totalItems: selection.totalItems,
+                totalValue: selection.totalValue,
+                createdAt: selection.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error validating download token:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error processing download request'
+        });
+    }
+});
+
+// ============================================
+// ROTA PÚBLICA - EXECUTAR DOWNLOAD ZIP (SEM AUTH)
+// ============================================
+router.get('/public/download/:token/zip', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        console.log(`📦 Gerando ZIP para token: ${token.substring(0, 8)}...`);
+
+        // 1. Buscar seleção pelo token
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invalid or expired download link'
+            });
+        }
+
+        // 2. Verificar expiração
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({
+                success: false,
+                message: 'Download link has expired'
+            });
+        }
+
+        // 3. Incrementar contador de downloads
+        selection.downloadCount = (selection.downloadCount || 0) + 1;
+        await selection.save();
+
+        // 4. Gerar ZIP (mesma lógica do download-zip existente)
+        const JSZip = require('jszip');
+        const zip = new JSZip();
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        console.log(`📸 Processando ${selection.items.length} fotos...`);
+
+        for (let i = 0; i < selection.items.length; i++) {
+            const item = selection.items[i];
+
+            try {
+                let photoUrl;
+                if (item.thumbnailUrl) {
+                    photoUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
+                } else {
+                    const path = item.originalPath ? item.originalPath.replace(/→/g, '/').trim() : '';
+                    photoUrl = `https://images.sunshinecowhides-gallery.com/${path}/${item.fileName}`;
+                }
+
+                const response = await fetch(photoUrl);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+
+                zip.file(item.fileName, buffer);
+                successCount++;
+
+            } catch (error) {
+                console.error(`❌ Error downloading ${item.fileName}:`, error.message);
+                errorCount++;
+            }
+        }
+
+        if (successCount === 0) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to download any photos'
+            });
+        }
+
+        console.log(`📦 Gerando ZIP... (${successCount} fotos, ${errorCount} erros)`);
+
+        const zipBuffer = await zip.generateAsync({
+            type: 'nodebuffer',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+        });
+
+        // Nome do arquivo
+        const clientName = (selection.clientName || 'client').replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `Sunshine_Cowhides_${clientName}_${selection.totalItems}_photos.zip`;
+
+        console.log(`✅ ZIP criado: ${fileName} (${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+
+        // Enviar arquivo
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Length', zipBuffer.length);
+
+        res.send(zipBuffer);
+
+    } catch (error) {
+        console.error('❌ Error generating ZIP:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 module.exports = router;
