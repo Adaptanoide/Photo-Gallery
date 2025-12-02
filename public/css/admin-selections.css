@@ -1398,8 +1398,8 @@ body.modal-open {
 
 /* HEADER COMPACTO */
 .selection-info-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 10.75rem !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0.75rem !important;
     padding: 10px 1px 1px 1px !important;
 }
 
@@ -2304,7 +2304,7 @@ body.modal-open {
 
 /* Retired modal header */
 .retired-header {
-    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    background: linear-gradient(135deg, #d4af37, #d4af37) !important;
 }
 
 /* Retired info box */

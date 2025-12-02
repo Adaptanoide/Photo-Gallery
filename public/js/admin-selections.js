@@ -675,6 +675,10 @@ class AdminSelections {
                             ${this.getStatusText(selection.status)}
                         </span>
                     </div>
+                    <div class="info-item">
+                        <label>Selection ID:</label>
+                        <span style="font-family: monospace; font-size: 12px; color: #888;">${selection.selectionId}</span>
+                    </div>
                 </div>
 
                 <!-- Customer Notes -->
