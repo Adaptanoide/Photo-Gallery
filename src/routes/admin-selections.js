@@ -18,12 +18,25 @@ router.use(authenticateToken);
  */
 router.get('/', async (req, res) => {
     try {
-        const { status = 'pending', page = 1, limit = 50 } = req.query;
+        const { status = 'pending', page = 1, limit = 50, clientSearch = '' } = req.query;
 
         // ✅ CORREÇÃO: Tratar "All Status"
         let query = {};
         if (status && status !== 'all') {
             query.status = status;
+        }
+
+        // ✅ FILTRO: Buscar por nome ou código do cliente
+        if (clientSearch && clientSearch.trim()) {
+            const searchTerm = clientSearch.trim();
+            query.$and = query.$and || [];
+            query.$and.push({
+                $or: [
+                    { clientName: { $regex: searchTerm, $options: 'i' } },
+                    { clientCode: { $regex: searchTerm, $options: 'i' } },
+                    { clientCompany: { $regex: searchTerm, $options: 'i' } }
+                ]
+            });
         }
 
         // ✅ NOVA LÓGICA: Selection Management SÓ vê seleções que CLIENTE processou
