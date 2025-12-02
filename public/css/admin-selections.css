@@ -1043,10 +1043,18 @@
 .selection-details-body {
     flex: 1;
     overflow-y: auto;
-    /* SCROLL AQUI PARA GARANTIR QUE TUDO SEJA VISÍVEL */
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* IMPORTANTE para flexbox funcionar com overflow */
+}
+
+/* Container principal do conteúdo */
+.selection-details-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Info Grid */
@@ -1095,14 +1103,13 @@
 }
 
 .categories-list {
-    height: 280px;
-    /* ALTURA FIXA MENOR */
+    flex: 1;
+    min-height: 200px;
+    max-height: none;
     overflow-y: auto;
-    /* SCROLL APENAS AQUI */
-    padding-right: 0.5rem;
+    padding: 0.5rem;
     background: rgba(30, 30, 35, 0.3);
     border-radius: 8px;
-    padding: 0.5rem;
 }
 
 /* Scrollbar styling */
@@ -1429,13 +1436,6 @@ body.modal-open {
     min-height: 0;
 }
 
-.categories-list {
-    height: auto !important;
-    flex: 1 !important;
-    min-height: 400px !important;
-    max-height: none !important;
-}
-
 /* FOOTER COMPACTO */
 .selection-summary-footer {
     height: auto !important;
@@ -1754,24 +1754,6 @@ body.modal-open {
     }
 }
 
-/* ============================================
-   CORREÇÕES - Modal Fullscreen
-   Adicione NO FINAL do admin-selections.css
-   ============================================ */
-
-/* 1. FIX: SCROLL INTERNO DA LISTA */
-.categories-list {
-    height: auto !important;
-    flex: 1 !important;
-    min-height: 570px !important;
-    max-height: calc(85vh - 350px) !important; /* LIMITA ALTURA! */
-    overflow-y: auto !important;
-}
-
-/* Garantir que o body do modal não tenha scroll */
-.selection-details-body {
-    overflow: hidden !important;
-}
 
 /* 2. FIX: FOTOS MENORES NO GRID */
 .item-card-thumbnail {
@@ -1835,10 +1817,6 @@ body.modal-open {
 @media (max-width: 1400px) {
     .category-items.grid-view {
         grid-template-columns: repeat(4, 1fr) !important;
-    }
-    
-    .categories-list {
-        max-height: calc(90vh - 380px) !important;
     }
 }
 
