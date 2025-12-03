@@ -615,6 +615,11 @@
 
         if (!img) return;
 
+        // Garantir estado inicial correto
+        if (spinner) spinner.style.display = 'block';
+        img.style.display = 'none';
+        img.src = ''; // Limpar src antigo para evitar onerror
+
         try {
             if (spinner) {
                 spinner.style.display = 'block';
@@ -728,11 +733,17 @@
             destroyPhotoZoom();
         }
 
-        // Limpar imagem para evitar flash ao abrir próxima foto
+        // Limpar imagem e preparar para próxima abertura
         const modalPhoto = document.getElementById('modalPhoto');
+        const spinner = document.getElementById('photoLoadingSpinner');
+
         if (modalPhoto) {
-            modalPhoto.src = '';
-            modalPhoto.style.display = 'none';
+            modalPhoto.src = ''; // Limpar src
+            modalPhoto.style.display = 'none'; // Esconder imagem
+        }
+
+        if (spinner) {
+            spinner.style.display = 'block'; // Deixar spinner pronto
         }
 
         document.getElementById('photoModal').style.display = 'none';
