@@ -305,6 +305,14 @@
     display: block;
 }
 
+/* DESKTOP: Posicionar entre carrinho e fotos */
+@media (min-width: 769px) {
+    .scroll-to-top {
+        right: 400px;  /* 380px carrinho + 20px espaço */
+        z-index: 9001; /* Acima do carrinho */
+    }
+}
+
 /* Cart badge */
 .header-cart-badge {
     position: absolute;
