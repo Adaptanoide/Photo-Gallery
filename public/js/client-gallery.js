@@ -615,14 +615,13 @@
 
         if (!img) return;
 
-        // Garantir estado inicial correto
-        if (spinner) spinner.style.display = 'block';
+        // Garantir estado inicial correto - SEMPRE mostrar spinner primeiro
+        if (spinner) {
+            spinner.style.display = 'block';
+        }
         img.style.display = 'none';
 
-        // Remover onerror temporariamente para não disparar ao limpar src
-        img.onerror = null;
-        img.onload = null;
-        img.src = ''; // Limpar src antigo
+        // Não limpar src aqui - já foi limpo no closePhotoModal
 
         try {
             if (spinner) {
@@ -737,20 +736,27 @@
             destroyPhotoZoom();
         }
 
-        // Limpar imagem e preparar para próxima abertura
-        const modalPhoto = document.getElementById('modalPhoto');
-        const spinner = document.getElementById('photoLoadingSpinner');
-
-        if (modalPhoto) {
-            modalPhoto.src = ''; // Limpar src
-            modalPhoto.style.display = 'none'; // Esconder imagem
-        }
-
-        if (spinner) {
-            spinner.style.display = 'block'; // Deixar spinner pronto
-        }
-
+        // ESCONDER MODAL PRIMEIRO (antes de mexer na imagem)
         document.getElementById('photoModal').style.display = 'none';
+
+        // DEPOIS limpar imagem (usuário não verá nada)
+        setTimeout(() => {
+            const modalPhoto = document.getElementById('modalPhoto');
+            const spinner = document.getElementById('photoLoadingSpinner');
+
+            if (modalPhoto) {
+                // Remover handlers para não disparar onerror
+                modalPhoto.onerror = null;
+                modalPhoto.onload = null;
+                // Limpar src
+                modalPhoto.src = '';
+                modalPhoto.style.display = 'none';
+            }
+
+            if (spinner) {
+                spinner.style.display = 'block';
+            }
+        }, 50);
 
         // ADICIONAR ESTE BLOCO
         // Se o modal foi aberto do carrinho, reabrir o carrinho
