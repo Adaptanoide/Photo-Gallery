@@ -727,6 +727,14 @@
         if (typeof destroyPhotoZoom === 'function') {
             destroyPhotoZoom();
         }
+
+        // Limpar imagem para evitar flash ao abrir próxima foto
+        const modalPhoto = document.getElementById('modalPhoto');
+        if (modalPhoto) {
+            modalPhoto.src = '';
+            modalPhoto.style.display = 'none';
+        }
+
         document.getElementById('photoModal').style.display = 'none';
 
         // ADICIONAR ESTE BLOCO
