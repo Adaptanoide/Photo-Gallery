@@ -262,6 +262,27 @@
             }
         }
 
+        // ===== TORNAR BADGE CLICÁVEL E ADICIONAR ÍCONE =====
+        if (galleryTitle) {
+            setTimeout(() => {
+                const badge = galleryTitle.querySelector('.category-price-badge');
+                if (badge) {
+                    // Adicionar ícone de chat (para todos os badges, com ou sem preço)
+                    window.addChatIconToBadge(badge);
+
+                    // Adicionar evento de clique
+                    if (!badge.dataset.clickListenerAdded) {
+                        badge.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            console.log('🖱️ Badge da galeria clicado');
+                            window.openChatWithPriceQuestion();
+                        });
+                        badge.dataset.clickListenerAdded = 'true';
+                    }
+                }
+            }, 100);
+        }
+
         // Popular mobile info bar
         const infoBar = document.getElementById('mobileInfoBar');
         const infoPriceBadge = document.getElementById('infoPriceBadge');
@@ -295,6 +316,28 @@
                     infoPhotoCount.textContent = originalCounter.textContent;
                 }
             }
+        }
+
+        // ===== TORNAR BADGE MOBILE CLICÁVEL E ADICIONAR ÍCONE =====
+        if (infoBar && window.innerWidth <= 768) {
+            setTimeout(() => {
+                const mobileBadge = document.getElementById('infoPriceBadge');
+                if (mobileBadge) {
+                    // Adicionar ícone de chat
+                    window.addChatIconToBadge(mobileBadge);
+
+                    // Adicionar evento de clique
+                    if (!mobileBadge.dataset.clickListenerAdded) {
+                        mobileBadge.style.cursor = 'pointer';
+                        mobileBadge.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            console.log('🖱️ Badge mobile clicado');
+                            window.openChatWithPriceQuestion();
+                        });
+                        mobileBadge.dataset.clickListenerAdded = 'true';
+                    }
+                }
+            }, 100);
         }
 
         const gridEl = document.getElementById('photosGrid');
@@ -785,10 +828,22 @@
                 const totalPhotos = navigationState.currentPhotos.length;
 
                 document.getElementById('modalPhotoCounter').innerHTML = `
-                    <span class="modal-price-badge contact-price">Contact for Price</span>
+                    <span class="modal-price-badge contact-price" 
+                          style="cursor: pointer; pointer-events: auto; position: relative; z-index: 1000;"
+                          onclick="event.stopPropagation(); document.getElementById('photoModal').style.display='none'; setTimeout(() => window.openChatWithPriceQuestion(), 300);">
+                        Contact for Price
+                    </span>
                     <span style="margin: 0 10px;">-</span>
                     ${photoIndex + 1} / ${totalPhotos}
                 `;
+
+                // Adicionar ícone de chat ao badge
+                setTimeout(() => {
+                    const modalBadge = document.querySelector('#modalPhotoCounter .modal-price-badge');
+                    if (modalBadge) {
+                        window.addChatIconToBadge(modalBadge);
+                    }
+                }, 100);
 
                 const gridEl = document.getElementById('modalDiscountGrid');
                 if (gridEl) gridEl.style.display = 'none';
@@ -886,10 +941,22 @@
 
                 // ✅ ATUALIZAR badge com preço correto
                 document.getElementById('modalPhotoCounter').innerHTML = `
-                    <span class="modal-price-badge">${currentTierPrice}</span>
+                    <span class="modal-price-badge"
+                          style="cursor: pointer; pointer-events: auto; position: relative; z-index: 1000;"
+                          onclick="event.stopPropagation(); document.getElementById('photoModal').style.display='none'; setTimeout(() => window.openChatWithPriceQuestion(), 300);">
+                        ${currentTierPrice}
+                    </span>
                     <span style="margin: 0 10px;">-</span>
                     ${photoIndex + 1} / ${totalPhotos}
                 `;
+
+                // Adicionar ícone de chat ao badge
+                setTimeout(() => {
+                    const modalBadge = document.querySelector('#modalPhotoCounter .modal-price-badge');
+                    if (modalBadge) {
+                        window.addChatIconToBadge(modalBadge);
+                    }
+                }, 100);
 
                 // ✅ MOSTRAR tiers SOMENTE se for Mix & Match
                 const gridEl = document.getElementById('modalDiscountGrid');
@@ -1723,6 +1790,119 @@
         }
     }
 
+    // ===== ADICIONAR ÍCONE DE CHAT AOS BADGES DE PREÇO =====
+
+    /**
+     * Adiciona ícone de chat clicável ao badge de preço
+     */
+    window.addChatIconToBadge = function (badgeElement) {
+        if (!badgeElement) return;
+
+        // Verificar se já tem o ícone (não duplicar)
+        if (badgeElement.querySelector('.chat-icon-badge')) return;
+
+        // Criar ícone
+        const chatIcon = document.createElement('i');
+        chatIcon.className = 'fas fa-comment-dots chat-icon-badge';
+        chatIcon.style.marginLeft = '8px';
+        chatIcon.style.fontSize = '0.9em';
+        chatIcon.style.opacity = '0.9';
+        chatIcon.title = 'Click to contact sales';
+
+        // Adicionar ao badge
+        badgeElement.appendChild(chatIcon);
+
+        // Tornar clicável
+        badgeElement.style.cursor = 'pointer';
+        badgeElement.style.transition = 'all 0.3s ease';
+
+        // Efeito hover
+        badgeElement.addEventListener('mouseenter', function () {
+            this.style.transform = 'scale(1.05)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        });
+
+        badgeElement.addEventListener('mouseleave', function () {
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = 'none';
+        });
+
+        console.log('✅ Ícone de chat adicionado ao badge');
+    }
+
+    // ===== CHAT: FUNÇÕES PARA ABRIR COM MENSAGEM PRÉ-PREENCHIDA =====
+
+    /**
+     * Pega nome da categoria com fallback inteligente
+     */
+    window.getCategoryNameSafely = function () {
+        // Nível 1: Tentar método hierárquico
+        if (typeof window.getCurrentCategoryDisplayName === 'function') {
+            try {
+                const name = window.getCurrentCategoryDisplayName();
+                if (name && name !== 'Premium Cowhide Selection') {
+                    console.log('✅ Nome da categoria (hierárquico):', name);
+                    return name;
+                }
+            } catch (error) {
+                console.warn('⚠️ Erro ao pegar nome hierárquico:', error);
+            }
+        }
+
+        // Nível 2: Tentar nome simples
+        if (window.navigationState && window.navigationState.currentCategoryName) {
+            console.log('✅ Nome da categoria (simples):', window.navigationState.currentCategoryName);
+            return window.navigationState.currentCategoryName;
+        }
+
+        // Nível 3: Fallback
+        console.warn('⚠️ Não foi possível obter nome da categoria, usando fallback');
+        return null;
+    }
+
+    /**
+     * Abre chat com mensagem sobre preço pré-preenchida
+     */
+    window.openChatWithPriceQuestion = function () {
+        const categoryName = window.getCategoryNameSafely();
+
+        let message;
+        if (categoryName) {
+            message = `Hello! I would like to know the price for "${categoryName}".`;
+        } else {
+            message = `Hello! I would like to know the price for [please specify the category].`;
+        }
+
+        console.log('💬 Abrindo chat com mensagem:', message);
+
+        // Abrir chat primeiro
+        if (window.chatManager) {
+            window.chatManager.openChat();
+        } else {
+            console.error('❌ ChatManager não disponível');
+            alert('Chat system is not available. Please refresh the page.');
+            return;
+        }
+
+        // Pré-preencher input e ajustar altura
+        setTimeout(() => {
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                // Preencher mensagem
+                chatInput.value = message;
+
+                // Ajustar altura automaticamente
+                chatInput.style.height = 'auto';
+                chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
+
+                // Focar e posicionar cursor no final
+                chatInput.focus();
+                chatInput.setSelectionRange(message.length, message.length);
+
+                console.log('✅ Textarea ajustado para altura:', chatInput.style.height);
+            }
+        }, 400);
+    }
 })();
 
 // ===== MOBILE: TOGGLE TIERS =====
