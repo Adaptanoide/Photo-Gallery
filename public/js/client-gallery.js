@@ -618,7 +618,11 @@
         // Garantir estado inicial correto
         if (spinner) spinner.style.display = 'block';
         img.style.display = 'none';
-        img.src = ''; // Limpar src antigo para evitar onerror
+
+        // Remover onerror temporariamente para não disparar ao limpar src
+        img.onerror = null;
+        img.onload = null;
+        img.src = ''; // Limpar src antigo
 
         try {
             if (spinner) {
