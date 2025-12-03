@@ -66,35 +66,63 @@ class ChatManager {
     }
 
     /**
-     * Shows tutorial tooltip with close button
+     * Mostra notificação de boas-vindas (primeira vez + reset semanal)
      */
-    showTooltipTutorial() {
-        const tooltip = document.getElementById('chatTooltip');
-        const closeBtn = document.getElementById('chatTooltipClose');
+    showWelcomeNotification() {
+        const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
+        const WELCOME_KEY = 'chatWelcomeShown';
 
-        if (!tooltip) return;
+        // Verificar localStorage
+        const lastShown = localStorage.getItem(WELCOME_KEY);
+        const now = Date.now();
 
-        // Show after 2 seconds
+        // Verificar se deve mostrar
+        let shouldShow = false;
+
+        if (!lastShown) {
+            // Primeira vez
+            shouldShow = true;
+            console.log('🎉 [CHAT] Primeira vez do cliente - mostrando boas-vindas');
+        } else {
+            // Verificar se passou 7 dias
+            const timeSinceLastShown = now - parseInt(lastShown);
+            if (timeSinceLastShown >= WEEK_IN_MS) {
+                shouldShow = true;
+                console.log('🔄 [CHAT] Passou 7 dias - mostrando boas-vindas novamente');
+            }
+        }
+
+        if (!shouldShow) {
+            console.log('⏭️ [CHAT] Boas-vindas já foram mostradas recentemente');
+            return;
+        }
+
+        // Aguardar 5 segundos
         setTimeout(() => {
-            tooltip.classList.add('show');
+            console.log('👋 [CHAT] Enviando mensagem de boas-vindas...');
 
-            // Close button handler
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    tooltip.classList.remove('show');
-                    setTimeout(() => tooltip.remove(), 500);
-                });
-            }
+            // Criar mensagem fake do vendedor
+            const welcomeMessage = {
+                sender: 'salesrep',
+                message: '👋 Welcome! Need help selecting cowhides?\n\nOur team is here Mon-Fri, 8 AM - 3:30 PM EST. Ask us anything about products, pricing or shipping - just type your message below!',
+                createdAt: new Date().toISOString()
+            };
 
-            // Close when chat is opened
-            const chatButton = document.getElementById('chatFloatBtn');
-            if (chatButton) {
-                chatButton.addEventListener('click', () => {
-                    tooltip.classList.remove('show');
-                    setTimeout(() => tooltip.remove(), 500);
-                }, { once: true });
-            }
-        }, 2000);
+            // Adicionar mensagem no chat
+            this.addMessage(welcomeMessage, false);
+
+            // Incrementar contador de não lidas (badge)
+            this.unreadCount = 1;
+            this.updateBadge();
+
+            // Tocar som
+            this.playNotificationSound();
+
+            // Salvar timestamp no localStorage
+            localStorage.setItem(WELCOME_KEY, now.toString());
+
+            console.log('✅ [CHAT] Boas-vindas enviadas com sucesso');
+        }, 5000); // 5 segundos
     }
 
     /**
@@ -123,8 +151,8 @@ class ChatManager {
         // Tentar carregar conversa existente
         await this.loadExistingConversation();
 
-        // Mostrar tooltip tutorial
-        this.showTooltipTutorial();
+        // Mostrar notificação de boas-vindas (primeira vez + reset semanal)
+        this.showWelcomeNotification();
 
         console.log('✅ [CHAT] Inicializado com sucesso');
     }
@@ -195,18 +223,6 @@ class ChatManager {
         document.body.insertAdjacentHTML('beforeend', chatHTML);
 
         console.log('✅ [CHAT] Elementos criados');
-
-        // Adicionar tooltip tutorial
-        const tooltipHTML = `
-            <div class="chat-tooltip" id="chatTooltip">
-                <div class="chat-tooltip-content">
-                    <p class="chat-tooltip-text">💬 Need help? Have questions? Click here to chat with us!</p>
-                    <button class="chat-tooltip-close" id="chatTooltipClose">×</button>
-                </div>
-                <div class="chat-tooltip-arrow"></div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', tooltipHTML);
     }
 
     /**
