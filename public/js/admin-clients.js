@@ -150,6 +150,10 @@ class AdminClients {
                 <h2 class="clients-title">
                     <i class="fas fa-users"></i>
                     Client Management
+                    <button class="copy-register-link" onclick="adminClients.copyRegisterLink()" title="Copy registration link to share with clients">
+                        <i class="fas fa-link"></i>
+                        <span>Share Registration Link</span>
+                    </button>
                 </h2>
                 <div class="clients-actions">
                     <button id="btnRefreshClients" class="btn btn-secondary">
@@ -3551,6 +3555,20 @@ class AdminClients {
             console.error('Error approving:', error);
             this.showError('Error approving registration');
         }
+    }
+
+    copyRegisterLink() {
+        const message = `You can request access to our exclusive Sunshine Cowhides Gallery by filling out this quick form:
+
+    https://sunshinecowhides-gallery.com/register.html
+
+    Once submitted, our team will review your request and send you an access code within 24-48 hours.`;
+
+        navigator.clipboard.writeText(message).then(() => {
+            this.showSuccess('Registration link copied! Ready to share with clients.');
+        }).catch(() => {
+            this.showError('Failed to copy link');
+        });
     }
 }
 

@@ -2662,3 +2662,31 @@ tr:has(.cart-indicator):hover {
     resize: vertical;
     min-height: 100px;
 }
+
+/* ===== COPY REGISTER LINK ===== */
+.copy-register-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 15px;
+    padding: 6px 12px;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 20px;
+    color: #D4AF37;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+}
+
+.copy-register-link:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #D4AF37;
+    transform: translateY(-1px);
+}
+
+.copy-register-link i {
+    font-size: 0.8rem;
+}
