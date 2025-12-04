@@ -583,7 +583,7 @@ class EmailService {
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
                     .container { max-width: 600px; margin: 0 auto; }
-                    .header { background: #d97706; color: white; padding: 30px; text-align: center; }
+                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
                     .content { padding: 30px; background: #fff; }
                     .info-box { background: #f8f9fa; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
