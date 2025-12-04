@@ -485,7 +485,7 @@ class EmailService {
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
                     .container { max-width: 600px; margin: 0 auto; }
-                    .header { background: linear-gradient(135deg, #D4AF37, #8b7355); color: white; padding: 30px; text-align: center; }
+                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
                     .content { padding: 30px; background: #fff; }
                     .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
@@ -529,6 +529,216 @@ class EmailService {
                     <div class="footer">
                         <p>© ${new Date().getFullYear()} Sunshine Cowhides. All rights reserved.</p>
                         <p>This email was sent because you made a purchase with us.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    /**
+     * Notificar admin sobre nova solicitação de registro
+     */
+    async notifyNewRegistration(registrationData) {
+        try {
+            if (!this.isReady()) {
+                const initialized = await this.initialize();
+                if (!initialized) {
+                    throw new Error('EmailService não pôde ser inicializado');
+                }
+            }
+
+            // Usar mesmos destinatários de newSelection
+            const recipients = this.config?.notifications?.newSelection?.recipients;
+
+            if (!recipients || recipients.length === 0) {
+                console.warn('⚠️ Nenhum destinatário configurado para notificações');
+                return { success: false, message: 'Nenhum destinatário configurado' };
+            }
+
+            const subject = `[New Registration Request] ${registrationData.companyName}`;
+            const html = this.generateNewRegistrationHtml(registrationData);
+
+            return await this.sendEmail({
+                to: recipients,
+                subject: subject,
+                html: html
+            });
+
+        } catch (error) {
+            console.error('❌ Erro ao notificar nova solicitação:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Gerar HTML para notificação de nova solicitação
+     */
+    generateNewRegistrationHtml(data) {
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 0 auto; }
+                    .header { background: #d97706; color: white; padding: 30px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 24px; }
+                    .content { padding: 30px; background: #fff; }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    .interest-box { background: #fff3cd; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    .action-btn { display: inline-block; background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 25px 0; }
+                    .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🆕 New Registration Request</h1>
+                    </div>
+                    
+                    <div class="content">
+                        <p>A new client is requesting access to the gallery.</p>
+                        
+                        <div class="info-box">
+                            <h3 style="margin-top: 0;">📋 Contact Information</h3>
+                            <p><strong>Name:</strong> ${data.contactName}</p>
+                            <p><strong>Company:</strong> ${data.companyName}</p>
+                            <p><strong>Email:</strong> ${data.email}</p>
+                            <p><strong>Phone:</strong> ${data.phone}</p>
+                            <p><strong>Location:</strong> ${data.city}, ${data.state}, ${data.country}</p>
+                            <p><strong>Business Type:</strong> ${data.businessType}</p>
+                        </div>
+                        
+                        <div class="interest-box">
+                            <h3 style="margin-top: 0;">💬 Client's Interest</h3>
+                            <p>${data.interestMessage}</p>
+                        </div>
+
+                        <div style="text-align: center;">
+                                <a href="https://sunshinecowhides-gallery.com/" class="action-btn">
+                                Go to Gallery
+                            </a>
+                        </div>
+                        
+                        <p style="color: #666; font-size: 13px;">
+                            <strong>Submitted:</strong> ${new Date(data.submittedAt).toLocaleString('en-US')}
+                        </p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>© ${new Date().getFullYear()} Sunshine Cowhides. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    /**
+     * Enviar email de boas-vindas para cliente aprovado
+     */
+    async sendWelcomeEmail({ to, clientName, companyName, accessCode, salesRep, customMessage }) {
+        try {
+            if (!this.isReady()) {
+                const initialized = await this.initialize();
+                if (!initialized) {
+                    throw new Error('EmailService não pôde ser inicializado');
+                }
+            }
+
+            const subject = `Welcome to Sunshine Cowhides Gallery - Your Access Code`;
+            const html = this.generateWelcomeEmailHtml({ clientName, companyName, accessCode, salesRep, customMessage });
+
+            return await this.sendEmail({
+                to: [{ name: clientName, email: to }],
+                subject: subject,
+                html: html
+            });
+
+        } catch (error) {
+            console.error('❌ Erro ao enviar email de boas-vindas:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Gerar HTML para email de boas-vindas
+     */
+    generateWelcomeEmailHtml({ clientName, companyName, accessCode, salesRep, customMessage }) {
+        const messageSection = customMessage ? `
+            <div style="background: #e8f4fd; border-left: 4px solid #2196f3; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <h3 style="margin-top: 0; color: #1976d2;">💬 Message from ${salesRep || 'Our Team'}</h3>
+                <p style="margin-bottom: 0;">${customMessage}</p>
+            </div>
+        ` : '';
+
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 0 auto; }
+                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 24px; }
+                    .content { padding: 30px; background: #fff; }
+                    .code-box { background: #1a1a1a; color: #D4AF37; padding: 30px; margin: 25px 0; border-radius: 12px; text-align: center; }
+                    .code-box h2 { margin: 0 0 10px 0; font-size: 18px; color: #fff; }
+                    .code-box .code { font-size: 48px; font-weight: bold; letter-spacing: 12px; font-family: 'Courier New', monospace; }
+                    .steps { background: #f8f9fa; padding: 25px; margin: 20px 0; border-radius: 8px; }
+                    .steps h3 { margin-top: 0; color: #333; }
+                    .steps ol { margin: 0; padding-left: 20px; }
+                    .steps li { margin: 10px 0; }
+                    .action-btn { display: inline-block; background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+                    .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🎉 Welcome to Sunshine Cowhides!</h1>
+                    </div>
+                    
+                    <div class="content">
+                        <p>Hello <strong>${clientName}</strong>,</p>
+                        
+                        <p>Great news! Your registration request for <strong>${companyName}</strong> has been approved. You now have access to our exclusive B2B cowhide gallery.</p>
+                        
+                        <div class="code-box">
+                            <h2>Your Access Code</h2>
+                            <div class="code">${accessCode}</div>
+                        </div>
+
+                        ${messageSection}
+                        
+                        <div class="steps">
+                            <h3>📋 How to Access the Gallery</h3>
+                            <ol>
+                                <li>Visit <a href="https://sunshinecowhides-gallery.com">sunshinecowhides-gallery.com</a></li>
+                                <li>Enter your 4-digit access code: <strong>${accessCode}</strong></li>
+                                <li>Browse our exclusive cowhide collection</li>
+                                <li>Select the products you're interested in</li>
+                                <li>Submit your selection for review</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="https://sunshinecowhides-gallery.com" class="action-btn">
+                                Visit Gallery Now
+                            </a>
+                        </div>
+                        
+                        <p>If you have any questions, feel free to contact us at <a href="mailto:sales@sunshinecowhides.com">sales@sunshinecowhides.com</a></p>
+                        
+                        <p>Best regards,<br><strong>${salesRep || 'Sunshine Cowhides Team'}</strong></p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>© ${new Date().getFullYear()} Sunshine Cowhides. All rights reserved.</p>
+                        <p>You received this email because you requested access to our gallery.</p>
                     </div>
                 </div>
             </body>

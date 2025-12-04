@@ -112,8 +112,6 @@ class AdminClients {
             return;
         }
 
-        //this.showLoading(true);
-
         try {
             // Create interface HTML
             this.renderClientInterface();
@@ -121,7 +119,8 @@ class AdminClients {
             // Load data in parallel
             await Promise.all([
                 this.loadClients(),
-                this.loadAvailableCategories()
+                this.loadAvailableCategories(),
+                this.loadPendingRequestsCount()
             ]);
 
             // Render table
@@ -156,6 +155,11 @@ class AdminClients {
                     <button id="btnRefreshClients" class="btn btn-secondary">
                         <i class="fas fa-sync-alt"></i>
                         Refresh
+                    </button>
+                    <button id="btnPendingRequests" class="btn btn-warning">
+                        <i class="fas fa-user-clock"></i>
+                        Pending Requests
+                        <span class="pending-requests-badge" id="pendingRequestsBadge" style="display: none;">0</span>
                     </button>
                     <button id="btnNewClient" class="btn btn-primary">
                         <i class="fas fa-plus"></i>
@@ -690,6 +694,71 @@ class AdminClients {
                     </div>
                 </div>
             </div>
+
+            <!-- Modal Pending Requests -->
+            <div id="pendingRequestsModal" class="client-modal">
+                <div class="client-modal-content modal-lg">
+                    <div class="client-modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-user-clock"></i>
+                            <span>Pending Registration Requests</span>
+                        </h3>
+                        <button class="modal-close" onclick="adminClients.closePendingRequestsModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="client-modal-body">
+                        <div id="pendingRequestsList" class="pending-requests-list">
+                            <div class="loading-state">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading requests...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="client-modal-footer">
+                        <button type="button" class="btn-modal btn-cancel" onclick="adminClients.closePendingRequestsModal()">
+                            <i class="fas fa-times"></i>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Request Details (z-index maior) -->
+            <div id="requestDetailsModal" class="client-modal modal-overlay-high">
+                <div class="client-modal-content">
+                    <div class="client-modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-user"></i>
+                            <span id="requestDetailsTitle">Registration Details</span>
+                        </h3>
+                        <button class="modal-close" onclick="adminClients.closeRequestDetailsModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="client-modal-body" id="requestDetailsBody">
+                        <!-- Será preenchido via JS -->
+                    </div>
+                    
+                    <div class="client-modal-footer">
+                        <button type="button" class="btn-modal btn-cancel" onclick="adminClients.closeRequestDetailsModal()">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="button" class="btn-modal btn-danger" onclick="adminClients.rejectRequest()">
+                            <i class="fas fa-ban"></i>
+                            Reject
+                        </button>
+                        <button type="button" class="btn-modal btn-save" onclick="adminClients.approveRequest()">
+                            <i class="fas fa-check"></i>
+                            Approve
+                        </button>
+                    </div>
+                </div>
+            </div>
         `;
 
         // Store element references
@@ -703,6 +772,7 @@ class AdminClients {
         // Main buttons
         document.getElementById('btnNewClient').addEventListener('click', () => this.openCreateModal());
         document.getElementById('btnRefreshClients').addEventListener('click', () => this.refreshData());
+        document.getElementById('btnPendingRequests')?.addEventListener('click', () => this.openPendingRequestsModal());
 
         // Filters
         document.getElementById('searchClients').addEventListener('input', (e) => this.handleSearch(e.target.value));
@@ -3105,6 +3175,382 @@ class AdminClients {
         }
 
         container.innerHTML = html;
+    }
+
+    // ===== PENDING REQUESTS =====
+    async loadPendingRequestsCount() {
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch('/api/register/admin/count', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.updatePendingBadge(data.count);
+            }
+        } catch (error) {
+            console.error('Error loading pending requests count:', error);
+        }
+    }
+
+    updatePendingBadge(count) {
+        // Badge no botão
+        const btnBadge = document.getElementById('pendingRequestsBadge');
+        if (btnBadge) {
+            if (count > 0) {
+                btnBadge.textContent = count;
+                btnBadge.style.display = 'flex';
+            } else {
+                btnBadge.style.display = 'none';
+            }
+        }
+
+        // Badge no sidebar
+        const sidebarBadge = document.getElementById('sidebarClientsBadge');
+        if (sidebarBadge) {
+            if (count > 0) {
+                sidebarBadge.textContent = count;
+                sidebarBadge.style.display = 'flex';
+            } else {
+                sidebarBadge.style.display = 'none';
+            }
+        }
+    }
+
+    // ===== PENDING REQUESTS MODAL =====
+    async openPendingRequestsModal() {
+        const modal = document.getElementById('pendingRequestsModal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        await this.loadPendingRequests();
+    }
+
+    closePendingRequestsModal() {
+        const modal = document.getElementById('pendingRequestsModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async loadPendingRequests() {
+        const container = document.getElementById('pendingRequestsList');
+
+        container.innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading requests...</p>
+        </div>
+    `;
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch('/api/register/admin/list?status=pending', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.registrations.length > 0) {
+                container.innerHTML = data.registrations.map(reg => `
+                <div class="pending-request-card" onclick="adminClients.openRequestDetails('${reg._id}')">
+                    <div class="request-card-header">
+                        <div class="request-company">
+                            <i class="fas fa-building"></i>
+                            ${reg.companyName}
+                        </div>
+                        <div class="request-date">
+                            <i class="fas fa-clock"></i>
+                            ${this.formatDate(reg.submittedAt)}
+                        </div>
+                    </div>
+                    <div class="request-card-body">
+                        <div class="request-info">
+                            <span class="request-name"><i class="fas fa-user"></i> ${reg.contactName}</span>
+                            <span class="request-email"><i class="fas fa-envelope"></i> ${reg.email}</span>
+                            <span class="request-location"><i class="fas fa-map-marker-alt"></i> ${reg.city}, ${reg.state}</span>
+                        </div>
+                        <div class="request-business-type">
+                            <span class="business-badge">${reg.businessType}</span>
+                        </div>
+                    </div>
+                    <div class="request-card-footer">
+                        <span class="view-details">Click to view details <i class="fas fa-chevron-right"></i></span>
+                    </div>
+                </div>
+            `).join('');
+            } else {
+                container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>No pending requests</p>
+                </div>
+            `;
+            }
+
+        } catch (error) {
+            console.error('Error loading pending requests:', error);
+            container.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading requests</p>
+            </div>
+        `;
+        }
+    }
+
+    // ===== REQUEST DETAILS MODAL =====
+    currentRequestId = null;
+
+    async openRequestDetails(requestId) {
+        this.currentRequestId = requestId;
+        const modal = document.getElementById('requestDetailsModal');
+        const body = document.getElementById('requestDetailsBody');
+
+        modal.classList.add('active');
+
+        body.innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading details...</p>
+        </div>
+    `;
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/register/admin/${requestId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const reg = data.registration;
+                document.getElementById('requestDetailsTitle').textContent = `${reg.companyName} - Registration`;
+
+                body.innerHTML = `
+                    <div class="request-details-grid">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-user"></i> Contact Information</h4>
+                            <div class="detail-row">
+                                <span class="detail-label">Name:</span>
+                                <span class="detail-value">${reg.contactName}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Email:</span>
+                                <span class="detail-value">${reg.email}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Phone:</span>
+                                <span class="detail-value">${reg.phone}</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-building"></i> Company Information</h4>
+                            <div class="detail-row">
+                                <span class="detail-label">Company:</span>
+                                <span class="detail-value">${reg.companyName}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Business Type:</span>
+                                <span class="detail-value">${reg.businessType}${reg.businessTypeOther ? ' - ' + reg.businessTypeOther : ''}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">${reg.city}, ${reg.state}, ${reg.country}</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section full-width">
+                            <h4><i class="fas fa-comment-dots"></i> Interest Message</h4>
+                            <div class="interest-message-box">
+                                ${reg.interestMessage}
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-info-circle"></i> Additional Info</h4>
+                            <div class="detail-row">
+                                <span class="detail-label">How did they hear:</span>
+                                <span class="detail-value">${reg.howDidYouHear || 'Not specified'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Referred by:</span>
+                                <span class="detail-value">${reg.referredBy || 'Not specified'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Submitted:</span>
+                                <span class="detail-value">${this.formatDate(reg.submittedAt)}</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-user-tie"></i> Assign Sales Rep <span class="required"></span></h4>
+                            <select id="approvalSalesRep" class="form-input-clients" required>
+                                <option value="">Select Sales Rep...</option>
+                                <option value="Keith">Keith</option>
+                                <option value="Karen">Karen</option>
+                                <option value="Eddie">Eddie</option>
+                                <option value="Andy">Andy</option>
+                                <option value="Vicky">Vicky</option>
+                                <option value="Eduarda">Eduarda</option>
+                                <option value="Eddie / Keith">Eddie / Keith</option>
+                                <option value="Eddie / Karen">Eddie / Karen</option>
+                                <option value="Keith / Karen">Keith / Karen</option>
+                            </select>
+                        </div>
+
+                        <div class="detail-section full-width">
+                            <h4><i class="fas fa-envelope"></i> Message to Client (Optional)</h4>
+                            <p class="field-hint">This message will be included in the welcome email sent to the client.</p>
+                            <textarea id="approvalMessage" class="form-input-clients" rows="4" 
+                                placeholder="Example: Thank you for your interest! Based on what you mentioned, I recommend checking out our Brazil Best Sellers category..."
+                            ></textarea>
+                        </div>
+                    </div>
+                `;
+            }
+
+        } catch (error) {
+            console.error('Error loading request details:', error);
+            body.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading details</p>
+            </div>
+        `;
+        }
+    }
+
+    closeRequestDetailsModal() {
+        const modal = document.getElementById('requestDetailsModal');
+        modal.classList.remove('active');
+        this.currentRequestId = null;
+    }
+
+    async rejectRequest() {
+        if (!this.currentRequestId) return;
+
+        const confirmed = await UISystem.confirm(
+            'Reject Registration',
+            'Are you sure you want to reject this registration request?',
+            'Reject',
+            'Cancel'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/register/admin/${this.currentRequestId}/reject`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason: 'Rejected by admin' })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess('Registration rejected');
+                this.closeRequestDetailsModal();
+                await this.loadPendingRequests();
+                await this.loadPendingRequestsCount();
+            } else {
+                this.showError(data.message || 'Error rejecting registration');
+            }
+
+        } catch (error) {
+            console.error('Error rejecting:', error);
+            this.showError('Error rejecting registration');
+        }
+    }
+
+    async approveRequest() {
+        if (!this.currentRequestId) return;
+
+        const salesRep = document.getElementById('approvalSalesRep').value;
+
+        if (!salesRep) {
+            // Destacar o campo
+            const selectEl = document.getElementById('approvalSalesRep');
+            selectEl.classList.add('input-error');
+            selectEl.focus();
+
+            // Mostrar erro inline
+            let errorMsg = document.getElementById('salesRepError');
+            if (!errorMsg) {
+                errorMsg = document.createElement('div');
+                errorMsg.id = 'salesRepError';
+                errorMsg.className = 'inline-error-message';
+                errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select a Sales Rep';
+                selectEl.parentNode.appendChild(errorMsg);
+            }
+
+            // Remover erro quando selecionar
+            selectEl.addEventListener('change', function () {
+                this.classList.remove('input-error');
+                const err = document.getElementById('salesRepError');
+                if (err) err.remove();
+            }, { once: true });
+
+            return;
+        }
+
+        try {
+            const token = this.getAdminToken();
+            const response = await fetch(`/api/register/admin/${this.currentRequestId}/approve`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    salesRep,
+                    customMessage: document.getElementById('approvalMessage')?.value || ''
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess('Registration approved! Client created with code: ' + data.accessCode.code);
+
+                // Fechar modais
+                this.closeRequestDetailsModal();
+                this.closePendingRequestsModal();
+
+                // Atualizar dados
+                await this.loadPendingRequestsCount();
+                await this.refreshData();
+
+                // Abrir modal de permissões para o novo cliente
+                setTimeout(() => {
+                    const newClient = this.clients.find(c => c.code === data.accessCode.code);
+                    if (newClient) {
+                        this.showSuccess('Now configure permissions for the new client');
+                        this.openSettingsModal(newClient._id || newClient.code);
+                    }
+                }, 500);
+
+            } else {
+                this.showError(data.message || 'Error approving registration');
+            }
+
+        } catch (error) {
+            console.error('Error approving:', error);
+            this.showError('Error approving registration');
+        }
     }
 }
 

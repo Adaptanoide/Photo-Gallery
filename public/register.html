@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Access - Sunshine Cowhides Gallery</title>
+    
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/register.css">
+</head>
+<body>
+    <div class="register-container">
+        <!-- Header -->
+        <header class="register-header">
+            <img src="/images/logo-transparent.png" alt="Sunshine Cowhides" class="register-logo">
+            <h1 class="register-title">Request Gallery Access</h1>
+            <p class="register-subtitle">Join our exclusive B2B cowhide gallery</p>
+        </header>
+
+        <!-- Form -->
+        <div class="form-container">
+            <form id="registrationForm" class="registration-form">
+                
+                <!-- Contact Info -->
+                <div class="form-section">
+                    <h2 class="section-title"><i class="fas fa-user"></i> Contact Information</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contactName">Full Name <span class="required">*</span></label>
+                            <input type="text" id="contactName" name="contactName" required placeholder="Your full name">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" required placeholder="your@email.com">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Phone Number <span class="required">*</span></label>
+                            <input type="tel" id="phone" name="phone" required placeholder="(000) 000-0000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Info -->
+                <div class="form-section">
+                    <h2 class="section-title"><i class="fas fa-building"></i> Company Information</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyName">Company Name <span class="required">*</span></label>
+                            <input type="text" id="companyName" name="companyName" required placeholder="Your company name">
+                        </div>
+                        <div class="form-group">
+                            <label for="businessType">Business Type <span class="required">*</span></label>
+                            <select id="businessType" name="businessType" required>
+                                <option value="">Select your business type</option>
+                                <option value="retailer">Retailer</option>
+                                <option value="wholesaler">Wholesaler</option>
+                                <option value="designer">Interior Designer</option>
+                                <option value="manufacturer">Manufacturer</option>
+                                <option value="decorator">Decorator</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row other-business-row" style="display: none;">
+                        <div class="form-group full-width">
+                            <label for="businessTypeOther">Please specify</label>
+                            <input type="text" id="businessTypeOther" name="businessTypeOther" placeholder="Describe your business">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="form-section">
+                    <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Location</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City <span class="required">*</span></label>
+                            <input type="text" id="city" name="city" required placeholder="Your city">
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State <span class="required">*</span></label>
+                            <input type="text" id="state" name="state" required placeholder="State">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="country">Country <span class="required">*</span></label>
+                            <select id="country" name="country" required>
+                                <option value="United States" selected>United States</option>
+                                <option value="Canada">Canada</option>
+                                <option value="Mexico">Mexico</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interest -->
+                <div class="form-section">
+                    <h2 class="section-title"><i class="fas fa-comment-dots"></i> Your Interest</h2>
+
+                    <div class="form-group full-width">
+                        <label for="interestMessage">What are you looking for? <span class="required">*</span></label>
+                        <textarea id="interestMessage" name="interestMessage" required rows="4" maxlength="1000"
+                            placeholder="Tell us about your needs, types of cowhides, quantities..."></textarea>
+                        <div class="char-counter"><span id="charCount">0</span>/1000</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="howDidYouHear">How did you hear about us?</label>
+                            <select id="howDidYouHear" name="howDidYouHear">
+                                <option value="">Select an option</option>
+                                <option value="google">Google Search</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="referral">Referral</option>
+                                <option value="trade_show">Trade Show</option>
+                                <option value="sales_rep">Sales Representative</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Submit Registration
+                    </button>
+                    <p class="form-note">
+                        <i class="fas fa-info-circle"></i> We'll review your request within 24-48 hours.
+                    </p>
+                </div>
+            </form>
+
+            <!-- Success (hidden) -->
+            <div id="successMessage" class="success-message" style="display: none;">
+                <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+                <h2>Registration Submitted!</h2>
+                <p>Thank you for your interest in Sunshine Cowhides.</p>
+                <p>We'll contact you at <strong id="confirmedEmail"></strong> within 24-48 hours.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="register-footer">
+            <p>&copy; 2025 Sunshine Cowhides. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Submitting...</p>
+        </div>
+    </div>
+
+    <script src="/js/client-registration.js"></script>
+</body>
+</html>
