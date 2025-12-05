@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sunshine Intelligence - AI Assistant</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.85em%22 font-size=%2270%22>🤖</text></svg>">
+    <title>Sunshine - AI Assistant</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.85em%22 font-size=%2270%22>🤖</text></svg>">
     <link rel="stylesheet" href="/css/intelligence.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -13,38 +14,20 @@
 
 <body>
     <div class="intelligence-app">
-        <aside class="metrics-sidebar">
-            <div class="logo">
-                <div class="logo-icon">🤖</div>
-                <h1>Sunshine<span>AI</span></h1>
+        <!-- Sidebar de Conversas (Simplificada) -->
+        <aside class="conversations-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">💬 Conversations</div>
             </div>
-
-            <div class="info-section">
-                <h3>AI Assistant - Beta</h3>
-                <p>Ask me about:</p>
-                <ul>
-                    <li>Current inventory</li>
-                    <li>Products in transit</li>
-                    <li>Sales analysis</li>
-                    <li>Aging products</li>
-                </ul>
+            <div class="conversations-list" id="conversationsList">
+                <div style="padding: 20px; text-align: center; opacity: 0.5;">
+                    No conversations yet
+                </div>
             </div>
-
-            <div class="info-section">
-                <h3>📌 Important Notes</h3>
-                <p>System information:</p>
-                <ul>
-                    <li>System is in active development</li>
-                    <li>Your prompts do NOT train the AI</li>
-                    <li>Use Train AI button below to write suggestions</li>
-                    <li>Responses based on real CDE data</li>
-                    <li>Pricing info coming soon from external sources</li>
-                    <li>Algorithm improvements ongoing</li>
-                </ul>
-                <p class="version">Version 0.1 Beta - December 2025</p>
-            </div>
-
-            <div class="quick-actions">
+            <div class="sidebar-footer">
+                <button class="new-chat-btn" onclick="createNewConversation()">
+                    ➕ New Chat
+                </button>
                 <button class="action-btn training-btn" onclick="openTrainingModal()">
                     🎓 Train AI Assistant
                 </button>
@@ -54,25 +37,38 @@
         <!-- Chat Principal -->
         <main class="chat-container">
             <div class="chat-header">
-                <div class="header-info">
-                    <div class="status-container">
-                        <span class="status-indicator testing" data-service="cde">
-                            CDE: Testing
-                        </span>
-                        <span class="status-indicator disabled" data-service="quickbooks">
-                            QuickBooks: Not Connected
-                        </span>
-                        <span class="status-indicator disabled" data-service="gallery">
-                            Gallery: Not Connected
-                        </span>
+                <div class="header-left">
+                    <div class="logo-inline">
+                        <span class="logo-icon">🤖</span>
+                        <h2>Sunshine AI</h2>
                     </div>
                 </div>
-                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+                <div class="status-container">
+                    <span id="cdeStatus" class="status-indicator testing">
+                        CDE: Checking...
+                    </span>
+                    <span class="status-indicator disabled">
+                        QuickBooks: Not Connected
+                    </span>
+                    <span class="status-indicator disabled">
+                        Gallery: Not Connected
+                    </span>
+                </div>
+
+                <div class="header-actions">
+                    <button class="header-btn" onclick="openHelpModal()" title="Help">
+                        ❓
+                    </button>
+                    <button class="header-btn logout-btn" onclick="logout()" title="Logout">
+                        ↩️
+                    </button>
+                </div>
             </div>
 
             <div class="messages-container" id="messagesContainer">
                 <div class="welcome-message">
-                    <h3>Welcome!</h3>
+                    <h3>Welcome, Andy! 👋</h3>
                     <p>I can help you analyze inventory and optimize your business.</p>
                     <div class="suggestions">
                         <button class="suggestion-chip" onclick="askQuestion(this)">
@@ -85,14 +81,14 @@
                             What are today's priorities?
                         </button>
                         <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Sales velocity last 7 days
+                            Show top products
                         </button>
                     </div>
                 </div>
             </div>
 
             <div class="input-container">
-                <input type="text" id="chatInput" placeholder="Try asking something. If the response is incorrect, please use the Train AI assistant button to make suggestions...">
+                <input type="text" id="chatInput" placeholder="Ask me anything about your inventory...">
                 <button class="send-btn" onclick="sendMessage()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" />
@@ -142,6 +138,46 @@
             </div>
             <div class="modal-body">
                 <div id="rulesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Help -->
+    <div id="helpModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>ℹ️ About Sunshine AI Assistant</h2>
+                <span class="close" onclick="closeHelpModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="help-section">
+                    <h3>What can I ask?</h3>
+                    <ul>
+                        <li>Current inventory levels</li>
+                        <li>Products in transit</li>
+                        <li>Sales analysis and trends</li>
+                        <li>Aging products report</li>
+                        <li>Restocking recommendations</li>
+                        <li>Channel performance (Etsy, Amazon, etc)</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>📌 Important Notes</h3>
+                    <ul>
+                        <li>System is in active development</li>
+                        <li>Your questions do NOT train the AI automatically</li>
+                        <li>Use "Train AI Assistant" button to add business rules</li>
+                        <li>Responses based on real-time CDE data</li>
+                        <li>Pricing info coming soon from QuickBooks</li>
+                        <li>Algorithm improvements ongoing</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <p class="version">Version 0.1 Beta - December 2025</p>
+                    <p class="version">© 2025 Sunshine Cowhides</p>
+                </div>
             </div>
         </div>
     </div>
