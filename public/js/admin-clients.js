@@ -937,6 +937,9 @@ class AdminClients {
                 <tr>
                     <td class="client-code-cell">
                         <div class="code-with-cart">
+                            <button class="btn-copy-inline" onclick="event.stopPropagation(); adminClients.copyClientAccessInfo('${client.code}', '${(client.clientName || '').replace(/'/g, "\\'")}')" title="Copy access info">
+                                <i class="fas fa-clone"></i>
+                            </button>
                             <span class="code-text">${client.code}</span>
                             ${cartBadge}
                         </div>
@@ -1117,6 +1120,33 @@ class AdminClients {
         }).catch(err => {
             console.error('Failed to copy:', err);
             UISystem.showToast('error', 'Failed to copy');
+        });
+    }
+
+    copyClientAccessInfo(code, clientName) {
+        const name = clientName || 'Client';
+        const accessInfo = `Hello ${name},
+
+        Here is your exclusive access to Sunshine Cowhides Gallery:
+
+        🌐 Website: https://sunshinecowhides-gallery.com
+        🔑 Access Code: ${code}
+
+        Instructions:
+        1. Visit the website above
+        2. Enter your 4-digit access code: ${code}
+        3. Browse and select your preferred cowhides
+        4. Your selections will be saved for 24 hours
+
+        Need assistance? Contact us anytime.
+
+        Best regards,
+        Sunshine Cowhides Team`;
+
+        navigator.clipboard.writeText(accessInfo).then(() => {
+            this.showSuccess('Access info copied!');
+        }).catch(() => {
+            this.showError('Failed to copy');
         });
     }
 

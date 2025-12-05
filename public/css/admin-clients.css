@@ -157,7 +157,7 @@
 }
 
 .clients-table td {
-    padding: 1.25rem 1.5rem;
+    padding: 1.0rem 1.0rem;
     border-bottom: 1px solid rgba(74, 85, 104, 0.3);
     vertical-align: middle;
     color: var(--text-secondary);
@@ -2148,6 +2148,46 @@ tr:has(.cart-indicator):hover {
     /* Ícone laranja #ea580c */
 }
 
+/* Hover azul para botão Edit */
+.special-btn-icon.edit:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+.special-btn-icon.edit:hover i {
+    color: #3b82f6;
+}
+
+/* Hover amarelo para botão Deactivate (pause) */
+.special-btn-icon.deactivate:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: #f59e0b;
+}
+
+.special-btn-icon.deactivate:hover i {
+    color: #f59e0b;
+}
+
+/* Hover verde para botão Activate (play) */
+.special-btn-icon.activate:hover {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: #22c55e;
+}
+
+.special-btn-icon.activate:hover i {
+    color: #22c55e;
+}
+
+/* Hover vermelho para botão Delete */
+.special-btn-icon.delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+.special-btn-icon.delete:hover i {
+    color: #ef4444;
+}
+
 /* ===== FOOTER FIXO PARA MODAL EDIT - ADICIONADO EM 06/09/2025 ===== */
 #clientModal .client-modal-content {
     width: 90%;
@@ -2674,7 +2714,7 @@ tr:has(.cart-indicator):hover {
     border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 20px;
     color: #D4AF37;
-    font-size: 0.75rem;
+    font-size: 1.0rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -2689,4 +2729,35 @@ tr:has(.cart-indicator):hover {
 
 .copy-register-link i {
     font-size: 0.8rem;
+}
+
+/* ===== INLINE COPY BUTTON ===== */
+.btn-copy-inline {
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #888);
+    cursor: pointer;
+    padding: 10px 12px;
+    margin-right: 4px;
+    margin-left: -8px;
+    border-radius: 6px;
+    transition: color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.5;
+    font-size: 14px;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-copy-inline:hover {
+    color: #D4AF37;
+    opacity: 1;
+}
+
+.code-with-cart {
+    display: flex;
+    align-items: center;
 }

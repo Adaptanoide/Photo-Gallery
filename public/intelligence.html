@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunshine Intelligence - AI Assistant</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.85em%22 font-size=%2280%22>🤖</text></svg>">
+    <link rel="stylesheet" href="/css/intelligence.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="intelligence-app">
+        <aside class="metrics-sidebar">
+            <div class="logo">
+                <div class="logo-icon">🤖</div>
+                <h1>Sunshine<span>AI</span></h1>
+            </div>
+
+            <div class="info-section">
+                <h3>AI Assistant - Beta</h3>
+                <p>Ask me about:</p>
+                <ul>
+                    <li>Current inventory</li>
+                    <li>Products in transit</li>
+                    <li>Sales analysis</li>
+                    <li>Aging products</li>
+                </ul>
+            </div>
+
+            <div class="info-section">
+                <h3>📌 Important Notes</h3>
+                <p>System information:</p>
+                <ul>
+                    <li>System is in active development</li>
+                    <li>Your prompts do NOT train the AI</li>
+                    <li>Responses based on real CDE data</li>
+                    <li>Pricing info coming soon from QB</li>
+                    <li>Algorithm improvements ongoing</li>
+                </ul>
+                <p class="version">Version 0.1 Beta - December 2025</p>
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-btn" onclick="uploadData()">
+                    📊 Upload Data
+                </button>
+                <button class="action-btn" onclick="exportReport()">
+                    📈 Export Report
+                </button>
+            </div>
+        </aside>
+
+        <!-- Chat Principal -->
+        <main class="chat-container">
+            <div class="chat-header">
+                <div class="header-info">
+                    <div class="status-container">
+                        <span class="status-indicator testing" data-service="cde">
+                            CDE: Testing
+                        </span>
+                        <span class="status-indicator disabled" data-service="quickbooks">
+                            QuickBooks: Not Connected
+                        </span>
+                        <span class="status-indicator disabled" data-service="gallery">
+                            Gallery: Not Connected
+                        </span>
+                    </div>
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h3>Welcome!</h3>
+                    <p>I can help you analyze inventory, predict demand, and optimize your business.</p>
+                    <div class="suggestions">
+                        <button class="suggestion-chip" onclick="askQuestion(this)">
+                            Show current inventory status
+                        </button>
+                        <button class="suggestion-chip" onclick="askQuestion(this)">
+                            Products in transit from Brazil
+                        </button>
+                        <button class="suggestion-chip" onclick="askQuestion(this)">
+                            Top selling categories this month
+                        </button>
+                        <button class="suggestion-chip" onclick="askQuestion(this)">
+                            Products aging over 60 days
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <input type="text" id="questionInput" placeholder="Ask about inventory, sales, or predictions..."
+                    onkeypress="handleEnter(event)">
+                <button class="send-btn" onclick="sendQuestion()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/intelligence.js"></script>
+</body>
+
+</html>

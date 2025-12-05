@@ -18,6 +18,7 @@ const pricingRoutes = require('./routes/pricing');
 const storageRoutes = require('./routes/storage');
 const trackingRoutes = require('./routes/tracking');
 const registrationRoutes = require('./routes/registration');
+const intelligenceRoutes = require('./routes/intelligence');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -178,6 +179,11 @@ app.use('/api/images', require('./routes/images'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/inventory-monitor', require('./routes/inventory-monitor'));
 app.use('/api/register', registrationRoutes);
+app.use('/api/intelligence', intelligenceRoutes);
+// Servir página Intelligence
+app.get('/intelligence', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/intelligence.html'));
+});
 
 // ============================================
 // ROTAS DE NOTIFICAÇÕES DE EXPIRAÇÃO

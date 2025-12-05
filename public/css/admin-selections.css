@@ -282,7 +282,7 @@
 } */
 
 .selections-table td {
-    padding: 1.25rem 1.5rem;
+    padding: 1.0rem 1.0rem;
     border-bottom: 1px solid rgba(74, 85, 104, 0.3);
     vertical-align: middle;
     background: rgba(58, 58, 66, 0.4);
