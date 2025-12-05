@@ -103,6 +103,86 @@ class CDEQueries {
         `);
         return result;
     }
+
+    // Query 6: Análise completa de inventário
+    async getTotalInventoryAnalysis() {
+        const conn = await this.connect();
+        
+        // Total geral
+        const [total] = await conn.execute(`
+            SELECT COUNT(*) as total,
+                COUNT(DISTINCT AQBITEM) as unique_products
+            FROM tbinventario 
+            WHERE AESTADOP = 'INGRESADO'
+        `);
+        
+        // Por categoria
+        const [byCategory] = await conn.execute(`
+            SELECT 
+                items.ACATEGORIA as category,
+                COUNT(*) as quantity,
+                COUNT(DISTINCT inv.AQBITEM) as unique_items
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            GROUP BY items.ACATEGORIA
+            ORDER BY quantity DESC
+        `);
+        
+        // Velocidade média
+        const [velocity] = await conn.execute(`
+            SELECT 
+                AVG(DATEDIFF(NOW(), AFECHA)) as avg_days_in_stock
+            FROM tbinventario
+            WHERE AESTADOP = 'INGRESADO'
+        `);
+        
+        return {
+            total: total[0],
+            byCategory,
+            velocity: velocity[0]
+        };
+    }
+
+    // Query 7: Produtos que precisam reposição
+    async getRestockingNeeds() {
+        const conn = await this.connect();
+        const [result] = await conn.execute(`
+            SELECT 
+                inv.AQBITEM as qbCode,
+                items.ADESCRIPTION as description,
+                COUNT(*) as current_stock,
+                items.TMIN as minimum_stock
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            GROUP BY inv.AQBITEM, items.ADESCRIPTION, items.TMIN
+            HAVING current_stock < 100
+            ORDER BY current_stock ASC
+            LIMIT 15
+        `);
+        return result;
+    }
+
+    // Query 8: Análise de vendas detalhada
+    async getSalesAnalysis(days = 30) {
+        const conn = await this.connect();
+        const [result] = await conn.execute(`
+            SELECT 
+                inv.AQBITEM as qbCode,
+                items.ADESCRIPTION as description,
+                COUNT(*) as units_sold,
+                DATE(inv.AFECHA) as sale_date
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'RETIRADO'
+            AND inv.AFECHA >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            GROUP BY inv.AQBITEM, items.ADESCRIPTION, DATE(inv.AFECHA)
+            ORDER BY units_sold DESC
+            LIMIT 20
+        `, [days]);
+        return result;
+    }
     
     async close() {
         if (this.connection) {

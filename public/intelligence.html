@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sunshine Intelligence - AI Assistant</title>
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.85em%22 font-size=%2280%22>🤖</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.85em%22 font-size=%2270%22>🤖</text></svg>">
     <link rel="stylesheet" href="/css/intelligence.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -45,11 +44,8 @@
             </div>
 
             <div class="quick-actions">
-                <button class="action-btn" onclick="uploadData()">
-                    📊 Upload Data
-                </button>
-                <button class="action-btn" onclick="exportReport()">
-                    📈 Export Report
+                <button class="action-btn training-btn" onclick="openTrainingModal()">
+                    🎓 Train AI Assistant
                 </button>
             </div>
         </aside>
@@ -79,31 +75,74 @@
                     <p>I can help you analyze inventory, predict demand, and optimize your business.</p>
                     <div class="suggestions">
                         <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Show current inventory status
+                            What needs restocking soon?
                         </button>
                         <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Products in transit from Brazil
+                            Show aging products analysis
                         </button>
                         <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Top selling categories this month
+                            What are today's priorities?
                         </button>
                         <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Products aging over 60 days
+                            Sales velocity last 7 days
                         </button>
                     </div>
                 </div>
             </div>
 
             <div class="input-container">
-                <input type="text" id="questionInput" placeholder="Ask about inventory, sales, or predictions..."
-                    onkeypress="handleEnter(event)">
-                <button class="send-btn" onclick="sendQuestion()">
+                <input type="text" id="chatInput" placeholder="Ask about inventory, sales, or predictions...">
+                <button class="send-btn" onclick="sendMessage()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" />
                     </svg>
                 </button>
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Treinamento -->
+    <div id="trainingModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎓 Train AI Assistant</h2>
+                <span class="close" onclick="closeTrainingModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Help improve the AI by providing business rules and insights:</p>
+
+                <input type="text" id="ruleTitle" placeholder="Title (e.g., Coaster Restock Rule)" />
+
+                <select id="ruleType">
+                    <option value="restock">Restocking Rule</option>
+                    <option value="pricing">Pricing Strategy</option>
+                    <option value="seasonal">Seasonal Pattern</option>
+                    <option value="client">Client Preference</option>
+                    <option value="general">General Insight</option>
+                </select>
+
+                <textarea id="ruleDescription" rows="6"
+                    placeholder="Describe the rule or insight...&#10;&#10;Example:&#10;When Brazilian coasters drop below 100 units, we should order 500 more because shipping takes 45 days and we sell about 50 per month."></textarea>
+
+                <div class="modal-actions">
+                    <button onclick="saveTrainingRule()" class="save-btn">💾 Save Rule</button>
+                    <button onclick="viewSavedRules()" class="view-btn">📋 View Saved Rules</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Saved Rules (SEPARADO) -->
+    <div id="savedRulesModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Saved Training Rules</h2>
+                <button class="close" onclick="closeSavedRulesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="rulesList"></div>
+            </div>
+        </div>
     </div>
 
     <script src="/js/intelligence.js"></script>
