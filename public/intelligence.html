@@ -36,8 +36,9 @@
                 <ul>
                     <li>System is in active development</li>
                     <li>Your prompts do NOT train the AI</li>
+                    <li>Use Train AI button below to write suggestions</li>
                     <li>Responses based on real CDE data</li>
-                    <li>Pricing info coming soon from QB</li>
+                    <li>Pricing info coming soon from external sources</li>
                     <li>Algorithm improvements ongoing</li>
                 </ul>
                 <p class="version">Version 0.1 Beta - December 2025</p>
@@ -72,7 +73,7 @@
             <div class="messages-container" id="messagesContainer">
                 <div class="welcome-message">
                     <h3>Welcome!</h3>
-                    <p>I can help you analyze inventory, predict demand, and optimize your business.</p>
+                    <p>I can help you analyze inventory and optimize your business.</p>
                     <div class="suggestions">
                         <button class="suggestion-chip" onclick="askQuestion(this)">
                             What needs restocking soon?
@@ -91,7 +92,7 @@
             </div>
 
             <div class="input-container">
-                <input type="text" id="chatInput" placeholder="Ask about inventory, sales, or predictions...">
+                <input type="text" id="chatInput" placeholder="Try asking something. If the response is incorrect, please use the Train AI assistant button to make suggestions...">
                 <button class="send-btn" onclick="sendMessage()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" />

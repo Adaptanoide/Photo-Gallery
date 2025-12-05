@@ -304,7 +304,7 @@ body {
 }
 
 .send-btn {
-    background: var(--accent);
+    background: var(--gradient-purple);
     color: white;
     border: none;
     padding: 14px 20px;
@@ -315,7 +315,7 @@ body {
 }
 
 .send-btn:hover {
-    background: var(--accent-hover);
+    background: var(--gradient-purple-hover);
     transform: scale(1.05);
 }
 
