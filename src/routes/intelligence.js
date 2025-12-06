@@ -414,13 +414,19 @@ router.post('/chat', authenticateToken, rateLimiter, async (req, res) => {
 // ROTAS DE STATUS E MONITORAMENTO
 // ============================================
 
-// Status dos serviços
+// Status dos serviços (COM GALLERY)
 router.get('/status', authenticateToken, (req, res) => {
     const fullStatus = ConnectionManager.getFullStatus();
+    
+    // Obter status da Gallery do assistant
+    const galleryStatus = assistant.getConnectionStatus();
 
     res.json({
         success: true,
-        services: fullStatus.services,
+        services: {
+            ...fullStatus.services,
+            gallery: galleryStatus.gallery  // NOVO
+        },
         performance: fullStatus.performance,
         cache: {
             entries: fullStatus.cache.totalEntries,

@@ -802,6 +802,9 @@ body {
 /* Help Section para Modal */
 .help-section {
     margin-bottom: 20px;
+    border-radius: 10px;
+    border: 2px #667eea6e solid;
+    padding: 6px;
 }
 
 .help-section h3 {

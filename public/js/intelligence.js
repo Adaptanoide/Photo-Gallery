@@ -1,4 +1,4 @@
-// public/js/intelligence.js - VERSÃO OTIMIZADA COM MELHOR UX
+// public/js/intelligence.js - VERSÃO CORRIGIDA - Fluxo de Conversas
 (function () {
     'use strict';
 
@@ -131,20 +131,22 @@
     function initialize() {
         if (!checkAuthentication()) return;
 
-        loadCachedMessages();
+        // NÃO carregar mensagens do cache - cada conversa tem suas próprias mensagens
+        // loadCachedMessages(); // REMOVIDO - era fonte de confusão
+
         setupEventListeners();
         startStatusMonitoring();
         startAutoSave();
-        showWelcomeMessage();
         checkConnectionStatus();
 
-        // Carregar conversas
+        // Carregar lista de conversas existentes
         loadConversations();
 
-        // Se não tem conversa ativa, criar uma
-        if (!STATE.currentConversationId) {  // ← IMPORTANTE: STATE.currentConversationId
-            createNewConversation();
-        }
+        // ============================================
+        // CORREÇÃO PRINCIPAL: NÃO criar conversa automaticamente
+        // Apenas mostrar a tela de boas-vindas
+        // ============================================
+        showWelcomeMessage();
 
         console.log('✅ Intelligence UI initialized');
     }
@@ -193,30 +195,51 @@
     }
 
     function updateStatusIndicators(data) {
-        const statusElement = document.getElementById('cdeStatus');
-
-        if (!statusElement) return;
-
+        // =====================
         // CDE Status
-        if (data.services.cde === 'online') {
-            statusElement.className = 'status-indicator connected';
-            statusElement.textContent = `CDE: Connected`;
+        // =====================
+        const cdeElement = document.getElementById('cdeStatus');
 
-            // Adicionar métricas se disponível
-            if (data.performance) {
-                const hitRate = data.performance.cacheHitRate || 0;
-                statusElement.title = `Cache Hit: ${hitRate}% | Avg: ${data.performance.avgResponseTime}ms`;
-            }
-        } else if (data.services.cde === 'offline') {
-            statusElement.className = 'status-indicator disabled';
-            statusElement.textContent = 'CDE: Offline';
+        if (cdeElement) {
+            if (data.services.cde === 'online') {
+                cdeElement.className = 'status-indicator connected';
+                cdeElement.textContent = 'CDE: Connected';
 
-            if (data.cache && data.cache.entries > 0) {
-                statusElement.title = `Using cached data (${data.cache.entries} entries)`;
+                if (data.performance) {
+                    const hitRate = data.performance.cacheHitRate || 0;
+                    cdeElement.title = `Cache Hit: ${hitRate}% | Avg: ${data.performance.avgResponseTime}ms`;
+                }
+            } else if (data.services.cde === 'offline') {
+                cdeElement.className = 'status-indicator disabled';
+                cdeElement.textContent = 'CDE: Offline';
+
+                if (data.cache && data.cache.entries > 0) {
+                    cdeElement.title = `Using cached data (${data.cache.entries} entries)`;
+                }
+            } else {
+                cdeElement.className = 'status-indicator connecting';
+                cdeElement.textContent = 'CDE: Connecting...';
             }
-        } else {
-            statusElement.className = 'status-indicator connecting';
-            statusElement.textContent = 'CDE: Connecting...';
+        }
+
+        // =====================
+        // Gallery Status (NOVO)
+        // =====================
+        const galleryElement = document.getElementById('galleryStatus');
+
+        if (galleryElement) {
+            if (data.services.gallery === 'online') {
+                galleryElement.className = 'status-indicator connected';
+                galleryElement.textContent = 'Gallery: Connected';
+                galleryElement.title = 'MongoDB Gallery connected';
+            } else if (data.services.gallery === 'offline') {
+                galleryElement.className = 'status-indicator disabled';
+                galleryElement.textContent = 'Gallery: Offline';
+                galleryElement.title = 'Gallery database not available';
+            } else {
+                galleryElement.className = 'status-indicator connecting';
+                galleryElement.textContent = 'Gallery: Connecting...';
+            }
         }
     }
 
@@ -234,6 +257,41 @@
         input.disabled = true;
         const sendBtn = document.querySelector('.send-btn');
         if (sendBtn) sendBtn.disabled = true;
+
+        // ============================================
+        // CORREÇÃO: Criar conversa APENAS no primeiro prompt
+        // ============================================
+        if (!STATE.currentConversationId) {
+            try {
+                const convResponse = await fetchWithAuth('/conversations', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title: 'New Chat' // Título temporário, será atualizado pelo backend
+                    })
+                });
+
+                const convData = await convResponse.json();
+
+                if (convData.success) {
+                    STATE.currentConversationId = convData.conversation._id;
+                    console.log('📝 New conversation created:', STATE.currentConversationId);
+                } else {
+                    throw new Error('Failed to create conversation');
+                }
+            } catch (error) {
+                console.error('Error creating conversation:', error);
+                await showAlert('Error starting conversation. Please try again.', 'Error');
+                input.disabled = false;
+                if (sendBtn) sendBtn.disabled = false;
+                return;
+            }
+        }
+
+        // Limpar welcome message se ainda estiver visível
+        const welcomeMsg = document.querySelector('.welcome-message');
+        if (welcomeMsg) {
+            welcomeMsg.remove();
+        }
 
         // Adicionar mensagem do usuário
         addMessage(question, 'user');
@@ -260,10 +318,9 @@
 
             const data = await response.json();
 
-            // Atualizar conversationId se nova
-            if (data.conversationId && !STATE.currentConversationId) {
+            // Atualizar conversationId se retornado
+            if (data.conversationId) {
                 STATE.currentConversationId = data.conversationId;
-                await loadConversations();
             }
 
             const responseTime = Date.now() - startTime;
@@ -403,7 +460,8 @@
     function showWelcomeMessage() {
         const container = document.getElementById('messagesContainer');
 
-        if (STATE.messageHistory.length === 0) {
+        // Sempre mostrar welcome se não tem conversa ativa
+        if (!STATE.currentConversationId || STATE.messageHistory.length === 0) {
             const welcomeHTML = `
                 <div class="welcome-message">
                     <h3>Welcome to Sunshine Intelligence! 🤖</h3>
@@ -425,20 +483,18 @@
     // ========================================
 
     function loadCachedMessages() {
+        // NOTA: Esta função foi simplificada
+        // As mensagens agora vêm das conversas salvas no MongoDB
+        // O cache local é apenas para backup temporário
         try {
             const cached = localStorage.getItem(CONFIG.MESSAGES_KEY);
             if (cached) {
-                STATE.messageHistory = JSON.parse(cached);
-
-                // Restaurar últimas mensagens
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = '';
-
-                STATE.messageHistory.slice(-10).forEach(msg => {
-                    addMessage(msg.text, msg.sender);
-                });
-
-                console.log(`📦 Restored ${STATE.messageHistory.length} messages from cache`);
+                const messages = JSON.parse(cached);
+                // Apenas restaurar se tiver uma conversa ativa
+                if (STATE.currentConversationId && messages.length > 0) {
+                    STATE.messageHistory = messages;
+                    console.log(`📦 Restored ${messages.length} messages from local cache`);
+                }
             }
         } catch (error) {
             console.error('Failed to load cached messages:', error);
@@ -458,10 +514,12 @@
         if (!confirm('Clear all chat history?')) return;
 
         STATE.messageHistory = [];
+        STATE.currentConversationId = null;
         localStorage.removeItem(CONFIG.MESSAGES_KEY);
         const container = document.getElementById('messagesContainer');
         container.innerHTML = '';
         showWelcomeMessage();
+        loadConversations(); // Atualizar sidebar
     }
 
     // ========================================
@@ -841,35 +899,32 @@
         }
     }
 
+    // ============================================
+    // CORREÇÃO: createNewConversation agora é usado
+    // apenas pelo botão "New Chat" e limpa a tela
+    // ============================================
     async function createNewConversation() {
-        try {
-            const response = await fetchWithAuth('/conversations', {
-                method: 'POST',
-                body: JSON.stringify({
-                    title: 'New Chat' // Título temporário simples
-                })
-            });
+        // Limpar estado atual
+        STATE.currentConversationId = null;
+        STATE.messageHistory = [];
 
-            const data = await response.json();
+        // Limpar container de mensagens
+        document.getElementById('messagesContainer').innerHTML = '';
 
-            if (data.success) {
-                STATE.currentConversationId = data.conversation._id;
+        // Mostrar welcome
+        showWelcomeMessage();
 
-                // Limpar mensagens
-                document.getElementById('messagesContainer').innerHTML = '';
-                STATE.messageHistory = [];
+        // Atualizar sidebar (remover seleção ativa)
+        await loadConversations();
 
-                // Recarregar lista
-                await loadConversations();
-
-                // Mostrar welcome
-                showWelcomeMessage();
-            }
-
-        } catch (error) {
-            console.error('Error creating conversation:', error);
-            await showAlert('Error creating new conversation', 'Error');
+        // Focar no input
+        const input = document.getElementById('chatInput');
+        if (input) {
+            input.value = '';
+            input.focus();
         }
+
+        console.log('🆕 Ready for new conversation');
     }
 
     async function loadConversation(conversationId) {
@@ -886,14 +941,20 @@
                 STATE.messageHistory = [];
 
                 // Adicionar mensagens da conversa
-                if (data.conversation.messages) {
+                if (data.conversation.messages && data.conversation.messages.length > 0) {
                     data.conversation.messages.forEach(msg => {
                         addMessage(msg.content, msg.role);
                     });
+                } else {
+                    // Se conversa sem mensagens, mostrar welcome
+                    showWelcomeMessage();
                 }
 
                 // Atualizar sidebar
                 await loadConversations();
+
+                // Scroll para o final
+                smoothScrollToBottom();
             }
 
         } catch (error) {
@@ -902,6 +963,10 @@
         }
     }
 
+    // ============================================
+    // CORREÇÃO: deleteConversation NÃO cria nova conversa
+    // automaticamente - apenas mostra o welcome
+    // ============================================
     async function deleteConversation(event, conversationId) {
         event.stopPropagation(); // Evitar abrir a conversa
 
@@ -914,18 +979,27 @@
             });
 
             if (response.ok) {
-                // Se deletou a conversa atual, criar nova
+                // Se deletou a conversa atual, voltar para o estado inicial
                 if (conversationId === STATE.currentConversationId) {
                     STATE.currentConversationId = null;
-                    await createNewConversation();
-                } else {
-                    await loadConversations();
+                    STATE.messageHistory = [];
+                    document.getElementById('messagesContainer').innerHTML = '';
+                    showWelcomeMessage();
                 }
+
+                // Atualizar lista de conversas
+                await loadConversations();
             }
         } catch (error) {
             console.error('Error deleting conversation:', error);
             await showAlert('Error deleting conversation', 'Error');
         }
+    }
+
+    // Placeholder para toggleTheme (caso não exista)
+    function toggleTheme() {
+        // Implementação futura de dark/light mode
+        console.log('Theme toggle - not implemented yet');
     }
 
     // Cleanup ao sair
@@ -936,10 +1010,11 @@
     window.closeHelpModal = closeHelpModal;
     window.loadConversation = loadConversation;
     window.createNewConversation = createNewConversation;
-    window.deleteConversation = deleteConversation;  // ← ADICIONE ESTA LINHA
+    window.deleteConversation = deleteConversation;
     window.askQuestion = askQuestion;
     window.logout = logout;
     window.clearChat = clearChat;
+    window.sendMessage = sendMessage;
 
     // Training modal functions
     window.openTrainingModal = openTrainingModal;
