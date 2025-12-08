@@ -104,6 +104,10 @@ router.get('/', async (req, res) => {
                     salesRep: s.salesRep || 'Unassigned',
                     totalItems: s.totalItems,
                     totalValue: s.totalValue,
+                    clientCurrency: s.clientCurrency || 'USD',
+                    currencyRate: s.currencyRate || 1,
+                    convertedValue: s.convertedValue || null,
+                    status: s.status,
                     status: s.status,
                     createdAt: s.createdAt,
                     googleDriveInfo: s.googleDriveInfo,
@@ -275,6 +279,9 @@ router.get('/:selectionId', async (req, res) => {
             })),
             totalItems: selection.totalItems || selection.items.length,
             totalValue: selection.totalValue || selection.items.reduce((sum, item) => sum + (item.price || 0), 0),
+            clientCurrency: selection.clientCurrency || 'USD',
+            currencyRate: selection.currencyRate || 1,
+            convertedValue: selection.convertedValue || null,
             movementLog: selection.movementLog || []
         };
 

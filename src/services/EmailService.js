@@ -148,8 +148,8 @@ class EmailService {
             if (clientCurrency !== 'USD' && selectionData.totalValue) {
                 try {
                     const CurrencyService = require('./CurrencyService');
-                    const rates = await CurrencyService.getRates();
-                    const rate = rates[clientCurrency] || 1;
+                    const ratesData = await CurrencyService.getRates();
+                    const rate = ratesData.rates[clientCurrency] || 1;
                     const convertedValue = selectionData.totalValue * rate;
                     const symbol = clientCurrency === 'CAD' ? 'C$' : '€';
                     totalValueFormatted = `$${selectionData.totalValue.toFixed(2)} (≈ ${symbol}${convertedValue.toFixed(2)} ${clientCurrency})`;

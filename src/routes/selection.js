@@ -138,7 +138,21 @@ router.post('/finalize', async (req, res) => {
             const salesRep = accessCode?.salesRep || 'Unassigned';
             const companyName = accessCode?.companyName || '-';
             const clientCurrency = accessCode?.preferences?.currency || 'USD';
-            console.log(`🏢 Company: ${companyName} | 👤 Sales Rep: ${salesRep} | 💱 Currency: ${clientCurrency}`);
+
+            // Buscar taxa de câmbio atual
+            let currencyRate = 1;
+            let convertedValue = null;
+            if (clientCurrency !== 'USD') {
+                try {
+                    const CurrencyService = require('../services/CurrencyService');
+                    const ratesData = await CurrencyService.getRates();
+                    currencyRate = ratesData.rates[clientCurrency] || 1;
+                } catch (e) {
+                    console.warn('⚠️ Erro ao buscar taxa de câmbio:', e.message);
+                }
+            }
+
+            console.log(`🏢 Company: ${companyName} | 👤 Sales Rep: ${salesRep} | 💱 Currency: ${clientCurrency} (rate: ${currencyRate})`);
 
             // Criar seleção normal sempre
             let selectionId;
@@ -255,6 +269,9 @@ router.post('/finalize', async (req, res) => {
                 }),
                 totalItems: cart.totalItems,
                 totalValue: totalValue,
+                clientCurrency: clientCurrency,
+                currencyRate: currencyRate,
+                convertedValue: clientCurrency !== 'USD' ? totalValue * currencyRate : null,
                 status: 'pending',
                 googleDriveInfo: {
                     clientFolderId: folderResult.folderId,

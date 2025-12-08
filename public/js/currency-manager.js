@@ -350,7 +350,8 @@ window.CurrencyManager = {
                 ${this.getOptionsHTML()}
                 <div class="currency-disclaimer">
                     <i class="fas fa-info-circle"></i>
-                    Approximate prices. Final invoice in USD.
+                    Approximate prices. Final invoice in USD.<br>
+                    <a href="https://www.exchangerate-api.com" target="_blank" style="color: #888; font-size: 0.7rem;">Rates by ExchangeRate-API</a>
                 </div>
             </div>
         `;

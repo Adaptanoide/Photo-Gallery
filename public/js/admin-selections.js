@@ -335,8 +335,9 @@ class AdminSelections {
                         ${selection.totalItems} items
                     </span>
                 </td>
-                <td class="total-value-cell">
+                <td class="total-value-cell" ${selection.clientCurrency && selection.clientCurrency !== 'USD' ? `title="Client viewed as: ${selection.clientCurrency === 'CAD' ? 'C$' : '€'}${selection.convertedValue ? selection.convertedValue.toFixed(2) : (selection.totalValue * (selection.currencyRate || 1.38)).toFixed(2)} ${selection.clientCurrency}\nExchange rate: ${selection.currencyRate || 'N/A'}" style="cursor: help;"` : ''}>
                     <strong>${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : '-'}</strong>
+                    ${selection.clientCurrency && selection.clientCurrency !== 'USD' ? `<br><small style="color: #888; font-weight: normal;">(${selection.clientCurrency} ℹ️)</small>` : ''}
                 </td>
                 <td class="date-cell">
                     <div class="date-created">${this.formatDate(selection.createdAt)}</div>
@@ -630,7 +631,7 @@ class AdminSelections {
                         <!-- Left: Summary -->
                         <div style="display: flex; gap: 30px; align-items: center;">
                             <span style="color: #999; font-size: 20px">Total items: <strong style="color: #fff;">${selection.totalItems || selection.items.length}</strong></span>
-                            <span style="color: #999; font-size: 20px">Total Value: <strong style="font-size: 1.0em; color: #16a34a;">${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}</strong></span>
+                            <span style="color: #999; font-size: 20px">Total Value: <strong style="font-size: 1.0em; color: #16a34a;">${selection.totalValue > 0 ? '$' + selection.totalValue.toFixed(2) : 'To be calculated'}</strong>${selection.clientCurrency && selection.clientCurrency !== 'USD' ? ` <small style="color: #888; font-size: 14px; cursor: help;" title="Client viewed as: ${selection.clientCurrency === 'CAD' ? 'C$' : '€'}${selection.convertedValue ? selection.convertedValue.toFixed(2) : (selection.totalValue * (selection.currencyRate || 1)).toFixed(2)} ${selection.clientCurrency}\nExchange rate used: ${selection.currencyRate || 'N/A'}">(${selection.clientCurrency} ℹ️)</small>` : ''}</span>
                         </div>
                         <!-- Right: Buttons -->
                         <div style="display: flex; gap: 10px;">

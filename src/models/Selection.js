@@ -42,6 +42,20 @@ const selectionSchema = new mongoose.Schema({
         trim: true,
         default: null
     },
+    // ===== MOEDA DO CLIENTE =====
+    clientCurrency: {
+        type: String,
+        enum: ['USD', 'CAD', 'EUR'],
+        default: 'USD'
+    },
+    currencyRate: {
+        type: Number,
+        default: 1
+    },
+    convertedValue: {
+        type: Number,
+        default: null
+    },
     // ===== NOVO: TIPO DE SELEÇÃO =====
     selectionType: {
         type: String,
