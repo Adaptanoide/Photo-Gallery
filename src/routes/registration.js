@@ -95,6 +95,19 @@ router.post('/', async (req, res) => {
 
         console.log(`📝 [REGISTRATION] New: ${companyName} - ${contactName} (${email})`);
 
+        // Enviar confirmação para o cliente
+        try {
+            const emailService = EmailService.getInstance();
+            await emailService.sendRegistrationConfirmation({
+                to: registration.email,
+                clientName: registration.contactName,
+                companyName: registration.companyName
+            });
+            console.log(`📧 [REGISTRATION] Confirmation sent to ${registration.email}`);
+        } catch (emailError) {
+            console.error('⚠️ [REGISTRATION] Failed to send confirmation:', emailError);
+        }
+
         // Enviar notificação para admin
         try {
             const emailService = EmailService.getInstance();

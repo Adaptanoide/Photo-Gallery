@@ -775,6 +775,89 @@ class EmailService {
     }
 
     /**
+     * Enviar email de confirmação de registro para o cliente
+     */
+    async sendRegistrationConfirmation({ to, clientName, companyName }) {
+        try {
+            if (!this.isReady()) {
+                const initialized = await this.initialize();
+                if (!initialized) {
+                    throw new Error('EmailService não pôde ser inicializado');
+                }
+            }
+
+            const subject = `We received your request - Sunshine Cowhides`;
+            const html = this.generateRegistrationConfirmationHtml({ clientName, companyName });
+
+            return await this.sendEmail({
+                to: [{ name: clientName, email: to }],
+                subject: subject,
+                html: html
+            });
+
+        } catch (error) {
+            console.error('❌ Erro ao enviar confirmação de registro:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Gerar HTML para confirmação de registro
+     */
+    generateRegistrationConfirmationHtml({ clientName, companyName }) {
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 0 auto; }
+                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 24px; }
+                    .content { padding: 30px; background: #fff; }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>✅ Request Received</h1>
+                    </div>
+                    
+                    <div class="content">
+                        <p>Hi <strong>${clientName}</strong>,</p>
+                        
+                        <p>Thank you for your interest in Sunshine Cowhides!</p>
+                        
+                        <div class="info-box">
+                            <p style="margin: 0;">We received your wholesale account request for <strong>${companyName}</strong> and our team will review it within <strong>24-48 hours</strong>.</p>
+                        </div>
+                        
+                        <p>Once approved, you'll receive an email with your exclusive access code to our B2B Gallery where you can:</p>
+                        
+                        <ul>
+                            <li>Browse real photos of our complete inventory</li>
+                            <li>See exclusive wholesale pricing</li>
+                            <li>Select and reserve items</li>
+                        </ul>
+                        
+                        <p>If you have any questions, feel free to reply to this email.</p>
+                        
+                        <p>Best regards,<br><strong>Sunshine Cowhides Team</strong></p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>© ${new Date().getFullYear()} Sunshine Cowhides. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    /**
      * Remover HTML de texto
      */
     stripHtml(html) {

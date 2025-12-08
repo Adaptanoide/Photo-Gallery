@@ -189,10 +189,7 @@ class ClientRegistration {
     }
 
     showSuccess(email) {
-        this.form.style.display = 'none';
-        document.getElementById('confirmedEmail').textContent = email;
-        this.successMessage.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.location.href = 'https://sunshinecowhides.com/pages/thank-you-for-contact-us-wholesale-request';
     }
 
     showToast(message, type = 'error') {
