@@ -26,7 +26,10 @@ router.post('/', async (req, res) => {
             country,
             interestMessage,
             howDidYouHear,
-            referredBy
+            referredBy,
+            resaleCertificate,
+            hasResaleCertificate,
+            noCertificateReason
         } = req.body;
 
         // Validações básicas
@@ -81,6 +84,9 @@ router.post('/', async (req, res) => {
             interestMessage: interestMessage.trim(),
             howDidYouHear: howDidYouHear || '',
             referredBy: referredBy?.trim() || '',
+            resaleCertificate: resaleCertificate?.trim() || '',
+            hasResaleCertificate: hasResaleCertificate !== false,
+            noCertificateReason: noCertificateReason?.trim() || '',
             ipAddress: req.ip || req.connection.remoteAddress,
             userAgent: req.get('User-Agent') || ''
         });
@@ -102,7 +108,10 @@ router.post('/', async (req, res) => {
                 country: registration.country,
                 businessType: registration.businessType,
                 interestMessage: registration.interestMessage,
-                submittedAt: registration.submittedAt
+                submittedAt: registration.submittedAt,
+                resaleCertificate: registration.resaleCertificate,
+                hasResaleCertificate: registration.hasResaleCertificate,
+                noCertificateReason: registration.noCertificateReason
             });
             console.log(`📧 [REGISTRATION] Notification sent to admin`);
         } catch (emailError) {

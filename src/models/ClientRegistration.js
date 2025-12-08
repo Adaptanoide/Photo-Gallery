@@ -55,6 +55,21 @@ const clientRegistrationSchema = new mongoose.Schema({
         default: 'United States'
     },
 
+    // ===== RESALE CERTIFICATE =====
+    resaleCertificate: {
+        type: String,
+        trim: true
+    },
+    hasResaleCertificate: {
+        type: Boolean,
+        default: true
+    },
+    noCertificateReason: {
+        type: String,
+        trim: true,
+        maxlength: 500
+    },
+
     // ===== INTERESSE =====
     interestMessage: {
         type: String,
@@ -109,7 +124,7 @@ clientRegistrationSchema.index({ email: 1 });
 clientRegistrationSchema.index({ submittedAt: -1 });
 
 // ===== MÉTODOS =====
-clientRegistrationSchema.methods.approve = function(adminUser, accessCode, categories = []) {
+clientRegistrationSchema.methods.approve = function (adminUser, accessCode, categories = []) {
     this.status = 'approved';
     this.approvedAt = new Date();
     this.approvedBy = adminUser;
@@ -118,7 +133,7 @@ clientRegistrationSchema.methods.approve = function(adminUser, accessCode, categ
     return this;
 };
 
-clientRegistrationSchema.methods.reject = function(adminUser, reason = '') {
+clientRegistrationSchema.methods.reject = function (adminUser, reason = '') {
     this.status = 'rejected';
     this.rejectedAt = new Date();
     this.rejectedBy = adminUser;
@@ -127,16 +142,16 @@ clientRegistrationSchema.methods.reject = function(adminUser, reason = '') {
 };
 
 // ===== STATICS =====
-clientRegistrationSchema.statics.countPending = function() {
+clientRegistrationSchema.statics.countPending = function () {
     return this.countDocuments({ status: 'pending' });
 };
 
-clientRegistrationSchema.statics.findPending = function() {
+clientRegistrationSchema.statics.findPending = function () {
     return this.find({ status: 'pending' }).sort({ submittedAt: -1 });
 };
 
-clientRegistrationSchema.statics.emailExists = async function(email) {
-    const existing = await this.findOne({ 
+clientRegistrationSchema.statics.emailExists = async function (email) {
+    const existing = await this.findOne({
         email: email.toLowerCase(),
         status: { $in: ['pending', 'approved'] }
     });

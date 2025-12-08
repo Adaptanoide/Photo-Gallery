@@ -3409,7 +3409,25 @@ class AdminClients {
                                 ${reg.interestMessage}
                             </div>
                         </div>
-
+                        <div class="detail-section full-width">
+                        <h4><i class="fas fa-certificate"></i> Resale Certificate</h4>
+                        <div class="resale-certificate-info">
+                            ${reg.hasResaleCertificate !== false ? `
+                                <div class="certificate-status has-certificate">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Certificate #: <strong>${reg.resaleCertificate || 'Not provided'}</strong></span>
+                                </div>
+                            ` : `
+                                <div class="certificate-status no-certificate">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>No Resale Certificate</span>
+                                </div>
+                                <div class="certificate-reason">
+                                    <strong>Reason:</strong> ${reg.noCertificateReason || 'Not specified'}
+                                </div>
+                            `}
+                        </div>
+                    </div>
                         <div class="detail-section">
                             <h4><i class="fas fa-info-circle"></i> Additional Info</h4>
                             <div class="detail-row">

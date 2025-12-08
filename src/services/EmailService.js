@@ -634,6 +634,16 @@ class EmailService {
                             <p>${data.interestMessage}</p>
                         </div>
 
+                        <div class="info-box" style="border-left-color: ${data.hasResaleCertificate !== false ? '#22c55e' : '#f59e0b'};">
+                            <h3 style="margin-top: 0;">📜 Resale Certificate</h3>
+                            ${data.hasResaleCertificate !== false ? `
+                                <p style="color: #22c55e;"><strong>✓ Has Certificate:</strong> ${data.resaleCertificate || 'Number not provided'}</p>
+                            ` : `
+                                <p style="color: #f59e0b;"><strong>⚠ No Certificate</strong></p>
+                                <p><strong>Reason:</strong> ${data.noCertificateReason || 'Not specified'}</p>
+                            `}
+                        </div>
+
                         <div style="text-align: center;">
                                 <a href="https://sunshinecowhides-gallery.com/" class="action-btn">
                                 Go to Gallery

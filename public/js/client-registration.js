@@ -6,7 +6,7 @@ class ClientRegistration {
         this.submitBtn = document.getElementById('submitBtn');
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.successMessage = document.getElementById('successMessage');
-        
+
         this.init();
     }
 
@@ -28,6 +28,29 @@ class ClientRegistration {
                 otherRow.style.display = 'block';
             } else {
                 otherRow.style.display = 'none';
+            }
+        });
+
+        // Resale Certificate toggle
+        const noResaleCertificate = document.getElementById('noResaleCertificate');
+        const resaleCertificateInput = document.getElementById('resaleCertificate');
+
+        noResaleCertificate.addEventListener('change', () => {
+            const reasonRow = document.querySelector('.no-certificate-reason');
+            const reasonTextarea = document.getElementById('noCertificateReason');
+
+            if (noResaleCertificate.checked) {
+                reasonRow.style.display = 'block';
+                resaleCertificateInput.disabled = true;
+                resaleCertificateInput.value = '';
+                resaleCertificateInput.style.opacity = '0.5';
+                reasonTextarea.required = true;
+            } else {
+                reasonRow.style.display = 'none';
+                resaleCertificateInput.disabled = false;
+                resaleCertificateInput.style.opacity = '1';
+                reasonTextarea.required = false;
+                reasonTextarea.value = '';
             }
         });
 
@@ -78,10 +101,10 @@ class ClientRegistration {
     showError(input, message) {
         const formGroup = input.closest('.form-group');
         formGroup.classList.add('error');
-        
+
         const existingError = formGroup.querySelector('.error-message');
         if (existingError) existingError.remove();
-        
+
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
         errorDiv.textContent = message;
@@ -91,7 +114,7 @@ class ClientRegistration {
     clearError(input) {
         const formGroup = input.closest('.form-group');
         formGroup.classList.remove('error');
-        
+
         const existingError = formGroup.querySelector('.error-message');
         if (existingError) existingError.remove();
     }
@@ -128,7 +151,10 @@ class ClientRegistration {
             state: document.getElementById('state').value.trim(),
             country: document.getElementById('country').value,
             interestMessage: document.getElementById('interestMessage').value.trim(),
-            howDidYouHear: document.getElementById('howDidYouHear').value
+            howDidYouHear: document.getElementById('howDidYouHear').value,
+            resaleCertificate: document.getElementById('resaleCertificate').value.trim(),
+            hasResaleCertificate: !document.getElementById('noResaleCertificate').checked,
+            noCertificateReason: document.getElementById('noCertificateReason').value.trim()
         };
 
         this.showLoading(true);

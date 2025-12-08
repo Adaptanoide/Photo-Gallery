@@ -106,6 +106,37 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Resale Certificate -->
+                <div class="form-section">
+                    <h2 class="section-title"><i class="fas fa-certificate"></i> Resale Certificate</h2>
+                    <p class="section-description">For wholesale purchases in the US, a Resale Certificate or Sales Tax ID is commonly required.</p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="resaleCertificate">Resale Certificate / Sales Tax ID</label>
+                            <input type="text" id="resaleCertificate" name="resaleCertificate" placeholder="Enter your certificate number">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="noResaleCertificate" name="noResaleCertificate">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-text">I don't have a Resale Certificate</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row no-certificate-reason" style="display: none;">
+                        <div class="form-group full-width">
+                            <label for="noCertificateReason">Please explain why <span class="required">*</span></label>
+                            <textarea id="noCertificateReason" name="noCertificateReason" rows="3" maxlength="500"
+                                placeholder="e.g., Business in Oregon (no sales tax), New business - certificate in process, International buyer, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Interest -->
                 <div class="form-section">
