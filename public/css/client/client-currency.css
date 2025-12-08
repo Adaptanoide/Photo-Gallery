@@ -1,0 +1,524 @@
+/* public/css/client/client-currency.css */
+/* ===== CURRENCY SELECTOR STYLES ===== */
+/* Integrado ao design do header existente */
+
+/* === VARIÁVEIS (usar as mesmas do sistema) === */
+:root {
+    --currency-gold: #D4AF37;
+    --currency-gold-hover: #c4a030;
+    --currency-gold-light: #FFF8E7;
+}
+
+/* ============================================ */
+/* === DESKTOP SELECTOR - NO HEADER ===        */
+/* ============================================ */
+@media (min-width: 769px) {
+    .currency-selector {
+        position: relative;
+        margin-left: 15px;
+        margin-right: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .currency-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: #ffffff;
+        border: 1px solid rgb(255 255 255);
+        border-radius: 8px;
+        color: #28a745;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 36px;
+        min-width: 85px;
+    }
+
+    .currency-btn:hover {
+        background: rgb(255, 255, 255);
+        border-color: rgba(255, 255, 255, 0.6);
+        transform: translateY(-1px);
+    }
+
+    .currency-btn:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .currency-btn .currency-symbol {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .currency-btn .currency-code {
+        font-weight: 600;
+    }
+
+    .currency-btn .currency-arrow {
+        font-size: 0.7rem;
+        transition: transform 0.3s ease;
+        margin-left: 2px;
+    }
+
+    .currency-btn:hover .currency-arrow,
+    .currency-btn.active .currency-arrow {
+        transform: rotate(180deg);
+    }
+
+    /* === DROPDOWN MENU === */
+    .currency-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        min-width: 220px;
+        z-index: 10002; /* Acima do dropdown de filtros */
+        display: none;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    .currency-dropdown.show {
+        display: block;
+        animation: currencyDropdownIn 0.2s ease;
+    }
+
+    @keyframes currencyDropdownIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Opções do dropdown */
+    .currency-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .currency-option:first-child {
+        border-radius: 12px 12px 0 0;
+    }
+
+    .currency-option:hover {
+        background: #f8f9fa;
+    }
+
+    .currency-option.active {
+        background: var(--currency-gold-light);
+        border-left-color: var(--currency-gold);
+    }
+
+    .currency-option .option-symbol {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #28a745;
+        width: 32px;
+        text-align: center;
+    }
+
+    .currency-option .option-info {
+        flex: 1;
+    }
+
+    .currency-option .option-code {
+        font-weight: 700;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .currency-option .option-name {
+        color: #666;
+        font-size: 0.8rem;
+        display: block;
+        margin-top: 2px;
+    }
+
+    .currency-option .option-check {
+        color: #28a745;
+        font-size: 1rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .currency-option.active .option-check {
+        opacity: 1;
+    }
+
+    /* Disclaimer no dropdown */
+    .currency-disclaimer {
+        padding: 12px 18px;
+        background: #f8f9fa;
+        font-size: 0.75rem;
+        color: #666;
+        border-top: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .currency-disclaimer i {
+        color: #999;
+        font-size: 0.85rem;
+    }
+}
+
+/* ============================================ */
+/* === MOBILE - BOTÃO E MODAL ===              */
+/* ============================================ */
+@media (max-width: 768px) {
+    /* Esconder seletor desktop no mobile */
+    .currency-selector {
+        display: none !important;
+    }
+
+    /* Botão mobile no header */
+    .mobile-currency-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 1px solid #b8941f;
+        color: #b8941f;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 8px;
+    }
+
+    .mobile-currency-btn:hover,
+    .mobile-currency-btn:active {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+
+    /* Badge com moeda atual */
+    .mobile-currency-btn .currency-badge {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        background: var(--currency-gold);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 1px 4px;
+        border-radius: 4px;
+        line-height: 1;
+    }
+
+    /* === MODAL MOBILE === */
+    .currency-modal-mobile {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10003;
+        display: none;
+        pointer-events: none;
+    }
+
+    .currency-modal-mobile.show {
+        display: block;
+        pointer-events: auto;
+    }
+
+    .currency-modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .currency-modal-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 24px 24px 0 0;
+        animation: slideUp 0.3s ease;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    /* Header do modal */
+    .currency-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid #eee;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+    }
+
+    .currency-modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+    }
+
+    .currency-modal-header h3 i {
+        color: var(--currency-gold);
+        font-size: 1.3rem;
+    }
+
+    .currency-modal-close {
+        background: #f5f5f5;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        color: #666;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .currency-modal-close:hover {
+        background: #eee;
+        color: #333;
+    }
+
+    /* Opções do modal */
+    .currency-modal-options {
+        padding: 16px;
+    }
+
+    .currency-modal-option {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        padding: 18px 20px;
+        background: white;
+        border: 2px solid #e8e8e8;
+        border-radius: 16px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+
+    .currency-modal-option:hover {
+        border-color: var(--currency-gold);
+        background: var(--currency-gold-light);
+    }
+
+    .currency-modal-option.active {
+        border-color: var(--currency-gold);
+        background: var(--currency-gold-light);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+    }
+
+    .currency-modal-option .modal-option-symbol {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--currency-gold);
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(212, 175, 55, 0.1);
+        border-radius: 12px;
+    }
+
+    .currency-modal-option .modal-option-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .currency-modal-option .modal-option-code {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .currency-modal-option .modal-option-name {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    .currency-modal-option .modal-option-check {
+        color: #28a745;
+        font-size: 1.4rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .currency-modal-option.active .modal-option-check {
+        opacity: 1;
+    }
+
+    /* Disclaimer do modal */
+    .currency-modal-disclaimer {
+        padding: 16px 20px;
+        margin: 8px 16px 16px;
+        background: #f8f9fa;
+        font-size: 0.85rem;
+        color: #666;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        border-radius: 12px;
+        line-height: 1.4;
+    }
+
+    .currency-modal-disclaimer i {
+        color: #999;
+        font-size: 1rem;
+        margin-top: 2px;
+    }
+}
+
+/* ============================================ */
+/* === DESKTOP - ESCONDER BOTÃO MOBILE ===     */
+/* ============================================ */
+@media (min-width: 769px) {
+    .mobile-currency-btn {
+        display: none !important;
+    }
+    
+    .currency-modal-mobile {
+        display: none !important;
+    }
+}
+
+/* ============================================ */
+/* === INDICADOR DE MOEDA NOS PREÇOS ===       */
+/* ============================================ */
+
+/* Badge pequeno quando moeda não é USD */
+.currency-indicator {
+    font-size: 0.7em;
+    color: #888;
+    font-weight: normal;
+    margin-left: 4px;
+}
+
+/* Tooltip de aproximação */
+.price-approximate {
+    position: relative;
+    cursor: help;
+}
+
+.price-approximate::after {
+    content: '≈';
+    font-size: 0.8em;
+    color: #999;
+    margin-left: 2px;
+}
+
+.price-approximate:hover::before {
+    content: 'Approximate price in selected currency';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* ============================================ */
+/* === ANIMAÇÃO DE ATUALIZAÇÃO DE PREÇO ===    */
+/* ============================================ */
+.price-updating {
+    animation: priceFlash 0.5s ease;
+}
+
+@keyframes priceFlash {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; background: var(--currency-gold-light); }
+    100% { opacity: 1; }
+}
+
+/* ============================================ */
+/* === ORDER SUMMARY - DISCLAIMER ===          */
+/* ============================================ */
+.order-summary-currency-note {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: #856404;
+}
+
+.order-summary-currency-note i {
+    font-size: 1.1rem;
+}
+
+.order-summary-currency-note strong {
+    font-weight: 700;
+}
+
+/* Quando moeda é diferente de USD, mostrar ambos valores */
+.dual-currency-display {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dual-currency-display .primary-price {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
+.dual-currency-display .secondary-price {
+    font-size: 0.85em;
+    color: #666;
+}

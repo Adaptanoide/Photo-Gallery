@@ -420,7 +420,7 @@ window.PriceProgressBar = {
                 <div class="price-tier ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}">
                     <div class="tier-medal">${medal}</div>
                     <div class="tier-label">${label} hides</div>
-                    <div class="tier-price">$${rule.price}</div>
+                    <div class="tier-price">${window.CurrencyManager ? CurrencyManager.format(rule.price) : '$' + rule.price}</div>
                 </div>
             `;
         });
@@ -464,20 +464,31 @@ window.PriceProgressBar = {
         });
 
         // Atualizar preços quando tier muda (DESKTOP E MOBILE)
-        const activeTier = document.querySelector('.price-tier.active');
-        if (activeTier) {
-            // Extrair preço do tier ativo
-            const priceText = activeTier.querySelector('.tier-price')?.textContent || activeTier.textContent;
-            const priceMatch = priceText.match(/\$(\d+)/);
-
-            if (priceMatch) {
-                const currentPrice = priceMatch[0]; // $109, $105, etc
-
-                // Atualizar info bar
-                const infoBadge = document.getElementById('infoPriceBadge');
-                if (infoBadge && !infoBadge.classList.contains('no-price')) {
-                    infoBadge.textContent = `${currentPrice}/each`;
+        if (this.rateRules.length > 0) {
+            // Encontrar o preço do tier atual baseado na quantidade
+            let currentTierPrice = this.basePrice;
+            for (const rule of this.rateRules) {
+                if (relevantItemCount >= rule.from && relevantItemCount <= rule.to) {
+                    currentTierPrice = rule.price;
+                    break;
                 }
+            }
+
+            // Formatar o preço com a moeda atual
+            const formattedPrice = window.CurrencyManager ?
+                CurrencyManager.format(currentTierPrice) :
+                `$${currentTierPrice}`;
+
+            // Atualizar info bar mobile
+            const infoBadge = document.getElementById('infoPriceBadge');
+            if (infoBadge && !infoBadge.classList.contains('no-price')) {
+                infoBadge.textContent = `${formattedPrice}/each`;
+            }
+
+            // Atualizar badge principal (ao lado do título)
+            const mainBadge = document.querySelector('.category-price-badge:not(.contact-price):not(.no-price)');
+            if (mainBadge && !mainBadge.closest('#mobileInfoBar')) {
+                mainBadge.innerHTML = `${formattedPrice} <span class="badge-chat-icon" style="margin-left: 5px; cursor: pointer;">💬</span>`;
             }
         }
 
@@ -1401,4 +1412,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+// ===== REAGIR A MUDANÇAS DE MOEDA =====
+window.addEventListener('currencyChanged', (e) => {
+    console.log('💱 [Commerce] Moeda alterada para:', e.detail.newCurrency);
+
+    // Re-renderizar PriceProgressBar se estiver visível
+    if (window.PriceProgressBar && window.PriceProgressBar.rateRules && window.PriceProgressBar.rateRules.length > 0) {
+        setTimeout(() => {
+            console.log('💱 [Commerce] Re-renderizando tiers com nova moeda...');
+            window.PriceProgressBar.render();
+            window.PriceProgressBar.updateProgress();
+        }, 150);
+    }
+});
+
+console.log('💱 [Commerce] Currency change listener registrado');
 console.log('🛍️ client-commerce.js carregado - Módulo comercial pronto');

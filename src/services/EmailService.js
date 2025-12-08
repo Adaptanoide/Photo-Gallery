@@ -141,16 +141,34 @@ class EmailService {
             }
 
             // Preparar dados para template
+            const clientCurrency = selectionData.clientCurrency || 'USD';
+            let totalValueFormatted = selectionData.totalValue ? `$${selectionData.totalValue.toFixed(2)}` : 'To be calculated';
+
+            // Se cliente usa outra moeda, mostrar conversão
+            if (clientCurrency !== 'USD' && selectionData.totalValue) {
+                try {
+                    const CurrencyService = require('./CurrencyService');
+                    const rates = await CurrencyService.getRates();
+                    const rate = rates[clientCurrency] || 1;
+                    const convertedValue = selectionData.totalValue * rate;
+                    const symbol = clientCurrency === 'CAD' ? 'C$' : '€';
+                    totalValueFormatted = `$${selectionData.totalValue.toFixed(2)} (≈ ${symbol}${convertedValue.toFixed(2)} ${clientCurrency})`;
+                } catch (e) {
+                    console.warn('⚠️ Erro ao converter moeda para email:', e.message);
+                }
+            }
+
             const templateData = {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
                 totalItems: selectionData.totalItems,
-                totalValue: selectionData.totalValue ? `$${selectionData.totalValue.toFixed(2)}` : 'To be calculated',
+                totalValue: totalValueFormatted,
                 folderName: selectionData.googleDriveInfo?.clientFolderName || 'Folder not specified',
                 selectionId: selectionData.selectionId,
                 createdAt: new Date().toLocaleString('pt-BR'),
                 observations: selectionData.observations,
-                salesRep: selectionData.salesRep || 'Unassigned'
+                salesRep: selectionData.salesRep || 'Unassigned',
+                clientCurrency: clientCurrency
             };
 
             // Aplicar template

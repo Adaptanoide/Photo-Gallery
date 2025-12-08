@@ -67,6 +67,15 @@ const accessCodeSchema = new mongoose.Schema({
         default: true,
     },
 
+    // ===== PREFERÊNCIAS DO CLIENTE (MOEDA) =====
+    preferences: {
+        currency: {
+            type: String,
+            enum: ['USD', 'CAD', 'EUR'],
+            default: 'USD'
+        }
+    },
+
     // ===== CONFIGURAÇÃO PARA ACESSO NORMAL (EXISTENTE) =====
     allowedCategories: [{
         type: String,

@@ -257,9 +257,9 @@
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    border: none;
-    color: white;
+    background: white;
+    border: 1px #b8941f solid;
+    color: #b8941f;
     cursor: pointer;
     display: flex;
     align-items: center;

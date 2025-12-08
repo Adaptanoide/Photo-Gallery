@@ -640,9 +640,9 @@ window.CartSystem = {
                 total: totals.total || 0,
                 hasDiscount: (totals.discount || 0) > 0,
                 discountDescription: '',
-                formattedSubtotal: `$${(totals.subtotal || 0).toFixed(2)}`,
-                formattedDiscountAmount: `$${(totals.discount || 0).toFixed(2)}`,
-                formattedTotal: `$${(totals.total || 0).toFixed(2)}`,
+                formattedSubtotal: window.CurrencyManager ? CurrencyManager.format(totals.subtotal || 0) : `$${(totals.subtotal || 0).toFixed(2)}`,
+                formattedDiscountAmount: window.CurrencyManager ? CurrencyManager.format(totals.discount || 0) : `$${(totals.discount || 0).toFixed(2)}`,
+                formattedTotal: window.CurrencyManager ? CurrencyManager.format(totals.total || 0) : `$${(totals.total || 0).toFixed(2)}`,
                 hasIncompletePrice: false,
                 mixMatchInfo: totals.mixMatchInfo || null // ✅ MIX&MATCH INFO!
             };
@@ -886,7 +886,7 @@ window.CartSystem = {
                 </div>
                 <div class="category-right">
                     ${(window.shouldShowPrices && window.shouldShowPrices() && categoryTotal > 0) ?
-                    `<span class="category-subtotal">$${categoryTotal.toFixed(2)}</span>` :
+                    `<span class="category-subtotal">${window.CurrencyManager ? CurrencyManager.format(categoryTotal) : '$' + categoryTotal.toFixed(2)}</span>` :
                     ''
                 }
                 </div>
@@ -1019,10 +1019,10 @@ window.CartSystem = {
                             ${(window.shouldShowPrices && window.shouldShowPrices()) ? `
                                 <div class="cart-item-price">
                                     ${(item.price > 0 || item.basePrice > 0) ?
-                        `<span class="price-value">$${(item.price || item.basePrice).toFixed(2)}</span>` :
+                        `<span class="price-value">${window.CurrencyManager ? CurrencyManager.format(item.price || item.basePrice) : '$' + (item.price || item.basePrice).toFixed(2)}</span>` :
                         `<span class="price-consult">Check price</span>`
                     }
-                                </div>
+                           </div>
                             ` : ''}
                             <div class="cart-item-timer ${timerClass}">
                                 <i class="fas fa-clock"></i>
@@ -1962,7 +1962,7 @@ async function generateOrderSummary() {
                     <strong>${category}</strong>
                     <span style="float: right; color: #666;">
                         ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'} 
-                        ${showPrices && categoryTotal > 0 ? `| $${categoryTotal.toFixed(2)}` : ''}
+                        ${showPrices && categoryTotal > 0 ? `| ${window.CurrencyManager ? CurrencyManager.format(categoryTotal) : '$' + categoryTotal.toFixed(2)}` : ''}
                     </span>
                 </div>
                 <div class="summary-category-items" style="display: ${index === 0 ? 'block' : 'none'};">
@@ -1972,7 +1972,7 @@ async function generateOrderSummary() {
         categoryItems.forEach(item => {
             let price = 'No price';
             if (item.price > 0) {
-                price = `$${item.price.toFixed(2)}`;
+                price = window.CurrencyManager ? CurrencyManager.format(item.price) : `$${item.price.toFixed(2)}`;
             }
 
             html += `
@@ -2026,15 +2026,24 @@ function downloadOrderPDF() {
     alert('PDF download will be implemented soon!');
 }
 
-function printOrderSummary() {
-    window.print();
-}
-
 // Tornar funções globais
 window.openOrderSummary = openOrderSummary;
 window.closeOrderSummary = closeOrderSummary;
-window.downloadOrderPDF = downloadOrderPDF;
-window.printOrderSummary = printOrderSummary;
 window.toggleSummaryCategory = toggleSummaryCategory;
+
+// ===== REAGIR A MUDANÇAS DE MOEDA =====
+window.addEventListener('currencyChanged', (e) => {
+    console.log('💱 [Cart] Moeda alterada para:', e.detail.newCurrency);
+
+    // Re-renderizar o carrinho com novos preços
+    if (window.CartSystem && CartSystem.state.items.length > 0) {
+        setTimeout(() => {
+            CartSystem.updateUI();
+            console.log('💱 [Cart] Carrinho atualizado com nova moeda');
+        }, 100);
+    }
+});
+
+console.log('💱 [Cart] Currency change listener registrado');
 
 console.log('📦 cart.js carregado - aguardando inicialização...');

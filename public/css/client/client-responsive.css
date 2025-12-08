@@ -150,17 +150,17 @@
     /* Botão de filtros - só aparece no mobile */
     .mobile-filter-btn {
         display: block !important;
-        width: 43px;
-        height: 44px;
+        width: 45px;
+        height: 45px;
         background: white;
-        color: #d4af37;
+        color: #b8941f;
         border: none;
-        border-radius: 8px;
+        border-radius: 50%;
         font-size: 1.1rem;
         margin-right: 10px;
         cursor: pointer;
         transition: background 0.3s;
-        border: 1px solid #d4af37;
+        border: 1px solid #b8941f;
     }
 
     .mobile-filter-btn:hover {
@@ -170,16 +170,15 @@
 
     /* Logout - só ícone no mobile */
     .client-logout-btn {
-        width: 42px;
-        height: 43px;
+        width: 45px;
+        height: 45px;
         padding: 0;
         justify-content: center;
         font-size: 1.1rem;
         background: #c9a961;
-        /* Mesmo dourado */
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 50%;
     }
 
     .client-logout-btn:hover {

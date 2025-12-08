@@ -137,7 +137,8 @@ router.post('/finalize', async (req, res) => {
             const accessCode = await AccessCode.findOne({ code: clientCode }).session(session);
             const salesRep = accessCode?.salesRep || 'Unassigned';
             const companyName = accessCode?.companyName || '-';
-            console.log(`🏢 Company: ${companyName} | 👤 Sales Rep: ${salesRep}`);
+            const clientCurrency = accessCode?.preferences?.currency || 'USD';
+            console.log(`🏢 Company: ${companyName} | 👤 Sales Rep: ${salesRep} | 💱 Currency: ${clientCurrency}`);
 
             // Criar seleção normal sempre
             let selectionId;
@@ -415,6 +416,7 @@ router.post('/finalize', async (req, res) => {
                         salesRep: salesRep,
                         totalItems: cart.totalItems,
                         totalValue: totalValue,
+                        clientCurrency: clientCurrency,
                         observations: observations || '',
                         googleDriveInfo: {
                             clientFolderName: folderResult.folderName

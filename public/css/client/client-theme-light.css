@@ -75,9 +75,9 @@ body.client-page::before {
 
 /* Botão de logout elegante */
 .client-page .client-logout-btn {
-    background: #ffffff;
-    border: 1px solid #d4af37;
-    color: #d4af37;
+    background: #b8941f;
+    border: 1px solid #ffffff;
+    color: #ffffff;
 }
 
 .client-page .client-logout-btn:hover {

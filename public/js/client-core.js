@@ -503,8 +503,8 @@ window.showCategories = async function () {
             const priceRange = shouldShowPrices()
                 ? ((stats.minPrice && stats.maxPrice)
                     ? (stats.minPrice === stats.maxPrice
-                        ? `$${stats.minPrice.toFixed(2)}`
-                        : `$${stats.minPrice.toFixed(2)} - $${stats.maxPrice.toFixed(2)}`)
+                        ? (window.CurrencyManager ? CurrencyManager.format(stats.minPrice) : `$${stats.minPrice.toFixed(2)}`)
+                        : (window.CurrencyManager ? `${CurrencyManager.format(stats.minPrice)} - ${CurrencyManager.format(stats.maxPrice)}` : `$${stats.minPrice.toFixed(2)} - $${stats.maxPrice.toFixed(2)}`))
                     : 'Price on request')
                 : 'Contact for Price';
 
@@ -679,6 +679,9 @@ window.loadFolderContents = async function (folderId) {
 // ===== MOSTRAR SUBPASTAS =====
 
 window.showSubfolders = function (folders) {
+    // Armazenar folders para re-renderização quando moeda mudar
+    window.lastLoadedFolders = folders;
+
     hideAllContainers();
     hideLoading();
     document.getElementById('foldersContainer').style.display = 'grid';
@@ -697,7 +700,9 @@ window.showSubfolders = function (folders) {
         const photoCount = folder.imageCount || folder.photoCount || folder.totalFiles || 0;
         const price = folder.price || 0;
         const formattedPrice = shouldShowPrices()
-            ? (folder.formattedPrice || (price > 0 ? `$${price.toFixed(2)}` : ''))
+            ? (price > 0
+                ? (window.CurrencyManager ? CurrencyManager.format(price) : `$${price.toFixed(2)}`)
+                : (folder.formattedPrice || ''))
             : '';
 
         // ✅ Verificar se tem subcategorias
@@ -990,4 +995,26 @@ document.addEventListener('click', function (event) {
     }
 });
 
-console.log('📦 client-core.js carregado - Módulo de navegação pronto');
+// ===== REAGIR A MUDANÇAS DE MOEDA =====
+window.addEventListener('currencyChanged', (e) => {
+    console.log('💱 [Core] Moeda alterada para:', e.detail.newCurrency);
+
+    setTimeout(() => {
+        // Verificar se estamos vendo subcategorias (folder-cards)
+        const foldersContainer = document.getElementById('foldersContainer');
+        const isShowingFolders = foldersContainer && foldersContainer.style.display === 'grid';
+
+        if (isShowingFolders && window.lastLoadedFolders && window.lastLoadedFolders.length > 0) {
+            // Está em subcategorias - re-renderizar com os mesmos dados
+            console.log('💱 [Core] Re-renderizando subcategorias com nova moeda...');
+            window.showSubfolders(window.lastLoadedFolders);
+        } else if (navigationState.currentPath.length === 0) {
+            // Está na Home - re-renderizar categorias principais
+            console.log('💱 [Core] Re-renderizando categorias principais...');
+            window.showCategories();
+        }
+        // Se estamos vendo fotos, o listener do client-gallery.js cuida disso
+    }, 100);
+});
+
+console.log('💱 [Core] Currency change listener registrado');

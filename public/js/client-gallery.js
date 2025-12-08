@@ -254,9 +254,9 @@
             if (!shouldShowPrices()) {
                 galleryTitle.innerHTML = `${folderName} <span class="category-price-badge contact-price">Contact for Price</span>`;
             } else if (customPrice) {
-                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">$${parseFloat(customPrice).toFixed(2)}</span>`;
+                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${window.CurrencyManager ? CurrencyManager.format(parseFloat(customPrice)) : '$' + parseFloat(customPrice).toFixed(2)}</span>`;
             } else if (categoryPrice && categoryPrice.hasPrice) {
-                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${categoryPrice.formattedPrice}</span>`;
+                galleryTitle.innerHTML = `${folderName} <span class="category-price-badge">${window.CurrencyManager ? CurrencyManager.format(categoryPrice.basePrice || categoryPrice.price) : categoryPrice.formattedPrice}</span>`;
             } else {
                 galleryTitle.innerHTML = `${folderName} <span class="category-price-badge no-price">Price on request</span>`;
             }
@@ -298,10 +298,10 @@
                     infoPriceBadge.innerHTML = 'Contact for Price';
                     infoPriceBadge.className = 'category-price-badge contact-price';
                 } else if (customPrice) {
-                    infoPriceBadge.innerHTML = `$${parseFloat(customPrice).toFixed(2)}`;
+                    infoPriceBadge.innerHTML = window.CurrencyManager ? CurrencyManager.format(parseFloat(customPrice)) : `$${parseFloat(customPrice).toFixed(2)}`;
                     infoPriceBadge.className = 'category-price-badge';
                 } else if (categoryPrice && categoryPrice.hasPrice) {
-                    infoPriceBadge.innerHTML = categoryPrice.formattedPrice;
+                    infoPriceBadge.innerHTML = window.CurrencyManager ? CurrencyManager.format(categoryPrice.price || categoryPrice.basePrice) : categoryPrice.formattedPrice;
                     infoPriceBadge.className = 'category-price-badge';
                 } else {
                     infoPriceBadge.innerHTML = 'Price on request';
@@ -386,7 +386,7 @@
                             loading="lazy">
                         
                         <div class="photo-price ${photo.customPrice || categoryPrice?.hasPrice ? '' : 'no-price'}">
-                            ${photo.customPrice ? `$${parseFloat(photo.customPrice).toFixed(2)}` : (categoryPrice?.formattedPrice || 'Price on request')}
+                            ${photo.customPrice ? (window.CurrencyManager ? CurrencyManager.format(parseFloat(photo.customPrice)) : `$${parseFloat(photo.customPrice).toFixed(2)}`) : (categoryPrice?.hasPrice && window.CurrencyManager ? CurrencyManager.format(categoryPrice.price || categoryPrice.basePrice) : (categoryPrice?.formattedPrice || 'Price on request'))}
                         </div>
                         
                         <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
@@ -892,7 +892,7 @@
             if (photo && photo.customPrice) {
                 priceInfo = {
                     hasPrice: true,
-                    formattedPrice: `$${parseFloat(photo.customPrice).toFixed(2)}`
+                    formattedPrice: window.CurrencyManager ? CurrencyManager.format(parseFloat(photo.customPrice)) : `$${parseFloat(photo.customPrice).toFixed(2)}`
                 };
                 console.log('💰 Usando customPrice da Special Selection:', photo.customPrice);
             } else {
@@ -958,7 +958,7 @@
                         }
 
                         if (isCurrentTier) {
-                            currentTierPrice = `$${range.price}/each`;
+                            currentTierPrice = `${window.CurrencyManager ? CurrencyManager.format(range.price) : '$' + range.price}/each`;
                             console.log(`💰 [MODAL] Mix&Match Tier ativo: ${range.min}-${range.max || '∞'} = ${currentTierPrice}`);
                             break;
                         }
@@ -1007,7 +1007,7 @@
                         volumeHTML += `
                             <span class="${tierClass}">
                                 ${range.min}${range.max ? `-${range.max}` : '+'} photos
-                                <span class="tier-price">$${range.price}/each</span>
+                                <span class="tier-price">${window.CurrencyManager ? CurrencyManager.format(range.price) : '$' + range.price}/each</span>
                             </span>
                         `;
                     });
@@ -1036,7 +1036,7 @@
                             const tierClass = isActive ? 'tier-item active' : 'tier-item';
 
                             if (index > 0) compactHTML += '<span class="separator">|</span>';
-                            compactHTML += `<span class="${tierClass}">${range.min}${range.max ? `-${range.max}` : '+'}: $${range.price}</span>`;
+                            compactHTML += `<span class="${tierClass}">${range.min}${range.max ? `-${range.max}` : '+'}: ${window.CurrencyManager ? CurrencyManager.format(range.price) : '$' + range.price}</span>`;
                         });
 
                         rateBar.innerHTML = compactHTML;
@@ -1460,7 +1460,7 @@
 
                 if (photo.customPrice) {
                     price = parseFloat(photo.customPrice);
-                    formattedPrice = `$${price.toFixed(2)}`;
+                    formattedPrice = window.CurrencyManager ? CurrencyManager.format(price) : `$${price.toFixed(2)}`;
                 } else if (navigationState.currentFolderId) {
                     try {
                         const priceInfo = await window.loadCategoryPrice(navigationState.currentFolderId);
@@ -1974,4 +1974,22 @@ window.loadPhotos = async function (folderId) {
 // Inicializar ao carregar
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initMobileTierToggle, 1000);
+});
+
+// ===== REAGIR A MUDANÇAS DE MOEDA =====
+window.addEventListener('currencyChanged', (e) => {
+    console.log('💱 [Gallery] Moeda alterada para:', e.detail.newCurrency);
+    
+    // Verificar se estamos realmente vendo FOTOS (não subcategorias)
+    const photosContainer = document.getElementById('photosContainer');
+    const isShowingPhotos = photosContainer && photosContainer.style.display === 'grid';
+    
+    if (isShowingPhotos && typeof navigationState !== 'undefined' && navigationState.currentFolderId) {
+        setTimeout(() => {
+            if (typeof loadPhotos === 'function') {
+                console.log('💱 [Gallery] Re-carregando fotos com nova moeda...');
+                loadPhotos(navigationState.currentFolderId);
+            }
+        }, 100);
+    }
 });

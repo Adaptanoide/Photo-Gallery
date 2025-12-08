@@ -19,7 +19,8 @@ const storageRoutes = require('./routes/storage');
 const trackingRoutes = require('./routes/tracking');
 const registrationRoutes = require('./routes/registration');
 const intelligenceRoutes = require('./routes/intelligence');
-
+const currencyRoutes = require('./routes/currency');
+const CurrencyService = require('./services/CurrencyService');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -180,6 +181,8 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/inventory-monitor', require('./routes/inventory-monitor'));
 app.use('/api/register', registrationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
+app.use('/api/currency', currencyRoutes);
+
 // Servir página Intelligence
 app.get('/intelligence', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/intelligence.html'));
@@ -904,6 +907,14 @@ function initCartExpirationNotifications() {
 setTimeout(() => {
     initCartExpirationNotifications();
 }, 15000);
+
+// ============================================
+// INICIAR ATUALIZAÇÃO AUTOMÁTICA DE CÂMBIO
+// ============================================
+setTimeout(() => {
+    console.log('💱 Iniciando serviço de atualização de câmbio...');
+    CurrencyService.startAutoUpdate(24); // Atualiza a cada 24 horas
+}, 20000); // Aguarda 20 segundos após iniciar
 
 // ============================================
 // ENDPOINT DE STATUS DE EXPIRAÇÃO
