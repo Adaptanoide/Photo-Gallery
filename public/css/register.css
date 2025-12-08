@@ -391,3 +391,42 @@ body {
 .no-certificate-reason textarea {
     background: white;
 }
+
+/* ===== BENEFITS BOX ===== */
+.benefits-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 30px;
+    padding: 25px 35px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+}
+
+.benefit-item i {
+    color: #D4AF37;
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .benefits-box {
+        padding: 20px 25px;
+        max-width: 100%;
+    }
+}
