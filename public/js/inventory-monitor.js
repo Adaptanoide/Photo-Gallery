@@ -229,12 +229,8 @@ class InventoryMonitor {
                 : '<span style="color: #f44336; font-size: 10px;">❌ R2</span>';
         }
 
-        let actionIndicator = '';
-        if (issue.syncCanFix) {
-            actionIndicator = '<span style="background: rgba(76,175,80,0.2); color: #81c784; padding: 4px 8px; border-radius: 4px; font-size: 11px;">⚡ Auto</span>';
-        } else if (issue.needsManualReview) {
-            actionIndicator = '<span style="background: rgba(255,193,7,0.2); color: #ffc107; padding: 4px 8px; border-radius: 4px; font-size: 11px;">👁️ Manual</span>';
-        }
+        // Botões de ação baseados no tipo de problema
+        let actionButtons = this.renderActionButtons(issue);
 
         // Detalhes extras
         let extraDetails = '';
@@ -280,10 +276,78 @@ class InventoryMonitor {
                     <div>C: ${issue.cdeQb || '-'}</div>
                 </td>
                 <td style="text-align: center;">
-                    ${actionIndicator}
+                    ${actionButtons}
                 </td>
             </tr>
         `;
+    }
+
+    renderActionButtons(issue) {
+        // Detectar tipo de problema baseado na descrição
+        const isRetorno = issue.issue && issue.issue.includes('Posible retorno');
+        const isPase = issue.issue && issue.issue.includes('PASE');
+
+        if (isRetorno) {
+            // Botão de RETORNO
+            return `
+                <button
+                    onclick="window.monitor.openRetornoModal('${issue.photoNumber}')"
+                    style="
+                        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        font-weight: 600;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
+                    title="Corregir retorno de mercadería"
+                >
+                    <i class="fas fa-undo"></i> Retorno
+                </button>
+            `;
+        } else if (isPase) {
+            // Botão de PASE
+            return `
+                <button
+                    onclick="window.monitor.openPaseModal('${issue.photoNumber}')"
+                    style="
+                        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        font-weight: 600;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
+                    title="Aplicar PASE (mover foto en R2)"
+                >
+                    <i class="fas fa-exchange-alt"></i> Pase
+                </button>
+            `;
+        } else if (issue.syncCanFix) {
+            return '<span style="background: rgba(76,175,80,0.2); color: #81c784; padding: 4px 8px; border-radius: 4px; font-size: 11px;">⚡ Auto</span>';
+        } else if (issue.needsManualReview) {
+            return '<span style="background: rgba(255,193,7,0.2); color: #ffc107; padding: 4px 8px; border-radius: 4px; font-size: 11px;">👁️ Manual</span>';
+        }
+
+        return '-';
     }
 
     hexToRgb(hex) {
@@ -321,6 +385,455 @@ class InventoryMonitor {
                 row.style.display = rowCategory === category ? '' : 'none';
             }
         });
+    }
+
+    async openRetornoModal(photoNumber) {
+        // Mostrar loading primeiro
+        this.showLoadingModal(photoNumber, 'retorno');
+
+        try {
+            // Buscar dados completos da foto
+            const photoData = await this.fetchPhotoData(photoNumber);
+
+            if (!photoData) {
+                throw new Error('No se pudo obtener información de la foto');
+            }
+
+            // Analisar se QB mudou (seria PASE, não retorno)
+            const qbChanged = photoData.mongoQb !== photoData.cdeQb;
+
+            // Fechar loading
+            document.getElementById('loadingModal')?.remove();
+
+            if (qbChanged) {
+                // QB mudou - não é retorno simples, é PASE!
+                this.showPaseWarningModal(photoNumber, photoData);
+            } else {
+                // QB não mudou - retorno simples
+                this.showRetornoConfirmModal(photoNumber, photoData);
+            }
+
+        } catch (error) {
+            console.error('Error al abrir modal:', error);
+            document.getElementById('loadingModal')?.remove();
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    showLoadingModal(photoNumber, action) {
+        const modal = document.createElement('div');
+        modal.id = 'loadingModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: #1a1a2e;
+                border-radius: 16px;
+                padding: 48px;
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            ">
+                <div style="font-size: 48px; margin-bottom: 16px;">
+                    <i class="fas fa-spinner fa-spin" style="color: #4caf50;"></i>
+                </div>
+                <div style="color: #fff; font-size: 16px;">
+                    Analizando foto ${photoNumber}...
+                </div>
+                <div style="color: #888; font-size: 13px; margin-top: 8px;">
+                    Verificando MongoDB y CDE
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    async fetchPhotoData(photoNumber) {
+        const sessionData = localStorage.getItem('sunshineSession');
+        const session = JSON.parse(sessionData);
+
+        const response = await fetch(`/api/monitor-actions/photo-info/${photoNumber}`, {
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al obtener datos de la foto');
+        }
+
+        return await response.json();
+    }
+
+    showRetornoConfirmModal(photoNumber, data) {
+        const modal = document.createElement('div');
+        modal.id = 'retornoModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: #1a1a2e;
+                border-radius: 16px;
+                padding: 32px;
+                max-width: 600px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,255,255,0.1);
+            ">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                    <div style="
+                        width: 48px;
+                        height: 48px;
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                    ">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; color: #fff; font-size: 20px;">Confirmar Retorno</h3>
+                        <p style="margin: 4px 0 0 0; color: #888; font-size: 13px;">Foto: ${photoNumber}</p>
+                    </div>
+                </div>
+
+                <!-- Estado Actual -->
+                <div style="
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 8px;">📊 ESTADO ACTUAL:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <div style="color: #888; font-size: 11px;">MongoDB:</div>
+                            <div style="color: #f44336; font-weight: 600;">${data.mongoStatus || 'sold'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.mongoQb || '-'}</div>
+                        </div>
+                        <div>
+                            <div style="color: #888; font-size: 11px;">CDE:</div>
+                            <div style="color: #4caf50; font-weight: 600;">${data.cdeStatus || 'INGRESADO'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.cdeQb || '-'}</div>
+                        </div>
+                    </div>
+                    ${data.category ? `<div style="color: #888; font-size: 11px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        📁 Categoría: <span style="color: #90caf9;">${data.category}</span>
+                    </div>` : ''}
+                </div>
+
+                <!-- Cambios a Aplicar -->
+                <div style="
+                    background: rgba(76, 175, 80, 0.1);
+                    border-left: 3px solid #4caf50;
+                    padding: 16px;
+                    border-radius: 8px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #4caf50; font-weight: 600; margin-bottom: 12px;">✓ CAMBIOS A APLICAR:</div>
+                    <div style="color: #e0e0e0; font-size: 14px; line-height: 1.8;">
+                        • Status: <strong style="color: #f44336;">sold</strong> → <strong style="color: #4caf50;">available</strong><br>
+                        • CDE Status: <strong>${data.cdeStatus || 'RETIRADO'}</strong> → <strong>INGRESADO</strong><br>
+                        • QB: <strong style="color: #90caf9;">${data.mongoQb || '-'}</strong> (sin cambios ✓)<br>
+                        • Limpiar selectionId y reservas
+                    </div>
+                </div>
+
+                <!-- Aviso de Verificación -->
+                <div style="
+                    background: rgba(255,193,7,0.1);
+                    border-left: 3px solid #ffc107;
+                    padding: 12px;
+                    border-radius: 8px;
+                    margin-bottom: 24px;
+                ">
+                    <div style="color: #ffc107; font-size: 12px; font-weight: 600; margin-bottom: 4px;">
+                        ⚠️ VERIFICACIÓN MANUAL RECOMENDADA:
+                    </div>
+                    <div style="color: #ffb74d; font-size: 12px; line-height: 1.5;">
+                        Verifique en el CDE que la foto ${photoNumber} realmente está INGRESADO
+                        y que corresponde físicamente al QB <strong>${data.mongoQb || '-'}</strong>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button
+                        onclick="document.getElementById('retornoModal').remove()"
+                        style="
+                            background: rgba(255,255,255,0.1);
+                            color: #999;
+                            border: 1px solid rgba(255,255,255,0.2);
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.1)'"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onclick="window.monitor.executeRetorno('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)'"
+                    >
+                        <i class="fas fa-check"></i> Confirmar Retorno
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    showPaseWarningModal(photoNumber, data) {
+        const modal = document.createElement('div');
+        modal.id = 'retornoModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: #1a1a2e;
+                border-radius: 16px;
+                padding: 32px;
+                max-width: 600px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,152,0,0.3);
+            ">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                    <div style="
+                        width: 48px;
+                        height: 48px;
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                    ">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; color: #ff9800; font-size: 20px;">⚠️ Cambio de Categoría Detectado</h3>
+                        <p style="margin: 4px 0 0 0; color: #888; font-size: 13px;">Foto: ${photoNumber}</p>
+                    </div>
+                </div>
+
+                <!-- QB Diferente -->
+                <div style="
+                    background: rgba(255,152,0,0.1);
+                    border-left: 3px solid #ff9800;
+                    padding: 16px;
+                    border-radius: 8px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #ff9800; font-weight: 600; margin-bottom: 12px;">🔄 QB CAMBIÓ:</div>
+                    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
+                        <div style="text-align: center; padding: 12px; background: rgba(244,67,54,0.2); border-radius: 8px;">
+                            <div style="color: #888; font-size: 11px;">MongoDB (Anterior)</div>
+                            <div style="color: #f44336; font-weight: 600; font-size: 18px; margin-top: 4px;">
+                                ${data.mongoQb || '-'}
+                            </div>
+                        </div>
+                        <div style="color: #ff9800; font-size: 24px;">→</div>
+                        <div style="text-align: center; padding: 12px; background: rgba(76,175,80,0.2); border-radius: 8px;">
+                            <div style="color: #888; font-size: 11px;">CDE (Nuevo)</div>
+                            <div style="color: #4caf50; font-weight: 600; font-size: 18px; margin-top: 4px;">
+                                ${data.cdeQb || '-'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Explicação -->
+                <div style="
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 24px;
+                ">
+                    <div style="color: #fff; font-size: 14px; line-height: 1.8;">
+                        <strong style="color: #ff9800;">Esto NO es un retorno simple!</strong><br><br>
+
+                        La foto regresó pero <strong>cambió de categoría</strong>. Esto significa que:<br><br>
+
+                        • La foto necesita moverse en el R2<br>
+                        • La categoría debe actualizarse<br>
+                        • El path debe cambiar<br><br>
+
+                        <strong>Use el botón PASE</strong> para hacer estos cambios correctamente.
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button
+                        onclick="document.getElementById('retornoModal').remove()"
+                        style="
+                            background: rgba(255,255,255,0.1);
+                            color: #999;
+                            border: 1px solid rgba(255,255,255,0.2);
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.1)'"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onclick="document.getElementById('retornoModal').remove(); window.monitor.openPaseModal('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 152, 0, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 152, 0, 0.3)'"
+                    >
+                        <i class="fas fa-exchange-alt"></i> Ir a PASE
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    async executeRetorno(photoNumber) {
+        console.log(`🔙 Executando retorno da foto ${photoNumber}...`);
+
+        // Fechar modal
+        const modal = document.getElementById('retornoModal');
+        if (modal) modal.remove();
+
+        // Mostrar loading
+        this.showActionLoading(photoNumber, 'retorno');
+
+        try {
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
+            const response = await fetch('/api/monitor-actions/retorno', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify({
+                    photoNumber,
+                    adminUser: session.username || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showActionSuccess(photoNumber, 'retorno', result.message);
+                // Re-scan após 2 segundos
+                setTimeout(() => this.scan(), 2000);
+            } else {
+                throw new Error(result.message || 'Error desconocido');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al ejecutar retorno:', error);
+            this.showActionError(photoNumber, 'retorno', error.message);
+        }
+    }
+
+    openPaseModal(photoNumber) {
+        alert(`Modal de PASE para foto ${photoNumber} - En desarrollo`);
+    }
+
+    showActionLoading(photoNumber, action) {
+        const actionName = action === 'retorno' ? 'Retorno' : 'Pase';
+        // Implementar notificação de loading (pode usar toast ou similar)
+        console.log(`⏳ Procesando ${actionName} de foto ${photoNumber}...`);
+    }
+
+    showActionSuccess(photoNumber, action, message) {
+        const actionName = action === 'retorno' ? 'Retorno' : 'Pase';
+        alert(`✅ ${actionName} ejecutado con éxito!\n\nFoto: ${photoNumber}\n${message}`);
+    }
+
+    showActionError(photoNumber, action, error) {
+        const actionName = action === 'retorno' ? 'Retorno' : 'Pase';
+        alert(`❌ Error al ejecutar ${actionName}\n\nFoto: ${photoNumber}\nError: ${error}`);
     }
 
     exportResults() {

@@ -179,6 +179,7 @@ app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/inventory-monitor', require('./routes/inventory-monitor'));
+app.use('/api/monitor-actions', require('./routes/monitor-actions'));
 app.use('/api/register', registrationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/currency', currencyRoutes);
