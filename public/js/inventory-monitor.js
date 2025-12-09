@@ -286,6 +286,36 @@ class InventoryMonitor {
         // Detectar tipo de problema baseado na descrição
         const isRetorno = issue.issue && issue.issue.includes('Posible retorno');
         const isPase = issue.issue && issue.issue.includes('PASE');
+        const isCritical = issue.issue && issue.issue.includes('RIESGO DE VENTA DUPLICADA');
+
+        // CRÍTICO: MongoDB=available, CDE=RETIRADO → Marcar como vendida
+        if (isCritical) {
+            return `
+                <button
+                    onclick="window.monitor.openVendidaModal('${issue.photoNumber}')"
+                    style="
+                        background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        font-weight: 600;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
+                    title="Marcar como vendida (sincronizar con CDE)"
+                >
+                    <i class="fas fa-ban"></i> Vendida
+                </button>
+            `;
+        }
 
         if (isRetorno) {
             // Botão de RETORNO
@@ -818,6 +848,241 @@ class InventoryMonitor {
 
     openPaseModal(photoNumber) {
         alert(`Modal de PASE para foto ${photoNumber} - En desarrollo`);
+    }
+
+    // ===========================================
+    // MODAL PARA MARCAR COMO VENDIDA (CRÍTICO)
+    // ===========================================
+    async openVendidaModal(photoNumber) {
+        // Mostrar loading primeiro
+        this.showLoadingModal(photoNumber, 'vendida');
+
+        try {
+            // Buscar dados completos da foto
+            const photoData = await this.fetchPhotoData(photoNumber);
+
+            if (!photoData) {
+                throw new Error('No se pudo obtener información de la foto');
+            }
+
+            // Fechar loading
+            document.getElementById('loadingModal')?.remove();
+
+            // Mostrar modal de confirmação para marcar como vendida
+            this.showVendidaConfirmModal(photoNumber, photoData);
+
+        } catch (error) {
+            console.error('Error al abrir modal vendida:', error);
+            document.getElementById('loadingModal')?.remove();
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    showVendidaConfirmModal(photoNumber, data) {
+        const modal = document.createElement('div');
+        modal.id = 'vendidaModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+                border-radius: 16px;
+                padding: 32px;
+                max-width: 500px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,255,255,0.1);
+            ">
+                <!-- Header -->
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                    <div style="
+                        width: 48px;
+                        height: 48px;
+                        background: rgba(244, 67, 54, 0.2);
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <i class="fas fa-ban" style="color: #f44336; font-size: 24px;"></i>
+                    </div>
+                    <div>
+                        <h3 style="color: #f44336; margin: 0; font-size: 18px;">Marcar como Vendida</h3>
+                        <p style="margin: 4px 0 0 0; color: #888; font-size: 13px;">Foto: ${photoNumber}</p>
+                    </div>
+                </div>
+
+                <!-- Estado Actual -->
+                <div style="
+                    background: rgba(244,67,54,0.1);
+                    border-left: 3px solid #f44336;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #f44336; font-weight: 600; margin-bottom: 8px;">⚠️ RIESGO DE VENTA DUPLICADA</div>
+                    <div style="color: #e0e0e0; font-size: 13px; line-height: 1.6;">
+                        Esta foto aparece <strong style="color: #4caf50;">disponible</strong> en la galería
+                        pero está marcada como <strong style="color: #f44336;">RETIRADO (vendida)</strong> en el CDE.
+                    </div>
+                </div>
+
+                <!-- Estado Comparativo -->
+                <div style="
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 8px;">📊 ESTADO ACTUAL:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <div style="color: #888; font-size: 11px;">MongoDB:</div>
+                            <div style="color: #4caf50; font-weight: 600;">${data.mongoStatus || 'available'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.mongoQb || '-'}</div>
+                        </div>
+                        <div>
+                            <div style="color: #888; font-size: 11px;">CDE:</div>
+                            <div style="color: #f44336; font-weight: 600;">${data.cdeStatus || 'RETIRADO'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.cdeQb || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cambios a Aplicar -->
+                <div style="
+                    background: rgba(244, 67, 54, 0.1);
+                    border-left: 3px solid #f44336;
+                    padding: 16px;
+                    border-radius: 8px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #f44336; font-weight: 600; margin-bottom: 12px;">✓ CAMBIOS A APLICAR:</div>
+                    <div style="color: #e0e0e0; font-size: 14px; line-height: 1.8;">
+                        • Status: <strong style="color: #4caf50;">available</strong> → <strong style="color: #f44336;">sold</strong><br>
+                        • CDE Status: → <strong>RETIRADO</strong><br>
+                        • La foto será removida de la galería
+                    </div>
+                </div>
+
+                <!-- Aviso -->
+                <div style="
+                    background: rgba(255,193,7,0.1);
+                    border-left: 3px solid #ffc107;
+                    padding: 12px;
+                    border-radius: 8px;
+                    margin-bottom: 24px;
+                ">
+                    <div style="color: #ffc107; font-size: 12px; font-weight: 600; margin-bottom: 4px;">
+                        ⚠️ VERIFICACIÓN RECOMENDADA:
+                    </div>
+                    <div style="color: #ffb74d; font-size: 12px; line-height: 1.5;">
+                        Confirme en el CDE que la foto ${photoNumber} realmente fue vendida
+                        antes de marcarla como vendida en el sistema.
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button
+                        onclick="document.getElementById('vendidaModal').remove()"
+                        style="
+                            background: rgba(255,255,255,0.1);
+                            color: #999;
+                            border: 1px solid rgba(255,255,255,0.2);
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.1)'"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onclick="window.monitor.executeVendida('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(244, 67, 54, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(244, 67, 54, 0.3)'"
+                    >
+                        <i class="fas fa-ban"></i> Confirmar Vendida
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    async executeVendida(photoNumber) {
+        console.log(`🛑 Marcando foto ${photoNumber} como vendida...`);
+
+        // Fechar modal
+        const modal = document.getElementById('vendidaModal');
+        if (modal) modal.remove();
+
+        // Mostrar loading
+        this.showActionLoading(photoNumber, 'vendida');
+
+        try {
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
+            const response = await fetch('/api/monitor-actions/vendida', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify({
+                    photoNumber: photoNumber,
+                    adminUser: session.user?.username || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showActionSuccess(photoNumber, 'vendida', result.message || 'Foto marcada como vendida');
+                // Atualizar o scan após sucesso
+                setTimeout(() => this.scan(), 1000);
+            } else {
+                throw new Error(result.message || 'Error al marcar como vendida');
+            }
+        } catch (error) {
+            console.error('Error al marcar como vendida:', error);
+            this.showActionError(photoNumber, 'vendida', error.message);
+        }
     }
 
     showActionLoading(photoNumber, action) {

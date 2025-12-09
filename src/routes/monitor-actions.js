@@ -185,9 +185,12 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
             database: process.env.CDE_DATABASE
         });
 
+        // Usar o photoNumber EXATO do MongoDB para buscar no CDE
+        const actualPhotoNumber = photo.photoNumber;
+
         const [cdeData] = await cdeConnection.execute(
             'SELECT ATIPOETIQUETA, AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
-            [photoNumber]
+            [actualPhotoNumber]
         );
 
         await cdeConnection.end();
@@ -197,7 +200,7 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
         // Retornar dados combinados
         return res.json({
             success: true,
-            photoNumber,
+            photoNumber: actualPhotoNumber,
             mongoStatus: photo.status,
             mongoQb: photo.qbItem,
             mongoCdeStatus: photo.cdeStatus,
@@ -214,6 +217,103 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Erro interno ao buscar informações',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// ============================================
+// AÇÃO 3: MARCAR COMO VENDIDA (CRÍTICO)
+// ============================================
+// POST /api/monitor-actions/vendida
+// Body: { photoNumber: "00046", adminUser: "admin@email.com" }
+// Usado quando: MongoDB=available mas CDE=RETIRADO
+router.post('/vendida', async (req, res) => {
+    try {
+        const { photoNumber, adminUser } = req.body;
+
+        // Validação
+        if (!photoNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Campo photoNumber é obrigatório'
+            });
+        }
+
+        // Validar que é admin autenticado
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Apenas administradores podem executar esta ação'
+            });
+        }
+
+        // Log da ação
+        console.log(`[MONITOR ACTION API] Marcando foto ${photoNumber} como vendida`);
+        console.log(`   Executado por: ${adminUser || req.user.username}`);
+
+        // Buscar foto no MongoDB
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+        const photo = await UnifiedProductComplete.findOne({
+            $or: [
+                { photoNumber: photoNumber },
+                { photoNumber: photoNumber.padStart(5, '0') }
+            ]
+        });
+
+        if (!photo) {
+            return res.status(404).json({
+                success: false,
+                message: `Foto ${photoNumber} não encontrada no MongoDB`
+            });
+        }
+
+        // Usar o photoNumber exato do MongoDB
+        const actualPhotoNumber = photo.photoNumber;
+
+        // Guardar estado anterior
+        const before = {
+            status: photo.status,
+            cdeStatus: photo.cdeStatus,
+            qbItem: photo.qbItem
+        };
+
+        // Atualizar para vendida
+        const updates = {
+            status: 'sold',
+            cdeStatus: 'RETIRADO',
+            currentStatus: 'sold'
+        };
+
+        await UnifiedProductComplete.updateOne(
+            { _id: photo._id },
+            { $set: updates }
+        );
+
+        console.log(`[MONITOR ACTION] ✅ Foto ${actualPhotoNumber} marcada como vendida`);
+        console.log(`   - Status: ${before.status} → sold`);
+        console.log(`   - CDE Status: ${before.cdeStatus} → RETIRADO`);
+
+        // Retornar sucesso
+        return res.json({
+            success: true,
+            message: `Foto ${actualPhotoNumber} marcada como vendida`,
+            data: {
+                photoNumber: actualPhotoNumber,
+                action: 'vendida',
+                changes: {
+                    before,
+                    after: updates
+                },
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('[MONITOR ACTION API] Erro ao marcar como vendida:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao processar ação',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
