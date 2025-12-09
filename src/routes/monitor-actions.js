@@ -371,7 +371,7 @@ router.post('/import', async (req, res) => {
         });
 
         const [cdeData] = await cdeConnection.execute(
-            'SELECT ATIPOETIQUETA, AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
+            'SELECT ATIPOETIQUETA, AESTADOP, AQBITEM, AIDH FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
             [photoNumber]
         );
         await cdeConnection.end();
@@ -385,6 +385,7 @@ router.post('/import', async (req, res) => {
 
         const cdeRecord = cdeData[0];
         const qbItem = cdeQb || cdeRecord.AQBITEM;
+        const idhCode = cdeRecord.AIDH ? String(cdeRecord.AIDH) : `IMPORT-${photoNumber}-${Date.now()}`;
 
         // Buscar categoria pelo QB
         const categoryDoc = await PhotoCategory.findOne({ qbItem: qbItem });
@@ -424,11 +425,20 @@ router.post('/import', async (req, res) => {
             });
         }
 
-        // Criar documento no MongoDB
+        // Criar documento no MongoDB com todos os campos obrigatórios
+        const fileName = `${photoNumber}.webp`;
+        const categoryName = categoryDoc.category || categoryDoc.googleDrivePath.split('/').pop() || qbItem;
+
         const newPhoto = new UnifiedProductComplete({
+            // Campos obrigatórios
+            idhCode: idhCode,
             photoNumber: photoNumber,
+            fileName: fileName,
+            photoId: photoNumber,
+            category: categoryName,
+
+            // Outros campos importantes
             qbItem: qbItem,
-            category: categoryDoc.category,
             googleDrivePath: categoryDoc.googleDrivePath,
             driveFileId: r2Path,
             r2Path: r2Path,
