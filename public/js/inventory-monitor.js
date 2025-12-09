@@ -210,11 +210,11 @@ class InventoryMonitor {
     renderIssueRow(issue) {
         const severityConfig = {
             critical: { icon: '🔴', class: 'severity-critical', label: 'CRÍTICO', color: '#f44336' },
-            warning: { icon: '🟡', class: 'severity-warning', label: 'ADVERTENCIA', color: '#ffc107' },
-            pendingSync: { icon: '🔄', class: 'severity-sync', label: 'SYNC PENDIENTE', color: '#2196f3' },
+            warning: { icon: '🟡', class: 'severity-warning', label: 'RETORNO', color: '#ffc107' },
+            pendingSync: { icon: '🔄', class: 'severity-sync', label: 'SYNC', color: '#2196f3' },
             noPhoto: { icon: '📷', class: 'severity-nophoto', label: 'SIN FOTO', color: '#9c27b0' },
             pass: { icon: '🔀', class: 'severity-pass', label: 'PASS', color: '#ff9800' },
-            autofix: { icon: '🔧', class: 'severity-autofix', label: 'AUTO-CORRECCIÓN', color: '#4caf50' },
+            autofix: { icon: '🔧', class: 'severity-autofix', label: 'AUTO', color: '#4caf50' },
             standby: { icon: '⏸️', class: 'severity-standby', label: 'STANDBY', color: '#607d8b' }
         };
 
