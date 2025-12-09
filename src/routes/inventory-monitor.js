@@ -64,9 +64,9 @@ async function loadR2PhotosCache() {
                     // Extrair número da foto do path
                     const match = obj.Key.match(/\/(\d+)\.webp$/);
                     if (match) {
+                        // IMPORTANTE: Adicionar APENAS o número exato do arquivo
+                        // NÃO usar padStart pois 0046 e 00046 são fotos FISICAMENTE diferentes!
                         r2PhotosCache.add(match[1]);
-                        // Também adicionar com zeros à esquerda
-                        r2PhotosCache.add(match[1].padStart(5, '0'));
                     }
                 }
             }
