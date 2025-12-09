@@ -286,6 +286,11 @@ class InventoryMonitor {
     }
 
     renderActionButtons(issue) {
+        // SIN FOTO e STANDBY não têm ações - requerem trabalho externo
+        if (issue.category === 'noPhoto' || issue.category === 'standby') {
+            return '-';
+        }
+
         // Detectar tipo de problema baseado na descrição
         const isRetorno = issue.issue && issue.issue.includes('Posible retorno');
         const isPase = issue.issue && issue.issue.includes('PASE');
