@@ -1162,21 +1162,142 @@ class InventoryMonitor {
     }
 
     showActionLoading(photoNumber, action) {
-        const actionName = action === 'retorno' ? 'Retorno' : action === 'import' ? 'Importar' : 'Pase';
-        // Implementar notificação de loading (pode usar toast ou similar)
-        console.log(`⏳ Procesando ${actionName} de foto ${photoNumber}...`);
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
+        const actionName = actionNames[action] || action;
+        this.showToast({
+            type: 'loading',
+            title: `Procesando ${actionName}...`,
+            message: `Foto ${photoNumber}`,
+            duration: 0 // No auto-dismiss while loading
+        });
     }
 
     showActionSuccess(photoNumber, action, message) {
         const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
         const actionName = actionNames[action] || action;
-        alert(`✅ ${actionName} ejecutado con éxito!\n\nFoto: ${photoNumber}\n${message}`);
+        this.showToast({
+            type: 'success',
+            title: `${actionName} exitoso`,
+            message: `Foto ${photoNumber}: ${message}`,
+            duration: 4000
+        });
     }
 
     showActionError(photoNumber, action, error) {
         const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
         const actionName = actionNames[action] || action;
-        alert(`❌ Error al ejecutar ${actionName}\n\nFoto: ${photoNumber}\nError: ${error}`);
+        this.showToast({
+            type: 'error',
+            title: `Error en ${actionName}`,
+            message: `Foto ${photoNumber}: ${error}`,
+            duration: 6000
+        });
+    }
+
+    showToast({ type, title, message, duration = 4000 }) {
+        // Remover toast anterior se existir
+        const existingToast = document.getElementById('monitorToast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+
+        const icons = {
+            success: '<i class="fas fa-check-circle"></i>',
+            error: '<i class="fas fa-times-circle"></i>',
+            loading: '<i class="fas fa-spinner fa-spin"></i>',
+            info: '<i class="fas fa-info-circle"></i>'
+        };
+
+        const colors = {
+            success: { bg: 'rgba(76, 175, 80, 0.95)', border: '#4caf50', icon: '#fff' },
+            error: { bg: 'rgba(244, 67, 54, 0.95)', border: '#f44336', icon: '#fff' },
+            loading: { bg: 'rgba(33, 150, 243, 0.95)', border: '#2196f3', icon: '#fff' },
+            info: { bg: 'rgba(255, 193, 7, 0.95)', border: '#ffc107', icon: '#fff' }
+        };
+
+        const config = colors[type] || colors.info;
+
+        const toast = document.createElement('div');
+        toast.id = 'monitorToast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            min-width: 320px;
+            max-width: 420px;
+            background: ${config.bg};
+            border-left: 4px solid ${config.border};
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            z-index: 10001;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            backdrop-filter: blur(10px);
+        `;
+
+        toast.innerHTML = `
+            <div style="
+                font-size: 24px;
+                color: ${config.icon};
+                flex-shrink: 0;
+                margin-top: 2px;
+            ">
+                ${icons[type]}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="
+                    font-weight: 700;
+                    font-size: 15px;
+                    color: #fff;
+                    margin-bottom: 4px;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                ">${title}</div>
+                <div style="
+                    font-size: 13px;
+                    color: rgba(255,255,255,0.9);
+                    line-height: 1.4;
+                    word-break: break-word;
+                ">${message}</div>
+            </div>
+            ${duration > 0 ? `
+                <button onclick="this.parentElement.remove()" style="
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    color: #fff;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    transition: background 0.2s;
+                    font-size: 14px;
+                " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <i class="fas fa-times"></i>
+                </button>
+            ` : ''}
+        `;
+
+        document.body.appendChild(toast);
+
+        // Animar entrada
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+        });
+
+        // Auto-dismiss
+        if (duration > 0) {
+            setTimeout(() => {
+                toast.style.transform = 'translateX(120%)';
+                setTimeout(() => toast.remove(), 400);
+            }, duration);
+        }
     }
 
     exportResults() {
