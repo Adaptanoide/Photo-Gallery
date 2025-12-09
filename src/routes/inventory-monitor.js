@@ -83,14 +83,10 @@ async function loadR2PhotosCache() {
 function photoExistsInR2(photoNumber) {
     if (!photoNumber) return false;
 
-    // Verificar várias formas
-    const variations = [
-        photoNumber,
-        photoNumber.padStart(5, '0'),
-        String(parseInt(photoNumber, 10))
-    ];
-
-    return variations.some(v => r2PhotosCache.has(v));
+    // BUSCA EXATA - não usar padStart para evitar confundir fotos diferentes
+    // Exemplo: 0046 e 00046 são fotos FISICAMENTE diferentes
+    // Apenas verificar o número exato
+    return r2PhotosCache.has(photoNumber);
 }
 
 router.get('/sync-status', async (req, res) => {
