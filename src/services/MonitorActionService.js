@@ -44,11 +44,14 @@ class MonitorActionService {
                 };
             }
 
-            // 2. Verificar status no CDE
+            // 2. Verificar status no CDE usando o photoNumber EXATO do MongoDB
             const cdeConnection = await this.connectCDE();
+            const actualPhotoNumber = photo.photoNumber; // Usar o número exato do MongoDB
+            console.log(`[MONITOR ACTION] Buscando no CDE com número: "${actualPhotoNumber}"`);
+
             const [cdeData] = await cdeConnection.execute(
                 'SELECT AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
-                [photoNumber]
+                [actualPhotoNumber]
             );
             await cdeConnection.end();
 
