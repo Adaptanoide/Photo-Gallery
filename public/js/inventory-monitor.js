@@ -290,6 +290,36 @@ class InventoryMonitor {
         const isRetorno = issue.issue && issue.issue.includes('Posible retorno');
         const isPase = issue.issue && issue.issue.includes('PASE');
         const isCritical = issue.issue && issue.issue.includes('RIESGO DE VENTA DUPLICADA');
+        const isSyncPending = issue.issue && issue.issue.includes('pendiente de sincronización');
+
+        // SYNC PENDIENTE: Foto existe no R2 e CDE mas não no MongoDB → Importar
+        if (isSyncPending) {
+            return `
+                <button
+                    onclick="window.monitor.executeImport('${issue.photoNumber}', '${issue.cdeQb || ''}')"
+                    style="
+                        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        font-weight: 600;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
+                    title="Importar foto al MongoDB"
+                >
+                    <i class="fas fa-download"></i> Importar
+                </button>
+            `;
+        }
 
         // CRÍTICO: MongoDB=available, CDE=RETIRADO → Marcar como vendida
         if (isCritical) {
@@ -1088,19 +1118,59 @@ class InventoryMonitor {
         }
     }
 
+    async executeImport(photoNumber, cdeQb) {
+        console.log(`📥 Importando foto ${photoNumber}...`);
+
+        // Mostrar loading
+        this.showActionLoading(photoNumber, 'import');
+
+        try {
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
+            const response = await fetch('/api/monitor-actions/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify({
+                    photoNumber: photoNumber,
+                    cdeQb: cdeQb || null,
+                    adminUser: session.user?.username || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showActionSuccess(photoNumber, 'import', result.message || 'Foto importada con éxito');
+                // Atualizar o scan após sucesso
+                setTimeout(() => this.scan(), 1000);
+            } else {
+                throw new Error(result.message || 'Error al importar foto');
+            }
+        } catch (error) {
+            console.error('Error al importar foto:', error);
+            this.showActionError(photoNumber, 'import', error.message);
+        }
+    }
+
     showActionLoading(photoNumber, action) {
-        const actionName = action === 'retorno' ? 'Retorno' : 'Pase';
+        const actionName = action === 'retorno' ? 'Retorno' : action === 'import' ? 'Importar' : 'Pase';
         // Implementar notificação de loading (pode usar toast ou similar)
         console.log(`⏳ Procesando ${actionName} de foto ${photoNumber}...`);
     }
 
     showActionSuccess(photoNumber, action, message) {
-        const actionName = action === 'retorno' ? 'Retorno' : 'Pase';
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
+        const actionName = actionNames[action] || action;
         alert(`✅ ${actionName} ejecutado con éxito!\n\nFoto: ${photoNumber}\n${message}`);
     }
 
     showActionError(photoNumber, action, error) {
-        const actionName = action === 'retorno' ? 'Retorno' : 'Pase';
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
+        const actionName = actionNames[action] || action;
         alert(`❌ Error al ejecutar ${actionName}\n\nFoto: ${photoNumber}\nError: ${error}`);
     }
 

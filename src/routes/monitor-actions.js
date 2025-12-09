@@ -320,6 +320,159 @@ router.post('/vendida', async (req, res) => {
 });
 
 // ============================================
+// AÇÃO 4: IMPORTAR FOTO (SYNC PENDIENTE)
+// ============================================
+// POST /api/monitor-actions/import
+// Body: { photoNumber: "0046", cdeQb: "5301SB" }
+// Usado quando: Foto existe no R2 e CDE mas não no MongoDB
+router.post('/import', async (req, res) => {
+    try {
+        const { photoNumber, cdeQb, adminUser } = req.body;
+
+        // Validação
+        if (!photoNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Campo photoNumber é obrigatório'
+            });
+        }
+
+        // Validar que é admin autenticado
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Apenas administradores podem executar esta ação'
+            });
+        }
+
+        console.log(`[MONITOR ACTION API] Importando foto ${photoNumber}`);
+        console.log(`   Executado por: ${adminUser || req.user.username}`);
+
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+        const PhotoCategory = require('../models/PhotoCategory');
+
+        // Verificar se já existe no MongoDB
+        const existing = await UnifiedProductComplete.findOne({ photoNumber: photoNumber });
+        if (existing) {
+            return res.status(400).json({
+                success: false,
+                message: `Foto ${photoNumber} já existe no MongoDB`
+            });
+        }
+
+        // Buscar dados do CDE
+        const mysql = require('mysql2/promise');
+        const cdeConnection = await mysql.createConnection({
+            host: process.env.CDE_HOST,
+            port: process.env.CDE_PORT,
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE
+        });
+
+        const [cdeData] = await cdeConnection.execute(
+            'SELECT ATIPOETIQUETA, AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
+            [photoNumber]
+        );
+        await cdeConnection.end();
+
+        if (cdeData.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `Foto ${photoNumber} não encontrada no CDE`
+            });
+        }
+
+        const cdeRecord = cdeData[0];
+        const qbItem = cdeQb || cdeRecord.AQBITEM;
+
+        // Buscar categoria pelo QB
+        const categoryDoc = await PhotoCategory.findOne({ qbItem: qbItem });
+        if (!categoryDoc) {
+            return res.status(400).json({
+                success: false,
+                message: `Categoria não encontrada para QB ${qbItem}`
+            });
+        }
+
+        // Construir o path do R2 (evitar barra dupla)
+        const basePath = categoryDoc.googleDrivePath.endsWith('/')
+            ? categoryDoc.googleDrivePath.slice(0, -1)
+            : categoryDoc.googleDrivePath;
+        const r2Path = `${basePath}/${photoNumber}.webp`;
+
+        // Verificar se existe no R2
+        const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
+        const s3Client = new S3Client({
+            region: 'auto',
+            endpoint: process.env.R2_ENDPOINT,
+            credentials: {
+                accessKeyId: process.env.R2_ACCESS_KEY_ID,
+                secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+            }
+        });
+
+        try {
+            await s3Client.send(new HeadObjectCommand({
+                Bucket: process.env.R2_BUCKET_NAME || 'sunshine-photos',
+                Key: r2Path
+            }));
+        } catch (err) {
+            return res.status(404).json({
+                success: false,
+                message: `Foto ${photoNumber} não encontrada no R2 no path: ${r2Path}`
+            });
+        }
+
+        // Criar documento no MongoDB
+        const newPhoto = new UnifiedProductComplete({
+            photoNumber: photoNumber,
+            qbItem: qbItem,
+            category: categoryDoc.category,
+            googleDrivePath: categoryDoc.googleDrivePath,
+            driveFileId: r2Path,
+            r2Path: r2Path,
+            status: cdeRecord.AESTADOP === 'INGRESADO' ? 'available' : 'sold',
+            cdeStatus: cdeRecord.AESTADOP,
+            currentStatus: cdeRecord.AESTADOP === 'INGRESADO' ? 'available' : 'sold',
+            isActive: true,
+            source: 'monitor-import',
+            importedAt: new Date(),
+            importedBy: adminUser || req.user.username
+        });
+
+        await newPhoto.save();
+
+        console.log(`[MONITOR ACTION] ✅ Foto ${photoNumber} importada com sucesso`);
+        console.log(`   - QB: ${qbItem}`);
+        console.log(`   - Categoria: ${categoryDoc.category}`);
+        console.log(`   - Status: ${newPhoto.status}`);
+        console.log(`   - R2 Path: ${r2Path}`);
+
+        return res.json({
+            success: true,
+            message: `Foto ${photoNumber} importada com sucesso`,
+            data: {
+                photoNumber: photoNumber,
+                qbItem: qbItem,
+                category: categoryDoc.category,
+                status: newPhoto.status,
+                r2Path: r2Path,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('[MONITOR ACTION API] Erro ao importar foto:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao importar foto',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// ============================================
 // ROTA DE STATUS (OPCIONAL)
 // ============================================
 // GET /api/monitor-actions/status
