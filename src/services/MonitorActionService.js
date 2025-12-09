@@ -29,18 +29,15 @@ class MonitorActionService {
         console.log(`[MONITOR ACTION] 🔙 Corrigindo retorno da foto ${photoNumber}...`);
 
         try {
-            // 1. Buscar foto no MongoDB
-            const photo = await UnifiedProductComplete.findOne({
-                $or: [
-                    { photoNumber: photoNumber },
-                    { photoNumber: photoNumber.padStart(5, '0') }
-                ]
-            });
+            // 1. Buscar foto no MongoDB - EXATAMENTE como veio da requisição
+            // NÃO usar padStart para evitar confundir fotos diferentes (0046 vs 00046)
+            const photo = await UnifiedProductComplete.findOne({ photoNumber: photoNumber });
 
             if (!photo) {
+                console.log(`[MONITOR ACTION] Foto ${photoNumber} não encontrada com busca exata`);
                 return {
                     success: false,
-                    message: `Foto ${photoNumber} não encontrada no MongoDB`
+                    message: `Foto ${photoNumber} não encontrada no MongoDB (busca exata)`
                 };
             }
 

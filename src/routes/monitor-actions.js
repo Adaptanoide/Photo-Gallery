@@ -159,19 +159,19 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
 
         console.log(`[MONITOR ACTION API] Buscando info da foto ${photoNumber}`);
 
-        // Buscar no MongoDB
+        // Buscar no MongoDB - EXATAMENTE como veio da requisição
         const UnifiedProductComplete = require('../models/UnifiedProductComplete');
-        const photo = await UnifiedProductComplete.findOne({
-            $or: [
-                { photoNumber: photoNumber },
-                { photoNumber: photoNumber.padStart(5, '0') }
-            ]
-        });
 
+        // Primeiro: buscar EXATAMENTE pelo número fornecido
+        let photo = await UnifiedProductComplete.findOne({ photoNumber: photoNumber });
+
+        // Se não encontrar, NÃO tenta variações - retorna não encontrado
+        // Isso evita confundir fotos diferentes como 0046 vs 00046
         if (!photo) {
+            console.log(`[MONITOR ACTION API] Foto ${photoNumber} não encontrada com busca exata`);
             return res.status(404).json({
                 success: false,
-                message: `Foto ${photoNumber} não encontrada no MongoDB`
+                message: `Foto ${photoNumber} não encontrada no MongoDB (busca exata)`
             });
         }
 

@@ -210,13 +210,11 @@ router.get('/scan', async (req, res) => {
 
             if (!mongoPhoto) {
                 // Verificar se existe como inativa ou sold
+                // IMPORTANTE: Buscar EXATAMENTE pelo número do CDE para evitar confundir
+                // fotos diferentes (ex: 0046 vs 00046 são fotos fisicamente diferentes!)
                 const existingPhoto = await UnifiedProductComplete.findOne({
-                    $or: [
-                        { photoNumber: atipoetiqueta },
-                        { photoNumber: atipoetiqueta.padStart(5, '0') },
-                        { photoNumber: String(parseInt(atipoetiqueta, 10)) }
-                    ]
-                }).select('photoNumber isActive status specialFlags').lean();
+                    photoNumber: atipoetiqueta
+                }).select('photoNumber isActive status specialFlags qbItem').lean();
 
                 // Se existe como inativa, ignorar
                 if (existingPhoto?.isActive === false) {
