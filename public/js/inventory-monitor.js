@@ -149,6 +149,7 @@ class InventoryMonitor {
         this.updateElement('noPhotoCount', summary.noPhoto);
         this.updateElement('autoFixCount', summary.autoFixable);
         this.updateElement('passCount', summary.pass);
+        this.updateElement('standbyCount', summary.standby);
 
         // Atualizar totais
         const totals = document.getElementById('scanTotals');
@@ -168,7 +169,8 @@ class InventoryMonitor {
             ...(data.pendingSync || []).map(i => ({ ...i, category: 'pendingSync' })),
             ...(data.noPhoto || []).map(i => ({ ...i, category: 'noPhoto' })),
             ...(data.pass || []).map(i => ({ ...i, category: 'pass' })),
-            ...(data.autoFixable || []).map(i => ({ ...i, category: 'autofix' }))
+            ...(data.autoFixable || []).map(i => ({ ...i, category: 'autofix' })),
+            ...(data.standby || []).map(i => ({ ...i, category: 'standby' }))
         ];
 
         const totalIssues = allIssues.length;
@@ -212,7 +214,8 @@ class InventoryMonitor {
             pendingSync: { icon: '🔄', class: 'severity-sync', label: 'SYNC PENDIENTE', color: '#2196f3' },
             noPhoto: { icon: '📷', class: 'severity-nophoto', label: 'SIN FOTO', color: '#9c27b0' },
             pass: { icon: '🔀', class: 'severity-pass', label: 'PASS', color: '#ff9800' },
-            autofix: { icon: '🔧', class: 'severity-autofix', label: 'AUTO-CORRECCIÓN', color: '#4caf50' }
+            autofix: { icon: '🔧', class: 'severity-autofix', label: 'AUTO-CORRECCIÓN', color: '#4caf50' },
+            standby: { icon: '⏸️', class: 'severity-standby', label: 'STANDBY', color: '#607d8b' }
         };
 
         const config = severityConfig[issue.category] || severityConfig.warning;

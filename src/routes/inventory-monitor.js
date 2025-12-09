@@ -132,7 +132,8 @@ router.get('/scan', async (req, res) => {
             pendingSync: [],   // 🔄 Foto existe no R2 mas não no MongoDB
             noPhoto: [],       // 📷 Couro sem foto
             autoFixable: [],   // 🔧 Sync vai resolver
-            pass: []           // 🔄 Múltiplos registros (PASS)
+            pass: [],          // 🔄 Múltiplos registros (PASS)
+            standby: []        // ⏸️ Fotos em STANDBY no CDE
         };
 
         // 1. Conectar ao CDE
@@ -531,6 +532,43 @@ router.get('/scan', async (req, res) => {
         }
 
         // ============================================================
+        // VERIFICAÇÃO 5: FOTOS EM STANDBY NO CDE
+        // ============================================================
+        console.log('[MONITOR] 🔍 Verificando fotos em STANDBY...');
+
+        const [standbyPhotos] = await cdeConnection.execute(
+            `SELECT ATIPOETIQUETA, AQBITEM, AIDH
+             FROM tbinventario
+             WHERE AESTADOP = 'STANDBY'
+             AND ATIPOETIQUETA IS NOT NULL
+             AND ATIPOETIQUETA != ''
+             AND ATIPOETIQUETA != '0'
+             AND ATIPOETIQUETA REGEXP '^[0-9]+$'
+             AND LENGTH(ATIPOETIQUETA) >= 3
+             ORDER BY AQBITEM, ATIPOETIQUETA`
+        );
+
+        for (const standbyPhoto of standbyPhotos) {
+            const photoNum = standbyPhoto.ATIPOETIQUETA;
+            const existsInR2 = photoExistsInR2(photoNum);
+
+            issues.standby.push({
+                photoNumber: photoNum,
+                severity: 'standby',
+                issue: 'Foto en STANDBY',
+                description: `La foto ${photoNum} está en STANDBY en el CDE. No aparece en la galería hasta que sea liberada.`,
+                mongoStatus: 'N/A',
+                cdeStatus: 'STANDBY',
+                mongoQb: '-',
+                cdeQb: standbyPhoto.AQBITEM || '-',
+                existsInR2: existsInR2,
+                needsManualReview: false
+            });
+        }
+
+        console.log(`[MONITOR] ⏸️ ${issues.standby.length} fotos en STANDBY`);
+
+        // ============================================================
         // RESULTADO FINAL
         // ============================================================
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -540,7 +578,8 @@ router.get('/scan', async (req, res) => {
             issues.pendingSync.length +
             issues.noPhoto.length +
             issues.autoFixable.length +
-            issues.pass.length;
+            issues.pass.length +
+            issues.standby.length;
 
         console.log(`[MONITOR] ✅ Scan completo em ${elapsed}s`);
         console.log(`[MONITOR] 📊 Resultados:`);
@@ -550,6 +589,7 @@ router.get('/scan', async (req, res) => {
         console.log(`   📷 Sin Foto: ${issues.noPhoto.length}`);
         console.log(`   🔧 Auto-corrección: ${issues.autoFixable.length}`);
         console.log(`   🔄 PASS: ${issues.pass.length}`);
+        console.log(`   ⏸️ STANDBY: ${issues.standby.length}`);
 
         res.json({
             success: true,
@@ -566,14 +606,16 @@ router.get('/scan', async (req, res) => {
                     pendingSync: issues.pendingSync.length,
                     noPhoto: issues.noPhoto.length,
                     autoFixable: issues.autoFixable.length,
-                    pass: issues.pass.length
+                    pass: issues.pass.length,
+                    standby: issues.standby.length
                 },
                 critical: issues.critical,
                 warnings: issues.warnings,
                 pendingSync: issues.pendingSync,
                 noPhoto: issues.noPhoto,
                 autoFixable: issues.autoFixable,
-                pass: issues.pass
+                pass: issues.pass,
+                standby: issues.standby
             }
         });
 
