@@ -73,6 +73,7 @@ body.home-page .luxury-container {
     max-width: 420px;
     width: 100%;
     margin: 0 auto;
+    padding-bottom: 60px; /* Espaço para o footer fixo */
 }
 
 /* ===== BRANDING - SOL E TÍTULO ===== */
@@ -169,15 +170,23 @@ body.home-page .luxury-btn-primary:active {
 /* ===== LINK ADMIN - MAIS DISCRETO ===== */
 body.home-page .luxury-admin-access {
     border-top: 1px solid #e2e8f0;
-    padding-top: 1.5rem;
-    margin-top: 1.5rem;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    text-align: center;
 }
 
 body.home-page .luxury-admin-link {
     color: #718096;
-    font-size: 0.85rem;
-    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
 }
 
 body.home-page .luxury-admin-link:hover {
@@ -186,23 +195,28 @@ body.home-page .luxury-admin-link:hover {
     transform: translateY(-1px);
 }
 
-/* ===== FOOTER - INTEGRADO E FIXO ===== */
+body.home-page .luxury-admin-link i {
+    font-size: 0.75rem;
+}
+
+/* ===== FOOTER - INTEGRADO NO CARD ===== */
 body.home-page .footer {
-    position: fixed;
-    bottom: 0;
+    position: absolute;
+    bottom: 10px;
     left: 0;
     right: 0;
     background: transparent;
-    color: #718096;
+    color: #a0aec0;
     text-align: center;
-    padding: 1rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
     z-index: 10;
+    pointer-events: none;
 }
 
 body.home-page .footer p {
     margin: 0;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 /* ===== MODAL DE LOGIN ADMIN - TEMA LIGHT ===== */
@@ -267,33 +281,47 @@ body.home-page .form-group input:focus {
     body.home-page .luxury-welcome-section {
         padding: 1rem;
     }
-    
+
+    body.home-page .luxury-container {
+        padding-bottom: 50px;
+    }
+
     body.home-page .luxury-logo i {
         font-size: 3rem;
     }
-    
+
     body.home-page .luxury-title {
         font-size: 2.2rem;
         letter-spacing: 2px;
     }
-    
+
     body.home-page .luxury-subtitle {
         font-size: 0.9rem;
     }
-    
+
     body.home-page .luxury-access-form {
         padding: 1.5rem;
     }
-    
+
     body.home-page .luxury-code-input {
         height: 50px;
         font-size: 1.2rem;
         letter-spacing: 8px;
     }
-    
+
     body.home-page .footer {
-        font-size: 0.7rem;
-        padding: 0.75rem;
+        font-size: 0.65rem;
+        padding: 0.5rem;
+        bottom: 5px;
+    }
+
+    body.home-page .luxury-admin-access {
+        padding-top: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    body.home-page .luxury-admin-link {
+        font-size: 0.75rem;
     }
 }
 
@@ -301,19 +329,29 @@ body.home-page .form-group input:focus {
     body.home-page .luxury-container {
         max-width: 100%;
         padding: 0 1rem;
+        padding-bottom: 45px;
     }
-    
+
     body.home-page .luxury-logo i {
         font-size: 2.5rem;
     }
-    
+
     body.home-page .luxury-title {
         font-size: 1.8rem;
     }
-    
+
     body.home-page .luxury-code-input {
         font-size: 1.1rem;
         letter-spacing: 6px;
+    }
+
+    body.home-page .luxury-admin-link {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    body.home-page .footer {
+        font-size: 0.6rem;
     }
 }
 
