@@ -201,69 +201,91 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
 
         const cdeInfo = cdeData.length > 0 ? cdeData[0] : null;
 
-        // Detectar colisão de IDH: mesmo photoNumber com IDHs diferentes
+        // Detectar colisão de IDH: mesmo photoNumber mas produto FÍSICO diferente
         const mongoIdh = String(photo.idhCode || '');
         const cdeIdh = cdeInfo ? String(cdeInfo.AIDH || '') : '';
 
         let isCollision = false;
         let collisionDetails = null;
 
-        // Verificar se há múltiplos IDHs diferentes para este photoNumber
+        // Verificar quais registros existem no CDE
         const uniqueIdhs = [...new Set(cdeData.map(r => String(r.AIDH || '')).filter(Boolean))];
         const uniqueQbs = [...new Set(cdeData.map(r => r.AQBITEM).filter(Boolean))];
-
-        // Verificar quais status existem no CDE
         const cdeStatuses = [...new Set(cdeData.map(r => r.AESTADOP).filter(Boolean))];
         const hasIngresado = cdeStatuses.includes('INGRESADO');
         const allRetirado = cdeStatuses.every(s => s === 'RETIRADO');
 
-        // Buscar o registro INGRESADO mais recente (se existir)
+        // Buscar o registro INGRESADO (o que importa para comparação)
         const ingresadoRecord = cdeData.find(r => r.AESTADOP === 'INGRESADO');
+        const ingresadoIdh = ingresadoRecord ? String(ingresadoRecord.AIDH || '') : '';
 
-        if (uniqueIdhs.length > 1 || (mongoIdh && cdeIdh && !mongoIdh.includes(cdeIdh) && !cdeIdh.includes(mongoIdh))) {
+        // LÓGICA CORRETA DE COLISÃO:
+        // - Só é colisão se existe INGRESADO no CDE E o IDH do INGRESADO é DIFERENTE do MongoDB
+        // - Se MongoDB IDH == CDE INGRESADO IDH → É o MESMO produto, é RETORNO simples
+        // - Se não existe INGRESADO no CDE (todos RETIRADO) → Verificar se MongoDB IDH está entre os RETIRADO
+
+        const mongoIdhMatchesIngresado = ingresadoIdh && (
+            mongoIdh === ingresadoIdh ||
+            mongoIdh.includes(ingresadoIdh) ||
+            ingresadoIdh.includes(mongoIdh)
+        );
+
+        // Só detectar colisão se:
+        // 1. Existe INGRESADO no CDE E o IDH do INGRESADO é DIFERENTE do MongoDB
+        // 2. OU não existe INGRESADO e o MongoDB IDH não está entre os registros do CDE
+        if (hasIngresado && !mongoIdhMatchesIngresado) {
+            // COLISÃO REAL: O número foi reutilizado para outro produto físico
             isCollision = true;
-
-            // Determinar tipo de colisão e ação recomendada
-            let collisionType = 'unknown';
-            let recommendedAction = 'manual';
-            let actionMessage = '';
-
-            if (hasIngresado) {
-                // Há um registro INGRESADO → pode reciclar
-                collisionType = 'recycle';
-                recommendedAction = 'reciclar';
-                actionMessage = 'Usar "Reciclar Número" para desactivar el registro antiguo y crear uno nuevo con los datos del CDE.';
-            } else if (allRetirado) {
-                // Todos são RETIRADO → só desativar
-                collisionType = 'deactivate';
-                recommendedAction = 'desativar';
-                actionMessage = 'Usar "Desactivar" para marcar el registro MongoDB como inactivo. No hay nuevo couro INGRESADO en el CDE.';
-            } else {
-                // Outros casos (STANDBY, etc)
-                collisionType = 'manual';
-                recommendedAction = 'manual';
-                actionMessage = 'Revisar manualmente. El CDE tiene registros en estados no estándar.';
-            }
-
             collisionDetails = {
-                message: '⚠️ COLISIÓN DETECTADA: Este número de foto fue usado para productos diferentes',
+                message: '⚠️ COLISIÓN: Este número fue reutilizado para otro producto',
                 mongoIdh: mongoIdh || 'N/A',
                 cdeIdhs: uniqueIdhs,
                 cdeQbs: uniqueQbs,
                 cdeRecordCount: cdeData.length,
                 cdeStatuses: cdeStatuses,
-                hasIngresado: hasIngresado,
-                allRetirado: allRetirado,
-                collisionType: collisionType,
-                recommendedAction: recommendedAction,
-                actionMessage: actionMessage,
-                ingresadoRecord: ingresadoRecord ? {
-                    idh: String(ingresadoRecord.AIDH || ''),
+                hasIngresado: true,
+                allRetirado: false,
+                collisionType: 'recycle',
+                recommendedAction: 'reciclar',
+                actionMessage: 'El couro en la galería (IDH ' + mongoIdh + ') es diferente del INGRESADO en CDE (IDH ' + ingresadoIdh + '). Usar "Reciclar Número" para actualizar.',
+                ingresadoRecord: {
+                    idh: ingresadoIdh,
                     qb: ingresadoRecord.AQBITEM,
                     fecha: ingresadoRecord.AFECHA
-                } : null
+                }
             };
+        } else if (!hasIngresado && allRetirado && uniqueIdhs.length > 0) {
+            // Verificar se o MongoDB IDH está entre os RETIRADO
+            const mongoIdhInRetirado = uniqueIdhs.some(idh =>
+                mongoIdh === idh || mongoIdh.includes(idh) || idh.includes(mongoIdh)
+            );
+
+            if (!mongoIdhInRetirado) {
+                // COLISÃO: MongoDB tem um IDH que não existe no CDE
+                isCollision = true;
+                collisionDetails = {
+                    message: '⚠️ COLISIÓN: El producto en galería no coincide con CDE',
+                    mongoIdh: mongoIdh || 'N/A',
+                    cdeIdhs: uniqueIdhs,
+                    cdeQbs: uniqueQbs,
+                    cdeRecordCount: cdeData.length,
+                    cdeStatuses: cdeStatuses,
+                    hasIngresado: false,
+                    allRetirado: true,
+                    collisionType: 'deactivate',
+                    recommendedAction: 'desativar',
+                    actionMessage: 'No hay INGRESADO en CDE. Usar "Desactivar" para remover de la galería.',
+                    ingresadoRecord: null
+                };
+            }
         }
+
+        // Log para debug
+        console.log(`[PHOTO-INFO] Foto ${actualPhotoNumber}:`);
+        console.log(`   MongoDB IDH: ${mongoIdh}`);
+        console.log(`   CDE INGRESADO IDH: ${ingresadoIdh || 'N/A'}`);
+        console.log(`   IDHs match: ${mongoIdhMatchesIngresado}`);
+        console.log(`   Is Collision: ${isCollision}`);
 
         // Retornar dados combinados com informação de IDH
         return res.json({
