@@ -461,7 +461,7 @@ class CDEQueries {
     async getLeadTimeAnalysis() {
         const query = `
             SELECT
-                COALESCE(items.AORIGIN, 'Unknown') as origem,
+                COALESCE(items.ORIGEN, 'Unknown') as origem,
                 COUNT(DISTINCT inv.AQBITEM) as produtos,
                 COUNT(*) as total_items,
                 ROUND(AVG(DATEDIFF(inv.AFECHA, inv.AFECHA_SHIP)), 1) as avg_lead_days,
@@ -472,7 +472,7 @@ class CDEQueries {
             WHERE inv.AFECHA_SHIP IS NOT NULL
             AND inv.AFECHA IS NOT NULL
             AND inv.AFECHA >= DATE_SUB(NOW(), INTERVAL 180 DAY)
-            GROUP BY items.AORIGIN
+            GROUP BY items.ORIGEN
             ORDER BY total_items DESC
         `;
 
@@ -485,7 +485,7 @@ class CDEQueries {
             SELECT
                 inv.AQBITEM as qbCode,
                 MAX(items.ADESCRIPTION) as description,
-                COALESCE(MAX(items.AORIGIN), 'Unknown') as origem,
+                COALESCE(MAX(items.ORIGEN), 'Unknown') as origem,
                 COUNT(*) as quantity,
                 ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA_SHIP)), 0) as dias_em_transito,
                 MIN(inv.AFECHA_SHIP) as primeiro_envio,
@@ -530,14 +530,14 @@ class CDEQueries {
     async getProductsByOrigin() {
         const query = `
             SELECT
-                COALESCE(items.AORIGIN, 'Unknown') as origem,
+                COALESCE(items.ORIGEN, 'Unknown') as origem,
                 COUNT(DISTINCT inv.AQBITEM) as produtos_unicos,
                 COUNT(*) as total_em_estoque,
                 ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA)), 0) as dias_medio_estoque
             FROM tbinventario inv
             LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
             WHERE inv.AESTADOP = 'INGRESADO'
-            GROUP BY items.AORIGIN
+            GROUP BY items.ORIGEN
             ORDER BY total_em_estoque DESC
         `;
 
@@ -550,7 +550,7 @@ class CDEQueries {
             SELECT
                 inv.AQBITEM as qbCode,
                 MAX(items.ADESCRIPTION) as description,
-                COALESCE(MAX(items.AORIGIN), 'Unknown') as origem,
+                COALESCE(MAX(items.ORIGEN), 'Unknown') as origem,
                 COUNT(*) as current_stock,
                 MAX(COALESCE(items.TMIN, 50)) as minimum_stock,
                 ROUND(
