@@ -621,8 +621,19 @@ router.get('/scan', async (req, res) => {
         // IMPORTANTE: Só mostrar STANDBY que:
         // 1. Tem número de foto REAL (não 0, não vazio)
         // 2. Existe na tbetiqueta (foi etiquetado = tem foto física)
+        // 3. NÃO existe no MongoDB (evitar duplicatas de fotos já importadas)
         // ============================================================
         console.log('[MONITOR] 🔍 Verificando fotos em STANDBY...');
+
+        // IMPORTANTE: Buscar TODOS os photoNumbers existentes no MongoDB
+        // (independente de status/isActive) para evitar duplicatas
+        const allMongoPhotoNumbers = await UnifiedProductComplete.find(
+            { photoNumber: { $exists: true, $ne: null, $ne: '' } },
+            { photoNumber: 1 }
+        ).lean();
+
+        const allMongoPhotoSet = new Set(allMongoPhotoNumbers.map(p => p.photoNumber));
+        console.log(`[MONITOR] 📦 ${allMongoPhotoSet.size} photoNumbers existentes no MongoDB (todos status)`);
 
         const [standbyPhotos] = await cdeConnection.execute(
             `SELECT DISTINCT
@@ -648,11 +659,12 @@ router.get('/scan', async (req, res) => {
             console.log(`[MONITOR] 🔍 STANDBY ${photoNum}: hasR2Photo=${hasR2Photo}, cacheSize=${r2PhotosCache.size}`);
 
             // Verificar se já existe no MongoDB (evitar duplicatas)
-            const existsInMongo = mongoMapExact.has(photoNum) ||
-                mongoMapNumeric.has(String(parseInt(photoNum, 10)));
+            // IMPORTANTE: Usar allMongoPhotoSet que inclui TODOS os registros (qualquer status)
+            const existsInMongo = allMongoPhotoSet.has(photoNum) ||
+                allMongoPhotoSet.has(String(parseInt(photoNum, 10)));
 
             if (existsInMongo) {
-                console.log(`[MONITOR] ⏭️ STANDBY ${photoNum}: Já existe no MongoDB, ignorando`);
+                console.log(`[MONITOR] ⏭️ STANDBY ${photoNum}: Já existe no MongoDB (qualquer status), ignorando`);
                 continue; // Já importado, não mostrar como STANDBY pendente
             }
 
