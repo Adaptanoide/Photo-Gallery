@@ -899,6 +899,166 @@ router.post('/desativar', async (req, res) => {
 });
 
 // ============================================
+// AÇÃO 7: IMPORTAR STANDBY
+// ============================================
+// POST /api/monitor-actions/import-standby
+// Body: { photoNumber: "77612", adminUser: "admin@email.com" }
+// Usado quando: Item está em STANDBY no CDE e tem foto no R2
+// Ação: Cria registro no MongoDB como "unavailable" (não aparece na galería)
+// Quando mudar para INGRESADO no CDE, o sync vai atualizar automaticamente
+router.post('/import-standby', async (req, res) => {
+    try {
+        const { photoNumber, adminUser } = req.body;
+
+        if (!photoNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Campo photoNumber é obrigatório'
+            });
+        }
+
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Apenas administradores podem executar esta ação'
+            });
+        }
+
+        console.log(`[MONITOR ACTION API] ⏸️ Importando STANDBY ${photoNumber}`);
+
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+
+        // 1. Verificar se já existe no MongoDB
+        const existingPhoto = await UnifiedProductComplete.findOne({ photoNumber: photoNumber });
+        if (existingPhoto) {
+            return res.status(400).json({
+                success: false,
+                message: `Foto ${photoNumber} já existe na Galería`
+            });
+        }
+
+        // 2. Buscar dados no CDE
+        const mysql = require('mysql2/promise');
+        const cdeConnection = await mysql.createConnection({
+            host: process.env.CDE_HOST,
+            port: process.env.CDE_PORT,
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE
+        });
+
+        const [cdeData] = await cdeConnection.execute(
+            `SELECT ATIPOETIQUETA, AESTADOP, AQBITEM, AIDH, AFECHA
+             FROM tbinventario
+             WHERE ATIPOETIQUETA = ?
+             ORDER BY AFECHA DESC
+             LIMIT 1`,
+            [photoNumber]
+        );
+
+        await cdeConnection.end();
+
+        if (cdeData.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `Foto ${photoNumber} não encontrada no CDE`
+            });
+        }
+
+        const cdeRecord = cdeData[0];
+
+        if (cdeRecord.AESTADOP !== 'STANDBY') {
+            return res.status(400).json({
+                success: false,
+                message: `Foto ${photoNumber} não está em STANDBY. Estado: ${cdeRecord.AESTADOP}`
+            });
+        }
+
+        // 3. Verificar se tem foto no R2
+        const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
+        const s3Client = new S3Client({
+            region: 'auto',
+            endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            credentials: {
+                accessKeyId: process.env.R2_ACCESS_KEY_ID,
+                secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+            }
+        });
+
+        let hasPhotoInR2 = false;
+        const photoNumberClean = String(photoNumber).replace(/^0+/, '');
+        const possibleKeys = [
+            `photos/${photoNumber}.jpg`,
+            `photos/${photoNumber}.JPG`,
+            `photos/${photoNumberClean}.jpg`,
+            `photos/${photoNumberClean}.JPG`
+        ];
+
+        for (const key of possibleKeys) {
+            try {
+                await s3Client.send(new HeadObjectCommand({
+                    Bucket: process.env.R2_BUCKET_NAME,
+                    Key: key
+                }));
+                hasPhotoInR2 = true;
+                break;
+            } catch (e) {
+                // Continua tentando
+            }
+        }
+
+        if (!hasPhotoInR2) {
+            return res.status(400).json({
+                success: false,
+                message: `Foto ${photoNumber} não tem imagem no R2. Precisa ser fotografada primeiro.`
+            });
+        }
+
+        // 4. Criar registro no MongoDB
+        const newPhoto = new UnifiedProductComplete({
+            photoNumber: photoNumber,
+            status: 'unavailable',
+            cdeStatus: 'STANDBY',
+            qbItem: cdeRecord.AQBITEM || '',
+            category: cdeRecord.AQBITEM || '',
+            idhCode: String(cdeRecord.AIDH || ''),
+            isActive: false,
+            standbyImportedAt: new Date(),
+            standbyImportedBy: adminUser || req.user.username,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+
+        await newPhoto.save();
+
+        console.log(`[MONITOR ACTION] ⏸️ STANDBY importado: ${photoNumber}`);
+
+        return res.json({
+            success: true,
+            message: `Foto ${photoNumber} importada como BLOQUEADA. Aparecerá na galería quando for liberada no CDE.`,
+            data: {
+                photoNumber: photoNumber,
+                action: 'import-standby',
+                cdeRecord: {
+                    idh: cdeRecord.AIDH,
+                    qb: cdeRecord.AQBITEM,
+                    status: cdeRecord.AESTADOP
+                },
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('[MONITOR ACTION API] Erro ao importar STANDBY:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao importar STANDBY',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// ============================================
 // ROTA DE STATUS (OPCIONAL)
 // ============================================
 // GET /api/monitor-actions/status
@@ -923,6 +1083,14 @@ router.get('/status', async (req, res) => {
                     requiredFields: ['photoNumber'],
                     optionalFields: ['adminUser'],
                     note: 'QB de destino é buscado automaticamente do CDE'
+                },
+                {
+                    endpoint: '/api/monitor-actions/import-standby',
+                    method: 'POST',
+                    description: 'Importa foto STANDBY para a galería como bloqueada',
+                    requiredFields: ['photoNumber'],
+                    optionalFields: ['adminUser'],
+                    note: 'Foto precisa existir no R2. Ficará invisível até ser liberada no CDE.'
                 }
             ],
             timestamp: new Date().toISOString()

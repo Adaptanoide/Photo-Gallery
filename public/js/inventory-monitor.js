@@ -286,8 +286,40 @@ class InventoryMonitor {
     }
 
     renderActionButtons(issue) {
-        // SIN FOTO e STANDBY não têm ações - requerem trabalho externo
-        if (issue.category === 'noPhoto' || issue.category === 'standby') {
+        // SIN FOTO não tem ação - requer fotografar
+        if (issue.category === 'noPhoto') {
+            return '-';
+        }
+
+        // STANDBY: Se tem foto no R2, pode preparar. Se não, precisa fotografar primeiro.
+        if (issue.category === 'standby') {
+            if (issue.hasR2Photo) {
+                return `
+                    <button
+                        onclick="window.monitor.executeImportStandby('${issue.photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 11px;
+                            font-weight: 600;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
+                        title="Preparar registro para cuando sea liberado en CDE"
+                    >
+                        <i class="fas fa-clock"></i> Preparar
+                    </button>
+                `;
+            }
             return '-';
         }
 
@@ -1057,6 +1089,47 @@ class InventoryMonitor {
     }
 
     // ===========================================
+    // AÇÃO: IMPORTAR STANDBY
+    // ===========================================
+    // Importa item STANDBY para a galería como bloqueado
+    async executeImportStandby(photoNumber) {
+        console.log(`⏸️ Importando STANDBY ${photoNumber}...`);
+
+        this.showActionLoading(photoNumber, 'standby');
+
+        try {
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
+            const response = await fetch(`/api/monitor-actions/import-standby`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify({
+                    photoNumber: photoNumber,
+                    adminUser: session.user?.username || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ STANDBY importado:', result);
+                this.showActionSuccess(photoNumber, 'standby', result.message);
+                setTimeout(() => this.scan(), 2000);
+            } else {
+                throw new Error(result.message || 'Error desconocido');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al importar STANDBY:', error);
+            this.showActionError(photoNumber, 'standby', error.message);
+        }
+    }
+
+    // ===========================================
     // AÇÃO: DESATIVAR REGISTRO (COLISÃO SEM INGRESADO)
     // ===========================================
     // Apenas desativa o registro antigo no MongoDB (todos CDE são RETIRADO)
@@ -1420,7 +1493,7 @@ class InventoryMonitor {
     }
 
     showActionLoading(photoNumber, action) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar', standby: 'Preparar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'loading',
@@ -1431,7 +1504,7 @@ class InventoryMonitor {
     }
 
     showActionSuccess(photoNumber, action, message) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar', standby: 'Preparar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'success',
@@ -1442,7 +1515,7 @@ class InventoryMonitor {
     }
 
     showActionError(photoNumber, action, error) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar', standby: 'Preparar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'error',
