@@ -513,6 +513,221 @@ router.post('/import', async (req, res) => {
 });
 
 // ============================================
+// AÇÃO 5: RECICLAR NÚMERO (COLISÃO)
+// ============================================
+// POST /api/monitor-actions/reciclar
+// Body: { photoNumber: "08128", adminUser: "admin@email.com" }
+// Usado quando: Mesmo photoNumber foi reutilizado para produto diferente (IDHs diferentes)
+// Ação: Desativa o registro antigo e cria um novo com os dados do CDE
+router.post('/reciclar', async (req, res) => {
+    try {
+        const { photoNumber, adminUser } = req.body;
+
+        // Validação
+        if (!photoNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Campo photoNumber é obrigatório'
+            });
+        }
+
+        // Validar que é admin autenticado
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Apenas administradores podem executar esta ação'
+            });
+        }
+
+        console.log(`[MONITOR ACTION API] ♻️ Reciclando número ${photoNumber}`);
+        console.log(`   Executado por: ${adminUser || req.user.username}`);
+
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+        const PhotoCategory = require('../models/PhotoCategory');
+
+        // 1. Buscar foto existente no MongoDB
+        const existingPhoto = await UnifiedProductComplete.findOne({ photoNumber: photoNumber });
+
+        if (!existingPhoto) {
+            return res.status(404).json({
+                success: false,
+                message: `Foto ${photoNumber} não encontrada no MongoDB`
+            });
+        }
+
+        // 2. Buscar dados atuais do CDE
+        const mysql = require('mysql2/promise');
+        const cdeConnection = await mysql.createConnection({
+            host: process.env.CDE_HOST,
+            port: process.env.CDE_PORT,
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE
+        });
+
+        // Buscar o registro mais recente INGRESADO no CDE para este photoNumber
+        const [cdeData] = await cdeConnection.execute(
+            `SELECT ATIPOETIQUETA, AESTADOP, AQBITEM, AIDH, AFECHA
+             FROM tbinventario
+             WHERE ATIPOETIQUETA = ? AND AESTADOP = 'INGRESADO'
+             ORDER BY AFECHA DESC
+             LIMIT 1`,
+            [photoNumber]
+        );
+
+        await cdeConnection.end();
+
+        if (cdeData.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Não há registro INGRESADO no CDE para o número ${photoNumber}`
+            });
+        }
+
+        const cdeRecord = cdeData[0];
+        const newIdh = String(cdeRecord.AIDH);
+        const newQb = cdeRecord.AQBITEM;
+
+        // 3. Verificar se realmente é uma colisão (IDHs diferentes)
+        const oldIdh = String(existingPhoto.idhCode || '');
+        if (oldIdh === newIdh) {
+            return res.status(400).json({
+                success: false,
+                message: `Não é uma colisão - mesmo IDH (${oldIdh}). Use Retorno em vez de Reciclar.`
+            });
+        }
+
+        // 4. Buscar categoria do novo QB
+        const categoryDoc = await PhotoCategory.findOne({ qbItem: newQb });
+        if (!categoryDoc) {
+            return res.status(400).json({
+                success: false,
+                message: `Categoria não encontrada para QB ${newQb}`
+            });
+        }
+
+        // 5. Guardar dados do registro antigo para log
+        const oldData = {
+            idhCode: existingPhoto.idhCode,
+            qbItem: existingPhoto.qbItem,
+            status: existingPhoto.status,
+            category: existingPhoto.category
+        };
+
+        // 6. Marcar registro antigo como inativo
+        await UnifiedProductComplete.updateOne(
+            { _id: existingPhoto._id },
+            {
+                $set: {
+                    isActive: false,
+                    recycledAt: new Date(),
+                    recycledBy: adminUser || req.user.username,
+                    recycleReason: `Número reciclado - novo IDH: ${newIdh}`
+                }
+            }
+        );
+
+        console.log(`[MONITOR ACTION] ⏹️ Registro antigo desativado:`);
+        console.log(`   - IDH: ${oldData.idhCode}`);
+        console.log(`   - QB: ${oldData.qbItem}`);
+        console.log(`   - Status: ${oldData.status}`);
+
+        // 7. Verificar se existe foto no R2 (pode ser que o novo couro tenha foto ou não)
+        const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
+        const s3Client = new S3Client({
+            region: 'auto',
+            endpoint: process.env.R2_ENDPOINT,
+            credentials: {
+                accessKeyId: process.env.R2_ACCESS_KEY_ID,
+                secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+            }
+        });
+
+        const basePath = categoryDoc.googleDrivePath.endsWith('/')
+            ? categoryDoc.googleDrivePath.slice(0, -1)
+            : categoryDoc.googleDrivePath;
+        const r2Path = `${basePath}/${photoNumber}.webp`;
+
+        let hasR2Photo = false;
+        try {
+            await s3Client.send(new HeadObjectCommand({
+                Bucket: process.env.R2_BUCKET_NAME || 'sunshine-photos',
+                Key: r2Path
+            }));
+            hasR2Photo = true;
+        } catch (err) {
+            hasR2Photo = false;
+        }
+
+        // 8. Criar novo registro com dados do CDE (apenas se tiver foto no R2)
+        let newPhotoCreated = null;
+        if (hasR2Photo) {
+            const fileName = `${photoNumber}.webp`;
+            const categoryName = categoryDoc.category || categoryDoc.googleDrivePath.split('/').pop() || newQb;
+
+            newPhotoCreated = new UnifiedProductComplete({
+                idhCode: newIdh,
+                photoNumber: photoNumber,
+                fileName: fileName,
+                photoId: photoNumber,
+                category: categoryName,
+                qbItem: newQb,
+                googleDrivePath: categoryDoc.googleDrivePath,
+                driveFileId: r2Path,
+                r2Path: r2Path,
+                status: 'available',
+                cdeStatus: 'INGRESADO',
+                currentStatus: 'available',
+                isActive: true,
+                source: 'monitor-recycle',
+                recycledFrom: existingPhoto._id,
+                importedAt: new Date(),
+                importedBy: adminUser || req.user.username
+            });
+
+            await newPhotoCreated.save();
+
+            console.log(`[MONITOR ACTION] ✅ Novo registro criado:`);
+            console.log(`   - IDH: ${newIdh}`);
+            console.log(`   - QB: ${newQb}`);
+            console.log(`   - Categoria: ${categoryName}`);
+            console.log(`   - R2 Path: ${r2Path}`);
+        } else {
+            console.log(`[MONITOR ACTION] ⚠️ Sem foto no R2 - registro antigo desativado mas novo não criado`);
+        }
+
+        // Retornar sucesso
+        return res.json({
+            success: true,
+            message: hasR2Photo
+                ? `Número ${photoNumber} reciclado: registro antigo desativado, novo criado com QB ${newQb}`
+                : `Registro antigo do número ${photoNumber} desativado (sem foto no R2 para criar novo)`,
+            data: {
+                photoNumber: photoNumber,
+                action: 'reciclar',
+                oldRecord: oldData,
+                newRecord: newPhotoCreated ? {
+                    idhCode: newIdh,
+                    qbItem: newQb,
+                    category: newPhotoCreated.category,
+                    status: 'available'
+                } : null,
+                hasR2Photo: hasR2Photo,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('[MONITOR ACTION API] Erro ao reciclar número:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao reciclar número',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// ============================================
 // ROTA DE STATUS (OPCIONAL)
 // ============================================
 // GET /api/monitor-actions/status

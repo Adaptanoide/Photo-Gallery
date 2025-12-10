@@ -558,55 +558,66 @@ class InventoryMonitor {
             justify-content: center;
             z-index: 10000;
             backdrop-filter: blur(5px);
+            padding: 16px;
+            box-sizing: border-box;
         `;
 
         modal.innerHTML = `
             <div style="
                 background: #1a1a2e;
                 border-radius: 16px;
-                padding: 32px;
-                max-width: 600px;
-                width: 90%;
+                padding: 20px;
+                max-width: 520px;
+                width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
                 box-shadow: 0 20px 60px rgba(0,0,0,0.5);
                 border: 1px solid rgba(255,255,255,0.1);
             ">
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                     <div style="
-                        width: 48px;
-                        height: 48px;
-                        border-radius: 12px;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 10px;
                         background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                        flex-shrink: 0;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 24px;
+                        font-size: 20px;
                     ">
                         <i class="fas fa-undo"></i>
                     </div>
                     <div>
-                        <h3 style="margin: 0; color: #fff; font-size: 20px;">Confirmar Retorno</h3>
-                        <p style="margin: 4px 0 0 0; color: #888; font-size: 13px;">Foto: ${photoNumber}</p>
+                        <h3 style="margin: 0; color: #fff; font-size: 18px;">Confirmar Retorno</h3>
+                        <p style="margin: 2px 0 0 0; color: #888; font-size: 12px;">Foto: ${photoNumber}</p>
                     </div>
                 </div>
 
                 ${data.isCollision ? `
-                <!-- Alerta de Colisão -->
+                <!-- Alerta de Colisão Compacto -->
                 <div style="
-                    background: rgba(244,67,54,0.15);
-                    border: 2px solid #f44336;
+                    background: rgba(244,67,54,0.12);
+                    border: 1px solid #f44336;
                     border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
+                    padding: 12px;
+                    margin-bottom: 12px;
                 ">
-                    <div style="color: #f44336; font-weight: 600; margin-bottom: 8px;">
-                        ⚠️ COLISIÓN DE NÚMERO DETECTADA
+                    <div style="color: #f44336; font-weight: 600; font-size: 13px; margin-bottom: 6px;">
+                        ⚠️ COLISIÓN: Número Reutilizado
                     </div>
-                    <div style="color: #ffcdd2; font-size: 13px; line-height: 1.6;">
-                        Este número de foto fue reutilizado para productos diferentes.<br>
-                        <strong>MongoDB IDH:</strong> ${data.mongoIdh || 'N/A'}<br>
-                        <strong>CDE IDHs:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || 'N/A'}<br>
-                        <strong>QBs encontrados:</strong> ${data.collisionDetails?.cdeQbs?.join(', ') || 'N/A'}<br>
-                        <strong style="color: #f44336;">NO APLICAR RETORNO - Son productos diferentes!</strong>
+                    <div style="color: #ffcdd2; font-size: 11px; line-height: 1.5;">
+                        <strong>Mongo:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
+                        <strong>CDE:</strong> IDH ${data.cdeIdh || 'N/A'} (${data.cdeQb || '-'})
+                    </div>
+                    <div style="
+                        margin-top: 10px;
+                        padding-top: 10px;
+                        border-top: 1px solid rgba(244,67,54,0.3);
+                        color: #fff;
+                        font-size: 11px;
+                    ">
+                        <strong style="color: #4caf50;">Acción recomendada:</strong> Usar "Reciclar Número" para desactivar el registro antiguo y crear uno nuevo con los datos del CDE.
                     </div>
                 </div>
                 ` : ''}
@@ -672,17 +683,17 @@ class InventoryMonitor {
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
                     <button
                         onclick="document.getElementById('retornoModal').remove()"
                         style="
                             background: rgba(255,255,255,0.1);
                             color: #999;
                             border: 1px solid rgba(255,255,255,0.2);
-                            padding: 12px 24px;
+                            padding: 10px 18px;
                             border-radius: 8px;
                             cursor: pointer;
-                            font-size: 14px;
+                            font-size: 13px;
                             font-weight: 600;
                             transition: all 0.2s;
                         "
@@ -691,17 +702,37 @@ class InventoryMonitor {
                     >
                         ${data.isCollision ? 'Cerrar' : 'Cancelar'}
                     </button>
-                    ${!data.isCollision ? `
+                    ${data.isCollision ? `
+                    <button
+                        onclick="window.monitor.executeReciclar('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+                            color: white;
+                            border: none;
+                            padding: 10px 18px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 13px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(156, 39, 176, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(156, 39, 176, 0.3)'"
+                    >
+                        <i class="fas fa-recycle"></i> Reciclar Número
+                    </button>
+                    ` : `
                     <button
                         onclick="window.monitor.executeRetorno('${photoNumber}')"
                         style="
                             background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
                             color: white;
                             border: none;
-                            padding: 12px 24px;
+                            padding: 10px 18px;
                             border-radius: 8px;
                             cursor: pointer;
-                            font-size: 14px;
+                            font-size: 13px;
                             font-weight: 600;
                             box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
                             transition: all 0.2s;
@@ -711,7 +742,7 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-check"></i> Confirmar Retorno
                     </button>
-                    ` : ''}
+                    `}
                 </div>
             </div>
         `;
@@ -740,56 +771,66 @@ class InventoryMonitor {
             justify-content: center;
             z-index: 10000;
             backdrop-filter: blur(5px);
+            padding: 16px;
+            box-sizing: border-box;
         `;
 
         modal.innerHTML = `
             <div style="
                 background: #1a1a2e;
                 border-radius: 16px;
-                padding: 32px;
-                max-width: 600px;
-                width: 90%;
+                padding: 20px;
+                max-width: 520px;
+                width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
                 box-shadow: 0 20px 60px rgba(0,0,0,0.5);
                 border: 1px solid rgba(255,152,0,0.3);
             ">
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                     <div style="
-                        width: 48px;
-                        height: 48px;
-                        border-radius: 12px;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 10px;
                         background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                        flex-shrink: 0;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 24px;
+                        font-size: 18px;
                     ">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     <div>
-                        <h3 style="margin: 0; color: #ff9800; font-size: 20px;">⚠️ Cambio de Categoría Detectado</h3>
-                        <p style="margin: 4px 0 0 0; color: #888; font-size: 13px;">Foto: ${photoNumber}</p>
+                        <h3 style="margin: 0; color: #ff9800; font-size: 16px;">⚠️ QB Diferente Detectado</h3>
+                        <p style="margin: 2px 0 0 0; color: #888; font-size: 12px;">Foto: ${photoNumber}</p>
                     </div>
                 </div>
 
                 ${data.isCollision ? `
-                <!-- Alerta de Colisão -->
+                <!-- Alerta de Colisão Compacto -->
                 <div style="
-                    background: rgba(244,67,54,0.15);
-                    border: 2px solid #f44336;
+                    background: rgba(244,67,54,0.12);
+                    border: 1px solid #f44336;
                     border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
+                    padding: 12px;
+                    margin-bottom: 12px;
                 ">
-                    <div style="color: #f44336; font-weight: 600; margin-bottom: 8px;">
-                        ⚠️ COLISIÓN DE NÚMERO DETECTADA
+                    <div style="color: #f44336; font-weight: 600; font-size: 13px; margin-bottom: 6px;">
+                        ⚠️ COLISIÓN: Número Reutilizado
                     </div>
-                    <div style="color: #ffcdd2; font-size: 13px; line-height: 1.6;">
-                        <strong>Este NO es un PASE real!</strong><br>
-                        El número de foto fue reutilizado para un producto diferente.<br><br>
-                        <strong>MongoDB IDH:</strong> ${data.mongoIdh || 'N/A'}<br>
-                        <strong>CDE IDHs:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || 'N/A'}<br>
-                        <strong>QBs encontrados:</strong> ${data.collisionDetails?.cdeQbs?.join(', ') || 'N/A'}<br><br>
-                        <strong style="color: #f44336;">NO HAY ACCIÓN NECESARIA - La foto del MongoDB es otro producto que ya fue vendido.</strong>
+                    <div style="color: #ffcdd2; font-size: 11px; line-height: 1.5;">
+                        <strong>Mongo:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
+                        <strong>CDE:</strong> IDH ${data.cdeIdh || 'N/A'} (${data.cdeQb || '-'})
+                    </div>
+                    <div style="
+                        margin-top: 10px;
+                        padding-top: 10px;
+                        border-top: 1px solid rgba(244,67,54,0.3);
+                        color: #fff;
+                        font-size: 11px;
+                    ">
+                        <strong style="color: #4caf50;">Acción:</strong> "Reciclar Número" desactiva el registro antiguo y crea uno nuevo.
                     </div>
                 </div>
                 ` : ''}
@@ -854,17 +895,17 @@ class InventoryMonitor {
                     `}
                 </div>
 
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
                     <button
                         onclick="document.getElementById('retornoModal').remove()"
                         style="
                             background: rgba(255,255,255,0.1);
                             color: #999;
                             border: 1px solid rgba(255,255,255,0.2);
-                            padding: 12px 24px;
+                            padding: 10px 18px;
                             border-radius: 8px;
                             cursor: pointer;
-                            font-size: 14px;
+                            font-size: 13px;
                             font-weight: 600;
                             transition: all 0.2s;
                         "
@@ -873,17 +914,37 @@ class InventoryMonitor {
                     >
                         ${data.isCollision ? 'Cerrar' : 'Cancelar'}
                     </button>
-                    ${!data.isCollision ? `
+                    ${data.isCollision ? `
+                    <button
+                        onclick="window.monitor.executeReciclar('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+                            color: white;
+                            border: none;
+                            padding: 10px 18px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 13px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(156, 39, 176, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(156, 39, 176, 0.3)'"
+                    >
+                        <i class="fas fa-recycle"></i> Reciclar Número
+                    </button>
+                    ` : `
                     <button
                         onclick="document.getElementById('retornoModal').remove(); window.monitor.openPaseModal('${photoNumber}')"
                         style="
                             background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
                             color: white;
                             border: none;
-                            padding: 12px 24px;
+                            padding: 10px 18px;
                             border-radius: 8px;
                             cursor: pointer;
-                            font-size: 14px;
+                            font-size: 13px;
                             font-weight: 600;
                             box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
                             transition: all 0.2s;
@@ -893,7 +954,7 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-exchange-alt"></i> Ir a PASE
                     </button>
-                    ` : ''}
+                    `}
                 </div>
             </div>
         `;
@@ -951,6 +1012,50 @@ class InventoryMonitor {
 
     openPaseModal(photoNumber) {
         alert(`Modal de PASE para foto ${photoNumber} - En desarrollo`);
+    }
+
+    // ===========================================
+    // AÇÃO: RECICLAR NÚMERO (COLISÃO)
+    // ===========================================
+    // Desativa o registro antigo no MongoDB e cria um novo com os dados do CDE
+    async executeReciclar(photoNumber) {
+        console.log(`♻️ Reciclando número da foto ${photoNumber}...`);
+
+        // Fechar modal se existir
+        document.getElementById('retornoModal')?.remove();
+
+        // Mostrar loading
+        this.showActionLoading(photoNumber, 'reciclar');
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/monitor-actions/reciclar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    photoNumber: photoNumber,
+                    adminUser: localStorage.getItem('username') || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ Reciclaje exitoso:', result);
+                this.showActionSuccess(photoNumber, 'reciclar', result.message);
+                // Re-scan após 2 segundos
+                setTimeout(() => this.scan(), 2000);
+            } else {
+                throw new Error(result.message || 'Error desconocido');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al reciclar número:', error);
+            this.showActionError(photoNumber, 'reciclar', error.message);
+        }
     }
 
     // ===========================================
@@ -1227,7 +1332,7 @@ class InventoryMonitor {
     }
 
     showActionLoading(photoNumber, action) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'loading',
@@ -1238,7 +1343,7 @@ class InventoryMonitor {
     }
 
     showActionSuccess(photoNumber, action, message) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'success',
@@ -1249,7 +1354,7 @@ class InventoryMonitor {
     }
 
     showActionError(photoNumber, action, error) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'error',
