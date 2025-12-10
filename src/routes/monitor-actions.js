@@ -212,14 +212,56 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
         const uniqueIdhs = [...new Set(cdeData.map(r => String(r.AIDH || '')).filter(Boolean))];
         const uniqueQbs = [...new Set(cdeData.map(r => r.AQBITEM).filter(Boolean))];
 
+        // Verificar quais status existem no CDE
+        const cdeStatuses = [...new Set(cdeData.map(r => r.AESTADOP).filter(Boolean))];
+        const hasIngresado = cdeStatuses.includes('INGRESADO');
+        const allRetirado = cdeStatuses.every(s => s === 'RETIRADO');
+
+        // Buscar o registro INGRESADO mais recente (se existir)
+        const ingresadoRecord = cdeData.find(r => r.AESTADOP === 'INGRESADO');
+
         if (uniqueIdhs.length > 1 || (mongoIdh && cdeIdh && !mongoIdh.includes(cdeIdh) && !cdeIdh.includes(mongoIdh))) {
             isCollision = true;
+
+            // Determinar tipo de colisão e ação recomendada
+            let collisionType = 'unknown';
+            let recommendedAction = 'manual';
+            let actionMessage = '';
+
+            if (hasIngresado) {
+                // Há um registro INGRESADO → pode reciclar
+                collisionType = 'recycle';
+                recommendedAction = 'reciclar';
+                actionMessage = 'Usar "Reciclar Número" para desactivar el registro antiguo y crear uno nuevo con los datos del CDE.';
+            } else if (allRetirado) {
+                // Todos são RETIRADO → só desativar
+                collisionType = 'deactivate';
+                recommendedAction = 'desativar';
+                actionMessage = 'Usar "Desactivar" para marcar el registro MongoDB como inactivo. No hay nuevo couro INGRESADO en el CDE.';
+            } else {
+                // Outros casos (STANDBY, etc)
+                collisionType = 'manual';
+                recommendedAction = 'manual';
+                actionMessage = 'Revisar manualmente. El CDE tiene registros en estados no estándar.';
+            }
+
             collisionDetails = {
-                message: '⚠️ COLISÃO DETECTADA: Este número de foto foi usado para produtos diferentes',
+                message: '⚠️ COLISIÓN DETECTADA: Este número de foto fue usado para productos diferentes',
                 mongoIdh: mongoIdh || 'N/A',
                 cdeIdhs: uniqueIdhs,
                 cdeQbs: uniqueQbs,
-                cdeRecordCount: cdeData.length
+                cdeRecordCount: cdeData.length,
+                cdeStatuses: cdeStatuses,
+                hasIngresado: hasIngresado,
+                allRetirado: allRetirado,
+                collisionType: collisionType,
+                recommendedAction: recommendedAction,
+                actionMessage: actionMessage,
+                ingresadoRecord: ingresadoRecord ? {
+                    idh: String(ingresadoRecord.AIDH || ''),
+                    qb: ingresadoRecord.AQBITEM,
+                    fecha: ingresadoRecord.AFECHA
+                } : null
             };
         }
 
@@ -722,6 +764,135 @@ router.post('/reciclar', async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Erro interno ao reciclar número',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// ============================================
+// AÇÃO 6: DESATIVAR (COLISÃO SEM INGRESADO)
+// ============================================
+// POST /api/monitor-actions/desativar
+// Body: { photoNumber: "08128", adminUser: "admin@email.com" }
+// Usado quando: Colisão detectada mas todos os registros no CDE são RETIRADO
+// Ação: Apenas marca o registro MongoDB como inativo (não cria novo)
+router.post('/desativar', async (req, res) => {
+    try {
+        const { photoNumber, adminUser } = req.body;
+
+        // Validação
+        if (!photoNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Campo photoNumber é obrigatório'
+            });
+        }
+
+        // Validar que é admin autenticado
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Apenas administradores podem executar esta ação'
+            });
+        }
+
+        console.log(`[MONITOR ACTION API] ⏹️ Desativando registro ${photoNumber}`);
+        console.log(`   Executado por: ${adminUser || req.user.username}`);
+
+        const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+
+        // 1. Buscar foto existente no MongoDB
+        const existingPhoto = await UnifiedProductComplete.findOne({ photoNumber: photoNumber });
+
+        if (!existingPhoto) {
+            return res.status(404).json({
+                success: false,
+                message: `Foto ${photoNumber} não encontrada no MongoDB`
+            });
+        }
+
+        // 2. Verificar no CDE se realmente todos são RETIRADO
+        const mysql = require('mysql2/promise');
+        const cdeConnection = await mysql.createConnection({
+            host: process.env.CDE_HOST,
+            port: process.env.CDE_PORT,
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE
+        });
+
+        const [cdeData] = await cdeConnection.execute(
+            `SELECT ATIPOETIQUETA, AESTADOP, AQBITEM, AIDH, AFECHA
+             FROM tbinventario
+             WHERE ATIPOETIQUETA = ?
+             ORDER BY AFECHA DESC`,
+            [photoNumber]
+        );
+
+        await cdeConnection.end();
+
+        // Verificar se existe algum INGRESADO (se sim, deveria usar Reciclar)
+        const hasIngresado = cdeData.some(r => r.AESTADOP === 'INGRESADO');
+        if (hasIngresado) {
+            return res.status(400).json({
+                success: false,
+                message: `Existe registro INGRESADO no CDE para ${photoNumber}. Use "Reciclar Número" em vez de Desativar.`
+            });
+        }
+
+        // 3. Guardar dados do registro para log
+        const oldData = {
+            idhCode: existingPhoto.idhCode,
+            qbItem: existingPhoto.qbItem,
+            status: existingPhoto.status,
+            category: existingPhoto.category
+        };
+
+        // 4. Marcar registro como inativo
+        await UnifiedProductComplete.updateOne(
+            { _id: existingPhoto._id },
+            {
+                $set: {
+                    isActive: false,
+                    status: 'sold',
+                    cdeStatus: 'RETIRADO',
+                    deactivatedAt: new Date(),
+                    deactivatedBy: adminUser || req.user.username,
+                    deactivateReason: `Colisão detectada - todos os registros CDE são RETIRADO. IDHs no CDE: ${cdeData.map(r => r.AIDH).join(', ')}`
+                }
+            }
+        );
+
+        console.log(`[MONITOR ACTION] ⏹️ Registro desativado com sucesso:`);
+        console.log(`   - PhotoNumber: ${photoNumber}`);
+        console.log(`   - IDH: ${oldData.idhCode}`);
+        console.log(`   - QB: ${oldData.qbItem}`);
+        console.log(`   - Status anterior: ${oldData.status}`);
+        console.log(`   - Registros CDE (todos RETIRADO): ${cdeData.length}`);
+
+        // Retornar sucesso
+        return res.json({
+            success: true,
+            message: `Registro ${photoNumber} desativado. Todos os ${cdeData.length} registros no CDE são RETIRADO (vendidos).`,
+            data: {
+                photoNumber: photoNumber,
+                action: 'desativar',
+                oldRecord: oldData,
+                cdeRecords: cdeData.map(r => ({
+                    idh: r.AIDH,
+                    qb: r.AQBITEM,
+                    status: r.AESTADOP,
+                    fecha: r.AFECHA
+                })),
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('[MONITOR ACTION API] Erro ao desativar registro:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao desativar registro',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }

@@ -608,7 +608,8 @@ class InventoryMonitor {
                     </div>
                     <div style="color: #ffcdd2; font-size: 11px; line-height: 1.5;">
                         <strong>Mongo:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
-                        <strong>CDE:</strong> IDH ${data.cdeIdh || 'N/A'} (${data.cdeQb || '-'})
+                        <strong>CDE:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || data.cdeIdh || 'N/A'}<br>
+                        <strong>Estados CDE:</strong> ${data.collisionDetails?.cdeStatuses?.join(', ') || '-'}
                     </div>
                     <div style="
                         margin-top: 10px;
@@ -617,7 +618,7 @@ class InventoryMonitor {
                         color: #fff;
                         font-size: 11px;
                     ">
-                        <strong style="color: #4caf50;">Acción recomendada:</strong> Usar "Reciclar Número" para desactivar el registro antiguo y crear uno nuevo con los datos del CDE.
+                        <strong style="color: #4caf50;">Acción recomendada:</strong> ${data.collisionDetails?.actionMessage || 'Revisar manualmente'}
                     </div>
                 </div>
                 ` : ''}
@@ -702,7 +703,7 @@ class InventoryMonitor {
                     >
                         ${data.isCollision ? 'Cerrar' : 'Cancelar'}
                     </button>
-                    ${data.isCollision ? `
+                    ${data.isCollision && data.collisionDetails?.recommendedAction === 'reciclar' ? `
                     <button
                         onclick="window.monitor.executeReciclar('${photoNumber}')"
                         style="
@@ -722,7 +723,27 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-recycle"></i> Reciclar Número
                     </button>
-                    ` : `
+                    ` : data.isCollision && data.collisionDetails?.recommendedAction === 'desativar' ? `
+                    <button
+                        onclick="window.monitor.executeDesativar('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+                            color: white;
+                            border: none;
+                            padding: 10px 18px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 13px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(96, 125, 139, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(96, 125, 139, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(96, 125, 139, 0.3)'"
+                    >
+                        <i class="fas fa-ban"></i> Desactivar Registro
+                    </button>
+                    ` : !data.isCollision ? `
                     <button
                         onclick="window.monitor.executeRetorno('${photoNumber}')"
                         style="
@@ -742,7 +763,7 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-check"></i> Confirmar Retorno
                     </button>
-                    `}
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -821,7 +842,8 @@ class InventoryMonitor {
                     </div>
                     <div style="color: #ffcdd2; font-size: 11px; line-height: 1.5;">
                         <strong>Mongo:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
-                        <strong>CDE:</strong> IDH ${data.cdeIdh || 'N/A'} (${data.cdeQb || '-'})
+                        <strong>CDE:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || data.cdeIdh || 'N/A'}<br>
+                        <strong>Estados CDE:</strong> ${data.collisionDetails?.cdeStatuses?.join(', ') || '-'}
                     </div>
                     <div style="
                         margin-top: 10px;
@@ -830,7 +852,7 @@ class InventoryMonitor {
                         color: #fff;
                         font-size: 11px;
                     ">
-                        <strong style="color: #4caf50;">Acción:</strong> "Reciclar Número" desactiva el registro antiguo y crea uno nuevo.
+                        <strong style="color: #4caf50;">Acción:</strong> ${data.collisionDetails?.actionMessage || 'Revisar manualmente'}
                     </div>
                 </div>
                 ` : ''}
@@ -914,7 +936,7 @@ class InventoryMonitor {
                     >
                         ${data.isCollision ? 'Cerrar' : 'Cancelar'}
                     </button>
-                    ${data.isCollision ? `
+                    ${data.isCollision && data.collisionDetails?.recommendedAction === 'reciclar' ? `
                     <button
                         onclick="window.monitor.executeReciclar('${photoNumber}')"
                         style="
@@ -934,7 +956,27 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-recycle"></i> Reciclar Número
                     </button>
-                    ` : `
+                    ` : data.isCollision && data.collisionDetails?.recommendedAction === 'desativar' ? `
+                    <button
+                        onclick="window.monitor.executeDesativar('${photoNumber}')"
+                        style="
+                            background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+                            color: white;
+                            border: none;
+                            padding: 10px 18px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 13px;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(96, 125, 139, 0.3);
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(96, 125, 139, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(96, 125, 139, 0.3)'"
+                    >
+                        <i class="fas fa-ban"></i> Desactivar Registro
+                    </button>
+                    ` : !data.isCollision ? `
                     <button
                         onclick="document.getElementById('retornoModal').remove(); window.monitor.openPaseModal('${photoNumber}')"
                         style="
@@ -954,7 +996,7 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-exchange-alt"></i> Ir a PASE
                     </button>
-                    `}
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1012,6 +1054,52 @@ class InventoryMonitor {
 
     openPaseModal(photoNumber) {
         alert(`Modal de PASE para foto ${photoNumber} - En desarrollo`);
+    }
+
+    // ===========================================
+    // AÇÃO: DESATIVAR REGISTRO (COLISÃO SEM INGRESADO)
+    // ===========================================
+    // Apenas desativa o registro antigo no MongoDB (todos CDE são RETIRADO)
+    async executeDesativar(photoNumber) {
+        console.log(`⏹️ Desativando registro ${photoNumber}...`);
+
+        // Fechar modal se existir
+        document.getElementById('retornoModal')?.remove();
+
+        // Mostrar loading
+        this.showActionLoading(photoNumber, 'desativar');
+
+        try {
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
+            const response = await fetch(`/api/monitor-actions/desativar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify({
+                    photoNumber: photoNumber,
+                    adminUser: session.user?.username || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ Desativação exitosa:', result);
+                this.showActionSuccess(photoNumber, 'desativar', result.message);
+                // Re-scan após 2 segundos
+                setTimeout(() => this.scan(), 2000);
+            } else {
+                throw new Error(result.message || 'Error desconocido');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al desativar registro:', error);
+            this.showActionError(photoNumber, 'desativar', error.message);
+        }
     }
 
     // ===========================================
@@ -1332,7 +1420,7 @@ class InventoryMonitor {
     }
 
     showActionLoading(photoNumber, action) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'loading',
@@ -1343,7 +1431,7 @@ class InventoryMonitor {
     }
 
     showActionSuccess(photoNumber, action, message) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'success',
@@ -1354,7 +1442,7 @@ class InventoryMonitor {
     }
 
     showActionError(photoNumber, action, error) {
-        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar' };
+        const actionNames = { retorno: 'Retorno', pase: 'Pase', import: 'Importar', vendida: 'Vendida', reciclar: 'Reciclar', desativar: 'Desactivar' };
         const actionName = actionNames[action] || action;
         this.showToast({
             type: 'error',
