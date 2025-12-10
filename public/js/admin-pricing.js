@@ -54,6 +54,58 @@ class AdminPricing {
         this.priceModal = document.getElementById('priceModal');
         this.priceForm = document.getElementById('priceForm');
         this.loading = document.getElementById('loading');
+
+        // Last refresh indicator elements
+        this.lastRefreshInfo = document.getElementById('lastRefreshInfo');
+        this.lastRefreshText = document.getElementById('lastRefreshText');
+
+        // Initialize last refresh from localStorage
+        this.updateLastRefreshIndicator();
+    }
+
+    // ===== LAST REFRESH INDICATOR =====
+    updateLastRefreshIndicator() {
+        if (!this.lastRefreshInfo || !this.lastRefreshText) return;
+
+        const lastRefresh = localStorage.getItem('pricing_last_refresh');
+
+        if (!lastRefresh) {
+            this.lastRefreshText.textContent = 'Never refreshed';
+            this.lastRefreshInfo.className = 'last-refresh-info warning';
+            return;
+        }
+
+        const lastDate = new Date(parseInt(lastRefresh, 10));
+        const now = new Date();
+        const diffMs = now - lastDate;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+        let text = '';
+        let className = 'last-refresh-info';
+
+        if (diffHours < 1) {
+            const mins = Math.floor(diffMs / (1000 * 60));
+            text = mins <= 1 ? 'Just now' : `${mins} min ago`;
+            className += ' recent';
+        } else if (diffHours < 24) {
+            text = `${Math.floor(diffHours)}h ago`;
+            className += ' recent';
+        } else if (diffDays < 7) {
+            text = `${Math.floor(diffDays)}d ago`;
+            className += '';
+        } else {
+            text = `${Math.floor(diffDays)}d ago - refresh recommended`;
+            className += ' warning';
+        }
+
+        this.lastRefreshText.textContent = text;
+        this.lastRefreshInfo.className = className;
+    }
+
+    saveLastRefreshTime() {
+        localStorage.setItem('pricing_last_refresh', Date.now().toString());
+        this.updateLastRefreshIndicator();
     }
 
 
@@ -200,6 +252,9 @@ class AdminPricing {
 
                 this.showSyncStatus(message, 'success');
                 this.updateSyncProgress('Refresh complete!', 100);
+
+                // Save last refresh time
+                this.saveLastRefreshTime();
 
                 // Reload categories
                 await this.loadCategories(true);

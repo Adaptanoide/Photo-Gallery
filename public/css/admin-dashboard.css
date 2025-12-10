@@ -231,6 +231,40 @@
     border-radius: var(--border-radius);
     background: rgba(58, 58, 66, 0.5);
     backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.admin-user:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
+}
+
+/* Settings icon on hover */
+.admin-user::after {
+    content: '\f013';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold-primary);
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.admin-user:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) rotate(90deg);
+}
+
+.admin-user:hover .user-name {
+    padding-right: 20px;
 }
 
 .user-avatar {
@@ -245,11 +279,17 @@
     font-weight: 700;
     font-size: 1rem;
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.admin-user:hover .user-avatar {
+    transform: scale(1.05);
 }
 
 .user-name {
     font-weight: 500;
     color: var(--text-primary);
+    transition: padding-right 0.3s ease;
 }
 
 /* Conteúdo principal */

@@ -299,10 +299,12 @@
     bottom: 0;
     left: 0;
     right: 0;
-    /*background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));*/
-    color: var(--text-primary);
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    color: #ffffff;
     padding: 1rem;
     font-size: 0.85rem;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     transform: translateY(100%);
     transition: transform 0.3s ease;
 }
