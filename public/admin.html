@@ -1485,34 +1485,50 @@
                     </div>
 
                     <!-- Legenda -->
-                    <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px; color: #888; font-size: 12px; text-transform: uppercase;">
-                            Leyenda de Categorías</h4>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
-                            <div>
-                                <span style="color: #f44336;">🔴 CRÍTICO</span>
-                                <p style="color: #666; margin: 4px 0 0 0;">Riesgo de venta duplicada. Acción inmediata.
-                                </p>
+                    <div style="margin-top: 20px; padding: 16px 20px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 style="margin-bottom: 14px; color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
+                            Leyenda de Categorías
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 13px;">
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <span style="color: #f44336; font-size: 16px;">🔴</span>
+                                <div>
+                                    <span style="color: #f44336; font-weight: 600;">CRÍTICO</span>
+                                    <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
+                                        MongoDB=disponible, CDE=vendido. Riesgo de venta duplicada.
+                                        <span style="color: #f44336;">Usar botón "Vendida".</span>
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <span style="color: #ffc107;">🟡 ADVERTENCIA</span>
-                                <p style="color: #666; margin: 4px 0 0 0;">Requiere investigación manual.</p>
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <span style="color: #ffc107; font-size: 16px;">🟡</span>
+                                <div>
+                                    <span style="color: #ffc107; font-weight: 600;">RETORNO</span>
+                                    <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
+                                        MongoDB=vendido, CDE=ingresado. Mercadería devuelta.
+                                        <span style="color: #4caf50;">Usar botón "Retorno".</span>
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <span style="color: #2196f3;">🔄 SYNC PENDIENTE</span>
-                                <p style="color: #666; margin: 4px 0 0 0;">Foto en R2 no importada al MongoDB.</p>
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <span style="color: #607d8b; font-size: 16px;">⏸️</span>
+                                <div>
+                                    <span style="color: #607d8b; font-weight: 600;">STANDBY</span>
+                                    <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
+                                        Foto bloqueada en CDE. Sin acción disponible.
+                                        <span style="color: #607d8b;">Requiere liberación en CDE.</span>
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <span style="color: #9c27b0;">📷 SIN FOTO</span>
-                                <p style="color: #666; margin: 4px 0 0 0;">Couro sin foto. Informar a Ingrid.</p>
-                            </div>
-                            <div>
-                                <span style="color: #4caf50;">🔧 AUTO-CORRECCIÓN</span>
-                                <p style="color: #666; margin: 4px 0 0 0;">QB diferente. Sync corregirá.</p>
-                            </div>
-                            <div>
-                                <span style="color: #ff9800;">🔀 PASS</span>
-                                <p style="color: #666; margin: 4px 0 0 0;">Número reutilizado con QB diferente.</p>
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <span style="color: #9c27b0; font-size: 16px;">📷</span>
+                                <div>
+                                    <span style="color: #9c27b0; font-weight: 600;">SIN FOTO</span>
+                                    <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
+                                        Item en CDE sin foto en R2. Sin acción disponible.
+                                        <span style="color: #9c27b0;">Requiere fotografía.</span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
