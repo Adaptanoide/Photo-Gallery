@@ -1189,16 +1189,18 @@ class InventoryMonitor {
         this.showActionLoading(photoNumber, 'reciclar');
 
         try {
-            const token = localStorage.getItem('token');
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
             const response = await fetch(`/api/monitor-actions/reciclar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${session.token}`
                 },
                 body: JSON.stringify({
                     photoNumber: photoNumber,
-                    adminUser: localStorage.getItem('username') || 'admin'
+                    adminUser: session.user?.username || 'admin'
                 })
             });
 
