@@ -306,13 +306,17 @@ class CDEIncrementalSync {
                 }
 
                 // TERCEIRO: Verificar no CDE
+                // IMPORTANTE: Buscar TODOS os registros e priorizar INGRESADO
                 const [cdeResult] = await cdeConnection.execute(
-                    'SELECT AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    'SELECT AESTADOP, AQBITEM, AIDH FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC',
                     [mongoPhoto.photoNumber]
                 );
 
-                if (cdeResult[0]) {
-                    const cdeStatus = cdeResult[0].AESTADOP;
+                if (cdeResult.length > 0) {
+                    // PRIORIZAR registro INGRESADO (pode haver múltiplos registros históricos)
+                    const ingresadoRecord = cdeResult.find(r => r.AESTADOP === 'INGRESADO');
+                    const cdeRecord = ingresadoRecord || cdeResult[0];
+                    const cdeStatus = cdeRecord.AESTADOP;
 
                     // Comparar apenas se diferente
                     if (mongoPhoto.cdeStatus !== cdeStatus ||
@@ -324,12 +328,12 @@ class CDEIncrementalSync {
                             mongoStatus: mongoPhoto.status,
                             mongoCDEStatus: mongoPhoto.cdeStatus,
                             realCDEStatus: cdeStatus,
-                            action: this.determineSuggestedAction(mongoPhoto, { AESTADOP: cdeStatus })
+                            action: this.determineSuggestedAction(mongoPhoto, cdeRecord)
                         });
 
                         // Aplicar correção se modo safe
                         if (this.mode === 'safe') {
-                            const correction = await this.applyCorrection(mongoPhoto, { AESTADOP: cdeStatus });
+                            const correction = await this.applyCorrection(mongoPhoto, cdeRecord);
                             if (correction.applied) {
                                 console.log(`[SYNC] ✅ ${mongoPhoto.photoNumber}: ${correction.action}`);
                             }
@@ -501,16 +505,20 @@ class CDEIncrementalSync {
 
             for (const mongoPhoto of mongoPhotosAvailable) {
                 // PASSO 1: Verificar em tbinventario
+                // IMPORTANTE: Buscar TODOS os registros e priorizar INGRESADO
                 const [invResult] = await cdeConnection.execute(
-                    `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AQBITEM 
-                FROM tbinventario 
-                WHERE ATIPOETIQUETA = ?`,
+                    `SELECT ATIPOETIQUETA, AESTADOP, RESERVEDUSU, AQBITEM, AIDH
+                FROM tbinventario
+                WHERE ATIPOETIQUETA = ?
+                ORDER BY AFECHA DESC`,
                     [mongoPhoto.photoNumber]
                 );
 
                 if (invResult.length > 0) {
-                    // ✅ Encontrou em tbinventario - foto aberta
-                    cdeChanges.push(invResult[0]);
+                    // PRIORIZAR registro INGRESADO (pode haver múltiplos registros históricos)
+                    const ingresadoRecord = invResult.find(r => r.AESTADOP === 'INGRESADO');
+                    const cdeRecord = ingresadoRecord || invResult[0];
+                    cdeChanges.push(cdeRecord);
                 }
                 // Sem else! Se não encontrou em tbinventario, ignora
                 // sync-sunshine.js e CDETransitSync cuidam de tbetiqueta
@@ -1041,15 +1049,19 @@ class CDEIncrementalSync {
                     if (!photoNumber) continue;
 
                     // Consultar estado no CDE
+                    // IMPORTANTE: Buscar TODOS os registros e priorizar INGRESADO
                     const [rows] = await cdeConnection.execute(
-                        'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                        'SELECT AESTADOP, RESERVEDUSU, AIDH FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC',
                         [photoNumber.padStart(5, '0')]
                     );
 
                     if (rows.length === 0) continue;
 
-                    const estadoCDE = rows[0].AESTADOP;
-                    const reservedUsu = rows[0].RESERVEDUSU || '';
+                    // PRIORIZAR registro INGRESADO (pode haver múltiplos registros históricos)
+                    const ingresadoRecord = rows.find(r => r.AESTADOP === 'INGRESADO');
+                    const cdeRecord = ingresadoRecord || rows[0];
+                    const estadoCDE = cdeRecord.AESTADOP;
+                    const reservedUsu = cdeRecord.RESERVEDUSU || '';
 
                     // Verificar se RESERVEDUSU contém o código do cliente
                     const pertenceAoCliente = reservedUsu.includes(`-${clientCode}`);
