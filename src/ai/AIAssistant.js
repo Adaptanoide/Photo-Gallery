@@ -102,9 +102,142 @@ class AIAssistant {
 
             // Tipos de movimento (tbmovimientos.ATIPOMOV)
             movementTypes: {
-                '1': 'Entrada no estoque',
-                '2': 'Saída/Venda',
-                '3': 'Ajuste/Transferência'
+                '1': 'INGRESADO - Entrada no estoque',
+                '2': 'RETIRADO - Saída/Venda',
+                '3': 'STANDBY - Aguardando foto/liberação'
+            },
+
+            // Nota: PRE-SELECTED e RESERVED são usados principalmente na Gallery (sistema de fotos)
+            // Nem todos os produtos têm fotos (ATIPOETIQUETA pode ser vazio)
+            galleryOnlyStates: ['PRE-SELECTED', 'RESERVED'],
+
+            // ========== CONHECIMENTO DE PRODUTOS ==========
+            // Estrutura: PREFIXO define categoria, SUFIXO define variação
+
+            productPrefixes: {
+                '5': { category: 'COWHIDES', description: 'Cowhides (mais importantes)', priority: 1 },
+                '4': { category: 'DESIGNER RUG', description: 'Designer Rugs', priority: 2 },
+                '2': { category: 'ACCESORIOS', description: 'Acessórios (coasters, pillows, placemats)', priority: 3 },
+                '6': { category: 'COWHIDES DYED', description: 'Cowhides Dyed/Special Colors', priority: 4 },
+                '3': { category: 'DESIGNER RUG', description: 'Designer Rugs Special', priority: 5 },
+                '1': { category: 'SHEEPSKIN', description: 'Slippers, Sheepskin products', priority: 6 },
+                '9': { category: 'EXOTIC', description: 'Calfskin, Exotic hides', priority: 7 },
+                '8': { category: 'SHEEPSKIN', description: 'Sheepskin Rugs', priority: 8 },
+                '7': { category: 'OTHER', description: 'Outros produtos', priority: 9 }
+            },
+
+            // COWHIDES (5XXX) - Estrutura detalhada
+            cowhideStructure: {
+                // Colombia (52XX)
+                '5200': { origin: 'COL', size: 'S', sqm: '2.50-2.99' },
+                '5201': { origin: 'COL', size: 'M', sqm: '3.00-3.49' },
+                '5202': { origin: 'COL', size: 'L', sqm: '3.50-3.99' },
+                '5203': { origin: 'COL', size: 'XL', sqm: '4.05-4.50+' },
+                '5204': { origin: 'COL', size: 'S/M', sqm: '2.50-3.49', type: 'Tannery Run' },
+                '5205': { origin: 'COL', size: 'L/XL', sqm: '3.50-4.50+', type: 'Tannery Run' },
+                '5206': { origin: 'COL', size: 'Mini', sqm: '24x35' },
+                // Brazil (53XX)
+                '5300': { origin: 'BRA', size: 'XS', sqm: '1.40-2.39' },
+                '5301': { origin: 'BRA', size: 'S', sqm: '2.00-2.99' },
+                '5302': { origin: 'BRA', size: 'M/L', sqm: '3.00-3.79' },
+                '5303': { origin: 'BRA', size: 'XL/Jumbo', sqm: '3.80-4.25+' },
+                // Brazil Promo (536X, 537X)
+                '5365': { origin: 'BRA', size: 'S', sqm: '2.40-2.99', type: 'Super Promo' },
+                '5375': { origin: 'BRA', size: 'ML/XL', sqm: '3.00-4.20', type: 'Super Promo' },
+                // Brazil Special (547X, 550X)
+                '5475': { origin: 'BRA', size: 'Mixed', sqm: '3.00-4.25', type: 'Tannery Run' },
+                '5500': { origin: 'BRA', size: 'Various', type: 'With Leather Binding and Lined' }
+            },
+
+            // Sufixos de Cor/Padrão para COWHIDES
+            cowhideSuffixes: {
+                // Padrões básicos
+                'BRI': 'Brindle',
+                'TRI': 'Tricolor',
+                'SP': 'Salt & Pepper',
+                'BLW': 'Black & White',
+                'BRW': 'Brown & White',
+                'EXO': 'Exotic',
+                'GR': 'Solid Grey',
+                'BL': 'Black',
+                'BR': 'Brindle/Brown',
+                'PE': 'Palomino/Exotic',
+                'SB': 'Salt Black',
+                'TP': 'Taupe',
+                'SC': 'Special Colors',
+                'LGT': 'Light (claro)',
+                'DRK': 'Dark (escuro)',
+                'BLK': 'Black',
+                'CHO': 'Chocolate',
+                // Tricolor variations
+                'TRC': 'Tricolor Classic',
+                'TRS': 'Tricolor Special',
+                'TRD': 'Tricolor Dark',
+                'TRV': 'Tricolor Vivid',
+                'PIC': 'Tricolor Picasso',
+                // Brindle variations
+                'ABB': 'Assorted Brindle Belly',
+                'ABK': 'Assorted Brindle Black',
+                'ADB': 'Assorted Dark Brindle',
+                'AWB': 'Assorted White Brindle',
+                // ZETA codes (Amazon)
+                'Z BB': 'ZETA Brindle Belly (Amazon)',
+                'Z BD': 'ZETA Brindle Dark Belly (Amazon)',
+                'Z BM': 'ZETA Brindle Medium (Amazon)',
+                'Z BR': 'ZETA Brindle Reddish (Amazon)',
+                'Z DM': 'ZETA Dark Medium (Amazon)',
+                'Z PA': 'ZETA Palomino Solid (Amazon)',
+                'Z GB': 'ZETA Greyish Beige (Amazon)',
+                'Z DR': 'ZETA Dark Reddish (Amazon)'
+            },
+
+            // Cowhides Dyed (6XXX)
+            dyedCowhides: {
+                // Natural colors (not dyed)
+                '6001': { color: 'Grey', size: 'S', sqm: '2.40-2.99', dyed: false },
+                '6002': { color: 'Grey', size: 'M/L', sqm: '3.00-3.79', dyed: false },
+                '6003': { color: 'Grey', size: 'XL', sqm: '3.80-4.25+', dyed: false },
+                '6011': { color: 'Natural White', size: 'S', sqm: '2.00-2.99', dyed: false },
+                '6012': { color: 'Natural White', size: 'M/L', sqm: '3.00-3.79', dyed: false },
+                '6013': { color: 'Natural White', size: 'XL', sqm: '3.80-4.25+', dyed: false },
+                '6021': { color: 'Butter Cream', size: 'S', dyed: false },
+                '6022': { color: 'Butter Cream', size: 'M/L', dyed: false },
+                '6023': { color: 'Butter Cream', size: 'XL', dyed: false },
+                // Dyed colors (rest of 6XXX)
+                'default': { dyed: true, description: 'Dyed Cowhide' }
+            },
+
+            // Designer Rugs (4XXX)
+            designerRugs: {
+                '41': { type: 'Bedside', size: '22X34' },
+                '42': { type: 'Runner', size: '2.5X8' },
+                '44': { type: 'Designer', size: '4X6' },
+                '45': { type: 'Designer', size: '5X7' },
+                '46': { type: 'Designer', size: '6X8' },
+                '49': { type: 'Designer XL', size: '9X11' }
+            },
+
+            // Rug patterns
+            rugPatterns: ['Plain', 'CHEVRON', 'ROPE THREAD', 'Star', 'Longhorn', 'MultiStar'],
+            rugColors: ['Degrade', 'Greyish Tones', 'Off White', 'Palomino Tones Mix', 'Tricolor', 'Taupe/Champagne Mix'],
+
+            // Coasters - Top Sellers (211X-213X)
+            coasters: {
+                '2110': 'Coaster Plain',
+                '2115': 'Coaster TX Star',
+                '2116': 'Coaster Longhorn Head',
+                '2117': 'Coaster Horseshoe',
+                '2119': 'Coaster Horse',
+                '2129': 'Coaster TX Map',
+                '2130': 'Coaster Hide Shape Plain',
+                '2135': 'Coaster Hide Shape TX Star'
+            },
+
+            // ZETA = Amazon specific codes (Z prefix in suffix)
+            zetaInfo: {
+                description: 'Códigos ZETA são específicos para Amazon',
+                pattern: 'Base code + Z + Color code',
+                examples: ['5302Z BR', '5302Z DM', '5303Z PA']
             }
         };
 
@@ -723,6 +856,36 @@ ${seasonalContext}
   - CLOSE = completed
   - PENDING = pending
   - CANCEL = cancelled
+
+🏷️ PRODUCT CODE STRUCTURE (QBITEM):
+• First digit defines category:
+  - 5XXX = COWHIDES (most important!) - Brazil & Colombia
+  - 4XXX = DESIGNER RUGS
+  - 2XXX = ACCESSORIES (coasters 211X-213X are top sellers)
+  - 6XXX = DYED COWHIDES (except 600X/601X/602X which are natural colors)
+  - 3XXX = SPECIAL DESIGNER RUGS
+  - 1XXX = SLIPPERS/SHEEPSKIN
+  - 9XXX = CALFSKIN/EXOTIC
+
+• COWHIDES (5XXX) structure:
+  - 520X = Colombia (S/M/L/XL by last digit: 0=S, 1=M, 2=L, 3=XL)
+  - 530X = Brazil (same size pattern)
+  - 5365 = Brazil Super Promo Small
+  - 5375 = Brazil Super Promo ML/XL
+  - 5475 = Brazil Tannery Run
+
+• COWHIDE SUFFIXES (color/pattern):
+  - BRI = Brindle, TRI = Tricolor, SP = Salt & Pepper
+  - BLW = Black & White, BRW = Brown & White
+  - LGT = Light, DRK = Dark, EXO = Exotic
+  - Z XX = ZETA codes (Amazon specific): Z BR=Brindle Reddish, Z DM=Dark Medium, Z BB=Brindle Belly, Z PA=Palomino
+
+• DESIGNER RUGS (4XXX):
+  - 41XX = Bedside 22X34, 42XX = Runner 2.5X8
+  - 44XX = 4X6, 45XX = 5X7, 46XX = 6X8, 49XX = 9X11
+
+• TOP COASTERS (2110-2135):
+  - 2110 = Plain, 2115 = TX Star, 2116 = Longhorn, 2117 = Horseshoe, 2129 = TX Map
 
 📋 RESPONSE FORMAT:
 • Use emojis purposefully: 📊📈📦💰🎯✅⚠️🟢🟡🔴🚨
