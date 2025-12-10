@@ -1,5 +1,5 @@
-// src/ai/AIAssistant.js - VERSÃO 2.0
-// Sem dados hardcoded, prompt flexível, mais analítico
+// src/ai/AIAssistant.js - VERSÃO 3.0
+// AI Agent com detecção de intenção avançada, alertas e contexto de negócio
 const Groq = require('groq-sdk');
 const CDEQueries = require('./CDEQueries');
 const GalleryQueries = require('./GalleryQueries');
@@ -19,6 +19,45 @@ class AIAssistant {
         this.connectionStatus = {
             cde: 'unknown',
             gallery: 'unknown'
+        };
+
+        // Conhecimento de negócio do Sunshine Cowhides
+        this.businessKnowledge = {
+            leadTimes: {
+                'Brazil': 45,
+                'Colombia': 7,
+                'Poland': 45,
+                'Argentina': 30,
+                'default': 30
+            },
+            criticalProducts: ['2110', '2115', '2129', '2117', '2116'], // Coasters
+            peakSeasonMonths: [10, 11, 12], // Out-Dez
+            channels: {
+                'etsy': { name: 'Etsy', share: 44 },
+                'amazon': { name: 'Amazon', share: 22 },
+                'shopify': { name: 'Shopify', share: 15 },
+                'direct': { name: 'Direct Sales', share: 19 }
+            },
+            minimumStockAlert: 100,
+            agingThresholdDays: 60
+        };
+
+        // Sistema de pesos para detecção de intenção
+        this.intentWeights = {
+            inventory: ['inventory', 'stock', 'estoque', 'available', 'how many', 'quantity'],
+            restock: ['restock', 'order', 'buy', 'need', 'low stock', 'running out', 'replenish'],
+            sales: ['sales', 'selling', 'sold', 'revenue', 'vendas', 'performance'],
+            clients: ['client', 'customer', 'vip', 'buyer', 'cliente'],
+            carts: ['cart', 'carrinho', 'shopping', 'checkout', 'reserved'],
+            aging: ['aging', 'old', 'stale', 'slow moving', 'sitting', 'parado'],
+            transit: ['transit', 'shipping', 'arriving', 'coming', 'transito', 'warehouse'],
+            seasonal: ['season', 'holiday', 'christmas', 'peak', 'december', 'summer', 'winter'],
+            channels: ['channel', 'marketplace', 'etsy', 'amazon', 'shopify', 'where'],
+            trending: ['trending', 'hot', 'popular', 'best', 'top', 'fast moving'],
+            forecast: ['forecast', 'predict', 'projection', 'when', 'will run out', 'estimate'],
+            comparison: ['compare', 'vs', 'versus', 'difference', 'better', 'worse', 'month'],
+            dashboard: ['dashboard', 'overview', 'summary', 'status', 'everything', 'general'],
+            alerts: ['alert', 'warning', 'attention', 'urgent', 'critical', 'problem']
         };
 
         this.initializeGallery();
@@ -84,13 +123,45 @@ class AIAssistant {
         return null;
     }
 
+    /**
+     * Detectar intenções da pergunta usando sistema de pesos
+     */
+    detectIntents(question) {
+        const lowerQuestion = question.toLowerCase();
+        const intentScores = {};
+
+        for (const [intent, keywords] of Object.entries(this.intentWeights)) {
+            let score = 0;
+            for (const keyword of keywords) {
+                if (lowerQuestion.includes(keyword)) {
+                    score += keyword.includes(' ') ? 2 : 1; // Frases valem mais
+                }
+            }
+            if (score > 0) {
+                intentScores[intent] = score;
+            }
+        }
+
+        // Ordenar por score e pegar top 3
+        const sortedIntents = Object.entries(intentScores)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([intent]) => intent);
+
+        return sortedIntents.length > 0 ? sortedIntents : ['dashboard'];
+    }
+
     async gatherContext(question) {
         const context = {};
         const lowerQuestion = question.toLowerCase();
 
+        // Usar sistema de detecção de intenção avançado
+        const intents = this.detectIntents(question);
+        console.log(`🎯 Intenções detectadas: ${intents.join(', ')}`);
+
         try {
             // =============================================
-            // DETECTAR TIPO DE PERGUNTA
+            // DETECTAR TIPO DE PERGUNTA (compatibilidade)
             // =============================================
 
             const isGalleryQuestion =
@@ -99,14 +170,14 @@ class AIAssistant {
                 lowerQuestion.includes('picture') ||
                 lowerQuestion.includes('image');
 
-            const isClientQuestion =
+            const isClientQuestion = intents.includes('clients') ||
                 lowerQuestion.includes('client') ||
                 lowerQuestion.includes('customer') ||
                 lowerQuestion.includes('vip') ||
                 lowerQuestion.includes('sales rep') ||
                 lowerQuestion.includes('marketing');
 
-            const isCartQuestion =
+            const isCartQuestion = intents.includes('carts') ||
                 lowerQuestion.includes('cart') ||
                 lowerQuestion.includes('carrinho') ||
                 lowerQuestion.includes('shopping');
@@ -116,7 +187,7 @@ class AIAssistant {
                 lowerQuestion.includes('order') ||
                 lowerQuestion.includes('pedido');
 
-            const isComingSoonQuestion =
+            const isComingSoonQuestion = intents.includes('transit') ||
                 lowerQuestion.includes('coming soon') ||
                 lowerQuestion.includes('transit') ||
                 lowerQuestion.includes('arriving') ||
@@ -133,37 +204,37 @@ class AIAssistant {
                 lowerQuestion.includes('preço') ||
                 lowerQuestion.includes('valor');
 
-            const isInventoryQuestion =
+            const isInventoryQuestion = intents.includes('inventory') ||
                 lowerQuestion.includes('inventory') ||
                 lowerQuestion.includes('stock') ||
                 lowerQuestion.includes('estoque');
 
-            const isRestockQuestion =
+            const isRestockQuestion = intents.includes('restock') ||
                 lowerQuestion.includes('restock') ||
                 lowerQuestion.includes('order') ||
                 lowerQuestion.includes('buy') ||
                 lowerQuestion.includes('need');
 
-            const isSalesQuestion =
+            const isSalesQuestion = intents.includes('sales') ||
                 lowerQuestion.includes('sales') ||
                 lowerQuestion.includes('selling') ||
                 lowerQuestion.includes('vendas') ||
                 lowerQuestion.includes('sold');
 
-            const isChannelQuestion =
+            const isChannelQuestion = intents.includes('channels') ||
                 lowerQuestion.includes('channel') ||
                 lowerQuestion.includes('marketplace') ||
                 lowerQuestion.includes('etsy') ||
                 lowerQuestion.includes('amazon') ||
                 lowerQuestion.includes('shopify');
 
-            const isTopQuestion =
+            const isTopQuestion = intents.includes('trending') ||
                 lowerQuestion.includes('top') ||
                 lowerQuestion.includes('best') ||
                 lowerQuestion.includes('most') ||
                 lowerQuestion.includes('popular');
 
-            const isDashboardQuestion =
+            const isDashboardQuestion = intents.includes('dashboard') ||
                 lowerQuestion.includes('dashboard') ||
                 lowerQuestion.includes('overview') ||
                 lowerQuestion.includes('summary') ||
@@ -173,6 +244,25 @@ class AIAssistant {
             const isExpiringQuestion =
                 lowerQuestion.includes('expir') ||
                 lowerQuestion.includes('expiring');
+
+            const isForecastQuestion = intents.includes('forecast') ||
+                lowerQuestion.includes('when') ||
+                lowerQuestion.includes('projection') ||
+                lowerQuestion.includes('run out');
+
+            const isComparisonQuestion = intents.includes('comparison') ||
+                lowerQuestion.includes('compare') ||
+                lowerQuestion.includes('vs') ||
+                lowerQuestion.includes('month');
+
+            const isSeasonalQuestion = intents.includes('seasonal') ||
+                lowerQuestion.includes('season') ||
+                lowerQuestion.includes('holiday');
+
+            const isAgingQuestion = intents.includes('aging') ||
+                lowerQuestion.includes('aging') ||
+                lowerQuestion.includes('old') ||
+                lowerQuestion.includes('slow');
 
             // =============================================
             // GALLERY QUERIES (MongoDB)
@@ -371,6 +461,85 @@ class AIAssistant {
                 context.trendingProducts = await this.cde.getTrendingNewProducts();
             }
 
+            // =============================================
+            // NOVAS QUERIES AVANÇADAS (V3.0)
+            // =============================================
+
+            // Análise de sazonalidade
+            if (isSeasonalQuestion) {
+                context.seasonalTrends = await ConnectionManager.executeWithCache(
+                    'seasonalTrends',
+                    () => this.cde.getSeasonalTrends(),
+                    120
+                );
+            }
+
+            // Previsão de estoque / quando vai acabar
+            if (isForecastQuestion || lowerQuestion.includes('projection')) {
+                context.stockProjection = await ConnectionManager.executeWithCache(
+                    'stockProjection',
+                    () => this.cde.getStockProjection(),
+                    30
+                );
+            }
+
+            // Comparativo mensal
+            if (isComparisonQuestion || lowerQuestion.includes('this month')) {
+                context.monthlyComparison = await ConnectionManager.executeWithCache(
+                    'monthlyComparison',
+                    () => this.cde.getMonthlyComparison(),
+                    60
+                );
+            }
+
+            // Produtos aging / inativos
+            if (isAgingQuestion) {
+                context.agingProducts = await this.cde.getAgingProducts();
+                context.inactiveProducts = await this.cde.getInactiveProducts(60);
+            }
+
+            // Análise de lead times
+            if (isComingSoonQuestion || lowerQuestion.includes('lead time')) {
+                context.leadTimeAnalysis = await ConnectionManager.executeWithCache(
+                    'leadTimeAnalysis',
+                    () => this.cde.getLeadTimeAnalysis(),
+                    60
+                );
+                context.detailedTransit = await this.cde.getDetailedTransitProducts();
+            }
+
+            // Estoque crítico
+            if (isRestockQuestion || lowerQuestion.includes('critical') || lowerQuestion.includes('urgent')) {
+                context.criticalStock = await ConnectionManager.executeWithCache(
+                    'criticalStock',
+                    () => this.cde.getCriticalStock(),
+                    15
+                );
+            }
+
+            // Produtos por origem / fornecedor
+            if (lowerQuestion.includes('origin') || lowerQuestion.includes('supplier') || lowerQuestion.includes('brazil') || lowerQuestion.includes('colombia')) {
+                context.productsByOrigin = await ConnectionManager.executeWithCache(
+                    'productsByOrigin',
+                    () => this.cde.getProductsByOrigin(),
+                    60
+                );
+            }
+
+            // Vendas por cliente
+            if (isClientQuestion && isSalesQuestion) {
+                context.salesByClient = await this.cde.getSalesByClient();
+            }
+
+            // Análise de preço vs velocidade
+            if (isPricingQuestion || lowerQuestion.includes('velocity')) {
+                context.priceVelocity = await ConnectionManager.executeWithCache(
+                    'priceVelocity',
+                    () => this.cde.getPriceVelocityAnalysis(),
+                    60
+                );
+            }
+
             // Se nenhuma query específica, buscar dados básicos
             if (Object.keys(context).length === 0) {
                 context.basicInfo = await ConnectionManager.executeWithCache(
@@ -391,6 +560,9 @@ class AIAssistant {
                 }
             }
 
+            // Adicionar conhecimento de negócio ao contexto
+            context.businessKnowledge = this.businessKnowledge;
+
         } catch (error) {
             console.error('⚠️ Erro ao buscar contexto:', error.message);
             context.error = 'Some data sources are temporarily unavailable.';
@@ -404,46 +576,90 @@ class AIAssistant {
             return this.getErrorResponse();
         }
 
-        // Construir regras customizadas
-        const customRulesText = customRules.length > 0
-            ? `\nCUSTOM BUSINESS RULES:\n${customRules.map(rule => `• ${rule.type.toUpperCase()}: ${rule.description}`).join('\n')}`
-            : '';
+        // Construir regras customizadas com detalhes estruturados
+        let customRulesText = '';
+        if (customRules.length > 0) {
+            customRulesText = '\n\n📋 CUSTOM BUSINESS RULES FROM ANDY:\n';
+            customRules.forEach(rule => {
+                customRulesText += `• ${rule.type.toUpperCase()}: ${rule.description}`;
+                if (rule.trigger_value && rule.trigger_comparison) {
+                    customRulesText += ` [Trigger: when value ${rule.trigger_comparison} ${rule.trigger_value}]`;
+                }
+                if (rule.product_codes && rule.product_codes.length > 0) {
+                    customRulesText += ` [Products: ${rule.product_codes.join(', ')}]`;
+                }
+                if (rule.lead_time_days) {
+                    customRulesText += ` [Lead time: ${rule.lead_time_days} days]`;
+                }
+                if (rule.reorder_quantity) {
+                    customRulesText += ` [Reorder: ${rule.reorder_quantity} units]`;
+                }
+                if (rule.action_recommended) {
+                    customRulesText += ` [Action: ${rule.action_recommended}]`;
+                }
+                customRulesText += '\n';
+            });
+        }
 
-        const systemPrompt = `You are a business intelligence assistant for Andy, owner of Sunshine Cowhides (wholesale cowhide business).
+        // Verificar se estamos em período sazonal
+        const currentMonth = new Date().getMonth() + 1;
+        const isPeakSeason = this.businessKnowledge.peakSeasonMonths.includes(currentMonth);
+        const seasonalContext = isPeakSeason ?
+            '\n⚠️ SEASONAL ALERT: We are in PEAK SEASON (Oct-Dec). Stock levels should be 30% higher than normal.\n' : '';
 
-CORE PRINCIPLES:
-• Be CONSERVATIVE with claims - only state what the data shows
-• Be ANALYTICAL - when you have real data, analyze it deeply and find patterns
-• Be ACTIONABLE - give insights Andy can act on, not just numbers
-• Be CONVERSATIONAL - talk like a helpful colleague, not a robot
+        const systemPrompt = `You are SUNSHINE AI, an intelligent business assistant for Andy, owner of Sunshine Cowhides - a B2B wholesale cowhide and leather goods company.
 
-RESPONSE STYLE:
-• Use emojis sparingly but effectively (📊 📈 📦 💰 🎯 ✅ ⚠️ 🟢 🟡 🔴 📸 👥 🛒)
+🎯 YOUR ROLE:
+You are not just a chatbot - you are Andy's analytical partner who:
+• Understands the cowhide business deeply
+• Proactively identifies opportunities and risks
+• Provides actionable insights, not just data dumps
+• Thinks ahead and anticipates Andy's needs
+
+📊 CORE PRINCIPLES:
+1. BE ANALYTICAL - When you have data, analyze it deeply. Find patterns, anomalies, trends.
+2. BE PROACTIVE - Don't wait to be asked. If you see a problem, mention it.
+3. BE SPECIFIC - Use actual numbers from the data. Never invent statistics.
+4. BE ACTIONABLE - Every insight should lead to a possible action.
+5. BE HONEST - If data is limited or unavailable, say so clearly.
+
+🏢 SUNSHINE COWHIDES BUSINESS CONTEXT:
+• Product focus: Cowhides, coasters (top sellers: 2110, 2115, 2129), leather goods
+• Channels: Etsy (44%), Amazon (22%), Shopify (15%), Direct (19%)
+• Suppliers: Brazil (45 day lead time), Colombia (7 days), Poland (45 days)
+• Daily volume: 100-200 items, 50-150 orders
+• Critical threshold: Products below 100 units need attention
+• Aging threshold: Products sitting 60+ days need review
+${seasonalContext}
+📋 RESPONSE FORMAT:
+• Use emojis purposefully: 📊📈📦💰🎯✅⚠️🟢🟡🔴🚨
 • Use bullet points (•) for lists
-• Use numbers (1, 2, 3) for priorities or steps
-• Add line breaks for readability
-• NO markdown formatting (no ** or ##)
-• Keep responses focused but thorough
+• Use numbers (1, 2, 3) for priorities or action steps
+• Add clear section breaks for readability
+• NO markdown formatting (no ** or ## or __)
+• Keep responses focused but comprehensive
+• Start with the most important insight
 
-DATA SOURCES AVAILABLE:
-• CDE (MySQL): Warehouse inventory, sales, orders, products in transit
-• Gallery (MongoDB): Photos, clients, carts, selections, pricing, marketing
+🔍 DATA SOURCES:
+• CDE (MySQL): Warehouse inventory, sales history, orders, products in transit
+• Gallery (MongoDB): Photos, clients, carts, selections, pricing
+• Training Rules: Custom business logic defined by Andy
 
-WHAT TO DO:
-• Analyze the actual data provided - find trends, anomalies, opportunities
-• Compare numbers when relevant (e.g., "up from last week", "higher than average")
-• Highlight important insights first
-• Suggest actions when appropriate
-• If data is limited, say so honestly
+⚡ ANALYSIS APPROACH:
+When analyzing data:
+1. Identify the KEY INSIGHT first
+2. Support with specific numbers
+3. Compare to benchmarks when possible (last month, average, etc.)
+4. Highlight anomalies or concerns
+5. Suggest concrete next steps
 
-WHAT NOT TO DO:
-• Never invent or assume data that isn't provided
-• Never state percentages or specific numbers without data backing it
-• Never give generic advice - be specific based on the data
-• Don't apologize excessively - just be helpful
+❌ NEVER DO:
+• Never invent numbers or percentages not in the data
+• Never give generic advice - be specific to Sunshine's situation
+• Never ignore warning signs in the data
+• Never be overly apologetic - be confident and helpful
 ${customRulesText}
-
-Remember: Andy wants real insights from real data to make business decisions.`;
+Remember: Andy relies on you to help run his business. Be the analytical partner he needs.`;
 
         const userMessage = `Question: ${question}
 

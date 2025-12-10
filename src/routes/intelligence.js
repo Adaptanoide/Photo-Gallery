@@ -1,11 +1,15 @@
-// src/routes/intelligence.js - VERSÃO OTIMIZADA COM MONITORAMENTO
+// src/routes/intelligence.js - VERSÃO 3.0 COM ALERTAS
 const express = require('express');
 const router = express.Router();
 const AIAssistant = require('../ai/AIAssistant');
 const AITrainingRule = require('../models/AITrainingRule');
 const ConnectionManager = require('../services/ConnectionManager');
+const AIAlertService = require('../services/AIAlertService');
 const jwt = require('jsonwebtoken');
 const AIConversation = require('../models/AIConversation');
+
+// Instância do serviço de alertas
+const alertService = AIAlertService.getInstance();
 
 // Configurações
 const JWT_SECRET = process.env.JWT_SECRET || 'sunshine-ai-secret-2025';
@@ -505,6 +509,128 @@ router.post('/cache/refresh', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to refresh cache'
+        });
+    }
+});
+
+// ============================================
+// ROTAS DE ALERTAS
+// ============================================
+
+// Verificar alertas ativos
+router.get('/alerts', authenticateToken, (req, res) => {
+    try {
+        const activeAlerts = alertService.getActiveAlerts();
+
+        res.json({
+            success: true,
+            count: activeAlerts.length,
+            alerts: activeAlerts
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Forçar verificação de alertas
+router.post('/alerts/check', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔔 Forçando verificação de alertas...');
+
+        // Coletar dados para verificação
+        const data = {
+            inventory: await assistant.cde.getCurrentInventory(),
+            restocking: await assistant.cde.getRestockingNeeds(),
+            criticalStock: await assistant.cde.getCriticalStock(),
+            transit: await assistant.cde.getProductsInTransit(),
+            detailedTransit: await assistant.cde.getDetailedTransitProducts()
+        };
+
+        // Verificar alertas
+        const alerts = await alertService.forceCheckAlerts(data);
+
+        res.json({
+            success: true,
+            alertsTriggered: alerts.length,
+            alerts: alerts.map(a => ({
+                title: a.ruleTitle,
+                type: a.ruleType,
+                priority: a.priority,
+                message: a.message.substring(0, 200) + '...'
+            }))
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao verificar alertas:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Limpar cache de alertas (para permitir reenvio)
+router.post('/alerts/clear', authenticateToken, (req, res) => {
+    if (req.user.username !== 'Andy') {
+        return res.status(403).json({
+            success: false,
+            error: 'Only Andy can clear alerts'
+        });
+    }
+
+    alertService.clearAlertCache();
+
+    res.json({
+        success: true,
+        message: 'Alert cache cleared - alerts can be triggered again'
+    });
+});
+
+// Obter estatísticas de alertas das regras
+router.get('/alerts/stats', authenticateToken, async (req, res) => {
+    try {
+        const rules = await AITrainingRule.find({
+            alert_enabled: true
+        }).select('title type priority trigger_count last_triggered');
+
+        const stats = {
+            totalAlertRules: rules.length,
+            byPriority: {
+                critical: rules.filter(r => r.priority === 'critical').length,
+                high: rules.filter(r => r.priority === 'high').length,
+                medium: rules.filter(r => r.priority === 'medium').length,
+                low: rules.filter(r => r.priority === 'low').length
+            },
+            byType: {},
+            recentlyTriggered: rules
+                .filter(r => r.last_triggered)
+                .sort((a, b) => new Date(b.last_triggered) - new Date(a.last_triggered))
+                .slice(0, 5)
+                .map(r => ({
+                    title: r.title,
+                    type: r.type,
+                    triggeredAt: r.last_triggered,
+                    triggerCount: r.trigger_count
+                }))
+        };
+
+        // Contar por tipo
+        rules.forEach(r => {
+            stats.byType[r.type] = (stats.byType[r.type] || 0) + 1;
+        });
+
+        res.json({
+            success: true,
+            stats
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });

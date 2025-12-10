@@ -434,10 +434,263 @@ class CDEQueries {
         return this.executeQuery('getInventoryFlow', query);
     }
 
+    // ========== NOVAS QUERIES PARA AI AGENT ==========
+
+    // Query 15: Análise de Sazonalidade - Padrões de venda por mês
+    async getSeasonalTrends() {
+        const query = `
+            SELECT
+                MONTH(AFECHA_ITEMPEDIDO) as mes,
+                YEAR(AFECHA_ITEMPEDIDO) as ano,
+                COUNT(*) as vendas_total,
+                COUNT(DISTINCT AQR_ITEMPEDIO) as pedidos,
+                COUNT(DISTINCT AQBITEM_ITEMPEDIDO) as produtos_diferentes,
+                ROUND(COUNT(*) / COUNT(DISTINCT WEEK(AFECHA_ITEMPEDIDO)), 1) as media_semanal
+            FROM tbitem_pedido
+            WHERE AFECHA_ITEMPEDIDO >= DATE_SUB(NOW(), INTERVAL 24 MONTH)
+            AND AFECHA_ITEMPEDIDO IS NOT NULL
+            GROUP BY YEAR(AFECHA_ITEMPEDIDO), MONTH(AFECHA_ITEMPEDIDO)
+            ORDER BY ano DESC, mes DESC
+            LIMIT 24
+        `;
+
+        return this.executeQuery('getSeasonalTrends', query);
+    }
+
+    // Query 16: Performance de Lead Time - Tempo de entrega por origem
+    async getLeadTimeAnalysis() {
+        const query = `
+            SELECT
+                COALESCE(items.AORIGIN, 'Unknown') as origem,
+                COUNT(DISTINCT inv.AQBITEM) as produtos,
+                COUNT(*) as total_items,
+                ROUND(AVG(DATEDIFF(inv.AFECHA, inv.AFECHA_SHIP)), 1) as avg_lead_days,
+                MIN(DATEDIFF(inv.AFECHA, inv.AFECHA_SHIP)) as min_lead_days,
+                MAX(DATEDIFF(inv.AFECHA, inv.AFECHA_SHIP)) as max_lead_days
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AFECHA_SHIP IS NOT NULL
+            AND inv.AFECHA IS NOT NULL
+            AND inv.AFECHA >= DATE_SUB(NOW(), INTERVAL 180 DAY)
+            GROUP BY items.AORIGIN
+            ORDER BY total_items DESC
+        `;
+
+        return this.executeQuery('getLeadTimeAnalysis', query);
+    }
+
+    // Query 17: Produtos em Trânsito Detalhado - Com dias em trânsito
+    async getDetailedTransitProducts() {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                COALESCE(MAX(items.AORIGIN), 'Unknown') as origem,
+                COUNT(*) as quantity,
+                ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA_SHIP)), 0) as dias_em_transito,
+                MIN(inv.AFECHA_SHIP) as primeiro_envio,
+                MAX(inv.AFECHA_SHIP) as ultimo_envio
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP IN ('PRE-TRANSITO', 'TRANSITO', 'WAREHOUSE')
+            AND inv.AFECHA_SHIP IS NOT NULL
+            GROUP BY inv.AQBITEM
+            HAVING dias_em_transito > 0
+            ORDER BY dias_em_transito DESC
+            LIMIT 20
+        `;
+
+        return this.executeQuery('getDetailedTransitProducts', query);
+    }
+
+    // Query 18: Análise de Preço vs Velocidade
+    async getPriceVelocityAnalysis() {
+        const query = `
+            SELECT
+                ip.AQBITEM_ITEMPEDIDO as codigo,
+                MAX(i.ADESCRIPTION) as produto,
+                ROUND(AVG(COALESCE(i.APRECIO, 0)), 2) as precio_promedio,
+                COUNT(*) as vendas_30d,
+                ROUND(COUNT(*) / 30, 2) as velocidade_dia,
+                COUNT(DISTINCT DATE(ip.AFECHA_ITEMPEDIDO)) as dias_com_venda
+            FROM tbitem_pedido ip
+            LEFT JOIN items i ON ip.AQBITEM_ITEMPEDIDO = i.AQBITEM
+            WHERE ip.AFECHA_ITEMPEDIDO >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            AND ip.AQBITEM_ITEMPEDIDO IS NOT NULL
+            GROUP BY ip.AQBITEM_ITEMPEDIDO
+            HAVING vendas_30d >= 5
+            ORDER BY velocidade_dia DESC
+            LIMIT 20
+        `;
+
+        return this.executeQuery('getPriceVelocityAnalysis', query);
+    }
+
+    // Query 19: Produtos por Fornecedor/Origem
+    async getProductsByOrigin() {
+        const query = `
+            SELECT
+                COALESCE(items.AORIGIN, 'Unknown') as origem,
+                COUNT(DISTINCT inv.AQBITEM) as produtos_unicos,
+                COUNT(*) as total_em_estoque,
+                ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA)), 0) as dias_medio_estoque
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            GROUP BY items.AORIGIN
+            ORDER BY total_em_estoque DESC
+        `;
+
+        return this.executeQuery('getProductsByOrigin', query);
+    }
+
+    // Query 20: Estoque Crítico - Produtos abaixo do mínimo com lead time
+    async getCriticalStock() {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                COALESCE(MAX(items.AORIGIN), 'Unknown') as origem,
+                COUNT(*) as current_stock,
+                MAX(COALESCE(items.TMIN, 50)) as minimum_stock,
+                ROUND(
+                    (COUNT(*) / NULLIF(MAX(COALESCE(items.TMIN, 50)), 0)) * 100,
+                    0
+                ) as percent_of_min
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND inv.AQBITEM IS NOT NULL
+            GROUP BY inv.AQBITEM
+            HAVING current_stock < minimum_stock
+            ORDER BY percent_of_min ASC
+            LIMIT 15
+        `;
+
+        return this.executeQuery('getCriticalStock', query);
+    }
+
+    // Query 21: Histórico de Vendas por Cliente (últimos 90 dias)
+    async getSalesByClient() {
+        const query = `
+            SELECT
+                o.AQBNOMBRE as cliente,
+                COUNT(DISTINCT o.AQR_ORDEN) as pedidos,
+                COUNT(ip.AQBITEM_ITEMPEDIDO) as itens_comprados,
+                MIN(o.AFECHAO) as primeira_compra,
+                MAX(o.AFECHAO) as ultima_compra,
+                DATEDIFF(NOW(), MAX(o.AFECHAO)) as dias_sem_comprar
+            FROM tborden o
+            LEFT JOIN tbitem_pedido ip ON o.AQR_ORDEN = ip.AQR_ITEMPEDIO
+            WHERE o.AFECHAO >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+            AND o.AQBNOMBRE IS NOT NULL
+            AND o.AQBNOMBRE != ''
+            GROUP BY o.AQBNOMBRE
+            ORDER BY itens_comprados DESC
+            LIMIT 20
+        `;
+
+        return this.executeQuery('getSalesByClient', query);
+    }
+
+    // Query 22: Projeção de Estoque - Quando vai acabar baseado na velocidade
+    async getStockProjection() {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                COUNT(*) as estoque_atual,
+                COALESCE(sales.vendas_30d, 0) as vendas_30d,
+                ROUND(COALESCE(sales.vendas_30d, 0) / 30, 2) as media_dia,
+                CASE
+                    WHEN COALESCE(sales.vendas_30d, 0) > 0
+                    THEN ROUND(COUNT(*) / (sales.vendas_30d / 30), 0)
+                    ELSE 999
+                END as dias_ate_acabar
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            LEFT JOIN (
+                SELECT
+                    AQBITEM_ITEMPEDIDO,
+                    COUNT(*) as vendas_30d
+                FROM tbitem_pedido
+                WHERE AFECHA_ITEMPEDIDO >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY AQBITEM_ITEMPEDIDO
+            ) sales ON inv.AQBITEM = sales.AQBITEM_ITEMPEDIDO
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND inv.AQBITEM IS NOT NULL
+            GROUP BY inv.AQBITEM, sales.vendas_30d
+            HAVING vendas_30d > 0
+            ORDER BY dias_ate_acabar ASC
+            LIMIT 20
+        `;
+
+        return this.executeQuery('getStockProjection', query);
+    }
+
+    // Query 23: Comparativo Mensal - Este mês vs mês passado
+    async getMonthlyComparison() {
+        const query = `
+            SELECT
+                'current_month' as periodo,
+                COUNT(*) as vendas,
+                COUNT(DISTINCT AQR_ITEMPEDIO) as pedidos,
+                COUNT(DISTINCT AQBITEM_ITEMPEDIDO) as produtos
+            FROM tbitem_pedido
+            WHERE MONTH(AFECHA_ITEMPEDIDO) = MONTH(NOW())
+            AND YEAR(AFECHA_ITEMPEDIDO) = YEAR(NOW())
+
+            UNION ALL
+
+            SELECT
+                'last_month' as periodo,
+                COUNT(*) as vendas,
+                COUNT(DISTINCT AQR_ITEMPEDIO) as pedidos,
+                COUNT(DISTINCT AQBITEM_ITEMPEDIDO) as produtos
+            FROM tbitem_pedido
+            WHERE MONTH(AFECHA_ITEMPEDIDO) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH))
+            AND YEAR(AFECHA_ITEMPEDIDO) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))
+        `;
+
+        return this.executeQuery('getMonthlyComparison', query);
+    }
+
+    // Query 24: Produtos Inativos - Sem venda há mais de X dias
+    async getInactiveProducts(days = 60) {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                COUNT(*) as em_estoque,
+                COALESCE(MAX(last_sale.ultima_venda), 'Never') as ultima_venda,
+                DATEDIFF(NOW(), MAX(last_sale.data_ultima_venda)) as dias_sem_venda
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            LEFT JOIN (
+                SELECT
+                    AQBITEM_ITEMPEDIDO,
+                    MAX(DATE(AFECHA_ITEMPEDIDO)) as data_ultima_venda,
+                    DATE_FORMAT(MAX(AFECHA_ITEMPEDIDO), '%Y-%m-%d') as ultima_venda
+                FROM tbitem_pedido
+                GROUP BY AQBITEM_ITEMPEDIDO
+            ) last_sale ON inv.AQBITEM = last_sale.AQBITEM_ITEMPEDIDO
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND inv.AQBITEM IS NOT NULL
+            GROUP BY inv.AQBITEM
+            HAVING dias_sem_venda > ? OR dias_sem_venda IS NULL
+            ORDER BY em_estoque DESC
+            LIMIT 15
+        `;
+
+        return this.executeQuery('getInactiveProducts', query, [days]);
+    }
+
+    // ========== FIM DAS NOVAS QUERIES ==========
+
     // Método para obter estatísticas de performance
     getQueryStats() {
         const stats = [];
-        
+
         for (const [name, data] of Object.entries(this.queryStats)) {
             stats.push({
                 query: name,
@@ -447,7 +700,7 @@ class CDEQueries {
                 lastCall: data.lastCall
             });
         }
-        
+
         return stats.sort((a, b) => b.calls - a.calls);
     }
 

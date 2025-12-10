@@ -183,6 +183,7 @@ app.use('/api/monitor-actions', require('./routes/monitor-actions'));
 app.use('/api/register', registrationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/currency', currencyRoutes);
+app.use('/api/import', require('./routes/data-import'));
 
 // Servir página Intelligence
 app.get('/intelligence', (req, res) => {
