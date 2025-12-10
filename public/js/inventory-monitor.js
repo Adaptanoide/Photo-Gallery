@@ -320,7 +320,23 @@ class InventoryMonitor {
                     </button>
                 `;
             }
-            return '-';
+            // STANDBY sem foto no R2 - mostrar aviso claro
+            return `
+                <span style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 12px;
+                    background: rgba(156, 39, 176, 0.15);
+                    border: 1px dashed rgba(156, 39, 176, 0.4);
+                    border-radius: 6px;
+                    color: #ce93d8;
+                    font-size: 10px;
+                    font-weight: 500;
+                " title="Esta foto existe en CDE pero no tiene imagen en R2. Debe ser localizada o fotografiada.">
+                    <i class="fas fa-camera"></i> Sin imagen R2
+                </span>
+            `;
         }
 
         // Detectar tipo de problema baseado na descrição

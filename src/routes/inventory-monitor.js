@@ -41,12 +41,14 @@ async function loadR2PhotosCache() {
     const startTime = Date.now();
     r2PhotosCache = new Set();
 
-    const prefixes = [
+    // Prefixos das categorias processadas (webp)
+    const categoryPrefixes = [
         'Brazil Best Sellers/',
         'Brazil Top Selected Categories/'
     ];
 
-    for (const prefix of prefixes) {
+    // 1. Buscar nas pastas de categorias (fotos processadas .webp)
+    for (const prefix of categoryPrefixes) {
         let continuationToken = null;
 
         do {
@@ -61,7 +63,7 @@ async function loadR2PhotosCache() {
 
             if (response.Contents) {
                 for (const obj of response.Contents) {
-                    // Extrair número da foto do path
+                    // Extrair número da foto do path (formato .webp)
                     const match = obj.Key.match(/\/(\d+)\.webp$/);
                     if (match) {
                         // IMPORTANTE: Adicionar APENAS o número exato do arquivo
@@ -75,9 +77,38 @@ async function loadR2PhotosCache() {
         } while (continuationToken);
     }
 
+    const processedCount = r2PhotosCache.size;
+
+    // 2. Buscar na pasta photos/ (fotos originais .jpg/.JPG)
+    let continuationToken = null;
+    do {
+        const command = new ListObjectsV2Command({
+            Bucket: BUCKET_NAME,
+            Prefix: 'photos/',
+            MaxKeys: 1000,
+            ContinuationToken: continuationToken
+        });
+
+        const response = await r2Client.send(command);
+
+        if (response.Contents) {
+            for (const obj of response.Contents) {
+                // Aceitar .jpg e .JPG
+                const match = obj.Key.match(/photos\/(\d+)\.(jpg|JPG)$/i);
+                if (match) {
+                    r2PhotosCache.add(match[1]);
+                }
+            }
+        }
+
+        continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+    } while (continuationToken);
+
+    const rawCount = r2PhotosCache.size - processedCount;
+
     r2CacheTimestamp = new Date();
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[MONITOR] ✅ ${r2PhotosCache.size} fotos encontradas no R2 (${elapsed}s)`);
+    console.log(`[MONITOR] ✅ ${r2PhotosCache.size} fotos no R2 (${processedCount} processadas + ${rawCount} originais) (${elapsed}s)`);
 }
 
 function photoExistsInR2(photoNumber) {
