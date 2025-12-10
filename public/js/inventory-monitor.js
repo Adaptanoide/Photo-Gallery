@@ -871,14 +871,14 @@ class InventoryMonitor {
                     margin-bottom: 24px;
                 ">
                     ${data.isCollision ? `
-                    <div style="color: #fff; font-size: 14px; line-height: 1.8;">
-                        <strong style="color: #f44336;">⚠️ COLISIÓN - Números de IDH diferentes!</strong><br><br>
+                    <div style="color: #fff; font-size: 13px; line-height: 1.7;">
+                        <strong style="color: #9c27b0;">♻️ RECICLAR NÚMERO</strong><br>
+                        <span style="color: #ce93d8;">Desactiva el registro antiguo y crea uno nuevo:</span><br><br>
 
-                        El producto en MongoDB (IDH: ${data.mongoIdh}) es <strong>diferente</strong> del producto en CDE (IDH: ${data.cdeIdh}).<br><br>
+                        <span style="color: #f44336;">❌ Antiguo:</span> IDH ${data.mongoIdh} (${data.mongoQb}) → <strong>isActive: false</strong><br>
+                        <span style="color: #4caf50;">✅ Nuevo:</span> IDH ${data.cdeIdh} (${data.cdeQb}) → <strong>available</strong><br><br>
 
-                        El número de foto fue <strong>reutilizado</strong> para otro couro después de la venta anterior.<br><br>
-
-                        <strong style="color: #4caf50;">Acción recomendada:</strong> Cerrar este modal. El sync ignorará esta "discrepancia" automáticamente.
+                        <strong style="color: #4caf50;">Resultado:</strong> El nuevo couro aparecerá disponible en la galería con el QB correcto.
                     </div>
                     ` : `
                     <div style="color: #fff; font-size: 14px; line-height: 1.8;">
