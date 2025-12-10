@@ -218,8 +218,7 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
         const hasIngresado = cdeStatuses.includes('INGRESADO');
         const allRetirado = cdeStatuses.every(s => s === 'RETIRADO');
 
-        // Buscar o registro INGRESADO (o que importa para comparação)
-        const ingresadoRecord = cdeData.find(r => r.AESTADOP === 'INGRESADO');
+        // Extrair o IDH do registro INGRESADO (já definido acima)
         const ingresadoIdh = ingresadoRecord ? String(ingresadoRecord.AIDH || '') : '';
 
         // LÓGICA CORRETA DE COLISÃO:
