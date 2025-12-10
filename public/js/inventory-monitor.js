@@ -1084,8 +1084,309 @@ class InventoryMonitor {
         }
     }
 
-    openPaseModal(photoNumber) {
-        alert(`Modal de PASE para foto ${photoNumber} - En desarrollo`);
+    async openPaseModal(photoNumber) {
+        console.log(`🔄 Abrindo modal de PASE para foto ${photoNumber}`);
+
+        // Mostrar loading enquanto busca dados
+        this.showPaseLoadingModal(photoNumber);
+
+        try {
+            // Buscar dados da foto
+            const data = await this.fetchPhotoData(photoNumber);
+
+            // Fechar loading
+            document.getElementById('paseModal')?.remove();
+
+            // Mostrar modal com dados
+            this.renderPaseModal(photoNumber, data);
+
+        } catch (error) {
+            console.error('Erro ao buscar dados para PASE:', error);
+            document.getElementById('paseModal')?.remove();
+            this.showToast({
+                type: 'error',
+                title: 'Error',
+                message: `No se pudieron cargar los datos de la foto ${photoNumber}`,
+                duration: 5000
+            });
+        }
+    }
+
+    showPaseLoadingModal(photoNumber) {
+        const modal = document.createElement('div');
+        modal.id = 'paseModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: #1e1e1e;
+                border-radius: 16px;
+                padding: 40px;
+                text-align: center;
+            ">
+                <div style="font-size: 48px; margin-bottom: 16px;">
+                    <i class="fas fa-spinner fa-spin" style="color: #ff9800;"></i>
+                </div>
+                <div style="color: #fff; font-size: 16px;">
+                    Analizando foto ${photoNumber}...
+                </div>
+                <div style="color: #888; font-size: 13px; margin-top: 8px;">
+                    Verificando categorías
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    renderPaseModal(photoNumber, data) {
+        const modal = document.createElement('div');
+        modal.id = 'paseModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        `;
+
+        // Verificar se os QBs são realmente diferentes
+        const qbsDifferent = data.mongoQb !== data.cdeQb;
+
+        modal.innerHTML = `
+            <div style="
+                background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+                border-radius: 16px;
+                max-width: 500px;
+                width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,152,0,0.3);
+                overflow: hidden;
+            ">
+                <!-- Header -->
+                <div style="
+                    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                    padding: 20px 24px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                ">
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        background: rgba(0,0,0,0.2);
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 20px;
+                    ">🔄</div>
+                    <div>
+                        <div style="color: #fff; font-weight: 700; font-size: 18px;">
+                            PASE de Categoría
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 13px;">
+                            Foto: ${photoNumber}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div style="padding: 24px;">
+                    <!-- QB Diferente -->
+                    <div style="
+                        background: rgba(255,152,0,0.1);
+                        border-left: 3px solid #ff9800;
+                        padding: 16px;
+                        border-radius: 8px;
+                        margin-bottom: 16px;
+                    ">
+                        <div style="color: #ff9800; font-weight: 600; margin-bottom: 12px;">🔄 CAMBIO DE CATEGORÍA:</div>
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
+                            <div style="text-align: center; padding: 12px; background: rgba(244,67,54,0.2); border-radius: 8px;">
+                                <div style="color: #888; font-size: 11px;">En Galería</div>
+                                <div style="color: #f44336; font-weight: 600; font-size: 16px; margin-top: 4px;">
+                                    ${data.mongoQb || '-'}
+                                </div>
+                            </div>
+                            <div style="color: #ff9800; font-size: 24px;">→</div>
+                            <div style="text-align: center; padding: 12px; background: rgba(76,175,80,0.2); border-radius: 8px;">
+                                <div style="color: #888; font-size: 11px;">En CDE (destino)</div>
+                                <div style="color: #4caf50; font-weight: 600; font-size: 16px; margin-top: 4px;">
+                                    ${data.cdeQb || '-'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info del producto -->
+                    <div style="
+                        background: rgba(255,255,255,0.05);
+                        border-radius: 8px;
+                        padding: 16px;
+                        margin-bottom: 16px;
+                    ">
+                        <div style="color: #999; font-size: 12px; margin-bottom: 8px;">📊 INFORMACIÓN:</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <div style="color: #888; font-size: 11px;">IDH:</div>
+                                <div style="color: #fff; font-weight: 600;">${data.mongoIdh || data.cdeIdh || '-'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #888; font-size: 11px;">Estado CDE:</div>
+                                <div style="color: #4caf50; font-weight: 600;">${this.translateStatus(data.cdeStatus)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cambios a Aplicar -->
+                    <div style="
+                        background: rgba(76, 175, 80, 0.1);
+                        border-left: 3px solid #4caf50;
+                        padding: 16px;
+                        border-radius: 8px;
+                        margin-bottom: 16px;
+                    ">
+                        <div style="color: #4caf50; font-weight: 600; margin-bottom: 12px;">✓ CAMBIOS A APLICAR:</div>
+                        <div style="color: #e0e0e0; font-size: 13px; line-height: 1.8;">
+                            • Mover fotos en R2: <strong style="color: #ff9800;">${data.mongoQb}</strong> → <strong style="color: #4caf50;">${data.cdeQb}</strong><br>
+                            • Actualizar categoría en MongoDB<br>
+                            • Se moverán las 4 versiones de la imagen<br>
+                            ${data.mongoStatus === 'sold' ? '• Estado: <strong style="color: #f44336;">Vendido</strong> → <strong style="color: #4caf50;">Disponible</strong>' : '• Estado se mantiene igual'}
+                        </div>
+                    </div>
+
+                    <!-- Aviso -->
+                    <div style="
+                        background: rgba(255,193,7,0.1);
+                        border-left: 3px solid #ffc107;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-bottom: 20px;
+                    ">
+                        <div style="color: #ffc107; font-size: 12px;">
+                            <strong>⚠️ Nota:</strong> Esta acción moverá los archivos de imagen en R2.
+                            Asegúrese de que la categoría de destino (${data.cdeQb}) es correcta.
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button
+                            onclick="document.getElementById('paseModal').remove()"
+                            style="
+                                background: rgba(255,255,255,0.1);
+                                color: #fff;
+                                border: none;
+                                padding: 10px 18px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 13px;
+                                font-weight: 600;
+                                transition: all 0.2s;
+                            "
+                            onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.1)'"
+                        >
+                            Cancelar
+                        </button>
+                        ${qbsDifferent ? `
+                        <button
+                            onclick="window.monitor.executePase('${photoNumber}')"
+                            style="
+                                background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                                color: white;
+                                border: none;
+                                padding: 10px 18px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 13px;
+                                font-weight: 600;
+                                box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+                                transition: all 0.2s;
+                            "
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 152, 0, 0.4)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 152, 0, 0.3)'"
+                        >
+                            <i class="fas fa-exchange-alt"></i> Confirmar PASE
+                        </button>
+                        ` : `
+                        <div style="color: #888; font-size: 13px; padding: 10px;">
+                            Las categorías son iguales - no se requiere PASE
+                        </div>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Fechar ao clicar fora
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    async executePase(photoNumber) {
+        console.log(`🔄 Executando PASE para foto ${photoNumber}...`);
+
+        // Fechar modal
+        document.getElementById('paseModal')?.remove();
+
+        // Mostrar loading
+        this.showActionLoading(photoNumber, 'pase');
+
+        try {
+            const sessionData = localStorage.getItem('sunshineSession');
+            const session = JSON.parse(sessionData);
+
+            const response = await fetch(`/api/monitor-actions/pase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify({
+                    photoNumber: photoNumber,
+                    adminUser: session.user?.username || 'admin'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ PASE exitoso:', result);
+                this.showActionSuccess(photoNumber, 'pase', result.message);
+                // Re-scan após 2 segundos
+                setTimeout(() => this.scan(), 2000);
+            } else {
+                throw new Error(result.message || 'Error desconocido');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al ejecutar PASE:', error);
+            this.showActionError(photoNumber, 'pase', error.message);
+        }
     }
 
     // ===========================================
