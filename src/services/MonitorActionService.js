@@ -47,7 +47,7 @@ class MonitorActionService {
             console.log(`[MONITOR ACTION] Buscando no CDE com número: "${actualPhotoNumber}"`);
 
             const [cdeData] = await cdeConnection.execute(
-                'SELECT AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
+                'SELECT AESTADOP, AQBITEM, AIDH FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC',
                 [actualPhotoNumber]
             );
             await cdeConnection.end();
@@ -59,14 +59,17 @@ class MonitorActionService {
                 };
             }
 
-            const cdeStatus = cdeData[0].AESTADOP;
-            const cdeQB = cdeData[0].AQBITEM;
+            // IMPORTANTE: Priorizar registro INGRESADO (pode haver múltiplos registros históricos)
+            const ingresadoRecord = cdeData.find(r => r.AESTADOP === 'INGRESADO');
+            const cdeRecord = ingresadoRecord || cdeData[0];
+            const cdeStatus = cdeRecord.AESTADOP;
+            const cdeQB = cdeRecord.AQBITEM;
 
-            // 3. Validar que é realmente um retorno
-            if (cdeStatus !== 'INGRESADO') {
+            // 3. Validar que é realmente um retorno (existe INGRESADO no CDE)
+            if (!ingresadoRecord) {
                 return {
                     success: false,
-                    message: `Foto ${photoNumber} não está INGRESADO no CDE (status: ${cdeStatus})`
+                    message: `Foto ${photoNumber} não tem registro INGRESADO no CDE (registros encontrados: ${cdeData.map(r => r.AESTADOP).join(', ')})`
                 };
             }
 
