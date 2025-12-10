@@ -1061,14 +1061,30 @@ router.post('/import-standby', async (req, res) => {
         }
 
         // 4. Criar registro no MongoDB
+        // IMPORTANTE: O modelo tem campos obrigatórios legacy que precisam ser preenchidos
+        const idhCode = String(cdeRecord.AIDH || `STANDBY-${photoNumber}`);
+        const fileName = foundR2Path.split('/').pop() || `${photoNumber}.webp`;
+
         const newPhoto = new UnifiedProductComplete({
+            // Campos obrigatórios
             photoNumber: photoNumber,
+            idhCode: idhCode,
+            fileName: fileName,
+            driveFileId: `standby-${photoNumber}`, // Legacy field - usar identificador único
+            photoId: `standby-${photoNumber}`,    // Legacy field - usar identificador único
+            category: cdeRecord.AQBITEM || 'Unknown',
+
+            // Status
             status: 'unavailable',
+            currentStatus: 'unavailable',
             cdeStatus: 'STANDBY',
+
+            // Dados adicionais
             qbItem: cdeRecord.AQBITEM || '',
-            category: cdeRecord.AQBITEM || '',
-            idhCode: String(cdeRecord.AIDH || ''),
+            r2Path: foundR2Path,
             isActive: false,
+
+            // Metadados
             standbyImportedAt: new Date(),
             standbyImportedBy: adminUser || req.user.username,
             createdAt: new Date(),
