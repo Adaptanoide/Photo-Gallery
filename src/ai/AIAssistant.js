@@ -21,25 +21,91 @@ class AIAssistant {
             gallery: 'unknown'
         };
 
-        // Conhecimento de negócio do Sunshine Cowhides
+        // Conhecimento de negócio do Sunshine Cowhides - AUTO-DESCOBERTO DO CDE
         this.businessKnowledge = {
+            // Lead times por país
             leadTimes: {
-                'Brazil': 45,
-                'Colombia': 7,
-                'Poland': 45,
-                'Argentina': 30,
+                'BRA': 45, 'Brazil': 45,
+                'COL': 7, 'Colombia': 7,
+                'POL': 45, 'Poland': 45,
+                'ARG': 30, 'Argentina': 30,
+                'PERU': 21,
+                'CHI': 60, 'CHINA': 60,
+                'USA': 3,
                 'default': 30
             },
-            criticalProducts: ['2110', '2115', '2129', '2117', '2116'], // Coasters
+
+            // Produtos críticos (coasters mais vendidos)
+            criticalProducts: ['2110', '2115', '2129', '2117', '2116'],
             peakSeasonMonths: [10, 11, 12], // Out-Dez
-            channels: {
-                'etsy': { name: 'Etsy', share: 44 },
-                'amazon': { name: 'Amazon', share: 22 },
-                'shopify': { name: 'Shopify', share: 15 },
-                'direct': { name: 'Direct Sales', share: 19 }
-            },
             minimumStockAlert: 100,
-            agingThresholdDays: 60
+            agingThresholdDays: 60,
+
+            // Marketplaces com volume de pedidos
+            marketplaces: {
+                'ETSY': { name: 'Etsy', orders: 10633, rank: 1 },
+                'AMAZON': { name: 'Amazon', orders: 5372, rank: 2 },
+                'SHOPIFY': { name: 'Shopify', orders: 3717, rank: 3 },
+                'EBAY': { name: 'eBay', orders: 2278, rank: 4 },
+                'WAYFAIR': { name: 'Wayfair', orders: 624, rank: 5 },
+                'FAIRE': { name: 'Faire', orders: 490, rank: 6 },
+                'OVERSTOCK': { name: 'Overstock', orders: 437, rank: 7 },
+                'WALMART': { name: 'Walmart', orders: 282, rank: 8 },
+                'HOUZZ': { name: 'Houzz', orders: 186, rank: 9 }
+            },
+
+            // Status do inventário (AESTADOP)
+            inventoryStatus: {
+                'INGRESADO': 'Em estoque, disponível para venda',
+                'RETIRADO': 'Vendido/Retirado do estoque',
+                'STANDBY': 'Aguardando (foto ou liberação)',
+                'PRE-SELECTED': 'Pré-selecionado por cliente',
+                'RESERVED': 'Reservado para pedido'
+            },
+
+            // Status da ordem (AESTADO_OR)
+            orderStatus: {
+                'FACTURADA': 'Faturada/Paga',
+                'CLOSE': 'Fechada/Concluída',
+                'CANCEL': 'Cancelada',
+                'PENDING': 'Pendente',
+                'OPEN': 'Aberta'
+            },
+
+            // Categorias de produtos
+            categories: ['COWHIDES', 'ACCESORIOS', 'DESIGNER RUG', 'SMALL HIDES', 'MOBILIARIO', 'SHEEPSKIN', 'PILLOW', 'RODEO RUG'],
+
+            // Fornecedores principais
+            suppliers: {
+                'S10': { name: 'Dekoland', country: 'BRA' },
+                'S11': { name: 'Minuano', country: 'BRA' },
+                'S21': { name: 'C&A', country: 'BRA' },
+                'S31': { name: 'Best Brasil', country: 'BRA' },
+                'S32': { name: 'Curtidos de Colombia', country: 'COL' },
+                'S52': { name: 'Curtinorte', country: 'COL' },
+                'S62': { name: 'Grupo Tarsis', country: 'COL' },
+                'S72': { name: 'Curtidos LeatherCol', country: 'COL' },
+                'S92': { name: 'Pison Cowhides', country: 'COL' },
+                'S94': { name: 'Pieles y Cueros', country: 'PERU' },
+                'S96': { name: 'Sheep 4 You', country: 'POL' },
+                'S98': { name: 'GENA', country: 'POL' }
+            },
+
+            // Origens de produtos com volume
+            origins: {
+                'COL': { name: 'Colombia', items: 107869, leadTime: 7 },
+                'BRA': { name: 'Brazil', items: 97214, leadTime: 45 },
+                'PERU': { name: 'Peru', items: 6756, leadTime: 21 },
+                'CHINA': { name: 'China', items: 200, leadTime: 60 },
+                'USA': { name: 'USA', items: 50, leadTime: 3 }
+            },
+
+            // Tipos de movimento (tbmovimientos.ATIPOMOV)
+            movementTypes: {
+                '1': 'Entrada no estoque',
+                '2': 'Saída/Venda',
+                '3': 'Ajuste/Transferência'
+            }
         };
 
         // Sistema de pesos para detecção de intenção
@@ -625,20 +691,38 @@ You are not just a chatbot - you are Andy's analytical partner who:
 
 🏢 SUNSHINE COWHIDES BUSINESS CONTEXT:
 • Product focus: Cowhides, coasters (top sellers: 2110, 2115, 2129), leather goods
-• Channels: Etsy (44%), Amazon (22%), Shopify (15%), Direct (19%)
-• Suppliers: Brazil (45 day lead time), Colombia (7 days), Poland (45 days)
-• Daily volume: 100-200 items, 50-150 orders
+• Categories: COWHIDES, ACCESORIOS, DESIGNER RUG, SMALL HIDES, MOBILIARIO, SHEEPSKIN, PILLOW
 • Critical threshold: Products below 100 units need attention
 • Aging threshold: Products sitting 60+ days need review
 ${seasonalContext}
-📝 TERMINOLOGY (use these terms correctly):
-• "QBITEMs" or "product codes" - NOT "unique products" (each QBITEM is a product type like 2110, 2115)
-• "units" or "pieces" - individual inventory items
-• "INGRESADO" = in stock/available
-• "TRANSITO" = in transit from supplier
-• "RETIRADO" = sold/shipped
-• "Lead time" = days from supplier to warehouse
-• "Aging" = days product has been sitting in inventory
+🛒 MARKETPLACES (by order volume):
+1. Etsy: ~10,600 orders (TOP CHANNEL - 44%)
+2. Amazon: ~5,400 orders (22%)
+3. Shopify: ~3,700 orders (15%)
+4. eBay: ~2,300 orders (9%)
+5. Others: Wayfair, Faire, Overstock, Walmart, Houzz (~10%)
+
+🌍 SUPPLIERS & LEAD TIMES:
+• Colombia (COL): 7 days - Curtidos de Colombia, Curtinorte, Grupo Tarsis, Pison Cowhides
+• Brazil (BRA): 45 days - Dekoland, Minuano, C&A, Best Brasil
+• Peru (PERU): 21 days - Pieles y Cueros
+• Poland (POL): 45 days - Sheep 4 You, GENA
+• China (CHI): 60 days
+
+📝 TERMINOLOGY & STATUS CODES:
+• "QBITEMs" or "product codes" = product types (like 2110, 2115)
+• "units" or "pieces" = individual inventory items
+• INVENTORY STATUS (AESTADOP):
+  - INGRESADO = in stock, available for sale
+  - RETIRADO = sold/shipped out
+  - STANDBY = waiting for photo or release
+  - PRE-SELECTED = pre-selected by client
+  - RESERVED = reserved for order
+• ORDER STATUS (AESTADO_OR):
+  - FACTURADA = invoiced/paid
+  - CLOSE = completed
+  - PENDING = pending
+  - CANCEL = cancelled
 
 📋 RESPONSE FORMAT:
 • Use emojis purposefully: 📊📈📦💰🎯✅⚠️🟢🟡🔴🚨
