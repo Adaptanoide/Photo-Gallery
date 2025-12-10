@@ -44,7 +44,10 @@ async function loadR2PhotosCache() {
     // Prefixos das categorias processadas (webp)
     const categoryPrefixes = [
         'Brazil Best Sellers/',
-        'Brazil Top Selected Categories/'
+        'Brazil Top Selected Categories/',
+        'Colombian Cowhides/',
+        'Sheepskins/',
+        'Calfskins/'
     ];
 
     // 1. Buscar nas pastas de categorias (fotos processadas .webp)
@@ -109,6 +112,13 @@ async function loadR2PhotosCache() {
     r2CacheTimestamp = new Date();
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`[MONITOR] ✅ ${r2PhotosCache.size} fotos no R2 (${processedCount} processadas + ${rawCount} originais) (${elapsed}s)`);
+
+    // DEBUG: Verificar fotos STANDBY específicas
+    const standbyTestPhotos = ['12368', '25771', '12365', '16283', '20802', '19914', '11664', '88987'];
+    const foundInCache = standbyTestPhotos.filter(p => r2PhotosCache.has(p));
+    console.log(`[MONITOR] 🔍 DEBUG STANDBY: ${foundInCache.length}/${standbyTestPhotos.length} fotos encontradas no cache`);
+    console.log(`[MONITOR] 🔍 Encontradas: ${foundInCache.join(', ') || 'nenhuma'}`);
+    console.log(`[MONITOR] 🔍 NÃO encontradas: ${standbyTestPhotos.filter(p => !r2PhotosCache.has(p)).join(', ') || 'todas OK'}`);
 }
 
 function photoExistsInR2(photoNumber) {
@@ -608,39 +618,62 @@ router.get('/scan', async (req, res) => {
         // ============================================================
         // VERIFICAÇÃO 5: FOTOS EM STANDBY NO CDE
         // ============================================================
+        // IMPORTANTE: Só mostrar STANDBY que:
+        // 1. Tem número de foto REAL (não 0, não vazio)
+        // 2. Existe na tbetiqueta (foi etiquetado = tem foto física)
+        // ============================================================
         console.log('[MONITOR] 🔍 Verificando fotos em STANDBY...');
 
         const [standbyPhotos] = await cdeConnection.execute(
-            `SELECT ATIPOETIQUETA, AQBITEM, AIDH
-             FROM tbinventario
-             WHERE AESTADOP = 'STANDBY'
-             AND ATIPOETIQUETA IS NOT NULL
-             AND ATIPOETIQUETA != ''
-             AND ATIPOETIQUETA != '0'
-             AND ATIPOETIQUETA REGEXP '^[0-9]+$'
-             AND LENGTH(ATIPOETIQUETA) >= 3
-             ORDER BY AQBITEM, ATIPOETIQUETA`
+            `SELECT DISTINCT
+                i.ATIPOETIQUETA,
+                i.AQBITEM,
+                i.AIDH
+             FROM tbinventario i
+             INNER JOIN tbetiqueta e ON i.ATIPOETIQUETA = e.ATIPOETIQUETA
+             WHERE i.AESTADOP = 'STANDBY'
+             AND i.ATIPOETIQUETA IS NOT NULL
+             AND i.ATIPOETIQUETA != ''
+             AND i.ATIPOETIQUETA != '0'
+             AND i.ATIPOETIQUETA REGEXP '^[0-9]+$'
+             AND LENGTH(i.ATIPOETIQUETA) >= 3
+             ORDER BY i.AQBITEM, i.ATIPOETIQUETA`
         );
 
         for (const standbyPhoto of standbyPhotos) {
             const photoNum = standbyPhoto.ATIPOETIQUETA;
-            const existsInR2 = photoExistsInR2(photoNum);
+            const hasR2Photo = photoExistsInR2(photoNum);
+
+            // DEBUG: Log cada foto STANDBY
+            console.log(`[MONITOR] 🔍 STANDBY ${photoNum}: hasR2Photo=${hasR2Photo}, cacheSize=${r2PhotosCache.size}`);
+
+            // Verificar se já existe no MongoDB (evitar duplicatas)
+            const existsInMongo = mongoMapExact.has(photoNum) ||
+                mongoMapNumeric.has(String(parseInt(photoNum, 10)));
+
+            if (existsInMongo) {
+                console.log(`[MONITOR] ⏭️ STANDBY ${photoNum}: Já existe no MongoDB, ignorando`);
+                continue; // Já importado, não mostrar como STANDBY pendente
+            }
 
             issues.standby.push({
                 photoNumber: photoNum,
                 severity: 'standby',
-                issue: 'Foto en STANDBY',
-                description: `La foto ${photoNum} está en STANDBY en el CDE. No aparece en la galería hasta que sea liberada.`,
+                issue: hasR2Photo ? 'Foto en STANDBY - lista para importar' : 'Foto en STANDBY - sin imagen R2',
+                description: hasR2Photo
+                    ? `La foto ${photoNum} está en STANDBY en el CDE y tiene imagen en R2. Puede ser preparada para importación.`
+                    : `La foto ${photoNum} está en STANDBY en el CDE pero NO tiene imagen en R2. Debe ser fotografiada.`,
                 mongoStatus: 'N/A',
                 cdeStatus: 'STANDBY',
                 mongoQb: '-',
                 cdeQb: standbyPhoto.AQBITEM || '-',
-                existsInR2: existsInR2,
-                needsManualReview: false
+                cdeIdh: standbyPhoto.AIDH || '-',
+                hasR2Photo: hasR2Photo,
+                needsManualReview: !hasR2Photo
             });
         }
 
-        console.log(`[MONITOR] ⏸️ ${issues.standby.length} fotos en STANDBY`);
+        console.log(`[MONITOR] ⏸️ ${issues.standby.length} fotos en STANDBY (com etiqueta)`);
 
         // ============================================================
         // RESULTADO FINAL

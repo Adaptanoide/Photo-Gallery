@@ -998,11 +998,11 @@ router.post('/import-standby', async (req, res) => {
             });
         }
 
-        // 3. Verificar se tem foto no R2
-        const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
+        // 3. Verificar se tem foto no R2 (em qualquer pasta/formato)
+        const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
         const s3Client = new S3Client({
             region: 'auto',
-            endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            endpoint: process.env.R2_ENDPOINT,
             credentials: {
                 accessKeyId: process.env.R2_ACCESS_KEY_ID,
                 secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
@@ -1010,24 +1010,46 @@ router.post('/import-standby', async (req, res) => {
         });
 
         let hasPhotoInR2 = false;
+        let foundR2Path = null;
         const photoNumberClean = String(photoNumber).replace(/^0+/, '');
-        const possibleKeys = [
-            `photos/${photoNumber}.jpg`,
-            `photos/${photoNumber}.JPG`,
-            `photos/${photoNumberClean}.jpg`,
-            `photos/${photoNumberClean}.JPG`
+
+        // Buscar em todas as pastas do R2 (categorias + photos)
+        const searchPrefixes = [
+            'Brazil Best Sellers/',
+            'Brazil Top Selected Categories/',
+            'Colombian Cowhides/',
+            'Sheepskins/',
+            'Calfskins/',
+            'photos/'
         ];
 
-        for (const key of possibleKeys) {
+        for (const prefix of searchPrefixes) {
             try {
-                await s3Client.send(new HeadObjectCommand({
+                const response = await s3Client.send(new ListObjectsV2Command({
                     Bucket: process.env.R2_BUCKET_NAME,
-                    Key: key
+                    Prefix: prefix,
+                    MaxKeys: 1000
                 }));
-                hasPhotoInR2 = true;
-                break;
+
+                if (response.Contents) {
+                    // Procurar pelo número da foto em qualquer formato
+                    const found = response.Contents.find(obj => {
+                        const match = obj.Key.match(/(\d+)\.(webp|jpg|JPG|jpeg|png)$/i);
+                        if (match) {
+                            const fileNum = match[1];
+                            return fileNum === photoNumber || fileNum === photoNumberClean;
+                        }
+                        return false;
+                    });
+
+                    if (found) {
+                        hasPhotoInR2 = true;
+                        foundR2Path = found.Key;
+                        break;
+                    }
+                }
             } catch (e) {
-                // Continua tentando
+                console.log(`[IMPORT-STANDBY] Erro ao buscar em ${prefix}:`, e.message);
             }
         }
 
@@ -1055,14 +1077,15 @@ router.post('/import-standby', async (req, res) => {
 
         await newPhoto.save();
 
-        console.log(`[MONITOR ACTION] ⏸️ STANDBY importado: ${photoNumber}`);
+        console.log(`[MONITOR ACTION] ⏸️ STANDBY importado: ${photoNumber} (R2: ${foundR2Path})`);
 
         return res.json({
             success: true,
-            message: `Foto ${photoNumber} importada como BLOQUEADA. Aparecerá na galería quando for liberada no CDE.`,
+            message: `Foto ${photoNumber} importada como BLOQUEADA. Aparecerá na galería cuando sea liberada en CDE.`,
             data: {
                 photoNumber: photoNumber,
                 action: 'import-standby',
+                r2Path: foundR2Path,
                 cdeRecord: {
                     idh: cdeRecord.AIDH,
                     qb: cdeRecord.AQBITEM,
