@@ -175,7 +175,7 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
             });
         }
 
-        // Buscar no CDE
+        // Buscar no CDE - INCLUINDO IDH para detectar colisões
         const mysql = require('mysql2/promise');
         const cdeConnection = await mysql.createConnection({
             host: process.env.CDE_HOST,
@@ -188,8 +188,12 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
         // Usar o photoNumber EXATO do MongoDB para buscar no CDE
         const actualPhotoNumber = photo.photoNumber;
 
+        // Buscar TODOS os registros com este photoNumber para detectar colisões
         const [cdeData] = await cdeConnection.execute(
-            'SELECT ATIPOETIQUETA, AESTADOP, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC LIMIT 1',
+            `SELECT ATIPOETIQUETA, AESTADOP, AQBITEM, AIDH, AFECHA
+             FROM tbinventario
+             WHERE ATIPOETIQUETA = ?
+             ORDER BY AFECHA DESC`,
             [actualPhotoNumber]
         );
 
@@ -197,18 +201,44 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
 
         const cdeInfo = cdeData.length > 0 ? cdeData[0] : null;
 
-        // Retornar dados combinados
+        // Detectar colisão de IDH: mesmo photoNumber com IDHs diferentes
+        const mongoIdh = String(photo.idhCode || '');
+        const cdeIdh = cdeInfo ? String(cdeInfo.AIDH || '') : '';
+
+        let isCollision = false;
+        let collisionDetails = null;
+
+        // Verificar se há múltiplos IDHs diferentes para este photoNumber
+        const uniqueIdhs = [...new Set(cdeData.map(r => String(r.AIDH || '')).filter(Boolean))];
+        const uniqueQbs = [...new Set(cdeData.map(r => r.AQBITEM).filter(Boolean))];
+
+        if (uniqueIdhs.length > 1 || (mongoIdh && cdeIdh && !mongoIdh.includes(cdeIdh) && !cdeIdh.includes(mongoIdh))) {
+            isCollision = true;
+            collisionDetails = {
+                message: '⚠️ COLISÃO DETECTADA: Este número de foto foi usado para produtos diferentes',
+                mongoIdh: mongoIdh || 'N/A',
+                cdeIdhs: uniqueIdhs,
+                cdeQbs: uniqueQbs,
+                cdeRecordCount: cdeData.length
+            };
+        }
+
+        // Retornar dados combinados com informação de IDH
         return res.json({
             success: true,
             photoNumber: actualPhotoNumber,
             mongoStatus: photo.status,
             mongoQb: photo.qbItem,
+            mongoIdh: mongoIdh || 'N/A',
             mongoCdeStatus: photo.cdeStatus,
             category: photo.category,
             r2Path: photo.r2Path,
             cdeStatus: cdeInfo ? cdeInfo.AESTADOP : 'N/A',
             cdeQb: cdeInfo ? cdeInfo.AQBITEM : null,
+            cdeIdh: cdeIdh || 'N/A',
             cdeExists: !!cdeInfo,
+            isCollision: isCollision,
+            collisionDetails: collisionDetails,
             timestamp: new Date().toISOString()
         });
 

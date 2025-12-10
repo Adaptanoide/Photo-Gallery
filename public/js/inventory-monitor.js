@@ -589,6 +589,28 @@ class InventoryMonitor {
                     </div>
                 </div>
 
+                ${data.isCollision ? `
+                <!-- Alerta de Colisão -->
+                <div style="
+                    background: rgba(244,67,54,0.15);
+                    border: 2px solid #f44336;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #f44336; font-weight: 600; margin-bottom: 8px;">
+                        ⚠️ COLISIÓN DE NÚMERO DETECTADA
+                    </div>
+                    <div style="color: #ffcdd2; font-size: 13px; line-height: 1.6;">
+                        Este número de foto fue reutilizado para productos diferentes.<br>
+                        <strong>MongoDB IDH:</strong> ${data.mongoIdh || 'N/A'}<br>
+                        <strong>CDE IDHs:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || 'N/A'}<br>
+                        <strong>QBs encontrados:</strong> ${data.collisionDetails?.cdeQbs?.join(', ') || 'N/A'}<br>
+                        <strong style="color: #f44336;">NO APLICAR RETORNO - Son productos diferentes!</strong>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Estado Actual -->
                 <div style="
                     background: rgba(255,255,255,0.05);
@@ -602,11 +624,13 @@ class InventoryMonitor {
                             <div style="color: #888; font-size: 11px;">MongoDB:</div>
                             <div style="color: #f44336; font-weight: 600;">${data.mongoStatus || 'sold'}</div>
                             <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.mongoQb || '-'}</div>
+                            <div style="color: #888; font-size: 10px; margin-top: 2px;">IDH: ${data.mongoIdh || '-'}</div>
                         </div>
                         <div>
                             <div style="color: #888; font-size: 11px;">CDE:</div>
                             <div style="color: #4caf50; font-weight: 600;">${data.cdeStatus || 'INGRESADO'}</div>
                             <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.cdeQb || '-'}</div>
+                            <div style="color: #888; font-size: 10px; margin-top: 2px;">IDH: ${data.cdeIdh || '-'}</div>
                         </div>
                     </div>
                     ${data.category ? `<div style="color: #888; font-size: 11px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -665,8 +689,9 @@ class InventoryMonitor {
                         onmouseover="this.style.background='rgba(255,255,255,0.15)'"
                         onmouseout="this.style.background='rgba(255,255,255,0.1)'"
                     >
-                        Cancelar
+                        ${data.isCollision ? 'Cerrar' : 'Cancelar'}
                     </button>
+                    ${!data.isCollision ? `
                     <button
                         onclick="window.monitor.executeRetorno('${photoNumber}')"
                         style="
@@ -686,6 +711,7 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-check"></i> Confirmar Retorno
                     </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -745,6 +771,29 @@ class InventoryMonitor {
                     </div>
                 </div>
 
+                ${data.isCollision ? `
+                <!-- Alerta de Colisão -->
+                <div style="
+                    background: rgba(244,67,54,0.15);
+                    border: 2px solid #f44336;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="color: #f44336; font-weight: 600; margin-bottom: 8px;">
+                        ⚠️ COLISIÓN DE NÚMERO DETECTADA
+                    </div>
+                    <div style="color: #ffcdd2; font-size: 13px; line-height: 1.6;">
+                        <strong>Este NO es un PASE real!</strong><br>
+                        El número de foto fue reutilizado para un producto diferente.<br><br>
+                        <strong>MongoDB IDH:</strong> ${data.mongoIdh || 'N/A'}<br>
+                        <strong>CDE IDHs:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || 'N/A'}<br>
+                        <strong>QBs encontrados:</strong> ${data.collisionDetails?.cdeQbs?.join(', ') || 'N/A'}<br><br>
+                        <strong style="color: #f44336;">NO HAY ACCIÓN NECESARIA - La foto del MongoDB es otro producto que ya fue vendido.</strong>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- QB Diferente -->
                 <div style="
                     background: rgba(255,152,0,0.1);
@@ -753,20 +802,22 @@ class InventoryMonitor {
                     border-radius: 8px;
                     margin-bottom: 16px;
                 ">
-                    <div style="color: #ff9800; font-weight: 600; margin-bottom: 12px;">🔄 QB CAMBIÓ:</div>
+                    <div style="color: #ff9800; font-weight: 600; margin-bottom: 12px;">🔄 QB DIFERENTE:</div>
                     <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
                         <div style="text-align: center; padding: 12px; background: rgba(244,67,54,0.2); border-radius: 8px;">
-                            <div style="color: #888; font-size: 11px;">MongoDB (Anterior)</div>
+                            <div style="color: #888; font-size: 11px;">MongoDB</div>
                             <div style="color: #f44336; font-weight: 600; font-size: 18px; margin-top: 4px;">
                                 ${data.mongoQb || '-'}
                             </div>
+                            <div style="color: #666; font-size: 10px; margin-top: 4px;">IDH: ${data.mongoIdh || '-'}</div>
                         </div>
-                        <div style="color: #ff9800; font-size: 24px;">→</div>
+                        <div style="color: #ff9800; font-size: 24px;">≠</div>
                         <div style="text-align: center; padding: 12px; background: rgba(76,175,80,0.2); border-radius: 8px;">
-                            <div style="color: #888; font-size: 11px;">CDE (Nuevo)</div>
+                            <div style="color: #888; font-size: 11px;">CDE</div>
                             <div style="color: #4caf50; font-weight: 600; font-size: 18px; margin-top: 4px;">
                                 ${data.cdeQb || '-'}
                             </div>
+                            <div style="color: #666; font-size: 10px; margin-top: 4px;">IDH: ${data.cdeIdh || '-'}</div>
                         </div>
                     </div>
                 </div>
@@ -778,6 +829,17 @@ class InventoryMonitor {
                     padding: 16px;
                     margin-bottom: 24px;
                 ">
+                    ${data.isCollision ? `
+                    <div style="color: #fff; font-size: 14px; line-height: 1.8;">
+                        <strong style="color: #f44336;">⚠️ COLISIÓN - Números de IDH diferentes!</strong><br><br>
+
+                        El producto en MongoDB (IDH: ${data.mongoIdh}) es <strong>diferente</strong> del producto en CDE (IDH: ${data.cdeIdh}).<br><br>
+
+                        El número de foto fue <strong>reutilizado</strong> para otro couro después de la venta anterior.<br><br>
+
+                        <strong style="color: #4caf50;">Acción recomendada:</strong> Cerrar este modal. El sync ignorará esta "discrepancia" automáticamente.
+                    </div>
+                    ` : `
                     <div style="color: #fff; font-size: 14px; line-height: 1.8;">
                         <strong style="color: #ff9800;">Esto NO es un retorno simple!</strong><br><br>
 
@@ -789,6 +851,7 @@ class InventoryMonitor {
 
                         <strong>Use el botón PASE</strong> para hacer estos cambios correctamente.
                     </div>
+                    `}
                 </div>
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -808,8 +871,9 @@ class InventoryMonitor {
                         onmouseover="this.style.background='rgba(255,255,255,0.15)'"
                         onmouseout="this.style.background='rgba(255,255,255,0.1)'"
                     >
-                        Cancelar
+                        ${data.isCollision ? 'Cerrar' : 'Cancelar'}
                     </button>
+                    ${!data.isCollision ? `
                     <button
                         onclick="document.getElementById('retornoModal').remove(); window.monitor.openPaseModal('${photoNumber}')"
                         style="
@@ -829,6 +893,7 @@ class InventoryMonitor {
                     >
                         <i class="fas fa-exchange-alt"></i> Ir a PASE
                     </button>
+                    ` : ''}
                 </div>
             </div>
         `;

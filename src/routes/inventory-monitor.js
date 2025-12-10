@@ -150,7 +150,7 @@ router.get('/scan', async (req, res) => {
             isActive: true,
             status: { $in: ['available', 'reserved'] }
         })
-            .select('photoNumber status qbItem category selectionId specialFlags')
+            .select('photoNumber status qbItem category selectionId specialFlags idhCode')
             .lean();
 
         console.log(`[MONITOR] 📸 ${mongoPhotos.length} fotos MongoDB (available/reserved)`);
@@ -210,7 +210,7 @@ router.get('/scan', async (req, res) => {
                 // fotos diferentes (ex: 0046 vs 00046 são fotos fisicamente diferentes!)
                 const existingPhoto = await UnifiedProductComplete.findOne({
                     photoNumber: atipoetiqueta
-                }).select('photoNumber isActive status specialFlags qbItem').lean();
+                }).select('photoNumber isActive status specialFlags qbItem idhCode').lean();
 
                 // Se existe como inativa, ignorar
                 if (existingPhoto?.isActive === false) {
@@ -222,8 +222,31 @@ router.get('/scan', async (req, res) => {
                     continue;
                 }
 
-                // Se existe como SOLD + CDE INGRESADO = possível retorno
+                // Se existe como SOLD + CDE INGRESADO = possível retorno OU colisão de número
                 if (existingPhoto?.status === 'sold') {
+                    // VERIFICAR IDH: Se MongoDB.idhCode != CDE.AIDH, é uma COLISÃO de número
+                    // (mesmo photoNumber usado para itens físicos diferentes)
+                    const mongoIdh = String(existingPhoto.idhCode || '');
+                    const cdeIdh = String(cdePhoto.AIDH || '');
+
+                    // Verificar se é colisão (IDHs diferentes = itens diferentes)
+                    const isCollision = mongoIdh && cdeIdh && !mongoIdh.includes(cdeIdh) && !cdeIdh.includes(mongoIdh);
+
+                    if (isCollision) {
+                        // 🔀 COLISÃO: Mesmo photoNumber, mas IDH diferente = outro produto físico
+                        // Verificar se os QBs são diferentes (confirma que são produtos diferentes)
+                        const mongoQb = existingPhoto.qbItem || '';
+                        const cdeQb = cdePhoto.AQBITEM || '';
+
+                        if (mongoQb !== cdeQb) {
+                            // Número reutilizado para produto diferente - ignorar neste scan
+                            // O item do MongoDB é outro produto, não relacionado a este CDE
+                            console.log(`[MONITOR] ⚠️ Colisão detectada: photo ${atipoetiqueta} - MongoDB IDH: ${mongoIdh} (${mongoQb}) vs CDE IDH: ${cdeIdh} (${cdeQb})`);
+                            continue; // Não é retorno, é colisão - ignorar
+                        }
+                    }
+
+                    // É retorno real (mesmo item ou mesmo QB)
                     issues.warnings.push({
                         photoNumber: cdePhoto.ATIPOETIQUETA,
                         severity: 'warning',
@@ -233,7 +256,8 @@ router.get('/scan', async (req, res) => {
                         cdeStatus: 'INGRESADO',
                         mongoQb: existingPhoto.qbItem || '-',
                         cdeQb: cdePhoto.AQBITEM || '-',
-                        cdeAidh: cdePhoto.AIDH,
+                        mongoIdh: mongoIdh || '-',
+                        cdeAidh: cdeIdh || '-',
                         syncCanFix: false,
                         needsManualReview: true
                     });
@@ -510,6 +534,29 @@ router.get('/scan', async (req, res) => {
             if (cdeData && photo.qbItem && cdeData.qbItem &&
                 photo.qbItem !== cdeData.qbItem &&
                 cdeData.qbItem.match(/^[0-9]{4}/)) {
+
+                // VERIFICAR IDH: Se os IDHs são diferentes, pode ser uma COLISÃO
+                // (mesmo photoNumber usado para produtos físicos diferentes)
+                const mongoIdh = String(photo.idhCode || '');
+                const cdeIdh = String(cdeData.aidh || '');
+
+                // Verificar se é colisão (IDHs diferentes e QBs muito diferentes = itens diferentes)
+                const isCollision = mongoIdh && cdeIdh &&
+                    !mongoIdh.includes(cdeIdh) && !cdeIdh.includes(mongoIdh);
+
+                if (isCollision) {
+                    // Verificar se a diferença de QB indica produtos completamente diferentes
+                    // (ex: Brazil 6003 vs Colombia 5202TRC - não faz sentido corrigir)
+                    const mongoQbPrefix = photo.qbItem.substring(0, 4);
+                    const cdeQbPrefix = cdeData.qbItem.substring(0, 4);
+
+                    if (mongoQbPrefix !== cdeQbPrefix) {
+                        // Colisão detectada - produtos diferentes, ignorar auto-correção
+                        console.log(`[MONITOR] ⚠️ Colisão ignorada (AUTO): photo ${photo.photoNumber} - MongoDB IDH: ${mongoIdh} (${photo.qbItem}) vs CDE IDH: ${cdeIdh} (${cdeData.qbItem})`);
+                        continue; // Não incluir como auto-fix, é colisão
+                    }
+                }
+
                 issues.autoFixable.push({
                     photoNumber: photo.photoNumber,
                     severity: 'autofix',
@@ -519,6 +566,8 @@ router.get('/scan', async (req, res) => {
                     cdeStatus: cdeData.status,
                     mongoQb: photo.qbItem,
                     cdeQb: cdeData.qbItem,
+                    mongoIdh: mongoIdh || '-',
+                    cdeAidh: cdeIdh || '-',
                     syncCanFix: true,
                     needsManualReview: false
                 });
