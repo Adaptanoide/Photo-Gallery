@@ -199,7 +199,10 @@ router.get('/photo-info/:photoNumber', async (req, res) => {
 
         await cdeConnection.end();
 
-        const cdeInfo = cdeData.length > 0 ? cdeData[0] : null;
+        // IMPORTANTE: Priorizar o registro INGRESADO como cdeInfo, pois representa o estado ATUAL
+        // Se não houver INGRESADO, usar o primeiro registro (mais recente por data)
+        const ingresadoRecord = cdeData.find(r => r.AESTADOP === 'INGRESADO');
+        const cdeInfo = ingresadoRecord || (cdeData.length > 0 ? cdeData[0] : null);
 
         // Detectar colisão de IDH: mesmo photoNumber mas produto FÍSICO diferente
         const mongoIdh = String(photo.idhCode || '');
