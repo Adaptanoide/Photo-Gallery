@@ -1367,46 +1367,46 @@
                     <div class="stats-container"
                         style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px;">
 
-                        <!-- Crítico -->
+                        <!-- Urgente (antes Crítico) -->
                         <div class="stat-card" style="border-left: 4px solid #f44336; background: linear-gradient(135deg, rgba(244,67,54,0.1) 0%, rgba(244,67,54,0.05) 100%);">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">🔴 CRÍTICO</div>
+                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">🔴 URGENTE</div>
                                     <div class="stat-value" id="criticalCount" style="color: #f44336; font-size: 36px; font-weight: 700;">-</div>
-                                    <div class="stat-description" style="font-size: 11px; color: #e57373;">Riesgo de venta duplicada</div>
+                                    <div class="stat-description" style="font-size: 11px; color: #e57373;">Posible venta duplicada</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Retornos (antes Advertencias) -->
+                        <!-- Verificar (antes Retornos) -->
                         <div class="stat-card" style="border-left: 4px solid #ffc107; background: linear-gradient(135deg, rgba(255,193,7,0.1) 0%, rgba(255,193,7,0.05) 100%);">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">🟡 RETORNOS</div>
+                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">🟡 VERIFICAR</div>
                                     <div class="stat-value" id="warningsCount" style="color: #ffc107; font-size: 36px; font-weight: 700;">-</div>
-                                    <div class="stat-description" style="font-size: 11px; color: #ffca28;">Mercadería que regresó</div>
+                                    <div class="stat-description" style="font-size: 11px; color: #ffca28;">Requieren análisis manual</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- STANDBY -->
+                        <!-- Bloqueados (antes STANDBY) -->
                         <div class="stat-card" style="border-left: 4px solid #607d8b; background: linear-gradient(135deg, rgba(96,125,139,0.1) 0%, rgba(96,125,139,0.05) 100%);">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">⏸️ STANDBY</div>
+                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">⏸️ BLOQUEADOS</div>
                                     <div class="stat-value" id="standbyCount" style="color: #607d8b; font-size: 36px; font-weight: 700;">-</div>
-                                    <div class="stat-description" style="font-size: 11px; color: #90a4ae;">Fotos bloqueadas en CDE</div>
+                                    <div class="stat-description" style="font-size: 11px; color: #90a4ae;">Esperando liberación en CDE</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Sin Foto -->
+                        <!-- Pendientes (antes Sin Foto) -->
                         <div class="stat-card" style="border-left: 4px solid #9c27b0; background: linear-gradient(135deg, rgba(156,39,176,0.1) 0%, rgba(156,39,176,0.05) 100%);">
                             <div class="stat-header">
                                 <div>
-                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">📷 SIN FOTO</div>
+                                    <div class="stat-title" style="font-size: 13px; font-weight: 600;">📷 PENDIENTES</div>
                                     <div class="stat-value" id="noPhotoCount" style="color: #9c27b0; font-size: 36px; font-weight: 700;">-</div>
-                                    <div class="stat-description" style="font-size: 11px; color: #ba68c8;">Couros sin fotografiar</div>
+                                    <div class="stat-description" style="font-size: 11px; color: #ba68c8;">Necesitan fotografía</div>
                                 </div>
                             </div>
                         </div>
@@ -1429,19 +1429,19 @@
                             </button>
                             <button class="monitor-filter-btn" data-category="critical"
                                 style="padding: 8px 16px; border: 1px solid rgba(244,67,54,0.3); background: rgba(244,67,54,0.1); color: #f44336; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                🔴 Crítico
+                                🔴 Urgente
                             </button>
                             <button class="monitor-filter-btn" data-category="warning"
                                 style="padding: 8px 16px; border: 1px solid rgba(255,193,7,0.3); background: rgba(255,193,7,0.1); color: #ffc107; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                🟡 Retornos
+                                🟡 Verificar
                             </button>
                             <button class="monitor-filter-btn" data-category="standby"
                                 style="padding: 8px 16px; border: 1px solid rgba(96,125,139,0.3); background: rgba(96,125,139,0.1); color: #607d8b; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                ⏸️ Standby
+                                ⏸️ Bloqueados
                             </button>
                             <button class="monitor-filter-btn" data-category="noPhoto"
                                 style="padding: 8px 16px; border: 1px solid rgba(156,39,176,0.3); background: rgba(156,39,176,0.1); color: #9c27b0; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                📷 Sin Foto
+                                📷 Pendientes
                             </button>
                         </div>
 
@@ -1464,11 +1464,11 @@
                             <thead>
                                 <tr>
                                     <th>Foto</th>
-                                    <th>Severidad</th>
-                                    <th>Problema</th>
-                                    <th>MongoDB</th>
+                                    <th>Estado</th>
+                                    <th>Situación</th>
+                                    <th>Galería</th>
                                     <th>CDE</th>
-                                    <th>QB</th>
+                                    <th>Categoría</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -1487,49 +1487,56 @@
                     <!-- Legenda -->
                     <div style="margin-top: 20px; padding: 16px 20px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
                         <h4 style="margin-bottom: 14px; color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
-                            Leyenda de Categorías
+                            Guía de Estados
                         </h4>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 13px;">
                             <div style="display: flex; align-items: flex-start; gap: 10px;">
                                 <span style="color: #f44336; font-size: 16px;">🔴</span>
                                 <div>
-                                    <span style="color: #f44336; font-weight: 600;">CRÍTICO</span>
+                                    <span style="color: #f44336; font-weight: 600;">URGENTE</span>
                                     <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
-                                        MongoDB=disponible, CDE=vendido. Riesgo de venta duplicada.
-                                        <span style="color: #f44336;">Usar botón "Vendida".</span>
+                                        Aparece disponible en la galería pero ya fue vendido según el CDE.
+                                        <span style="color: #f44336;">Presione "Analizar" y luego "Marcar Vendida".</span>
                                     </p>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: flex-start; gap: 10px;">
                                 <span style="color: #ffc107; font-size: 16px;">🟡</span>
                                 <div>
-                                    <span style="color: #ffc107; font-weight: 600;">RETORNO</span>
+                                    <span style="color: #ffc107; font-weight: 600;">VERIFICAR</span>
                                     <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
-                                        MongoDB=vendido, CDE=ingresado. Mercadería devuelta.
-                                        <span style="color: #4caf50;">Usar botón "Retorno".</span>
+                                        Posible retorno o cambio de categoría. Requiere análisis manual.
+                                        <span style="color: #4caf50;">Presione "Analizar" para ver opciones.</span>
                                     </p>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: flex-start; gap: 10px;">
                                 <span style="color: #607d8b; font-size: 16px;">⏸️</span>
                                 <div>
-                                    <span style="color: #607d8b; font-weight: 600;">STANDBY</span>
+                                    <span style="color: #607d8b; font-weight: 600;">BLOQUEADOS</span>
                                     <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
-                                        Foto bloqueada en CDE. Sin acción disponible.
-                                        <span style="color: #607d8b;">Requiere liberación en CDE.</span>
+                                        Couro bloqueado en el CDE. No aparece en la galería.
+                                        <span style="color: #607d8b;">Esperando liberación en el CDE.</span>
                                     </p>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: flex-start; gap: 10px;">
                                 <span style="color: #9c27b0; font-size: 16px;">📷</span>
                                 <div>
-                                    <span style="color: #9c27b0; font-weight: 600;">SIN FOTO</span>
+                                    <span style="color: #9c27b0; font-weight: 600;">PENDIENTES</span>
                                     <p style="color: #888; margin: 4px 0 0 0; font-size: 12px; line-height: 1.4;">
-                                        Item en CDE sin foto en R2. Sin acción disponible.
-                                        <span style="color: #9c27b0;">Requiere fotografía.</span>
+                                        Couro registrado en CDE pero sin fotografía.
+                                        <span style="color: #9c27b0;">Necesita ser fotografiado.</span>
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                        <!-- Mensagem de ajuda -->
+                        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                            <p style="color: #888; font-size: 12px; margin: 0;">
+                                <i class="fas fa-question-circle" style="color: #2196f3; margin-right: 6px;"></i>
+                                ¿Dudas o problemas? Contacte al <span style="color: #2196f3; font-weight: 600;">técnico responsable</span> para asistencia.
+                            </p>
                         </div>
                     </div>
                 </div>

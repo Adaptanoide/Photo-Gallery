@@ -96,7 +96,7 @@ class InventoryMonitor {
                         </div>
                         <div>Escaneando inventario...</div>
                         <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                            Verificando CDE, MongoDB y R2... Esto puede tomar 30-60 segundos
+                            Verificando CDE, Galería y R2... Esto puede tomar 30-60 segundos
                         </div>
                     </td>
                 </tr>
@@ -155,9 +155,9 @@ class InventoryMonitor {
         const totals = document.getElementById('scanTotals');
         if (totals) {
             totals.innerHTML = `
-                <span>MongoDB: <strong>${summary.totalScanned}</strong></span>
-                <span>CDE: <strong>${summary.totalCdeIngresado}</strong></span>
-                <span>R2: <strong>${summary.totalR2Photos || '-'}</strong></span>
+                <span>En Galería: <strong>${summary.totalScanned}</strong></span>
+                <span>En CDE: <strong>${summary.totalCdeIngresado}</strong></span>
+                <span>Fotos R2: <strong>${summary.totalR2Photos || '-'}</strong></span>
                 <span>Tiempo: <strong>${summary.scanTime}s</strong></span>
             `;
         }
@@ -209,13 +209,13 @@ class InventoryMonitor {
 
     renderIssueRow(issue) {
         const severityConfig = {
-            critical: { icon: '🔴', class: 'severity-critical', label: 'CRÍTICO', color: '#f44336' },
-            warning: { icon: '🟡', class: 'severity-warning', label: 'RETORNO', color: '#ffc107' },
-            pendingSync: { icon: '🔄', class: 'severity-sync', label: 'SYNC', color: '#2196f3' },
-            noPhoto: { icon: '📷', class: 'severity-nophoto', label: 'SIN FOTO', color: '#9c27b0' },
-            pass: { icon: '🔀', class: 'severity-pass', label: 'PASS', color: '#ff9800' },
+            critical: { icon: '🔴', class: 'severity-critical', label: 'URGENTE', color: '#f44336' },
+            warning: { icon: '🟡', class: 'severity-warning', label: 'VERIFICAR', color: '#ffc107' },
+            pendingSync: { icon: '🔄', class: 'severity-sync', label: 'IMPORTAR', color: '#2196f3' },
+            noPhoto: { icon: '📷', class: 'severity-nophoto', label: 'PENDIENTE', color: '#9c27b0' },
+            pass: { icon: '🔀', class: 'severity-pass', label: 'MOVER', color: '#ff9800' },
             autofix: { icon: '🔧', class: 'severity-autofix', label: 'AUTO', color: '#4caf50' },
-            standby: { icon: '⏸️', class: 'severity-standby', label: 'STANDBY', color: '#607d8b' }
+            standby: { icon: '⏸️', class: 'severity-standby', label: 'BLOQUEADO', color: '#607d8b' }
         };
 
         const config = severityConfig[issue.category] || severityConfig.warning;
@@ -275,7 +275,7 @@ class InventoryMonitor {
                     </span>
                 </td>
                 <td style="font-family: monospace; font-size: 11px; color: #888;">
-                    <div>M: ${issue.mongoQb || '-'}</div>
+                    <div>G: ${issue.mongoQb || '-'}</div>
                     <div>C: ${issue.cdeQb || '-'}</div>
                 </td>
                 <td style="text-align: center;">
@@ -319,7 +319,7 @@ class InventoryMonitor {
                     "
                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
-                    title="Importar foto al MongoDB"
+                    title="Importar foto a la Galería"
                 >
                     <i class="fas fa-download"></i> Importar
                 </button>
@@ -356,13 +356,13 @@ class InventoryMonitor {
         }
 
         if (isRetorno) {
-            // Botão de RETORNO
+            // Botão de ANALIZAR (antes Retorno)
             return `
                 <button
                     onclick="window.monitor.openRetornoModal('${issue.photoNumber}')"
                     style="
-                        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-                        color: white;
+                        background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%);
+                        color: #333;
                         border: none;
                         padding: 8px 16px;
                         border-radius: 6px;
@@ -377,9 +377,9 @@ class InventoryMonitor {
                     "
                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';"
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';"
-                    title="Corregir retorno de mercadería"
+                    title="Analizar situación y ver opciones"
                 >
-                    <i class="fas fa-undo"></i> Retorno
+                    <i class="fas fa-search"></i> Analizar
                 </button>
             `;
         } else if (isPase) {
@@ -430,14 +430,14 @@ class InventoryMonitor {
             'sold': 'Vendido',
             'in_selection': 'En Selección',
             'pending': 'Pendiente',
-            'INGRESADO': 'INGRESADO',
-            'PRE-SELECTED': 'PRE-SELECTED',
-            'CONFIRMED': 'CONFIRMED',
-            'RETIRADO': 'RETIRADO',
-            'RESERVED': 'RESERVED',
-            'STANDBY': 'STANDBY',
-            'NO EXISTE': 'NO EXISTE',
-            'N/A': 'N/A'
+            'INGRESADO': 'Disponible',
+            'PRE-SELECTED': 'Pre-selec.',
+            'CONFIRMED': 'Confirmado',
+            'RETIRADO': 'Vendido',
+            'RESERVED': 'Reservado',
+            'STANDBY': 'Bloqueado',
+            'NO EXISTE': 'Solo CDE',
+            'N/A': 'Solo CDE'
         };
         return translations[status] || status || '-';
     }
@@ -520,7 +520,7 @@ class InventoryMonitor {
                     Analizando foto ${photoNumber}...
                 </div>
                 <div style="color: #888; font-size: 13px; margin-top: 8px;">
-                    Verificando MongoDB y CDE
+                    Verificando Galería y CDE
                 </div>
             </div>
         `;
@@ -607,7 +607,7 @@ class InventoryMonitor {
                         ⚠️ COLISIÓN: Número Reutilizado
                     </div>
                     <div style="color: #ffcdd2; font-size: 11px; line-height: 1.5;">
-                        <strong>Mongo:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
+                        <strong>Galería:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
                         <strong>CDE:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || data.cdeIdh || 'N/A'}<br>
                         <strong>Estados CDE:</strong> ${data.collisionDetails?.cdeStatuses?.join(', ') || '-'}
                     </div>
@@ -633,15 +633,15 @@ class InventoryMonitor {
                     <div style="color: #999; font-size: 12px; margin-bottom: 8px;">📊 ESTADO ACTUAL:</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
-                            <div style="color: #888; font-size: 11px;">MongoDB:</div>
-                            <div style="color: #f44336; font-weight: 600;">${data.mongoStatus || 'sold'}</div>
-                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.mongoQb || '-'}</div>
+                            <div style="color: #888; font-size: 11px;">En Galería:</div>
+                            <div style="color: #f44336; font-weight: 600;">${this.translateStatus(data.mongoStatus) || 'Vendido'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">Cat: ${data.mongoQb || '-'}</div>
                             <div style="color: #888; font-size: 10px; margin-top: 2px;">IDH: ${data.mongoIdh || '-'}</div>
                         </div>
                         <div>
-                            <div style="color: #888; font-size: 11px;">CDE:</div>
-                            <div style="color: #4caf50; font-weight: 600;">${data.cdeStatus || 'INGRESADO'}</div>
-                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.cdeQb || '-'}</div>
+                            <div style="color: #888; font-size: 11px;">En CDE:</div>
+                            <div style="color: #4caf50; font-weight: 600;">${this.translateStatus(data.cdeStatus) || 'Disponible'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">Cat: ${data.cdeQb || '-'}</div>
                             <div style="color: #888; font-size: 10px; margin-top: 2px;">IDH: ${data.cdeIdh || '-'}</div>
                         </div>
                     </div>
@@ -660,10 +660,10 @@ class InventoryMonitor {
                 ">
                     <div style="color: #4caf50; font-weight: 600; margin-bottom: 12px;">✓ CAMBIOS A APLICAR:</div>
                     <div style="color: #e0e0e0; font-size: 14px; line-height: 1.8;">
-                        • Status: <strong style="color: #f44336;">sold</strong> → <strong style="color: #4caf50;">available</strong><br>
-                        • CDE Status: <strong>${data.cdeStatus || 'RETIRADO'}</strong> → <strong>INGRESADO</strong><br>
-                        • QB: <strong style="color: #90caf9;">${data.mongoQb || '-'}</strong> (sin cambios ✓)<br>
-                        • Limpiar selectionId y reservas
+                        • Estado: <strong style="color: #f44336;">Vendido</strong> → <strong style="color: #4caf50;">Disponible</strong><br>
+                        • La foto volverá a aparecer en la galería<br>
+                        • Categoría: <strong style="color: #90caf9;">${data.mongoQb || '-'}</strong> (sin cambios ✓)<br>
+                        • Se limpiarán reservas anteriores
                     </div>
                 </div>
 
@@ -841,7 +841,7 @@ class InventoryMonitor {
                         ⚠️ COLISIÓN: Número Reutilizado
                     </div>
                     <div style="color: #ffcdd2; font-size: 11px; line-height: 1.5;">
-                        <strong>Mongo:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
+                        <strong>Galería:</strong> IDH ${data.mongoIdh || 'N/A'} (${data.mongoQb || '-'})<br>
                         <strong>CDE:</strong> ${data.collisionDetails?.cdeIdhs?.join(', ') || data.cdeIdh || 'N/A'}<br>
                         <strong>Estados CDE:</strong> ${data.collisionDetails?.cdeStatuses?.join(', ') || '-'}
                     </div>
@@ -868,7 +868,7 @@ class InventoryMonitor {
                     <div style="color: #ff9800; font-weight: 600; margin-bottom: 12px;">🔄 QB DIFERENTE:</div>
                     <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
                         <div style="text-align: center; padding: 12px; background: rgba(244,67,54,0.2); border-radius: 8px;">
-                            <div style="color: #888; font-size: 11px;">MongoDB</div>
+                            <div style="color: #888; font-size: 11px;">En Galería</div>
                             <div style="color: #f44336; font-weight: 600; font-size: 18px; margin-top: 4px;">
                                 ${data.mongoQb || '-'}
                             </div>
@@ -876,7 +876,7 @@ class InventoryMonitor {
                         </div>
                         <div style="color: #ff9800; font-size: 24px;">≠</div>
                         <div style="text-align: center; padding: 12px; background: rgba(76,175,80,0.2); border-radius: 8px;">
-                            <div style="color: #888; font-size: 11px;">CDE</div>
+                            <div style="color: #888; font-size: 11px;">En CDE</div>
                             <div style="color: #4caf50; font-weight: 600; font-size: 18px; margin-top: 4px;">
                                 ${data.cdeQb || '-'}
                             </div>
@@ -1244,14 +1244,14 @@ class InventoryMonitor {
                     <div style="color: #999; font-size: 12px; margin-bottom: 8px;">📊 ESTADO ACTUAL:</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
-                            <div style="color: #888; font-size: 11px;">MongoDB:</div>
-                            <div style="color: #4caf50; font-weight: 600;">${data.mongoStatus || 'available'}</div>
-                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.mongoQb || '-'}</div>
+                            <div style="color: #888; font-size: 11px;">En Galería:</div>
+                            <div style="color: #4caf50; font-weight: 600;">${this.translateStatus(data.mongoStatus) || 'Disponible'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">Cat: ${data.mongoQb || '-'}</div>
                         </div>
                         <div>
-                            <div style="color: #888; font-size: 11px;">CDE:</div>
-                            <div style="color: #f44336; font-weight: 600;">${data.cdeStatus || 'RETIRADO'}</div>
-                            <div style="color: #888; font-size: 11px; margin-top: 4px;">QB: ${data.cdeQb || '-'}</div>
+                            <div style="color: #888; font-size: 11px;">En CDE:</div>
+                            <div style="color: #f44336; font-weight: 600;">${this.translateStatus(data.cdeStatus) || 'Vendido'}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">Cat: ${data.cdeQb || '-'}</div>
                         </div>
                     </div>
                 </div>
@@ -1266,9 +1266,9 @@ class InventoryMonitor {
                 ">
                     <div style="color: #f44336; font-weight: 600; margin-bottom: 12px;">✓ CAMBIOS A APLICAR:</div>
                     <div style="color: #e0e0e0; font-size: 14px; line-height: 1.8;">
-                        • Status: <strong style="color: #4caf50;">available</strong> → <strong style="color: #f44336;">sold</strong><br>
-                        • CDE Status: → <strong>RETIRADO</strong><br>
-                        • La foto será removida de la galería
+                        • Estado: <strong style="color: #4caf50;">Disponible</strong> → <strong style="color: #f44336;">Vendido</strong><br>
+                        • La foto será removida de la galería<br>
+                        • Se sincronizará con el estado del CDE
                     </div>
                 </div>
 
