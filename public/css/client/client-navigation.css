@@ -7,7 +7,7 @@
     animation: slideInDown 0.3s ease-out;
     background: white;
     position: sticky;
-    top: 70px;
+    top: 65px;
     z-index: 100;
     padding: 12px 1px;
     border-bottom: 1px solid #dee2e6;
@@ -508,6 +508,7 @@
         background: #f8f9fa;
         display: flex;
         justify-content: center;
+        gap: 10px;
         border-top: 1px solid #e0e0e0;
         border-radius: 0 0 12px 12px;
         box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
@@ -531,6 +532,27 @@
 
     .btn-clear-dropdown:hover {
         background: #f0f0f0;
+    }
+
+    .btn-done-dropdown {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #d4af37;
+        color: white;
+        border: 1px solid #d4af37;
+    }
+
+    .btn-done-dropdown:hover {
+        background: #b8941f;
+        border-color: #b8941f;
     }
 }
 

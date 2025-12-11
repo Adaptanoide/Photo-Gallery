@@ -195,7 +195,7 @@
 /* Gallery header */
 .gallery-header {
     position: sticky;
-    top: 165px;
+    top: 153px;
     z-index: 90;
     background: white;
     padding: 20px 20px;
@@ -356,15 +356,13 @@
 #priceProgressContainer,
 .price-info-container {
     position: sticky;
-    top: 230px;
-    /* VOLTAR para 220px como estava */
+    top: 227px;
     background: #f8f9fa;
     padding: 12px 8px;
     margin: 0px 0rem 0rem 0rem;
     border-bottom: 1px solid #dee2e6;
     box-sizing: border-box;
     z-index: 85;
-    /* VOLTAR para 85 como estava */
     width: auto;
     display: block;
 }
@@ -1082,7 +1080,7 @@
     .toggle-tiers-btn:active {
         background: rgba(212, 175, 55, 0.2);
     }
-    
+
     /* Fotos grid - mais espaço */
     .photos-grid {
         padding-top: 12px !important;

@@ -365,6 +365,10 @@
     padding: 4px 11px 0px 11px;
     border-top: 1px solid var(--border-subtle);
     background: var(--luxury-dark);
+    /* Prevenir glitch/layout shift */
+    min-height: 120px;
+    transition: none;
+    transform: translateZ(0);
 }
 
 .cart-summary {
@@ -427,6 +431,9 @@
     font-weight: 600;
     color: var(--gold-primary);
     text-align: center;
+    /* Prevenir glitch */
+    min-height: 1.5em;
+    transition: none;
 }
 
 .items-text {

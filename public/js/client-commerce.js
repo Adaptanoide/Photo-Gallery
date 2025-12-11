@@ -1095,14 +1095,31 @@ window.displayFilteredCategories = function (categories) {
         // Gerar descrição baseada no nome da categoria
         const description = generateCategoryDescription(cleanName);
 
-        // IMPORTANTE: Sempre mostrar cards SEM thumbnails e SEM preços
+        // Determinar preço a mostrar
+        let priceHTML = '';
+        if (window.shouldShowPrices && window.shouldShowPrices()) {
+            // Verificar se categoria tem dados de preço
+            if (category.minPrice || category.maxPrice || category.price) {
+                const minP = category.minPrice || category.price;
+                const maxP = category.maxPrice || category.price;
+                const priceStr = minP === maxP
+                    ? (window.CurrencyManager ? CurrencyManager.format(minP) : `$${minP.toFixed(2)}`)
+                    : (window.CurrencyManager ? `${CurrencyManager.format(minP)} - ${CurrencyManager.format(maxP)}` : `$${minP.toFixed(2)} - $${maxP.toFixed(2)}`);
+                priceHTML = `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${priceStr}</span>`;
+            } else {
+                // Sem dados de preço, mostrar contact
+                priceHTML = '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>';
+            }
+        } else {
+            // Cliente não pode ver preços
+            priceHTML = '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>';
+        }
+
         categoryCard.innerHTML = `
             <h3>${cleanName}</h3>
             <p>${description}</p>
             <div class="folder-stats">
-                <span class="contact-price">
-                    <i class="fas fa-phone"></i> Contact for Price
-                </span>
+                ${priceHTML}
             </div>
         `;
 

@@ -12,7 +12,13 @@
       "Bash(if exist analysis rd /s /q analysis)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfix: remove action buttons from SIN FOTO items in monitor\n\nSIN FOTO and STANDBY items now show ''-'' instead of action buttons\nsince both require external work (photography / CDE release).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(timeout:*)",
+      "Bash(timeout 15 node:*)",
+      "Bash(pm2 list:*)",
+      "Bash(npm start)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

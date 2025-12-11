@@ -1,0 +1,229 @@
+{
+  "timestamp": "2025-12-10T17:05:28.695Z",
+  "summary": {
+    "totalStandby": 13,
+    "withPhoto": 8,
+    "partialPhoto": 0,
+    "withoutPhoto": 5
+  },
+  "r2Structure": {
+    "totalFiles": 23985,
+    "folders": [
+      "Brazil Best Sellers",
+      "Brazil Top Selected Categories",
+      "Calfskins",
+      "Colombian Cowhides",
+      "Cowhide Hair On BRA With Leather Binding And Lined",
+      "Duffle Bags",
+      "Furniture",
+      "Rodeo Rugs",
+      "Sheepskins",
+      "_display",
+      "_preview",
+      "_thumbnails"
+    ]
+  },
+  "details": {
+    "withPhoto": [
+      {
+        "photoNumber": "12368",
+        "qb": "8401",
+        "idh": "200112368",
+        "fecha": "2025-10-22T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Sheepskins/Himalayan Exotic Tones/12368.webp",
+          "_display/Sheepskins/Himalayan Exotic Tones/12368.webp",
+          "_preview/Sheepskins/Himalayan Exotic Tones/12368.webp",
+          "_thumbnails/Sheepskins/Himalayan Exotic Tones/12368.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "25771",
+        "qb": "5375LGT",
+        "idh": "200125771",
+        "fecha": "2025-10-17T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Brazil Best Sellers/Light Tones Mix ML-XL/25771.webp",
+          "_display/Brazil Best Sellers/Light Tones Mix ML-XL/25771.webp",
+          "_preview/Brazil Best Sellers/Light Tones Mix ML-XL/25771.webp",
+          "_thumbnails/Brazil Best Sellers/Light Tones Mix ML-XL/25771.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "12365",
+        "qb": "8401",
+        "idh": "200112365",
+        "fecha": "2025-10-01T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Sheepskins/Himalayan Exotic Tones/12365.webp",
+          "_display/Sheepskins/Himalayan Exotic Tones/12365.webp",
+          "_preview/Sheepskins/Himalayan Exotic Tones/12365.webp",
+          "_thumbnails/Sheepskins/Himalayan Exotic Tones/12365.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "16283",
+        "qb": "5365",
+        "idh": "200116283",
+        "fecha": "2025-08-20T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/16283.webp",
+          "_display/Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/16283.webp",
+          "_preview/Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/16283.webp",
+          "_thumbnails/Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/16283.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "20802",
+        "qb": "5375LGT",
+        "idh": "200120802",
+        "fecha": "2025-08-05T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Brazil Best Sellers/Light Tones Mix ML-XL/20802.webp",
+          "_display/Brazil Best Sellers/Light Tones Mix ML-XL/20802.webp",
+          "_preview/Brazil Best Sellers/Light Tones Mix ML-XL/20802.webp",
+          "_thumbnails/Brazil Best Sellers/Light Tones Mix ML-XL/20802.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "19914",
+        "qb": "5375LGT",
+        "idh": "200119914",
+        "fecha": "2025-07-31T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Brazil Best Sellers/Light Tones Mix ML-XL/19914.webp",
+          "_display/Brazil Best Sellers/Light Tones Mix ML-XL/19914.webp",
+          "_preview/Brazil Best Sellers/Light Tones Mix ML-XL/19914.webp",
+          "_thumbnails/Brazil Best Sellers/Light Tones Mix ML-XL/19914.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "11664",
+        "qb": "5365",
+        "idh": "200111664",
+        "fecha": "2025-07-15T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/11664.webp",
+          "_display/Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/11664.webp",
+          "_preview/Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/11664.webp",
+          "_thumbnails/Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/11664.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      },
+      {
+        "photoNumber": "88987",
+        "qb": "5375LGT",
+        "idh": "200088987",
+        "fecha": "2025-02-12T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [
+          "Brazil Best Sellers/Light Tones Mix ML-XL/88987.webp",
+          "_display/Brazil Best Sellers/Light Tones Mix ML-XL/88987.webp",
+          "_preview/Brazil Best Sellers/Light Tones Mix ML-XL/88987.webp",
+          "_thumbnails/Brazil Best Sellers/Light Tones Mix ML-XL/88987.webp"
+        ],
+        "hasProcessedWebp": true,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": true
+      }
+    ],
+    "partialPhoto": [],
+    "withoutPhoto": [
+      {
+        "photoNumber": "16281",
+        "qb": "5365",
+        "idh": "200116281",
+        "fecha": "2025-08-20T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [],
+        "hasProcessedWebp": false,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": false
+      },
+      {
+        "photoNumber": "88540",
+        "qb": "5475BR",
+        "idh": "200088540",
+        "fecha": "2025-02-11T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [],
+        "hasProcessedWebp": false,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": false
+      },
+      {
+        "photoNumber": "77612",
+        "qb": "5301MB",
+        "idh": "200077612",
+        "fecha": "2024-12-17T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [],
+        "hasProcessedWebp": false,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": false
+      },
+      {
+        "photoNumber": "4940",
+        "qb": "5365",
+        "idh": "200074940",
+        "fecha": "2024-12-04T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [],
+        "hasProcessedWebp": false,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": false
+      },
+      {
+        "photoNumber": "2399",
+        "qb": "5475BR",
+        "idh": "200072399",
+        "fecha": "2024-10-17T03:00:00.000Z",
+        "reservedBy": "",
+        "r2Paths": [],
+        "hasProcessedWebp": false,
+        "hasOriginalJpg": false,
+        "inPhotosFolder": false,
+        "inCategoryFolder": false
+      }
+    ]
+  }
+}

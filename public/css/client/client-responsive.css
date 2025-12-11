@@ -1,6 +1,127 @@
 /* public/css/client/client-responsive.css */
 /* ===== RESPONSIVE - ALL MEDIA QUERIES ===== */
 
+/* === DESKTOP LARGE (min-width: 1200px) - Escala mais compacta === */
+@media (min-width: 1200px) {
+    /* Reduzir tamanho base da fonte para ficar mais compacto */
+    .client-page {
+        font-size: 14px;
+    }
+
+    /* Header mais compacto */
+    .client-luxury-header {
+        padding: 0.5rem 0;
+    }
+
+    .client-luxury-header .container {
+        padding: 0 20px;
+    }
+
+    /* Cards de categoria mais compactos */
+    .categories-grid,
+    .folders-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .category-card,
+    .folder-card {
+        padding: 1rem 1.25rem;
+        min-height: 200px;
+    }
+
+    .category-card h3,
+    .folder-card h4 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .category-card p,
+    .folder-description {
+        font-size: 0.85rem;
+        min-height: 36px;
+        max-height: 36px;
+    }
+
+    /* Thumbnails de fotos mais compactas */
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    /* Gallery header mais compacto */
+    .gallery-header {
+        padding: 17px 15px;
+    }
+
+    .gallery-header h3 {
+        font-size: 1rem;
+    }
+
+    /* Price badges mais compactos */
+    .folder-price-badge,
+    .category-price-badge {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+
+    /* Carrinho mais compacto */
+    .cart-sidebar {
+        width: 340px !important;
+    }
+
+    .cart-container {
+        max-width: 340px;
+    }
+
+    .main {
+        width: calc(100% - 340px) !important;
+    }
+
+    .cart-header {
+        padding: 6px 12px;
+    }
+
+    .cart-header h3 {
+        font-size: 1rem;
+    }
+
+    .cart-item {
+        padding: 8px 6px;
+    }
+
+    .cart-item-image {
+        width: 65px;
+        height: 65px;
+    }
+
+    .cart-item-title {
+        font-size: 0.8rem;
+    }
+
+    /* Breadcrumb mais compacto */
+    .breadcrumb {
+        padding: 8px 15px;
+    }
+
+    .breadcrumb-item {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+}
+
+/* === DESKTOP EXTRA LARGE (min-width: 1600px) === */
+@media (min-width: 1600px) {
+    .categories-grid,
+    .folders-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
 /* === TABLET (768px - 1024px) === */
 @media (max-width: 1024px) {
 
@@ -355,35 +476,45 @@
 
     /* Ajustar container para não esconder o botão */
     .filter-container {
-        padding-bottom: 100px;
-        /* Espaço para o botão fixo */
         overflow-y: auto;
-        max-height: calc(100vh - 180px);
+        max-height: calc(100vh - 140px);
+        padding-bottom: 80px; /* Espaço para o botão fixo */
     }
 
     .filter-actions-mobile {
-        display: block !important;
-        padding: 20px;
-        position: absolute;
-        /* VOLTAR para absolute como estava */
-        bottom: 90px;
-        /* MUDOU de 0 para 50px - sobe o botão */
+        display: none !important; /* Escondido por padrão - só aparece quando sidebar está ativo */
+        padding: 15px 20px;
+        padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+        position: fixed;
+        bottom: 0;
         left: 0;
         right: 0;
         background: white;
         border-top: 1px solid #e0e0e0;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 10003;
+    }
+
+    /* Mostrar Apply button apenas quando o sidebar está aberto */
+    .filter-sidebar.active .filter-actions-mobile {
+        display: block !important;
     }
 
     .btn-apply-close {
         width: 100%;
-        padding: 12px;
-        background: var(--gold-primary);
+        padding: 14px;
+        background: linear-gradient(135deg, #28a745, #218838);
         color: white;
         border: none;
         border-radius: 8px;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-apply-close:active {
+        transform: scale(0.98);
     }
 
     /* Tablets - sidebar com largura limitada */
@@ -851,30 +982,44 @@
         font-size: 1.1rem;
     }
 
-    /* Modal header organizado */
-    .modal-header {
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 1060 !important;
-        background: white !important;
-        padding: calc(40px + env(safe-area-inset-top)) 15px 15px 15px !important;
-        min-height: 120px !important;
-        height: 200px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        /* ADICIONE - centraliza verticalmente */
+    /* Modal body - espaço para header e footer fixos */
+    .modal-body {
+        padding-top: 150px !important; /* Espaço para header fixo */
+        padding-bottom: 100px !important; /* Espaço para footer fixo */
     }
 
-    /* Controls - adicionar margin-top para descer */
+    .photo-container {
+        max-height: calc(100vh - 250px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Modal header organizado */
+    .modal-header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 10001 !important;
+        background: white !important;
+        padding: calc(env(safe-area-inset-top, 20px) + 10px) 15px 10px 15px !important;
+        min-height: auto !important;
+        max-height: 140px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Controls - linha superior com preço e fechar */
     .modal-controls {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
         order: -1 !important;
-        /* ADICIONE - desce os controls */
-        margin-bottom: 15px !important;
-        gap: 120px;
+        margin-bottom: 8px !important;
+        width: 100% !important;
     }
 
     /* Preço - mostrar só o badge, esconder contador */
@@ -910,18 +1055,19 @@
     /* Barra de rate rules compacta acima do footer */
     .modal-rate-rules-bar {
         position: fixed !important;
-        bottom: 48px !important;
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; /* Alinhado com footer incluindo safe-area */
         left: 0 !important;
         right: 0 !important;
         background: #fff !important;
         border-top: 1px solid #ddd;
-        padding: 11px 11px !important;
+        border-bottom: 1px solid #fff; /* Overlap branco para evitar gaps */
+        padding: 11px 11px 13px 11px !important; /* Padding extra embaixo */
         font-size: 1.0rem !important;
         text-align: center;
-        z-index: 1054;
+        z-index: 10000;
         color: #000000;
         display: none;
-        margin: 3px 0px 24px 0px;
+        margin: 0 !important; /* Remover margem para evitar gaps */
     }
 
     .modal-rate-rules-bar.active {
@@ -951,15 +1097,17 @@
         left: 0 !important;
         right: 0 !important;
         background: #ffffff !important;
-        padding: 8px !important;
-        z-index: 1055 !important;
+        padding: 10px 15px !important;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        z-index: 10001 !important;
         border-top: 1px solid #e0e0e0;
         display: flex !important;
         justify-content: center !important;
-        flex-direction: row-reverse !important;
+        flex-direction: row !important;
         align-items: center !important;
-        gap: 10px;
-        height: 80px;
+        gap: 15px;
+        min-height: 60px;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
 
     /* Ordem dos elementos - zoom esquerda, add direita */

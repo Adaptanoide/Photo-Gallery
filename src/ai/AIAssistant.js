@@ -739,6 +739,51 @@ class AIAssistant {
                 );
             }
 
+            // =============================================
+            // BUSCA POR PRODUTO ESPECÍFICO (V3.1)
+            // =============================================
+
+            // Detectar código de produto na pergunta (ex: 5375, 5302, 2110)
+            const productCodeMatch = question.match(/\b(\d{4}[A-Z]*(?:\s?[A-Z]{2})?)\b/i);
+            if (productCodeMatch) {
+                const productCode = productCodeMatch[1].toUpperCase();
+                console.log('🔍 Código de produto detectado:', productCode);
+
+                // Buscar dados específicos do produto
+                context.specificProduct = await this.cde.getProductsByCode(productCode);
+                context.productTransit = await this.cde.getTransitByCode(productCode);
+
+                // Se for um código exato (4 dígitos), buscar resumo completo
+                if (productCode.match(/^\d{4}$/)) {
+                    context.productSummary = await this.cde.getProductSummary(productCode);
+                }
+            }
+
+            // Detectar sufixos de cor/padrão (TRI, BRI, SP, ZETA, etc)
+            const suffixPatterns = ['tricolor', 'brindle', 'salt pepper', 'black white', 'exotic', 'zeta'];
+            const suffixCodes = {
+                'tricolor': 'TRI', 'brindle': 'BRI', 'salt pepper': 'SP',
+                'black white': 'BLW', 'exotic': 'EXO', 'zeta': 'Z'
+            };
+
+            for (const pattern of suffixPatterns) {
+                if (lowerQuestion.includes(pattern)) {
+                    const suffix = suffixCodes[pattern];
+                    console.log('🎨 Sufixo de padrão detectado:', suffix);
+                    context.productsBySuffix = await this.cde.getProductsBySuffix(suffix);
+                    break;
+                }
+            }
+
+            // Detectar busca por origem específica
+            if (lowerQuestion.includes('brazil') || lowerQuestion.includes('brasil') || lowerQuestion.includes('bra ')) {
+                console.log('🌍 Origem detectada: Brazil');
+                context.stockByOrigin = await this.cde.getStockByOrigin('BRA');
+            } else if (lowerQuestion.includes('colombia') || lowerQuestion.includes('col ')) {
+                console.log('🌍 Origem detectada: Colombia');
+                context.stockByOrigin = await this.cde.getStockByOrigin('COL');
+            }
+
             // Se nenhuma query específica, buscar dados básicos
             if (Object.keys(context).length === 0) {
                 context.basicInfo = await ConnectionManager.executeWithCache(
@@ -903,19 +948,22 @@ ${seasonalContext}
 
 ⚡ ANALYSIS APPROACH:
 When analyzing data:
-1. Identify the KEY INSIGHT first
-2. Support with specific numbers
-3. Compare to benchmarks when possible (last month, average, etc.)
-4. Highlight anomalies or concerns
-5. Suggest concrete next steps
+1. BE DIRECT - Answer the specific question first
+2. If you have data for the question, show it immediately with numbers
+3. If you DON'T have data, say "I don't have specific data for [X]" - don't fill with unrelated info
+4. Keep responses SHORT and FOCUSED on what was asked
+5. Only add extra context if directly relevant
 
 ❌ NEVER DO:
 • Never invent numbers or percentages not in the data
 • Never give generic advice - be specific to Sunshine's situation
 • Never ignore warning signs in the data
 • Never be overly apologetic - be confident and helpful
+• NEVER show general inventory when asked about specific products - if you don't have data, say so
+• NEVER pad responses with unrelated marketplace info or general statistics
+• NEVER explain how the product codes work unless asked - just answer the question
 ${customRulesText}
-Remember: Andy relies on you to help run his business. Be the analytical partner he needs.`;
+Remember: Andy needs DIRECT answers. If asked about "5375 products", show 5375 data or say you don't have it. Don't fill with general info.`;
 
         const userMessage = `Question: ${question}
 

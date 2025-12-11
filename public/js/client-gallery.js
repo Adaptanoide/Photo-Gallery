@@ -578,6 +578,9 @@
         const modal = document.getElementById('photoModal');
         modal.style.display = 'flex';
 
+        // Prevenir scroll do body quando modal está aberto
+        document.body.style.overflow = 'hidden';
+
         // Inicializar zoom
         if (typeof initializePhotoZoom === 'function') {
             initializePhotoZoom();
@@ -735,6 +738,9 @@
         if (typeof destroyPhotoZoom === 'function') {
             destroyPhotoZoom();
         }
+
+        // Restaurar scroll do body
+        document.body.style.overflow = '';
 
         // ESCONDER MODAL PRIMEIRO (antes de mexer na imagem)
         document.getElementById('photoModal').style.display = 'none';

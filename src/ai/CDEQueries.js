@@ -685,6 +685,135 @@ class CDEQueries {
         return this.executeQuery('getInactiveProducts', query, [days]);
     }
 
+    // Query 25: Busca por Código de Produto (QBITEM pattern)
+    async getProductsByCode(codePattern) {
+        const pattern = codePattern.includes('%') ? codePattern : `${codePattern}%`;
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                MAX(items.ACATEGORIA) as categoria,
+                MAX(items.ORIGEN) as origem,
+                COUNT(*) as em_estoque,
+                ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA)), 0) as dias_medio_estoque
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND inv.AQBITEM LIKE ?
+            GROUP BY inv.AQBITEM
+            ORDER BY em_estoque DESC
+            LIMIT 30
+        `;
+
+        return this.executeQuery('getProductsByCode', query, [pattern]);
+    }
+
+    // Query 26: Busca por Sufixo (cor/padrão como TRI, BRI, SP, Z%)
+    async getProductsBySuffix(suffix) {
+        const pattern = `%${suffix}%`;
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                MAX(items.ACATEGORIA) as categoria,
+                MAX(items.ORIGEN) as origem,
+                COUNT(*) as em_estoque,
+                ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA)), 0) as dias_medio_estoque
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND inv.AQBITEM LIKE ?
+            GROUP BY inv.AQBITEM
+            ORDER BY em_estoque DESC
+            LIMIT 30
+        `;
+
+        return this.executeQuery('getProductsBySuffix', query, [pattern]);
+    }
+
+    // Query 27: Busca por Origem específica (BRA, COL, etc)
+    async getStockByOrigin(origin) {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                MAX(items.ACATEGORIA) as categoria,
+                COUNT(*) as em_estoque,
+                ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA)), 0) as dias_medio_estoque
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND items.ORIGEN = ?
+            GROUP BY inv.AQBITEM
+            ORDER BY em_estoque DESC
+            LIMIT 50
+        `;
+
+        return this.executeQuery('getStockByOrigin', query, [origin]);
+    }
+
+    // Query 28: Busca produtos em trânsito por código
+    async getTransitByCode(codePattern) {
+        const pattern = codePattern.includes('%') ? codePattern : `${codePattern}%`;
+        const query = `
+            SELECT
+                inv.AQBITEM as qbCode,
+                MAX(items.ADESCRIPTION) as description,
+                inv.AESTADOP as status,
+                COUNT(*) as quantidade,
+                MIN(inv.AFECHA) as data_mais_antiga,
+                ROUND(AVG(DATEDIFF(NOW(), inv.AFECHA)), 0) as dias_em_transito
+            FROM tbetiqueta inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP IN ('PRE-TRANSITO', 'TRANSITO', 'WAREHOUSE')
+            AND inv.AQBITEM LIKE ?
+            GROUP BY inv.AQBITEM, inv.AESTADOP
+            ORDER BY quantidade DESC
+            LIMIT 30
+        `;
+
+        return this.executeQuery('getTransitByCode', query, [pattern]);
+    }
+
+    // Query 29: Resumo rápido de um produto específico
+    async getProductSummary(qbitem) {
+        const query = `
+            SELECT
+                i.AQBITEM as qbCode,
+                i.ADESCRIPTION as description,
+                i.ACATEGORIA as categoria,
+                i.ORIGEN as origem,
+                COALESCE(stock.em_estoque, 0) as em_estoque,
+                COALESCE(transit.em_transito, 0) as em_transito,
+                COALESCE(sales.vendas_30d, 0) as vendas_30d,
+                COALESCE(sales.vendas_90d, 0) as vendas_90d
+            FROM items i
+            LEFT JOIN (
+                SELECT AQBITEM, COUNT(*) as em_estoque
+                FROM tbinventario
+                WHERE AESTADOP = 'INGRESADO'
+                GROUP BY AQBITEM
+            ) stock ON i.AQBITEM = stock.AQBITEM
+            LEFT JOIN (
+                SELECT AQBITEM, COUNT(*) as em_transito
+                FROM tbetiqueta
+                WHERE AESTADOP IN ('PRE-TRANSITO', 'TRANSITO', 'WAREHOUSE')
+                GROUP BY AQBITEM
+            ) transit ON i.AQBITEM = transit.AQBITEM
+            LEFT JOIN (
+                SELECT
+                    AQBITEM_ITEMPEDIDO as AQBITEM,
+                    SUM(CASE WHEN AFECHA_ITEMPEDIDO >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as vendas_30d,
+                    SUM(CASE WHEN AFECHA_ITEMPEDIDO >= DATE_SUB(NOW(), INTERVAL 90 DAY) THEN 1 ELSE 0 END) as vendas_90d
+                FROM tbitem_pedido
+                GROUP BY AQBITEM_ITEMPEDIDO
+            ) sales ON i.AQBITEM = sales.AQBITEM
+            WHERE i.AQBITEM = ?
+        `;
+
+        return this.executeQuery('getProductSummary', query, [qbitem]);
+    }
+
     // ========== FIM DAS NOVAS QUERIES ==========
 
     // Método para obter estatísticas de performance

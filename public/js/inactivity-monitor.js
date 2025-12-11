@@ -35,6 +35,106 @@
     }
 
     /**
+     * Create and show the session expired modal
+     */
+    function showSessionExpiredModal() {
+        // Remove existing modal if any
+        const existing = document.getElementById('sessionExpiredModal');
+        if (existing) existing.remove();
+
+        // Create modal HTML
+        const modal = document.createElement('div');
+        modal.id = 'sessionExpiredModal';
+        modal.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                animation: fadeIn 0.3s ease;
+            ">
+                <div style="
+                    background: white;
+                    border-radius: 16px;
+                    padding: 2.5rem;
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    animation: slideUp 0.3s ease;
+                ">
+                    <div style="
+                        width: 70px;
+                        height: 70px;
+                        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 1.5rem;
+                    ">
+                        <i class="fas fa-clock" style="font-size: 32px; color: white;"></i>
+                    </div>
+                    <h2 style="
+                        color: #333;
+                        margin: 0 0 1rem;
+                        font-size: 1.5rem;
+                        font-weight: 600;
+                    ">Session Expired</h2>
+                    <p style="
+                        color: #666;
+                        margin: 0 0 1.5rem;
+                        font-size: 1rem;
+                        line-height: 1.6;
+                    ">Your session has expired due to inactivity.<br>Please login again to continue.</p>
+                    <button id="sessionExpiredOkBtn" style="
+                        background: linear-gradient(135deg, #d4af37, #b8941f);
+                        color: white;
+                        border: none;
+                        padding: 14px 40px;
+                        font-size: 1rem;
+                        font-weight: 600;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+                    ">
+                        <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i>
+                        OK, Login Again
+                    </button>
+                </div>
+            </div>
+            <style>
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                #sessionExpiredOkBtn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+                }
+            </style>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Handle button click
+        document.getElementById('sessionExpiredOkBtn').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+    }
+
+    /**
      * Perform logout due to inactivity
      */
     function performInactivityLogout() {
@@ -45,15 +145,8 @@
         localStorage.removeItem('galleryMode');
         localStorage.removeItem(STORAGE_KEY);
 
-        // Show notification if function exists
-        if (typeof showNotification === 'function') {
-            showNotification('Session expired due to inactivity. Please login again.', 'warning');
-        }
-
-        // Redirect to home after brief delay
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 1500);
+        // Show modal instead of notification
+        showSessionExpiredModal();
     }
 
     /**
