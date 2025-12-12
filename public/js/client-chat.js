@@ -274,9 +274,18 @@ class ChatManager {
      */
     async openChat() {
         const chatWindow = document.getElementById('chatWindow');
+        const chatButton = document.getElementById('chatFloatButton');
+
         chatWindow.classList.add('open');
         this.isOpen = true;
         this.resetUnreadCount();
+
+        // Esconder botão de chat quando aberto
+        if (chatButton) {
+            chatButton.style.opacity = '0';
+            chatButton.style.pointerEvents = 'none';
+            chatButton.style.transform = 'scale(0.5)';
+        }
 
         // Focar no input
         document.getElementById('chatInput').focus();
@@ -297,8 +306,17 @@ class ChatManager {
      */
     closeChat() {
         const chatWindow = document.getElementById('chatWindow');
+        const chatButton = document.getElementById('chatFloatButton');
+
         chatWindow.classList.remove('open');
         this.isOpen = false;
+
+        // Mostrar botão de chat novamente
+        if (chatButton) {
+            chatButton.style.opacity = '1';
+            chatButton.style.pointerEvents = 'auto';
+            chatButton.style.transform = 'scale(1)';
+        }
 
         // NÃO parar polling - continua rodando para detectar novas mensagens!
 

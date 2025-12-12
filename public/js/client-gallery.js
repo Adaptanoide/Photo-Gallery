@@ -1947,9 +1947,9 @@
 
         let message;
         if (categoryName) {
-            message = `Hello! I would like to know the price for "${categoryName}".`;
+            message = `Hi! I'd like to discuss pricing and details for "${categoryName}". Can you help me?`;
         } else {
-            message = `Hello! I would like to know the price for [please specify the category].`;
+            message = `Hi! I'd like to discuss pricing and details for this category. Can you help me?`;
         }
 
         console.log('💬 Abrindo chat com mensagem:', message);

@@ -1073,6 +1073,12 @@
     margin-bottom: 8px;
 }
 
+.progress-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .progress-bar-incentive {
     font-size: 14px;
     font-weight: 600;
@@ -1080,11 +1086,68 @@
     white-space: nowrap;
 }
 
+/* Mix & Match Badge na barra de progresso */
+.mix-match-badge {
+    background: linear-gradient(135deg, #B87333 0%, #D4A574 100%);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(184, 115, 51, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.mix-match-badge:hover {
+    background: linear-gradient(135deg, #A0522D 0%, #B87333 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(184, 115, 51, 0.4);
+}
+
+.mix-match-badge i {
+    font-size: 0.7rem;
+}
+
+/* Hint text ao lado do badge Mix & Match */
+.mix-match-hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.mix-match-hint:hover {
+    color: #B87333;
+}
+
+.mix-match-hint i {
+    font-size: 0.7rem;
+}
+
 @media (max-width: 768px) {
     .progress-bar-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
+    }
+
+    /* Esconder Mix & Match badge e hint no mobile */
+    .mix-match-badge,
+    .mix-match-hint {
+        display: none !important;
     }
 }
 

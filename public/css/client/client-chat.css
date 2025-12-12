@@ -20,6 +20,9 @@
     transition: all 0.3s ease;
     z-index: 9998;
     border: none;
+    /* Smooth transition for hide/show */
+    opacity: 1;
+    transform: scale(1);
 }
 
 .chat-float-button:hover {
@@ -65,7 +68,7 @@
 
 .chat-window {
     position: fixed;
-    bottom: 100px;
+    bottom: 30px;
     left: 30px;
     width: 380px;
     height: 550px;
@@ -405,6 +408,11 @@
     pointer-events: none;
     max-width: 280px;
     border: 2px solid #B87333;
+}
+
+/* Esconder tooltip quando chat está aberto */
+.chat-window.open ~ .chat-tooltip {
+    display: none !important;
 }
 
 .chat-tooltip.show {

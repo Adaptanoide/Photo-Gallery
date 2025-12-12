@@ -248,6 +248,9 @@ function isCurrentCategoryMixMatch() {
     return isMixMatch;
 }
 
+// Expor globalmente para uso em outros módulos
+window.isCurrentCategoryMixMatch = isCurrentCategoryMixMatch;
+
 // ===== PRICE PROGRESS BAR =====
 window.PriceProgressBar = {
     currentCategoryId: null,
@@ -398,7 +401,13 @@ window.PriceProgressBar = {
         <div class="progress-bar-container">
             <div class="progress-bar-header">
                 <div class="progress-bar-label" id="progressLabel">Your Progress: Start adding photos!</div>
-                <div class="progress-bar-incentive" id="progressIncentive"></div>
+                <div class="progress-bar-right">
+                    <div class="progress-bar-incentive" id="progressIncentive"></div>
+                    <span class="mix-match-hint" onclick="openMixMatchInfoModal()"><i class="fas fa-info-circle"></i> What's this?</span>
+                    <span id="mixMatchBadge" class="mix-match-badge" onclick="openMixMatchInfoModal()">
+                        <i class="fas fa-layer-group"></i> Mix & Match
+                    </span>
+                </div>
             </div>
             <div class="progress-bar-track">
                 <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
@@ -1478,3 +1487,153 @@ window.addEventListener('currencyChanged', (e) => {
 
 console.log('💱 [Commerce] Currency change listener registrado');
 console.log('🛍️ client-commerce.js carregado - Módulo comercial pronto');
+
+// ============================================
+// MIX & MATCH INFO MODAL
+// ============================================
+
+window.openMixMatchInfoModal = function() {
+    // Remover modal existente se houver
+    const existing = document.getElementById('mixMatchInfoModal');
+    if (existing) existing.remove();
+
+    const modalHTML = `
+        <style>
+            #mixMatchInfoModal * { box-sizing: border-box; }
+            @keyframes mixMatchModalSlideIn {
+                from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+        </style>
+        <div id="mixMatchInfoModal" style="
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        ">
+            <div style="
+                background: white;
+                border-radius: 16px;
+                max-width: 580px;
+                width: 100%;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+                animation: mixMatchModalSlideIn 0.3s ease;
+                overflow: hidden;
+                max-height: 90vh;
+                overflow-y: auto;
+            ">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #B87333, #D4A574); padding: 24px; color: white; text-align: center;">
+                    <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                        <i class="fas fa-layer-group" style="font-size: 24px;"></i>
+                    </div>
+                    <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">Mix & Match Program</h2>
+                    <p style="margin: 8px 0 0; opacity: 0.95; font-size: 0.95rem;">Save more when you buy more!</p>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 24px;">
+                    <!-- How it works -->
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 12px; color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-question-circle" style="color: #B87333;"></i> How does it work?
+                        </h3>
+                        <p style="margin: 0; color: #555; line-height: 1.6; font-size: 0.95rem;">
+                            Our Mix & Match program allows you to <strong>combine different products</strong> from this category to unlock volume discounts. The more items you add to your selection, the better price per item you get!
+                        </p>
+                    </div>
+
+                    <!-- Tier explanation -->
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px; color: #333; font-size: 1rem;">
+                            <i class="fas fa-medal" style="color: #B87333;"></i> Discount Tiers
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                            <div style="background: #CD7F32; color: white; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Bronze</div>
+                                <div style="font-size: 0.75rem; opacity: 0.9;">1-5 items</div>
+                            </div>
+                            <div style="background: #C0C0C0; color: #333; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Silver</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">6-12 items</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Gold</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">13-36 items</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #b9f2ff, #E0E7EE); color: #333; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Diamond</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">37+ items</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key benefits -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px; color: #333; font-size: 1rem;">
+                            <i class="fas fa-star" style="color: #B87333;"></i> Key Benefits
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #555; font-size: 0.9rem; line-height: 1.8;">
+                            <li><strong>Mix different styles</strong> - Combine any products within this category</li>
+                            <li><strong>Automatic discounts</strong> - Prices update as you add items</li>
+                            <li><strong>No minimum order</strong> - Start saving from 6 items</li>
+                            <li><strong>Best prices at Diamond</strong> - Maximum savings at 37+ items</li>
+                        </ul>
+                    </div>
+
+                    <!-- Pro tip -->
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-lightbulb" style="color: white; font-size: 14px;"></i>
+                        </div>
+                        <div>
+                            <strong style="color: #166534; font-size: 0.9rem;">Pro Tip!</strong>
+                            <p style="margin: 4px 0 0; color: #166534; font-size: 0.85rem; line-height: 1.5;">
+                                Watch the progress bar above to see how close you are to the next tier. Add just a few more items to unlock bigger savings!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <button onclick="closeMixMatchInfoModal()" style="
+                        padding: 12px 32px;
+                        background: #B87333;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 0.95rem;
+                        transition: all 0.2s;
+                    " onmouseover="this.style.background='#A0522D'" onmouseout="this.style.background='#B87333'">
+                        <i class="fas fa-check"></i> Got it!
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Fechar ao clicar fora
+    document.getElementById('mixMatchInfoModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeMixMatchInfoModal();
+        }
+    });
+};
+
+window.closeMixMatchInfoModal = function() {
+    const modal = document.getElementById('mixMatchInfoModal');
+    if (modal) modal.remove();
+};
