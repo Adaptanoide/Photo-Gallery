@@ -32,11 +32,22 @@ router.post('/', async (req, res) => {
             noCertificateReason
         } = req.body;
 
-        // Validações básicas
-        if (!contactName || !email || !phone || !companyName || !city || !state || !interestMessage) {
+        // Validações básicas - apenas nome, email e telefone são obrigatórios
+        if (!contactName || !email || !phone) {
             return res.status(400).json({
                 success: false,
-                message: 'Please fill in all required fields'
+                message: 'Please fill in all required fields (Name, Email, Phone)'
+            });
+        }
+
+        // Validação do Resale Certificate: precisa ter certificado OU marcar que não tem
+        const hasCertificate = resaleCertificate && resaleCertificate.trim() !== '';
+        const checkedNoResale = hasResaleCertificate === false;
+
+        if (!hasCertificate && !checkedNoResale) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please enter your Resale Certificate or indicate that you don\'t have one'
             });
         }
 

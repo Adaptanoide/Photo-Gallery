@@ -39,6 +39,9 @@ class ClientRegistration {
             const reasonRow = document.querySelector('.no-certificate-reason');
             const reasonTextarea = document.getElementById('noCertificateReason');
 
+            // Limpar erro do resale certificate quando checkbox mudar
+            this.clearError(resaleCertificateInput);
+
             if (noResaleCertificate.checked) {
                 reasonRow.style.display = 'block';
                 resaleCertificateInput.disabled = true;
@@ -51,6 +54,13 @@ class ClientRegistration {
                 resaleCertificateInput.style.opacity = '1';
                 reasonTextarea.required = false;
                 reasonTextarea.value = '';
+            }
+        });
+
+        // Limpar erro do resale certificate quando digitar
+        resaleCertificateInput.addEventListener('input', () => {
+            if (resaleCertificateInput.value.trim()) {
+                this.clearError(resaleCertificateInput);
             }
         });
 
@@ -129,7 +139,29 @@ class ClientRegistration {
             }
         });
 
+        // Validação customizada: Resale Certificate OU checkbox
+        if (!this.validateResaleCertificate()) {
+            isValid = false;
+        }
+
         return isValid;
+    }
+
+    validateResaleCertificate() {
+        const resaleCertificate = document.getElementById('resaleCertificate');
+        const noResaleCertificate = document.getElementById('noResaleCertificate');
+
+        const hasCertificate = resaleCertificate.value.trim() !== '';
+        const hasCheckedNo = noResaleCertificate.checked;
+
+        if (!hasCertificate && !hasCheckedNo) {
+            // Mostrar erro no campo do certificado
+            this.showError(resaleCertificate, 'Please enter your certificate number or check the box below');
+            return false;
+        }
+
+        this.clearError(resaleCertificate);
+        return true;
     }
 
     async handleSubmit(e) {

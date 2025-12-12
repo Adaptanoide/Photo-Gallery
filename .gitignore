@@ -18,3 +18,4 @@ fix-*.js
 backup-old-scripts/
 *.log
 sync.log/scripts
+sunshine-cowhides-gallery.env

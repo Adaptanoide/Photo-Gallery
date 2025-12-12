@@ -380,6 +380,15 @@ body {
     line-height: 1.4;
 }
 
+.field-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 8px;
+    margin-left: 34px;
+    font-style: italic;
+}
+
 .no-certificate-reason {
     margin-top: 15px;
     padding: 15px;
