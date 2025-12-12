@@ -7,6 +7,7 @@ const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const Cart = require('../models/Cart');
 const Selection = require('../models/Selection');
 const PhotoCategory = require('../models/PhotoCategory');
+const CDEWriter = require('./CDEWriter'); // Para re-reservar fotos
 
 // Identificação única da instância
 const INSTANCE_ID = process.env.SYNC_INSTANCE_ID || 'unknown';
@@ -1030,6 +1031,7 @@ class CDEIncrementalSync {
 
             let totalProblemas = 0;
             let totalCorrecoes = 0;
+            let totalReReservas = 0; // Contador de fotos re-reservadas com sucesso
             const selecoesComProblemas = [];
 
             for (const selecao of selecoesPending) {
@@ -1069,14 +1071,41 @@ class CDEIncrementalSync {
                     let problema = null;
                     let acao = null;
 
-                    // LÓGICA DE DETECÇÃO - OPÇÃO B (CONSERVADORA)
-                    // Apenas INGRESADO remove automaticamente
-                    // Todo o resto apenas ALERTA para o admin decidir
+                    // LÓGICA DE DETECÇÃO - OPÇÃO C (ULTRA-CONSERVADORA)
+                    // NÃO remove automaticamente NENHUM status
+                    // INGRESADO: tenta re-reservar primeiro
+                    // Todo o resto: apenas ALERTA para o admin decidir
 
                     if (estadoCDE === 'INGRESADO') {
-                        // Foto voltou para estoque disponível - pode remover
-                        problema = 'VOLTOU PARA INGRESADO';
-                        acao = 'REMOVER';
+                        // Foto está INGRESADO - pode ser reserva pendente/falhou
+                        // NOVA LÓGICA: Tentar re-reservar antes de qualquer ação
+                        console.log(`[SYNC] 🔄 Foto ${photoNumber} está INGRESADO - tentando re-reservar...`);
+
+                        try {
+                            // Tentar re-reservar a foto no CDE
+                            const result = await CDEWriter.markAsReserved(
+                                photoNumber.padStart(5, '0'),
+                                clientCode,
+                                clientName,
+                                selecao.salesRep || 'Unassigned',
+                                'tbinventario'
+                            );
+
+                            if (result && result.success) {
+                                console.log(`[SYNC] ✅ Foto ${photoNumber} RE-RESERVADA com sucesso para ${clientName}`);
+                                totalReReservas++;
+                                // Re-reservou com sucesso, não é mais um problema
+                                continue; // Pula para próxima foto
+                            } else {
+                                // Não conseguiu reservar - alertar admin
+                                problema = 'INGRESADO (re-reserva falhou)';
+                                acao = 'ALERTAR';
+                            }
+                        } catch (reserveError) {
+                            console.error(`[SYNC] ⚠️ Erro ao re-reservar ${photoNumber}:`, reserveError.message);
+                            problema = 'INGRESADO (erro ao re-reservar)';
+                            acao = 'ALERTAR';
+                        }
                     } else if (estadoCDE === 'RETIRADO') {
                         // RETIRADO - pode ter sido vendida para o mesmo cliente
                         // Apenas alertar, admin decide
@@ -1246,12 +1275,17 @@ class CDEIncrementalSync {
                     }
                 });
             }
+            // Log de re-reservas bem-sucedidas
+            if (totalReReservas > 0) {
+                console.log(`[SYNC] 🔄 ${totalReReservas} foto(s) re-reservada(s) com sucesso`);
+            }
             console.log(`------------------------------------------------------------`);
 
             return {
                 verificadas: selecoesPending.length,
                 problemas: totalProblemas,
                 correcoes: totalCorrecoes,
+                reReservas: totalReReservas,
                 selecoesAfetadas: selecoesComProblemas
             };
 
