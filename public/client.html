@@ -191,8 +191,8 @@
                 </div>
             </div>
             <nav class="client-header-nav">
-                <span id="headerWelcome"
-                    style="margin-right: 20px; color: #ffffff; font-size: 14px; font-weight: 500;">Welcome!</span>
+                <!-- Welcome text (currency will be inserted after this) -->
+                <span id="headerWelcome" class="header-welcome-text">Welcome!</span>
 
                 <!-- Botão de Filtros (só mobile) -->
                 <button onclick="toggleFilters()" class="mobile-filter-btn">
@@ -203,10 +203,48 @@
                     <i class="fas fa-shopping-cart"></i>
                     <span id="headerCartBadge" class="header-cart-badge">0</span>
                 </button>
-                <button onclick="logout()" class="client-logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="logout-text">Logout</span>
+
+                <!-- Mobile Profile Button (opens menu) -->
+                <button onclick="openMobileProfileMenu()" class="mobile-profile-btn">
+                    <i class="fas fa-user"></i>
                 </button>
+
+                <!-- Profile Dropdown (Desktop only) -->
+                <div class="profile-dropdown-container">
+                    <button class="profile-dropdown-btn" onclick="toggleProfileDropdown()" title="Account">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-chevron"></i>
+                    </button>
+
+                    <div id="profileDropdown" class="profile-dropdown-menu">
+                        <div class="dropdown-user-info">
+                            <div class="dropdown-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="dropdown-user-details">
+                                <span id="dropdownUserName" class="dropdown-name">Client</span>
+                                <span id="dropdownUserEmail" class="dropdown-email">email@example.com</span>
+                            </div>
+                        </div>
+
+                        <button class="dropdown-item" onclick="openProfileModal()">
+                            <i class="fas fa-user-edit"></i>
+                            <span>My Profile</span>
+                        </button>
+
+                        <button class="dropdown-item" onclick="openChangeCodeModal()">
+                            <i class="fas fa-key"></i>
+                            <span>Change Access Code</span>
+                        </button>
+
+                        <button class="dropdown-item logout-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
@@ -277,7 +315,7 @@
                         <div id="breadcrumbPath"></div>
                         <!-- Info no breadcrumb (DESKTOP ONLY) -->
                         <div class="breadcrumb-info-group">
-                            <span id="breadcrumbPriceHint" class="breadcrumb-price-hint">Click to chat</span>
+                            <span id="breadcrumbPriceHint" class="breadcrumb-price-hint" onclick="openChatWithPriceQuestion()">Click to chat</span>
                             <span id="breadcrumbPriceBadge" class="breadcrumb-price-badge"></span>
                             <span id="breadcrumbPhotoCount" class="breadcrumb-photo-count"></span>
                         </div>
@@ -640,6 +678,178 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
+    <!-- Mobile Profile Menu -->
+    <div id="mobileProfileMenu" class="mobile-profile-menu" style="display: none;">
+        <div class="mobile-menu-overlay" onclick="closeMobileProfileMenu()"></div>
+        <div class="mobile-menu-content">
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-user-info">
+                    <span id="mobileMenuUserName">Client</span>
+                    <span id="mobileMenuUserEmail">email@example.com</span>
+                </div>
+                <button class="mobile-menu-close" onclick="closeMobileProfileMenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <button class="mobile-menu-item" onclick="closeMobileProfileMenu(); openProfileModal();">
+                <i class="fas fa-user-edit"></i>
+                <span>My Profile</span>
+            </button>
+            <button class="mobile-menu-item" onclick="closeMobileProfileMenu(); openChangeCodeModal();">
+                <i class="fas fa-key"></i>
+                <span>Change Access Code</span>
+            </button>
+            <button class="mobile-menu-item logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="profile-modal" style="display: none;">
+        <div class="profile-modal-overlay" onclick="closeProfileModal()"></div>
+        <div class="profile-modal-content">
+            <div class="profile-modal-header">
+                <h2><i class="fas fa-user-edit"></i> My Profile</h2>
+                <button class="profile-modal-close" onclick="closeProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="profile-modal-body">
+                <form id="profileForm">
+                    <div class="profile-form-section">
+                        <h3><i class="fas fa-user"></i> Contact Information</h3>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group">
+                                <label for="profileName">Name *</label>
+                                <input type="text" id="profileName" name="clientName" required>
+                            </div>
+                        </div>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group">
+                                <label for="profileEmail">Email *</label>
+                                <input type="email" id="profileEmail" name="clientEmail" required>
+                            </div>
+                            <div class="profile-form-group">
+                                <label for="profilePhone">Phone</label>
+                                <input type="tel" id="profilePhone" name="clientPhone">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-form-section">
+                        <h3><i class="fas fa-building"></i> Company</h3>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group full-width">
+                                <label for="profileCompany">Company Name</label>
+                                <input type="text" id="profileCompany" name="companyName">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-form-section">
+                        <h3><i class="fas fa-map-marker-alt"></i> Address</h3>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group full-width">
+                                <label for="profileAddress1">Address Line 1</label>
+                                <input type="text" id="profileAddress1" name="addressLine1">
+                            </div>
+                        </div>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group full-width">
+                                <label for="profileAddress2">Address Line 2</label>
+                                <input type="text" id="profileAddress2" name="addressLine2">
+                            </div>
+                        </div>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group">
+                                <label for="profileCity">City</label>
+                                <input type="text" id="profileCity" name="city">
+                            </div>
+                            <div class="profile-form-group">
+                                <label for="profileState">State</label>
+                                <input type="text" id="profileState" name="state">
+                            </div>
+                        </div>
+
+                        <div class="profile-form-row">
+                            <div class="profile-form-group">
+                                <label for="profileZipCode">Zip Code</label>
+                                <input type="text" id="profileZipCode" name="zipCode">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="profile-modal-footer">
+                <button type="button" class="btn-profile-cancel" onclick="closeProfileModal()">
+                    Cancel
+                </button>
+                <button type="button" class="btn-profile-save" onclick="saveProfile()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Access Code Modal -->
+    <div id="changeCodeModal" class="profile-modal" style="display: none;">
+        <div class="profile-modal-overlay" onclick="closeChangeCodeModal()"></div>
+        <div class="profile-modal-content change-code-modal">
+            <div class="profile-modal-header">
+                <h2><i class="fas fa-key"></i> Change Access Code</h2>
+                <button class="profile-modal-close" onclick="closeChangeCodeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="profile-modal-body">
+                <div class="change-code-info">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Your access code is a 4-digit number that you use to log in. Choose something memorable but secure.</p>
+                </div>
+
+                <form id="changeCodeForm">
+                    <div class="profile-form-group">
+                        <label for="currentCode">Current Code</label>
+                        <input type="text" id="currentCode" name="currentCode" maxlength="4" pattern="[0-9]{4}"
+                               placeholder="Enter your current 4-digit code" required>
+                    </div>
+
+                    <div class="profile-form-group">
+                        <label for="newCode">New Code</label>
+                        <input type="text" id="newCode" name="newCode" maxlength="4" pattern="[0-9]{4}"
+                               placeholder="Enter new 4-digit code" required>
+                    </div>
+
+                    <div class="profile-form-group">
+                        <label for="confirmCode">Confirm New Code</label>
+                        <input type="text" id="confirmCode" name="confirmCode" maxlength="4" pattern="[0-9]{4}"
+                               placeholder="Confirm new 4-digit code" required>
+                    </div>
+                </form>
+            </div>
+
+            <div class="profile-modal-footer">
+                <button type="button" class="btn-profile-cancel" onclick="closeChangeCodeModal()">
+                    Cancel
+                </button>
+                <button type="button" class="btn-profile-save" onclick="changeAccessCode()">
+                    <i class="fas fa-key"></i> Change Code
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts modularizados com versionamento -->
     <script src="/js/inactivity-monitor.js"></script>
     <script src="/js/image-utils.js?v=3"></script>
@@ -651,6 +861,7 @@
     <script src="js/client-gallery.js?v=3"></script>
     <script src="js/client-chat.js?v=4"></script>
     <script src="js/client-commerce.js?v=3"></script>
+    <script src="js/client-profile.js?v=1"></script>
     <script src="/js/ui-system.js?v=3"></script>
     <script src="js/currency-manager.js?v=1"></script>
 

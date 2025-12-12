@@ -624,6 +624,13 @@
         font-weight: 500;
         white-space: nowrap;
         animation: hintPulse 2s ease-in-out infinite;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-price-hint:hover {
+        color: #22c55e;
+        animation: none;
     }
 
     /* Mostrar hint apenas quando o badge está visível */

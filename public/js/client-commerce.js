@@ -1553,53 +1553,71 @@ window.openMixMatchInfoModal = function() {
                 <!-- Body -->
                 <div style="padding: 28px;">
                     <!-- Title -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <div style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #B87333, #D4A574); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.95rem;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #B87333, #D4A574); color: white; padding: 10px 20px; border-radius: 24px; font-weight: 600; font-size: 1.1rem;">
                             <i class="fas fa-layer-group"></i> Mix & Match Program
                         </div>
-                        <p style="margin: 12px 0 0; color: #666; font-size: 0.9rem;">Save more when you buy more!</p>
+                        <p style="margin: 12px 0 0; color: #666; font-size: 0.95rem;">Save more when you buy more!</p>
                     </div>
 
                     <!-- How it works -->
-                    <p style="margin: 0 0 20px; color: #555; line-height: 1.6; font-size: 0.9rem; text-align: center;">
-                        Combine <strong>different products</strong> from this category to unlock volume discounts.
-                    </p>
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 10px; color: #333; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-question-circle" style="color: #B87333;"></i> How does it work?
+                        </h3>
+                        <p style="margin: 0; color: #555; line-height: 1.6; font-size: 0.9rem;">
+                            Our Mix & Match program allows you to <strong>combine different products</strong> from this category to unlock volume discounts. The more items you add, the better price per item you get!
+                        </p>
+                    </div>
 
-                    <!-- Tier grid -->
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px;">
-                        <div style="background: #CD7F32; color: white; padding: 12px 8px; border-radius: 10px; text-align: center;">
-                            <div style="font-weight: 700; font-size: 0.8rem;">Bronze</div>
-                            <div style="font-size: 0.7rem; opacity: 0.9; margin-top: 2px;">1-5</div>
-                        </div>
-                        <div style="background: #C0C0C0; color: #333; padding: 12px 8px; border-radius: 10px; text-align: center;">
-                            <div style="font-weight: 700; font-size: 0.8rem;">Silver</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 2px;">6-12</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; padding: 12px 8px; border-radius: 10px; text-align: center;">
-                            <div style="font-weight: 700; font-size: 0.8rem;">Gold</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 2px;">13-36</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #b9f2ff, #E0E7EE); color: #333; padding: 12px 8px; border-radius: 10px; text-align: center;">
-                            <div style="font-weight: 700; font-size: 0.8rem;">Diamond</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 2px;">37+</div>
+                    <!-- Tier explanation -->
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px; color: #333; font-size: 0.95rem;">
+                            <i class="fas fa-medal" style="color: #B87333;"></i> Discount Tiers
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                            <div style="background: #CD7F32; color: white; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Bronze</div>
+                                <div style="font-size: 0.75rem; opacity: 0.9;">1-5 items</div>
+                            </div>
+                            <div style="background: #C0C0C0; color: #333; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Silver</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">6-12 items</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Gold</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">13-36 items</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #b9f2ff, #E0E7EE); color: #333; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 0.85rem;">Diamond</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">37+ items</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Benefits list -->
-                    <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: #555;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-check-circle" style="color: #22c55e;"></i>
-                                <span><strong>Mix styles</strong> - Any product in this category</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-check-circle" style="color: #22c55e;"></i>
-                                <span><strong>Auto-discount</strong> - Prices update as you add</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-check-circle" style="color: #22c55e;"></i>
-                                <span><strong>Best at Diamond</strong> - Max savings at 37+ items</span>
-                            </div>
+                    <!-- Key benefits -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px; color: #333; font-size: 0.95rem;">
+                            <i class="fas fa-star" style="color: #B87333;"></i> Key Benefits
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #555; font-size: 0.85rem; line-height: 1.8;">
+                            <li><strong>Mix different styles</strong> - Combine any products within this category</li>
+                            <li><strong>Automatic discounts</strong> - Prices update as you add items</li>
+                            <li><strong>No minimum order</strong> - Start saving from 6 items</li>
+                            <li><strong>Best prices at Diamond</strong> - Maximum savings at 37+ items</li>
+                        </ul>
+                    </div>
+
+                    <!-- Pro tip -->
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 28px; height: 28px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-lightbulb" style="color: white; font-size: 12px;"></i>
+                        </div>
+                        <div>
+                            <strong style="color: #166534; font-size: 0.85rem;">Pro Tip!</strong>
+                            <p style="margin: 4px 0 0; color: #166534; font-size: 0.8rem; line-height: 1.5;">
+                                Watch the progress bar above to see how close you are to the next tier. Add just a few more items to unlock bigger savings!
+                            </p>
                         </div>
                     </div>
 

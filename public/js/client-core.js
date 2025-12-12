@@ -355,11 +355,18 @@ window.loadClientDataAfterMode = async function () {
 function updateClientInterface(data) {
     const { client, allowedCategories } = data;
 
-    // Salvar showPrices
+    // Salvar showPrices e outros dados do cliente
     const savedSession = localStorage.getItem('sunshineSession');
     if (savedSession) {
         const session = JSON.parse(savedSession);
         session.client = { ...session.client, showPrices: client.showPrices };
+        session.user = {
+            ...session.user,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            companyName: client.companyName
+        };
         localStorage.setItem('sunshineSession', JSON.stringify(session));
     }
 
@@ -367,6 +374,11 @@ function updateClientInterface(data) {
     const headerWelcome = document.getElementById('headerWelcome');
     if (headerWelcome) {
         headerWelcome.textContent = `Welcome, ${client.name}!`;
+    }
+
+    // Atualizar dropdown de perfil se existir
+    if (window.updateDropdownUserInfo) {
+        window.updateDropdownUserInfo();
     }
 }
 
