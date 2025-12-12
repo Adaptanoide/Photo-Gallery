@@ -282,6 +282,8 @@ class VirtualGallery {
     // Atualizar contador de status
     updateStatus() {
         const statusEl = document.getElementById('photosCount');
+        const breadcrumbCounter = document.getElementById('breadcrumbPhotoCount');
+
         if (statusEl) {
             const total = this.allPhotos.length;
             const loaded = this.loadedCount;
@@ -292,6 +294,10 @@ class VirtualGallery {
                 const infoCounter = document.getElementById('infoPhotoCount');
                 if (infoCounter) {
                     infoCounter.innerHTML = `<strong>${loaded}</strong> of <strong>${total}</strong>`;
+                }
+                // Sincronizar com breadcrumb (desktop)
+                if (breadcrumbCounter && window.innerWidth > 768) {
+                    breadcrumbCounter.innerHTML = `<i class="fas fa-images"></i> ${loaded} of ${total}`;
                 }
 
                 // ADICIONE ISSO: Se travou em 60 e é mobile, forçar mostrar total
@@ -309,6 +315,10 @@ class VirtualGallery {
                 const infoCounter = document.getElementById('infoPhotoCount');
                 if (infoCounter) {
                     infoCounter.textContent = `${total} photo(s)`;
+                }
+                // Sincronizar breadcrumb (desktop)
+                if (breadcrumbCounter && window.innerWidth > 768) {
+                    breadcrumbCounter.innerHTML = `<i class="fas fa-images"></i> ${total} photo(s)`;
                 }
             }
         }

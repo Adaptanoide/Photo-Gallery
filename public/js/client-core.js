@@ -845,6 +845,17 @@ window.hideAllContainers = function () {
     if (loadingEl) {
         loadingEl.style.display = 'none';
     }
+
+    // Limpar breadcrumb info quando não estiver em fotos
+    const breadcrumbPriceBadge = document.getElementById('breadcrumbPriceBadge');
+    if (breadcrumbPriceBadge) {
+        breadcrumbPriceBadge.innerHTML = '';
+        breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
+    }
+    const breadcrumbPhotoCount = document.getElementById('breadcrumbPhotoCount');
+    if (breadcrumbPhotoCount) {
+        breadcrumbPhotoCount.innerHTML = '';
+    }
 }
 
 window.showNoContent = function (title, message) {

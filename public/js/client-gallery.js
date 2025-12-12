@@ -262,6 +262,40 @@
             }
         }
 
+        // ===== POPULAR BADGE DE PREÇO NO BREADCRUMB (DESKTOP ONLY) =====
+        const breadcrumbPriceBadge = document.getElementById('breadcrumbPriceBadge');
+        if (breadcrumbPriceBadge && window.innerWidth > 768) {
+            // Guardar preço atual para atualizações de moeda
+            window.currentCategoryPrice = categoryPrice;
+            window.currentCustomPrice = customPrice;
+
+            if (!shouldShowPrices()) {
+                breadcrumbPriceBadge.innerHTML = '<i class="fas fa-comment-dollar"></i> Contact for Price';
+                breadcrumbPriceBadge.className = 'breadcrumb-price-badge contact-price';
+            } else if (customPrice) {
+                const formattedPrice = window.CurrencyManager ? CurrencyManager.format(parseFloat(customPrice)) : '$' + parseFloat(customPrice).toFixed(2);
+                breadcrumbPriceBadge.innerHTML = `<i class="fas fa-comment-dollar"></i> ${formattedPrice}`;
+                breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
+            } else if (categoryPrice && categoryPrice.hasPrice) {
+                const formattedPrice = window.CurrencyManager ? CurrencyManager.format(categoryPrice.basePrice || categoryPrice.price) : categoryPrice.formattedPrice;
+                breadcrumbPriceBadge.innerHTML = `<i class="fas fa-comment-dollar"></i> ${formattedPrice}`;
+                breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
+            } else {
+                breadcrumbPriceBadge.innerHTML = '<i class="fas fa-comment-dollar"></i> Price on request';
+                breadcrumbPriceBadge.className = 'breadcrumb-price-badge no-price';
+            }
+
+            // Adicionar click listener para abrir chat
+            if (!breadcrumbPriceBadge.dataset.clickListenerAdded) {
+                breadcrumbPriceBadge.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    console.log('🖱️ Breadcrumb badge clicado');
+                    window.openChatWithPriceQuestion();
+                });
+                breadcrumbPriceBadge.dataset.clickListenerAdded = 'true';
+            }
+        }
+
         // ===== TORNAR BADGE CLICÁVEL E ADICIONAR ÍCONE =====
         if (galleryTitle) {
             setTimeout(() => {
@@ -350,6 +384,12 @@
         // Virtual Scrolling para muitas fotos
         const USE_VIRTUAL_SCROLLING = photos.length > 30;
 
+        // Atualizar contador no breadcrumb (DESKTOP)
+        const breadcrumbPhotoCount = document.getElementById('breadcrumbPhotoCount');
+        if (breadcrumbPhotoCount && window.innerWidth > 768) {
+            breadcrumbPhotoCount.innerHTML = `<i class="fas fa-images"></i> ${photos.length} photo(s)`;
+        }
+
         if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
             console.log(`🚀 Usando Virtual Scrolling para ${photos.length} fotos`);
             document.getElementById('photosCount').innerHTML = `Loading <strong>${photos.length}</strong> photos...`;
@@ -357,6 +397,10 @@
             const infoCount = document.getElementById('infoPhotoCount');
             if (infoCount && window.innerWidth <= 768) {
                 infoCount.innerHTML = `Loading <strong>${photos.length}</strong> photos...`;
+            }
+            // Atualizar breadcrumb com loading
+            if (breadcrumbPhotoCount && window.innerWidth > 768) {
+                breadcrumbPhotoCount.innerHTML = `<i class="fas fa-images"></i> Loading ${photos.length}...`;
             }
             window.virtualGallery.init(photos, gridEl, categoryPrice);
         } else {
@@ -1982,9 +2026,39 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initMobileTierToggle, 1000);
 });
 
+// ===== FUNÇÃO PARA ATUALIZAR BREADCRUMB PRICE BADGE =====
+window.updateBreadcrumbPriceBadge = function() {
+    const breadcrumbPriceBadge = document.getElementById('breadcrumbPriceBadge');
+    if (!breadcrumbPriceBadge || window.innerWidth <= 768) return;
+
+    const categoryPrice = window.currentCategoryPrice;
+    const customPrice = window.currentCustomPrice;
+
+    if (!shouldShowPrices()) {
+        breadcrumbPriceBadge.innerHTML = '<i class="fas fa-tag"></i> Contact for Price';
+        breadcrumbPriceBadge.className = 'breadcrumb-price-badge contact-price';
+    } else if (customPrice) {
+        const formattedPrice = window.CurrencyManager ? CurrencyManager.format(parseFloat(customPrice)) : '$' + parseFloat(customPrice).toFixed(2);
+        breadcrumbPriceBadge.innerHTML = `<i class="fas fa-tag"></i> ${formattedPrice}`;
+        breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
+    } else if (categoryPrice && categoryPrice.hasPrice) {
+        const formattedPrice = window.CurrencyManager ? CurrencyManager.format(categoryPrice.basePrice || categoryPrice.price) : categoryPrice.formattedPrice;
+        breadcrumbPriceBadge.innerHTML = `<i class="fas fa-tag"></i> ${formattedPrice}`;
+        breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
+    } else {
+        breadcrumbPriceBadge.innerHTML = '<i class="fas fa-tag"></i> Price on request';
+        breadcrumbPriceBadge.className = 'breadcrumb-price-badge no-price';
+    }
+};
+
 // ===== REAGIR A MUDANÇAS DE MOEDA =====
 window.addEventListener('currencyChanged', (e) => {
     console.log('💱 [Gallery] Moeda alterada para:', e.detail.newCurrency);
+
+    // Atualizar breadcrumb badge imediatamente
+    if (typeof window.updateBreadcrumbPriceBadge === 'function') {
+        window.updateBreadcrumbPriceBadge();
+    }
 
     // Verificar se estamos realmente vendo FOTOS (não subcategorias)
     const photosContainer = document.getElementById('photosContainer');

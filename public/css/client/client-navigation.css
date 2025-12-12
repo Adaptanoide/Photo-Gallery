@@ -3,14 +3,12 @@
 
 /* === BREADCRUMB CONTAINER === */
 .breadcrumb-container {
-    margin-bottom: 1.5rem;
     animation: slideInDown 0.3s ease-out;
     background: white;
     position: sticky;
     top: 65px;
     z-index: 100;
     padding: 12px 1px;
-    border-bottom: 1px solid #dee2e6;
 }
 
 /* Breadcrumb */
@@ -349,7 +347,7 @@
     font-style: italic;
     padding: 4px 16px;
     display: inline-block;
-    font-size: 19px;
+    font-size: 16px;
     font-weight: bold;
 }
 
@@ -363,7 +361,7 @@
     .header-filters-btn {
         background: #ffffff;
         border: 1px solid #ffffff;
-        color: #b8941f;
+        color: #B87333;
         padding: 10px 20px;
         border-radius: 8px 0px 0px 8px;
         cursor: pointer;
@@ -380,7 +378,7 @@
         background: var(--gold-primary);
         color: white;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
     }
 
     .header-filters-btn.active {
@@ -397,21 +395,21 @@
         transform: rotate(180deg);
     }
 
-    /* Remove TODOS os efeitos laranjas ao clicar/focar */
+    /* Remove TODOS os efeitos ao clicar/focar */
     .header-filters-btn:focus,
     .header-filters-btn:active,
     .header-filters-btn:focus-visible,
     .header-filters-btn:focus-within {
         outline: none !important;
         box-shadow: none !important;
-        border-color: #d4af37 !important;
+        border-color: #B87333 !important;
     }
 
-    /* Mantém apenas a borda dourada normal, sem efeitos extras */
+    /* Mantém apenas a borda bronze normal, sem efeitos extras */
     .header-filters-btn:active {
         transform: translateY(0) !important;
         background: white !important;
-        color: #d4af37 !important;
+        color: #B87333 !important;
     }
 
     .filters-dropdown-content {
@@ -556,14 +554,14 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        background: #d4af37;
+        background: #B87333;
         color: white;
-        border: 1px solid #d4af37;
+        border: 1px solid #B87333;
     }
 
     .btn-done-dropdown:hover {
-        background: #b8941f;
-        border-color: #b8941f;
+        background: #A0522D;
+        border-color: #A0522D;
     }
 }
 
@@ -584,5 +582,128 @@
     .main .container {
         margin-left: 0px !important;
         margin-right: 0px !important;
+    }
+}
+
+/* ============================================ */
+/* === BREADCRUMB PRICE BADGE (DESKTOP ONLY) === */
+/* ============================================ */
+
+/* Esconder info group no mobile */
+.breadcrumb-info-group {
+    display: none;
+}
+
+.breadcrumb-price-badge,
+.breadcrumb-photo-count,
+.breadcrumb-price-hint {
+    display: none;
+}
+
+/* Desktop: mostrar e posicionar à direita */
+@media (min-width: 769px) {
+    /* Breadcrumb precisa de flex para espaço entre */
+    .breadcrumb {
+        justify-content: space-between;
+    }
+
+    /* Grupo de info (badge + contador) no lado direito */
+    .breadcrumb-info-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    /* Hint "Click to chat" - aparece quando badge tem conteúdo */
+    .breadcrumb-price-hint {
+        display: none;
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-weight: 500;
+        white-space: nowrap;
+        animation: hintPulse 2s ease-in-out infinite;
+    }
+
+    /* Mostrar hint apenas quando o badge está visível */
+    .breadcrumb-info-group:has(.breadcrumb-price-badge:not(:empty)) .breadcrumb-price-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .breadcrumb-price-hint::before {
+        content: '\f0a9';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 0.7rem;
+    }
+
+    @keyframes hintPulse {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; }
+    }
+
+    /* Badge de preço */
+    .breadcrumb-price-badge {
+        display: none; /* Escondido até ter conteúdo */
+        background: #22c55e;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Mostrar quando tiver conteúdo */
+    .breadcrumb-price-badge:not(:empty) {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .breadcrumb-price-badge:hover {
+        background: #16a34a;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+
+    /* Estilo para "Contact for Price" */
+    .breadcrumb-price-badge.contact-price {
+        background: #6b7280;
+    }
+
+    .breadcrumb-price-badge.contact-price:hover {
+        background: #4b5563;
+    }
+
+    /* Estilo para "No price" */
+    .breadcrumb-price-badge.no-price {
+        background: #9ca3af;
+    }
+
+    .breadcrumb-price-badge.no-price:hover {
+        background: #6b7280;
+    }
+
+    /* Contador de fotos */
+    .breadcrumb-photo-count {
+        display: none;
+        background: #ffffff;
+        color: #4b5563;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .breadcrumb-photo-count:not(:empty) {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
 }

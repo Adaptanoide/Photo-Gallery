@@ -348,60 +348,59 @@
     z-index: 10;
 }
 
-/* Zoom controls */
+/* Zoom controls - Design Elegante e Minimalista */
 .zoom-controls-simple {
     position: absolute;
     top: 100px;
-    /* MUDANÇA: era 80px, agora 100px */
-    right: 20px;
+    right: 15px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    background: rgba(44, 44, 52, 0.9);
-    padding: 8px 12px;
-    border-radius: 25px;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px;
+    border-radius: 20px;
     z-index: 30;
-    transition: var(--transition);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-subtle);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .zoom-controls-simple:hover {
-    background: rgba(44, 44, 52, 0.95);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .zoom-btn-simple {
-    background: var(--gold-primary) !important;
-    border: 1px solid var(--gold-primary);
-    color: white !important;
-    width: 36px;
-    height: 36px;
+    background: transparent !important;
+    border: none;
+    color: #B87333 !important;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    transition: var(--transition);
-    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .zoom-btn-simple:hover:not(:disabled) {
-    background: white !important;
-    color: var(--gold-primary) !important;
-    border-color: var(--gold-primary);
+    background: rgba(184, 115, 51, 0.1) !important;
+    color: #A0522D !important;
 }
 
 .zoom-btn-simple:active:not(:disabled) {
-    transform: scale(0.95);
+    transform: scale(0.92);
 }
 
 .zoom-btn-simple:disabled {
-    opacity: 0.3;
+    opacity: 0.25;
     cursor: not-allowed;
-    background: rgba(148, 163, 184, 0.2);
-    border-color: var(--text-muted);
-    color: var(--text-muted);
+    background: transparent !important;
+    color: #999 !important;
 }
 
 /* Price badge in modal */

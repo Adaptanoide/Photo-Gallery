@@ -408,17 +408,19 @@ window.PriceProgressBar = {
         <div class="price-progress-wrapper">
         `;
 
-        // Medalhas para cada tier
-        const medals = ['🥉', '🥈', '🥇', '💎'];
+        // Nomes e classes de cores para cada tier
+        const tierNames = ['Bronze', 'Silver', 'Gold', 'Diamond'];
+        const tierClasses = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-diamond'];
 
         this.rateRules.forEach((rule, index) => {
             const label = rule.to === 999 ? `${rule.from}+` : `${rule.from}-${rule.to}`;
             const isFirst = index === 0;
-            const medal = medals[index] || '⭐';
+            const tierName = tierNames[index] || `Tier ${index + 1}`;
+            const tierClass = tierClasses[index] || '';
 
             html += `
-                <div class="price-tier ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}">
-                    <div class="tier-medal">${medal}</div>
+                <div class="price-tier ${tierClass} ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}" data-tier="${index}">
+                    <div class="tier-name">${tierName}</div>
                     <div class="tier-label">${label} hides</div>
                     <div class="tier-price">${window.CurrencyManager ? CurrencyManager.format(rule.price) : '$' + rule.price}</div>
                 </div>
@@ -489,6 +491,12 @@ window.PriceProgressBar = {
             const mainBadge = document.querySelector('.category-price-badge:not(.contact-price):not(.no-price)');
             if (mainBadge && !mainBadge.closest('#mobileInfoBar')) {
                 mainBadge.innerHTML = `${formattedPrice} <span class="badge-chat-icon" style="margin-left: 5px; cursor: pointer;">💬</span>`;
+            }
+
+            // Atualizar breadcrumb price badge (desktop)
+            const breadcrumbBadge = document.getElementById('breadcrumbPriceBadge');
+            if (breadcrumbBadge && breadcrumbBadge.innerHTML !== '' && !breadcrumbBadge.classList.contains('no-price') && !breadcrumbBadge.classList.contains('contact-price')) {
+                breadcrumbBadge.innerHTML = `<i class="fas fa-comment-dollar"></i> ${formattedPrice}`;
             }
         }
 

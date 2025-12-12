@@ -79,7 +79,7 @@
     }
 
     .cart-header {
-        padding: 6px 12px;
+        padding: 6px 20px;
     }
 
     .cart-header h3 {
@@ -274,19 +274,19 @@
         width: 45px;
         height: 45px;
         background: white;
-        color: #b8941f;
+        color: #B87333;
         border: none;
         border-radius: 50%;
         font-size: 1.1rem;
         margin-right: 10px;
         cursor: pointer;
         transition: background 0.3s;
-        border: 1px solid #b8941f;
+        border: 1px solid #B87333;
     }
 
     .mobile-filter-btn:hover {
-        background: #b8984f;
-        /* Dourado mais escuro no hover */
+        background: #A0522D;
+        color: white;
     }
 
     /* Logout - só ícone no mobile */
@@ -296,14 +296,14 @@
         padding: 0;
         justify-content: center;
         font-size: 1.1rem;
-        background: #c9a961;
+        background: #B87333;
         color: white;
         border: none;
         border-radius: 50%;
     }
 
     .client-logout-btn:hover {
-        background: #b8984f;
+        background: #A0522D;
     }
 
     .client-logout-btn .logout-text {
@@ -534,8 +534,8 @@
         border-radius: 50%;
         background: white;
         border: none;
-        color: #c9a961;
-        /* Dourado */
+        color: #B87333;
+        /* Bronze */
         font-size: 1.2rem;
         cursor: pointer;
         display: flex;
@@ -600,7 +600,7 @@
     .breadcrumb-back-btn {
         flex-shrink: 0;
         margin-top: 2px;
-        background: #d4af37;
+        background: #B87333;
         border-radius: 50%;
         height: 40px;
         width: 40px;
@@ -1046,7 +1046,7 @@
         line-height: 1.3 !important;
         white-space: normal !important;
         max-width: 100% !important;
-        background: rgba(212, 175, 55, 0.1);
+        background: rgba(184, 115, 51, 0.1);
         padding: 8px;
         border-radius: 4px;
         margin: 0;
@@ -1081,7 +1081,7 @@
     }
 
     .modal-rate-rules-bar .tier-item.active {
-        color: #d4af37;
+        color: #B87333;
         font-weight: bold;
     }
 

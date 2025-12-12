@@ -4,9 +4,9 @@
 
 /* === VARIÁVEIS (usar as mesmas do sistema) === */
 :root {
-    --currency-gold: #D4AF37;
-    --currency-gold-hover: #c4a030;
-    --currency-gold-light: #FFF8E7;
+    --currency-gold: #B87333;
+    --currency-gold-hover: #A0522D;
+    --currency-gold-light: #FDF5EF;
 }
 
 /* ============================================ */
@@ -196,8 +196,8 @@
         height: 45px;
         border-radius: 50%;
         background: #ffffff;
-        border: 1px solid #b8941f;
-        color: #b8941f;
+        border: 1px solid #B87333;
+        color: #B87333;
         font-size: 1rem;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -350,19 +350,19 @@
     .currency-modal-option.active {
         border-color: var(--currency-gold);
         background: var(--currency-gold-light);
-        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+        box-shadow: 0 0 0 3px rgba(184, 115, 51, 0.15);
     }
 
     .currency-modal-option .modal-option-symbol {
         font-size: 1.8rem;
         font-weight: 700;
-        color: var(--currency-gold);
+        color: #28a745;
         width: 50px;
         height: 50px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(212, 175, 55, 0.1);
+        background: rgba(184, 115, 51, 0.1);
         border-radius: 12px;
     }
 

@@ -10,13 +10,13 @@
     left: 30px;
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #000000 0%, #757575 100%);
+    background: #B87333;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
+    box-shadow: 0 4px 20px rgba(184, 115, 51, 0.4);
     transition: all 0.3s ease;
     z-index: 9998;
     border: none;
@@ -24,13 +24,13 @@
 
 .chat-float-button:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 30px rgba(251, 191, 36, 0.6);
+    box-shadow: 0 6px 30px rgba(184, 115, 51, 0.6);
 }
 
 .chat-float-button svg {
     width: 28px;
     height: 28px;
-    fill: #fbbf24;
+    fill: #ffffff;
 }
 
 /* Badge de mensagens não lidas */
@@ -104,13 +104,13 @@
    ============================================ */
 
 .chat-header {
-    background: linear-gradient(135deg, #000000 0%, #757575 100%);
-    color: #fbbf24;
+    background: linear-gradient(135deg, #613926 0%, #B87333 100%);
+    color: #ffffff;
     padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 3px solid #fbbf24;
+    border-bottom: 3px solid #8B4513;
 }
 
 .chat-header-title {
@@ -137,9 +137,9 @@
 }
 
 .chat-close-btn {
-    background: rgba(251, 191, 36, 0.2);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
-    color: #fbbf24;
+    color: #ffffff;
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -151,7 +151,7 @@
 }
 
 .chat-close-btn:hover {
-    background: rgba(251, 191, 36, 0.3);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* ============================================
@@ -193,9 +193,10 @@
 }
 
 .chat-message.client .chat-message-bubble {
-    background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%);
-    color: #333;
+    background: linear-gradient(135deg, #b87333 0%, #b87333 100%);
+    color: #ffffff;
     border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 /* Mensagens do vendedor */
@@ -223,12 +224,12 @@
 }
 
 .chat-message.client .chat-message-avatar {
-    background: linear-gradient(135deg, #000000 0%, #757575 100%);
-    color: #fbbf24;
+    background: linear-gradient(135deg, #b87333 0%, #2563eb 100%);
+    color: #ffffff;
 }
 
 .chat-message.salesrep .chat-message-avatar {
-    background: #d4af37;
+    background: #475569;
     color: white;
 }
 
@@ -297,24 +298,25 @@
 .chat-textarea {
     flex: 1;
     border: 1px solid #e5e7eb;
-    border-radius: 20px;
-    padding: 10px 16px;
+    border-radius: 16px;
+    padding: 12px 16px;
     font-size: 14px;
     font-family: inherit;
     resize: none;
-    max-height: 100px;
-    min-height: 40px;
+    max-height: 140px;
+    min-height: 100px;
     outline: none;
     transition: border-color 0.2s;
+    line-height: 1.4;
 }
 
 .chat-textarea:focus {
-    border-color: #fbbf24;
+    border-color: #B87333;
 }
 
 .chat-send-btn {
-    background: linear-gradient(135deg, #000000 0%, #757575 100%);
-    color: #fbbf24;
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    color: #ffffff;
     border: none;
     width: 40px;
     height: 40px;
@@ -323,12 +325,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
 .chat-send-btn:hover {
     transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
 .chat-send-btn:disabled {
@@ -374,12 +378,12 @@
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: #fbbf24;
+    background: #B87333;
     border-radius: 3px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #fcd34d;
+    background: #A0522D;
 }
 
 /* ============================================
@@ -393,14 +397,14 @@
     background: #ffffff;
     padding: 16px 20px;
     border-radius: 12px;
-    box-shadow: 0 6px 25px rgba(251, 191, 36, 0.4);
+    box-shadow: 0 6px 25px rgba(184, 115, 51, 0.4);
     z-index: 9997;
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.4s ease, transform 0.4s ease;
     pointer-events: none;
     max-width: 280px;
-    border: 2px solid #fbbf24;
+    border: 2px solid #B87333;
 }
 
 .chat-tooltip.show {
@@ -425,9 +429,9 @@
 }
 
 .chat-tooltip-close {
-    background: rgba(251, 191, 36, 0.2);
+    background: rgba(184, 115, 51, 0.2);
     border: none;
-    color: #fbbf24;
+    color: #B87333;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -442,7 +446,7 @@
 }
 
 .chat-tooltip-close:hover {
-    background: rgba(251, 191, 36, 0.4);
+    background: rgba(184, 115, 51, 0.4);
     transform: scale(1.1);
 }
 
@@ -454,7 +458,7 @@
     height: 0;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-top: 10px solid #fbbf24;
+    border-top: 10px solid #B87333;
 }
 
 @keyframes shake {

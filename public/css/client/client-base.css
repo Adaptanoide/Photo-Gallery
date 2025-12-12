@@ -15,10 +15,10 @@
     --luxury-medium: #3a3a42;
     --luxury-light: #f8f9fa;
     
-    /* Dourado */
-    --gold-primary: #d4af37;
-    --gold-hover: #b8941f;
-    --gold-light: rgba(212, 175, 55, 0.08);
+    /* Bronze/Cobre */
+    --gold-primary: #B87333;
+    --gold-hover: #A0522D;
+    --gold-light: rgba(184, 115, 51, 0.08);
     
     /* Textos */
     --text-primary: #ffffff;
@@ -38,7 +38,7 @@
     /* Sombras */
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.25);
-    --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.2);
+    --shadow-gold: 0 4px 20px rgba(184, 115, 51, 0.2);
     
     /* Medidas */
     --border-radius: 8px;

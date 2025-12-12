@@ -1600,61 +1600,108 @@ async function finalizeSelection() {
 
 // NOVA FUNÇÃO: Modal de confirmação
 function showConfirmationModal(validItems, ghostCount) {
-    // Criar HTML do modal melhorado
+    // Criar HTML do modal - SEM usar classes .modal ou .modal-content para evitar conflitos CSS
     const modalHTML = `
-        <div id="confirmSelectionModal" class="modal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 20000; align-items: center; justify-content: center;">
-            <div class="modal-content" style="background: white; padding: 25px; border-radius: 10px; max-width: 500px; width: 90%; max-height: 60vh; overflow-y: auto; position: relative;">
-                <!-- Header compacto -->
-                <h2 style="margin-bottom: 15px; color: #333; font-size: 1.5rem;">Confirm Your Selection</h2>
-                
-                <!-- Info de itens -->
-                <div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 5px;">
-                    <p style="margin: 0; font-weight: 600;">
-                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                        Items to be reserved: <span style="color: #28a745;">${validItems.length} photos</span>
-                    </p>
-                    ${ghostCount > 0 ? `
-                        <p style="margin: 8px 0 0 0; color: #ff9800; font-size: 14px;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            ${ghostCount} unavailable item(s) will be removed
-                        </p>
-                    ` : ''}
-                </div>
-                
-                <!-- AVISO IMPORTANTE COM DESTAQUE -->
-                <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: start; gap: 10px;">
-                        <i class="fas fa-info-circle" style="color: #ff9800; font-size: 20px; margin-top: 2px;"></i>
+        <style>
+            #confirmSelectionModal * { box-sizing: border-box; }
+            @keyframes confirmModalSlideIn {
+                from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+        </style>
+        <div id="confirmSelectionModal" style="
+            display: flex !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(0,0,0,0.6) !important;
+            backdrop-filter: blur(4px);
+            z-index: 99999 !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            margin: 0 !important;
+        ">
+            <div id="confirmModalBox" style="
+                background: white !important;
+                border-radius: 16px !important;
+                max-width: 520px !important;
+                width: 100% !important;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
+                animation: confirmModalSlideIn 0.3s ease !important;
+                overflow: hidden !important;
+                max-height: 90vh !important;
+                height: auto !important;
+            ">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #B87333, #A0522D); padding: 20px 24px; color: white;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-clipboard-check" style="font-size: 20px;"></i>
+                        </div>
                         <div>
-                            <strong style="color: #856404; display: block; margin-bottom: 5px;">Important Notice:</strong>
-                            <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.5;">
-                                After confirming, <strong>your access will be temporarily disabled</strong> while our sales team processes your selection. 
-                                You will be contacted within 24 hours to complete the purchase.
-                            </p>
+                            <div style="font-size: 1.25rem; font-weight: 600; margin: 0;">Confirm Your Selection</div>
+                            <div style="font-size: 0.9rem; opacity: 0.95; margin-top: 4px;"><i class="fas fa-box"></i> ${validItems.length} item${validItems.length > 1 ? 's' : ''} selected</div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Campo de observações compacto -->
-                <div style="margin-bottom: 20px;">
-                    <label for="clientObservations" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">
-                        Observations (optional):
-                    </label>
-                    <textarea 
-                        id="clientObservations" 
-                        rows="3" 
-                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; resize: vertical; font-size: 14px; height: 160px;"
-                        placeholder="Add any special requests or notes..."
-                    ></textarea>
+
+                <!-- Body -->
+                <div style="padding: 24px;">
+                    ${ghostCount > 0 ? `
+                        <div style="background: #fef3cd; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 16px;"></i>
+                            <span style="color: #92400e; font-size: 0.9rem;">${ghostCount} unavailable item(s) will be removed</span>
+                        </div>
+                    ` : ''}
+
+                    <!-- Info Cards -->
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 16px;">
+                            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <i class="fas fa-rocket" style="color: #16a34a; font-size: 16px; margin-top: 2px;"></i>
+                                <div>
+                                    <strong style="color: #166534; font-size: 0.95rem;">What happens next?</strong>
+                                    <p style="margin: 6px 0 0 0; color: #166534; font-size: 0.875rem; line-height: 1.5;">Our team will review and contact you. Your items will be reserved.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-clock" style="color: #2563eb; font-size: 16px;"></i>
+                                <span style="color: #1e40af; font-size: 0.875rem;"><strong>Hours:</strong> Mon-Fri, 8 AM - 3:30 PM EST (Fort Myers, FL)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Textarea -->
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #374151;">
+                            <i class="fas fa-comment-dots" style="color: #B87333; margin-right: 6px;"></i>
+                            Additional Notes <span style="font-weight: 400; color: #9ca3af;">(optional)</span>
+                        </label>
+                        <textarea id="clientObservations" style="
+                            width: 100%;
+                            padding: 14px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 10px;
+                            resize: vertical;
+                            font-size: 0.95rem;
+                            font-family: inherit;
+                            min-height: 100px;
+                            max-height: 150px;
+                            transition: border-color 0.2s, box-shadow 0.2s;
+                        " placeholder="Shipping address, questions, special requests..." onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.1)';" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"></textarea>
+                    </div>
                 </div>
-                
-                <!-- Botões -->
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button onclick="cancelConfirmation()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                        Cancel
-                    </button>
-                    <button onclick="proceedWithSelection()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                        <i class="fas fa-check"></i> Confirm Selection
+
+                <!-- Footer -->
+                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button onclick="cancelConfirmation()" style="padding: 12px 24px; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">Cancel</button>
+                    <button onclick="proceedWithSelection()" style="padding: 12px 28px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#16a34a'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#22c55e'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-check"></i> Confirm
                     </button>
                 </div>
             </div>
@@ -1741,60 +1788,156 @@ window.proceedWithSelection = async function () {
 
 // Modal de sucesso melhorado
 function showSuccessModalWithMessage(result) {
+    const itemCount = result.selection.totalItems;
+    const itemText = itemCount === 1 ? 'item has' : 'items have';
+
     const modalHTML = `
-        <div id="successModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 30000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: white; padding: 20px; border-radius: 12px; max-width: 520px; width: 90%; text-align: center; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-                <!-- Ícone de sucesso maior -->
-                <i class="fas fa-check-circle" style="color: #28a745; font-size: 70px; margin-bottom: 20px;"></i>
-                
-                <!-- Título principal -->
-                <h2 style="margin-bottom: 10px; font-size: 28px; color: #333;">Selection Confirmed!</h2>
-                
-                <!-- Destaque para número de itens -->
-                <div style="margin: 20px 0; padding: 15px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 8px;">
-                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: white;">
-                        ${result.selection.totalItems} items have been reserved
+        <style>
+            #successModal * { box-sizing: border-box; }
+            @keyframes successModalFadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            @keyframes successCheckPop {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            @keyframes successPulse {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+                50% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+            }
+        </style>
+        <div id="successModal" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        ">
+            <div style="
+                background: white;
+                border-radius: 20px;
+                max-width: 480px;
+                width: 100%;
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+                animation: successModalFadeIn 0.35s ease;
+                overflow: hidden;
+            ">
+                <!-- Header com gradiente verde -->
+                <div style="
+                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                    padding: 32px 24px;
+                    text-align: center;
+                    position: relative;
+                ">
+                    <!-- Ícone de sucesso -->
+                    <div style="
+                        width: 72px;
+                        height: 72px;
+                        background: white;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 16px;
+                        animation: successCheckPop 0.5s ease 0.2s both, successPulse 2s ease-in-out infinite 0.7s;
+                    ">
+                        <i class="fas fa-check" style="color: #22c55e; font-size: 32px;"></i>
+                    </div>
+
+                    <h2 style="margin: 0; font-size: 1.6rem; font-weight: 700; color: white;">
+                        Selection Confirmed!
+                    </h2>
+
+                    <p style="margin: 10px 0 0; font-size: 1.1rem; color: rgba(255,255,255,0.95);">
+                        <strong>${itemCount}</strong> ${itemText} been reserved
                     </p>
                 </div>
-                
-                <!-- Box de próximos passos com mais destaque -->
-                <div style="background: #d4edda; border: 3px solid #28a745; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: left;">
-                    <h4 style="margin: 0 0 15px 0; color: #155724; font-size: 20px; text-align: center;">
-                        <i class="fas fa-info-circle" style="color: #28a745;"></i> Important Information
-                    </h4>
-                    <ul style="margin: 0; padding-left: 25px; color: #155724; font-size: 16px; line-height: 2;">
-                        <li><strong>Our sales team will contact you within 24 hours</strong></li>
-                        <li>This tool was designed to help you pre-select products</li>
-                        <li>Payment methods and shipping options will be discussed with your sales representative</li>
-                        <li>Final pricing may vary based on quantity and negotiation</li>
-                    </ul>
+
+                <!-- Body -->
+                <div style="padding: 24px;">
+                    <!-- Next Steps -->
+                    <div style="
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 16px;
+                    ">
+                        <h4 style="margin: 0 0 14px; color: #334155; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-clipboard-list" style="color: #B87333;"></i>
+                            What happens next?
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.8;">
+                            <li>Our sales team will contact you <strong>within 24 hours</strong></li>
+                            <li>Your selected items are now reserved</li>
+                            <li>Payment & shipping will be discussed with your representative</li>
+                        </ul>
+                    </div>
+
+                    <!-- Access Notice -->
+                    <div style="
+                        background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+                        border: 1px solid #fcd34d;
+                        border-radius: 12px;
+                        padding: 16px;
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 12px;
+                    ">
+                        <div style="
+                            width: 32px;
+                            height: 32px;
+                            background: #fbbf24;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-shrink: 0;
+                        ">
+                            <i class="fas fa-pause" style="color: white; font-size: 12px;"></i>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 4px; font-weight: 600; color: #92400e; font-size: 0.9rem;">
+                                Gallery access paused
+                            </p>
+                            <p style="margin: 0; color: #a16207; font-size: 0.85rem; line-height: 1.4;">
+                                Your sales rep will reactivate your access after confirming your order.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                
-                <!-- Aviso importante com mais destaque -->
-                <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <p style="color: #856404; font-size: 14px; margin: 0; line-height: 1.5;">
-                        <i class="fas fa-info-circle" style="color: #ff9800; font-size: 18px;"></i><br>
-                        <strong>Your access has been temporarily disabled.</strong><br>
-                        Contact your sales representative for assistance.
-                    </p>
+
+                <!-- Footer -->
+                <div style="padding: 0 24px 24px; text-align: center;">
+                    <button onclick="location.href='/'" style="
+                        padding: 14px 32px;
+                        background: #B87333;
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 1rem;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 10px;
+                        box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
+                        transition: all 0.2s;
+                        width: 100%;
+                        justify-content: center;
+                    " onmouseover="this.style.background='#A0522D'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#B87333'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-home"></i> Return to Home
+                    </button>
                 </div>
-                
-                <!-- Botão mais destacado -->
-                <button onclick="location.href='/'" style="
-                    padding: 15px 40px; 
-                    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
-                    color: white; 
-                    border: none; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    font-weight: bold; 
-                    font-size: 18px;
-                    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-                    transition: all 0.3s;
-                    margin-top: 10px;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-home"></i> Return to Home
-                </button>
             </div>
         </div>
     `;

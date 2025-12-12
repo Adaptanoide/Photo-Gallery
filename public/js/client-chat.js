@@ -203,11 +203,11 @@ class ChatManager {
                 <!-- Input -->
                 <div class="chat-input-area">
                     <div class="chat-input-wrapper">
-                        <textarea 
-                            class="chat-textarea" 
-                            id="chatInput" 
+                        <textarea
+                            class="chat-textarea"
+                            id="chatInput"
                             placeholder="Type your message..."
-                            rows="1"
+                            rows="2"
                         ></textarea>
                         <button class="chat-send-btn" id="chatSendBtn">
                             <svg viewBox="0 0 24 24" fill="currentColor">
