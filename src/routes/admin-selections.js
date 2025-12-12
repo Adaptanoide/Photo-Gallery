@@ -1655,4 +1655,322 @@ router.get('/public/download/:token/zip', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/selections/restore-photos
+ * Restaurar fotos removidas para uma seleção
+ * ROTA TEMPORÁRIA para corrigir bug de auto-remoção
+ */
+router.post('/restore-photos', async (req, res) => {
+    const mysql = require('mysql2/promise');
+
+    try {
+        const { clientCode, photoNumbers } = req.body;
+
+        if (!clientCode || !photoNumbers || !Array.isArray(photoNumbers)) {
+            return res.status(400).json({
+                success: false,
+                message: 'clientCode e photoNumbers são obrigatórios'
+            });
+        }
+
+        console.log(`[RESTORE] Iniciando restauração de ${photoNumbers.length} fotos para cliente ${clientCode}`);
+
+        // 1. Buscar seleção PENDING do cliente
+        const selection = await Selection.findOne({
+            clientCode: clientCode,
+            status: 'pending'
+        });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: `Seleção PENDING não encontrada para cliente ${clientCode}`
+            });
+        }
+
+        // 2. Conectar ao CDE para verificar status
+        let cdeConnection = null;
+        try {
+            cdeConnection = await mysql.createConnection({
+                host: process.env.CDE_HOST,
+                port: process.env.CDE_PORT,
+                user: process.env.CDE_USER,
+                password: process.env.CDE_PASSWORD,
+                database: process.env.CDE_DATABASE
+            });
+        } catch (cdeErr) {
+            console.error('[RESTORE] Erro ao conectar CDE:', cdeErr.message);
+        }
+
+        // 3. Analisar e restaurar cada foto
+        const results = {
+            analyzed: 0,
+            restored: 0,
+            alreadyInSelection: 0,
+            notInMongo: 0,
+            sold: 0,
+            errors: 0,
+            details: []
+        };
+
+        for (const photoNum of photoNumbers) {
+            results.analyzed++;
+            const paddedNum = String(photoNum).padStart(5, '0');
+
+            try {
+                // Verificar no CDE
+                let cdeStatus = 'UNKNOWN';
+                let reservedUsu = '';
+
+                if (cdeConnection) {
+                    const [cdeRows] = await cdeConnection.execute(
+                        'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                        [paddedNum]
+                    );
+                    if (cdeRows.length > 0) {
+                        cdeStatus = cdeRows[0].AESTADOP;
+                        reservedUsu = cdeRows[0].RESERVEDUSU || '';
+                    }
+                }
+
+                // Se RETIRADO, não restaurar
+                if (cdeStatus === 'RETIRADO') {
+                    results.sold++;
+                    results.details.push({
+                        photo: paddedNum,
+                        status: 'sold',
+                        message: `RETIRADO no CDE (${reservedUsu})`
+                    });
+                    continue;
+                }
+
+                // Buscar no MongoDB
+                const mongoPhoto = await UnifiedProductComplete.findOne({
+                    $or: [
+                        { photoNumber: photoNum },
+                        { photoNumber: paddedNum },
+                        { fileName: `${paddedNum}.webp` }
+                    ]
+                });
+
+                if (!mongoPhoto) {
+                    results.notInMongo++;
+                    results.details.push({
+                        photo: paddedNum,
+                        status: 'not_found',
+                        message: 'Não existe no MongoDB'
+                    });
+                    continue;
+                }
+
+                // Verificar se já está na seleção
+                const alreadyInSelection = selection.items.some(item =>
+                    item.fileName === `${paddedNum}.webp` ||
+                    item.driveFileId === mongoPhoto.driveFileId
+                );
+
+                if (alreadyInSelection) {
+                    results.alreadyInSelection++;
+                    results.details.push({
+                        photo: paddedNum,
+                        status: 'already_in_selection',
+                        message: 'Já está na seleção'
+                    });
+                    continue;
+                }
+
+                // Adicionar à seleção
+                selection.items.push({
+                    driveFileId: mongoPhoto.driveFileId,
+                    fileName: `${paddedNum}.webp`,
+                    category: mongoPhoto.category,
+                    thumbnailUrl: mongoPhoto.thumbnailUrl || `/_thumbnails/${mongoPhoto.category}/${paddedNum}.webp`,
+                    price: mongoPhoto.price || mongoPhoto.basePrice || 0,
+                    basePrice: mongoPhoto.basePrice || 0,
+                    addedAt: new Date()
+                });
+
+                // Atualizar status do produto
+                mongoPhoto.status = 'reserved';
+                mongoPhoto.selectionId = selection.selectionId;
+                mongoPhoto.reservedBy = {
+                    clientCode: selection.clientCode,
+                    clientName: selection.clientName,
+                    selectionId: selection.selectionId
+                };
+                await mongoPhoto.save();
+
+                results.restored++;
+                results.details.push({
+                    photo: paddedNum,
+                    status: 'restored',
+                    message: `Restaurado! CDE: ${cdeStatus}`
+                });
+
+            } catch (err) {
+                results.errors++;
+                results.details.push({
+                    photo: paddedNum,
+                    status: 'error',
+                    message: err.message
+                });
+            }
+        }
+
+        // 4. Recalcular totais
+        selection.totalItems = selection.items.length;
+
+        let newTotal = 0;
+        for (const item of selection.items) {
+            newTotal += item.price || 0;
+        }
+        selection.totalValue = newTotal;
+
+        // 5. Adicionar log
+        if (results.restored > 0) {
+            selection.addMovementLog(
+                'items_restored',
+                `${results.restored} foto(s) restaurada(s) manualmente via API.`,
+                true,
+                req.user?.username || 'admin',
+                { restoredPhotos: results.details.filter(d => d.status === 'restored').map(d => d.photo) }
+            );
+        }
+
+        await selection.save();
+
+        // Fechar conexão CDE
+        if (cdeConnection) {
+            await cdeConnection.end();
+        }
+
+        console.log(`[RESTORE] Concluído: ${results.restored} restauradas, ${results.sold} vendidas, ${results.errors} erros`);
+
+        res.json({
+            success: true,
+            message: `${results.restored} foto(s) restaurada(s)`,
+            results: results,
+            selection: {
+                totalItems: selection.totalItems,
+                totalValue: selection.totalValue
+            }
+        });
+
+    } catch (error) {
+        console.error('[RESTORE] Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/selections/analyze-photos
+ * Analisar estado de fotos no CDE e MongoDB
+ */
+router.get('/analyze-photos', async (req, res) => {
+    const mysql = require('mysql2/promise');
+
+    try {
+        const { photos } = req.query;
+
+        if (!photos) {
+            return res.status(400).json({
+                success: false,
+                message: 'Query param "photos" é obrigatório (lista separada por vírgula)'
+            });
+        }
+
+        const photoNumbers = photos.split(',').map(p => p.trim());
+        console.log(`[ANALYZE] Analisando ${photoNumbers.length} fotos`);
+
+        // Conectar CDE
+        let cdeConnection = null;
+        try {
+            cdeConnection = await mysql.createConnection({
+                host: process.env.CDE_HOST,
+                port: process.env.CDE_PORT,
+                user: process.env.CDE_USER,
+                password: process.env.CDE_PASSWORD,
+                database: process.env.CDE_DATABASE
+            });
+        } catch (cdeErr) {
+            console.error('[ANALYZE] Erro ao conectar CDE:', cdeErr.message);
+        }
+
+        const analysis = [];
+
+        for (const photoNum of photoNumbers) {
+            const paddedNum = String(photoNum).padStart(5, '0');
+
+            let cdeStatus = 'NOT_FOUND';
+            let reservedUsu = '';
+            let qbItem = '';
+
+            if (cdeConnection) {
+                const [cdeRows] = await cdeConnection.execute(
+                    'SELECT AESTADOP, RESERVEDUSU, AQBITEM FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    [paddedNum]
+                );
+                if (cdeRows.length > 0) {
+                    cdeStatus = cdeRows[0].AESTADOP;
+                    reservedUsu = cdeRows[0].RESERVEDUSU || '';
+                    qbItem = cdeRows[0].AQBITEM || '';
+                }
+            }
+
+            const mongoPhoto = await UnifiedProductComplete.findOne({
+                $or: [
+                    { photoNumber: photoNum },
+                    { photoNumber: paddedNum },
+                    { fileName: `${paddedNum}.webp` }
+                ]
+            });
+
+            analysis.push({
+                photoNumber: paddedNum,
+                cde: {
+                    status: cdeStatus,
+                    reservedUsu: reservedUsu,
+                    qbItem: qbItem
+                },
+                mongo: {
+                    exists: !!mongoPhoto,
+                    status: mongoPhoto?.status || null,
+                    selectionId: mongoPhoto?.selectionId || null,
+                    category: mongoPhoto?.category || null
+                },
+                canRestore: cdeStatus !== 'RETIRADO' && !!mongoPhoto
+            });
+        }
+
+        if (cdeConnection) {
+            await cdeConnection.end();
+        }
+
+        // Resumo
+        const summary = {
+            total: analysis.length,
+            canRestore: analysis.filter(a => a.canRestore).length,
+            sold: analysis.filter(a => a.cde.status === 'RETIRADO').length,
+            notInMongo: analysis.filter(a => !a.mongo.exists).length,
+            available: analysis.filter(a => a.cde.status === 'INGRESADO').length
+        };
+
+        res.json({
+            success: true,
+            summary: summary,
+            photos: analysis
+        });
+
+    } catch (error) {
+        console.error('[ANALYZE] Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 module.exports = router;
