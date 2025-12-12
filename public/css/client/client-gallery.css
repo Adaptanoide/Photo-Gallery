@@ -1226,5 +1226,6 @@
     .btn-clear-filters {
         padding: 10px 20px;
         font-size: 0.9rem;
+        border: white 1px solid;
     }
 }
