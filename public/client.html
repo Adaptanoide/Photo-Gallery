@@ -139,6 +139,32 @@
                             <span>Tricolor</span>
                         </label>
                     </div>
+
+                    <!-- Price Range Filter -->
+                    <div class="dropdown-section">
+                        <h4>Price Range</h4>
+                        <label class="dropdown-checkbox">
+                            <input type="checkbox" name="priceRange" value="0-50" onchange="applyFilters()">
+                            <span>Under $50</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="checkbox" name="priceRange" value="50-100" onchange="applyFilters()">
+                            <span>$50 - $100</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="checkbox" name="priceRange" value="100-150" onchange="applyFilters()">
+                            <span>$100 - $150</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="checkbox" name="priceRange" value="150-200" onchange="applyFilters()">
+                            <span>$150 - $200</span>
+                        </label>
+                        <label class="dropdown-checkbox">
+                            <input type="checkbox" name="priceRange" value="200-999" onchange="applyFilters()">
+                            <span>Over $200</span>
+                        </label>
+                    </div>
+
                     <div class="dropdown-actions">
                         <button onclick="clearAllFilters()" class="btn-clear-dropdown">
                             <i class="fas fa-times"></i> Clear
@@ -468,6 +494,12 @@
             </div>
         </div>
     </div>
+
+    <!-- Botão Toggle do Carrinho (Desktop) - FORA do sidebar, posição fixa -->
+    <button id="sidebarToggleBtn" class="sidebar-toggle-btn" onclick="toggleCartSidebar()" title="Toggle Cart">
+        <span id="toggleBadge" class="toggle-badge">0</span>
+        <i class="fas fa-chevron-right"></i>
+    </button>
 
     <!-- Sidebar do Carrinho -->
     <div id="cartSidebar" class="cart-sidebar">

@@ -590,24 +590,25 @@
         display: flex !important;
         width: 380px !important;
         top: 70px !important;
-        /* ADICIONE - começa abaixo do header */
         height: calc(100vh - 76px) !important;
-        /* ADICIONE - altura ajustada */
         z-index: 9000 !important;
-    }
-
-    .cart-sidebar {
-        z-index: 9000 !important;
-        /* Menor que o modal (10000) */
+        /* Position fixed para ficar sempre visível */
+        position: fixed !important;
+        right: 0 !important;
+        /* Animação de deslizar elegante */
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(0);
+        overflow: visible; /* Para o botão toggle aparecer */
     }
 
     .cart-close {
         display: none !important;
     }
 
-
     .main {
         width: calc(100% - 380px) !important;
+        /* Animação suave sincronizada com o carrinho */
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* Remove o overlay escuro no desktop */
@@ -618,9 +619,120 @@
     /* Ajusta o container do carrinho */
     .cart-container {
         max-width: 380px;
-        /* Reduzido de 450px */
+        width: 380px;
         animation: none;
-        /* Remove animação de slide */
+        /* Animação suave do conteúdo */
+        transition: opacity 0.3s ease;
+        opacity: 1;
+    }
+
+    /* ===== ESTADO COLAPSADO - Desliza para fora ===== */
+    .cart-sidebar.collapsed {
+        transform: translateX(380px); /* Desliza para a direita (fora da tela) */
+    }
+
+    .cart-sidebar.collapsed .cart-container {
+        opacity: 0;
+    }
+
+    .main.cart-collapsed {
+        width: 100% !important;
+    }
+
+}
+
+/* ===== BOTÃO TOGGLE DO CARRINHO - POSIÇÃO FIXA ===== */
+/* Só visível no desktop */
+@media (min-width: 769px) {
+    .sidebar-toggle-btn {
+        position: fixed;
+        right: 340px; /* Posição perfeita na borda do carrinho */
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 60px;
+        background: linear-gradient(180deg, #d4af37 0%, #b8941f 100%);
+        border: none;
+        border-radius: 6px 0 0 6px;
+        cursor: pointer;
+        z-index: 9002;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+        /* Animação suave sincronizada com o carrinho */
+        transition:
+            right 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+            width 0.2s ease,
+            background 0.2s ease;
+        color: white;
+        font-size: 12px;
+    }
+
+    .sidebar-toggle-btn:hover {
+        background: linear-gradient(180deg, #e4bf47 0%, #c8a42f 100%);
+        width: 28px;
+        box-shadow: -3px 0 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar-toggle-btn i {
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Quando colapsado, botão move para a borda direita da tela */
+    .sidebar-toggle-btn.collapsed {
+        right: 0;
+    }
+
+    .sidebar-toggle-btn.collapsed i {
+        transform: rotate(180deg);
+    }
+
+    /* Badge no botão toggle quando colapsado */
+    .sidebar-toggle-btn .toggle-badge {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #e74c3c;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        min-width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(231, 76, 60, 0.5);
+        border: 2px solid white;
+    }
+
+    .sidebar-toggle-btn.collapsed .toggle-badge {
+        display: flex;
+        animation: badge-pulse 2s ease-in-out infinite;
+    }
+
+    .sidebar-toggle-btn.collapsed .toggle-badge:empty,
+    .sidebar-toggle-btn.collapsed .toggle-badge[data-count="0"] {
+        display: none;
+    }
+
+    /* Animação suave de pulsar */
+    @keyframes badge-pulse {
+        0%, 100% {
+            transform: translateX(-50%) scale(1);
+        }
+        50% {
+            transform: translateX(-50%) scale(1.15);
+        }
+    }
+}
+
+/* Esconder botão toggle no mobile */
+@media (max-width: 768px) {
+    .sidebar-toggle-btn {
+        display: none !important;
     }
 }
 

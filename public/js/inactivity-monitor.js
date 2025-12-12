@@ -140,10 +140,12 @@
     function performInactivityLogout() {
         console.log('Session expired due to inactivity (30 minutes)');
 
-        // Clear session data
+        // Clear all session data
         localStorage.removeItem('sunshineSession');
         localStorage.removeItem('galleryMode');
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('sessionStartTime');
+        localStorage.removeItem('cartCollapsed'); // Also clear cart preference
 
         // Show modal instead of notification
         showSessionExpiredModal();
@@ -162,24 +164,74 @@
     }
 
     /**
+     * Validate if session token is still valid (quick check)
+     * Returns false if clearly invalid, true if possibly valid
+     */
+    function isSessionPossiblyValid(session) {
+        try {
+            const sessionData = JSON.parse(session);
+            // Check if has required fields
+            if (!sessionData.token || !sessionData.clientId) {
+                return false;
+            }
+            // Check if token looks valid (basic format check)
+            if (typeof sessionData.token !== 'string' || sessionData.token.length < 10) {
+                return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
      * Initialize the inactivity monitor
      */
     function init() {
         // Only run if user is logged in
         const session = localStorage.getItem('sunshineSession');
         if (!session) {
+            // No session - clear any old activity data
+            localStorage.removeItem(STORAGE_KEY);
+            return;
+        }
+
+        // Note: We don't validate session format here anymore
+        // The backend will handle invalid sessions with proper 401 responses
+        // This monitor only handles INACTIVITY timeouts, not session validation
+
+        // Get last activity and session start time
+        const lastActivity = localStorage.getItem(STORAGE_KEY);
+        const sessionStartKey = 'sessionStartTime';
+        const sessionStart = localStorage.getItem(sessionStartKey);
+
+        // If no session start time recorded, this is a new/fresh session
+        // Set it now and update activity
+        if (!sessionStart) {
+            localStorage.setItem(sessionStartKey, Date.now().toString());
+            updateActivity();
+            setupActivityListeners();
+            console.log('Inactivity monitor initialized - new session');
             return;
         }
 
         // Check if already inactive on page load/focus
-        if (checkInactivity()) {
+        // Only show expired modal if there WAS activity recorded before
+        if (lastActivity && checkInactivity()) {
             performInactivityLogout();
             return;
         }
 
         // Update activity on page load
         updateActivity();
+        setupActivityListeners();
+        console.log('Inactivity monitor initialized (30 min timeout)');
+    }
 
+    /**
+     * Setup activity event listeners
+     */
+    function setupActivityListeners() {
         // Listen for user activity events
         const activityEvents = [
             'mousedown',
@@ -227,7 +279,8 @@
             }
         });
 
-        console.log('Inactivity monitor initialized (30 min timeout)');
+        // Start the timeout
+        resetTimeout();
     }
 
     // Initialize when DOM is ready

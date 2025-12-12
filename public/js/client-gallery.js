@@ -1985,11 +1985,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== REAGIR A MUDANÇAS DE MOEDA =====
 window.addEventListener('currencyChanged', (e) => {
     console.log('💱 [Gallery] Moeda alterada para:', e.detail.newCurrency);
-    
+
     // Verificar se estamos realmente vendo FOTOS (não subcategorias)
     const photosContainer = document.getElementById('photosContainer');
     const isShowingPhotos = photosContainer && photosContainer.style.display === 'grid';
-    
+
     if (isShowingPhotos && typeof navigationState !== 'undefined' && navigationState.currentFolderId) {
         setTimeout(() => {
             if (typeof loadPhotos === 'function') {

@@ -232,7 +232,7 @@
 }
 
 .client-header-logo span {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 500;
     color: #ffffff;
 }
@@ -310,6 +310,17 @@
     .scroll-to-top {
         right: 400px;  /* 380px carrinho + 20px espaço */
         z-index: 9001; /* Acima do carrinho */
+        /* Animação suave ao mudar de posição */
+        transition:
+            right 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+            background 0.3s ease,
+            transform 0.3s ease,
+            box-shadow 0.3s ease;
+    }
+
+    /* Quando carrinho está oculto, botão move para a direita */
+    .scroll-to-top.cart-hidden {
+        right: 30px;
     }
 }
 

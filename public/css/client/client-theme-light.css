@@ -142,12 +142,7 @@ body.client-page::before {
 /* Photo thumbnails */
 .client-page .photo-thumbnail {
     background: #f8f9fa;
-    border: 1px solid #e2e8f0;
-}
-
-.client-page .photo-thumbnail:hover {
-    border-color: var(--gold-primary);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+    /* Bordas e efeitos hover estão em client-gallery.css */
 }
 
 /* Cart items */
@@ -324,7 +319,7 @@ body.client-page::before {
 .client-page .folder-stats span {
     background: #ffffff;
     color: #4a5568;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 /* Photo price badges */

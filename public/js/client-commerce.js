@@ -397,7 +397,7 @@ window.PriceProgressBar = {
 
         <div class="progress-bar-container">
             <div class="progress-bar-header">
-                <div class="progress-bar-label" id="progressLabel">Your Progress: 0 items</div>
+                <div class="progress-bar-label" id="progressLabel">Your Progress: Start adding photos!</div>
                 <div class="progress-bar-incentive" id="progressIncentive"></div>
             </div>
             <div class="progress-bar-track">
@@ -937,14 +937,25 @@ window.autoApplyFilters = async function () {
         prices: []
     };
 
-    // Type/Pattern
+    // Type/Pattern (funciona tanto para mobile quanto desktop)
     document.querySelectorAll('input[name="typePattern"]:checked').forEach(cb => {
-        selectedFilters.types.push(cb.value);
+        if (cb.value) { // Ignorar "All Types" que tem value=""
+            selectedFilters.types.push(cb.value);
+        }
     });
 
-    // Price ranges
+    // Price ranges - Coletar de AMBOS: mobile (#priceFilters) e desktop (name="priceRange")
+    // Mobile sidebar
     document.querySelectorAll('#priceFilters input[type="checkbox"]:checked').forEach(cb => {
-        selectedFilters.prices.push(cb.value);
+        if (!selectedFilters.prices.includes(cb.value)) {
+            selectedFilters.prices.push(cb.value);
+        }
+    });
+    // Desktop dropdown
+    document.querySelectorAll('input[name="priceRange"]:checked').forEach(cb => {
+        if (!selectedFilters.prices.includes(cb.value)) {
+            selectedFilters.prices.push(cb.value);
+        }
     });
 
     console.log('📌 Filtros selecionados:', selectedFilters);
@@ -981,13 +992,18 @@ window.autoApplyFilters = async function () {
             });
         }
 
-        // Aplicar filtros de preço
+        // Aplicar filtros de preço (comparar em USD - valores do banco)
         if (selectedFilters.prices.length > 0 && window.shouldShowPrices()) {
             filteredCategories = filteredCategories.filter(category => {
-                const price = category.price || 0;
+                // Usar minPrice, ou price, ou basePrice (em USD)
+                const categoryPrice = category.minPrice || category.price || category.basePrice || 0;
+
+                if (categoryPrice === 0) return false; // Ignorar categorias sem preço
+
                 return selectedFilters.prices.some(range => {
                     const [min, max] = range.split('-').map(Number);
-                    return price >= min && price <= (max || 999999);
+                    // Comparar preço da categoria (USD) com faixa selecionada (USD)
+                    return categoryPrice >= min && categoryPrice <= (max || 999999);
                 });
             });
         }
@@ -1054,11 +1070,15 @@ window.displayFilteredCategories = function (categories) {
 
     if (categories.length === 0) {
         container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                <i class="fas fa-search fa-3x" style="color: #ccc; margin-bottom: 20px;"></i>
-                <h3>No categories found</h3>
-                <p>Try adjusting your filters</p>
-                <button onclick="clearAllFilters(); window.showCategories();" class="btn btn-primary">Clear Filters</button>
+            <div class="no-results-container">
+                <div class="no-results-icon">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <h3 class="no-results-title">No categories match your filters</h3>
+                <p class="no-results-text">Try adjusting your filter criteria or clear all filters to see all categories</p>
+                <button onclick="clearAllFilters(); window.showCategories();" class="btn-clear-filters">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
             </div>
         `;
         return;
@@ -1211,8 +1231,13 @@ window.clearAllFilters = function () {
         allTypesRadio.checked = true;
     }
 
-    // Desmarcar checkboxes do sidebar
+    // Desmarcar checkboxes do sidebar (mobile)
     document.querySelectorAll('#filterSidebar input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+
+    // Desmarcar checkboxes do dropdown (desktop)
+    document.querySelectorAll('input[name="priceRange"]').forEach(checkbox => {
         checkbox.checked = false;
     });
 

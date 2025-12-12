@@ -473,6 +473,11 @@ window.CartSystem = {
             this.elements.cartBadge.textContent = this.state.totalItems;
         }
 
+        // Atualizar badge do botão toggle (desktop colapsado)
+        if (window.updateToggleBadge) {
+            window.updateToggleBadge(this.state.totalItems);
+        }
+
         // Atualizar contador de texto
         if (this.elements.itemCount) {
             const text = this.state.totalItems === 0 ? 'Empty cart' :
@@ -1478,6 +1483,75 @@ window.openCartSidebar = function () {
 window.closeCartSidebar = function () {
     CartSystem.closeSidebar();
 };
+
+/**
+ * Toggle do carrinho (colapsar/expandir) - Desktop only
+ */
+window.toggleCartSidebar = function () {
+    // Só funciona no desktop
+    if (window.innerWidth <= 768) return;
+
+    const sidebar = document.getElementById('cartSidebar');
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const main = document.querySelector('.main');
+    const scrollToTop = document.querySelector('.scroll-to-top');
+
+    if (!sidebar || !toggleBtn) return;
+
+    const isCollapsed = sidebar.classList.contains('collapsed');
+
+    if (isCollapsed) {
+        // Expandir - Carrinho desliza para dentro
+        sidebar.classList.remove('collapsed');
+        toggleBtn.classList.remove('collapsed');
+        if (main) main.classList.remove('cart-collapsed');
+        if (scrollToTop) scrollToTop.classList.remove('cart-hidden');
+        localStorage.setItem('cartCollapsed', 'false');
+    } else {
+        // Colapsar - Carrinho desliza para fora
+        sidebar.classList.add('collapsed');
+        toggleBtn.classList.add('collapsed');
+        if (main) main.classList.add('cart-collapsed');
+        if (scrollToTop) scrollToTop.classList.add('cart-hidden');
+        localStorage.setItem('cartCollapsed', 'true');
+    }
+};
+
+/**
+ * Restaurar estado do carrinho (colapsado/expandido) no carregamento
+ */
+window.restoreCartState = function () {
+    if (window.innerWidth <= 768) return;
+
+    const isCollapsed = localStorage.getItem('cartCollapsed') === 'true';
+    const sidebar = document.getElementById('cartSidebar');
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const main = document.querySelector('.main');
+    const scrollToTop = document.querySelector('.scroll-to-top');
+
+    if (isCollapsed && sidebar && toggleBtn) {
+        sidebar.classList.add('collapsed');
+        toggleBtn.classList.add('collapsed');
+        if (main) main.classList.add('cart-collapsed');
+        if (scrollToTop) scrollToTop.classList.add('cart-hidden');
+    }
+};
+
+/**
+ * Atualizar badge do botão toggle
+ */
+window.updateToggleBadge = function (count) {
+    const badge = document.getElementById('toggleBadge');
+    if (badge) {
+        badge.textContent = count || 0;
+        badge.setAttribute('data-count', count || 0);
+    }
+};
+
+// Restaurar estado ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(restoreCartState, 100);
+});
 
 /**
  * Prosseguir para finalização da seleção

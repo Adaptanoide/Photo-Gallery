@@ -422,25 +422,36 @@
         border: 1px solid #e0e0e0;
         border-radius: 12px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        width: 280px;
+        width: 520px; /* Mais largo para duas colunas */
         max-height: 500px;
         z-index: 10001;
         display: none;
-        /* NOVO: Estrutura flex para fixar footer */
-        flex-direction: column;
+        /* Layout em grid para duas colunas + footer */
+        flex-wrap: wrap;
     }
 
     .filters-dropdown-content.show {
         display: flex;
     }
 
+    /* Seções de filtro lado a lado */
     .dropdown-section {
+        flex: 1;
+        min-width: 220px;
         padding: 20px;
-        /* NOVO: Permitir scroll apenas no conteúdo */
         overflow-y: auto;
         max-height: 380px;
-        flex: 1;
         border-bottom: none;
+    }
+
+    /* Primeira seção (Type/Pattern) com borda divisória */
+    .dropdown-section:first-of-type {
+        border-right: 1px solid #eee;
+    }
+
+    /* Actions ocupam largura total */
+    .dropdown-actions {
+        flex-basis: 100%;
     }
 
     /* NOVO: Customização do scrollbar */

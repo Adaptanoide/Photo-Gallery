@@ -999,6 +999,9 @@ document.addEventListener('click', function (event) {
 window.addEventListener('currencyChanged', (e) => {
     console.log('💱 [Core] Moeda alterada para:', e.detail.newCurrency);
 
+    // Atualizar labels dos filtros de preço
+    updatePriceFilterLabels();
+
     setTimeout(() => {
         // Verificar se estamos vendo subcategorias (folder-cards)
         const foldersContainer = document.getElementById('foldersContainer');
@@ -1016,5 +1019,60 @@ window.addEventListener('currencyChanged', (e) => {
         // Se estamos vendo fotos, o listener do client-gallery.js cuida disso
     }, 100);
 });
+
+// Atualizar labels quando a moeda estiver pronta no carregamento inicial
+window.addEventListener('currencyReady', () => {
+    console.log('💱 [Core] Currency ready - atualizando filtros de preço');
+    updatePriceFilterLabels();
+});
+
+/**
+ * Atualiza os labels dos filtros de preço com a moeda atual
+ * Funciona tanto no dropdown do desktop quanto no sidebar do mobile
+ */
+function updatePriceFilterLabels() {
+    if (!window.CurrencyManager || !CurrencyManager.state.isLoaded) {
+        return;
+    }
+
+    const symbol = CurrencyManager.getSymbol();
+
+    // Mapeamento de valores USD para labels
+    const priceRanges = [
+        { value: '0-50', label: `Under ${symbol}${CurrencyManager.convert(50).toFixed(0)}` },
+        { value: '50-100', label: `${symbol}${CurrencyManager.convert(50).toFixed(0)} - ${symbol}${CurrencyManager.convert(100).toFixed(0)}` },
+        { value: '100-150', label: `${symbol}${CurrencyManager.convert(100).toFixed(0)} - ${symbol}${CurrencyManager.convert(150).toFixed(0)}` },
+        { value: '150-200', label: `${symbol}${CurrencyManager.convert(150).toFixed(0)} - ${symbol}${CurrencyManager.convert(200).toFixed(0)}` },
+        { value: '200-999', label: `Over ${symbol}${CurrencyManager.convert(200).toFixed(0)}` }
+    ];
+
+    // Atualizar todos os checkboxes de preço (desktop dropdown e mobile sidebar)
+    priceRanges.forEach(range => {
+        // Desktop dropdown
+        const desktopCheckboxes = document.querySelectorAll(`.filters-dropdown-content input[value="${range.value}"]`);
+        desktopCheckboxes.forEach(checkbox => {
+            const label = checkbox.closest('label');
+            if (label) {
+                const span = label.querySelector('span');
+                if (span) span.textContent = range.label;
+            }
+        });
+
+        // Mobile sidebar
+        const mobileCheckboxes = document.querySelectorAll(`.filter-sidebar input[value="${range.value}"]`);
+        mobileCheckboxes.forEach(checkbox => {
+            const label = checkbox.closest('label');
+            if (label) {
+                const span = label.querySelector('span');
+                if (span) span.textContent = range.label;
+            }
+        });
+    });
+
+    console.log('💱 [Core] Labels de filtros de preço atualizados para', CurrencyManager.getCurrency());
+}
+
+// Expor função globalmente
+window.updatePriceFilterLabels = updatePriceFilterLabels;
 
 console.log('💱 [Core] Currency change listener registrado');
