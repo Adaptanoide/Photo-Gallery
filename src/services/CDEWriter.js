@@ -109,7 +109,7 @@ class CDEWriter {
 
     /**
      * MARCAR COMO PRE-SELECTED (quando adiciona ao carrinho)
-     * 🆕 AGORA COM FALLBACK AUTOMÁTICO
+     * SEM FALLBACK - usa apenas a tabela indicada para evitar modificar foto errada
      */
     static async markAsReserved(photoNumber, clientCode, clientName = 'Client', salesRep = 'Unassigned', cdeTable = 'tbinventario') {
         let connection = null;
@@ -118,16 +118,14 @@ class CDEWriter {
             connection = await this.getConnection();
             const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
 
-            // Determinar ordem de tentativa
-            const firstTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
-            const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
+            // Usar APENAS a tabela indicada - NÃO fazer fallback
+            const targetTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
 
-            console.log(`[CDE] Reservando foto ${photoNumber} para ${reservedusu}`);
-            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable}...`);
+            console.log(`[CDE] Reservando foto ${photoNumber} para ${reservedusu} em ${targetTable}`);
 
-            // TENTATIVA 1: Tabela preferida
-            const [result1] = await connection.execute(
-                `UPDATE ${firstTable} 
+            // PASSO 1: Tentar reservar na tabela indicada
+            const [updateResult] = await connection.execute(
+                `UPDATE ${targetTable}
                 SET AESTADOP = 'PRE-SELECTED',
                     RESERVEDUSU = ?,
                     AFECHA = NOW()
@@ -136,31 +134,32 @@ class CDEWriter {
                 [reservedusu, photoNumber]
             );
 
-            if (result1.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} reservada em ${firstTable}`);
+            if (updateResult.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} reservada em ${targetTable}`);
                 return true;
             }
 
-            // TENTATIVA 2: Fallback automático
-            console.log(`[CDE] 🔄 Não encontrada em ${firstTable}, tentando ${secondTable}...`);
-
-            const [result2] = await connection.execute(
-                `UPDATE ${secondTable} 
-                SET AESTADOP = 'PRE-SELECTED',
-                    RESERVEDUSU = ?,
-                    AFECHA = NOW()
-                WHERE ATIPOETIQUETA = ?
-                AND AESTADOP IN ('INGRESADO', 'WAREHOUSE', 'PRE-TRANSITO', 'TRANSITO')`,
-                [reservedusu, photoNumber]
+            // PASSO 2: Se não atualizou, verificar status atual
+            const [checkRows] = await connection.execute(
+                `SELECT AESTADOP, RESERVEDUSU FROM ${targetTable} WHERE ATIPOETIQUETA = ?`,
+                [photoNumber]
             );
 
-            if (result2.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} reservada em ${secondTable} (fallback)`);
-                return true;
+            if (checkRows.length > 0) {
+                const currentStatus = checkRows[0].AESTADOP;
+                const currentReservedBy = checkRows[0].RESERVEDUSU;
+
+                if (currentStatus === 'PRE-SELECTED' && currentReservedBy === reservedusu) {
+                    console.log(`[CDE] ✅ Foto ${photoNumber} já estava reservada para ${reservedusu} em ${targetTable}`);
+                    return true;
+                } else {
+                    console.log(`[CDE] ⚠️ Foto ${photoNumber} está com status ${currentStatus} (${currentReservedBy || 'sem reserva'}) em ${targetTable}`);
+                    return false;
+                }
             }
 
-            // Não encontrou em nenhuma tabela
-            console.log(`[CDE] ⚠️ Foto ${photoNumber} não estava disponível em nenhuma tabela`);
+            // PASSO 3: Foto não existe na tabela indicada
+            console.log(`[CDE] ⚠️ Foto ${photoNumber} não encontrada em ${targetTable}`);
             return false;
 
         } catch (error) {
@@ -177,19 +176,15 @@ class CDEWriter {
         try {
             connection = await this.getConnection();
 
-            // Determinar ordem de tentativa
-            const firstTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
-            const secondTable = firstTable === 'tbinventario' ? 'tbetiqueta' : 'tbinventario';
+            // Usar APENAS a tabela indicada - NÃO fazer fallback para evitar modificar foto errada
+            const targetTable = cdeTable === 'tbetiqueta' ? 'tbetiqueta' : 'tbinventario';
+            const availableStatus = targetTable === 'tbetiqueta' ? 'PRE-TRANSITO' : 'INGRESADO';
 
-            // ✅ DETERMINAR STATUS CORRETO BASEADO NA TABELA
-            const availableStatus = firstTable === 'tbetiqueta' ? 'PRE-TRANSITO' : 'INGRESADO';
+            console.log(`[CDE] Liberando foto ${photoNumber} em ${targetTable}`);
 
-            console.log(`[CDE] Liberando foto ${photoNumber}`);
-            console.log(`[CDE] 🎯 Tentando primeiro em ${firstTable} → ${availableStatus}...`);
-
-            // TENTATIVA 1: Tabela preferida
-            const [result1] = await connection.execute(
-                `UPDATE ${firstTable} 
+            // PASSO 1: Tentar atualizar se estiver em status reservado
+            const [updateResult] = await connection.execute(
+                `UPDATE ${targetTable}
                 SET AESTADOP = ?,
                     RESERVEDUSU = NULL,
                     AFECHA = NOW()
@@ -198,34 +193,30 @@ class CDEWriter {
                 [availableStatus, photoNumber]
             );
 
-            if (result1.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${firstTable} → ${availableStatus}`);
+            if (updateResult.affectedRows > 0) {
+                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${targetTable} → ${availableStatus}`);
                 return true;
             }
 
-            // TENTATIVA 2: Fallback automático
-            console.log(`[CDE] 🔄 Não encontrada em ${firstTable}, tentando ${secondTable}...`);
-
-            // ✅ STATUS CORRETO PARA A SEGUNDA TABELA
-            const fallbackStatus = secondTable === 'tbetiqueta' ? 'PRE-TRANSITO' : 'INGRESADO';
-
-            const [result2] = await connection.execute(
-                `UPDATE ${secondTable} 
-                SET AESTADOP = ?,
-                    RESERVEDUSU = NULL,
-                    AFECHA = NOW()
-                WHERE ATIPOETIQUETA = ?
-                AND AESTADOP IN ('PRE-SELECTED', 'RESERVED', 'CONFIRMED')`,
-                [fallbackStatus, photoNumber]
+            // PASSO 2: Se não atualizou, verificar status atual (pode já estar liberada)
+            const [checkRows] = await connection.execute(
+                `SELECT AESTADOP FROM ${targetTable} WHERE ATIPOETIQUETA = ?`,
+                [photoNumber]
             );
 
-            if (result2.affectedRows > 0) {
-                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em ${secondTable} (fallback) → ${fallbackStatus}`);
-                return true;
+            if (checkRows.length > 0) {
+                const currentStatus = checkRows[0].AESTADOP;
+                if (currentStatus === availableStatus || currentStatus === 'INGRESADO' || currentStatus === 'PRE-TRANSITO') {
+                    console.log(`[CDE] ✅ Foto ${photoNumber} já estava disponível em ${targetTable} (${currentStatus})`);
+                    return true; // Já está OK, não precisa fazer nada
+                } else {
+                    console.log(`[CDE] ⚠️ Foto ${photoNumber} está com status ${currentStatus} em ${targetTable} - não modificada`);
+                    return false;
+                }
             }
 
-            // Não encontrou em nenhuma tabela
-            console.log(`[CDE] ⚠️ Foto ${photoNumber} já estava liberada ou não encontrada`);
+            // PASSO 3: Foto não existe na tabela indicada
+            console.log(`[CDE] ⚠️ Foto ${photoNumber} não encontrada em ${targetTable}`);
             return false;
 
         } catch (error) {
