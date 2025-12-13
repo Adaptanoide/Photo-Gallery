@@ -714,3 +714,105 @@
         gap: 5px;
     }
 }
+
+/* ============================================
+   DARK MODE STYLES - Navigation
+   ============================================ */
+
+/* Breadcrumb container - critical fix for white area */
+body.dark-mode .breadcrumb-container {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .breadcrumb {
+    background: #252525 !important;
+}
+
+body.dark-mode .filters-dropdown-content {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .dropdown-section {
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .dropdown-section h4 {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .filter-option {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .filter-option:hover {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .dropdown-actions {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .btn-clear-dropdown {
+    background: #3d3d3d !important;
+    color: #e0e0e0 !important;
+    border-color: #555 !important;
+}
+
+body.dark-mode .btn-clear-dropdown:hover {
+    background: #4d4d4d !important;
+}
+
+body.dark-mode .gallery-nav-breadcrumb {
+    background: #252525 !important;
+}
+
+body.dark-mode .breadcrumb-item {
+    color: #999 !important;
+}
+
+body.dark-mode .breadcrumb-item a {
+    color: #999 !important;
+}
+
+body.dark-mode .breadcrumb-item.active,
+body.dark-mode .breadcrumb-current {
+    color: #f0f0f0 !important;
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .breadcrumb-photo-count {
+    background: #3d3d3d !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .breadcrumb-chat-btn {
+    background: #3d3d3d !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .breadcrumb-price {
+    background: #3d3d3d !important;
+}
+
+/* Breadcrumb Price Badge - White text on green */
+body.dark-mode .breadcrumb-price-badge {
+    color: #ffffff !important;
+}
+
+body.dark-mode .breadcrumb-price-badge i {
+    color: #ffffff !important;
+}
+
+/* Breadcrumb Price Hint - More visible in dark mode */
+body.dark-mode .breadcrumb-price-hint {
+    color: #22c55e !important;
+}
+
+/* Remove white border from breadcrumb in dark mode */
+body.dark-mode .breadcrumb {
+    border-color: #3d3d3d !important;
+    box-shadow: none !important;
+}

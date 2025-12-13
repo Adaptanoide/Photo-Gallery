@@ -710,3 +710,91 @@
     padding: 2rem;
     /* Reduzido de 2.5rem */
 }
+
+/* ============================================
+   DARK MODE - Fullscreen Modal Price Tiers
+   ============================================ */
+
+/* Price tiers bar - more visible in dark mode */
+body.dark-mode .modal-discount-grid {
+    background: linear-gradient(180deg, #2d2d2d 0%, #252525 100%) !important;
+    border-top: 2px solid #B87333 !important;
+    padding: 12px 20px !important;
+}
+
+body.dark-mode .modal-volume-pricing {
+    background: transparent !important;
+}
+
+body.dark-mode .modal-volume-pricing .volume-label {
+    color: #a0a0a0 !important;
+}
+
+body.dark-mode .modal-volume-pricing .volume-tier {
+    color: #a0a0a0 !important;
+    background: transparent !important;
+}
+
+body.dark-mode .modal-volume-pricing .volume-tier.active {
+    background: rgba(184, 115, 51, 0.25) !important;
+    border: 1px solid rgba(184, 115, 51, 0.5) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    color: #f0f0f0 !important;
+    font-weight: 600 !important;
+}
+
+body.dark-mode .modal-volume-pricing .tier-price {
+    color: #4caf50 !important;
+}
+
+body.dark-mode .modal-volume-pricing .volume-tier.active .tier-price {
+    color: white !important;
+}
+
+body.dark-mode .modal-volume-pricing .cart-count {
+    color: #d4a574 !important;
+    border-left-color: #444 !important;
+}
+
+/* Modal footer in dark mode - ensure it stands out */
+body.dark-mode .modal-footer {
+    background: #252525 !important;
+    border-top: 1px solid #B87333 !important;
+}
+
+body.dark-mode .photo-info span {
+    color: #a0a0a0 !important;
+}
+
+/* ============================================
+   MIX & MATCH MODAL - Scroll Fix
+   ============================================ */
+
+#mixMatchInfoModal > div:first-of-type:not(style) {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+
+/* Scrollbar styling for mix match modal */
+#mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scrollbar {
+    width: 8px;
+}
+
+#mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scrollbar-thumb {
+    background: #B87333;
+    border-radius: 4px;
+}
+
+body.dark-mode #mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+body.dark-mode #mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scrollbar-thumb {
+    background: #B87333;
+}

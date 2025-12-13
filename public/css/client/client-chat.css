@@ -509,3 +509,76 @@
     animation: none;
     transform: scale(1.1);
 }
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+/* Chat Window */
+body.dark-mode .chat-window {
+    background: #2a2a2a !important;
+    border: 1px solid #3d3d3d !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Chat Messages Area */
+body.dark-mode .chat-messages {
+    background: #1e1e1e !important;
+}
+
+/* Salesrep message bubble */
+body.dark-mode .chat-message.salesrep .chat-message-bubble {
+    background: #333 !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+/* Chat Input Area */
+body.dark-mode .chat-input-area {
+    background: #2a2a2a !important;
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .chat-textarea {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .chat-textarea::placeholder {
+    color: #888 !important;
+}
+
+body.dark-mode .chat-textarea:focus {
+    border-color: #B87333 !important;
+    background: #3a3a3a !important;
+}
+
+/* Chat Empty State */
+body.dark-mode .chat-empty {
+    color: #888 !important;
+}
+
+body.dark-mode .chat-loading {
+    color: #888 !important;
+}
+
+/* Chat Tooltip */
+body.dark-mode .chat-tooltip {
+    background: #2a2a2a !important;
+    border-color: #B87333 !important;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .chat-tooltip-text {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .chat-tooltip-arrow {
+    border-top-color: #B87333 !important;
+}
+
+/* Unread badge - keep it red/visible */
+body.dark-mode .chat-unread-badge {
+    border-color: #2a2a2a !important;
+}

@@ -1127,6 +1127,7 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
     try {
         const { code } = req.params;
         const Cart = require('../models/Cart');
+        const PhotoCategory = require('../models/PhotoCategory');
 
         console.log(`🛒 Fetching cart for client ${code}...`);
 
@@ -1152,19 +1153,150 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
             !item.ghostStatus || item.ghostStatus !== 'ghost'
         );
 
+        // 🆕 AGREGAR POR CATEGORIA para resumo
+        const categoryMap = new Map();
+
+        for (const item of validItems) {
+            const categoryPath = item.category || '';
+            if (!categoryMap.has(categoryPath)) {
+                categoryMap.set(categoryPath, {
+                    category: categoryPath,
+                    items: [],
+                    count: 0
+                });
+            }
+            const cat = categoryMap.get(categoryPath);
+            cat.items.push(item);
+            cat.count++;
+        }
+
+        // 🆕 BUSCAR INFO DE PREÇO/TIER para cada categoria
+        const categorySummary = [];
+
+        for (const [categoryPath, catData] of categoryMap) {
+            // Normalizar path para busca (converter " → " para "/")
+            const normalizedPath = categoryPath.replace(/ → /g, '/').replace(/\/$/, '');
+
+            // Buscar categoria no banco
+            const photoCategory = await PhotoCategory.findOne({
+                $or: [
+                    { displayName: { $regex: normalizedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+                    { googleDrivePath: { $regex: normalizedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
+                ],
+                isActive: true
+            });
+
+            // Extrair info de pricing
+            let qbItem = '';
+            let basePrice = 0;
+            let priceRanges = [];
+            let currentTier = null;
+            let nextTier = null;
+            let currentPrice = 0;
+
+            if (photoCategory) {
+                qbItem = photoCategory.qbItem || '';
+                basePrice = photoCategory.basePrice || 0;
+
+                // Buscar regra VOLUME
+                const volumeRule = photoCategory.discountRules?.find(r =>
+                    r.clientCode === 'VOLUME' && r.isActive
+                );
+
+                if (volumeRule && volumeRule.priceRanges?.length > 0) {
+                    priceRanges = volumeRule.priceRanges.sort((a, b) => a.min - b.min);
+
+                    // Encontrar tier atual baseado na quantidade
+                    for (let i = 0; i < priceRanges.length; i++) {
+                        const tier = priceRanges[i];
+                        const tierMax = tier.max || Infinity;
+
+                        if (catData.count >= tier.min && catData.count <= tierMax) {
+                            currentTier = {
+                                index: i + 1,
+                                min: tier.min,
+                                max: tier.max,
+                                price: tier.price
+                            };
+                            currentPrice = tier.price;
+
+                            // Próximo tier
+                            if (i < priceRanges.length - 1) {
+                                const next = priceRanges[i + 1];
+                                nextTier = {
+                                    index: i + 2,
+                                    min: next.min,
+                                    price: next.price,
+                                    itemsNeeded: next.min - catData.count
+                                };
+                            }
+                            break;
+                        }
+                    }
+
+                    // Se não encontrou tier, usar o maior disponível
+                    if (!currentTier && priceRanges.length > 0) {
+                        const lastTier = priceRanges[priceRanges.length - 1];
+                        if (catData.count >= lastTier.min) {
+                            currentTier = {
+                                index: priceRanges.length,
+                                min: lastTier.min,
+                                max: lastTier.max,
+                                price: lastTier.price
+                            };
+                            currentPrice = lastTier.price;
+                        }
+                    }
+                }
+
+                // Fallback para basePrice
+                if (!currentPrice) {
+                    currentPrice = basePrice;
+                }
+            }
+
+            categorySummary.push({
+                category: categoryPath,
+                shortName: categoryPath.split(' → ').filter(s => s.trim()).pop() || categoryPath,
+                qbItem: qbItem,
+                count: catData.count,
+                basePrice: basePrice,
+                currentPrice: currentPrice,
+                totalValue: catData.count * currentPrice,
+                currentTier: currentTier,
+                nextTier: nextTier,
+                allTiers: priceRanges.map((t, i) => ({
+                    tier: i + 1,
+                    min: t.min,
+                    max: t.max,
+                    price: t.price
+                })),
+                // 🆕 ITEMS para expandir com thumbnails
+                items: catData.items.map(item => ({
+                    r2Key: item.r2Key || item.driveFileId,
+                    name: item.name || item.fileName || 'Unnamed',
+                    price: item.price || currentPrice || 0
+                }))
+            });
+        }
+
+        // Ordenar por quantidade (maior primeiro)
+        categorySummary.sort((a, b) => b.count - a.count);
+
         const cartData = {
             _id: cart._id,
             clientCode: cart.clientCode,
             clientName: cart.clientName,
             createdAt: cart.createdAt,
             lastActivity: cart.lastActivity,
-            totalItems: validItems.length, // ✅ Conta só válidos
-            items: validItems.map(item => { // ✅ Mapeia só válidos
+            totalItems: validItems.length,
+            // 🆕 RESUMO POR CATEGORIA
+            categorySummary: categorySummary,
+            items: validItems.map(item => {
                 const expiresIn = item.expiresAt ?
                     Math.round((new Date(item.expiresAt) - now) / 1000 / 60) : null;
 
                 return {
-                    // Adapt to R2
                     r2Key: item.r2Key || item.driveFileId,
                     name: item.name || item.fileName || 'Unnamed',
                     price: item.price || 0,
@@ -1176,10 +1308,10 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
                     isExpired: expiresIn !== null && expiresIn <= 0
                 };
             }),
-            totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0) // ✅ Soma só válidos
+            totalValue: validItems.reduce((sum, item) => sum + (item.price || 0), 0)
         };
 
-        console.log(`✅ Cart found: ${cartData.totalItems} items, total value: $${cartData.totalValue}`);
+        console.log(`✅ Cart found: ${cartData.totalItems} items, ${categorySummary.length} categories`);
         res.json({
             success: true,
             cart: cartData

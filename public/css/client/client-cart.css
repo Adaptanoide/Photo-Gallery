@@ -873,3 +873,103 @@
     display: inline-block !important;
     box-shadow: 0 2px 4px rgba(184, 115, 51, 0.3) !important;
 }
+
+/* ============================================
+   DARK MODE STYLES - Cart
+   ============================================ */
+
+body.dark-mode .cart-content {
+    background: #2d2d2d !important;
+}
+
+body.dark-mode .cart-header {
+    background: #252525 !important;
+    border-bottom-color: #3d3d3d !important;
+}
+
+body.dark-mode .cart-header h2 {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .cart-close-btn {
+    color: #999 !important;
+}
+
+body.dark-mode .cart-close-btn:hover {
+    color: #fff !important;
+}
+
+body.dark-mode .cart-body {
+    background: #2d2d2d !important;
+}
+
+body.dark-mode .cart-item {
+    background: #333 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .cart-item:hover {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .cart-item-name {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .cart-item-category {
+    color: #999 !important;
+}
+
+body.dark-mode .cart-item-price {
+    color: #22c55e !important;
+}
+
+body.dark-mode .cart-empty-message {
+    color: #888 !important;
+}
+
+body.dark-mode .cart-footer {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .cart-total-label {
+    color: #999 !important;
+}
+
+body.dark-mode .cart-total-value {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .category-section-header {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .category-toggle {
+    color: #999 !important;
+}
+
+/* Cart item title - lighter gray in dark mode */
+body.dark-mode .cart-item-title {
+    color: #c0c0c0 !important;
+}
+
+/* Category label in cart */
+body.dark-mode .category-label {
+    color: #c0c0c0 !important;
+}
+
+/* Cart content scrollbar - dark mode */
+body.dark-mode .cart-content::-webkit-scrollbar-track {
+    background: #252525 !important;
+}
+
+body.dark-mode .cart-content::-webkit-scrollbar-thumb {
+    background: #B87333 !important;
+}
+
+body.dark-mode .cart-content {
+    scrollbar-color: #B87333 #252525 !important;
+}

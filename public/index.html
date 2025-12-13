@@ -35,6 +35,11 @@
 </head>
 
 <body class="home-page">
+    <!-- Dark Mode Toggle Button - Top Right -->
+    <button id="darkModeToggleLogin" class="dark-mode-toggle-login" onclick="toggleDarkModeLogin()" title="Toggle Dark Mode">
+        <i class="fas fa-moon" id="darkModeIconLogin"></i>
+    </button>
+
     <!-- Header Simplificado -->
     <header class="luxury-header">
         <div class="container">
@@ -237,6 +242,32 @@
     </footer>
 
     <script src="js/app.js?v=1755889230412"></script>
+
+    <!-- Dark Mode Script for Login Page -->
+    <script>
+        function toggleDarkModeLogin() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+            updateDarkModeUILogin(isDark);
+        }
+
+        function updateDarkModeUILogin(isDark) {
+            const icon = document.getElementById('darkModeIconLogin');
+            if (icon) {
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+
+        // Initialize dark mode on page load
+        (function initDarkModeLogin() {
+            const savedMode = localStorage.getItem('darkMode');
+            const isDark = savedMode === 'enabled';
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+            }
+            updateDarkModeUILogin(isDark);
+        })();
+    </script>
 </body>
 
 </html>

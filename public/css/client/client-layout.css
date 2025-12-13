@@ -353,62 +353,115 @@
     display: none;
 }
 
+/* ===== UNIFIED HEADER MENU ===== */
+.header-unified-menu {
+    display: none; /* Hidden on mobile */
+    align-items: center;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-left: 15px;
+}
+
+@media (min-width: 769px) {
+    .header-unified-menu {
+        display: flex;
+    }
+}
+
+.unified-currency-slot {
+    display: flex;
+    align-items: center;
+}
+
+.unified-currency-slot .currency-selector {
+    margin: 0 !important;
+}
+
+.unified-currency-slot .currency-btn {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    height: 30px !important;
+    min-width: auto !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+}
+
+.unified-currency-slot .currency-btn:hover {
+    background: #f5f5f5 !important;
+}
+
+.unified-menu-divider {
+    width: 1px;
+    height: 24px;
+    background: #e0e0e0;
+    margin: 0 4px;
+}
+
 /* ===== PROFILE DROPDOWN ===== */
 .profile-dropdown-container {
     position: relative;
-    margin-left: 8px;
 }
 
 .profile-dropdown-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #ffffff;
-    padding: 6px 10px;
-    border-radius: 20px;
+    border: none;
+    color: #B87333;
+    padding: 4px 10px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 6px;
-    height: 36px;
+    height: 30px;
 }
 
 .profile-dropdown-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: #FDF8F3;
 }
 
 .profile-avatar {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
+    background: #B87333;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 12px;
+    font-size: 11px;
 }
 
+i.fas.dropdown-chevron,
+i.fa.dropdown-chevron,
 .dropdown-chevron {
-    font-size: 8px;
-    transition: transform 0.2s ease;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.7rem !important;
+    margin-left: 2px;
+    color: #B87333;
+    display: inline-block !important;
+    transition: transform 0.3s ease !important;
+    -webkit-transition: transform 0.3s ease !important;
+    transform: rotate(0deg);
 }
 
+.profile-dropdown-btn:hover .dropdown-chevron,
 .profile-dropdown-btn.active .dropdown-chevron {
-    transform: rotate(180deg);
+    transform: rotate(180deg) !important;
+    -webkit-transform: rotate(180deg) !important;
 }
 
 /* Dropdown Menu */
 .profile-dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     right: 0;
-    min-width: 240px;
+    min-width: 280px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
@@ -427,26 +480,27 @@
 .dropdown-user-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 14px;
+    padding: 20px 18px;
     background: #f8f9fa;
     border-bottom: 1px solid #eee;
 }
 
 .dropdown-avatar {
-    font-size: 32px;
+    font-size: 42px;
     color: #B87333;
 }
 
 .dropdown-user-details {
     display: flex;
     flex-direction: column;
+    gap: 3px;
     overflow: hidden;
 }
 
 .dropdown-name {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     color: #333;
     white-space: nowrap;
     overflow: hidden;
@@ -454,8 +508,8 @@
 }
 
 .dropdown-email {
-    font-size: 11px;
-    color: #888;
+    font-size: 13px;
+    color: #777;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -472,31 +526,32 @@
 .dropdown-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     width: 100%;
-    padding: 10px 14px;
+    padding: 16px 18px;
     border: none;
     background: transparent;
     color: #444;
-    font-size: 13px;
+    font-size: 15px;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
 }
 
 .dropdown-item:hover {
-    background: #f5f5f5;
+    background: #f8f8f8;
 }
 
 .dropdown-item i {
-    width: 18px;
-    color: #888;
-    font-size: 14px;
+    width: 22px;
+    color: #B87333;
+    font-size: 16px;
 }
 
 .dropdown-item.logout-item {
     color: #dc2626;
     border-top: 1px solid #eee;
+    margin-top: 8px;
 }
 
 .dropdown-item.logout-item i {
@@ -515,11 +570,11 @@
 /* Mobile Profile Button */
 .mobile-profile-btn {
     display: none;
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     border: 1px solid var(--gold-primary);
-    background: rgba(184, 115, 51, 0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: var(--gold-primary);
     cursor: pointer;
     align-items: center;
@@ -1210,4 +1265,1216 @@
     .profile-modal-footer {
         padding: 14px 20px;
     }
+}
+
+/* ============================================
+   DARK MODE STYLES
+   ============================================ */
+
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+}
+
+/* Main content area */
+body.dark-mode .main {
+    background-color: #1a1a1a;
+}
+
+body.dark-mode .container {
+    background-color: transparent;
+}
+
+/* Header - Keep bronze theme but darken slightly */
+body.dark-mode .client-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+    border-bottom: 1px solid #333;
+}
+
+/* Unified menu in header */
+body.dark-mode .header-unified-menu {
+    background: #2d2d2d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .unified-menu-divider {
+    background: #444;
+}
+
+body.dark-mode .unified-currency-slot .currency-btn:hover {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .profile-dropdown-btn:hover {
+    background: #3d3d3d;
+}
+
+/* Profile Dropdown Menu */
+body.dark-mode .profile-dropdown-menu {
+    background: #2d2d2d;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .dropdown-user-info {
+    background: #252525;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+body.dark-mode .dropdown-name {
+    color: #f0f0f0;
+}
+
+body.dark-mode .dropdown-email {
+    color: #999;
+}
+
+body.dark-mode .dropdown-item {
+    color: #e0e0e0;
+}
+
+body.dark-mode .dropdown-item:hover {
+    background: #3d3d3d;
+}
+
+body.dark-mode .dropdown-item.logout-item {
+    border-top: 1px solid #3d3d3d;
+}
+
+body.dark-mode .dropdown-item.logout-item:hover {
+    background: #3d2020;
+}
+
+/* Mobile Profile Menu */
+body.dark-mode .mobile-menu-content {
+    background: #2d2d2d;
+}
+
+body.dark-mode .mobile-menu-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+}
+
+body.dark-mode .mobile-menu-item {
+    color: #e0e0e0;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+body.dark-mode .mobile-menu-item:active {
+    background: #3d3d3d;
+}
+
+body.dark-mode .mobile-menu-item.logout {
+    border-top: 1px solid #3d3d3d;
+}
+
+/* Category Cards */
+body.dark-mode .category-card {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .category-card:hover {
+    background: #333;
+    border-color: #B87333;
+}
+
+body.dark-mode .category-name {
+    color: #f0f0f0;
+}
+
+body.dark-mode .category-description {
+    color: #999;
+}
+
+/* Product Cards */
+body.dark-mode .product-card {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .product-card:hover {
+    border-color: #B87333;
+}
+
+body.dark-mode .product-info {
+    background: #252525;
+}
+
+body.dark-mode .product-name {
+    color: #f0f0f0;
+}
+
+body.dark-mode .product-sku {
+    color: #888;
+}
+
+/* Gallery Navigation */
+body.dark-mode .gallery-breadcrumb {
+    background: #252525;
+}
+
+body.dark-mode .breadcrumb-item {
+    color: #999;
+}
+
+body.dark-mode .breadcrumb-item.active {
+    color: #f0f0f0;
+}
+
+/* Filters */
+body.dark-mode .filters-dropdown {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .filters-section h4 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .filter-option {
+    color: #e0e0e0;
+}
+
+body.dark-mode .filter-option:hover {
+    background: #3d3d3d;
+}
+
+/* Search */
+body.dark-mode .search-input {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+    color: #f0f0f0;
+}
+
+body.dark-mode .search-input::placeholder {
+    color: #777;
+}
+
+body.dark-mode .search-suggestions-dropdown {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+/* Cart Sidebar */
+body.dark-mode .cart-sidebar {
+    background: #2d2d2d;
+}
+
+body.dark-mode .cart-header {
+    background: #252525;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+body.dark-mode .cart-header h2 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .cart-item {
+    background: #333;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .cart-item-name {
+    color: #f0f0f0;
+}
+
+body.dark-mode .cart-item-sku {
+    color: #888;
+}
+
+body.dark-mode .cart-footer {
+    background: #252525;
+    border-top: 1px solid #3d3d3d;
+}
+
+body.dark-mode .cart-empty {
+    color: #888;
+}
+
+/* Modals */
+body.dark-mode .profile-modal-content {
+    background: #2d2d2d;
+}
+
+body.dark-mode .profile-modal-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+}
+
+body.dark-mode .profile-modal-body {
+    background: #2d2d2d;
+}
+
+body.dark-mode .profile-form-group label {
+    color: #ccc;
+}
+
+body.dark-mode .profile-form-input {
+    background: #252525;
+    border-color: #3d3d3d;
+    color: #f0f0f0;
+}
+
+body.dark-mode .profile-form-input:focus {
+    border-color: #B87333;
+    background: #333;
+}
+
+body.dark-mode .profile-modal-footer {
+    background: #252525;
+    border-top: 1px solid #3d3d3d;
+}
+
+/* Currency Dropdown */
+body.dark-mode .currency-dropdown {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .currency-option {
+    color: #e0e0e0;
+}
+
+body.dark-mode .currency-option:hover {
+    background: #3d3d3d;
+}
+
+/* Buttons adjustments */
+body.dark-mode .btn-profile-cancel {
+    background: #3d3d3d;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+body.dark-mode .btn-profile-cancel:hover {
+    background: #4d4d4d;
+}
+
+/* Scroll to top button */
+body.dark-mode .scroll-to-top {
+    background: #3d3d3d;
+    color: #B87333;
+}
+
+body.dark-mode .scroll-to-top:hover {
+    background: #4d4d4d;
+}
+
+/* Loading section */
+body.dark-mode .loading-section {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+/* Welcome text */
+body.dark-mode .header-welcome-text {
+    color: #f0f0f0;
+}
+
+/* Selection Counter */
+body.dark-mode .selection-counter {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+/* Mix & Match */
+body.dark-mode .mix-match-drawer {
+    background: #2d2d2d;
+}
+
+body.dark-mode .mix-match-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+}
+
+/* Mix & Match Modal */
+body.dark-mode .mix-match-modal-content,
+body.dark-mode #mixMatchInfoModal .mix-match-modal-content,
+body.dark-mode [class*="modal-content"] {
+    background: #2d2d2d !important;
+    color: #e0e0e0;
+}
+
+body.dark-mode .mix-match-modal-content h3,
+body.dark-mode .mix-match-modal-content h4,
+body.dark-mode .mix-match-modal-content p,
+body.dark-mode .mix-match-modal-content li {
+    color: #e0e0e0;
+}
+
+body.dark-mode .mix-match-modal-content .pro-tip {
+    background: #3d3d3d;
+}
+
+/* Filters Dropdown */
+body.dark-mode .filters-dropdown,
+body.dark-mode .filters-panel,
+body.dark-mode .filters-content {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .filters-dropdown h4,
+body.dark-mode .filters-section h4,
+body.dark-mode .filter-group-title {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .filter-option,
+body.dark-mode .filter-option label {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .filter-option:hover {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .btn-clear-dropdown,
+body.dark-mode .btn-done-dropdown {
+    background: #3d3d3d;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+/* Subcategory cards (the white ones) */
+body.dark-mode .subcategory-card,
+body.dark-mode .category-item,
+body.dark-mode [class*="category-card"] {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .subcategory-card:hover,
+body.dark-mode .category-item:hover {
+    background: #333 !important;
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .subcategory-name,
+body.dark-mode .category-title,
+body.dark-mode [class*="category-name"] {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .subcategory-description,
+body.dark-mode .category-desc,
+body.dark-mode [class*="category-description"] {
+    color: #999 !important;
+}
+
+body.dark-mode .subcategory-count,
+body.dark-mode .product-count {
+    color: #888 !important;
+}
+
+/* Chat Widget */
+body.dark-mode .chat-widget,
+body.dark-mode .chat-container {
+    background: #2d2d2d;
+}
+
+body.dark-mode .chat-messages {
+    background: #252525;
+}
+
+body.dark-mode .chat-input-container {
+    background: #2d2d2d;
+    border-top: 1px solid #3d3d3d;
+}
+
+body.dark-mode .chat-input {
+    background: #252525;
+    border-color: #3d3d3d;
+    color: #f0f0f0;
+}
+
+body.dark-mode .chat-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+}
+
+/* Breadcrumb */
+body.dark-mode .breadcrumb,
+body.dark-mode .gallery-nav,
+body.dark-mode .nav-breadcrumb {
+    background: #252525;
+}
+
+body.dark-mode .breadcrumb a,
+body.dark-mode .breadcrumb span {
+    color: #999;
+}
+
+body.dark-mode .breadcrumb .active,
+body.dark-mode .breadcrumb-current {
+    color: #f0f0f0;
+}
+
+/* Progress bar area */
+body.dark-mode .progress-section,
+body.dark-mode .tier-progress,
+body.dark-mode .pricing-tiers {
+    background: #252525;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .tier-label,
+body.dark-mode .tier-info {
+    color: #e0e0e0;
+}
+
+/* Zoom/Lightbox */
+body.dark-mode .zoom-modal,
+body.dark-mode .lightbox-container {
+    background: rgba(0, 0, 0, 0.95);
+}
+
+body.dark-mode .zoom-info-bar,
+body.dark-mode .lightbox-header {
+    background: #1a1a1a;
+    color: #f0f0f0;
+}
+
+body.dark-mode .zoom-footer,
+body.dark-mode .lightbox-footer {
+    background: #1a1a1a;
+}
+
+/* Generic modals fix */
+body.dark-mode .modal-content,
+body.dark-mode .modal-body,
+body.dark-mode .modal-dialog {
+    background: #2d2d2d !important;
+    color: #e0e0e0;
+}
+
+body.dark-mode .modal-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+    border-bottom: 1px solid #3d3d3d;
+}
+
+body.dark-mode .modal-footer {
+    background: #252525;
+    border-top: 1px solid #3d3d3d;
+}
+
+/* Confirmation modals */
+body.dark-mode .confirmation-modal-content {
+    background: #2d2d2d !important;
+}
+
+body.dark-mode .confirmation-title,
+body.dark-mode .confirmation-message {
+    color: #e0e0e0;
+}
+
+/* Any remaining white backgrounds */
+body.dark-mode .card,
+body.dark-mode .panel,
+body.dark-mode .box {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+/* Currency Dropdown */
+body.dark-mode .currency-dropdown {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option {
+    color: #e0e0e0 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option:hover {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option.active {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .currency-info {
+    color: #888 !important;
+}
+
+/* Loading States */
+body.dark-mode .loading-container,
+body.dark-mode .loading-wrapper,
+body.dark-mode .loading-box,
+body.dark-mode [class*="loading"] {
+    background: #2d2d2d !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .loading-text {
+    color: #999 !important;
+}
+
+/* Subcategory Cards - More specific selectors */
+body.dark-mode .subcategory-grid .category-card,
+body.dark-mode .categories-grid .category-card,
+body.dark-mode .category-grid > div,
+body.dark-mode [class*="category-card"],
+body.dark-mode [class*="subcategory"] {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .subcategory-grid .category-card:hover,
+body.dark-mode .categories-grid .category-card:hover {
+    background: #333 !important;
+    border-color: #B87333 !important;
+}
+
+/* Photo Grid Area */
+body.dark-mode .photos-grid,
+body.dark-mode .gallery-grid,
+body.dark-mode .product-grid,
+body.dark-mode .photo-gallery,
+body.dark-mode #photosContainer,
+body.dark-mode #galleryContainer,
+body.dark-mode .gallery-content {
+    background: #1a1a1a !important;
+}
+
+/* Pricing Tiers Bar */
+body.dark-mode .pricing-bar,
+body.dark-mode .tier-bar,
+body.dark-mode .tiers-container,
+body.dark-mode .progress-container,
+body.dark-mode [class*="tier"],
+body.dark-mode [class*="pricing"] {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .tier-item,
+body.dark-mode .tier-option {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .tier-label,
+body.dark-mode .tier-text,
+body.dark-mode .tier-count {
+    color: #999 !important;
+}
+
+/* Gallery Container */
+body.dark-mode .gallery-wrapper,
+body.dark-mode .content-wrapper,
+body.dark-mode .main-content {
+    background: #1a1a1a !important;
+}
+
+/* Container principal */
+body.dark-mode .container {
+    background: transparent !important;
+}
+
+/* Corrigir cores de texto nos cards */
+body.dark-mode .category-name,
+body.dark-mode .category-title,
+body.dark-mode .card-title,
+body.dark-mode h3,
+body.dark-mode h4 {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .category-description,
+body.dark-mode .card-description,
+body.dark-mode .category-desc,
+body.dark-mode p {
+    color: #b0b0b0 !important;
+}
+
+body.dark-mode .product-count,
+body.dark-mode .item-count,
+body.dark-mode .count {
+    color: #888 !important;
+}
+
+/* Seção Your Progress */
+body.dark-mode .progress-section,
+body.dark-mode .your-progress {
+    background: #252525 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Botões What's this */
+body.dark-mode .whats-this-btn,
+body.dark-mode [class*="info-btn"] {
+    color: #999 !important;
+}
+
+/* Área completa da galeria de fotos */
+body.dark-mode .gallery-section,
+body.dark-mode .photos-section,
+body.dark-mode #categoryContent,
+body.dark-mode #subcategoryContent {
+    background: #1a1a1a !important;
+}
+
+/* Override para qualquer fundo branco restante */
+body.dark-mode div[style*="background: white"],
+body.dark-mode div[style*="background:#fff"],
+body.dark-mode div[style*="background: #fff"],
+body.dark-mode div[style*="background:#ffffff"],
+body.dark-mode div[style*="background: #ffffff"] {
+    background: #2d2d2d !important;
+}
+
+/* Garantir que o body todo seja escuro - usar cinza escuro, não preto puro */
+body.dark-mode,
+body.dark-mode html {
+    background-color: #1e1e1e !important;
+}
+
+/* Main element */
+body.dark-mode main,
+body.dark-mode .main {
+    background-color: #1e1e1e !important;
+}
+
+/* ============================================
+   DARK MODE - FIXES ADICIONAIS
+   ============================================ */
+
+/* Header - Filter button and search backgrounds */
+body.dark-mode .filters-btn,
+body.dark-mode .filter-btn,
+body.dark-mode .btn-filters,
+body.dark-mode [class*="filter-btn"] {
+    background: #333 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .search-wrapper,
+body.dark-mode .search-container .search-wrapper {
+    background: #333 !important;
+}
+
+body.dark-mode .search-button,
+body.dark-mode .search-btn {
+    background: #333 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Chat Widget - Input area */
+body.dark-mode .chat-body,
+body.dark-mode .chat-messages-container {
+    background: #252525 !important;
+}
+
+body.dark-mode .chat-input-wrapper,
+body.dark-mode .chat-input-area,
+body.dark-mode .chat-footer {
+    background: #2d2d2d !important;
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .chat-input,
+body.dark-mode .chat-textarea,
+body.dark-mode textarea.chat-input {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .chat-input::placeholder {
+    color: #888 !important;
+}
+
+body.dark-mode .chat-empty-message {
+    color: #888 !important;
+}
+
+/* Currency Dropdown - Footer and text colors */
+body.dark-mode .currency-dropdown .currency-info,
+body.dark-mode .currency-footer,
+body.dark-mode .currency-dropdown-footer {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option .option-code,
+body.dark-mode .currency-option .currency-code,
+body.dark-mode .option-name {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .currency-option .option-full-name,
+body.dark-mode .currency-option .currency-name {
+    color: #aaa !important;
+}
+
+/* Subcategory Cards - Force dark when navigating */
+body.dark-mode .category-card,
+body.dark-mode .subcategory-card,
+body.dark-mode .gallery-card,
+body.dark-mode .product-card,
+body.dark-mode [class*="-card"] {
+    background: #2a2a2a !important;
+    border-color: #3d3d3d !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .category-card:hover,
+body.dark-mode .subcategory-card:hover,
+body.dark-mode .gallery-card:hover {
+    background: #333 !important;
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .category-card .category-name,
+body.dark-mode .subcategory-card .category-name,
+body.dark-mode [class*="-card"] h3,
+body.dark-mode [class*="-card"] h4,
+body.dark-mode [class*="-card"] .title {
+    color: #f5f5f5 !important;
+}
+
+body.dark-mode .category-card .category-description,
+body.dark-mode .subcategory-card .category-description,
+body.dark-mode [class*="-card"] p,
+body.dark-mode [class*="-card"] .description {
+    color: #b0b0b0 !important;
+}
+
+body.dark-mode .category-card .product-count,
+body.dark-mode [class*="-card"] .count,
+body.dark-mode [class*="-card"] .meta {
+    color: #888 !important;
+}
+
+/* Pricing Tiers - Background fix */
+body.dark-mode .pricing-tiers-container,
+body.dark-mode .tiers-row,
+body.dark-mode .tier-buttons,
+body.dark-mode .mix-match-tiers,
+body.dark-mode [class*="tier-container"],
+body.dark-mode [class*="pricing-container"] {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .tier-button,
+body.dark-mode .tier-btn,
+body.dark-mode [class*="tier-btn"],
+body.dark-mode [class*="tier-item"] {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .tier-button.active,
+body.dark-mode .tier-btn.active {
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .tier-label,
+body.dark-mode .tier-name,
+body.dark-mode [class*="tier"] span {
+    color: #ccc !important;
+}
+
+/* Progress Section */
+body.dark-mode .progress-header,
+body.dark-mode .progress-info,
+body.dark-mode .your-progress-section {
+    background: #252525 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .progress-text {
+    color: #ccc !important;
+}
+
+/* Cart Footer fix */
+body.dark-mode .cart-footer,
+body.dark-mode .cart-bottom,
+body.dark-mode .cart-actions {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .cart-total,
+body.dark-mode .cart-summary {
+    background: #2d2d2d !important;
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .review-summary-btn,
+body.dark-mode .btn-review-summary {
+    background: #333 !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+/* Access Disabled Modal - Will need JS fix */
+body.dark-mode .blocked-modal,
+body.dark-mode .access-blocked-modal,
+body.dark-mode [class*="blocked"],
+body.dark-mode [class*="disabled-modal"] {
+    background: #2d2d2d !important;
+}
+
+body.dark-mode .blocked-modal h1,
+body.dark-mode .blocked-modal h2,
+body.dark-mode .blocked-modal h3 {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .blocked-modal p,
+body.dark-mode .blocked-modal li {
+    color: #ccc !important;
+}
+
+/* General fix - Any white background divs */
+body.dark-mode div,
+body.dark-mode section,
+body.dark-mode article {
+    border-color: #3d3d3d;
+}
+
+/* Search input */
+body.dark-mode .search-input,
+body.dark-mode input.search-input,
+body.dark-mode input[type="search"] {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .search-input::placeholder {
+    color: #888 !important;
+}
+
+/* ============================================
+   DARK MODE - PRICING TIERS BAR FIX
+   ============================================ */
+body.dark-mode #priceBarContainer,
+body.dark-mode .price-bar-container,
+body.dark-mode .progress-bar-container,
+body.dark-mode .progress-bar-header,
+body.dark-mode .price-progress-wrapper {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .progress-bar-label,
+body.dark-mode .progress-bar-incentive {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .progress-bar-track {
+    background: #333 !important;
+}
+
+body.dark-mode .price-tier {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .price-tier:hover {
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .tier-name {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .tier-label {
+    color: #999 !important;
+}
+
+body.dark-mode .mix-match-hint {
+    color: #888 !important;
+}
+
+body.dark-mode .mix-match-hint:hover {
+    color: #B87333 !important;
+}
+
+/* ============================================
+   DARK MODE - FILTERS BUTTON FIX
+   ============================================ */
+body.dark-mode .header-filters-btn {
+    background: #333 !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .header-filters-btn:hover {
+    background: #3d3d3d !important;
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .header-filters-btn i {
+    color: #B87333 !important;
+}
+
+/* Search wrapper fix */
+body.dark-mode .header-search-wrapper,
+body.dark-mode .search-wrapper {
+    background: #333 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .header-search-wrapper input,
+body.dark-mode .search-wrapper input {
+    background: transparent !important;
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .header-search-btn,
+body.dark-mode .search-btn {
+    background: transparent !important;
+    color: #B87333 !important;
+}
+
+/* ============================================
+   DARK MODE - HEADER AREA WHITE FIX
+   ============================================ */
+body.dark-mode .navigation-bar,
+body.dark-mode .nav-bar,
+body.dark-mode .header-nav,
+body.dark-mode .breadcrumb-container,
+body.dark-mode .gallery-navigation,
+body.dark-mode .category-nav,
+body.dark-mode .subcategory-nav {
+    background: #1e1e1e !important;
+    border-color: #3d3d3d !important;
+}
+
+/* Any white borders or gaps */
+body.dark-mode .client-header + *,
+body.dark-mode header + * {
+    border-top-color: #3d3d3d !important;
+}
+
+/* Category tabs row */
+body.dark-mode .category-tabs,
+body.dark-mode .tabs-container,
+body.dark-mode .category-row {
+    background: #1e1e1e !important;
+    border-color: #3d3d3d !important;
+}
+
+/* ============================================
+   DARK MODE - PRODUCT COUNT BADGES FIX
+   ============================================ */
+body.dark-mode .product-count,
+body.dark-mode .item-count,
+body.dark-mode .photo-count,
+body.dark-mode .count-badge,
+body.dark-mode [class*="product-count"],
+body.dark-mode span[class*="-count"] {
+    background: transparent !important;
+    color: #888 !important;
+}
+
+/* Category card badges specifically */
+body.dark-mode .category-card .product-count,
+body.dark-mode .subcategory-card .product-count,
+body.dark-mode .category-card .count,
+body.dark-mode .gallery-card .count {
+    background: transparent !important;
+    color: #888 !important;
+    border-color: transparent !important;
+}
+
+/* The icon next to count */
+body.dark-mode .category-card .product-count i,
+body.dark-mode .category-card .count i,
+body.dark-mode [class*="-card"] .product-count i {
+    color: #666 !important;
+}
+
+/* Gallery section container - ensure dark background */
+body.dark-mode .gallery-section,
+body.dark-mode .categories-section,
+body.dark-mode .products-section,
+body.dark-mode #categoryContent,
+body.dark-mode #subcategoryContent,
+body.dark-mode #galleryContent {
+    background: #1e1e1e !important;
+}
+
+/* Gallery grid wrapper */
+body.dark-mode .gallery-grid-wrapper,
+body.dark-mode .categories-wrapper,
+body.dark-mode .content-area {
+    background: #1e1e1e !important;
+}
+
+/* ============================================
+   DARK MODE - SPECIFIC CONTAINER IDS
+   ============================================ */
+body.dark-mode #clientContent,
+body.dark-mode #contentContainer,
+body.dark-mode #categoriesContainer,
+body.dark-mode #foldersContainer,
+body.dark-mode #photosContainer {
+    background: #1e1e1e !important;
+}
+
+/* Breadcrumb container fix */
+body.dark-mode #breadcrumbContainer,
+body.dark-mode .breadcrumb-container {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .breadcrumb {
+    background: transparent !important;
+}
+
+body.dark-mode .breadcrumb-item,
+body.dark-mode .breadcrumb-item.home-btn {
+    color: #999 !important;
+    background: transparent !important;
+}
+
+body.dark-mode .breadcrumb-item:hover {
+    color: #B87333 !important;
+}
+
+body.dark-mode .breadcrumb-back-btn {
+    color: #999 !important;
+    background: transparent !important;
+}
+
+body.dark-mode .breadcrumb-info-group {
+    background: transparent !important;
+}
+
+body.dark-mode .breadcrumb-price-hint,
+body.dark-mode .breadcrumb-photo-count {
+    color: #888 !important;
+}
+
+/* Categories grid */
+body.dark-mode .categories-grid,
+body.dark-mode .folders-grid,
+body.dark-mode .photos-grid {
+    background: #1e1e1e !important;
+}
+
+/* Loading sections */
+body.dark-mode .loading-section,
+body.dark-mode .navigation-loading,
+body.dark-mode #clientLoading,
+body.dark-mode #navigationLoading {
+    background: #1e1e1e !important;
+    color: #888 !important;
+}
+
+/* Error section */
+body.dark-mode .error-section,
+body.dark-mode #clientError {
+    background: #1e1e1e !important;
+}
+
+body.dark-mode .error-content {
+    background: #2d2d2d !important;
+    color: #e0e0e0 !important;
+}
+
+/* ============================================
+   DARK MODE - CONFIRM SELECTION MODAL
+   ============================================ */
+
+body.dark-mode #confirmModalBox {
+    background: #2a2a2a !important;
+}
+
+/* Body section of confirm modal */
+body.dark-mode #confirmModalBox > div:nth-child(2) {
+    background: #2a2a2a !important;
+}
+
+/* Info cards - Green "What happens next" */
+body.dark-mode #confirmModalBox div[style*="background: #f0fdf4"] {
+    background: rgba(22, 163, 74, 0.15) !important;
+    border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+body.dark-mode #confirmModalBox div[style*="background: #f0fdf4"] strong,
+body.dark-mode #confirmModalBox div[style*="color: #166534"] {
+    color: #86efac !important;
+}
+
+body.dark-mode #confirmModalBox div[style*="background: #f0fdf4"] p {
+    color: #86efac !important;
+}
+
+/* Info cards - Blue "Hours" */
+body.dark-mode #confirmModalBox div[style*="background: #eff6ff"] {
+    background: rgba(37, 99, 235, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+body.dark-mode #confirmModalBox div[style*="background: #eff6ff"] span,
+body.dark-mode #confirmModalBox div[style*="color: #1e40af"] {
+    color: #93c5fd !important;
+}
+
+/* Warning card - Yellow (ghost items) */
+body.dark-mode #confirmModalBox div[style*="background: #fef3cd"] {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+body.dark-mode #confirmModalBox div[style*="background: #fef3cd"] span {
+    color: #fcd34d !important;
+}
+
+/* Label for textarea */
+body.dark-mode #confirmModalBox label[style*="color: #374151"] {
+    color: #c0c0c0 !important;
+}
+
+body.dark-mode #confirmModalBox span[style*="color: #9ca3af"] {
+    color: #888 !important;
+}
+
+/* Textarea */
+body.dark-mode #clientObservations {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode #clientObservations::placeholder {
+    color: #888 !important;
+}
+
+/* Footer section */
+body.dark-mode #confirmModalBox > div:last-child {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+}
+
+/* Cancel button */
+body.dark-mode #confirmModalBox button[style*="background: white"] {
+    background: #3d3d3d !important;
+    color: #c0c0c0 !important;
+    border-color: #555 !important;
+}
+
+/* ============================================
+   DARK MODE - SUCCESS/CONFIRMATION RESULT MODAL
+   ============================================ */
+
+body.dark-mode .swal2-popup,
+body.dark-mode .swal2-container .swal2-popup {
+    background: #2a2a2a !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .swal2-title {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .swal2-html-container {
+    color: #c0c0c0 !important;
 }

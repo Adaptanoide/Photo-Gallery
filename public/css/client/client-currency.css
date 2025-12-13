@@ -24,18 +24,18 @@
     .currency-btn {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
+        gap: 5px;
+        padding: 5px 10px;
         background: #ffffff;
         border: 1px solid rgb(255 255 255);
-        border-radius: 8px;
+        border-radius: 6px;
         color: #28a745;
-        font-size: 0.9rem;
+        font-size: 0.82rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
-        height: 36px;
-        min-width: 85px;
+        height: 32px;
+        min-width: 75px;
     }
 
     .currency-btn:hover {
@@ -51,7 +51,7 @@
 
     .currency-btn .currency-symbol {
         font-weight: 700;
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     .currency-btn .currency-code {
@@ -175,6 +175,11 @@
     .currency-disclaimer i {
         color: #999;
         font-size: 0.85rem;
+    }
+
+    .currency-disclaimer .disclaimer-link {
+        color: #888;
+        font-size: 0.7rem;
     }
 }
 
@@ -521,4 +526,71 @@
 .dual-currency-display .secondary-price {
     font-size: 0.85em;
     color: #666;
+}
+
+/* ============================================
+   DARK MODE STYLES - Currency
+   ============================================ */
+
+body.dark-mode .currency-dropdown {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .currency-option:hover {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option.active {
+    background: #3d3d3d !important;
+}
+
+body.dark-mode .currency-option .option-name {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .currency-option .option-full-name {
+    color: #999 !important;
+}
+
+body.dark-mode .currency-info {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+    color: #888 !important;
+}
+
+body.dark-mode .currency-info a {
+    color: #B87333 !important;
+}
+
+body.dark-mode .currency-modal-mobile .modal-content {
+    background: #2d2d2d !important;
+}
+
+body.dark-mode .currency-modal-mobile .modal-header {
+    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%) !important;
+}
+
+body.dark-mode .currency-modal-mobile .currency-option {
+    border-bottom-color: #3d3d3d !important;
+}
+
+/* Currency Disclaimer Footer - Dark Mode */
+body.dark-mode .currency-disclaimer {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .currency-disclaimer i {
+    color: #B87333 !important;
+}
+
+body.dark-mode .currency-disclaimer a,
+body.dark-mode .currency-disclaimer .disclaimer-link {
+    color: #B87333 !important;
 }

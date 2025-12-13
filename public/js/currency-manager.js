@@ -278,10 +278,10 @@ window.CurrencyManager = {
         // Verificar se já existe
         if (document.getElementById('currencySelectorDesktop')) return;
 
-        // Encontrar local para inserir (após headerWelcome)
-        const welcomeSpan = document.getElementById('headerWelcome');
-        if (!welcomeSpan) {
-            console.warn('⚠️ [CurrencyManager] headerWelcome não encontrado');
+        // Encontrar slot no menu unificado
+        const currencySlot = document.getElementById('currencySlot');
+        if (!currencySlot) {
+            console.warn('⚠️ [CurrencyManager] currencySlot não encontrado');
             return;
         }
 
@@ -290,7 +290,7 @@ window.CurrencyManager = {
         selector.className = 'currency-selector';
         selector.innerHTML = this.getSelectorHTML('desktop');
 
-        welcomeSpan.insertAdjacentElement('afterend', selector);
+        currencySlot.appendChild(selector);
         console.log('✅ [CurrencyManager] Seletor desktop renderizado');
     },
 
@@ -351,7 +351,7 @@ window.CurrencyManager = {
                 <div class="currency-disclaimer">
                     <i class="fas fa-info-circle"></i>
                     Approximate prices. Final invoice in USD.<br>
-                    <a href="https://www.exchangerate-api.com" target="_blank" style="color: #888; font-size: 0.7rem;">Rates by ExchangeRate-API</a>
+                    <a href="https://www.exchangerate-api.com" target="_blank" class="disclaimer-link">Rates by ExchangeRate-API</a>
                 </div>
             </div>
         `;

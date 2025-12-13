@@ -35,25 +35,66 @@ function isGlobalMixMatch(categoryPath) {
 }
 
 /**
- * Middleware de validação simples e direto
+ * Middleware de validação robusto
+ * Verifica: sessionId, clientCode E se cliente existe/está ativo no banco
  */
-const validateRequest = (req, res, next) => {
+const validateRequest = async (req, res, next) => {
     const sessionId = req.params.sessionId || req.body.sessionId;
     const clientCode = req.body.clientCode;
 
     if (req.path.includes('/add') || req.path.includes('/remove')) {
+        // Validação básica do sessionId
         if (!sessionId || sessionId.length < 10) {
+            console.log(`[CART-VALIDATION] ❌ SessionId inválido: ${sessionId}`);
             return res.status(400).json({
                 success: false,
                 message: 'SessionId inválido'
             });
         }
 
-        if (req.path.includes('/add') && (!clientCode || clientCode.length !== 4)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Código de cliente inválido'
-            });
+        // Validação do clientCode para adição
+        if (req.path.includes('/add')) {
+            if (!clientCode || clientCode.length !== 4) {
+                console.log(`[CART-VALIDATION] ❌ ClientCode inválido: ${clientCode}`);
+                return res.status(400).json({
+                    success: false,
+                    message: 'Código de cliente inválido'
+                });
+            }
+
+            // 🆕 NOVA VALIDAÇÃO: Verificar se cliente existe e está ativo
+            try {
+                const client = await AccessCode.findOne({ code: clientCode });
+
+                if (!client) {
+                    console.log(`[CART-VALIDATION] ❌ Cliente não encontrado: ${clientCode}`);
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Cliente não encontrado'
+                    });
+                }
+
+                if (!client.isActive) {
+                    console.log(`[CART-VALIDATION] ❌ Cliente inativo: ${clientCode}`);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Código de acesso expirado ou inativo. Entre em contato com seu vendedor.'
+                    });
+                }
+
+                // Anexar dados do cliente validado ao request
+                req.validatedClient = {
+                    code: client.code,
+                    salesRep: client.salesRep,
+                    companyName: client.companyName,
+                    ttlHours: client.cartSettings?.ttlHours || 24
+                };
+
+            } catch (dbError) {
+                console.error(`[CART-VALIDATION] ⚠️ Erro ao validar cliente:`, dbError.message);
+                // Em caso de erro de DB, deixa passar (fail-open para não bloquear)
+                // O CartService vai tentar de novo de qualquer forma
+            }
         }
     }
 
@@ -80,7 +121,11 @@ router.post('/add', validateRequest, async (req, res) => {
             });
         }
 
-        console.log(`[ROUTE] Adicionando ${fileName} ao carrinho de ${clientName}`);
+        // 🆕 Log estruturado para diagnóstico
+        console.log(`[CART-ADD] 📥 Início | Cliente: ${clientCode} | Foto: ${fileName} | Session: ${sessionId?.substring(0, 8)}...`);
+
+        // 🆕 Usar dados pré-validados se disponíveis (evita query duplicada)
+        const validatedClient = req.validatedClient;
 
         const result = await CartService.addToCart(
             sessionId,
@@ -104,24 +149,42 @@ router.post('/add', validateRequest, async (req, res) => {
             totals = await calculateCartTotals(result.cart);
         }
 
+        // 🆕 Log de sucesso
+        if (result.success) {
+            console.log(`[CART-ADD] ✅ Sucesso | Cliente: ${clientCode} | Foto: ${fileName} | Total: ${result.cart?.totalItems || 0} itens`);
+        }
+
         res.status(201).json({
             ...result,
             totals: totals // ✅ ADICIONAR TOTALS!
         });
 
     } catch (error) {
-        console.error('[ROUTE] Erro ao adicionar:', error.message);
+        // 🆕 Log estruturado de erro com mais contexto
+        console.error(`[CART-ADD] ❌ Erro | Cliente: ${req.body.clientCode} | Foto: ${req.body.fileName} | Erro: ${error.message}`);
 
         let statusCode = 500;
-        if (error.message.includes('reservado')) {
-            statusCode = 423;
-        } else if (error.message.includes('já está')) {
-            statusCode = 409;
+        let userMessage = error.message;
+
+        // 🆕 Mapeamento de erros mais específico
+        if (error.message.includes('reservado') || error.message.includes('reserved')) {
+            statusCode = 423; // Locked
+            userMessage = 'This item is currently reserved by another customer';
+        } else if (error.message.includes('já está') || error.message.includes('already')) {
+            statusCode = 409; // Conflict
+            userMessage = 'This item is already in your cart';
+        } else if (error.message.includes('não disponível') || error.message.includes('unavailable')) {
+            statusCode = 410; // Gone
+            userMessage = 'This item is no longer available';
+        } else if (error.message.includes('não encontrado') || error.message.includes('not found')) {
+            statusCode = 404;
+            userMessage = 'Item not found';
         }
 
         res.status(statusCode).json({
             success: false,
-            message: error.message
+            message: userMessage,
+            errorCode: statusCode // 🆕 Para debugging no frontend
         });
     }
 });
@@ -135,17 +198,31 @@ router.delete('/remove/:driveFileId', validateRequest, async (req, res) => {
         const { driveFileId } = req.params;
         const { sessionId } = req.body;
 
-        console.log(`[ROUTE] Removendo ${driveFileId} do carrinho`);
+        // 🆕 Log estruturado
+        console.log(`[CART-REMOVE] 📤 Início | Session: ${sessionId?.substring(0, 8)}... | FileId: ${driveFileId?.substring(0, 20)}...`);
 
         const result = await CartService.removeFromCart(sessionId, driveFileId);
+
+        // 🆕 Log de sucesso
+        if (result.success) {
+            console.log(`[CART-REMOVE] ✅ Sucesso | Session: ${sessionId?.substring(0, 8)}... | Itens restantes: ${result.cart?.totalItems || 0}`);
+        }
+
         res.json(result);
 
     } catch (error) {
-        console.error('[ROUTE] Erro ao remover:', error.message);
+        // 🆕 Log de erro estruturado
+        console.error(`[CART-REMOVE] ❌ Erro | Session: ${req.body.sessionId?.substring(0, 8)}... | Erro: ${error.message}`);
 
-        res.status(error.message.includes('não encontrado') ? 404 : 500).json({
+        let statusCode = 500;
+        if (error.message.includes('não encontrado') || error.message.includes('not found')) {
+            statusCode = 404;
+        }
+
+        res.status(statusCode).json({
             success: false,
-            message: error.message
+            message: error.message,
+            errorCode: statusCode
         });
     }
 });

@@ -494,6 +494,57 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
         });
     });
+
+    // Initialize dark mode from localStorage
+    initDarkMode();
 });
+
+// ===== DARK MODE =====
+window.toggleDarkMode = function() {
+    const isDark = document.body.classList.toggle('dark-mode');
+
+    // Save preference
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+
+    // Update UI
+    updateDarkModeUI(isDark);
+
+    console.log(`🌙 Dark mode ${isDark ? 'enabled' : 'disabled'}`);
+};
+
+function initDarkMode() {
+    const savedMode = localStorage.getItem('darkMode');
+    const isDark = savedMode === 'enabled';
+
+    if (isDark) {
+        document.body.classList.add('dark-mode');
+    }
+
+    updateDarkModeUI(isDark);
+}
+
+function updateDarkModeUI(isDark) {
+    // Desktop
+    const iconDesktop = document.getElementById('darkModeIcon');
+    const textDesktop = document.getElementById('darkModeText');
+
+    if (iconDesktop) {
+        iconDesktop.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    if (textDesktop) {
+        textDesktop.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+
+    // Mobile
+    const iconMobile = document.getElementById('darkModeIconMobile');
+    const textMobile = document.getElementById('darkModeTextMobile');
+
+    if (iconMobile) {
+        iconMobile.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    if (textMobile) {
+        textMobile.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+}
 
 console.log('📦 client-profile.js loaded');

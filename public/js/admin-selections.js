@@ -70,6 +70,9 @@ class AdminSelections {
             });
         }
 
+        // Keyboard handler for selection lightbox
+        document.addEventListener('keydown', (e) => this.handleSelectionLightboxKeyboard(e));
+
         console.log('🔗 Event listeners configured');
     }
 
@@ -525,61 +528,708 @@ class AdminSelections {
         }
     }
 
-    // ===== SHOW SELECTION MODAL =====
+    // ===== SHOW SELECTION MODAL - REDESIGNED =====
     showSelectionModal(selectionId, selection, loading = false) {
-        // Create modal if doesn't exist
+        // Check if modal exists and has the NEW structure
         let modal = document.getElementById('selectionDetailsModal');
+
+        // Se modal existe mas NÃO tem a nova estrutura, remover e recriar
+        if (modal && !modal.querySelector('#selectionModalTitle')) {
+            console.log('🔄 Removing old modal structure, creating new one...');
+            modal.remove();
+            modal = null;
+        }
+
+        // Create modal if doesn't exist
         if (!modal) {
             modal = this.createSelectionModal();
         }
 
-        const modalTitle = modal.querySelector('.selection-details-title');
-        const modalBody = modal.querySelector('.selection-details-body');
-
-        modalTitle.innerHTML = `
-            <i class="fas fa-shopping-cart"></i>
-            Selection Details
-        `;
-
         if (loading) {
-            modalBody.innerHTML = `
-                <div class="text-center">
+            // Show loading state
+            document.getElementById('selectionModalTitle').textContent = 'Loading...';
+            document.getElementById('selectionCategoriesList').innerHTML = `
+                <div class="loading-state">
                     <i class="fas fa-spinner fa-spin fa-2x"></i>
                     <p>Loading selection details...</p>
                 </div>
             `;
+            document.getElementById('selectionQBNav').innerHTML = '';
+            document.getElementById('selectionStatus').innerHTML = '';
         } else {
-            modalBody.innerHTML = this.renderSelectionDetails(selection);
+            // Populate all fields with selection data
+            this.populateSelectionModal(selection);
         }
 
         modal.classList.add('active');
-        // ⭐ BLOQUEAR SCROLL DO BODY
         document.body.style.overflow = 'hidden';
-        // Inicializar listeners dos checkboxes
-        this.initCheckboxListeners();
     }
 
-    // ===== CREATE SELECTION MODAL =====
+    // ===== POPULATE SELECTION MODAL =====
+    populateSelectionModal(selection) {
+        if (!selection) return;
+
+        // Format date
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
+        // Header info
+        document.getElementById('selectionModalTitle').textContent = `Selection - ${selection.clientName}`;
+        document.getElementById('selectionDate').textContent = formatDate(selection.createdAt);
+        document.getElementById('selectionClient').textContent = selection.clientName;
+        document.getElementById('selectionCompany').textContent = selection.clientCompany || selection.clientName;
+        document.getElementById('selectionId').textContent = selection.selectionId;
+
+        // Status badge
+        const statusEl = document.getElementById('selectionStatus');
+        statusEl.className = `selection-status-badge status-${selection.status}`;
+        statusEl.innerHTML = `${this.getStatusIcon(selection.status)} ${this.getStatusText(selection.status)}`;
+
+        // Customer Notes
+        const notesSection = document.getElementById('selectionNotesSection');
+        if (selection.customerNotes) {
+            document.getElementById('selectionNotes').textContent = selection.customerNotes;
+            notesSection.style.display = 'block';
+        } else {
+            notesSection.style.display = 'none';
+        }
+
+        // Group items by category and calculate stats
+        const categoriesData = this.groupItemsByCategory(selection);
+        this.selectionCategories = categoriesData;
+        this.currentQBIndex = 0;
+
+        // QB Navigation tabs
+        this.renderQBNavigation(categoriesData, selection.qbMap);
+
+        // Categories list
+        this.renderSelectionCategories(categoriesData, selection);
+
+        // Footer totals
+        document.getElementById('selectionTotalItems').textContent = `${selection.totalItems || selection.items.length} items`;
+        const totalValue = selection.totalValue || categoriesData.reduce((sum, cat) => sum + cat.value, 0);
+        document.getElementById('selectionTotalValue').textContent = `= $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        // Update view mode buttons
+        this.updateViewModeButtons();
+
+        // Initialize scroll listener for dynamic QB tabs
+        this.initScrollListener();
+    }
+
+    // ===== INIT SCROLL LISTENER FOR DYNAMIC QB TABS =====
+    initScrollListener() {
+        const scrollContainer = document.querySelector('#selectionDetailsModal .selection-body');
+        if (!scrollContainer) return;
+
+        // Remove old listener if exists
+        if (this._scrollHandler) {
+            scrollContainer.removeEventListener('scroll', this._scrollHandler);
+        }
+
+        // Create scroll handler
+        this._scrollHandler = () => {
+            this.updateActiveQBTab(scrollContainer);
+        };
+
+        scrollContainer.addEventListener('scroll', this._scrollHandler, { passive: true });
+    }
+
+    // ===== UPDATE ACTIVE QB TAB BASED ON SCROLL =====
+    updateActiveQBTab(scrollContainer) {
+        const categories = scrollContainer.querySelectorAll('.selection-category');
+        if (!categories.length) return;
+
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const containerTop = containerRect.top;
+        let activeIndex = 0;
+
+        // Find which category is most visible (closest to top of container)
+        categories.forEach((cat, index) => {
+            const catRect = cat.getBoundingClientRect();
+            const catTop = catRect.top - containerTop;
+
+            // If category top is above or at the container top (with some threshold)
+            if (catTop <= 50) {
+                activeIndex = index;
+            }
+        });
+
+        // Update QB tabs if changed
+        if (this.currentQBIndex !== activeIndex) {
+            this.currentQBIndex = activeIndex;
+            this.highlightQBTab(activeIndex);
+        }
+    }
+
+    // ===== HIGHLIGHT QB TAB =====
+    highlightQBTab(index) {
+        const tabs = document.querySelectorAll('#selectionQBNav .qb-tab');
+        tabs.forEach((tab, i) => {
+            tab.classList.toggle('active', i === index);
+        });
+    }
+
+    // ===== GROUP ITEMS BY CATEGORY =====
+    groupItemsByCategory(selection) {
+        const grouped = {};
+        selection.items.forEach(item => {
+            if (!grouped[item.category]) {
+                grouped[item.category] = {
+                    category: item.category,
+                    shortName: item.category.split(' → ').filter(s => s.trim()).pop() || item.category,
+                    items: [],
+                    count: 0,
+                    value: 0,
+                    qbItem: selection.qbMap ? selection.qbMap[item.category] : null
+                };
+            }
+            grouped[item.category].items.push(item);
+            grouped[item.category].count++;
+            grouped[item.category].value += item.price || 0;
+        });
+        return Object.values(grouped);
+    }
+
+    // ===== RENDER QB NAVIGATION =====
+    renderQBNavigation(categoriesData, qbMap) {
+        const navContainer = document.getElementById('selectionQBNav');
+        const tabsHTML = categoriesData.map((cat, i) => {
+            const qbCode = cat.qbItem || cat.shortName.substring(0, 8);
+            return `<button class="qb-tab ${i === 0 ? 'active' : ''}"
+                           onclick="adminSelections.goToCategory(${i})"
+                           title="${cat.category}">
+                ${qbCode}
+            </button>`;
+        }).join('');
+        navContainer.innerHTML = tabsHTML;
+    }
+
+    // ===== RENDER SELECTION CATEGORIES =====
+    renderSelectionCategories(categoriesData, selection) {
+        const container = document.getElementById('selectionCategoriesList');
+        const canRemove = selection && (selection.status === 'pending' || selection.status === 'finalized');
+
+        const categoriesHTML = categoriesData.map((cat, catIndex) => {
+            const qbBadge = cat.qbItem
+                ? `<span class="qb-badge">${cat.qbItem}</span>`
+                : `<span class="qb-badge empty">—</span>`;
+            const escapedCategory = cat.category.replace(/'/g, "\\'");
+
+            return `
+            <div class="selection-category" data-index="${catIndex}" id="selCat${catIndex}">
+                <div class="cat-row" onclick="adminSelections.toggleSelCategory(${catIndex})">
+                    <div class="col-checkbox">
+                        ${canRemove ? `
+                            <input type="checkbox"
+                                class="cat-select-all"
+                                data-category="${cat.category}"
+                                data-cat-index="${catIndex}"
+                                onclick="event.stopPropagation(); adminSelections.toggleCategorySelection(${catIndex}, '${escapedCategory}');"
+                                title="Select all in this category">
+                        ` : ''}
+                    </div>
+                    <div class="col-category">
+                        <i class="fas fa-chevron-right cat-arrow"></i>
+                        <span class="cat-name">${cat.shortName}</span>
+                    </div>
+                    <div class="col-qb">${qbBadge}</div>
+                    <div class="col-qty">${cat.count}</div>
+                    <div class="col-value">$${cat.value.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div class="cat-items" style="display: none;" data-rendered="false">
+                    <!-- Items loaded on expand -->
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        container.innerHTML = categoriesHTML || '<div class="empty-selection">No categories</div>';
+    }
+
+    // ===== TOGGLE CATEGORY SELECTION =====
+    toggleCategorySelection(catIndex, category) {
+        const catCheckbox = document.querySelector(`.cat-select-all[data-cat-index="${catIndex}"]`);
+        const isChecked = catCheckbox?.checked;
+
+        // Get the category container
+        const categoryDiv = document.getElementById(`selCat${catIndex}`);
+        if (!categoryDiv) return;
+
+        const itemsDiv = categoryDiv.querySelector('.cat-items');
+
+        // Force expand if needed
+        if (!categoryDiv.classList.contains('expanded')) {
+            this.toggleSelCategory(catIndex);
+        }
+
+        // Force render if needed
+        if (itemsDiv && itemsDiv.dataset.rendered === 'false') {
+            this.renderCategoryPhotos(catIndex, itemsDiv);
+        }
+
+        // Select all checkboxes with retry (DOM needs time to render)
+        let attempts = 0;
+        const selectAll = () => {
+            attempts++;
+            const checkboxes = categoryDiv.querySelectorAll('.cat-items .photo-checkbox');
+
+            if (checkboxes.length > 0) {
+                checkboxes.forEach(cb => {
+                    cb.checked = isChecked;
+                });
+                this.updateRemoveButtonState();
+            } else if (attempts < 10) {
+                setTimeout(selectAll, 100);
+            }
+        };
+
+        setTimeout(selectAll, 50);
+    }
+
+    // ===== TOGGLE SELECTION CATEGORY =====
+    toggleSelCategory(index) {
+        const category = document.querySelector(`.selection-category[data-index="${index}"]`);
+        if (!category) return;
+
+        const itemsDiv = category.querySelector('.cat-items');
+        const arrow = category.querySelector('.cat-arrow');
+        const isExpanded = category.classList.contains('expanded');
+
+        if (isExpanded) {
+            category.classList.remove('expanded');
+            itemsDiv.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        } else {
+            category.classList.add('expanded');
+            itemsDiv.style.display = 'block';
+            arrow.style.transform = 'rotate(90deg)';
+
+            // Lazy load items if not rendered
+            if (itemsDiv.dataset.rendered === 'false') {
+                this.renderCategoryPhotos(index, itemsDiv);
+            }
+        }
+    }
+
+    // ===== RENDER CATEGORY PHOTOS =====
+    renderCategoryPhotos(catIndex, container) {
+        const cat = this.selectionCategories[catIndex];
+        if (!cat) return;
+
+        const viewMode = this.viewMode || 'list';
+        const selection = this.currentSelection;
+        const canRemove = selection && (selection.status === 'pending' || selection.status === 'finalized');
+        const escapedCategory = cat.category.replace(/'/g, "\\'");
+
+        const photosHTML = cat.items.map((item, itemIndex) => {
+            const thumbUrl = this.getThumbnailUrl(item);
+            const itemName = item.fileName || item.name || 'Unknown';
+
+            if (viewMode === 'grid') {
+                return `
+                <div class="photo-grid-item">
+                    ${canRemove ? `
+                        <input type="checkbox"
+                            class="photo-checkbox item-checkbox"
+                            data-filename="${itemName}"
+                            data-category="${cat.category}"
+                            data-price="${item.price || 0}"
+                            onclick="event.stopPropagation(); adminSelections.updateRemoveButtonState();">
+                    ` : ''}
+                    <img src="${thumbUrl}" alt="${itemName}" loading="lazy"
+                         onclick="adminSelections.openSelectionLightbox(${catIndex}, ${itemIndex})"
+                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.add('no-img');">
+                    <span class="photo-name">${itemName}</span>
+                </div>`;
+            } else {
+                return `
+                <div class="photo-list-item">
+                    ${canRemove ? `
+                        <input type="checkbox"
+                            class="photo-checkbox item-checkbox"
+                            data-filename="${itemName}"
+                            data-category="${cat.category}"
+                            data-price="${item.price || 0}"
+                            onclick="event.stopPropagation(); adminSelections.updateRemoveButtonState();">
+                    ` : ''}
+                    <img src="${thumbUrl}" alt="${itemName}" loading="lazy"
+                         onclick="adminSelections.openSelectionLightbox(${catIndex}, ${itemIndex})"
+                         onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23333%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2212%22>No img</text></svg>';">
+                    <div class="photo-info">
+                        <span class="photo-name">${itemName}</span>
+                        <span class="photo-price">$${(item.price || 0).toFixed(2)}</span>
+                    </div>
+                </div>`;
+            }
+        }).join('');
+
+        container.innerHTML = `<div class="photos-container ${viewMode}-view">${photosHTML}</div>`;
+        container.dataset.rendered = 'true';
+    }
+
+    // ===== UPDATE REMOVE BUTTON STATE =====
+    updateRemoveButtonState() {
+        const checkedBoxes = document.querySelectorAll('#selectionDetailsModal .item-checkbox:checked');
+        const removeBtn = document.getElementById('btnRemoveSelected');
+
+        if (removeBtn) {
+            if (checkedBoxes.length > 0) {
+                removeBtn.style.display = 'inline-flex';
+                removeBtn.querySelector('.selected-count').textContent = checkedBoxes.length;
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        }
+    }
+
+    // ===== REMOVE SELECTED FROM MODAL =====
+    async removeSelectedFromModal() {
+        if (!this.currentSelection) return;
+
+        const checkedBoxes = document.querySelectorAll('#selectionDetailsModal .item-checkbox:checked');
+
+        if (checkedBoxes.length === 0) {
+            UISystem.showToast('warning', 'No items selected');
+            return;
+        }
+
+        // Collect selected items
+        const itemsToRemove = Array.from(checkedBoxes).map(checkbox => ({
+            fileName: checkbox.dataset.filename,
+            price: parseFloat(checkbox.dataset.price) || 0,
+            category: checkbox.dataset.category
+        }));
+
+        const confirmMessage = itemsToRemove.length === 1
+            ? 'Remove 1 item from this selection?'
+            : `Remove ${itemsToRemove.length} items from this selection?`;
+
+        const confirmed = await UISystem.confirm(
+            'Remove Selected Items?',
+            confirmMessage
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/api/selections/${this.currentSelection.selectionId}/remove-items`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({ items: itemsToRemove })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UISystem.showToast('success', `Removed ${itemsToRemove.length} items`);
+
+                // Reload modal with fresh data
+                await this.viewSelection(this.currentSelection.selectionId);
+
+                // Reload main list
+                await this.loadSelections();
+            } else {
+                UISystem.showToast('error', result.message || 'Failed to remove items');
+            }
+        } catch (error) {
+            console.error('Error removing items:', error);
+            UISystem.showToast('error', 'Error removing items');
+        }
+    }
+
+    // ===== QB NAVIGATION FUNCTIONS =====
+    goToCategory(index) {
+        // Update active tab
+        this.highlightQBTab(index);
+        this.currentQBIndex = index;
+
+        // Scroll to category within modal container
+        const category = document.getElementById(`selCat${index}`);
+        const scrollContainer = document.querySelector('#selectionDetailsModal .selection-body');
+
+        if (category && scrollContainer) {
+            // Calculate scroll position relative to container
+            const containerTop = scrollContainer.getBoundingClientRect().top;
+            const categoryTop = category.getBoundingClientRect().top;
+            const scrollOffset = scrollContainer.scrollTop + (categoryTop - containerTop);
+
+            scrollContainer.scrollTo({
+                top: scrollOffset,
+                behavior: 'smooth'
+            });
+
+            // Expand if not expanded
+            if (!category.classList.contains('expanded')) {
+                this.toggleSelCategory(index);
+            }
+        }
+    }
+
+    prevQBCategory() {
+        if (!this.selectionCategories || this.selectionCategories.length === 0) return;
+        const newIndex = this.currentQBIndex > 0
+            ? this.currentQBIndex - 1
+            : this.selectionCategories.length - 1;
+        this.goToCategory(newIndex);
+    }
+
+    nextQBCategory() {
+        if (!this.selectionCategories || this.selectionCategories.length === 0) return;
+        const newIndex = this.currentQBIndex < this.selectionCategories.length - 1
+            ? this.currentQBIndex + 1
+            : 0;
+        this.goToCategory(newIndex);
+    }
+
+    // ===== VIEW MODE FUNCTIONS =====
+    setViewMode(mode) {
+        this.viewMode = mode;
+        this.updateViewModeButtons();
+
+        // Re-render all expanded categories
+        document.querySelectorAll('.selection-category.expanded .cat-items').forEach(container => {
+            container.dataset.rendered = 'false';
+            const catIndex = container.closest('.selection-category').dataset.index;
+            this.renderCategoryPhotos(parseInt(catIndex), container);
+        });
+    }
+
+    updateViewModeButtons() {
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeBtn = document.querySelector(`.view-btn[onclick*="${this.viewMode}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // ===== PRINT CURRENT SELECTION =====
+    printCurrentSelection() {
+        if (this.currentSelection) {
+            this.printSelection(this.currentSelection.selectionId);
+        }
+    }
+
+    // ===== EXPORT CURRENT TO CDE =====
+    exportCurrentToCDE() {
+        if (this.currentSelection) {
+            this.openPONumberModal(this.currentSelection.selectionId);
+        }
+    }
+
+    // ===== OPEN SELECTION LIGHTBOX (NEW) =====
+    openSelectionLightbox(catIndex, itemIndex) {
+        if (!this.selectionCategories || !this.selectionCategories[catIndex]) return;
+
+        const cat = this.selectionCategories[catIndex];
+        const item = cat.items[itemIndex];
+        if (!item) return;
+
+        // Store current position for navigation
+        this.lightboxCatIndex = catIndex;
+        this.lightboxItemIndex = itemIndex;
+        this.lightboxItems = cat.items;
+
+        // Get full image URL using the corrected method
+        const fullUrl = this.getOriginalUrl(item);
+
+        // Show lightbox with this item
+        this.showSelectionLightbox(item, fullUrl);
+    }
+
+    // ===== SHOW SELECTION LIGHTBOX =====
+    showSelectionLightbox(item, imageUrl) {
+        // Create or get lightbox
+        let lightbox = document.getElementById('selectionLightbox');
+        if (!lightbox) {
+            lightbox = document.createElement('div');
+            lightbox.id = 'selectionLightbox';
+            lightbox.className = 'lightbox-overlay';
+            lightbox.innerHTML = `
+                <div class="lightbox-content">
+                    <button class="lightbox-close" onclick="adminSelections.closeSelectionLightbox()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="lightbox-nav lightbox-prev" onclick="adminSelections.prevSelectionPhoto()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <img id="selectionLightboxImage" src="" alt="">
+                    <button class="lightbox-nav lightbox-next" onclick="adminSelections.nextSelectionPhoto()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <div class="lightbox-info">
+                        <span id="selectionLightboxName"></span>
+                        <span id="selectionLightboxPrice"></span>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+        }
+
+        // Update image and info
+        document.getElementById('selectionLightboxImage').src = imageUrl;
+        document.getElementById('selectionLightboxName').textContent = item.fileName || item.name || '';
+        document.getElementById('selectionLightboxPrice').textContent = `$${(item.price || 0).toFixed(2)}`;
+
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeSelectionLightbox() {
+        const lightbox = document.getElementById('selectionLightbox');
+        if (lightbox) {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    prevSelectionPhoto() {
+        if (!this.lightboxItems || this.lightboxItemIndex <= 0) return;
+        this.lightboxItemIndex--;
+        const item = this.lightboxItems[this.lightboxItemIndex];
+        this.showSelectionLightbox(item, this.getOriginalUrl(item));
+    }
+
+    nextSelectionPhoto() {
+        if (!this.lightboxItems || this.lightboxItemIndex >= this.lightboxItems.length - 1) return;
+        this.lightboxItemIndex++;
+        const item = this.lightboxItems[this.lightboxItemIndex];
+        this.showSelectionLightbox(item, this.getOriginalUrl(item));
+    }
+
+    // ===== KEYBOARD HANDLER FOR LIGHTBOX =====
+    handleSelectionLightboxKeyboard(e) {
+        const lightbox = document.getElementById('selectionLightbox');
+        if (!lightbox || !lightbox.classList.contains('active')) return;
+
+        switch (e.key) {
+            case 'Escape':
+                this.closeSelectionLightbox();
+                break;
+            case 'ArrowLeft':
+                this.prevSelectionPhoto();
+                break;
+            case 'ArrowRight':
+                this.nextSelectionPhoto();
+                break;
+        }
+    }
+
+    // ===== CREATE SELECTION MODAL - REDESIGNED =====
     createSelectionModal() {
         const modal = document.createElement('div');
         modal.id = 'selectionDetailsModal';
-        modal.className = 'selection-details-modal';
+        modal.className = 'selection-modal';
         modal.innerHTML = `
-            <div class="selection-details-content">
-                <div class="selection-details-header">
-                    <h3 class="selection-details-title">
-                        <i class="fas fa-shopping-cart"></i>
-                        Selection Details
-                    </h3>
-                    <button class="selection-details-close" onclick="adminSelections.hideSelectionModal()">
-                        <i class="fas fa-times"></i>
-                    </button>
+            <div class="selection-modal-content">
+                <!-- Fixed Top Section -->
+                <div class="selection-fixed-top">
+                    <!-- Header -->
+                    <div class="selection-modal-header">
+                        <div class="selection-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="selectionModalTitle">Selection Details</span>
+                        </div>
+                        <div class="selection-header-right">
+                            <span id="selectionStatus" class="selection-status-badge"></span>
+                            <button class="selection-close" onclick="adminSelections.hideSelectionModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Info Bar -->
+                    <div class="selection-info-bar">
+                        <div class="info-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="selectionDate">--</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-user"></i>
+                            <span id="selectionClient">--</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-building"></i>
+                            <span id="selectionCompany">--</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-fingerprint"></i>
+                            <span id="selectionId" class="selection-id-code">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Customer Notes (if exists) -->
+                    <div id="selectionNotesSection" class="selection-notes-section" style="display: none;">
+                        <div class="notes-content">
+                            <i class="fas fa-comment-dots"></i>
+                            <span id="selectionNotes"></span>
+                        </div>
+                    </div>
+
+                    <!-- QB Items Navigation -->
+                    <div class="selection-nav-section">
+                        <button class="nav-btn" onclick="adminSelections.prevQBCategory()" title="Previous">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div id="selectionQBNav" class="qb-nav-tabs">
+                            <!-- QB tabs will be filled via JS -->
+                        </div>
+                        <button class="nav-btn" onclick="adminSelections.nextQBCategory()" title="Next">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <div class="view-toggle-btns">
+                            <button class="view-btn active" onclick="adminSelections.setViewMode('list')" title="List View">
+                                <i class="fas fa-list"></i>
+                            </button>
+                            <button class="view-btn" onclick="adminSelections.setViewMode('grid')" title="Grid View">
+                                <i class="fas fa-th"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Column Headers -->
+                    <div class="selection-columns-header">
+                        <div class="col-checkbox"></div>
+                        <div class="col-category">Category</div>
+                        <div class="col-qb">QB Item</div>
+                        <div class="col-qty">Qty</div>
+                        <div class="col-value">Value</div>
+                    </div>
                 </div>
-                <div class="selection-details-body">
-                    <!-- Content will be injected here -->
+
+                <!-- Scrollable Categories Section -->
+                <div class="selection-body">
+                    <div id="selectionCategoriesList" class="selection-categories">
+                        <!-- Categories will be filled via JS -->
+                    </div>
                 </div>
-                <div class="selection-details-footer">
-                    <!-- Footer will be injected here -->
+
+                <!-- Fixed Footer -->
+                <div class="selection-modal-footer">
+                    <div class="selection-totals">
+                        <span class="total-label">Total:</span>
+                        <span id="selectionTotalItems" class="total-items">0 items</span>
+                        <span id="selectionTotalValue" class="total-value">= $0</span>
+                    </div>
+                    <div class="selection-actions">
+                        <button id="btnRemoveSelected" class="btn-selection btn-remove" style="display: none;" onclick="adminSelections.removeSelectedFromModal()">
+                            <i class="fas fa-trash"></i> Remove (<span class="selected-count">0</span>)
+                        </button>
+                        <button class="btn-selection btn-export" onclick="adminSelections.exportCurrentToCDE()">
+                            <i class="fas fa-file-export"></i> Export to CDE
+                        </button>
+                        <button class="btn-selection btn-close" onclick="adminSelections.hideSelectionModal()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -740,7 +1390,7 @@ class AdminSelections {
                                                 class="category-select-all" 
                                                 data-category="${category.replace(/'/g, '\\\'')}"
                                                 style="accent-color: #d4af37; margin-right: 8px; width: 18px; height: 18px;"
-                                                onchange="adminSelections.toggleCategorySelection(this, '${category.replace(/'/g, '\\\'')}')">
+                                                onchange="adminSelections.toggleLegacyCategorySelection(this, '${category.replace(/'/g, '\\\'')}')">
                                             <span>Select All</span>
                                         </label>
                                     </div>
@@ -831,13 +1481,21 @@ class AdminSelections {
         return {};
     }
 
-    // Adicione também a função hideSelectionModal se não existir:
+    // Hide selection modal
     hideSelectionModal() {
         const modal = document.getElementById('selectionDetailsModal');
         if (modal) {
             modal.classList.remove('active');
         }
-        // ⭐ RESTAURAR SCROLL DO BODY
+
+        // Clean up scroll listener
+        const scrollContainer = document.querySelector('#selectionDetailsModal .selection-body');
+        if (scrollContainer && this._scrollHandler) {
+            scrollContainer.removeEventListener('scroll', this._scrollHandler);
+            this._scrollHandler = null;
+        }
+
+        // Restore body scroll
         document.body.style.overflow = '';
     }
 
@@ -899,26 +1557,52 @@ class AdminSelections {
 
     // ===== GET THUMBNAIL URL =====
     getThumbnailUrl(item) {
+        // 1. Se já tem thumbnailUrl no banco, usar direto
         if (item.thumbnailUrl) return item.thumbnailUrl;
+
+        // 2. Tentar construir a partir de category + fileName
+        if (item.category && item.fileName) {
+            // category format: "NATURAL COWHIDES → Premium" - usar primeira parte
+            const categoryPath = item.category.split(' → ')[0].trim();
+            const path = `${categoryPath}/${item.fileName}`;
+            const encodedPath = path.split('/').map(part => encodeURIComponent(part)).join('/');
+            return `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
+        }
+
+        // 3. Fallback para ImageUtils
         if (window.ImageUtils && window.ImageUtils.getThumbnailUrl) {
             return window.ImageUtils.getThumbnailUrl(item);
         }
+
         return '';
     }
 
     // ===== GET ORIGINAL URL =====
     getOriginalUrl(item) {
+        // 1. Se tem thumbnailUrl, converter para full
         if (item.thumbnailUrl) {
             return item.thumbnailUrl.replace('/_thumbnails/', '/');
         }
+
+        // 2. Tentar construir a partir de category + fileName
+        if (item.category && item.fileName) {
+            const categoryPath = item.category.split(' → ')[0].trim();
+            const path = `${categoryPath}/${item.fileName}`;
+            const encodedPath = path.split('/').map(part => encodeURIComponent(part)).join('/');
+            return `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+        }
+
+        // 3. Fallback para ImageUtils
         if (window.ImageUtils && window.ImageUtils.getFullImageUrl) {
             return window.ImageUtils.getFullImageUrl(item);
         }
-        // Fallback
+
+        // 4. Fallback final
         if (item.r2Key || item.id) {
             const key = item.r2Key || item.id;
             return `https://images.sunshinecowhides-gallery.com/${key}`;
         }
+
         return '';
     }
 
@@ -2333,8 +3017,8 @@ class AdminSelections {
         }, 500);
     }
 
-    // Função para marcar/desmarcar todos os checkboxes de uma categoria
-    toggleCategorySelection(selectAllCheckbox, category) {
+    // Função para marcar/desmarcar todos os checkboxes de uma categoria (LEGACY - overlay antigo)
+    toggleLegacyCategorySelection(selectAllCheckbox, category) {
         const isChecked = selectAllCheckbox.checked;
         // Escapar caracteres especiais na categoria para o seletor
         const escapedCategory = category.replace(/['"\\]/g, '\\$&');

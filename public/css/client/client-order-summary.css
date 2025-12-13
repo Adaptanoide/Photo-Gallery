@@ -133,3 +133,95 @@
     background: #e0e0e0;
     color: var(--text-primary);
 }
+
+/* ============================================
+   DARK MODE - Order Summary Modal
+   ============================================ */
+
+body.dark-mode .order-summary-content {
+    background: #2a2a2a !important;
+    border: 1px solid #3d3d3d !important;
+}
+
+body.dark-mode .order-summary-header {
+    background: #252525 !important;
+    border-bottom-color: #B87333 !important;
+}
+
+body.dark-mode .order-summary-header h2 {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .order-summary-close {
+    color: #888 !important;
+}
+
+body.dark-mode .order-summary-close:hover {
+    color: #d4a574 !important;
+}
+
+body.dark-mode .order-summary-body {
+    background: #2a2a2a !important;
+    color: #c0c0c0 !important;
+}
+
+/* Summary info labels */
+body.dark-mode .order-summary-body .summary-info,
+body.dark-mode .order-summary-body span,
+body.dark-mode .order-summary-body p {
+    color: #c0c0c0 !important;
+}
+
+/* Category headers in summary */
+body.dark-mode .order-summary-body .category-header,
+body.dark-mode .order-summary-body [style*="color: #666"],
+body.dark-mode .order-summary-body [style*="color: #333"] {
+    color: #c0c0c0 !important;
+}
+
+/* Item names in summary */
+body.dark-mode .order-summary-body .item-name {
+    color: #c0c0c0 !important;
+}
+
+/* Price values keep green */
+body.dark-mode .order-summary-body .item-price,
+body.dark-mode .order-summary-body [style*="color: #28a745"] {
+    color: #22c55e !important;
+}
+
+/* Total section */
+body.dark-mode .order-summary-body hr {
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .order-summary-body .total-label {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .order-summary-footer {
+    background: #252525 !important;
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .btn-summary-close {
+    background: #3d3d3d !important;
+    color: #c0c0c0 !important;
+}
+
+body.dark-mode .btn-summary-close:hover {
+    background: #4d4d4d !important;
+}
+
+/* Scrollbar for dark mode */
+body.dark-mode .order-summary-body::-webkit-scrollbar-track {
+    background: #1e1e1e !important;
+}
+
+body.dark-mode .order-summary-body::-webkit-scrollbar-thumb {
+    background: #B87333 !important;
+}
+
+body.dark-mode .order-summary-body {
+    scrollbar-color: #B87333 #1e1e1e !important;
+}

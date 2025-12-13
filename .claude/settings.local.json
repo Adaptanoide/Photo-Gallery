@@ -36,7 +36,13 @@
       "Bash(dir:*)",
       "Bash(git fetch:*)",
       "Bash(ls:*)",
-      "Bash(del /f scriptsanalyze-sami-pricing.js scriptsfix-sami-pricing.js)"
+      "Bash(del /f scriptsanalyze-sami-pricing.js scriptsfix-sami-pricing.js)",
+      "Bash(find:*)",
+      "Bash(pm2 restart:*)",
+      "Bash(del /f \"c:\\Users\\Tiago\\Desktop\\GALERIA\\nul\")",
+      "Bash(del \"\\?\\c:\\Users\\Tiago\\Desktop\\GALERIA\\nul\")",
+      "Bash(cmd /c \"del /f /q \\?\\c:\\Users\\Tiago\\Desktop\\GALERIA\\nul\")",
+      "Bash(cmd /c \"cd /d c:\\Users\\Tiago\\Desktop\\GALERIA && dir nul 2>nul && echo FILE EXISTS || echo FILE NOT FOUND\")"
     ],
     "deny": [],
     "ask": []

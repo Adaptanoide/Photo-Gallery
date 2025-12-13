@@ -220,6 +220,10 @@ async function handleAdminLogin(e) {
 
             localStorage.setItem('sunshineSession', JSON.stringify(session));
 
+            // 🆕 LIMPAR dados de inatividade da sessão anterior
+            localStorage.removeItem('lastActivityTime');
+            localStorage.removeItem('sessionStartTime');
+
             AppState.isLoggedIn = true;
             AppState.userType = 'admin';
             AppState.currentUser = data.user;
@@ -294,6 +298,12 @@ async function handleDirectClientLogin(e) {
 
             // ✅ LIMPAR escolha de galeria anterior
             localStorage.removeItem('galleryMode');
+
+            // 🆕 LIMPAR dados de inatividade da sessão anterior
+            // Isso evita que o inactivity-monitor mostre "Session Expired"
+            // ao calcular inatividade com timestamps antigos
+            localStorage.removeItem('lastActivityTime');
+            localStorage.removeItem('sessionStartTime');
 
             AppState.isLoggedIn = true;
             AppState.userType = 'client';

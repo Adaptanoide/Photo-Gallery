@@ -1497,6 +1497,18 @@ window.openMixMatchInfoModal = function() {
     const existing = document.getElementById('mixMatchInfoModal');
     if (existing) existing.remove();
 
+    // Detect dark mode
+    const isDark = document.body.classList.contains('dark-mode');
+    const bgColor = isDark ? '#2d2d2d' : 'white';
+    const textColor = isDark ? '#e0e0e0' : '#333';
+    const textMuted = isDark ? '#999' : '#666';
+    const textBody = isDark ? '#ccc' : '#555';
+    const sectionBg = isDark ? '#252525' : '#f8fafc';
+    const tipBg = isDark ? '#3d3d3d' : '#fef9e7';
+    const closeBtnBg = isDark ? '#3d3d3d' : '#f3f4f6';
+    const closeBtnHover = isDark ? '#4d4d4d' : '#e5e7eb';
+    const closeBtnColor = isDark ? '#ccc' : '#6b7280';
+
     const modalHTML = `
         <style>
             #mixMatchInfoModal * { box-sizing: border-box; }
@@ -1520,33 +1532,37 @@ window.openMixMatchInfoModal = function() {
             padding: 20px;
         ">
             <div style="
-                background: white;
+                background: ${bgColor};
                 border-radius: 16px;
                 max-width: 520px;
                 width: 100%;
-                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+                max-height: 90vh;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
                 animation: mixMatchModalSlideIn 0.3s ease;
-                overflow: hidden;
+                overflow-y: auto;
                 position: relative;
             ">
                 <!-- Close button -->
                 <button onclick="closeMixMatchInfoModal()" style="
-                    position: absolute;
+                    position: sticky;
                     top: 12px;
-                    right: 12px;
+                    float: right;
+                    margin-right: 12px;
+                    margin-top: 12px;
                     width: 32px;
                     height: 32px;
                     border: none;
-                    background: #f3f4f6;
+                    background: ${closeBtnBg};
                     border-radius: 50%;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #6b7280;
+                    color: ${closeBtnColor};
                     font-size: 14px;
                     transition: all 0.2s;
-                " onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    z-index: 10;
+                " onmouseover="this.style.background='${closeBtnHover}'" onmouseout="this.style.background='${closeBtnBg}'">
                     <i class="fas fa-times"></i>
                 </button>
 
@@ -1557,22 +1573,22 @@ window.openMixMatchInfoModal = function() {
                         <div style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #B87333, #D4A574); color: white; padding: 10px 20px; border-radius: 24px; font-weight: 600; font-size: 1.1rem;">
                             <i class="fas fa-layer-group"></i> Mix & Match Program
                         </div>
-                        <p style="margin: 12px 0 0; color: #666; font-size: 0.95rem;">Save more when you buy more!</p>
+                        <p style="margin: 12px 0 0; color: ${textMuted}; font-size: 0.95rem;">Save more when you buy more!</p>
                     </div>
 
                     <!-- How it works -->
                     <div style="margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 10px; color: #333; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <h3 style="margin: 0 0 10px; color: ${textColor}; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
                             <i class="fas fa-question-circle" style="color: #B87333;"></i> How does it work?
                         </h3>
-                        <p style="margin: 0; color: #555; line-height: 1.6; font-size: 0.9rem;">
+                        <p style="margin: 0; color: ${textBody}; line-height: 1.6; font-size: 0.9rem;">
                             Our Mix & Match program allows you to <strong>combine different products</strong> from this category to unlock volume discounts. The more items you add, the better price per item you get!
                         </p>
                     </div>
 
                     <!-- Tier explanation -->
-                    <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 12px; color: #333; font-size: 0.95rem;">
+                    <div style="background: ${sectionBg}; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px; color: ${textColor}; font-size: 0.95rem;">
                             <i class="fas fa-medal" style="color: #B87333;"></i> Discount Tiers
                         </h4>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
@@ -1597,10 +1613,10 @@ window.openMixMatchInfoModal = function() {
 
                     <!-- Key benefits -->
                     <div style="margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 10px; color: #333; font-size: 0.95rem;">
+                        <h4 style="margin: 0 0 10px; color: ${textColor}; font-size: 0.95rem;">
                             <i class="fas fa-star" style="color: #B87333;"></i> Key Benefits
                         </h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #555; font-size: 0.85rem; line-height: 1.8;">
+                        <ul style="margin: 0; padding-left: 20px; color: ${textBody}; font-size: 0.85rem; line-height: 1.8;">
                             <li><strong>Mix different styles</strong> - Combine any products within this category</li>
                             <li><strong>Automatic discounts</strong> - Prices update as you add items</li>
                             <li><strong>No minimum order</strong> - Start saving from 6 items</li>
@@ -1609,13 +1625,13 @@ window.openMixMatchInfoModal = function() {
                     </div>
 
                     <!-- Pro tip -->
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start;">
-                        <div style="width: 28px; height: 28px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div style="background: ${tipBg}; border: 1px solid ${isDark ? '#555' : '#bbf7d0'}; border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 28px; height: 28px; background: #F5A623; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="fas fa-lightbulb" style="color: white; font-size: 12px;"></i>
                         </div>
                         <div>
-                            <strong style="color: #166534; font-size: 0.85rem;">Pro Tip!</strong>
-                            <p style="margin: 4px 0 0; color: #166534; font-size: 0.8rem; line-height: 1.5;">
+                            <strong style="color: ${isDark ? '#F5A623' : '#92400e'}; font-size: 0.85rem;">Pro Tip!</strong>
+                            <p style="margin: 4px 0 0; color: ${isDark ? '#ccc' : '#92400e'}; font-size: 0.8rem; line-height: 1.5;">
                                 Watch the progress bar above to see how close you are to the next tier. Add just a few more items to unlock bigger savings!
                             </p>
                         </div>

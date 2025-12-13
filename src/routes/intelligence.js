@@ -13,8 +13,10 @@ const alertService = AIAlertService.getInstance();
 
 // Configurações
 const JWT_SECRET = process.env.JWT_SECRET || 'sunshine-ai-secret-2025';
+
+// 🆕 USUÁRIOS VÁLIDOS - Senhas vêm do .env
 const VALID_USERS = {
-    'Andy': 'SUN1!'
+    'Andy': process.env.INTELLIGENCE_USER_ANDY || ''
 };
 
 // Instância do assistente

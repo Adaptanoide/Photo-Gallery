@@ -533,3 +533,279 @@ body.home-page #accessModal .btn-primary {
     width: 100%;
     margin-top: 1rem;
 }
+
+/* ============================================
+   DARK MODE TOGGLE BUTTON - TOP RIGHT
+   ============================================ */
+.dark-mode-toggle-login {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(184, 115, 51, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode-toggle-login:hover {
+    background: rgba(184, 115, 51, 0.1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(184, 115, 51, 0.2);
+}
+
+.dark-mode-toggle-login i {
+    font-size: 18px;
+    color: #B87333;
+    transition: transform 0.3s ease;
+}
+
+.dark-mode-toggle-login:hover i {
+    transform: rotate(15deg);
+}
+
+/* ============================================
+   DARK MODE - LOGIN PAGE
+   ============================================ */
+body.home-page.dark-mode {
+    background: #1e1e1e !important;
+    background-image: none !important;
+}
+
+body.home-page.dark-mode::before,
+body.home-page.dark-mode::after {
+    background: transparent !important;
+    background-image: none !important;
+    display: none !important;
+}
+
+/* Ensure main and section have dark background */
+body.home-page.dark-mode .main,
+body.home-page.dark-mode main,
+body.home-page.dark-mode .luxury-welcome-section,
+body.home-page.dark-mode section {
+    background: #1e1e1e !important;
+}
+
+/* Dark Mode Toggle Button in Dark Mode */
+body.home-page.dark-mode .dark-mode-toggle-login {
+    background: rgba(45, 45, 45, 0.9) !important;
+    border-color: rgba(184, 115, 51, 0.3) !important;
+}
+
+body.home-page.dark-mode .dark-mode-toggle-login:hover {
+    background: rgba(184, 115, 51, 0.2) !important;
+}
+
+body.home-page.dark-mode .dark-mode-toggle-login i {
+    color: #d4a574 !important;
+}
+
+/* Title and Text */
+body.home-page.dark-mode .luxury-title {
+    color: #e0e0e0 !important;
+}
+
+body.home-page.dark-mode .luxury-subtitle {
+    color: #a0a0a0 !important;
+}
+
+/* Form Card */
+body.home-page.dark-mode .luxury-access-form {
+    background: #2a2a2a !important;
+    border-color: rgba(184, 115, 51, 0.2) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Code Input */
+body.home-page.dark-mode .luxury-code-input {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.home-page.dark-mode .luxury-code-input::placeholder {
+    color: #666 !important;
+}
+
+body.home-page.dark-mode .luxury-code-input:focus {
+    background: #3a3a3a !important;
+    border-color: #B87333 !important;
+}
+
+/* Admin Link */
+body.home-page.dark-mode .luxury-admin-access {
+    border-top-color: #3d3d3d !important;
+}
+
+body.home-page.dark-mode .luxury-admin-link {
+    color: #888 !important;
+}
+
+body.home-page.dark-mode .luxury-admin-link:hover {
+    color: #d4a574 !important;
+    background: rgba(184, 115, 51, 0.15) !important;
+}
+
+/* Footer */
+body.home-page.dark-mode .footer {
+    color: #666 !important;
+}
+
+/* Loading Spinner */
+body.home-page.dark-mode .loading {
+    background: rgba(30, 30, 30, 0.95) !important;
+    color: #a0a0a0 !important;
+}
+
+body.home-page.dark-mode .spinner {
+    border-color: #444 !important;
+    border-top-color: #B87333 !important;
+}
+
+/* ============================================
+   DARK MODE - MODALS (Including Admin Login)
+   ============================================ */
+body.home-page.dark-mode .modal-content {
+    background: #2a2a2a !important;
+    border-color: #3d3d3d !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.home-page.dark-mode .modal-content h2 {
+    color: #e0e0e0 !important;
+}
+
+body.home-page.dark-mode .close {
+    color: #888 !important;
+}
+
+body.home-page.dark-mode .close:hover {
+    color: #d4a574 !important;
+}
+
+body.home-page.dark-mode .form-group label {
+    color: #a0a0a0 !important;
+}
+
+body.home-page.dark-mode .form-group input {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.home-page.dark-mode .form-group input:focus {
+    border-color: #B87333 !important;
+    background: #3a3a3a !important;
+}
+
+/* ============================================
+   DARK MODE - ACCESS DISABLED MODAL (Override Inline Styles)
+   ============================================ */
+body.home-page.dark-mode #accessModal .modal-content,
+body.home-page.dark-mode #accessModal > div[style*="background: white"],
+body.home-page.dark-mode #accessModal [style*="background: white"] {
+    background: #2a2a2a !important;
+    color: #e0e0e0 !important;
+}
+
+body.home-page.dark-mode #accessModal h2[style*="color: #333"],
+body.home-page.dark-mode #accessModal [style*="color: #333"] {
+    color: #e0e0e0 !important;
+}
+
+body.home-page.dark-mode #accessModal [style*="color: #999"] {
+    color: #888 !important;
+}
+
+/* Warning Box - Yellow */
+body.home-page.dark-mode #accessModal [style*="background: #fff3cd"] {
+    background: rgba(255, 193, 7, 0.15) !important;
+    border-left-color: #B87333 !important;
+}
+
+body.home-page.dark-mode #accessModal [style*="color: #856404"] {
+    color: #d4a574 !important;
+}
+
+/* Info Box - Blue */
+body.home-page.dark-mode #accessModal [style*="background: #f0f8ff"] {
+    background: rgba(0, 102, 204, 0.12) !important;
+    border-left-color: #6a9fd4 !important;
+}
+
+body.home-page.dark-mode #accessModal [style*="color: #004080"] {
+    color: #8ab4e8 !important;
+}
+
+/* Success Box - Green */
+body.home-page.dark-mode #accessModal [style*="background: #e8f5e9"] {
+    background: rgba(76, 175, 80, 0.12) !important;
+    border-left-color: #66bb6a !important;
+}
+
+body.home-page.dark-mode #accessModal [style*="color: #2e7d32"] {
+    color: #81c784 !important;
+}
+
+/* Support Message */
+body.home-page.dark-mode #accessModal [style*="color: #666"] {
+    color: #888 !important;
+}
+
+/* UL Lists inside modal */
+body.home-page.dark-mode #accessModal ul {
+    color: inherit !important;
+}
+
+body.home-page.dark-mode #accessModal ul li {
+    color: inherit !important;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .dark-mode-toggle-login {
+        top: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .dark-mode-toggle-login i {
+        font-size: 16px;
+    }
+}
+
+/* ============================================
+   DARK MODE - ACCESS MODAL SCROLLBAR FIX
+   ============================================ */
+body.home-page.dark-mode #accessModal .modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.home-page.dark-mode #accessModal .modal-content::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 4px;
+}
+
+body.home-page.dark-mode #accessModal .modal-content::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+body.home-page.dark-mode #accessModal .modal-content::-webkit-scrollbar-thumb:hover {
+    background: #B87333;
+}
+
+/* Firefox scrollbar */
+body.home-page.dark-mode #accessModal .modal-content {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #1e1e1e;
+}

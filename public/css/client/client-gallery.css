@@ -389,6 +389,7 @@
 }
 
 /* Price info container - Volume pricing */
+/* Light mode: white background, Dark mode: see dark mode section below */
 #priceProgressContainer,
 .price-info-container {
     position: sticky;
@@ -774,26 +775,31 @@
 /* CONTADOR - À DIREITA (CAIXA CHEIA)         */
 /* ============================================ */
 
+/* Light Mode - Subtle gray badge */
 .photo-count-badge {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #4b5563;
+    padding: 5px 10px;
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    color: #6b7280;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     flex-shrink: 0;
     white-space: nowrap;
     min-width: fit-content;
 }
 
 .photo-count-badge i {
-    font-size: 1rem;
-    opacity: 0.7;
+    font-size: 0.85rem;
+    color: #9ca3af;
     flex-shrink: 0;
 }
 
 .count-text {
-    color: #4b5563;
+    color: #6b7280;
     font-weight: 500;
 }
 
@@ -805,11 +811,12 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 10px;
-    background: rgba(254, 226, 226, 0.6);
-    color: #dc2626;
+    padding: 5px 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
     border-radius: 6px;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -829,7 +836,8 @@
 
 /* Hover sutil */
 .folder-card.out-of-stock:hover .out-of-stock-inline {
-    background: rgba(254, 226, 226, 0.8);
+    background: #fee2e2;
+    border-color: #fca5a5;
 }
 
 /* ============================================ */
@@ -1401,4 +1409,179 @@
         font-size: 0.9rem;
         border: white 1px solid;
     }
+}
+
+/* ============================================
+   DARK MODE - GALLERY CARDS
+   ============================================ */
+
+/* Folder Card */
+body.dark-mode .folder-card {
+    background: #2a2a2a !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .folder-card:hover {
+    background: #333 !important;
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .folder-card h4 {
+    color: #f0f0f0 !important;
+}
+
+/* Description - Better contrast */
+body.dark-mode .folder-description {
+    color: #a0a0a0 !important;
+}
+
+/* Product Count Badge - Dark - Subtle brown style */
+body.dark-mode .photo-count-badge {
+    background: rgba(139, 90, 43, 0.25) !important;
+    color: #c9a67a !important;
+    border: 1px solid rgba(139, 90, 43, 0.35) !important;
+    border-radius: 6px !important;
+    padding: 5px 10px !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .photo-count-badge i {
+    color: #c9a67a !important;
+}
+
+body.dark-mode .photo-count-badge .count-text {
+    color: #c9a67a !important;
+    font-weight: 500 !important;
+}
+
+/* OUT OF STOCK Badge - Dark - Subtle red style */
+body.dark-mode .out-of-stock-inline {
+    background: rgba(220, 53, 69, 0.15) !important;
+    border: 1px solid rgba(220, 53, 69, 0.25) !important;
+    color: #d08080 !important;
+}
+
+body.dark-mode .out-of-stock-inline i {
+    color: #d08080 !important;
+}
+
+body.dark-mode .out-of-stock-inline .out-text {
+    color: #d08080 !important;
+}
+
+body.dark-mode .folder-card.out-of-stock:hover .out-of-stock-inline {
+    background: rgba(220, 53, 69, 0.2) !important;
+}
+
+/* Price Badge - Keep green but darker */
+body.dark-mode .folder-price-badge {
+    background: #28a745 !important;
+    color: white !important;
+}
+
+/* Contact for Price */
+body.dark-mode .contact-price {
+    color: #888 !important;
+}
+
+/* Folder Stats Container */
+body.dark-mode .folder-stats {
+    border-top-color: #3d3d3d !important;
+}
+
+/* Category Cards (if different from folder) */
+body.dark-mode .category-card {
+    background: #2a2a2a !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .category-card:hover {
+    background: #333 !important;
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .category-card h3,
+body.dark-mode .category-card h4 {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .category-card .category-description,
+body.dark-mode .category-card p {
+    color: #a0a0a0 !important;
+}
+
+/* Progress bar and tiers */
+body.dark-mode .progress-bar-container {
+    background: #252525 !important;
+}
+
+body.dark-mode .progress-bar-label {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .progress-bar-track {
+    background: rgba(184, 115, 51, 0.2) !important;
+}
+
+/* Price Progress Container - Dark Mode */
+body.dark-mode #priceProgressContainer,
+body.dark-mode .price-info-container {
+    background: #252525 !important;
+}
+
+body.dark-mode .price-info-inline {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .price-progress-wrapper {
+    background: #252525 !important;
+}
+
+body.dark-mode .price-tier {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .price-tier:hover {
+    border-color: #B87333 !important;
+}
+
+body.dark-mode .tier-name {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .tier-label {
+    color: #999 !important;
+}
+
+body.dark-mode .tier-price {
+    color: #4caf50 !important;
+}
+
+/* Mix Match Hint */
+body.dark-mode .mix-match-hint {
+    color: #888 !important;
+}
+
+body.dark-mode .mix-match-hint:hover {
+    color: #B87333 !important;
+}
+
+/* Progress Bar Incentive */
+body.dark-mode .progress-bar-incentive {
+    color: #66bb6a !important;
+}
+
+/* No Results */
+body.dark-mode .no-results-container {
+    background: #2a2a2a !important;
+}
+
+body.dark-mode .no-results-title {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .no-results-text {
+    color: #999 !important;
 }

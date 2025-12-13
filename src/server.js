@@ -1,11 +1,15 @@
 // src/server.js
-// VERSÃO 2.1 - Servidor com Sincronização Incremental Opcional
+// VERSÃO 2.2 - Servidor com Validação de Ambiente e Sincronização Incremental
 
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const path = require('path');
 require('dotenv').config();
+
+// 🆕 VALIDAR VARIÁVEIS DE AMBIENTE NO STARTUP
+const { validateEnvOrExit } = require('./config/validateEnv');
+validateEnvOrExit();
 
 // Importações dos modelos e serviços
 const connectDB = require('./config/database');
@@ -26,7 +30,37 @@ const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(compression());
-app.use(cors());
+
+// 🆕 CORS com whitelist configurável
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Permitir requests sem origin (como apps mobile ou Postman)
+        if (!origin) return callback(null, true);
+
+        // Em desenvolvimento, permitir localhost
+        if (process.env.NODE_ENV !== 'production') {
+            return callback(null, true);
+        }
+
+        // Em produção, verificar whitelist
+        const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+            .split(',')
+            .map(o => o.trim())
+            .filter(o => o);
+
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Origem bloqueada: ${origin}`);
+            callback(new Error('Não permitido pelo CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

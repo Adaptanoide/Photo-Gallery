@@ -84,7 +84,9 @@ class CartService {
             let cart = await Cart.findOne({ sessionId }) ||
                 await Cart.findOne({ clientCode, isActive: true });
 
+            let isNewCart = false;
             if (!cart) {
+                // Carrinho novo - criar e salvar para ter _id
                 cart = new Cart({
                     sessionId,
                     clientCode,
@@ -92,18 +94,20 @@ class CartService {
                     items: [],
                     isActive: true
                 });
+                await cart.save();
+                isNewCart = true;
+                console.log(`[CART] 🆕 Novo carrinho criado para ${clientCode}`);
             }
 
-            // 4. Verificar duplicata (3 formas - mais robusto)
-
-            const isDuplicate = cart.items.some(item =>
+            // 4. 🆕 VERIFICAÇÃO DE DUPLICATA ROBUSTA (3 formas)
+            const checkDuplicate = (items) => items.some(item =>
                 item.driveFileId === driveFileId ||
                 item.fileName === product.fileName ||
-                (photoNumber && item.fileName?.includes(photoNumber))
+                (photoNumber && photoNumber !== 'unknown' && item.fileName?.includes(photoNumber))
             );
 
-            if (isDuplicate) {
-                console.log(`[CART] ✅ Duplicata ignorada: ${product.fileName}`);
+            if (checkDuplicate(cart.items)) {
+                console.log(`[CART] ✅ Duplicata ignorada (check 1): ${product.fileName}`);
 
                 // Retorna sucesso (não é erro para o cliente)
                 const validItems = cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
@@ -119,12 +123,18 @@ class CartService {
                 };
             }
 
+            // 🆕 VERIFICAÇÃO EXTRA: Checar se produto já está reservado para OUTRO cliente
+            if (product.status === 'reserved' && product.reservedBy?.clientCode && product.reservedBy.clientCode !== clientCode) {
+                console.log(`[CART] ⚠️ Produto reservado para outro cliente: ${product.reservedBy.clientCode}`);
+                throw new Error('Este produto já está reservado por outro cliente');
+            }
+
             // 5. 🆕 DEFINIR EXPIRAÇÃO (Coming Soon = null)
             const expiresAt = isComingSoon ? null : new Date(Date.now() + (ttlHours * 60 * 60 * 1000));
             console.log(`[CART] Expiração: ${expiresAt ? expiresAt.toISOString() : 'SEM EXPIRAÇÃO (Coming Soon)'}`);
 
-            // 6. Adicionar ao carrinho
-            cart.items.push({
+            // 6. Preparar novo item
+            const newItem = {
                 productId: product._id,
                 driveFileId: product.driveFileId,
                 fileName: product.fileName,
@@ -140,10 +150,44 @@ class CartService {
                 transitStatus: product.transitStatus === 'coming_soon' ? 'coming_soon' : null,
                 cdeTable: cdeTable,
                 isComingSoon: isComingSoon,
-            });
+            };
 
-            await cart.save();
-            console.log(`[CART] Carrinho salvo - ${cart.items.length} items`);
+            // 🆕 USAR OPERAÇÃO ATÔMICA para adicionar item (evita race condition)
+            // Isso garante que se outro request adicionar o mesmo item primeiro, não duplica
+            const updateResult = await Cart.findOneAndUpdate(
+                {
+                    _id: cart._id,
+                    'items.driveFileId': { $ne: driveFileId } // Só adiciona se NÃO existe
+                },
+                {
+                    $push: { items: newItem },
+                    $set: { lastActivity: new Date() }
+                },
+                { new: true }
+            );
+
+            // Se updateResult é null, significa que o item já existe (race condition evitada!)
+            if (!updateResult) {
+                // Re-buscar carrinho atualizado para retornar dados corretos
+                const currentCart = await Cart.findById(cart._id);
+                console.log(`[CART] ✅ Duplicata evitada (operação atômica): ${product.fileName}`);
+
+                const validItems = currentCart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+                return {
+                    success: true,
+                    message: 'Item já está no carrinho',
+                    isDuplicate: true,
+                    cart: {
+                        totalItems: validItems.length,
+                        items: currentCart.items,
+                        isEmpty: validItems.length === 0
+                    }
+                };
+            }
+
+            // Atualizar referência do cart com o resultado atualizado
+            cart = updateResult;
+            console.log(`[CART] Carrinho salvo (atômico) - ${cart.items.length} items`);
 
             // 7. Marcar produto como reservado
             product.status = 'reserved';

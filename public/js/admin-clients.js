@@ -610,63 +610,103 @@ class AdminClients {
                 </div>
             </div>
 
-            <!-- Modal Cart Control -->
-            <div id="cartControlModal" class="client-modal">
-                <div class="client-modal-content">
-                    <div class="client-modal-header">
-                        <h3 class="modal-title">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span id="cartControlTitle">Cart Control</span>
-                        </h3>
-                        <button class="modal-close" onclick="adminClients.closeCartControl()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="client-modal-body">
-                        <!-- Cart Summary -->
-                        <div class="form-section-clients">
-                            <h4 class="form-section-title-clients">
-                                <i class="fas fa-chart-bar"></i>
-                                Cart Summary
-                            </h4>
-                            <div id="cartSummary" class="cart-summary-grid">
-                                <!-- Será preenchido via JS -->
+            <!-- Modal Cart Control - REDESIGNED V2 -->
+            <div id="cartControlModal" class="cart-modal">
+                <div class="cart-modal-content">
+                    <!-- Header Fixo -->
+                    <div class="cart-fixed-top">
+                        <div class="cart-modal-header">
+                            <div class="cart-title">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span id="cartControlTitle">Cart Control</span>
+                            </div>
+                            <div class="cart-header-info">
+                                <span id="cartLastActivity" class="last-activity"></span>
+                                <button class="cart-close" onclick="adminClients.closeCartControl()">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
                         </div>
 
                         <!-- Time Control -->
-                        <div class="form-section-clients">
-                            <h4 class="form-section-title-clients">
-                                <i class="fas fa-clock"></i>
-                                Time Control
-                            </h4>
-                            <div id="cartTimeControl" class="cart-time-control">
-                                <!-- Será preenchido via JS -->
+                        <div class="cart-time-section">
+                            <div class="cart-time-left">
+                                <div class="time-label"><i class="fas fa-clock"></i> Extend Reservation:</div>
+                                <div id="cartTimeControl" class="time-buttons"></div>
+                            </div>
+                            <div class="cart-countdown">
+                                <span class="countdown-label">Expires in</span>
+                                <span id="cartCountdown" class="countdown-timer">--:--:--</span>
                             </div>
                         </div>
 
-                        <!-- Cart Items -->
-                        <div class="form-section-clients">
-                            <h4 class="form-section-title-clients">
-                                <i class="fas fa-images"></i>
-                                Cart Items
-                            </h4>
-                            <div id="cartItemsList" class="cart-items-list">
-                                <!-- Será preenchido via JS -->
+                        <!-- Navegação de Categorias -->
+                        <div class="cart-nav-section">
+                            <button class="nav-btn" onclick="adminClients.prevCategory()" title="Previous Category">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div id="cartCategoryNav" class="category-nav-tabs">
+                                <!-- Tabs de categorias preenchidas via JS -->
                             </div>
+                            <button class="nav-btn" onclick="adminClients.nextCategory()" title="Next Category">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Headers das Colunas -->
+                        <div class="cart-columns-header">
+                            <div class="col-category">Category</div>
+                            <div class="col-qb">QB Item</div>
+                            <div class="col-qty">Qty</div>
+                            <div class="col-tier">Tier</div>
+                            <div class="col-price">Price</div>
+                            <div class="col-next">Next Tier</div>
+                            <div class="col-subtotal">Subtotal</div>
                         </div>
                     </div>
 
-                    <div class="client-modal-footer">
-                        <button type="button" class="btn-modal btn-cancel" onclick="adminClients.closeCartControl()">
+                    <!-- Lista de Categorias (com scroll) -->
+                    <div class="cart-items-section">
+                        <div id="cartCategoriesList" class="cart-categories">
+                            <!-- Será preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Footer Fixo -->
+                    <div class="cart-modal-footer">
+                        <div class="cart-total">
+                            <span class="total-label">TOTAL:</span>
+                            <span id="cartTotalItems" class="total-items">0 items</span>
+                            <span id="cartTotalValue" class="total-value">= $0</span>
+                        </div>
+                        <div class="cart-actions">
+                            <button type="button" class="btn-cart btn-cancel" onclick="adminClients.closeCartControl()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn-cart btn-save" onclick="adminClients.saveCartChanges()">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lightbox para fotos -->
+                <div id="cartLightbox" class="cart-lightbox" onclick="adminClients.closeLightbox(event)">
+                    <div class="lightbox-content">
+                        <button class="lightbox-close" onclick="adminClients.closeLightbox()">
                             <i class="fas fa-times"></i>
-                            Cancel
                         </button>
-                        <button type="button" class="btn-modal btn-save" onclick="adminClients.saveCartChanges()">
-                            <i class="fas fa-save"></i>
-                            Save Changes
+                        <button class="lightbox-nav prev" onclick="adminClients.lightboxPrev(event)">
+                            <i class="fas fa-chevron-left"></i>
                         </button>
+                        <img id="lightboxImage" src="" alt="">
+                        <button class="lightbox-nav next" onclick="adminClients.lightboxNext(event)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <div class="lightbox-info">
+                            <span id="lightboxName"></span>
+                            <span id="lightboxCounter"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1977,91 +2017,272 @@ class AdminClients {
 
             const data = await response.json();
 
-            if (!data.success || !data.cart || data.cart.items.length === 0) {
-                document.getElementById('cartSummary').innerHTML = '<p>No items in cart</p>';
-                document.getElementById('cartTimeControl').innerHTML = '<p>No cart to manage</p>';
-                document.getElementById('cartItemsList').innerHTML = '<p>No items</p>';
+            if (!data.success || !data.cart || data.cart.totalItems === 0) {
+                document.getElementById('cartLastActivity').textContent = 'Empty cart';
+                document.getElementById('cartTimeControl').innerHTML = '<span class="empty-msg">No cart to manage</span>';
+                document.getElementById('cartCategoryNav').innerHTML = '';
+                document.getElementById('cartCategoriesList').innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-cart"></i><p>No items in cart</p></div>';
+                document.getElementById('cartTotalItems').textContent = '0 items';
+                document.getElementById('cartTotalValue').textContent = '= $0';
                 return;
             }
 
             const cart = data.cart;
 
-            // Cart Summary
-            document.getElementById('cartSummary').innerHTML = `
-            <div class="cart-summary-stats">
-                <div class="stat">
-                    <span class="stat-label">Total Items:</span>
-                    <span class="stat-value">${cart.totalItems}</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Last Activity:</span>
-                    <span class="stat-value">${this.formatDate(cart.lastActivity)}</span>
-                </div>
-            </div>
-        `;
+            // Salvar dados para lightbox
+            this.cartCategories = cart.categorySummary;
+            this.currentCategoryIndex = 0;
+            this.currentImageIndex = 0;
 
-            // Adicionar botões de controle de tempo
+            // Header - Last Activity
+            document.getElementById('cartLastActivity').innerHTML = `<i class="fas fa-clock"></i> Last Activity: ${this.formatDate(cart.lastActivity)}`;
+
+            // Time Control Buttons
             document.getElementById('cartTimeControl').innerHTML = `
-            <div class="time-control-buttons">
-                <button class="time-btn" onclick="adminClients.extendTime(0.0167)">1min</button>
-                <button class="time-btn" onclick="adminClients.extendTime(0.5)">30min</button>
+                <button class="time-btn" onclick="adminClients.extendTime(0.0167)">1m</button>
+                <button class="time-btn" onclick="adminClients.extendTime(0.5)">30m</button>
                 <button class="time-btn" onclick="adminClients.extendTime(1)">1h</button>
                 <button class="time-btn" onclick="adminClients.extendTime(2)">2h</button>
                 <button class="time-btn" onclick="adminClients.extendTime(6)">6h</button>
                 <button class="time-btn" onclick="adminClients.extendTime(12)">12h</button>
-                <button class="time-btn" onclick="adminClients.extendTime(24)">1 day</button>
-                <button class="time-btn" onclick="adminClients.extendTime(48)">2 days</button>
-                <button class="time-btn" onclick="adminClients.extendTime(72)">3 days</button>
-                <button class="time-btn" onclick="adminClients.extendTime(96)">4 days</button>
-                <button class="time-btn" onclick="adminClients.extendTime(120)">5 days</button>
-            </div>
-        `;
+                <button class="time-btn" onclick="adminClients.extendTime(24)">1d</button>
+                <button class="time-btn" onclick="adminClients.extendTime(48)">2d</button>
+                <button class="time-btn" onclick="adminClients.extendTime(72)">3d</button>
+            `;
 
-            // Marcar botão da última extensão como ativo
+            // Marcar botão ativo
             if (this.lastTimeExtension) {
                 setTimeout(() => {
-                    const buttons = document.querySelectorAll('.time-btn');
-                    buttons.forEach(btn => {
-                        if ((this.lastTimeExtension === 0.5 && btn.textContent === '30min') ||
-                            (this.lastTimeExtension === 1 && btn.textContent === '1h') ||
-                            (this.lastTimeExtension === 2 && btn.textContent === '2h') ||
-                            (this.lastTimeExtension === 6 && btn.textContent === '6h') ||
-                            (this.lastTimeExtension === 12 && btn.textContent === '12h') ||
-                            (this.lastTimeExtension === 24 && btn.textContent === '1 day') ||
-                            (this.lastTimeExtension === 48 && btn.textContent === '2 days') ||
-                            (this.lastTimeExtension === 72 && btn.textContent === '3 days') ||
-                            (this.lastTimeExtension === 96 && btn.textContent === '4 days') ||
-                            (this.lastTimeExtension === 120 && btn.textContent === '5 days')) {
-                            btn.classList.add('active');
-                        }
+                    const btnMap = {'0.0167':'1m','0.5':'30m','1':'1h','2':'2h','6':'6h','12':'12h','24':'1d','48':'2d','72':'3d'};
+                    const activeText = btnMap[this.lastTimeExtension];
+                    document.querySelectorAll('.time-btn').forEach(btn => {
+                        if (btn.textContent === activeText) btn.classList.add('active');
                     });
-                }, 100);
+                }, 50);
             }
 
-            // Listar items - USAR item.name como no modal original
-            document.getElementById('cartItemsList').innerHTML = cart.items.map((item, index) => {
-                const statusClass = item.isExpired ? 'item-expired' : 'item-active';
-                const statusText = item.isExpired ?
-                    '<span class="expired-badge">Expired</span>' :
-                    `<span class="timer" style="color: #ea580c;">${this.formatTimeRemaining(item.expiresInMinutes)}</span>`;
+            // Navegação de Categorias (tabs)
+            const navHTML = cart.categorySummary.map((cat, i) =>
+                `<button class="cat-tab ${i === 0 ? 'active' : ''}" onclick="adminClients.goToCategory(${i})" title="${cat.shortName}">
+                    ${cat.qbItem || cat.shortName.substring(0,8)}
+                </button>`
+            ).join('');
+            document.getElementById('cartCategoryNav').innerHTML = navHTML;
+
+            // 🆕 CATEGORIAS COM ESTRUTURA DE TABELA ALINHADA
+            let totalValue = 0;
+            const categoriesHTML = cart.categorySummary.map((cat, catIndex) => {
+                totalValue += cat.totalValue || 0;
+                const tierIndex = cat.currentTier?.index || 0;
+                const tierClass = tierIndex > 0 ? `tier-${tierIndex}` : 'tier-base';
+                const tierText = tierIndex > 0 ? `Tier ${tierIndex}` : 'Base';
+
+                // Próximo tier
+                let nextHint = '<span class="next-empty">—</span>';
+                if (cat.nextTier) {
+                    nextHint = `<span class="next-hint">+${cat.nextTier.itemsNeeded} → T${cat.nextTier.index}</span>`;
+                } else if (tierIndex >= 4) {
+                    nextHint = `<span class="max-hint"><i class="fas fa-crown"></i> MAX</span>`;
+                }
+
+                // Thumbnails com lightbox
+                const thumbsHTML = cat.items ? cat.items.map((item, itemIndex) => {
+                    const r2Path = item.r2Key || '';
+                    const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
+                    const thumbUrl = `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
+
+                    return `
+                    <div class="thumb-item" title="${item.name}" onclick="adminClients.openLightbox(${catIndex}, ${itemIndex})">
+                        <img src="${thumbUrl}" alt="${item.name}" loading="lazy"
+                             onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.add('no-img');">
+                        <span class="thumb-name">${item.name}</span>
+                    </div>
+                    `;
+                }).join('') : '';
 
                 return `
-                <div class="cart-item ${statusClass}" style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <div class="item-number" style="width: 30px; font-weight: bold;">${index + 1}.</div>
-                    <div class="item-info" style="flex: 1;">
-                        <div class="item-name" style="font-weight: bold;">${item.name}</div>
-                        <div class="item-path" style="font-size: 0.9em; color: #999;">
-                            <i class="fas fa-folder-open"></i> 
-                            ${item.category}${item.subcategory ? ' / ' + item.subcategory : ''}
+                <div class="cart-category" data-index="${catIndex}" id="cartCat${catIndex}">
+                    <div class="cat-row" onclick="adminClients.toggleCategory(${catIndex})">
+                        <div class="col-category">
+                            <i class="fas fa-chevron-right cat-arrow"></i>
+                            <span class="cat-name">${cat.shortName}</span>
                         </div>
+                        <div class="col-qb">
+                            <span class="qb-badge">${cat.qbItem || '—'}</span>
+                        </div>
+                        <div class="col-qty">${cat.count}</div>
+                        <div class="col-tier"><span class="tier-badge ${tierClass}">${tierText}</span></div>
+                        <div class="col-price">$${cat.currentPrice}</div>
+                        <div class="col-next">${nextHint}</div>
+                        <div class="col-subtotal">$${cat.totalValue.toLocaleString()}</div>
                     </div>
-                    <div class="item-status" style="width: 150px; text-align: right;">${statusText}</div>
+                    <div class="cat-items" style="display: none;">
+                        <div class="thumbs-grid">${thumbsHTML}</div>
+                    </div>
                 </div>
-            `;
+                `;
             }).join('');
+
+            document.getElementById('cartCategoriesList').innerHTML = categoriesHTML || '<div class="empty-cart">No categories</div>';
+
+            // Footer totais
+            document.getElementById('cartTotalItems').textContent = `${cart.totalItems} items`;
+            document.getElementById('cartTotalValue').textContent = `= $${totalValue.toLocaleString()}`;
+
+            // 🆕 COUNTDOWN TIMER - menor tempo do carrinho
+            this.startCartCountdown(cart.items);
+
+            // 🆕 Initialize scroll listener for dynamic category tabs
+            this.initCartScrollListener();
 
         } catch (error) {
             console.error('Error:', error);
+        }
+    }
+
+    // ===== INIT CART SCROLL LISTENER FOR DYNAMIC TABS =====
+    initCartScrollListener() {
+        const scrollContainer = document.querySelector('#cartControlModal .cart-items-section');
+        if (!scrollContainer) return;
+
+        // Remove old listener if exists
+        if (this._cartScrollHandler) {
+            scrollContainer.removeEventListener('scroll', this._cartScrollHandler);
+        }
+
+        // Create scroll handler
+        this._cartScrollHandler = () => {
+            this.updateActiveCartTab(scrollContainer);
+        };
+
+        scrollContainer.addEventListener('scroll', this._cartScrollHandler, { passive: true });
+    }
+
+    // ===== UPDATE ACTIVE CART TAB BASED ON SCROLL =====
+    updateActiveCartTab(scrollContainer) {
+        const categories = scrollContainer.querySelectorAll('.cart-category');
+        if (!categories.length) return;
+
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const containerTop = containerRect.top;
+        let activeIndex = 0;
+
+        // Find which category is most visible (closest to top of container)
+        categories.forEach((cat, index) => {
+            const catRect = cat.getBoundingClientRect();
+            const catTop = catRect.top - containerTop;
+
+            // If category top is above or at the container top (with some threshold)
+            if (catTop <= 50) {
+                activeIndex = index;
+            }
+        });
+
+        // Update tabs if changed
+        if (this.currentCategoryIndex !== activeIndex) {
+            this.currentCategoryIndex = activeIndex;
+            this.highlightCartTab(activeIndex);
+        }
+    }
+
+    // ===== HIGHLIGHT CART TAB =====
+    highlightCartTab(index) {
+        const tabs = document.querySelectorAll('#cartCategoryNav .cat-tab');
+        tabs.forEach((tab, i) => {
+            tab.classList.toggle('active', i === index);
+        });
+    }
+
+    // 🆕 Iniciar countdown do carrinho
+    startCartCountdown(items) {
+        // Limpar interval anterior se existir
+        if (this.cartCountdownInterval) {
+            clearInterval(this.cartCountdownInterval);
+        }
+
+        // Encontrar o menor tempo de expiração
+        const now = new Date();
+        let minExpiration = null;
+
+        items.forEach(item => {
+            if (item.expiresAt) {
+                const expDate = new Date(item.expiresAt);
+                if (!minExpiration || expDate < minExpiration) {
+                    minExpiration = expDate;
+                }
+            }
+        });
+
+        if (!minExpiration) {
+            document.getElementById('cartCountdown').textContent = 'No timer';
+            document.getElementById('cartCountdown').classList.remove('warning', 'critical');
+            return;
+        }
+
+        // Salvar a expiração mínima para updates
+        this.minCartExpiration = minExpiration;
+
+        // Update inicial
+        this.updateCartCountdown();
+
+        // Iniciar interval para atualizar a cada segundo
+        this.cartCountdownInterval = setInterval(() => {
+            this.updateCartCountdown();
+        }, 1000);
+    }
+
+    // 🆕 Atualizar display do countdown
+    updateCartCountdown() {
+        const countdownEl = document.getElementById('cartCountdown');
+        if (!countdownEl || !this.minCartExpiration) return;
+
+        const now = new Date();
+        const diff = this.minCartExpiration - now;
+
+        if (diff <= 0) {
+            countdownEl.textContent = 'EXPIRED';
+            countdownEl.classList.add('critical');
+            countdownEl.classList.remove('warning');
+            clearInterval(this.cartCountdownInterval);
+            return;
+        }
+
+        // Calcular horas, minutos e segundos
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        // Formatar display
+        let display;
+        if (hours > 24) {
+            const days = Math.floor(hours / 24);
+            const remainingHours = hours % 24;
+            display = `${days}d ${remainingHours}h ${minutes.toString().padStart(2, '0')}m`;
+        } else if (hours > 0) {
+            display = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        countdownEl.textContent = display;
+
+        // Classes de warning baseadas no tempo restante
+        if (diff < 5 * 60 * 1000) { // menos de 5 min
+            countdownEl.classList.add('critical');
+            countdownEl.classList.remove('warning');
+        } else if (diff < 30 * 60 * 1000) { // menos de 30 min
+            countdownEl.classList.add('warning');
+            countdownEl.classList.remove('critical');
+        } else {
+            countdownEl.classList.remove('warning', 'critical');
+        }
+    }
+
+    // 🆕 Limpar countdown ao fechar modal
+    stopCartCountdown() {
+        if (this.cartCountdownInterval) {
+            clearInterval(this.cartCountdownInterval);
+            this.cartCountdownInterval = null;
         }
     }
 
@@ -2135,6 +2356,16 @@ class AdminClients {
     }
 
     closeCartControl() {
+        // Parar countdown timer
+        this.stopCartCountdown();
+
+        // Clean up scroll listener
+        const scrollContainer = document.querySelector('#cartControlModal .cart-items-section');
+        if (scrollContainer && this._cartScrollHandler) {
+            scrollContainer.removeEventListener('scroll', this._cartScrollHandler);
+            this._cartScrollHandler = null;
+        }
+
         const modal = document.getElementById('cartControlModal');
         if (modal) {
             modal.classList.remove('active');
@@ -2148,6 +2379,177 @@ class AdminClients {
         setTimeout(() => {
             this.closeCartControl();
         }, 500);
+    }
+
+    // 🆕 Toggle categoria expansível (novo design)
+    toggleCategory(index) {
+        const category = document.querySelector(`.cart-category[data-index="${index}"]`);
+        if (!category) return;
+
+        const itemsDiv = category.querySelector('.cat-items');
+        const arrow = category.querySelector('.cat-arrow');
+
+        if (itemsDiv.style.display === 'none') {
+            itemsDiv.style.display = 'block';
+            arrow.classList.remove('fa-chevron-right');
+            arrow.classList.add('fa-chevron-down');
+            category.classList.add('expanded');
+        } else {
+            itemsDiv.style.display = 'none';
+            arrow.classList.remove('fa-chevron-down');
+            arrow.classList.add('fa-chevron-right');
+            category.classList.remove('expanded');
+        }
+    }
+
+    // 🆕 Navegação entre categorias
+    goToCategory(index) {
+        // Atualizar tabs
+        this.highlightCartTab(index);
+        this.currentCategoryIndex = index;
+
+        // Scroll para categoria dentro do container
+        const catEl = document.getElementById(`cartCat${index}`);
+        const scrollContainer = document.querySelector('#cartControlModal .cart-items-section');
+
+        if (catEl && scrollContainer) {
+            // Calculate scroll position relative to container
+            const containerTop = scrollContainer.getBoundingClientRect().top;
+            const categoryTop = catEl.getBoundingClientRect().top;
+            const scrollOffset = scrollContainer.scrollTop + (categoryTop - containerTop);
+
+            scrollContainer.scrollTo({
+                top: scrollOffset,
+                behavior: 'smooth'
+            });
+
+            // Expandir automaticamente
+            const itemsDiv = catEl.querySelector('.cat-items');
+            if (itemsDiv && itemsDiv.style.display === 'none') {
+                this.toggleCategory(index);
+            }
+        }
+    }
+
+    prevCategory() {
+        if (!this.cartCategories || this.cartCategories.length === 0) return;
+        const newIndex = this.currentCategoryIndex > 0
+            ? this.currentCategoryIndex - 1
+            : this.cartCategories.length - 1;
+        this.goToCategory(newIndex);
+    }
+
+    nextCategory() {
+        if (!this.cartCategories || this.cartCategories.length === 0) return;
+        const newIndex = this.currentCategoryIndex < this.cartCategories.length - 1
+            ? this.currentCategoryIndex + 1
+            : 0;
+        this.goToCategory(newIndex);
+    }
+
+    // 🆕 Lightbox para fotos
+    openLightbox(catIndex, itemIndex) {
+        event.stopPropagation();
+        this.currentCategoryIndex = catIndex;
+        this.currentImageIndex = itemIndex;
+
+        const cat = this.cartCategories[catIndex];
+        const item = cat.items[itemIndex];
+        const r2Path = item.r2Key || '';
+        const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
+        const fullUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+
+        document.getElementById('lightboxImage').src = fullUrl;
+        document.getElementById('lightboxName').textContent = item.name;
+        document.getElementById('lightboxCounter').textContent = `${itemIndex + 1} / ${cat.items.length}`;
+        document.getElementById('cartLightbox').classList.add('active');
+    }
+
+    closeLightbox(event) {
+        if (event && event.target.classList.contains('lightbox-content')) return;
+        document.getElementById('cartLightbox').classList.remove('active');
+    }
+
+    lightboxPrev(event) {
+        event.stopPropagation();
+        const cat = this.cartCategories[this.currentCategoryIndex];
+        this.currentImageIndex = this.currentImageIndex > 0
+            ? this.currentImageIndex - 1
+            : cat.items.length - 1;
+        this.updateLightboxImage();
+    }
+
+    lightboxNext(event) {
+        event.stopPropagation();
+        const cat = this.cartCategories[this.currentCategoryIndex];
+        this.currentImageIndex = this.currentImageIndex < cat.items.length - 1
+            ? this.currentImageIndex + 1
+            : 0;
+        this.updateLightboxImage();
+    }
+
+    updateLightboxImage() {
+        const cat = this.cartCategories[this.currentCategoryIndex];
+        const item = cat.items[this.currentImageIndex];
+        const r2Path = item.r2Key || '';
+        const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
+        const fullUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+
+        document.getElementById('lightboxImage').src = fullUrl;
+        document.getElementById('lightboxName').textContent = item.name;
+        document.getElementById('lightboxCounter').textContent = `${this.currentImageIndex + 1} / ${cat.items.length}`;
+    }
+
+    // Toggle para expandir/colapsar categoria individual (legacy)
+    toggleCategoryDetails(headerElement) {
+        const detailsElement = headerElement.nextElementSibling;
+        const toggleIcon = headerElement.querySelector('.toggle-icon');
+
+        if (detailsElement.style.display === 'none') {
+            detailsElement.style.display = 'block';
+            toggleIcon.classList.remove('fa-chevron-right');
+            toggleIcon.classList.add('fa-chevron-down');
+        } else {
+            detailsElement.style.display = 'none';
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-right');
+        }
+    }
+
+    // 🆕 Toggle para expandir/colapsar todas as categorias
+    toggleCategorySummary() {
+        const summaryList = document.getElementById('categorySummaryList');
+        const toggleBtn = document.getElementById('categorySummaryToggle');
+        const icon = toggleBtn.querySelector('i');
+
+        const allDetails = summaryList.querySelectorAll('.category-details');
+        const allIcons = summaryList.querySelectorAll('.toggle-icon');
+
+        // Verificar se algum está aberto
+        const anyOpen = Array.from(allDetails).some(d => d.style.display !== 'none');
+
+        allDetails.forEach(detail => {
+            detail.style.display = anyOpen ? 'none' : 'block';
+        });
+
+        allIcons.forEach(ic => {
+            if (anyOpen) {
+                ic.classList.remove('fa-chevron-down');
+                ic.classList.add('fa-chevron-right');
+            } else {
+                ic.classList.remove('fa-chevron-right');
+                ic.classList.add('fa-chevron-down');
+            }
+        });
+
+        // Toggle ícone principal
+        if (anyOpen) {
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+        } else {
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+        }
     }
 
     // ===== NOVAS FUNÇÕES DE PROTEÇÃO DE DADOS =====
