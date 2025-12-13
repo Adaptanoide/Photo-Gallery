@@ -249,12 +249,28 @@ class CartService {
         }
     }
 
-    static async removeFromCart(sessionId, driveFileId) {
+    static async removeFromCart(sessionId, driveFileId, clientCode = null) {
         try {
             console.log(`[CART] Removendo ${driveFileId} - VERSÃO SIMPLIFICADA`);
 
-            // 1. Buscar carrinho e verificar se é um ghost item
-            const cart = await Cart.findOne({ sessionId, isActive: true });
+            // 1. Buscar carrinho COM FALLBACK (igual ao addToCart)
+            let cart = await Cart.findOne({ sessionId, isActive: true });
+
+            // 🆕 FALLBACK: Se não encontrou por sessionId, tentar por clientCode
+            if (!cart && clientCode) {
+                console.log(`[CART] 🔄 Fallback: buscando por clientCode ${clientCode}`);
+                cart = await Cart.findOne({ clientCode, isActive: true });
+            }
+
+            // 🆕 FALLBACK 2: Buscar qualquer carrinho ativo que contenha o item
+            if (!cart) {
+                console.log(`[CART] 🔄 Fallback 2: buscando carrinho com o item ${driveFileId}`);
+                cart = await Cart.findOne({
+                    'items.driveFileId': driveFileId,
+                    isActive: true
+                });
+            }
+
             if (!cart) throw new Error('Carrinho não encontrado');
 
             // Encontrar o item específico para verificar se é ghost

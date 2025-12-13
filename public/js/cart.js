@@ -292,13 +292,18 @@ window.CartSystem = {
         try {
             this.setLoading(true);
 
+            // 🆕 Buscar clientCode para fallback no backend
+            const clientSession = this.getClientSession();
+            const clientCode = clientSession?.accessCode || null;
+
             const response = await fetch(`${this.config.apiBaseUrl}/remove/${encodeURIComponent(driveFileId)}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    sessionId: this.state.sessionId
+                    sessionId: this.state.sessionId,
+                    clientCode: clientCode  // 🆕 Enviar clientCode para fallback
                 })
             });
 

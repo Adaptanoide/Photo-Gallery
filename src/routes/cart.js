@@ -196,12 +196,13 @@ router.post('/add', validateRequest, async (req, res) => {
 router.delete('/remove/:driveFileId', validateRequest, async (req, res) => {
     try {
         const { driveFileId } = req.params;
-        const { sessionId } = req.body;
+        const { sessionId, clientCode } = req.body;
 
         // 🆕 Log estruturado
-        console.log(`[CART-REMOVE] 📤 Início | Session: ${sessionId?.substring(0, 8)}... | FileId: ${driveFileId?.substring(0, 20)}...`);
+        console.log(`[CART-REMOVE] 📤 Início | Session: ${sessionId?.substring(0, 8)}... | Client: ${clientCode || 'N/A'} | FileId: ${driveFileId?.substring(0, 20)}...`);
 
-        const result = await CartService.removeFromCart(sessionId, driveFileId);
+        // 🆕 Passar clientCode para fallback
+        const result = await CartService.removeFromCart(sessionId, driveFileId, clientCode);
 
         // 🆕 Log de sucesso
         if (result.success) {
