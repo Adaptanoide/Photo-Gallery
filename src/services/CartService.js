@@ -154,6 +154,7 @@ class CartService {
 
             // 🆕 USAR OPERAÇÃO ATÔMICA para adicionar item (evita race condition)
             // Isso garante que se outro request adicionar o mesmo item primeiro, não duplica
+            // ⚠️ IMPORTANTE: $inc totalItems porque findOneAndUpdate NÃO dispara middleware pre('save')
             const updateResult = await Cart.findOneAndUpdate(
                 {
                     _id: cart._id,
@@ -161,6 +162,7 @@ class CartService {
                 },
                 {
                     $push: { items: newItem },
+                    $inc: { totalItems: 1 },  // 🆕 Incrementar contador manualmente!
                     $set: { lastActivity: new Date() }
                 },
                 { new: true }
