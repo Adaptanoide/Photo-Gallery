@@ -25,11 +25,19 @@ router.post('/finalize', async (req, res) => {
             const { sessionId, clientCode, clientName, observations } = req.body;
 
             console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
+            console.log(`📋 SessionId recebido: ${sessionId?.substring(0, 20)}...`);
 
-            // 1. Buscar carrinho ativo
-            const cart = await Cart.findActiveBySession(sessionId).session(session);
+            // 1. Buscar carrinho ativo COM FALLBACK (igual ao removeFromCart)
+            let cart = await Cart.findActiveBySession(sessionId).session(session);
+
+            // 🆕 FALLBACK: Se não encontrou por sessionId, tentar por clientCode
+            if (!cart && clientCode) {
+                console.log(`[SELECTION] 🔄 Fallback: buscando carrinho por clientCode ${clientCode}`);
+                cart = await Cart.findActiveByClient(clientCode).session(session);
+            }
 
             if (!cart || cart.totalItems === 0) {
+                console.log(`❌ Carrinho não encontrado ou vazio | sessionId: ${sessionId} | clientCode: ${clientCode}`);
                 return res.status(400).json({
                     success: false,
                     message: 'Carrinho vazio ou não encontrado'
