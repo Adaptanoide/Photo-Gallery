@@ -18,55 +18,63 @@ const router = express.Router();
  * Finalizar seleção do cliente - mover fotos para RESERVED + enviar email
  */
 router.post('/finalize', async (req, res) => {
+    const { sessionId, clientCode, clientName, observations } = req.body;
+
+    console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
+    console.log(`📋 SessionId recebido: ${sessionId}`);
+
+    // ========== BUSCAR CARRINHO FORA DA TRANSAÇÃO PRIMEIRO ==========
+    // Isso evita problemas de read concern dentro de transações
+    let cart = null;
+
+    // Tentativa 1: Por sessionId
+    cart = await Cart.findOne({ sessionId, isActive: true });
+    console.log(`[SELECTION] 🔍 Busca por sessionId: ${cart ? `encontrado (${cart.totalItems} itens, clientCode: ${cart.clientCode})` : 'não encontrado'}`);
+
+    // Tentativa 2: Por clientCode
+    if (!cart && clientCode) {
+        console.log(`[SELECTION] 🔄 Fallback 1: buscando por clientCode ${clientCode}`);
+        cart = await Cart.findOne({ clientCode, isActive: true });
+        console.log(`[SELECTION] 🔍 Busca por clientCode: ${cart ? `encontrado (${cart.totalItems} itens, sessionId: ${cart.sessionId})` : 'não encontrado'}`);
+    }
+
+    // Tentativa 3: Qualquer carrinho do cliente
+    if (!cart && clientCode) {
+        console.log(`[SELECTION] 🔄 Fallback 2: buscando qualquer carrinho do cliente ${clientCode}`);
+        const allCarts = await Cart.find({ clientCode });
+        console.log(`[SELECTION] 📦 Encontrados ${allCarts.length} carrinhos para clientCode ${clientCode}:`);
+        allCarts.forEach(c => {
+            console.log(`   - ${c.sessionId}: ${c.totalItems} itens, isActive: ${c.isActive}`);
+        });
+        cart = allCarts.find(c => c.isActive && c.totalItems > 0);
+    }
+
+    if (!cart || cart.totalItems === 0) {
+        console.log(`❌ Carrinho não encontrado ou vazio | sessionId: ${sessionId} | clientCode: ${clientCode}`);
+        // Log adicional para debug
+        const debugCart = await Cart.findOne({ sessionId });
+        if (debugCart) {
+            console.log(`⚠️ DEBUG: Carrinho existe mas: isActive=${debugCart.isActive}, totalItems=${debugCart.totalItems}, items.length=${debugCart.items?.length}`);
+        }
+        return res.status(400).json({
+            success: false,
+            message: 'Carrinho vazio ou não encontrado'
+        });
+    }
+
+    console.log(`📦 Carrinho encontrado: ${cart.totalItems} itens (sessionId: ${cart.sessionId})`);
+
+    // ========== AGORA INICIAR A TRANSAÇÃO ==========
     const session = await mongoose.startSession();
 
     try {
         return await session.withTransaction(async () => {
-            const { sessionId, clientCode, clientName, observations } = req.body;
+            // Re-buscar o carrinho dentro da transação para lock
+            const cartInTransaction = await Cart.findById(cart._id).session(session);
 
-            console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
-            console.log(`📋 SessionId recebido: ${sessionId}`);
-
-            // 1. Buscar carrinho ativo COM FALLBACK ROBUSTO
-            let cart = null;
-
-            // Tentativa 1: Por sessionId
-            cart = await Cart.findOne({ sessionId, isActive: true }).session(session);
-            console.log(`[SELECTION] 🔍 Busca por sessionId: ${cart ? `encontrado (${cart.totalItems} itens, clientCode: ${cart.clientCode})` : 'não encontrado'}`);
-
-            // Tentativa 2: Por clientCode
-            if (!cart && clientCode) {
-                console.log(`[SELECTION] 🔄 Fallback 1: buscando por clientCode ${clientCode}`);
-                cart = await Cart.findOne({ clientCode, isActive: true }).session(session);
-                console.log(`[SELECTION] 🔍 Busca por clientCode: ${cart ? `encontrado (${cart.totalItems} itens, sessionId: ${cart.sessionId})` : 'não encontrado'}`);
+            if (!cartInTransaction || cartInTransaction.totalItems === 0) {
+                throw new Error('Carrinho foi modificado durante a transação');
             }
-
-            // Tentativa 3: Qualquer carrinho ativo do cliente (sem filtro isActive)
-            if (!cart && clientCode) {
-                console.log(`[SELECTION] 🔄 Fallback 2: buscando qualquer carrinho do cliente ${clientCode}`);
-                const allCarts = await Cart.find({ clientCode }).session(session);
-                console.log(`[SELECTION] 📦 Encontrados ${allCarts.length} carrinhos para clientCode ${clientCode}:`);
-                allCarts.forEach(c => {
-                    console.log(`   - ${c.sessionId}: ${c.totalItems} itens, isActive: ${c.isActive}`);
-                });
-                // Pegar o primeiro ativo com itens
-                cart = allCarts.find(c => c.isActive && c.totalItems > 0);
-            }
-
-            if (!cart || cart.totalItems === 0) {
-                console.log(`❌ Carrinho não encontrado ou vazio | sessionId: ${sessionId} | clientCode: ${clientCode}`);
-                // Log adicional para debug
-                const debugCart = await Cart.findOne({ sessionId }).session(session);
-                if (debugCart) {
-                    console.log(`⚠️ DEBUG: Carrinho existe mas: isActive=${debugCart.isActive}, totalItems=${debugCart.totalItems}`);
-                }
-                return res.status(400).json({
-                    success: false,
-                    message: 'Carrinho vazio ou não encontrado'
-                });
-            }
-
-            console.log(`📦 Carrinho encontrado: ${cart.totalItems} itens`);
 
             // FILTRAR GHOST ITEMS - CRÍTICO!
             let validItems = cart.items.filter(item =>
