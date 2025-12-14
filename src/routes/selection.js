@@ -25,19 +25,41 @@ router.post('/finalize', async (req, res) => {
             const { sessionId, clientCode, clientName, observations } = req.body;
 
             console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
-            console.log(`📋 SessionId recebido: ${sessionId?.substring(0, 20)}...`);
+            console.log(`📋 SessionId recebido: ${sessionId}`);
 
-            // 1. Buscar carrinho ativo COM FALLBACK (igual ao removeFromCart)
-            let cart = await Cart.findActiveBySession(sessionId).session(session);
+            // 1. Buscar carrinho ativo COM FALLBACK ROBUSTO
+            let cart = null;
 
-            // 🆕 FALLBACK: Se não encontrou por sessionId, tentar por clientCode
+            // Tentativa 1: Por sessionId
+            cart = await Cart.findOne({ sessionId, isActive: true }).session(session);
+            console.log(`[SELECTION] 🔍 Busca por sessionId: ${cart ? `encontrado (${cart.totalItems} itens, clientCode: ${cart.clientCode})` : 'não encontrado'}`);
+
+            // Tentativa 2: Por clientCode
             if (!cart && clientCode) {
-                console.log(`[SELECTION] 🔄 Fallback: buscando carrinho por clientCode ${clientCode}`);
-                cart = await Cart.findActiveByClient(clientCode).session(session);
+                console.log(`[SELECTION] 🔄 Fallback 1: buscando por clientCode ${clientCode}`);
+                cart = await Cart.findOne({ clientCode, isActive: true }).session(session);
+                console.log(`[SELECTION] 🔍 Busca por clientCode: ${cart ? `encontrado (${cart.totalItems} itens, sessionId: ${cart.sessionId})` : 'não encontrado'}`);
+            }
+
+            // Tentativa 3: Qualquer carrinho ativo do cliente (sem filtro isActive)
+            if (!cart && clientCode) {
+                console.log(`[SELECTION] 🔄 Fallback 2: buscando qualquer carrinho do cliente ${clientCode}`);
+                const allCarts = await Cart.find({ clientCode }).session(session);
+                console.log(`[SELECTION] 📦 Encontrados ${allCarts.length} carrinhos para clientCode ${clientCode}:`);
+                allCarts.forEach(c => {
+                    console.log(`   - ${c.sessionId}: ${c.totalItems} itens, isActive: ${c.isActive}`);
+                });
+                // Pegar o primeiro ativo com itens
+                cart = allCarts.find(c => c.isActive && c.totalItems > 0);
             }
 
             if (!cart || cart.totalItems === 0) {
                 console.log(`❌ Carrinho não encontrado ou vazio | sessionId: ${sessionId} | clientCode: ${clientCode}`);
+                // Log adicional para debug
+                const debugCart = await Cart.findOne({ sessionId }).session(session);
+                if (debugCart) {
+                    console.log(`⚠️ DEBUG: Carrinho existe mas: isActive=${debugCart.isActive}, totalItems=${debugCart.totalItems}`);
+                }
                 return res.status(400).json({
                     success: false,
                     message: 'Carrinho vazio ou não encontrado'
