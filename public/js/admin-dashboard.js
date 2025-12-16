@@ -20,6 +20,10 @@ class AdminDashboard {
         this.setupEventListeners();
         this.checkAuthentication();
         this.loadDashboardData();
+
+        // 🆕 Verificar pending requests após 3 segundos
+        setTimeout(() => this.checkPendingRequestsAlert(), 3000);
+
         console.log('✅ Admin Dashboard inicializado');
     }
 
@@ -623,6 +627,190 @@ class AdminDashboard {
         console.log('✅ Sucesso:', message);
         // TODO: Implementar toast/notification system
         alert(message);
+    }
+
+    // ===== PENDING REQUESTS ALERT =====
+    async checkPendingRequestsAlert() {
+        try {
+            // Buscar token de admin (mesmo método que admin-clients.js)
+            const sessionData = localStorage.getItem('sunshineSession');
+            if (!sessionData) return;
+
+            const session = JSON.parse(sessionData);
+            const token = session.token;
+            if (!token) return;
+
+            console.log('🔔 Checking for pending requests...');
+
+            // Buscar contagem de pending requests
+            const response = await fetch('/api/register/admin/count', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const data = await response.json();
+            console.log('🔔 Pending requests response:', data);
+
+            if (data.success && data.count > 0) {
+                console.log(`🔔 Found ${data.count} pending request(s)! Showing alert...`);
+                this.showPendingRequestsAlert(data.count);
+            } else {
+                console.log('🔔 No pending requests found');
+            }
+        } catch (error) {
+            console.error('❌ Error checking pending requests:', error);
+        }
+    }
+
+    showPendingRequestsAlert(count) {
+        // Evitar mostrar múltiplos alertas
+        if (document.getElementById('pendingRequestsAlertOverlay')) return;
+
+        const plural = count > 1 ? 's' : '';
+        const alertHtml = `
+            <div id="pendingRequestsAlertOverlay" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 99999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            ">
+                <div style="
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                    border-radius: 20px;
+                    padding: 40px;
+                    max-width: 450px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 100px rgba(245, 158, 11, 0.3);
+                    border: 2px solid #f59e0b;
+                    animation: bounceIn 0.5s ease;
+                ">
+                    <div style="
+                        width: 80px;
+                        height: 80px;
+                        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 20px;
+                        animation: pulse 2s infinite;
+                    ">
+                        <i class="fas fa-user-clock" style="font-size: 36px; color: white;"></i>
+                    </div>
+
+                    <h2 style="
+                        color: #fff;
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                        font-weight: 600;
+                    ">New Client Request${plural}!</h2>
+
+                    <p style="
+                        color: #94a3b8;
+                        font-size: 16px;
+                        margin-bottom: 25px;
+                        line-height: 1.5;
+                    ">
+                        You have <span style="color: #f59e0b; font-weight: bold; font-size: 20px;">${count}</span> pending client registration${plural} waiting for review.
+                    </p>
+
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button onclick="window.adminDashboard.dismissPendingAlert()" style="
+                            background: transparent;
+                            border: 2px solid #475569;
+                            color: #94a3b8;
+                            padding: 12px 24px;
+                            border-radius: 10px;
+                            font-size: 14px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.borderColor='#64748b'; this.style.color='#fff';"
+                           onmouseout="this.style.borderColor='#475569'; this.style.color='#94a3b8';">
+                            Later
+                        </button>
+
+                        <button onclick="window.adminDashboard.goToPendingRequests()" style="
+                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                            border: none;
+                            color: white;
+                            padding: 12px 28px;
+                            border-radius: 10px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            transition: all 0.2s;
+                            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+                        " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(245, 158, 11, 0.6)';"
+                           onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(245, 158, 11, 0.4)';">
+                            <i class="fas fa-arrow-right"></i>
+                            View Requests
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.95); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+                    70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                }
+            </style>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', alertHtml);
+        console.log(`🔔 Showing pending requests alert: ${count} request${plural}`);
+    }
+
+    dismissPendingAlert() {
+        const overlay = document.getElementById('pendingRequestsAlertOverlay');
+        if (overlay) {
+            overlay.style.animation = 'fadeOut 0.3s ease forwards';
+            setTimeout(() => overlay.remove(), 300);
+        }
+    }
+
+    goToPendingRequests() {
+        // Fechar alerta
+        this.dismissPendingAlert();
+
+        // Navegar para seção de clientes
+        this.navigateToSection('clients');
+
+        // Aguardar carregamento e abrir modal de pending requests
+        setTimeout(() => {
+            if (window.adminClients && typeof window.adminClients.openPendingRequestsModal === 'function') {
+                window.adminClients.openPendingRequestsModal();
+            } else {
+                // Fallback: clicar no botão de pending requests
+                const btn = document.getElementById('btnPendingRequests');
+                if (btn) btn.click();
+            }
+        }, 500);
     }
 }
 

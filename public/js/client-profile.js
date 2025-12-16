@@ -379,9 +379,22 @@ window.changeAccessCode = async function() {
         session.accessCode = newCode;
         localStorage.setItem('sunshineSession', JSON.stringify(session));
 
+        // 🆕 MIGRAR LOCALSTORAGE DO CARRINHO: copiar sessionId do código antigo para o novo
+        const oldCartKey = `cartSessionId_${currentCode}`;
+        const newCartKey = `cartSessionId_${newCode}`;
+        const oldSessionId = localStorage.getItem(oldCartKey);
+        if (oldSessionId) {
+            localStorage.setItem(newCartKey, oldSessionId);
+            localStorage.removeItem(oldCartKey);
+            console.log(`🛒 localStorage migrado: ${oldCartKey} → ${newCartKey}`);
+        }
+
         // Show success
         saveBtn.innerHTML = '<i class="fas fa-check"></i> Changed!';
         saveBtn.style.background = '#28a745';
+
+        // 🆕 Mostrar mensagem diferente se carrinho foi migrado
+        const cartMessage = data.cartMigrated ? ' Your cart items have been preserved.' : '';
 
         setTimeout(() => {
             closeChangeCodeModal();
@@ -390,7 +403,10 @@ window.changeAccessCode = async function() {
             saveBtn.disabled = false;
 
             // Show success message
-            alert('Access code changed successfully! Your new code is: ' + newCode);
+            alert('Access code changed successfully! Your new code is: ' + newCode + cartMessage);
+
+            // 🆕 Recarregar página para reinicializar cart com novo código
+            window.location.reload();
         }, 1500);
 
     } catch (error) {

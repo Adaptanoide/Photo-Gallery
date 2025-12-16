@@ -3,6 +3,7 @@
 const express = require('express');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const AccessCode = require('../models/AccessCode');
+const Cart = require('../models/Cart');
 
 const router = express.Router();
 
@@ -210,10 +211,26 @@ router.post('/change-code', async (req, res) => {
 
         console.log(`🔑 Access code changed for ${client.clientName}: ${oldCode} → ${newCode}`);
 
+        // 🆕 MIGRAR CARRINHO: Se o cliente tinha carrinho ativo, atualizar o clientCode
+        let cartMigrated = false;
+        try {
+            const existingCart = await Cart.findOne({ clientCode: oldCode, isActive: true });
+            if (existingCart) {
+                existingCart.clientCode = newCode;
+                await existingCart.save();
+                cartMigrated = true;
+                console.log(`🛒 Carrinho migrado: ${oldCode} → ${newCode} (${existingCart.totalItems} itens)`);
+            }
+        } catch (cartError) {
+            // Não falhar a operação principal se migração do carrinho falhar
+            console.error(`⚠️ Erro ao migrar carrinho (não crítico):`, cartError.message);
+        }
+
         res.json({
             success: true,
             message: 'Access code changed successfully',
-            newCode: newCode
+            newCode: newCode,
+            cartMigrated: cartMigrated  // 🆕 Informar frontend se houve migração
         });
 
     } catch (error) {

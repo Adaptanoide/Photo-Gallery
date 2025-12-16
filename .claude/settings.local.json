@@ -42,7 +42,11 @@
       "Bash(del /f \"c:\\Users\\Tiago\\Desktop\\GALERIA\\nul\")",
       "Bash(del \"\\?\\c:\\Users\\Tiago\\Desktop\\GALERIA\\nul\")",
       "Bash(cmd /c \"del /f /q \\?\\c:\\Users\\Tiago\\Desktop\\GALERIA\\nul\")",
-      "Bash(cmd /c \"cd /d c:\\Users\\Tiago\\Desktop\\GALERIA && dir nul 2>nul && echo FILE EXISTS || echo FILE NOT FOUND\")"
+      "Bash(cmd /c \"cd /d c:\\Users\\Tiago\\Desktop\\GALERIA && dir nul 2>nul && echo FILE EXISTS || echo FILE NOT FOUND\")",
+      "Bash(npx pm2 restart galeria)",
+      "Bash(npx pm2 list)",
+      "Bash(npx pm2:*)",
+      "Bash(cmd /c \"taskkill /F /PID 7912\")"
     ],
     "deny": [],
     "ask": []
