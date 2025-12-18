@@ -17,7 +17,7 @@ const aiTrainingRuleSchema = new mongoose.Schema({
     },
     created_by: {
         type: String,
-        default: 'Andy'
+        default: 'system'
     },
     active: {
         type: Boolean,

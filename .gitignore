@@ -19,3 +19,7 @@ backup-old-scripts/
 *.log
 sync.log/scripts
 sunshine-cowhides-gallery.env
+scripts/
+sync.log
+data/
+.claude/

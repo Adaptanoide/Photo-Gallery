@@ -570,23 +570,24 @@ class CDEQueries {
         return this.executeQuery('getCriticalStock', query);
     }
 
-    // Query 21: Histórico de Vendas por Cliente (últimos 90 dias)
+    // Query 21: Histórico de Vendas por Canal (últimos 90 dias)
+    // Nota: Dados detalhados de clientes vêm do QuickBooks
     async getSalesByClient() {
         const query = `
             SELECT
-                o.AQBNOMBRE as cliente,
+                o.AIDMARKETPLACE as canal,
                 COUNT(DISTINCT o.AQR_ORDEN) as pedidos,
-                COUNT(ip.AQBITEM_ITEMPEDIDO) as itens_comprados,
-                MIN(o.AFECHAO) as primeira_compra,
-                MAX(o.AFECHAO) as ultima_compra,
-                DATEDIFF(NOW(), MAX(o.AFECHAO)) as dias_sem_comprar
+                COUNT(ip.AQBITEM_ITEMPEDIDO) as itens_vendidos,
+                MIN(o.AFECHAO) as primeira_venda,
+                MAX(o.AFECHAO) as ultima_venda,
+                DATEDIFF(NOW(), MAX(o.AFECHAO)) as dias_desde_ultima
             FROM tborden o
             LEFT JOIN tbitem_pedido ip ON o.AQR_ORDEN = ip.AQR_ITEMPEDIO
             WHERE o.AFECHAO >= DATE_SUB(NOW(), INTERVAL 90 DAY)
-            AND o.AQBNOMBRE IS NOT NULL
-            AND o.AQBNOMBRE != ''
-            GROUP BY o.AQBNOMBRE
-            ORDER BY itens_comprados DESC
+            AND o.AIDMARKETPLACE IS NOT NULL
+            AND o.AIDMARKETPLACE != ''
+            GROUP BY o.AIDMARKETPLACE
+            ORDER BY itens_vendidos DESC
             LIMIT 20
         `;
 

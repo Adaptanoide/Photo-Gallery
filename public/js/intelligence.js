@@ -25,7 +25,10 @@
         autoSaveTimer: null,
         editingRuleId: null,
         connectionRetries: 0,
-        currentConversationId: null
+        currentConversationId: null,
+        // File attachment state
+        attachedFile: null,      // { fileId, fileName, fileType, summary }
+        isUploading: false
     };
 
     // ========================================
@@ -303,13 +306,26 @@
         try {
             const startTime = Date.now();
 
+            // Incluir fileId se houver arquivo anexado
+            const requestBody = {
+                question,
+                conversationId: STATE.currentConversationId
+            };
+
+            if (STATE.attachedFile) {
+                requestBody.fileId = STATE.attachedFile.fileId;
+                console.log('📎 Sending with file:', STATE.attachedFile.fileName);
+            }
+
             const response = await fetchWithAuth('/chat', {
                 method: 'POST',
-                body: JSON.stringify({
-                    question,
-                    conversationId: STATE.currentConversationId
-                })
+                body: JSON.stringify(requestBody)
             });
+
+            // Limpar arquivo após enviar
+            if (STATE.attachedFile) {
+                clearAttachedFile();
+            }
 
             if (!response.ok) {
                 const error = await response.json();
@@ -362,6 +378,119 @@
         }
     }
 
+    // ========================================
+    // GESTÃO DE ARQUIVOS ANEXADOS
+    // ========================================
+
+    async function uploadFile(file) {
+        if (STATE.isUploading) return;
+
+        STATE.isUploading = true;
+        showFileUploadProgress(file.name);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const token = localStorage.getItem(CONFIG.TOKEN_KEY);
+            const response = await fetch(`${CONFIG.API_BASE}/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Upload failed');
+            }
+
+            // Salvar referência do arquivo
+            STATE.attachedFile = {
+                fileId: data.fileId,
+                fileName: data.fileName,
+                fileType: data.fileType,
+                summary: data.summary
+            };
+
+            showAttachedFileIndicator();
+            console.log('📎 File attached:', STATE.attachedFile);
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            await showAlert(`Error uploading file: ${error.message}`, 'Upload Error');
+        } finally {
+            STATE.isUploading = false;
+            hideFileUploadProgress();
+        }
+    }
+
+    function showFileUploadProgress(fileName) {
+        const indicator = document.getElementById('fileUploadIndicator');
+        if (indicator) {
+            indicator.innerHTML = `
+                <span class="file-upload-spinner"></span>
+                <span>Uploading ${fileName}...</span>
+            `;
+            indicator.style.display = 'flex';
+        }
+    }
+
+    function hideFileUploadProgress() {
+        const indicator = document.getElementById('fileUploadIndicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+
+    function showAttachedFileIndicator() {
+        if (!STATE.attachedFile) return;
+
+        const indicator = document.getElementById('fileUploadIndicator');
+        if (indicator) {
+            const icon = getFileIcon(STATE.attachedFile.fileType);
+            indicator.innerHTML = `
+                <span class="attached-file-icon">${icon}</span>
+                <span class="attached-file-name">${STATE.attachedFile.fileName}</span>
+                <button class="attached-file-remove" onclick="window.clearAttachedFile()" title="Remove file">&times;</button>
+            `;
+            indicator.style.display = 'flex';
+            indicator.classList.add('has-file');
+        }
+    }
+
+    function clearAttachedFile() {
+        STATE.attachedFile = null;
+        const indicator = document.getElementById('fileUploadIndicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+            indicator.classList.remove('has-file');
+            indicator.innerHTML = '';
+        }
+        // Limpar input file
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.value = '';
+    }
+
+    function getFileIcon(fileType) {
+        const icons = {
+            'pdf': '📄',
+            'excel': '📊',
+            'csv': '📋',
+            'text': '📝'
+        };
+        return icons[fileType] || '📎';
+    }
+
+    function triggerFileUpload() {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.click();
+        }
+    }
+
     function addMessage(text, sender) {
         const container = document.getElementById('messagesContainer');
         const message = document.createElement('div');
@@ -395,38 +524,144 @@
         requestAnimationFrame(() => {
             message.classList.add('fade-in');
         });
+
+        // Atualizar visibilidade da sticky bar
+        updateStickyVisibility();
     }
 
     function formatMessage(text) {
-        // Converter bullets e formatação
-        return text
-            .replace(/•/g, '&bull;')
-            .replace(/\n/g, '<br>')
-            .replace(/📊/g, '<span class="emoji">📊</span>')
-            .replace(/📈/g, '<span class="emoji">📈</span>')
-            .replace(/📦/g, '<span class="emoji">📦</span>')
-            .replace(/💰/g, '<span class="emoji">💰</span>')
-            .replace(/🎯/g, '<span class="emoji">🎯</span>')
-            .replace(/✅/g, '<span class="emoji">✅</span>')
-            .replace(/⚠️/g, '<span class="emoji">⚠️</span>')
-            .replace(/🔴/g, '<span class="emoji">🔴</span>')
-            .replace(/🟡/g, '<span class="emoji">🟡</span>')
-            .replace(/🟢/g, '<span class="emoji">🟢</span>');
+        // Escape HTML first (security)
+        let formatted = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Parse markdown-style formatting
+        // Bold: **text** or __text__
+        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+        // Italic: *text* or _text_ (but not inside words)
+        formatted = formatted.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>');
+        formatted = formatted.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
+
+        // Code: `text`
+        formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Detect and format sections (lines ending with :)
+        formatted = formatted.replace(/^([A-Za-z][^:\n]{2,30}):$/gm, '<div class="msg-section-title">$1</div>');
+
+        // Convert bullet points to proper list items
+        // First, find groups of bullet lines and wrap them
+        formatted = formatted.replace(/((?:^[•\-\*]\s.+$\n?)+)/gm, (match) => {
+            const items = match.trim().split('\n').map(line => {
+                const content = line.replace(/^[•\-\*]\s*/, '');
+                return `<li>${content}</li>`;
+            }).join('');
+            return `<ul class="msg-list">${items}</ul>`;
+        });
+
+        // Convert numbered lists (1. 2. 3.)
+        formatted = formatted.replace(/((?:^\d+[\.\)]\s.+$\n?)+)/gm, (match) => {
+            const items = match.trim().split('\n').map(line => {
+                const content = line.replace(/^\d+[\.\)]\s*/, '');
+                return `<li>${content}</li>`;
+            }).join('');
+            return `<ol class="msg-list">${items}</ol>`;
+        });
+
+        // Highlight numbers with currency or percentages
+        formatted = formatted.replace(/(\$[\d,]+(?:\.\d{2})?(?:K|M|B)?)/g, '<span class="msg-number">$1</span>');
+        formatted = formatted.replace(/(\d+(?:,\d{3})*(?:\.\d+)?%)/g, '<span class="msg-percent">$1</span>');
+        formatted = formatted.replace(/(\d{1,3}(?:,\d{3})+)/g, '<span class="msg-number">$1</span>');
+
+        // Convert remaining newlines to breaks (but not inside lists)
+        formatted = formatted.replace(/\n(?![<])/g, '<br>');
+
+        // Clean up extra breaks
+        formatted = formatted.replace(/<br><br><br>/g, '<br><br>');
+        formatted = formatted.replace(/<br>(<ul|<ol|<div class="msg-section)/g, '$1');
+        formatted = formatted.replace(/(<\/ul>|<\/ol>|<\/div>)<br>/g, '$1');
+
+        return formatted;
     }
+
+    // Typing indicator messages - sequential, stops at last one
+    const TYPING_MESSAGES = [
+        { text: 'Processing your question...', icon: '💭' },
+        { text: 'Analyzing context...', icon: '🔍' },
+        { text: 'Gathering data...', icon: '📊' },
+        { text: 'Querying the database...', icon: '🗄️' }
+    ];
+
+    let typingMessageIndex = 0;
+    let typingInterval = null;
 
     function showTyping() {
         const container = document.getElementById('messagesContainer');
         const typing = document.createElement('div');
         typing.className = 'message assistant typing';
         typing.id = 'typing-' + Date.now();
-        typing.innerHTML = '<span>•</span><span>•</span><span>•</span>';
+
+        typingMessageIndex = 0;
+        const firstMsg = TYPING_MESSAGES[0];
+
+        typing.innerHTML = `
+            <div class="typing-content">
+                <div class="typing-spinner"></div>
+                <div class="typing-info">
+                    <span class="typing-icon">${firstMsg.icon}</span>
+                    <span class="typing-text">${firstMsg.text}</span>
+                </div>
+            </div>
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+        `;
+
         container.appendChild(typing);
         smoothScrollToBottom();
         STATE.currentTypingId = typing.id;
+
+        // Advance messages every 4 seconds, stop at last one
+        typingInterval = setInterval(() => {
+            // Stop if we're at the last message
+            if (typingMessageIndex >= TYPING_MESSAGES.length - 1) {
+                clearInterval(typingInterval);
+                typingInterval = null;
+                return;
+            }
+
+            typingMessageIndex++;
+            const msg = TYPING_MESSAGES[typingMessageIndex];
+            const iconEl = typing.querySelector('.typing-icon');
+            const textEl = typing.querySelector('.typing-text');
+
+            if (iconEl && textEl) {
+                // Fade out
+                iconEl.style.opacity = '0';
+                textEl.style.opacity = '0';
+
+                setTimeout(() => {
+                    iconEl.textContent = msg.icon;
+                    textEl.textContent = msg.text;
+                    // Fade in
+                    iconEl.style.opacity = '1';
+                    textEl.style.opacity = '1';
+                }, 200);
+            }
+        }, 4000);
+
         return typing.id;
     }
 
     function removeTyping(id) {
+        // Clear the rotating messages interval
+        if (typingInterval) {
+            clearInterval(typingInterval);
+            typingInterval = null;
+        }
+
         const typing = document.getElementById(id);
         if (typing) {
             typing.classList.add('fade-out');
@@ -453,9 +688,169 @@
         input.value = question;
         input.focus();
 
+        // Fechar dropdowns (welcome e sticky)
+        closeAllDropdowns();
+        closeStickyDropdown();
+
         // Auto-enviar após pequeno delay
         setTimeout(sendMessage, 100);
     }
+
+    function toggleCategory(button) {
+        const category = button.parentElement;
+        const dropdown = category.querySelector('.category-dropdown');
+        const wasOpen = dropdown.classList.contains('show');
+
+        // Fechar todos os outros dropdowns
+        closeAllDropdowns();
+
+        // Toggle do dropdown atual
+        if (!wasOpen) {
+            dropdown.classList.add('show');
+            button.classList.add('active');
+        }
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.category-dropdown').forEach(d => d.classList.remove('show'));
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    // Fechar dropdowns ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.suggestion-category')) {
+            closeAllDropdowns();
+        }
+        // Também fechar sticky dropdown se clicar fora
+        if (!e.target.closest('.sticky-suggestions')) {
+            closeStickyDropdown();
+        }
+    });
+
+    // ========================================
+    // STICKY SUGGESTIONS BAR
+    // ========================================
+
+    const STICKY_QUESTIONS = {
+        inventory: [
+            "What's the current inventory status?",
+            "Show aging products (60+ days)",
+            "What products are in transit?",
+            "Show inventory by category",
+            "What's the stock projection?",
+            "Show low stock alerts",
+            "Products arriving this week"
+        ],
+        sales: [
+            "What are the top selling products?",
+            "Show sales by channel",
+            "What's the sales velocity?",
+            "Compare this month vs last month",
+            "Show daily sales performance",
+            "Best sellers this week",
+            "Slow moving products"
+        ],
+        revenue: [
+            "What's the total revenue this year?",
+            "Who are the top customers by revenue?",
+            "Compare 2024 vs 2023 revenue",
+            "What are the best selling months?",
+            "Show revenue trends",
+            "Average order value",
+            "Revenue by product category"
+        ],
+        clients: [
+            "Show client summary",
+            "Who are the VIP clients?",
+            "Show inactive clients (30+ days)",
+            "New clients this month",
+            "Clients with pending orders",
+            "Top buyers last 90 days",
+            "Client retention rate"
+        ],
+        purchasing: [
+            "What needs restocking?",
+            "Show critical stock alerts",
+            "What should we order from Brazil?",
+            "What should we order from Colombia?",
+            "Show lead time analysis",
+            "Pending supplier orders",
+            "Reorder recommendations"
+        ],
+        analytics: [
+            "Show business dashboard",
+            "Performance overview",
+            "Sales vs inventory trends",
+            "Channel comparison report",
+            "Year-over-year growth",
+            "Product profitability",
+            "Seasonal patterns"
+        ],
+        gallery: [
+            "Show gallery summary",
+            "Photos by category",
+            "What's reserved?",
+            "Show active carts",
+            "Coming soon items",
+            "Recently added photos",
+            "Photos pending approval"
+        ]
+    };
+
+    function toggleStickyCategory(button) {
+        const category = button.dataset.category;
+        const wrapper = button.parentElement;
+        const dropdown = wrapper.querySelector('.sticky-dropdown');
+        const wasActive = button.classList.contains('active');
+
+        // Fechar todos os dropdowns primeiro
+        closeStickyDropdown();
+
+        if (!wasActive) {
+            // Abrir dropdown com as perguntas da categoria
+            button.classList.add('active');
+            const questions = STICKY_QUESTIONS[category] || [];
+
+            dropdown.innerHTML = questions.map(q =>
+                `<button class="suggestion-item" onclick="askQuestion(this)">${q}</button>`
+            ).join('');
+
+            dropdown.classList.add('show');
+        }
+    }
+
+    function closeStickyDropdown() {
+        document.querySelectorAll('.sticky-dropdown').forEach(d => {
+            d.classList.remove('show');
+            d.innerHTML = '';
+        });
+        document.querySelectorAll('.sticky-cat-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    function updateStickyVisibility() {
+        const stickyBar = document.getElementById('stickySuggestions');
+        const welcomeMessage = document.querySelector('.welcome-message');
+
+        if (!stickyBar) return;
+
+        // Mostrar sticky bar quando a welcome message não está visível
+        // (ou seja, quando há uma conversa ativa)
+        if (!welcomeMessage && STATE.messageHistory.length > 0) {
+            stickyBar.classList.add('visible');
+        } else {
+            stickyBar.classList.remove('visible');
+            closeStickyDropdown();
+        }
+    }
+
+    // Função helper para limpar container de mensagens
+    function clearMessagesContainer() {
+        const container = document.getElementById('messagesContainer');
+        container.innerHTML = '';
+    }
+
+    // Exportar para window
+    window.toggleStickyCategory = toggleStickyCategory;
 
     function showWelcomeMessage() {
         const container = document.getElementById('messagesContainer');
@@ -464,13 +859,136 @@
         if (!STATE.currentConversationId || STATE.messageHistory.length === 0) {
             const welcomeHTML = `
                 <div class="welcome-message">
-                    <h3>Welcome to Sunshine Intelligence! 🤖</h3>
+                    <h3>Welcome to Sunshine Intelligence!</h3>
                     <p>I can help you analyze inventory and optimize your business.</p>
-                    <div class="suggestions">
-                        <button class="suggestion-chip" onclick="askQuestion(this)">What needs restocking?</button>
-                        <button class="suggestion-chip" onclick="askQuestion(this)">Show top products</button>
-                        <button class="suggestion-chip" onclick="askQuestion(this)">Today's sales</button>
-                        <button class="suggestion-chip" onclick="askQuestion(this)">Sales by channel</button>
+
+                    <!-- Menu de Sugestões por Categoria -->
+                    <div class="suggestions-menu">
+                        <!-- Inventory -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📦</span>
+                                <span class="category-name">Inventory</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the current inventory status?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show aging products (60+ days)</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What products are in transit?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show inventory by category</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the stock projection?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show low stock alerts</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Products arriving this week</button>
+                            </div>
+                        </div>
+
+                        <!-- Sales -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📈</span>
+                                <span class="category-name">Sales</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What are the top selling products?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show sales by channel</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the sales velocity?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Compare this month vs last month</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show daily sales performance</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Best sellers this week</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Slow moving products</button>
+                            </div>
+                        </div>
+
+                        <!-- Revenue -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">💰</span>
+                                <span class="category-name">Revenue</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the total revenue this year?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Who are the top customers by revenue?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Compare 2024 vs 2023 revenue</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What are the best selling months?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show revenue trends</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Average order value</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Revenue by product category</button>
+                            </div>
+                        </div>
+
+                        <!-- Clients -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">👥</span>
+                                <span class="category-name">Clients</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show client summary</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Who are the VIP clients?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show inactive clients (30+ days)</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">New clients this month</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Clients with pending orders</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Top buyers last 90 days</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Client retention rate</button>
+                            </div>
+                        </div>
+
+                        <!-- Purchasing -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">🛒</span>
+                                <span class="category-name">Purchasing</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What needs restocking?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show critical stock alerts</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What should we order from Brazil?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What should we order from Colombia?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show lead time analysis</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Pending supplier orders</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Reorder recommendations</button>
+                            </div>
+                        </div>
+
+                        <!-- Analytics -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📊</span>
+                                <span class="category-name">Analytics</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show business dashboard</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Performance overview</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Sales vs inventory trends</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Channel comparison report</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Year-over-year growth</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Product profitability</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Seasonal patterns</button>
+                            </div>
+                        </div>
+
+                        <!-- Gallery -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📸</span>
+                                <span class="category-name">Gallery</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show gallery summary</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Photos by category</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's reserved?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show active carts</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Coming soon items</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Recently added photos</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Photos pending approval</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -568,6 +1086,23 @@
         const sendBtn = document.querySelector('.send-btn');
         if (sendBtn) {
             sendBtn.addEventListener('click', sendMessage);
+        }
+
+        // File input
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadFile(file);
+                }
+            });
+        }
+
+        // Attach button
+        const attachBtn = document.querySelector('.attach-btn');
+        if (attachBtn) {
+            attachBtn.addEventListener('click', triggerFileUpload);
         }
 
         // Theme toggle
@@ -908,11 +1443,14 @@
         STATE.currentConversationId = null;
         STATE.messageHistory = [];
 
-        // Limpar container de mensagens
-        document.getElementById('messagesContainer').innerHTML = '';
+        // Limpar container de mensagens (mantém sticky bar)
+        clearMessagesContainer();
 
         // Mostrar welcome
         showWelcomeMessage();
+
+        // Esconder sticky bar (não há conversa)
+        updateStickyVisibility();
 
         // Atualizar sidebar (remover seleção ativa)
         await loadConversations();
@@ -935,9 +1473,8 @@
             if (data.success) {
                 STATE.currentConversationId = conversationId;
 
-                // Limpar e recarregar mensagens
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = '';
+                // Limpar e recarregar mensagens (mantém sticky bar)
+                clearMessagesContainer();
                 STATE.messageHistory = [];
 
                 // Adicionar mensagens da conversa
@@ -949,6 +1486,9 @@
                     // Se conversa sem mensagens, mostrar welcome
                     showWelcomeMessage();
                 }
+
+                // Atualizar sticky bar
+                updateStickyVisibility();
 
                 // Atualizar sidebar
                 await loadConversations();
@@ -983,8 +1523,9 @@
                 if (conversationId === STATE.currentConversationId) {
                     STATE.currentConversationId = null;
                     STATE.messageHistory = [];
-                    document.getElementById('messagesContainer').innerHTML = '';
+                    clearMessagesContainer();
                     showWelcomeMessage();
+                    updateStickyVisibility();
                 }
 
                 // Atualizar lista de conversas
@@ -996,14 +1537,712 @@
         }
     }
 
-    // Placeholder para toggleTheme (caso não exista)
-    function toggleTheme() {
-        // Implementação futura de dark/light mode
-        console.log('Theme toggle - not implemented yet');
-    }
-
     // Cleanup ao sair
     window.addEventListener('beforeunload', cleanup);
+
+    // ========================================
+    // DASHBOARD FUNCTIONS - V2 PROFESSIONAL
+    // ========================================
+
+    let currentView = 'chat';
+    let dashboardData = null;
+    let dashboardRefreshInterval = null;
+    let salesTrendChart = null;
+    let categoryPieChart = null;
+    let marketplaceChart = null;
+    let agingChart = null;
+    let topProductsChart = null;
+
+    function switchView(view) {
+        currentView = view;
+
+        // Update tab states
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.view === view);
+        });
+
+        // Toggle view visibility
+        const chatElements = [
+            document.getElementById('stickySuggestions'),
+            document.getElementById('messagesContainer'),
+            document.getElementById('fileUploadIndicator'),
+            document.querySelector('.input-container')
+        ];
+
+        const dashboardView = document.getElementById('dashboardView');
+
+        if (view === 'dashboard') {
+            chatElements.forEach(el => { if (el) el.style.display = 'none'; });
+            if (dashboardView) {
+                dashboardView.style.display = 'block';
+                loadDashboardData();
+            }
+        } else {
+            chatElements.forEach(el => {
+                if (el) {
+                    if (el.classList.contains('input-container')) {
+                        el.style.display = 'flex';
+                    } else if (el.id === 'fileUploadIndicator') {
+                        // Keep hidden unless file attached
+                    } else {
+                        el.style.display = '';
+                    }
+                }
+            });
+            if (dashboardView) dashboardView.style.display = 'none';
+        }
+
+        console.log(`📊 Switched to ${view} view`);
+    }
+
+    async function loadDashboardData() {
+        try {
+            updateAgentMessage('Analyzing your business data...');
+            updateAgentState('analyzing');
+
+            const response = await fetchWithAuth('/dashboard');
+            const data = await response.json();
+
+            if (data.success) {
+                dashboardData = data;
+                renderDashboard(data);
+                updateAgentMessage(data.agentMessage || 'Analysis complete. Here are your latest insights.');
+                updateAgentState('active');
+            } else {
+                throw new Error(data.error || 'Failed to load dashboard');
+            }
+        } catch (error) {
+            console.error('Dashboard error:', error);
+            updateAgentMessage('Unable to load dashboard data. Please try again.');
+            updateAgentState('error');
+        }
+    }
+
+    function renderDashboard(data) {
+        // ========== Update KPIs (5 cards) ==========
+        updateKPI('kpiInventoryValue', formatNumber(data.kpis?.inventory || 0));
+        updateKPI('kpiInventoryItems', `${data.kpis?.inventoryItems || 0} categories`);
+
+        updateKPI('kpiInventoryValueTotal', formatCurrency(data.kpis?.inventoryValue || 0));
+        updateKPI('kpiAvgPrice', `Avg: $${(data.kpis?.avgPrice || 0).toFixed(2)}/unit`);
+
+        updateKPI('kpiSalesValue', formatCurrency(data.kpis?.monthlySales || 0));
+        const trendEl = document.getElementById('kpiSalesTrend');
+        if (trendEl) {
+            const trend = data.kpis?.salesTrend || 0;
+            trendEl.className = `kpi-trend ${trend >= 0 ? 'up' : 'down'}`;
+            trendEl.textContent = `${trend >= 0 ? '▲' : '▼'} ${Math.abs(trend)}% vs last month`;
+        }
+
+        updateKPI('kpiTransitValue', formatNumber(data.kpis?.inTransit || 0));
+        updateKPI('kpiTransitEta', `ETA: ${data.kpis?.transitEta || '--'}`);
+
+        updateKPI('kpiAgingValue', data.kpis?.aging || 0);
+        updateKPI('kpiAgingPercent', `${data.kpis?.agingPercent || 0}% of inventory`);
+
+        // ========== Render All Charts ==========
+        renderSalesTrendChart(data.charts?.salesTrend || []);
+        renderCategoryPieChart(data.charts?.categoryDistribution || []);
+        renderMarketplaceChart(data.charts?.marketplaceChart || []);
+        renderAgingChart(data.charts?.agingDistribution || []);
+        renderTopProductsBarChart(data.charts?.topProductsChart || []);
+
+        // ========== Render Alerts ==========
+        renderAlerts(data.alerts?.items || []);
+        updateKPI('alertsCriticalCount', data.alerts?.criticalCount || 0);
+        updateKPI('alertsWarningCount', data.alerts?.warningCount || 0);
+
+        // ========== Render Suppliers ==========
+        renderSuppliers(data.suppliers || []);
+
+        // ========== Render Stock Health ==========
+        renderStockHealth(data.stockHealth || {});
+
+        // ========== Render Price Analysis ==========
+        renderPriceAnalysis(data.priceAnalysis || {});
+
+        // ========== Render Top Products ==========
+        renderTopProducts(data.topProducts || []);
+
+        // ========== Render Top Customers ==========
+        renderTopCustomers(data.topCustomers || []);
+
+        // ========== Render Insights ==========
+        renderInsights(data.insights || []);
+
+        // ========== Update Last Update Time ==========
+        const lastUpdate = document.getElementById('dashboardLastUpdate');
+        if (lastUpdate) {
+            lastUpdate.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+        }
+    }
+
+    // ========== CHART RENDERING ==========
+
+    function renderSalesTrendChart(salesData) {
+        const ctx = document.getElementById('salesTrendChart');
+        if (!ctx) return;
+
+        // Destroy existing chart
+        if (salesTrendChart) {
+            salesTrendChart.destroy();
+        }
+
+        const labels = salesData.map(d => d.month);
+        const salesValues = salesData.map(d => d.sales);
+        const unitsValues = salesData.map(d => d.units);
+
+        salesTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Revenue ($)',
+                        data: salesValues,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Units Sold',
+                        data: unitsValues,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#9ca3af', font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: (v) => '$' + (v / 1000) + 'K'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#6366f1' }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderCategoryPieChart(categoryData) {
+        const ctx = document.getElementById('categoryPieChart');
+        if (!ctx) return;
+
+        // Destroy existing chart
+        if (categoryPieChart) {
+            categoryPieChart.destroy();
+        }
+
+        const labels = categoryData.map(d => d.name);
+        const values = categoryData.map(d => d.value);
+        const colors = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6'];
+
+        categoryPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderColor: '#1a1a2e',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#9ca3af',
+                            font: { size: 11 },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    function renderMarketplaceChart(marketplaceData) {
+        const ctx = document.getElementById('marketplaceChart');
+        if (!ctx) return;
+
+        if (marketplaceChart) {
+            marketplaceChart.destroy();
+        }
+
+        const labels = marketplaceData.map(d => d.name);
+        const values = marketplaceData.map(d => d.revenue);
+        const colors = marketplaceData.map(d => d.color);
+
+        marketplaceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: values,
+                    backgroundColor: colors,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: (v) => '$' + (v / 1000) + 'K'
+                        }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#e5e7eb', font: { weight: 500 } }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderAgingChart(agingData) {
+        const ctx = document.getElementById('agingChart');
+        if (!ctx) return;
+
+        if (agingChart) {
+            agingChart.destroy();
+        }
+
+        const labels = agingData.map(d => d.range);
+        const values = agingData.map(d => d.count);
+        const colors = agingData.map(d => d.color);
+
+        agingChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Units',
+                    data: values,
+                    backgroundColor: colors,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderTopProductsBarChart(productsData) {
+        const ctx = document.getElementById('topProductsChart');
+        if (!ctx) return;
+
+        if (topProductsChart) {
+            topProductsChart.destroy();
+        }
+
+        const labels = productsData.map(d => d.name);
+        const values = productsData.map(d => d.revenue);
+
+        topProductsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: values,
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: (v) => '$' + formatNumber(v)
+                        }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af', font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderStockHealth(healthData) {
+        const score = healthData.score || 0;
+        updateKPI('healthScore', score + '%');
+
+        // Update health score color based on value
+        const scoreEl = document.getElementById('healthScore');
+        if (scoreEl) {
+            if (score >= 70) {
+                scoreEl.style.color = '#10b981';
+            } else if (score >= 50) {
+                scoreEl.style.color = '#f59e0b';
+            } else {
+                scoreEl.style.color = '#ef4444';
+            }
+        }
+
+        updateKPI('wellStockedCount', formatNumber(healthData.wellStocked || 0));
+        updateKPI('lowStockCount', formatNumber(healthData.lowStock || 0));
+        updateKPI('outOfStockCount', formatNumber(healthData.outOfStock || 0));
+        updateKPI('needRestockCount', healthData.needRestock || 0);
+    }
+
+    // ========== COMPONENT RENDERING ==========
+
+    function updateKPI(elementId, value) {
+        const el = document.getElementById(elementId);
+        if (el) el.textContent = value;
+    }
+
+    function formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toLocaleString();
+    }
+
+    function formatCurrency(num) {
+        return '$' + formatNumber(num);
+    }
+
+    function renderAlerts(alerts) {
+        const container = document.getElementById('alertsList');
+        if (!container) return;
+
+        if (alerts.length === 0) {
+            container.innerHTML = `
+                <div class="no-data">
+                    <div class="no-data-icon">✅</div>
+                    <p>No active alerts</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert-item ${alert.severity || 'info'}">
+                <div class="alert-icon">${getAlertIcon(alert.severity)}</div>
+                <div class="alert-content">
+                    <div class="alert-title">${alert.title}</div>
+                    <div class="alert-description">${alert.description}</div>
+                    <div class="alert-time">${alert.time || 'Just now'}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function getAlertIcon(severity) {
+        const icons = {
+            critical: '🚨',
+            warning: '⚠️',
+            info: '💡'
+        };
+        return icons[severity] || '🔔';
+    }
+
+    function renderSuppliers(suppliers) {
+        const container = document.getElementById('suppliersList');
+        if (!container) return;
+
+        updateKPI('suppliersCount', suppliers.length);
+
+        if (suppliers.length === 0) {
+            container.innerHTML = '<div class="no-data"><p>No supplier data</p></div>';
+            return;
+        }
+
+        container.innerHTML = suppliers.map(supplier => `
+            <div class="supplier-item ${supplier.status}">
+                <div class="supplier-flag">${supplier.country}</div>
+                <div class="supplier-info">
+                    <div class="supplier-name">${supplier.name}</div>
+                    <div class="supplier-meta">
+                        ${supplier.activeShipments > 0
+                            ? `<span class="active">${supplier.activeShipments} active shipments</span>`
+                            : '<span class="inactive">No active shipments</span>'}
+                    </div>
+                </div>
+                <div class="supplier-stats">
+                    <div class="stat-value">${supplier.totalUnitsInTransit}</div>
+                    <div class="stat-label">units</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderPriceAnalysis(priceData) {
+        updateKPI('avgPrice', '$' + (priceData.avgPrice || 0).toFixed(2));
+        updateKPI('inventoryValue', formatCurrency(priceData.inventoryValue || 0));
+        updateKPI('avgOrderValue', '$' + (priceData.avgOrderValue || 0).toFixed(2));
+
+        const container = document.getElementById('priceByCategory');
+        if (!container || !priceData.byCategory) return;
+
+        container.innerHTML = priceData.byCategory.slice(0, 4).map(cat => `
+            <div class="price-category">
+                <span class="cat-name">${cat.category}</span>
+                <span class="cat-value">$${formatNumber(cat.totalValue)}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderTopProducts(products) {
+        const container = document.getElementById('topProductsList');
+        if (!container) return;
+
+        if (products.length === 0) {
+            container.innerHTML = '<div class="no-data"><p>No product data available</p></div>';
+            return;
+        }
+
+        container.innerHTML = products.slice(0, 8).map(product => `
+            <div class="product-item">
+                <div class="product-rank">${product.rank}</div>
+                <div class="product-info">
+                    <div class="product-name">${product.code}</div>
+                    <div class="product-meta">${product.category}</div>
+                </div>
+                <div class="product-stats">
+                    <div class="product-qty">${product.quantity} units</div>
+                    <div class="product-trend ${product.trend}">
+                        ${product.trend === 'up' ? '▲' : '▼'} ${product.change}%
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderTopCustomers(customers) {
+        const container = document.getElementById('topCustomersList');
+        if (!container) return;
+
+        if (customers.length === 0) {
+            container.innerHTML = '<div class="no-data"><p>No customer data</p></div>';
+            return;
+        }
+
+        container.innerHTML = customers.slice(0, 6).map(customer => `
+            <div class="customer-item">
+                <div class="customer-rank">${customer.rank}</div>
+                <div class="customer-info">
+                    <div class="customer-name">${customer.name}</div>
+                    <div class="customer-meta">${customer.orders} orders</div>
+                </div>
+                <div class="customer-revenue">$${formatNumber(customer.revenue)}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderMarketplaces(marketplaces) {
+        const container = document.getElementById('marketplacesList');
+        if (!container) return;
+
+        if (marketplaces.length === 0) {
+            container.innerHTML = '<div class="no-data"><p>No marketplace data</p></div>';
+            return;
+        }
+
+        container.innerHTML = marketplaces.map(mp => `
+            <div class="marketplace-item">
+                <div class="marketplace-header">
+                    <span class="marketplace-icon">${mp.icon}</span>
+                    <span class="marketplace-name">${mp.name}</span>
+                    <span class="marketplace-trend ${mp.trend}">${mp.trend === 'up' ? '↑' : mp.trend === 'down' ? '↓' : '→'}</span>
+                </div>
+                <div class="marketplace-stats">
+                    <span class="mp-revenue">$${formatNumber(mp.revenue)}</span>
+                    <span class="mp-sales">${mp.sales} sales</span>
+                </div>
+                <div class="marketplace-bar">
+                    <div class="bar-fill" style="width: ${mp.percentOfTotal}%"></div>
+                </div>
+                <div class="marketplace-percent">${mp.percentOfTotal}% of total</div>
+            </div>
+        `).join('');
+    }
+
+    function renderInsights(insights) {
+        const container = document.getElementById('insightsList');
+        if (!container) return;
+
+        if (insights.length === 0) {
+            container.innerHTML = `
+                <div class="no-data">
+                    <div class="no-data-icon">🔍</div>
+                    <p>Analyzing data for insights...</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = insights.map(insight => `
+            <div class="insight-card ${insight.type || ''}">
+                <div class="insight-icon">${insight.icon || '💡'}</div>
+                <div class="insight-content">
+                    <div class="insight-title">${insight.title || ''}</div>
+                    <div class="insight-text">${insight.text}</div>
+                    ${insight.action ? `
+                        <button class="insight-action-btn" onclick="askAboutInsight('${insight.query}')">
+                            ${insight.action} →
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ========== AGENT STATUS ==========
+
+    function updateAgentMessage(message) {
+        const el = document.getElementById('agentMessage');
+        if (el) el.textContent = message;
+    }
+
+    function updateAgentState(state) {
+        const el = document.getElementById('agentState');
+        if (!el) return;
+
+        const states = {
+            active: { text: '● Active', class: 'active' },
+            analyzing: { text: '◉ Analyzing...', class: 'analyzing' },
+            error: { text: '○ Error', class: 'error' }
+        };
+
+        const s = states[state] || states.active;
+        el.textContent = s.text;
+        el.className = `agent-state ${s.class}`;
+    }
+
+    // ========== DASHBOARD ACTIONS ==========
+
+    function refreshDashboard() {
+        loadDashboardData();
+    }
+
+    function askAgentAboutAlerts() {
+        switchView('chat');
+        const input = document.getElementById('chatInput');
+        if (input) {
+            input.value = 'Tell me about the current alerts and what actions I should take.';
+            sendMessage();
+        }
+    }
+
+    function askAboutInsight(query) {
+        switchView('chat');
+        const input = document.getElementById('chatInput');
+        if (input) {
+            input.value = query;
+            sendMessage();
+        }
+    }
+
+    function updateTopProducts() {
+        const filter = document.getElementById('topProductsFilter')?.value || 'quantity';
+        // Reload with new filter - could add API param
+        if (dashboardData) {
+            renderTopProducts(dashboardData.topProducts || []);
+        }
+    }
+
+    function markAllAlertsRead() {
+        console.log('Marking all alerts as read');
+        // Could add API call here
+    }
+
+    function toggleEmailAlerts() {
+        const enabled = document.getElementById('emailAlertsToggle')?.checked;
+        console.log('Email alerts:', enabled ? 'enabled' : 'disabled');
+        // Could add API call here
+    }
+
+    function openAlertSettings() {
+        console.log('Opening alert settings');
+        // Could open modal here
+    }
+
+    function openAgentSettings() {
+        console.log('Opening agent settings');
+        // Could open modal here
+    }
+
+    function generateNewInsights() {
+        updateAgentMessage('Generating new AI insights...');
+        loadDashboardData();
+    }
 
     // Exportar funções globais necessárias
     window.openHelpModal = openHelpModal;
@@ -1012,9 +2251,27 @@
     window.createNewConversation = createNewConversation;
     window.deleteConversation = deleteConversation;
     window.askQuestion = askQuestion;
+    window.toggleCategory = toggleCategory;
     window.logout = logout;
     window.clearChat = clearChat;
     window.sendMessage = sendMessage;
+
+    // File upload functions
+    window.uploadFile = uploadFile;
+    window.clearAttachedFile = clearAttachedFile;
+    window.triggerFileUpload = triggerFileUpload;
+
+    // Dashboard functions
+    window.switchView = switchView;
+    window.refreshDashboard = refreshDashboard;
+    window.askAgentAboutAlerts = askAgentAboutAlerts;
+    window.askAboutInsight = askAboutInsight;
+    window.updateTopProducts = updateTopProducts;
+    window.markAllAlertsRead = markAllAlertsRead;
+    window.toggleEmailAlerts = toggleEmailAlerts;
+    window.openAlertSettings = openAlertSettings;
+    window.openAgentSettings = openAgentSettings;
+    window.generateNewInsights = generateNewInsights;
 
     // Training modal functions
     window.openTrainingModal = openTrainingModal;

@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="/css/intelligence.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -40,7 +42,16 @@
                 <div class="header-left">
                     <div class="logo-inline">
                         <span class="logo-icon">🤖</span>
-                        <h2>Sunshine AI - BETA VERSION</h2>
+                        <h2>Sunshine Intelligence</h2>
+                    </div>
+                    <!-- View Tabs -->
+                    <div class="view-tabs">
+                        <button class="view-tab active" data-view="chat" onclick="switchView('chat')">
+                            💬 Chat
+                        </button>
+                        <button class="view-tab" data-view="dashboard" onclick="switchView('dashboard')">
+                            📊 Dashboard
+                        </button>
                     </div>
                 </div>
 
@@ -66,35 +77,494 @@
                 </div>
             </div>
 
-            <div class="messages-container" id="messagesContainer">
-                <div class="welcome-message">
-                    <h3>Welcome, Andy! 👋</h3>
-                    <p>I can help you analyze inventory and optimize your business.</p>
-                    <div class="suggestions">
-                        <button class="suggestion-chip" onclick="askQuestion(this)">
-                            What needs restocking soon?
+            <!-- Sticky Suggestions Bar (aparece durante conversa) -->
+            <div class="sticky-suggestions" id="stickySuggestions">
+                <div class="sticky-suggestions-inner">
+                    <span class="sticky-label">Quick:</span>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="inventory" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">📦</span> Inventory
                         </button>
-                        <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Show aging products analysis
+                        <div class="sticky-dropdown"></div>
+                    </div>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="sales" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">📈</span> Sales
                         </button>
-                        <button class="suggestion-chip" onclick="askQuestion(this)">
-                            What are today's priorities?
+                        <div class="sticky-dropdown"></div>
+                    </div>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="revenue" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">💰</span> Revenue
                         </button>
-                        <button class="suggestion-chip" onclick="askQuestion(this)">
-                            Show top products
+                        <div class="sticky-dropdown"></div>
+                    </div>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="clients" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">👥</span> Clients
                         </button>
+                        <div class="sticky-dropdown"></div>
+                    </div>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="purchasing" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">🛒</span> Purchasing
+                        </button>
+                        <div class="sticky-dropdown"></div>
+                    </div>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="analytics" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">📊</span> Analytics
+                        </button>
+                        <div class="sticky-dropdown"></div>
+                    </div>
+                    <div class="sticky-cat-wrapper">
+                        <button class="sticky-cat-btn" data-category="gallery" onclick="toggleStickyCategory(this)">
+                            <span class="btn-icon">📸</span> Gallery
+                        </button>
+                        <div class="sticky-dropdown"></div>
                     </div>
                 </div>
             </div>
 
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h3>Welcome to Sunshine Intelligence! 🤖</h3>
+                    <p>I can help you analyze inventory and optimize your business.</p>
+
+                    <!-- Menu de Sugestões por Categoria -->
+                    <div class="suggestions-menu">
+                        <!-- Inventory -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📦</span>
+                                <span class="category-name">Inventory</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the current inventory status?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show aging products (60+ days)</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What products are in transit?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show inventory by category</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the stock projection?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show low stock alerts</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Products arriving this week</button>
+                            </div>
+                        </div>
+
+                        <!-- Sales -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📈</span>
+                                <span class="category-name">Sales</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What are the top selling products?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show sales by channel</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the sales velocity?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Compare this month vs last month</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show daily sales performance</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Best sellers this week</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Slow moving products</button>
+                            </div>
+                        </div>
+
+                        <!-- Revenue -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">💰</span>
+                                <span class="category-name">Revenue</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's the total revenue this year?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Who are the top customers by revenue?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Compare 2024 vs 2023 revenue</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What are the best selling months?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show revenue trends</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Average order value</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Revenue by product category</button>
+                            </div>
+                        </div>
+
+                        <!-- Clients -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">👥</span>
+                                <span class="category-name">Clients</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show client summary</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Who are the VIP clients?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show inactive clients (30+ days)</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">New clients this month</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Clients with pending orders</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Top buyers last 90 days</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Client retention rate</button>
+                            </div>
+                        </div>
+
+                        <!-- Purchasing -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">🛒</span>
+                                <span class="category-name">Purchasing</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">What needs restocking?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show critical stock alerts</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What should we order from Brazil?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What should we order from Colombia?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show lead time analysis</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Pending supplier orders</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Reorder recommendations</button>
+                            </div>
+                        </div>
+
+                        <!-- Analytics -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📊</span>
+                                <span class="category-name">Analytics</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show business dashboard</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Performance overview</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Sales vs inventory trends</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Channel comparison report</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Year-over-year growth</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Product profitability</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Seasonal patterns</button>
+                            </div>
+                        </div>
+
+                        <!-- Gallery -->
+                        <div class="suggestion-category">
+                            <button class="category-btn" onclick="toggleCategory(this)">
+                                <span class="category-icon">📸</span>
+                                <span class="category-name">Gallery</span>
+                                <span class="category-arrow">▼</span>
+                            </button>
+                            <div class="category-dropdown">
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show gallery summary</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Photos by category</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">What's reserved?</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Show active carts</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Coming soon items</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Recently added photos</button>
+                                <button class="suggestion-item" onclick="askQuestion(this)">Photos pending approval</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File attachment indicator -->
+            <div id="fileUploadIndicator" class="file-upload-indicator" style="display: none;"></div>
+
             <div class="input-container">
-                <input type="text" id="chatInput" placeholder="Ask me anything about your inventory...">
+                <!-- Hidden file input -->
+                <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;" />
+
+                <!-- Attach button -->
+                <button class="attach-btn" onclick="triggerFileUpload()" title="Attach file (PDF, Excel, CSV, TXT)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                    </svg>
+                </button>
+
+                <input type="text" id="chatInput" placeholder="Ask me anything about your business..." onkeydown="handleInputKeydown(event)" />
                 <button class="send-btn" onclick="sendMessage()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" />
                     </svg>
                 </button>
             </div>
+
+            <!-- ============================================ -->
+            <!-- DASHBOARD VIEW - V2 PROFESSIONAL -->
+            <!-- ============================================ -->
+            <div id="dashboardView" class="dashboard-view" style="display: none;">
+                <!-- Dashboard Header -->
+                <div class="dashboard-header">
+                    <div class="dashboard-title">
+                        <h2>📊 Sunshine Intelligence Dashboard</h2>
+                        <span class="dashboard-subtitle">Real-time Business Analytics</span>
+                    </div>
+                    <div class="dashboard-actions">
+                        <button class="dashboard-btn" onclick="refreshDashboard()" title="Refresh Data">
+                            🔄 Refresh
+                        </button>
+                        <button class="dashboard-btn alerts-config" onclick="openAlertSettings()" title="Alert Settings">
+                            ⚙️ Alerts
+                        </button>
+                        <span class="last-update" id="dashboardLastUpdate">--</span>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Row - 5 Main Metrics -->
+                <div class="dashboard-kpis">
+                    <div class="kpi-card primary" id="kpiInventory">
+                        <div class="kpi-icon">📦</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpiInventoryValue">--</div>
+                            <div class="kpi-label">Total Inventory</div>
+                            <div class="kpi-sublabel" id="kpiInventoryItems">-- categories</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card success" id="kpiValue">
+                        <div class="kpi-icon">💎</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpiInventoryValueTotal">--</div>
+                            <div class="kpi-label">Inventory Value</div>
+                            <div class="kpi-sublabel" id="kpiAvgPrice">Avg: $--/unit</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card info" id="kpiSales">
+                        <div class="kpi-icon">💰</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpiSalesValue">--</div>
+                            <div class="kpi-label">Monthly Revenue</div>
+                            <div class="kpi-trend up" id="kpiSalesTrend">▲ --% vs last month</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpiTransit">
+                        <div class="kpi-icon">🚚</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpiTransitValue">--</div>
+                            <div class="kpi-label">In Transit</div>
+                            <div class="kpi-sublabel" id="kpiTransitEta">ETA: --</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card warning" id="kpiAging">
+                        <div class="kpi-icon">⏰</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpiAgingValue">--</div>
+                            <div class="kpi-label">Aging (60+ days)</div>
+                            <div class="kpi-sublabel" id="kpiAgingPercent">--% of inventory</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 1 - Sales & Category -->
+                <div class="dashboard-charts-row">
+                    <div class="dashboard-panel chart-panel wide">
+                        <div class="panel-header">
+                            <h3>📈 Revenue Trend (Last 12 Months)</h3>
+                            <div class="chart-controls">
+                                <button class="chart-btn active" data-period="12m">12M</button>
+                                <button class="chart-btn" data-period="6m">6M</button>
+                                <button class="chart-btn" data-period="3m">3M</button>
+                            </div>
+                        </div>
+                        <div class="panel-content chart-container">
+                            <canvas id="salesTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="dashboard-panel chart-panel">
+                        <div class="panel-header">
+                            <h3>🥧 Inventory by Category</h3>
+                        </div>
+                        <div class="panel-content chart-container">
+                            <canvas id="categoryPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 2 - Marketplace & Aging -->
+                <div class="dashboard-charts-row">
+                    <div class="dashboard-panel chart-panel">
+                        <div class="panel-header">
+                            <h3>🛒 Revenue by Channel</h3>
+                        </div>
+                        <div class="panel-content chart-container">
+                            <canvas id="marketplaceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="dashboard-panel chart-panel">
+                        <div class="panel-header">
+                            <h3>📊 Inventory Aging Distribution</h3>
+                        </div>
+                        <div class="panel-content chart-container">
+                            <canvas id="agingChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="dashboard-panel chart-panel">
+                        <div class="panel-header">
+                            <h3>🏆 Top 10 Products by Revenue</h3>
+                        </div>
+                        <div class="panel-content chart-container">
+                            <canvas id="topProductsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Panels Row -->
+                <div class="dashboard-grid-3">
+                    <!-- Alerts Panel -->
+                    <div class="dashboard-panel alerts-panel">
+                        <div class="panel-header">
+                            <h3>🚨 Active Alerts</h3>
+                            <div class="panel-header-actions">
+                                <span class="panel-badge critical" id="alertsCriticalCount">0</span>
+                                <span class="panel-badge warning" id="alertsWarningCount">0</span>
+                            </div>
+                        </div>
+                        <div class="panel-content scrollable" id="alertsList">
+                            <div class="loading-placeholder">
+                                <span class="spinner"></span> Scanning for issues...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suppliers Panel -->
+                    <div class="dashboard-panel suppliers-panel">
+                        <div class="panel-header">
+                            <h3>🏭 Suppliers & Shipments</h3>
+                            <span class="panel-badge" id="suppliersCount">0</span>
+                        </div>
+                        <div class="panel-content scrollable" id="suppliersList">
+                            <div class="loading-placeholder">
+                                <span class="spinner"></span> Loading suppliers...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Health Panel -->
+                    <div class="dashboard-panel stock-health-panel">
+                        <div class="panel-header">
+                            <h3>🩺 Stock Health</h3>
+                        </div>
+                        <div class="panel-content" id="stockHealthContent">
+                            <div class="health-indicator">
+                                <div class="health-score" id="healthScore">--</div>
+                                <div class="health-label">Overall Health</div>
+                            </div>
+                            <div class="health-metrics">
+                                <div class="health-metric">
+                                    <span class="metric-icon good">✓</span>
+                                    <span class="metric-label">Well Stocked</span>
+                                    <span class="metric-value" id="wellStockedCount">--</span>
+                                </div>
+                                <div class="health-metric">
+                                    <span class="metric-icon warning">!</span>
+                                    <span class="metric-label">Low Stock</span>
+                                    <span class="metric-value" id="lowStockCount">--</span>
+                                </div>
+                                <div class="health-metric">
+                                    <span class="metric-icon danger">✕</span>
+                                    <span class="metric-label">Out of Stock</span>
+                                    <span class="metric-value" id="outOfStockCount">--</span>
+                                </div>
+                                <div class="health-metric">
+                                    <span class="metric-icon info">↻</span>
+                                    <span class="metric-label">Need Restock</span>
+                                    <span class="metric-value" id="needRestockCount">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Data Row -->
+                <div class="dashboard-grid-3">
+                    <!-- Top Products List -->
+                    <div class="dashboard-panel products-panel">
+                        <div class="panel-header">
+                            <h3>📦 Product Details</h3>
+                            <select id="topProductsFilter" onchange="updateTopProducts()">
+                                <option value="quantity">By Stock</option>
+                                <option value="sales">By Sales</option>
+                                <option value="revenue">By Revenue</option>
+                            </select>
+                        </div>
+                        <div class="panel-content scrollable" id="topProductsList">
+                            <div class="loading-placeholder">
+                                <span class="spinner"></span> Loading...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Customers Panel -->
+                    <div class="dashboard-panel customers-panel">
+                        <div class="panel-header">
+                            <h3>👑 Top Customers</h3>
+                            <span class="panel-subtitle">By Revenue</span>
+                        </div>
+                        <div class="panel-content scrollable" id="topCustomersList">
+                            <div class="loading-placeholder">
+                                <span class="spinner"></span> Loading...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price Analysis Panel -->
+                    <div class="dashboard-panel price-panel">
+                        <div class="panel-header">
+                            <h3>💵 Price Analysis</h3>
+                        </div>
+                        <div class="panel-content" id="priceAnalysis">
+                            <div class="price-metric">
+                                <span class="price-label">Avg. Product Price</span>
+                                <span class="price-value" id="avgPrice">$--</span>
+                            </div>
+                            <div class="price-metric">
+                                <span class="price-label">Total Inventory Value</span>
+                                <span class="price-value large" id="inventoryValue">$--</span>
+                            </div>
+                            <div class="price-metric">
+                                <span class="price-label">Avg. Order Value</span>
+                                <span class="price-value" id="avgOrderValue">$--</span>
+                            </div>
+                            <div class="price-breakdown" id="priceByCategory">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights Row -->
+                <div class="dashboard-panel insights-panel full-width">
+                    <div class="panel-header">
+                        <h3>🤖 AI Agent Insights & Recommendations</h3>
+                        <button class="panel-btn primary" onclick="generateNewInsights()">
+                            Generate New Insights
+                        </button>
+                    </div>
+                    <div class="panel-content insights-grid" id="insightsList">
+                        <div class="loading-placeholder">
+                            <span class="spinner"></span> AI is analyzing your data...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Status Bar -->
+                <div class="agent-status-bar">
+                    <div class="agent-info">
+                        <div class="agent-avatar pulse">🤖</div>
+                        <div class="agent-status">
+                            <span class="agent-name">Sunshine Agent</span>
+                            <span class="agent-state" id="agentState">● Active</span>
+                        </div>
+                    </div>
+                    <div class="agent-message" id="agentMessage">
+                        Monitoring your business in real-time...
+                    </div>
+                    <div class="agent-actions">
+                        <button class="agent-action-btn secondary" onclick="openAgentSettings()">
+                            ⚙️ Settings
+                        </button>
+                        <button class="agent-action-btn primary" onclick="askAgentAboutAlerts()">
+                            💬 Ask Agent
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- END DASHBOARD VIEW -->
+
         </main>
     </div>
 

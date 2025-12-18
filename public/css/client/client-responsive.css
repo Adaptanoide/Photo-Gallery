@@ -1339,8 +1339,233 @@
     #confirmSelectionModal .modal-content {
         padding: 15px !important;
     }
-    
+
     #confirmSelectionModal h2 {
         font-size: 1.1rem !important;
+    }
+}
+
+/* ============================================
+   DARK MODE - MOBILE SPECIFIC OVERRIDES
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Mobile Header - Dark Mode */
+    body.dark-mode .client-luxury-header {
+        background: #1e1e1e !important;
+        border-bottom: 1px solid #3d3d3d !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Breadcrumb Container - Dark Mode */
+    body.dark-mode .breadcrumb-container {
+        background: #252525 !important;
+        border-bottom-color: #3d3d3d !important;
+    }
+
+    body.dark-mode .breadcrumb {
+        background: #2a2a2a !important;
+        box-shadow: none !important;
+    }
+
+    body.dark-mode .breadcrumb-item:last-child {
+        color: #e0e0e0 !important;
+    }
+
+    /* Rate Rules / Price Progress Container - Dark Mode */
+    body.dark-mode #priceProgressContainer {
+        background: #252525 !important;
+    }
+
+    body.dark-mode .price-tier {
+        background: #2d2d2d !important;
+        border-color: #3d3d3d !important;
+        color: #c0c0c0 !important;
+    }
+
+    body.dark-mode .price-tier.active {
+        background: rgba(184, 115, 51, 0.25) !important;
+        border-color: #B87333 !important;
+        color: #f0f0f0 !important;
+    }
+
+    body.dark-mode .price-tier .tier-price {
+        color: #4caf50 !important;
+    }
+
+    /* Mobile Info Bar - Dark Mode */
+    body.dark-mode .mobile-info-bar {
+        background: #252525 !important;
+        border-bottom-color: #3d3d3d !important;
+    }
+
+    body.dark-mode .mobile-info-bar .info-price {
+        color: #e0e0e0 !important;
+    }
+
+    body.dark-mode .mobile-info-bar .info-counter {
+        color: #a0a0a0 !important;
+    }
+
+    /* Filter Sidebar - Dark Mode */
+    body.dark-mode .filter-sidebar {
+        background: #1e1e1e !important;
+    }
+
+    body.dark-mode .filter-sidebar .filter-header {
+        background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%) !important;
+    }
+
+    body.dark-mode .filter-container {
+        background: #1e1e1e !important;
+    }
+
+    /* Filter Section Titles (Type/Pattern, Price Range) */
+    body.dark-mode .filter-section h4,
+    body.dark-mode .filter-sidebar h4 {
+        color: #e0e0e0 !important;
+        border-bottom-color: #B87333 !important;
+    }
+
+    /* Filter Options Labels - ALL text inside filter options */
+    body.dark-mode .filter-sidebar label,
+    body.dark-mode .filter-sidebar .filter-option,
+    body.dark-mode .filter-sidebar .filter-option label,
+    body.dark-mode .filter-sidebar .filter-options label,
+    body.dark-mode .filter-sidebar span,
+    body.dark-mode .filter-section label,
+    body.dark-mode .filter-options label {
+        color: #e0e0e0 !important;
+    }
+
+    /* Checkbox and Radio button labels */
+    body.dark-mode .filter-sidebar input[type="checkbox"] + label,
+    body.dark-mode .filter-sidebar input[type="radio"] + label,
+    body.dark-mode .filter-sidebar .checkbox-label,
+    body.dark-mode .filter-sidebar .radio-label {
+        color: #e0e0e0 !important;
+    }
+
+    /* Filter option hover */
+    body.dark-mode .filter-sidebar .filter-option:hover,
+    body.dark-mode .filter-sidebar label:hover {
+        background: #2d2d2d !important;
+    }
+
+    body.dark-mode .filter-actions-mobile {
+        background: #252525 !important;
+        border-top-color: #3d3d3d !important;
+    }
+
+    body.dark-mode .filter-sidebar .filter-close-btn {
+        background: #333 !important;
+        color: #B87333 !important;
+    }
+
+    /* Mobile Filter Button - Dark Mode */
+    body.dark-mode .mobile-filter-btn {
+        background: #333 !important;
+        color: #B87333 !important;
+        border-color: #B87333 !important;
+    }
+
+    body.dark-mode .mobile-filter-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    /* Navigation Loading - Dark Mode */
+    body.dark-mode .navigation-loading {
+        background: #2d2d2d !important;
+        color: #e0e0e0 !important;
+    }
+
+    /* Modal Header/Footer Mobile - Dark Mode */
+    body.dark-mode .modal-header {
+        background: #252525 !important;
+    }
+
+    body.dark-mode .modal-header h4 {
+        background: rgba(184, 115, 51, 0.15) !important;
+        color: #e0e0e0 !important;
+    }
+
+    body.dark-mode .modal-footer {
+        background: #252525 !important;
+        border-top-color: #3d3d3d !important;
+    }
+
+    /* Modal Rate Rules Bar - Dark Mode */
+    body.dark-mode .modal-rate-rules-bar {
+        background: #252525 !important;
+        border-top-color: #3d3d3d !important;
+        border-bottom-color: #252525 !important;
+        color: #c0c0c0 !important;
+    }
+
+    body.dark-mode .modal-rate-rules-bar .tier-item {
+        color: #888 !important;
+    }
+
+    body.dark-mode .modal-rate-rules-bar .tier-item.active {
+        color: #d4a574 !important;
+    }
+
+    body.dark-mode .modal-rate-rules-bar .separator {
+        color: #444 !important;
+    }
+
+    /* Currency Button - Dark Mode */
+    body.dark-mode .mobile-currency-btn {
+        background: #333 !important;
+        border-color: #B87333 !important;
+        color: #B87333 !important;
+    }
+
+    body.dark-mode .mobile-currency-btn:hover,
+    body.dark-mode .mobile-currency-btn:active {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    /* Cart Button - Dark Mode */
+    body.dark-mode .client-cart-btn {
+        background: #333 !important;
+        border-color: #B87333 !important;
+        color: #B87333 !important;
+    }
+
+    body.dark-mode .client-cart-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    /* Profile Button - Dark Mode */
+    body.dark-mode .profile-dropdown-btn {
+        background: #333 !important;
+        border-color: #B87333 !important;
+        color: #B87333 !important;
+    }
+
+    body.dark-mode .profile-dropdown-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
+}
+
+/* ============================================
+   DARK MODE - SMALL MOBILE (480px)
+   ============================================ */
+
+@media (max-width: 480px) {
+    body.dark-mode .modal-header {
+        background: #252525 !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    body.dark-mode .modal-footer {
+        background: #252525 !important;
+        border-top-color: #3d3d3d !important;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
     }
 }

@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const aiConversationSchema = new mongoose.Schema({
     userId: {
         type: String,
-        required: true,
-        default: 'Andy'
+        required: true
     },
     title: {
         type: String,

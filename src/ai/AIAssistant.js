@@ -1,10 +1,13 @@
-// src/ai/AIAssistant.js - VERSÃO 3.0
-// AI Agent com detecção de intenção avançada, alertas e contexto de negócio
+// src/ai/AIAssistant.js - VERSÃO 3.2
+// AI Agent com detecção de intenção avançada, alertas, contexto de negócio, dados QuickBooks e MEMÓRIA DE LONGO PRAZO
 const Groq = require('groq-sdk');
 const CDEQueries = require('./CDEQueries');
 const GalleryQueries = require('./GalleryQueries');
 const ConnectionManager = require('../services/ConnectionManager');
 const AITrainingRule = require('../models/AITrainingRule');
+const AIMemoryService = require('../services/AIMemoryService');
+const fs = require('fs');
+const path = require('path');
 
 class AIAssistant {
     constructor() {
@@ -20,6 +23,9 @@ class AIAssistant {
             cde: 'unknown',
             gallery: 'unknown'
         };
+
+        // Carregar dados do QuickBooks (vendas históricas)
+        this.quickbooksData = this.loadQuickBooksData();
 
         // Conhecimento de negócio do Sunshine Cowhides - AUTO-DESCOBERTO DO CDE
         this.businessKnowledge = {
@@ -273,9 +279,88 @@ class AIAssistant {
         }
     }
 
-    async processQuery(question) {
+    /**
+     * Carrega dados processados do QuickBooks (vendas históricas por cliente)
+     */
+    loadQuickBooksData() {
+        try {
+            const summaryPath = path.join(__dirname, '../../data/training/quickbooks-summary.json');
+
+            if (fs.existsSync(summaryPath)) {
+                const data = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+                console.log(`📊 QuickBooks data loaded: ${data.summary?.totalCustomers || 0} customers, $${(data.summary?.totalSalesAllTime || 0).toLocaleString()} total sales`);
+                return data;
+            } else {
+                console.warn('⚠️ QuickBooks data not found - run scripts/analyze-quickbooks.js');
+                return null;
+            }
+        } catch (error) {
+            console.error('❌ Error loading QuickBooks data:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Busca cliente no QuickBooks por nome (busca parcial)
+     */
+    findQuickBooksCustomer(searchName) {
+        if (!this.quickbooksData?.allCustomers) return null;
+
+        const searchLower = searchName.toLowerCase();
+        return this.quickbooksData.allCustomers.find(c =>
+            c.name.toLowerCase().includes(searchLower)
+        );
+    }
+
+    /**
+     * Retorna top clientes do QuickBooks
+     * IMPORTANTE: Todos os valores são em USD (dólares), NÃO unidades!
+     */
+    getTopQuickBooksCustomers(limit = 20) {
+        if (!this.quickbooksData?.topCustomers) return [];
+        return {
+            _NOTE: "⚠️ ALL VALUES ARE IN USD DOLLARS! totalSales and avgMonthly are REVENUE, not units sold",
+            customers: this.quickbooksData.topCustomers.slice(0, limit).map(c => ({
+                name: c.name,
+                totalSales_USD: c.totalSales,
+                avgMonthly_USD: c.avgMonthly,
+                _currency: "USD"
+            }))
+        };
+    }
+
+    /**
+     * Retorna resumo de vendas do QuickBooks
+     * IMPORTANTE: Todos os valores são em USD (dólares), NÃO unidades!
+     */
+    getQuickBooksSalesSummary() {
+        if (!this.quickbooksData) return null;
+        return {
+            _NOTE: "⚠️ ALL VALUES ARE IN USD DOLLARS, NOT UNITS! totalSales=dollars, avgMonthlySales=dollars/month",
+            period: this.quickbooksData.period,
+            summary: {
+                ...this.quickbooksData.summary,
+                _currency: "USD",
+                _explanation: "totalSalesAllTime is total REVENUE in dollars, avgMonthlySales is average monthly REVENUE in dollars"
+            },
+            topMonths: this.quickbooksData.topMonths?.map(m => ({
+                ...m,
+                sales_USD: m.sales,
+                _note: "sales value is in USD dollars (revenue)"
+            }))
+        };
+    }
+
+    async processQuery(question, conversationHistory = [], userId = null) {
         try {
             console.log('📊 Processing question:', question);
+            console.log('🧠 Conversation history:', conversationHistory.length, 'messages');
+            console.log('👤 User ID:', userId || 'anonymous');
+
+            // Registrar tipo de pergunta para análise de padrões (memória de longo prazo)
+            if (userId) {
+                await AIMemoryService.recordQuestionType(userId, question);
+            }
 
             const quickResponse = this.handleSimpleQueries(question);
             if (quickResponse) return quickResponse;
@@ -287,7 +372,13 @@ class AIAssistant {
                 return this.getFallbackResponse(question);
             }
 
-            const response = await this.generateResponse(question, context, customRules);
+            // Obter contexto de memória de longo prazo
+            let longTermMemory = '';
+            if (userId) {
+                longTermMemory = await AIMemoryService.getMemoryContextForPrompt(userId);
+            }
+
+            const response = await this.generateResponse(question, context, customRules, conversationHistory, longTermMemory);
             return response;
 
         } catch (error) {
@@ -301,16 +392,16 @@ class AIAssistant {
 
         if (lowerQ.match(/^(hi|hello|hey|good morning|good afternoon|greetings?)$/)) {
             const greetings = [
-                "👋 Hey Andy! Ready to dive into today's numbers?",
-                "Hello Andy! What would you like to analyze today?",
-                "Hi Andy! I've got fresh data from both CDE and Gallery ready for you.",
-                "Good to see you, Andy! What insights can I provide today?"
+                "👋 Hey! Ready to dive into today's numbers?",
+                "Hello! What would you like to analyze today?",
+                "Hi! I've got fresh data from both CDE and Gallery ready for you.",
+                "Good to see you! What insights can I provide today?"
             ];
             return greetings[Math.floor(Math.random() * greetings.length)];
         }
 
         if (lowerQ.match(/^(thanks|thank you|thx|ty)$/)) {
-            return "You're welcome, Andy! Let me know if you need anything else. 📊";
+            return "You're welcome! Let me know if you need anything else. 📊";
         }
 
         if (lowerQ === 'status' || lowerQ === 'are you working') {
@@ -462,6 +553,43 @@ class AIAssistant {
                 lowerQuestion.includes('aging') ||
                 lowerQuestion.includes('old') ||
                 lowerQuestion.includes('slow');
+
+            // Perguntas sobre histórico de vendas (QuickBooks)
+            const isHistoricalSalesQuestion =
+                lowerQuestion.includes('historical') ||
+                lowerQuestion.includes('history') ||
+                lowerQuestion.includes('histórico') ||
+                lowerQuestion.includes('2021') ||
+                lowerQuestion.includes('2022') ||
+                lowerQuestion.includes('2023') ||
+                lowerQuestion.includes('2024') ||
+                lowerQuestion.includes('by year') ||
+                lowerQuestion.includes('annual') ||
+                lowerQuestion.includes('yearly') ||
+                (isSalesQuestion && lowerQuestion.includes('total'));
+
+            // =============================================
+            // QUICKBOOKS DATA (Sales History)
+            // =============================================
+
+            if (this.quickbooksData) {
+                // Sempre incluir resumo de vendas para perguntas de vendas/clientes
+                if (isSalesQuestion || isClientQuestion || isHistoricalSalesQuestion || isDashboardQuestion) {
+                    context.quickbooksSalesSummary = this.getQuickBooksSalesSummary();
+                }
+
+                // Top clientes históricos
+                if (isClientQuestion || isTopQuestion || isHistoricalSalesQuestion) {
+                    context.quickbooksTopCustomers = this.getTopQuickBooksCustomers(20);
+                }
+
+                // Busca específica de cliente
+                const customerMatch = lowerQuestion.match(/(?:customer|cliente|client)\s+["']?([^"']+)["']?/i);
+                if (customerMatch) {
+                    const customerSearch = customerMatch[1].trim();
+                    context.quickbooksCustomerData = this.findQuickBooksCustomer(customerSearch);
+                }
+            }
 
             // =============================================
             // GALLERY QUERIES (MongoDB)
@@ -815,7 +943,7 @@ class AIAssistant {
         return context;
     }
 
-    async generateResponse(question, context, customRules = []) {
+    async generateResponse(question, context, customRules = [], conversationHistory = [], longTermMemory = '') {
         if (context.error && Object.keys(context).length === 1) {
             return this.getErrorResponse();
         }
@@ -845,140 +973,110 @@ class AIAssistant {
             });
         }
 
+        // Memória de longo prazo (se disponível)
+        const longTermMemorySection = longTermMemory ? longTermMemory : '';
+
         // Verificar se estamos em período sazonal
         const currentMonth = new Date().getMonth() + 1;
         const isPeakSeason = this.businessKnowledge.peakSeasonMonths.includes(currentMonth);
         const seasonalContext = isPeakSeason ?
             '\n⚠️ SEASONAL ALERT: We are in PEAK SEASON (Oct-Dec). Stock levels should be 30% higher than normal.\n' : '';
 
-        const systemPrompt = `You are SUNSHINE AI, an intelligent business assistant for Andy, owner of Sunshine Cowhides - a B2B wholesale cowhide and leather goods company.
+        const systemPrompt = `You are Sunshine - a friendly, smart business assistant for a cowhide wholesale company.
 
-🎯 YOUR ROLE:
-You are not just a chatbot - you are Andy's analytical partner who:
-• Understands the cowhide business deeply
-• Proactively identifies opportunities and risks
-• Provides actionable insights, not just data dumps
-• Thinks ahead and anticipates Andy's needs
+🎨 YOUR PERSONALITY:
+• Talk like a helpful colleague, not a robot
+• Be warm and conversational - use natural language
+• Get straight to the point - no fluff
+• Use emojis naturally 🎯📊📦✅⚠️
+• If you don't know something, say so briefly
 
-📊 CORE PRINCIPLES:
-1. BE ANALYTICAL - When you have data, analyze it deeply. Find patterns, anomalies, trends.
-2. BE PROACTIVE - Don't wait to be asked. If you see a problem, mention it.
-3. BE SPECIFIC - Use actual numbers from the data. Never invent statistics.
-4. BE ACTIONABLE - Every insight should lead to a possible action.
-5. BE HONEST - If data is limited or unavailable, say so clearly.
+📝 RESPONSE STYLE:
+• SHORT and PUNCHY - users are busy!
+• Use emojis to make responses visual
+• Use bullet points (• or -) for lists
+• Use numbered lists (1. 2. 3.) for rankings
+• Section headers: "Section Name:" on its own line
+• NEVER use markdown like ** or ## or __
+• Start with the key insight
 
-🏢 SUNSHINE COWHIDES BUSINESS CONTEXT:
-• Product focus: Cowhides, coasters (top sellers: 2110, 2115, 2129), leather goods
-• Categories: COWHIDES, ACCESORIOS, DESIGNER RUG, SMALL HIDES, MOBILIARIO, SHEEPSKIN, PILLOW
-• Critical threshold: Products below 100 units need attention
-• Aging threshold: Products sitting 60+ days need review
+🔒 DATA PRIVACY - IMPORTANT:
+• NEVER show exact dollar amounts unless user specifically asks "how much" or "what's the revenue"
+• Use relative terms: "strong sales", "top performer", "growing", "declining"
+• For rankings, show position without exact values: "#1 seller", "top 3"
+• Only show percentages and units (not dollars) by default
+• If user asks specifically for revenue/money data, then show it
+
+📦 INVENTORY FOCUS (default):
+• Show units, quantities, stock levels freely
+• Highlight low stock, aging, critical items
+• Lead times: Colombia 7 days, Brazil 45 days
+• Critical threshold: below 100 units
+
+💵 QUICKBOOKS DATA - CRITICAL:
+• ALL QuickBooks values are in USD DOLLARS, NOT units!
+• "totalSales: 1551286" means $1,551,286 revenue, NOT 1.5M products sold
+• "avgMonthlySales: 955161" means $955,161/month revenue
+• Never confuse dollar amounts with unit quantities
+• CDE inventory data = units/quantities
+• QuickBooks data = dollar revenue
 ${seasonalContext}
-🛒 MARKETPLACES (by order volume):
-1. Etsy: ~10,600 orders (TOP CHANNEL - 44%)
-2. Amazon: ~5,400 orders (22%)
-3. Shopify: ~3,700 orders (15%)
-4. eBay: ~2,300 orders (9%)
-5. Others: Wayfair, Faire, Overstock, Walmart, Houzz (~10%)
+🚫 DON'T - CRITICAL:
+• Don't show dollar values unless asked
+• Don't be overly formal or apologetic
+• Don't explain product codes unless asked
+• Don't pad responses with general info
+• Don't repeat the question back
 
-🌍 SUPPLIERS & LEAD TIMES:
-• Colombia (COL): 7 days - Curtidos de Colombia, Curtinorte, Grupo Tarsis, Pison Cowhides
-• Brazil (BRA): 45 days - Dekoland, Minuano, C&A, Best Brasil
-• Peru (PERU): 21 days - Pieles y Cueros
-• Poland (POL): 45 days - Sheep 4 You, GENA
-• China (CHI): 60 days
-
-📝 TERMINOLOGY & STATUS CODES:
-• "QBITEMs" or "product codes" = product types (like 2110, 2115)
-• "units" or "pieces" = individual inventory items
-• INVENTORY STATUS (AESTADOP):
-  - INGRESADO = in stock, available for sale
-  - RETIRADO = sold/shipped out
-  - STANDBY = waiting for photo or release
-  - PRE-SELECTED = pre-selected by client
-  - RESERVED = reserved for order
-• ORDER STATUS (AESTADO_OR):
-  - FACTURADA = invoiced/paid
-  - CLOSE = completed
-  - PENDING = pending
-  - CANCEL = cancelled
-
-🏷️ PRODUCT CODE STRUCTURE (QBITEM):
-• First digit defines category:
-  - 5XXX = COWHIDES (most important!) - Brazil & Colombia
-  - 4XXX = DESIGNER RUGS
-  - 2XXX = ACCESSORIES (coasters 211X-213X are top sellers)
-  - 6XXX = DYED COWHIDES (except 600X/601X/602X which are natural colors)
-  - 3XXX = SPECIAL DESIGNER RUGS
-  - 1XXX = SLIPPERS/SHEEPSKIN
-  - 9XXX = CALFSKIN/EXOTIC
-
-• COWHIDES (5XXX) structure:
-  - 520X = Colombia (S/M/L/XL by last digit: 0=S, 1=M, 2=L, 3=XL)
-  - 530X = Brazil (same size pattern)
-  - 5365 = Brazil Super Promo Small
-  - 5375 = Brazil Super Promo ML/XL
-  - 5475 = Brazil Tannery Run
-
-• COWHIDE SUFFIXES (color/pattern):
-  - BRI = Brindle, TRI = Tricolor, SP = Salt & Pepper
-  - BLW = Black & White, BRW = Brown & White
-  - LGT = Light, DRK = Dark, EXO = Exotic
-  - Z XX = ZETA codes (Amazon specific): Z BR=Brindle Reddish, Z DM=Dark Medium, Z BB=Brindle Belly, Z PA=Palomino
-
-• DESIGNER RUGS (4XXX):
-  - 41XX = Bedside 22X34, 42XX = Runner 2.5X8
-  - 44XX = 4X6, 45XX = 5X7, 46XX = 6X8, 49XX = 9X11
-
-• TOP COASTERS (2110-2135):
-  - 2110 = Plain, 2115 = TX Star, 2116 = Longhorn, 2117 = Horseshoe, 2129 = TX Map
-
-📋 RESPONSE FORMAT:
-• Use emojis purposefully: 📊📈📦💰🎯✅⚠️🟢🟡🔴🚨
-• Use bullet points (•) for lists
-• Use numbers (1, 2, 3) for priorities or action steps
-• Add clear section breaks for readability
-• NO markdown formatting (no ** or ## or __)
-• Keep responses focused but comprehensive
-• Start with the most important insight
-
-🔍 DATA SOURCES:
-• CDE (MySQL): Warehouse inventory, sales history, orders, products in transit
-• Gallery (MongoDB): Photos, clients, carts, selections, pricing
-• Training Rules: Custom business logic defined by Andy
-
-⚡ ANALYSIS APPROACH:
-When analyzing data:
-1. BE DIRECT - Answer the specific question first
-2. If you have data for the question, show it immediately with numbers
-3. If you DON'T have data, say "I don't have specific data for [X]" - don't fill with unrelated info
-4. Keep responses SHORT and FOCUSED on what was asked
-5. Only add extra context if directly relevant
-
-❌ NEVER DO:
-• Never invent numbers or percentages not in the data
-• Never give generic advice - be specific to Sunshine's situation
-• Never ignore warning signs in the data
-• Never be overly apologetic - be confident and helpful
-• NEVER show general inventory when asked about specific products - if you don't have data, say so
-• NEVER pad responses with unrelated marketplace info or general statistics
-• NEVER explain how the product codes work unless asked - just answer the question
+⚠️ ACCURACY RULES - VERY IMPORTANT:
+• NEVER invent numbers - only use data provided in "Available Data"
+• If data is missing, say "I don't have data for that" - don't guess!
+• If asked about something not in the data, be honest: "That's not in my current dataset"
+• Double-check calculations before presenting them
+• When comparing periods, verify both periods exist in the data
+• If a number seems unusual, mention it: "This seems high/low - worth verifying"
 ${customRulesText}
-Remember: Andy needs DIRECT answers. If asked about "5375 products", show 5375 data or say you don't have it. Don't fill with general info.`;
+🧠 CONVERSATION MEMORY:
+You have access to the conversation history. Use it to:
+• Remember what was discussed earlier
+• Refer back to previous topics naturally
+• Avoid repeating information already given
+• Build on previous answers
+${longTermMemorySection}
+Be helpful, be brief, be human! 🌟`;
 
+        // Build messages array with conversation history
+        const messages = [
+            { role: "system", content: systemPrompt }
+        ];
+
+        // Add conversation history (last 10 messages max to save tokens)
+        const recentHistory = conversationHistory.slice(-10);
+        for (const msg of recentHistory) {
+            messages.push({
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            });
+        }
+
+        // Add current question with context
         const userMessage = `Question: ${question}
 
 Available Data:
 ${JSON.stringify(context, null, 2)}
 
-Analyze this data and provide helpful, actionable insights. Be specific and use the actual numbers from the data.`;
+INSTRUCTIONS:
+1. Answer ONLY using the data provided above
+2. If you can't find the answer in the data, say "I don't have that information"
+3. Use exact numbers from the data - don't round or estimate
+4. Be specific and factual - no guessing!`;
+
+        messages.push({ role: "user", content: userMessage });
 
         const completion = await this.groq.chat.completions.create({
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userMessage }
-            ],
+            messages: messages,
             model: "llama-3.3-70b-versatile",
-            temperature: 0.5,
+            temperature: 0.3,  // Lower = more precise, less creative/hallucination
             max_tokens: 1200
         });
 
@@ -1005,7 +1103,7 @@ Analyze this data and provide helpful, actionable insights. Be specific and use 
     }
 
     getFallbackResponse(question) {
-        return `👋 Hey Andy! I can help you analyze:
+        return `👋 Hey! I can help you analyze:
 
 📦 Inventory & Stock
   • Current inventory levels
@@ -1115,6 +1213,101 @@ I can still try to help! What would you like to know about?
                 monthSales: "N/A"
             };
         }
+    }
+
+    // ============================================
+    // DASHBOARD HELPER METHODS
+    // ============================================
+
+    /**
+     * Get inventory summary for dashboard
+     */
+    async getInventorySummary() {
+        try {
+            const inventory = await this.cde.getCurrentInventory();
+            const totalUnits = inventory?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 0;
+
+            // Group by category
+            const byCategory = {};
+            if (inventory) {
+                for (const item of inventory) {
+                    const cat = item.category || 'OTHER';
+                    if (!byCategory[cat]) {
+                        byCategory[cat] = { units: 0, items: 0 };
+                    }
+                    byCategory[cat].units += item.quantity || 1;
+                    byCategory[cat].items++;
+                }
+            }
+
+            return { totalUnits, byCategory, rawData: inventory };
+        } catch (error) {
+            console.error('getInventorySummary error:', error.message);
+            return { totalUnits: 0, byCategory: {} };
+        }
+    }
+
+    /**
+     * Get top products for dashboard
+     */
+    async getTopProducts(limit = 10) {
+        try {
+            const products = await this.cde.getTopSellingProducts();
+            return (products || []).slice(0, limit).map(p => ({
+                code: p.QBITEM || p.code,
+                name: p.QBITEM || p.name,
+                category: p.category || '',
+                quantity: p.quantity || p.total || 0
+            }));
+        } catch (error) {
+            console.error('getTopProducts error:', error.message);
+            return [];
+        }
+    }
+
+    /**
+     * Get transit summary for dashboard
+     */
+    async getTransitSummary() {
+        try {
+            const transit = await this.cde.getProductsInTransit();
+            return {
+                totalInTransit: transit?.length || 0,
+                products: transit || []
+            };
+        } catch (error) {
+            console.error('getTransitSummary error:', error.message);
+            return { totalInTransit: 0, products: [] };
+        }
+    }
+
+    /**
+     * Get aging products for dashboard
+     */
+    async getAgingProducts(days = 60) {
+        try {
+            const aging = await this.cde.getAgingProducts();
+            // Filter by days if needed
+            return aging || [];
+        } catch (error) {
+            console.error('getAgingProducts error:', error.message);
+            return [];
+        }
+    }
+
+    /**
+     * Get QuickBooks summary for dashboard
+     */
+    getQuickBooksSalesSummary() {
+        if (!this.quickbooksData) return { summary: { avgMonthly: 0 } };
+
+        return {
+            summary: {
+                totalSalesAllTime: this.quickbooksData.summary?.totalSalesAllTime || 0,
+                avgMonthly: this.quickbooksData.summary?.avgMonthly || 0,
+                customerCount: this.quickbooksData.summary?.customerCount || 0
+            }
+        };
     }
 
     getConnectionStatus() {

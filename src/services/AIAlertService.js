@@ -426,11 +426,11 @@ class AIAlertService {
             // ========== CONFIGURAÇÃO DE EMAIL ==========
             // MODO TESTE: Enviar para desenvolvedor
             const TEST_MODE = true;
-            const TEST_EMAIL = 'tiagoioti@gmail.com';
+            const TEST_EMAIL = 'tiagoivoti9@gmail.com';
             const PRODUCTION_EMAIL = 'ahuisman@outlook.com';
 
             const recipientEmail = TEST_MODE ? TEST_EMAIL : PRODUCTION_EMAIL;
-            const recipientName = TEST_MODE ? 'Tiago (Test)' : 'Andy';
+            const recipientName = TEST_MODE ? 'Tiago (Test)' : 'Sunshine Team';
             // ============================================
 
             const priorityColors = {
@@ -602,6 +602,494 @@ class AIAlertService {
         this.alertCache = savedCache;
 
         return alerts;
+    }
+
+    // ========== ENVIAR TESTE DIRETO ==========
+
+    /**
+     * Enviar email de teste com insights de negócio
+     * @param {string} email - Email de destino
+     * @param {Object} insightsData - Dados de insights do dashboard
+     * @returns {Promise<Object>}
+     */
+    async sendTestNotification(email, insightsData = {}) {
+        try {
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                        .header { background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 30px; text-align: center; }
+                        .header h1 { margin: 0; font-size: 28px; }
+                        .content { padding: 30px; background: #fff; }
+                        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+                        .kpi-card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #D4AF37; }
+                        .kpi-value { font-size: 28px; font-weight: bold; color: #1a1a1a; }
+                        .kpi-label { font-size: 14px; color: #666; }
+                        .alert-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+                        .alert-critical { background: #f8d7da; border-left-color: #dc3545; }
+                        .insight-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+                        .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                        .action-btn { display: inline-block; background: #D4AF37; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>🌟 Sunshine Intelligence Daily Report</h1>
+                        <p>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+
+                    <div class="content">
+                        <p>Hello!</p>
+                        <p>Here's your daily business intelligence summary:</p>
+
+                        <div class="kpi-grid">
+                            <div class="kpi-card">
+                                <div class="kpi-value">${insightsData.inventory || '2,547'}</div>
+                                <div class="kpi-label">📦 Total Inventory Units</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value">${insightsData.monthlySales || '$45,230'}</div>
+                                <div class="kpi-label">💰 Monthly Sales</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value">${insightsData.inTransit || '342'}</div>
+                                <div class="kpi-label">🚚 Units In Transit</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value">${insightsData.agingCount || '15'}</div>
+                                <div class="kpi-label">⏰ Aging Products (60+ days)</div>
+                            </div>
+                        </div>
+
+                        ${insightsData.criticalAlerts > 0 ? `
+                            <div class="alert-box alert-critical">
+                                <h3>🚨 Critical Alerts (${insightsData.criticalAlerts})</h3>
+                                <p>You have critical stock alerts that require immediate attention!</p>
+                            </div>
+                        ` : ''}
+
+                        ${insightsData.warningAlerts > 0 ? `
+                            <div class="alert-box">
+                                <h3>⚠️ Warnings (${insightsData.warningAlerts})</h3>
+                                <p>Some items need your attention. Review in the dashboard.</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="insight-box">
+                            <h3>💡 AI Insight</h3>
+                            <p>${insightsData.insight || 'Your top performer is Large Natural Cowhides with 156 units sold this month. Consider increasing stock for the holiday season!'}</p>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <a href="https://sunshinecowhides-gallery.com/intelligence.html" class="action-btn">
+                                View Full Dashboard →
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>This email was automatically generated by Sunshine Intelligence AI v3.0</p>
+                        <p>© ${new Date().getFullYear()} Sunshine Cowhides. All rights reserved.</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const result = await this.emailService.sendEmail({
+                to: [{ name: 'Sunshine Team', email: email }],
+                subject: `[Sunshine AI] Daily Intelligence Report - ${new Date().toLocaleDateString()}`,
+                html: html
+            });
+
+            console.log(`📧 Notificação de teste enviada para: ${email}`);
+            return result;
+
+        } catch (error) {
+            console.error('❌ Erro ao enviar notificação de teste:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ========== EMAIL SIMULACOES ==========
+
+    /**
+     * Enviar alerta de estoque critico
+     * @param {string} email - Email de destino
+     * @param {Array} criticalProducts - Lista de produtos criticos
+     */
+    async sendCriticalStockAlert(email, criticalProducts = []) {
+        try {
+            // Dados de exemplo se nao fornecidos
+            if (criticalProducts.length === 0) {
+                criticalProducts = [
+                    { code: 'LG-NAT-001', name: 'Large Natural Cowhide', stock: 12, minStock: 50, daysToStockout: 5 },
+                    { code: 'MD-BRN-002', name: 'Medium Brown Cowhide', stock: 8, minStock: 30, daysToStockout: 3 },
+                    { code: 'SM-BLK-003', name: 'Small Black Cowhide', stock: 15, minStock: 40, daysToStockout: 7 }
+                ];
+            }
+
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                        .header { background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 30px; text-align: center; }
+                        .header h1 { margin: 0; font-size: 28px; }
+                        .content { padding: 30px; background: #fff; }
+                        .alert-banner { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        .product-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        .product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+                        .product-table th { background: #f8f9fa; font-weight: bold; }
+                        .critical { color: #dc3545; font-weight: bold; }
+                        .warning { color: #ffc107; }
+                        .action-btn { display: inline-block; background: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                        .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                        .urgency-badge { background: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>CRITICAL STOCK ALERT</h1>
+                        <p>Immediate Action Required</p>
+                    </div>
+
+                    <div class="content">
+                        <div class="alert-banner">
+                            <strong>URGENT:</strong> ${criticalProducts.length} products are at critically low stock levels and require immediate restocking!
+                        </div>
+
+                        <h2>Critical Products</h2>
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Code</th>
+                                    <th>Name</th>
+                                    <th>Current Stock</th>
+                                    <th>Min Required</th>
+                                    <th>Days to Stockout</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${criticalProducts.map(p => `
+                                    <tr>
+                                        <td><strong>${p.code}</strong></td>
+                                        <td>${p.name}</td>
+                                        <td class="critical">${p.stock}</td>
+                                        <td>${p.minStock}</td>
+                                        <td><span class="urgency-badge">${p.daysToStockout} days</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+
+                        <h3>Recommended Actions:</h3>
+                        <ol>
+                            <li>Contact suppliers immediately for emergency restocking</li>
+                            <li>Consider express shipping options</li>
+                            <li>Review sales channels to manage demand</li>
+                            <li>Update inventory projections in the system</li>
+                        </ol>
+
+                        <div style="text-align: center;">
+                            <a href="https://sunshinecowhides-gallery.com/intelligence.html" class="action-btn">
+                                View Full Inventory Report
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>This critical alert was automatically generated by Sunshine Intelligence AI v3.0</p>
+                        <p>Sent: ${new Date().toLocaleString()}</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const result = await this.emailService.sendEmail({
+                to: [{ name: 'Sunshine Team', email: email }],
+                subject: `[CRITICAL] Stock Alert - ${criticalProducts.length} Products Need Immediate Restocking`,
+                html: html
+            });
+
+            console.log(`CRITICAL stock alert sent to: ${email}`);
+            return result;
+
+        } catch (error) {
+            console.error('Error sending critical stock alert:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Enviar alerta de clientes inativos
+     * @param {string} email - Email de destino
+     * @param {Array} inactiveClients - Lista de clientes inativos
+     */
+    async sendInactiveClientsAlert(email, inactiveClients = []) {
+        try {
+            // Dados de exemplo se nao fornecidos
+            if (inactiveClients.length === 0) {
+                inactiveClients = [
+                    { name: 'Western Decor Co', code: 'WDC001', lastOrder: '2024-08-15', daysSinceOrder: 124, totalSpent: 45000 },
+                    { name: 'Ranch Supplies Ltd', code: 'RSL002', lastOrder: '2024-09-02', daysSinceOrder: 106, totalSpent: 38500 },
+                    { name: 'Home Interiors Plus', code: 'HIP003', lastOrder: '2024-09-20', daysSinceOrder: 88, totalSpent: 32000 },
+                    { name: 'Texas Living', code: 'TXL004', lastOrder: '2024-10-01', daysSinceOrder: 77, totalSpent: 28750 }
+                ];
+            }
+
+            const totalRevenue = inactiveClients.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                        .header { background: linear-gradient(135deg, #fd7e14, #e67300); color: white; padding: 30px; text-align: center; }
+                        .header h1 { margin: 0; font-size: 28px; }
+                        .content { padding: 30px; background: #fff; }
+                        .summary-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin-bottom: 20px; border-radius: 0 8px 8px 0; }
+                        .client-card { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #fd7e14; }
+                        .client-name { font-size: 18px; font-weight: bold; color: #1a1a1a; }
+                        .client-stats { display: flex; gap: 20px; margin-top: 10px; }
+                        .stat { font-size: 14px; color: #666; }
+                        .stat strong { color: #fd7e14; }
+                        .action-btn { display: inline-block; background: #fd7e14; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                        .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                        .reactivation-tip { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Inactive Clients Alert</h1>
+                        <p>Re-engagement Opportunity</p>
+                    </div>
+
+                    <div class="content">
+                        <div class="summary-box">
+                            <strong>Summary:</strong> ${inactiveClients.length} valuable clients haven't ordered in 60+ days.
+                            Combined historical revenue: <strong>$${totalRevenue.toLocaleString()}</strong>
+                        </div>
+
+                        <h2>Clients Needing Follow-up</h2>
+                        ${inactiveClients.map(c => `
+                            <div class="client-card">
+                                <div class="client-name">${c.name}</div>
+                                <div class="client-stats">
+                                    <span class="stat">Code: <strong>${c.code}</strong></span>
+                                    <span class="stat">Last Order: <strong>${c.lastOrder}</strong></span>
+                                    <span class="stat">Days Inactive: <strong>${c.daysSinceOrder}</strong></span>
+                                    <span class="stat">Total Spent: <strong>$${(c.totalSpent || 0).toLocaleString()}</strong></span>
+                                </div>
+                            </div>
+                        `).join('')}
+
+                        <div class="reactivation-tip">
+                            <h3>Re-activation Tips</h3>
+                            <ul>
+                                <li>Send personalized follow-up emails with new product recommendations</li>
+                                <li>Offer exclusive discounts for returning customers</li>
+                                <li>Highlight new arrivals that match their previous purchases</li>
+                                <li>Consider a phone call for high-value clients</li>
+                            </ul>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <a href="https://sunshinecowhides-gallery.com/intelligence.html" class="action-btn">
+                                View Client Details
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>This alert was automatically generated by Sunshine Intelligence AI v3.0</p>
+                        <p>Sent: ${new Date().toLocaleString()}</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const result = await this.emailService.sendEmail({
+                to: [{ name: 'Sunshine Team', email: email }],
+                subject: `[Sunshine AI] ${inactiveClients.length} Inactive Clients - Re-engagement Opportunity`,
+                html: html
+            });
+
+            console.log(`Inactive clients alert sent to: ${email}`);
+            return result;
+
+        } catch (error) {
+            console.error('Error sending inactive clients alert:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Enviar resumo semanal
+     * @param {string} email - Email de destino
+     * @param {Object} weeklyData - Dados da semana
+     */
+    async sendWeeklySummary(email, weeklyData = {}) {
+        try {
+            // Dados de exemplo se nao fornecidos
+            const data = {
+                weekNumber: weeklyData.weekNumber || Math.ceil((new Date().getDate()) / 7),
+                totalSales: weeklyData.totalSales || 12450,
+                ordersCount: weeklyData.ordersCount || 48,
+                avgOrderValue: weeklyData.avgOrderValue || 259.38,
+                topProduct: weeklyData.topProduct || { name: 'Large Natural Cowhide', sales: 23 },
+                newCustomers: weeklyData.newCustomers || 5,
+                returningCustomers: weeklyData.returningCustomers || 31,
+                inventoryReceived: weeklyData.inventoryReceived || 150,
+                inventoryShipped: weeklyData.inventoryShipped || 89,
+                lowStockItems: weeklyData.lowStockItems || 3,
+                pendingShipments: weeklyData.pendingShipments || 12,
+                weekOverWeekGrowth: weeklyData.weekOverWeekGrowth || 8.5,
+                highlights: weeklyData.highlights || [
+                    'Etsy sales increased by 15% compared to last week',
+                    'New product line "Exotic Prints" received positive feedback',
+                    'Shipping times improved by 0.5 days on average'
+                ],
+                concerns: weeklyData.concerns || [
+                    '3 products approaching critical stock levels',
+                    'Amazon returns slightly higher than usual (2.1%)'
+                ]
+            };
+
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                        .header { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 30px; text-align: center; }
+                        .header h1 { margin: 0; font-size: 28px; }
+                        .content { padding: 30px; background: #fff; }
+                        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+                        .kpi-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
+                        .kpi-value { font-size: 24px; font-weight: bold; color: #1a1a1a; }
+                        .kpi-label { font-size: 12px; color: #666; margin-top: 5px; }
+                        .kpi-change { font-size: 12px; margin-top: 5px; }
+                        .kpi-change.positive { color: #28a745; }
+                        .kpi-change.negative { color: #dc3545; }
+                        .section { margin: 25px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+                        .section h3 { margin-top: 0; color: #4f46e5; }
+                        .highlight-list { list-style: none; padding: 0; }
+                        .highlight-list li { padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+                        .highlight-list li:last-child { border-bottom: none; }
+                        .highlight-list li:before { content: ""; margin-right: 10px; }
+                        .concern-list li:before { content: ""; margin-right: 10px; }
+                        .top-product { background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+                        .action-btn { display: inline-block; background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                        .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
+                        .divider { height: 1px; background: #e9ecef; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Weekly Business Summary</h1>
+                        <p>Week ${data.weekNumber} - ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                    </div>
+
+                    <div class="content">
+                        <div class="kpi-grid">
+                            <div class="kpi-card">
+                                <div class="kpi-value">$${data.totalSales.toLocaleString()}</div>
+                                <div class="kpi-label">Total Sales</div>
+                                <div class="kpi-change positive">+${data.weekOverWeekGrowth}% WoW</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value">${data.ordersCount}</div>
+                                <div class="kpi-label">Orders</div>
+                                <div class="kpi-change positive">+3 vs last week</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value">$${data.avgOrderValue.toFixed(2)}</div>
+                                <div class="kpi-label">Avg Order Value</div>
+                                <div class="kpi-change positive">+$12</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value">${data.newCustomers + data.returningCustomers}</div>
+                                <div class="kpi-label">Customers</div>
+                                <div class="kpi-change">${data.newCustomers} new</div>
+                            </div>
+                        </div>
+
+                        <div class="top-product">
+                            <div style="font-size: 14px; opacity: 0.9;">TOP SELLER THIS WEEK</div>
+                            <div style="font-size: 24px; font-weight: bold; margin: 10px 0;">${data.topProduct.name}</div>
+                            <div style="font-size: 18px;">${data.topProduct.sales} units sold</div>
+                        </div>
+
+                        <div class="section">
+                            <h3>Inventory Movement</h3>
+                            <div style="display: flex; justify-content: space-around; text-align: center;">
+                                <div>
+                                    <div style="font-size: 28px; font-weight: bold; color: #28a745;">+${data.inventoryReceived}</div>
+                                    <div style="color: #666;">Units Received</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 28px; font-weight: bold; color: #6366f1;">-${data.inventoryShipped}</div>
+                                    <div style="color: #666;">Units Shipped</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 28px; font-weight: bold; color: #ffc107;">${data.pendingShipments}</div>
+                                    <div style="color: #666;">Pending Orders</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <h3>Week Highlights</h3>
+                            <ul class="highlight-list">
+                                ${data.highlights.map(h => `<li>${h}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        ${data.concerns.length > 0 ? `
+                            <div class="section" style="background: #fff3cd;">
+                                <h3 style="color: #856404;">Items Needing Attention</h3>
+                                <ul class="highlight-list concern-list">
+                                    ${data.concerns.map(c => `<li>${c}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+
+                        <div style="text-align: center;">
+                            <a href="https://sunshinecowhides-gallery.com/intelligence.html" class="action-btn">
+                                View Detailed Analytics
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>Weekly Summary generated by Sunshine Intelligence AI v3.0</p>
+                        <p>Sent: ${new Date().toLocaleString()}</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const result = await this.emailService.sendEmail({
+                to: [{ name: 'Sunshine Team', email: email }],
+                subject: `[Sunshine AI] Weekly Summary - Week ${data.weekNumber} | $${data.totalSales.toLocaleString()} in Sales`,
+                html: html
+            });
+
+            console.log(`Weekly summary sent to: ${email}`);
+            return result;
+
+        } catch (error) {
+            console.error('Error sending weekly summary:', error);
+            return { success: false, error: error.message };
+        }
     }
 
     // ========== SINGLETON ==========

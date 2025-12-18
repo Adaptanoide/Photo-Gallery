@@ -394,20 +394,25 @@ window.changeAccessCode = async function() {
         saveBtn.style.background = '#28a745';
 
         // 🆕 Mostrar mensagem diferente se carrinho foi migrado
-        const cartMessage = data.cartMigrated ? ' Your cart items have been preserved.' : '';
+        const cartMessage = data.cartMigrated ? ' Cart items preserved!' : '';
 
+        // Fechar modal primeiro
         setTimeout(() => {
             closeChangeCodeModal();
             saveBtn.innerHTML = originalText;
             saveBtn.style.background = '';
             saveBtn.disabled = false;
 
-            // Show success message
-            alert('Access code changed successfully! Your new code is: ' + newCode + cartMessage);
+            // 🆕 Mostrar toast de sucesso (ao invés de alert)
+            if (window.UISystem && typeof UISystem.showToast === 'function') {
+                UISystem.showToast('success', `Code changed to ${newCode}!${cartMessage}`, 3000);
+            }
 
-            // 🆕 Recarregar página para reinicializar cart com novo código
-            window.location.reload();
-        }, 1500);
+            // 🆕 Recarregar página após toast aparecer
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }, 1000);
 
     } catch (error) {
         console.error('Error changing code:', error);
