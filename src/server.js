@@ -205,6 +205,7 @@ app.use('/api/selections', require('./routes/admin-selections'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/gallery', require('./routes/gallery'));
+app.use('/api/catalog', require('./routes/catalog'));
 app.use('/api/cart', cartRoutes);
 app.use('/api/selection', selectionRoutes);
 app.use('/api/pricing', pricingRoutes);
@@ -218,6 +219,12 @@ app.use('/api/register', registrationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/currency', currencyRoutes);
 app.use('/api/import', require('./routes/data-import'));
+app.use('/api/leads', require('./routes/leads'));
+
+// Servir página Leads CRM
+app.get('/leads', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/leads.html'));
+});
 
 // Servir página Intelligence
 app.get('/intelligence', (req, res) => {
@@ -769,6 +776,20 @@ const server = app.listen(PORT, () => {
                 CDETransitSync.start(10); // A cada 10 minutos
                 console.log('[TRANSIT SYNC] Sincronização de trânsito iniciada');
             }, 45000);
+        }
+
+        // Iniciar sincronização de catálogo após 60 segundos
+        const catalogSyncEnabled = process.env.ENABLE_CATALOG_SYNC !== 'false';
+        if (catalogSyncEnabled) {
+            console.log('SINCRONIZAÇÃO DE CATÁLOGO CONFIGURADA');
+            console.log('Intervalo: 5 minutos');
+            console.log('Iniciando em 60 segundos...');
+
+            setTimeout(() => {
+                const CatalogSyncService = require('./services/CatalogSyncService').getInstance();
+                CatalogSyncService.startPeriodicSync(5); // A cada 5 minutos
+                console.log('[CATALOG SYNC] Sincronização de catálogo iniciada');
+            }, 60000);
         }
     } else {
         console.log('Sincronização automática DESABILITADA');

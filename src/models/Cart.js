@@ -97,6 +97,39 @@ const cartSchema = new mongoose.Schema({
             type: String,
             default: '',
             comment: 'Path formatado para display'
+        },
+
+        // ===== CAMPOS PARA CATALOG PRODUCTS =====
+        isCatalogProduct: {
+            type: Boolean,
+            default: false,
+            comment: 'True se for produto de catálogo (não foto)'
+        },
+        qbItem: {
+            type: String,
+            default: null,
+            comment: 'Código QB do produto de catálogo'
+        },
+        productName: {
+            type: String,
+            default: null,
+            comment: 'Nome do produto de catálogo'
+        },
+        quantity: {
+            type: Number,
+            default: 1,
+            min: 1,
+            comment: 'Quantidade (para catálogo)'
+        },
+        unitPrice: {
+            type: Number,
+            default: 0,
+            comment: 'Preço unitário (para catálogo)'
+        },
+        reservedIDHs: {
+            type: [String],
+            default: [],
+            comment: 'IDHs reservados no CDE para este item de catálogo'
         }
     }],
     totalItems: {
@@ -165,6 +198,48 @@ cartSchema.methods.getItem = function (driveFileId) {
         item.driveFileId === driveFileId &&
         (!item.expiresAt || item.expiresAt > new Date())  // ✅ MODIFICADO: Coming Soon sempre válido
     );
+};
+
+// Método para verificar se produto de catálogo está no carrinho
+cartSchema.methods.hasCatalogItem = function (qbItem) {
+    return this.items.some(item =>
+        item.isCatalogProduct &&
+        item.qbItem === qbItem &&
+        (!item.expiresAt || item.expiresAt > new Date())
+    );
+};
+
+// Método para obter item de catálogo
+cartSchema.methods.getCatalogItem = function (qbItem) {
+    return this.items.find(item =>
+        item.isCatalogProduct &&
+        item.qbItem === qbItem &&
+        (!item.expiresAt || item.expiresAt > new Date())
+    );
+};
+
+// Método para calcular total de unidades (fotos + quantidades de catálogo)
+cartSchema.methods.getTotalUnits = function () {
+    return this.items.reduce((total, item) => {
+        if (item.ghostStatus === 'ghost') return total;
+        if (!item.expiresAt || item.expiresAt > new Date()) {
+            return total + (item.quantity || 1);
+        }
+        return total;
+    }, 0);
+};
+
+// Método para separar items por tipo
+cartSchema.methods.getItemsByType = function () {
+    const validItems = this.items.filter(item =>
+        item.ghostStatus !== 'ghost' &&
+        (!item.expiresAt || item.expiresAt > new Date())
+    );
+
+    return {
+        photoItems: validItems.filter(item => !item.isCatalogProduct),
+        catalogItems: validItems.filter(item => item.isCatalogProduct)
+    };
 };
 
 // Método para calcular tempo restante de reserva

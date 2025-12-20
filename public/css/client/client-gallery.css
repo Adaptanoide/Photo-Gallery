@@ -761,12 +761,12 @@
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    background: rgba(107, 114, 128, 0.1);
-    color: #4b5563;
+    background: #22c55e;
+    color: white;
     border-radius: 6px;
     font-weight: 600;
     font-size: 0.95rem;
-    border: 1px solid rgba(107, 114, 128, 0.2);
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
     flex-shrink: 0;
     white-space: nowrap;
 }

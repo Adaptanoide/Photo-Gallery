@@ -249,7 +249,9 @@ router.get('/category-ranges', async (req, res) => {
             basePrice: category.basePrice,
             appliedType: 'base',
             ranges: [],
-            currentDiscount: null
+            currentDiscount: null,
+            // ✅ NOVO: Informar se categoria participa do Mix & Match
+            participatesInMixMatch: category.participatesInMixMatch === true
         };
 
         // 1. Verificar Custom Client
@@ -990,8 +992,11 @@ router.get('/categories/grouped', authenticateToken, async (req, res) => {
             photoCount: { $gt: 0 }
         }).sort({ googleDrivePath: 1 }).lean();
 
-        // Definir categorias principais do Mix & Match (conforme PDF)
-        const mixMatchCategories = [
+        // Definir categorias principais do Mix & Match
+        // NOTA: Esta lista é usada como FALLBACK. O sistema agora prioriza
+        // o campo participatesInMixMatch do banco de dados
+        const mixMatchCategoriesFallback = [
+            'Brazilian Cowhides',
             'Colombian Cowhides',
             'Brazil Best Sellers',
             'Brazil Top Selected Categories'
@@ -1011,9 +1016,15 @@ router.get('/categories/grouped', authenticateToken, async (req, res) => {
             if (!grouped[mainCategory]) {
                 grouped[mainCategory] = {
                     name: mainCategory,
-                    isMixMatch: mixMatchCategories.includes(mainCategory),
+                    // Começa com valor do fallback, mas será atualizado se alguma subcategoria tiver participatesInMixMatch
+                    isMixMatch: mixMatchCategoriesFallback.includes(mainCategory),
                     subcategories: []
                 };
+            }
+
+            // Se QUALQUER subcategoria tem participatesInMixMatch = true, o grupo é Mix & Match
+            if (cat.participatesInMixMatch === true) {
+                grouped[mainCategory].isMixMatch = true;
             }
 
             // Adicionar subcategoria
@@ -2319,9 +2330,31 @@ router.post('/bulk-update-individual', authenticateToken, async (req, res) => {
                         // Criar nova
                         category.discountRules.push({
                             clientCode: 'VOLUME',
+                            clientName: 'All Regular Clients',
                             priceRanges: processedRanges,
-                            isActive: true
+                            isActive: true,
+                            createdAt: new Date()
                         });
+                    }
+                }
+
+                // Atualizar participatesInMixMatch
+                if (update.participatesInMixMatch !== undefined) {
+                    const oldValue = category.participatesInMixMatch;
+                    category.participatesInMixMatch = update.participatesInMixMatch;
+
+                    // Se desativando Mix & Match, remover volume rules
+                    if (oldValue === true && update.participatesInMixMatch === false) {
+                        // Remover regra VOLUME
+                        category.discountRules = category.discountRules.filter(
+                            r => r.clientCode !== 'VOLUME'
+                        );
+                        console.log(`🔄 Mix & Match desativado para ${category.folderName}, volume rules removidas`);
+                    }
+
+                    // Se ativando Mix & Match, garantir que tem volume rules
+                    if (oldValue === false && update.participatesInMixMatch === true) {
+                        console.log(`🔄 Mix & Match ativado para ${category.folderName}`);
                     }
                 }
 

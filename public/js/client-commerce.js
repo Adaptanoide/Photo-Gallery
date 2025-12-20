@@ -218,25 +218,37 @@ window.syncCartUIFromRemove = function (photoId) {
 }
 
 // ===== CATEGORIAS MIX & MATCH (GLOBAL TIERS) =====
+// NOTA: Esta lista é usada como FALLBACK enquanto migramos para
+// usar participatesInMixMatch do banco de dados
 const GLOBAL_MIX_MATCH_CATEGORIES = [
     'Brazilian Cowhides',
+    'Colombian Cowhides',
     'Brazil Best Sellers',
-    'Brazil Top Selected Categories',
-    'Colombian Cowhides'
+    'Brazil Top Selected Categories'
 ];
+
+// ✅ NOVO: Armazenar participatesInMixMatch da API para a categoria atual
+window.currentCategoryMixMatchStatus = null;
 
 /**
  * Verifica se a categoria atual participa do Mix & Match global
+ * PRIORIDADE: Usar valor da API se disponível, senão fallback para lista hardcoded
  */
 function isCurrentCategoryMixMatch() {
     if (!window.navigationState || !window.navigationState.currentPath || window.navigationState.currentPath.length === 0) {
         return false;
     }
 
-    // Pegar a categoria principal (primeiro nível)
+    // ✅ PRIORIDADE 1: Usar valor da API se disponível
+    if (window.currentCategoryMixMatchStatus !== null) {
+        console.log('🔍 Mix & Match (via API):', window.currentCategoryMixMatchStatus);
+        return window.currentCategoryMixMatchStatus;
+    }
+
+    // ✅ FALLBACK: Usar lista hardcoded se API não disponível
     const mainCategory = window.navigationState.currentPath[0].name;
 
-    console.log('🔍 Verificando Mix & Match:', mainCategory);
+    console.log('🔍 Verificando Mix & Match (fallback):', mainCategory);
 
     // Verificar se está na lista
     const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
@@ -259,6 +271,8 @@ window.PriceProgressBar = {
 
     init(categoryId) {
         this.currentCategoryId = categoryId;
+        // ✅ Resetar status Mix & Match antes de carregar nova categoria
+        window.currentCategoryMixMatchStatus = null;
         this.loadRateRules().then(() => {
             this.render();
             this.updateProgress();
@@ -277,16 +291,24 @@ window.PriceProgressBar = {
             const response = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(this.currentCategoryId)}&clientCode=${encodeURIComponent(clientCode || '')}`);
             const data = await response.json();
 
-            if (data.success && data.data.ranges) {
-                this.rateRules = data.data.ranges.map(range => ({
-                    from: range.min,
-                    to: range.max || 999,
-                    price: range.price
-                }));
-                this.basePrice = data.data.ranges[0]?.price || 0;
+            if (data.success && data.data) {
+                // ✅ NOVO: Armazenar status Mix & Match da API
+                window.currentCategoryMixMatchStatus = data.data.participatesInMixMatch === true;
+                console.log('📦 Mix & Match status da API:', window.currentCategoryMixMatchStatus);
+
+                if (data.data.ranges) {
+                    this.rateRules = data.data.ranges.map(range => ({
+                        from: range.min,
+                        to: range.max || 999,
+                        price: range.price
+                    }));
+                    this.basePrice = data.data.ranges[0]?.price || 0;
+                }
             }
         } catch (error) {
             console.error('Erro ao carregar rate rules:', error);
+            // Reset status em caso de erro
+            window.currentCategoryMixMatchStatus = null;
         }
     },
 

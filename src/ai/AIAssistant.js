@@ -1,8 +1,9 @@
-// src/ai/AIAssistant.js - VERSÃO 3.2
-// AI Agent com detecção de intenção avançada, alertas, contexto de negócio, dados QuickBooks e MEMÓRIA DE LONGO PRAZO
+// src/ai/AIAssistant.js - VERSÃO 4.0
+// AI Agent com detecção de intenção avançada, alertas, contexto de negócio, Leads CRM e MEMÓRIA DE LONGO PRAZO
 const Groq = require('groq-sdk');
 const CDEQueries = require('./CDEQueries');
 const GalleryQueries = require('./GalleryQueries');
+const LeadsQueries = require('./LeadsQueries');
 const ConnectionManager = require('../services/ConnectionManager');
 const AITrainingRule = require('../models/AITrainingRule');
 const AIMemoryService = require('../services/AIMemoryService');
@@ -17,11 +18,13 @@ class AIAssistant {
 
         this.cde = new CDEQueries();
         this.gallery = new GalleryQueries();
+        this.leads = new LeadsQueries();
         this.testMode = false;
 
         this.connectionStatus = {
             cde: 'unknown',
-            gallery: 'unknown'
+            gallery: 'unknown',
+            leads: 'unknown'
         };
 
         // Carregar dados do QuickBooks (vendas históricas)
@@ -262,20 +265,37 @@ class AIAssistant {
             forecast: ['forecast', 'predict', 'projection', 'when', 'will run out', 'estimate'],
             comparison: ['compare', 'vs', 'versus', 'difference', 'better', 'worse', 'month'],
             dashboard: ['dashboard', 'overview', 'summary', 'status', 'everything', 'general'],
-            alerts: ['alert', 'warning', 'attention', 'urgent', 'critical', 'problem']
+            alerts: ['alert', 'warning', 'attention', 'urgent', 'critical', 'problem'],
+            // Leads CRM intents
+            leads: ['lead', 'leads', 'prospect', 'prospecto', 'prospección', 'prospeccion'],
+            followup: ['follow up', 'follow-up', 'callback', 'call back', 'ligar', 'chamar', 'contactar'],
+            coldleads: ['cold lead', 'cold', 'frio', 'frios', 'inactive lead', 'parado'],
+            hotleads: ['hot lead', 'quente', 'quentes', 'high potential', 'priority'],
+            conversion: ['convert', 'conversion', 'conversão', 'won', 'ganho', 'closed']
         };
 
-        this.initializeGallery();
+        this.initializeConnections();
     }
 
-    async initializeGallery() {
+    async initializeConnections() {
+        // Initialize Gallery
         try {
-            const connected = await this.gallery.initialize();
-            this.connectionStatus.gallery = connected ? 'online' : 'offline';
+            const galleryConnected = await this.gallery.initialize();
+            this.connectionStatus.gallery = galleryConnected ? 'online' : 'offline';
             console.log(`📸 Gallery connection: ${this.connectionStatus.gallery}`);
         } catch (error) {
             console.error('❌ Gallery initialization error:', error.message);
             this.connectionStatus.gallery = 'offline';
+        }
+
+        // Initialize Leads
+        try {
+            const leadsConnected = await this.leads.initialize();
+            this.connectionStatus.leads = leadsConnected ? 'online' : 'offline';
+            console.log(`📋 Leads connection: ${this.connectionStatus.leads}`);
+        } catch (error) {
+            console.error('❌ Leads initialization error:', error.message);
+            this.connectionStatus.leads = 'offline';
         }
     }
 
@@ -351,11 +371,16 @@ class AIAssistant {
         };
     }
 
-    async processQuery(question, conversationHistory = [], userId = null) {
+    async processQuery(question, conversationHistory = [], userId = null, mode = 'general') {
         try {
-            console.log('📊 Processing question:', question);
+            console.log('📊 Processing question:', question, '| Mode:', mode);
             console.log('🧠 Conversation history:', conversationHistory.length, 'messages');
             console.log('👤 User ID:', userId || 'anonymous');
+
+            // If mode is 'leads', use dedicated leads processing
+            if (mode === 'leads') {
+                return await this.processLeadsQuery(question);
+            }
 
             // Registrar tipo de pergunta para análise de padrões (memória de longo prazo)
             if (userId) {
@@ -387,6 +412,170 @@ class AIAssistant {
         }
     }
 
+    /**
+     * Process queries specifically for Leads CRM - ONLY uses Leads data
+     */
+    async processLeadsQuery(question) {
+        try {
+            console.log('📋 Processing LEADS-ONLY question:', question);
+            const lowerQuestion = question.toLowerCase();
+
+            // Initialize leads connection if needed
+            if (this.connectionStatus.leads !== 'online') {
+                await this.initializeConnections();
+            }
+
+            if (this.connectionStatus.leads !== 'online') {
+                return '❌ Leads database is not available. Please try again later.';
+            }
+
+            // Build context ONLY from Leads data
+            const context = {};
+
+            // Detect what kind of leads question
+            const isCallQuestion = lowerQuestion.includes('call') ||
+                lowerQuestion.includes('who') ||
+                lowerQuestion.includes('contact') ||
+                lowerQuestion.includes('ligar') ||
+                lowerQuestion.includes('chamar');
+
+            const isColdQuestion = lowerQuestion.includes('cold') ||
+                lowerQuestion.includes('frio') ||
+                lowerQuestion.includes('inactive');
+
+            const isHotQuestion = lowerQuestion.includes('hot') ||
+                lowerQuestion.includes('quente') ||
+                lowerQuestion.includes('priority') ||
+                lowerQuestion.includes('urgent');
+
+            const isTodayQuestion = lowerQuestion.includes('today') ||
+                lowerQuestion.includes('hoje') ||
+                lowerQuestion.includes('follow');
+
+            const isStatsQuestion = lowerQuestion.includes('stats') ||
+                lowerQuestion.includes('conversion') ||
+                lowerQuestion.includes('pipeline') ||
+                lowerQuestion.includes('summary') ||
+                lowerQuestion.includes('overview');
+
+            const isStateQuestion = lowerQuestion.includes('state') ||
+                lowerQuestion.includes('estado') ||
+                lowerQuestion.includes('region');
+
+            // Gather ONLY leads context based on question type
+            if (isCallQuestion || isTodayQuestion) {
+                context.leadsForToday = await this.leads.getLeadsForToday();
+                context.leadsNeedingFollowUp = await this.leads.getLeadsNeedingFollowUp();
+                context.leadsTopToCall = await this.leads.getTopLeadsToCall();
+            }
+
+            if (isColdQuestion) {
+                context.coldLeads = await this.leads.getColdLeads(14);
+            }
+
+            if (isHotQuestion) {
+                context.hotLeads = await this.leads.getHotLeads();
+            }
+
+            if (isStatsQuestion) {
+                context.leadsSummary = await this.leads.getLeadsSummary();
+                context.conversionStats = await this.leads.getConversionStats();
+                context.leadsPipeline = await this.leads.getLeadsPipeline();
+            }
+
+            if (isStateQuestion) {
+                context.leadsByState = await this.leads.getLeadsByState();
+            }
+
+            // If no specific intent detected, get general leads context
+            if (Object.keys(context).length === 0) {
+                context.leadsSummary = await this.leads.getLeadsSummary();
+                context.leadsTopToCall = await this.leads.getTopLeadsToCall();
+                context.coldLeads = await this.leads.getColdLeads(14);
+            }
+
+            // Generate response using leads-only system prompt
+            return await this.generateLeadsResponse(question, context);
+
+        } catch (error) {
+            console.error('❌ Leads AI Error:', error);
+            return '❌ Error processing leads query. Please try again.';
+        }
+    }
+
+    /**
+     * Generate response specifically for Leads CRM
+     */
+    async generateLeadsResponse(question, context) {
+        const systemPrompt = `You are a LEADS CRM AI Assistant for Sunshine Cowhides.
+
+🎯 YOUR ONLY JOB: Help manage B2B sales leads and prospects.
+
+📋 LEADS DATA ONLY:
+You ONLY have access to LEADS data (prospective customers from CSV imports).
+You do NOT have access to Gallery clients, selections, or carts.
+NEVER mention Gallery data, client codes, or selections.
+
+📊 LEAD STATUS FLOW:
+🆕 new → 📞 contacted → ⭐ interested → 🤝 negotiating → ✅ won / ❌ lost / 😴 dormant
+
+🔥 POTENTIAL LEVELS:
+🔥 hot (highest priority)
+🔴 high
+🟡 medium
+🟢 low
+
+❄️ COLD LEAD = No contact for 14+ days
+
+🎯 RESPONSE RULES (CRITICAL):
+1. MAX 5-7 lines - be ULTRA concise
+2. Use emojis for EVERY lead/status
+3. Show TOP 3-5 items only
+4. Format: emoji + name + location + key info
+5. End with ONE action suggestion
+6. NO markdown formatting (no ** or ##)
+
+📱 RESPONSE EXAMPLES:
+
+Q: "Who should I call?"
+A: 📞 Top leads to call NOW:
+🔥 ABC Furniture (TX) - hot, no contact 5d
+🔴 Western Decor Co (OK) - high potential, follow-up due
+⭐ Rustic Home (FL) - interested, waiting response
+🆕 Leather Works (CA) - new lead, never contacted
+
+👉 Start with ABC Furniture - hot lead waiting!
+
+Q: "Cold leads?"
+A: ❄️ Cold leads (14+ days no contact):
+• Western Trading - 18 days, was interested
+• Ranch Supply - 22 days, high potential
+• Cowboy Corner - 30 days, needs follow-up
+
+⚠️ Contact these ASAP before they go cold!
+
+IMPORTANT: Only use the data provided. If data is empty, say "No leads found for [criteria]".`;
+
+        const userMessage = `Question: ${question}
+
+LEADS DATA (from CRM database):
+${JSON.stringify(context, null, 2)}
+
+Give a direct, concise answer using ONLY this leads data.`;
+
+        const completion = await this.groq.chat.completions.create({
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userMessage }
+            ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.4,
+            max_tokens: 400
+        });
+
+        return completion.choices[0].message.content;
+    }
+
     handleSimpleQueries(question) {
         const lowerQ = question.toLowerCase().trim();
 
@@ -407,7 +596,8 @@ class AIAssistant {
         if (lowerQ === 'status' || lowerQ === 'are you working') {
             const cdeStatus = this.connectionStatus.cde === 'online' ? '✅' : '❌';
             const galleryStatus = this.connectionStatus.gallery === 'online' ? '✅' : '❌';
-            return `System Status:\n\n${cdeStatus} CDE (Warehouse Database)\n${galleryStatus} Gallery (Photos, Clients, Carts)\n\nAll systems ready!`;
+            const leadsStatus = this.connectionStatus.leads === 'online' ? '✅' : '❌';
+            return `System Status:\n\n${cdeStatus} CDE (Warehouse Database)\n${galleryStatus} Gallery (Photos, Clients, Carts)\n${leadsStatus} Leads CRM (Prospects & Pipeline)\n\nAll systems ready!`;
         }
 
         return null;
@@ -719,6 +909,118 @@ class AIAssistant {
                 else if (isPricingQuestion) {
                     context.categoriesWithPricing = await this.gallery.getCategoriesWithPricing();
                     context.pricingAnalysis = await this.gallery.getPricingAnalysis();
+                }
+            }
+
+            // =============================================
+            // LEADS CRM QUERIES (MongoDB)
+            // =============================================
+
+            const isLeadsQuestion = intents.includes('leads') ||
+                lowerQuestion.includes('lead') ||
+                lowerQuestion.includes('prospect');
+
+            const isFollowUpQuestion = intents.includes('followup') ||
+                lowerQuestion.includes('follow up') ||
+                lowerQuestion.includes('follow-up') ||
+                lowerQuestion.includes('callback') ||
+                lowerQuestion.includes('ligar') ||
+                lowerQuestion.includes('chamar');
+
+            const isColdLeadsQuestion = intents.includes('coldleads') ||
+                (lowerQuestion.includes('cold') && lowerQuestion.includes('lead')) ||
+                lowerQuestion.includes('frio');
+
+            const isHotLeadsQuestion = intents.includes('hotleads') ||
+                (lowerQuestion.includes('hot') && lowerQuestion.includes('lead')) ||
+                lowerQuestion.includes('quente') ||
+                lowerQuestion.includes('priority');
+
+            const isConversionQuestion = intents.includes('conversion') ||
+                lowerQuestion.includes('convert') ||
+                lowerQuestion.includes('won') ||
+                lowerQuestion.includes('pipeline');
+
+            if (this.connectionStatus.leads === 'online') {
+
+                // Dashboard geral de leads
+                if (isLeadsQuestion && isDashboardQuestion) {
+                    context.leadsSummary = await ConnectionManager.executeWithCache(
+                        'leadsSummary',
+                        () => this.leads.getLeadsSummary(),
+                        5
+                    );
+                    context.leadsTopToCall = await this.leads.getTopLeadsToCall();
+                    context.leadsPipeline = await this.leads.getLeadsPipeline();
+                }
+
+                // Quem ligar hoje / follow-ups
+                else if (isFollowUpQuestion || (isLeadsQuestion && lowerQuestion.includes('today'))) {
+                    context.leadsForToday = await this.leads.getLeadsForToday();
+                    context.leadsNeedingFollowUp = await this.leads.getLeadsNeedingFollowUp();
+                    context.leadsTopToCall = await this.leads.getTopLeadsToCall();
+                }
+
+                // Leads frios (sem contato há muito tempo)
+                else if (isColdLeadsQuestion) {
+                    context.coldLeads = await this.leads.getColdLeads(14);
+                    context.leadsWithoutActivity = await this.leads.getLeadsWithoutRecentActivity(7);
+                }
+
+                // Leads quentes / alta prioridade
+                else if (isHotLeadsQuestion) {
+                    context.hotLeads = await this.leads.getHotLeads();
+                    context.leadsTopToCall = await this.leads.getTopLeadsToCall();
+                }
+
+                // Conversão e performance
+                else if (isConversionQuestion) {
+                    context.conversionStats = await this.leads.getConversionStats();
+                    context.conversionByState = await this.leads.getConversionByState();
+                    context.recentlyWonLeads = await this.leads.getRecentlyWonLeads(10);
+                }
+
+                // Leads por estado/região
+                else if (isLeadsQuestion && (lowerQuestion.includes('state') || lowerQuestion.includes('region') || lowerQuestion.includes('estado'))) {
+                    context.leadsByState = await this.leads.getLeadsByState();
+                }
+
+                // Leads por tipo de negócio
+                else if (isLeadsQuestion && (lowerQuestion.includes('business') || lowerQuestion.includes('type') || lowerQuestion.includes('negocio'))) {
+                    context.leadsByBusinessType = await this.leads.getLeadsByBusinessType();
+                }
+
+                // Atividade recente
+                else if (isLeadsQuestion && (lowerQuestion.includes('activity') || lowerQuestion.includes('interaction') || lowerQuestion.includes('recent'))) {
+                    context.recentInteractions = await this.leads.getRecentInteractions(7);
+                    context.interactionStats = await this.leads.getInteractionStats();
+                }
+
+                // Qualidade de dados
+                else if (isLeadsQuestion && (lowerQuestion.includes('quality') || lowerQuestion.includes('data') || lowerQuestion.includes('missing'))) {
+                    context.dataQualityStats = await this.leads.getDataQualityStats();
+                    context.leadsWithoutPhone = await this.leads.getLeadsWithoutPhone();
+                    context.leadsWithoutEmail = await this.leads.getLeadsWithoutEmail();
+                }
+
+                // Busca por lead específico
+                else if (isLeadsQuestion && (lowerQuestion.includes('find') || lowerQuestion.includes('search') || lowerQuestion.includes('buscar'))) {
+                    // Extrair termo de busca
+                    const searchMatch = lowerQuestion.match(/(?:find|search|buscar)\s+(?:lead\s+)?(.+)/i);
+                    if (searchMatch) {
+                        const searchTerm = searchMatch[1].trim();
+                        context.searchResults = await this.leads.searchLeads(searchTerm, 10);
+                    }
+                }
+
+                // Pergunta geral sobre leads - retornar resumo
+                else if (isLeadsQuestion) {
+                    context.leadsSummary = await ConnectionManager.executeWithCache(
+                        'leadsSummary',
+                        () => this.leads.getLeadsSummary(),
+                        5
+                    );
+                    context.leadsQuickContext = await this.leads.getContextForAI();
                 }
             }
 
@@ -1035,6 +1337,123 @@ ${seasonalContext}
 • Double-check calculations before presenting them
 • When comparing periods, verify both periods exist in the data
 • If a number seems unusual, mention it: "This seems high/low - worth verifying"
+
+🌍 SUPPLIERS & LEAD TIMES:
+• Colombia (COL): 7 days - Curtidos de Colombia, Curtinorte, Grupo Tarsis, Pison Cowhides
+• Brazil (BRA): 45 days - Dekoland, Minuano, C&A, Best Brasil
+• Peru (PERU): 21 days - Pieles y Cueros
+• Poland (POL): 45 days - Sheep 4 You, GENA
+• China (CHI): 60 days
+
+📝 TERMINOLOGY & STATUS CODES:
+• "QBITEMs" or "product codes" = product types (like 2110, 2115)
+• "units" or "pieces" = individual inventory items
+• INVENTORY STATUS (AESTADOP):
+  - INGRESADO = in stock, available for sale
+  - RETIRADO = sold/shipped out
+  - STANDBY = waiting for photo or release
+  - PRE-SELECTED = pre-selected by client
+  - RESERVED = reserved for order
+• ORDER STATUS (AESTADO_OR):
+  - FACTURADA = invoiced/paid
+  - CLOSE = completed
+  - PENDING = pending
+  - CANCEL = cancelled
+
+🏷️ PRODUCT CODE STRUCTURE (QBITEM):
+• First digit defines category:
+  - 5XXX = COWHIDES (most important!) - Brazil & Colombia
+  - 4XXX = DESIGNER RUGS
+  - 2XXX = ACCESSORIES (coasters 211X-213X are top sellers)
+  - 6XXX = DYED COWHIDES (except 600X/601X/602X which are natural colors)
+  - 3XXX = SPECIAL DESIGNER RUGS
+  - 1XXX = SLIPPERS/SHEEPSKIN
+  - 9XXX = CALFSKIN/EXOTIC
+
+• COWHIDES (5XXX) structure:
+  - 520X = Colombia (S/M/L/XL by last digit: 0=S, 1=M, 2=L, 3=XL)
+  - 530X = Brazil (same size pattern)
+  - 5365 = Brazil Super Promo Small
+  - 5375 = Brazil Super Promo ML/XL
+  - 5475 = Brazil Tannery Run
+
+• COWHIDE SUFFIXES (color/pattern):
+  - BRI = Brindle, TRI = Tricolor, SP = Salt & Pepper
+  - BLW = Black & White, BRW = Brown & White
+  - LGT = Light, DRK = Dark, EXO = Exotic
+  - Z XX = ZETA codes (Amazon specific): Z BR=Brindle Reddish, Z DM=Dark Medium, Z BB=Brindle Belly, Z PA=Palomino
+
+• DESIGNER RUGS (4XXX):
+  - 41XX = Bedside 22X34, 42XX = Runner 2.5X8
+  - 44XX = 4X6, 45XX = 5X7, 46XX = 6X8, 49XX = 9X11
+
+• TOP COASTERS (2110-2135):
+  - 2110 = Plain, 2115 = TX Star, 2116 = Longhorn, 2117 = Horseshoe, 2129 = TX Map
+
+📋 RESPONSE FORMAT:
+• Use emojis purposefully: 📊📈📦💰🎯✅⚠️🟢🟡🔴🚨
+• Use bullet points (•) for lists
+• Use numbers (1, 2, 3) for priorities or action steps
+• Add clear section breaks for readability
+• NO markdown formatting (no ** or ## or __)
+• Keep responses focused but comprehensive
+• Start with the most important insight
+
+🔍 DATA SOURCES:
+• CDE (MySQL): Warehouse inventory, sales history, orders, products in transit
+• Gallery (MongoDB): Photos, clients, carts, selections, pricing
+• Leads CRM (MongoDB): Prospects, pipeline, follow-ups, conversions
+• Training Rules: Custom business logic defined by Andy
+
+📋 LEADS CRM CONTEXT:
+• Status flow: 🆕 new → 📞 contacted → ⭐ interested → 🤝 negotiating → ✅ won / ❌ lost / 😴 dormant
+• Potential: 🔥 hot > 🔴 high > 🟡 medium > 🟢 low
+• ❄️ Cold Lead = No contact 14+ days
+• 📅 Follow-up = Scheduled callback
+• 🎯 Conversion = Lead → Paying client
+
+🎯 LEADS RESPONSE RULES (VERY IMPORTANT):
+1. Use EMOJIS liberally - they make responses scannable
+2. MAX 5-7 lines per response - be ULTRA concise
+3. Show TOP 3-5 items only, not full lists
+4. Format: emoji + name + key info (one line per lead)
+5. End with ONE clear action suggestion
+
+📱 LEADS RESPONSE EXAMPLES:
+Q: "Who should I call?"
+A: "📞 Top 5 to call NOW:
+🔥 Luxe Society (TX) - hot, no contact 7d
+🔥 Big E Livestock (OK) - hot, follow-up overdue
+⭐ Cowgirls Trading (CO) - interested, call scheduled
+🆕 Rustic Angel Decor (FL) - new, never contacted
+🆕 The Catty Cowgirl (TX) - new, high potential
+
+👉 Start with Luxe Society - hot lead waiting!"
+
+Q: "Cold leads?"
+A: "❄️ 12 cold leads (14+ days no contact):
+Top priority:
+• Dizz Saddle Shop - 16 days, was interested
+• Wieneke Productions - 20 days, high potential
+• Rattler Hill - 25 days, needs follow-up
+
+⚠️ 9 more going cold. Want the full list?"
+
+⚡ ANALYSIS APPROACH:
+1. BE ULTRA DIRECT - answer in 3-5 lines max
+2. Use emojis for every lead status/priority
+3. Numbers and facts only - no explanations
+4. ONE action item at the end
+5. If no data, say "❌ No data for [X]" - don't pad
+
+❌ NEVER DO:
+• Never invent numbers or percentages not in the data
+• Never give generic advice - be specific to Sunshine's situation
+• Never ignore warning signs in the data
+• Never be overly apologetic - be confident and helpful
+• NEVER show general inventory when asked about specific products - if you don't have data, say so
+• NEVER pad responses with unrelated marketplace info or general statistics
+• NEVER explain how the product codes work unless asked - just answer the question
 ${customRulesText}
 🧠 CONVERSATION MEMORY:
 You have access to the conversation history. Use it to:
@@ -1134,6 +1553,13 @@ INSTRUCTIONS:
   • Client selections
   • Expiring items
 
+📋 Leads CRM
+  • Who to call today
+  • Cold leads needing attention
+  • Hot/high potential leads
+  • Pipeline & conversion stats
+  • Leads by state/region
+
 What would you like to know?`;
     }
 
@@ -1156,7 +1582,8 @@ I can still try to help! What would you like to know about?
 • Sales
 • Gallery photos
 • Clients
-• Carts`;
+• Carts
+• Leads`;
     }
 
     async getMetrics() {

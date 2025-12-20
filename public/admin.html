@@ -353,35 +353,25 @@
                         </div>
                     </div>
 
-                    <!-- Filtros (mantém como está) -->
+                    <!-- Filtros simplificados -->
                     <div class="pricing-filters">
                         <div class="filters-row">
-                            <div class="filter-group">
-                                <label class="filter-label">Search Category</label>
+                            <div class="filter-group search-group">
+                                <label class="filter-label">Search</label>
                                 <input type="text" id="searchCategories" class="filter-input"
                                     placeholder="Category name or QBITEM...">
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Price Status</label>
-                                <select id="filterPriceStatus" class="filter-select">
-                                    <option value="all">All</option>
-                                    <option value="with">With Price</option>
-                                    <option value="without">Without Price</option>
-                                </select>
                             </div>
                             <div class="filter-group">
                                 <label class="filter-label">Sort by</label>
                                 <select id="sortCategories" class="filter-select">
                                     <option value="name">Name A-Z</option>
-                                    <option value="price-high">Highest Price</option>
-                                    <option value="price-low">Lowest Price</option>
+                                    <option value="name-desc">Name Z-A</option>
+                                    <option value="price-high">Price: High → Low</option>
+                                    <option value="price-low">Price: Low → High</option>
+                                    <option value="mixmatch">Mix & Match First</option>
                                     <option value="photos">Most Photos</option>
                                 </select>
                             </div>
-                            <button id="btnApplyPricingFilters" class="btn-filter">
-                                <i class="fas fa-filter"></i>
-                                Filter
-                            </button>
                         </div>
                     </div>
 

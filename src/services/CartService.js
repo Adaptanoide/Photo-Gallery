@@ -740,6 +740,147 @@ class CartService {
             throw error;
         }
     }
+
+    // ============================================
+    // MÉTODOS PARA CATALOG PRODUCTS
+    // ============================================
+
+    /**
+     * Adicionar produto de catálogo ao carrinho
+     */
+    static async addCatalogToCart(sessionId, clientCode, clientName, catalogData) {
+        try {
+            const { qbItem, productName, category, quantity, unitPrice, thumbnailUrl, reservedIDHs } = catalogData;
+
+            console.log(`[CART-CATALOG] Adicionando ${quantity}x ${productName} (${qbItem}) ao carrinho de ${clientCode}`);
+
+            // Buscar ou criar carrinho
+            let cart = await Cart.findOne({ sessionId }) ||
+                await Cart.findOne({ clientCode, isActive: true });
+
+            if (!cart) {
+                cart = new Cart({
+                    sessionId,
+                    clientCode,
+                    clientName,
+                    items: [],
+                    isActive: true
+                });
+            }
+
+            // Verificar se já existe item deste qbItem no carrinho
+            const existingIndex = cart.items.findIndex(item =>
+                item.isCatalogProduct && item.qbItem === qbItem
+            );
+
+            if (existingIndex >= 0) {
+                // Atualizar quantidade existente
+                const existing = cart.items[existingIndex];
+                existing.quantity = (existing.quantity || 0) + quantity;
+                existing.reservedIDHs = [...(existing.reservedIDHs || []), ...reservedIDHs];
+                console.log(`[CART-CATALOG] Quantidade atualizada para ${existing.quantity}`);
+            } else {
+                // Adicionar novo item de catálogo
+                cart.items.push({
+                    productId: new (require('mongoose')).Types.ObjectId(), // ID temporário
+                    driveFileId: `catalog_${qbItem}_${Date.now()}`, // ID único para catálogo
+                    fileName: productName,
+                    category: category,
+                    thumbnailUrl: thumbnailUrl || null,
+                    price: unitPrice * quantity, // Preço total
+                    basePrice: unitPrice,
+                    addedAt: new Date(),
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+                    // Campos de catálogo
+                    isCatalogProduct: true,
+                    qbItem: qbItem,
+                    productName: productName,
+                    quantity: quantity,
+                    unitPrice: unitPrice,
+                    reservedIDHs: reservedIDHs || []
+                });
+            }
+
+            await cart.save();
+            console.log(`[CART-CATALOG] Carrinho salvo - ${cart.items.length} items`);
+
+            // Retornar dados do carrinho
+            const validItems = cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+
+            return {
+                success: true,
+                message: `${quantity}x ${productName} adicionado ao carrinho`,
+                cart: {
+                    totalItems: validItems.length,
+                    totalUnits: cart.getTotalUnits(),
+                    items: cart.items,
+                    isEmpty: validItems.length === 0
+                }
+            };
+
+        } catch (error) {
+            console.error(`[CART-CATALOG] Erro: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Atualizar quantidade de produto de catálogo
+     */
+    static async updateCatalogQuantity(sessionId, qbItem, newQuantity) {
+        try {
+            console.log(`[CART-CATALOG] Atualizando ${qbItem} para quantidade ${newQuantity}`);
+
+            const cart = await Cart.findOne({ sessionId, isActive: true });
+            if (!cart) throw new Error('Carrinho não encontrado');
+
+            const itemIndex = cart.items.findIndex(item =>
+                item.isCatalogProduct && item.qbItem === qbItem
+            );
+
+            if (itemIndex < 0) {
+                throw new Error('Produto não encontrado no carrinho');
+            }
+
+            if (newQuantity <= 0) {
+                // Remover item
+                cart.items.splice(itemIndex, 1);
+                console.log(`[CART-CATALOG] Item removido`);
+            } else {
+                // Atualizar quantidade
+                const item = cart.items[itemIndex];
+                item.quantity = newQuantity;
+                item.price = item.unitPrice * newQuantity;
+                console.log(`[CART-CATALOG] Quantidade atualizada para ${newQuantity}`);
+            }
+
+            await cart.save();
+
+            const validItems = cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+
+            return {
+                success: true,
+                message: newQuantity <= 0 ? 'Item removido' : `Quantidade atualizada para ${newQuantity}`,
+                cart: {
+                    totalItems: validItems.length,
+                    totalUnits: cart.getTotalUnits(),
+                    items: cart.items,
+                    isEmpty: validItems.length === 0
+                }
+            };
+
+        } catch (error) {
+            console.error(`[CART-CATALOG] Erro: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Remover produto de catálogo do carrinho
+     */
+    static async removeCatalogFromCart(sessionId, qbItem) {
+        return this.updateCatalogQuantity(sessionId, qbItem, 0);
+    }
 }
 
 module.exports = CartService;

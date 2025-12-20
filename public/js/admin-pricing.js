@@ -21,6 +21,8 @@ class AdminPricing {
         this.filters = {
             search: '',
             priceStatus: 'all',
+            mixMatch: 'all',
+            tierConfig: 'all',
             sortBy: 'name'
         };
 
@@ -186,6 +188,18 @@ class AdminPricing {
         }
         if (sortSelect) {
             sortSelect.addEventListener('change', (e) => this.handleSort(e.target.value));
+        }
+
+        // Mix & Match filter
+        const filterMixMatch = document.getElementById('filterMixMatch');
+        if (filterMixMatch) {
+            filterMixMatch.addEventListener('change', (e) => this.handleMixMatchFilter(e.target.value));
+        }
+
+        // Tier Config filter
+        const filterTierConfig = document.getElementById('filterTierConfig');
+        if (filterTierConfig) {
+            filterTierConfig.addEventListener('change', (e) => this.handleTierConfigFilter(e.target.value));
         }
 
         // Botões de Save/Discard (novo footer)
@@ -377,16 +391,63 @@ class AdminPricing {
             filtered = filtered.filter(cat => !cat.basePrice || cat.basePrice === 0);
         }
 
+        // Filtro de Mix & Match
+        if (this.filters.mixMatch === 'enabled') {
+            filtered = filtered.filter(cat => cat.participatesInMixMatch === true);
+        } else if (this.filters.mixMatch === 'disabled') {
+            filtered = filtered.filter(cat => cat.participatesInMixMatch !== true);
+        }
+
+        // Filtro de Tier Config
+        if (this.filters.tierConfig === 'complete') {
+            // Tem todos os 4 tiers configurados
+            filtered = filtered.filter(cat => {
+                const t1 = cat.tier1Price || cat.basePrice || 0;
+                const t2 = cat.tier2Price || 0;
+                const t3 = cat.tier3Price || 0;
+                const t4 = cat.tier4Price || 0;
+                return t1 > 0 && t2 > 0 && t3 > 0 && t4 > 0;
+            });
+        } else if (this.filters.tierConfig === 'incomplete') {
+            // Tem algum tier mas não todos
+            filtered = filtered.filter(cat => {
+                const t1 = cat.tier1Price || cat.basePrice || 0;
+                const t2 = cat.tier2Price || 0;
+                const t3 = cat.tier3Price || 0;
+                const t4 = cat.tier4Price || 0;
+                const hasAny = t1 > 0 || t2 > 0 || t3 > 0 || t4 > 0;
+                const hasAll = t1 > 0 && t2 > 0 && t3 > 0 && t4 > 0;
+                return hasAny && !hasAll;
+            });
+        } else if (this.filters.tierConfig === 'none') {
+            // Não tem pricing
+            filtered = filtered.filter(cat => {
+                const t1 = cat.tier1Price || cat.basePrice || 0;
+                return t1 === 0;
+            });
+        }
+
         // Ordenação
         switch (this.filters.sortBy) {
             case 'name':
                 filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                break;
+            case 'name-desc':
+                filtered.sort((a, b) => b.displayName.localeCompare(a.displayName));
                 break;
             case 'price-high':
                 filtered.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0));
                 break;
             case 'price-low':
                 filtered.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0));
+                break;
+            case 'mixmatch':
+                filtered.sort((a, b) => {
+                    // Mix & Match primeiro, depois por nome
+                    if (a.participatesInMixMatch && !b.participatesInMixMatch) return -1;
+                    if (!a.participatesInMixMatch && b.participatesInMixMatch) return 1;
+                    return a.displayName.localeCompare(b.displayName);
+                });
                 break;
             case 'photos':
                 filtered.sort((a, b) => b.photoCount - a.photoCount);
@@ -425,7 +486,7 @@ class AdminPricing {
             if (!groupMap.has(groupName)) {
                 groupMap.set(groupName, {
                     name: groupName,
-                    isMixMatch: groupName === 'Brazil Best Sellers' || groupName === 'Brazil Top Selected Categories',
+                    isMixMatch: groupName === 'Brazilian Cowhides' || groupName === 'Colombian Cowhides' || groupName === 'Brazil Best Sellers' || groupName === 'Brazil Top Selected Categories',
                     subcategories: []
                 });
             }
@@ -507,7 +568,9 @@ class AdminPricing {
 
             // Criar grupo se não existe
             if (!groupMap.has(groupName)) {
-                const isMixMatch = groupName === 'Brazil Best Sellers' ||
+                const isMixMatch = groupName === 'Brazilian Cowhides' ||
+                    groupName === 'Colombian Cowhides' ||
+                    groupName === 'Brazil Best Sellers' ||
                     groupName === 'Brazil Top Selected Categories';
 
                 groupMap.set(groupName, {
@@ -565,17 +628,29 @@ class AdminPricing {
                         <span class="group-name">
                             <i class="fas fa-folder"></i>
                             ${group.name}
-                            ${group.isMixMatch ? '<span class="mix-match-badge">MIX & MATCH</span>' : ''}
                         </span>
                         <span class="group-count">${group.subcategories.length} subcategories</span>
                         </div>
 
                         <!-- ✅ CABEÇALHO DA TABELA -->
+                        ${group.isMixMatch ? `
                         <div class="subcategories-table-header">
-                            <div class="col-name">SUBCATEGORY NAME</div>
+                            <div class="col-name">SUBCATEGORY</div>
                             <div class="col-qb">QB ITEM</div>
-                            <div class="col-pricing">PRICING TIERS</div>
+                            <div class="col-tier"><span class="tier-name">Bronze</span><span class="tier-qty">1-5</span></div>
+                            <div class="col-tier"><span class="tier-name">Silver</span><span class="tier-qty">6-12</span></div>
+                            <div class="col-tier"><span class="tier-name">Gold</span><span class="tier-qty">13-36</span></div>
+                            <div class="col-tier"><span class="tier-name">Diamond</span><span class="tier-qty">37+</span></div>
+                            <div class="col-toggle">MIX & MATCH</div>
                         </div>
+                        ` : `
+                        <div class="subcategories-table-header header-simple">
+                            <div class="col-name">SUBCATEGORY</div>
+                            <div class="col-qb">QB ITEM</div>
+                            <div class="col-price-header">BASE PRICE</div>
+                            <div class="col-toggle">MIX & MATCH</div>
+                        </div>
+                        `}
 
                         <div class="subcategories-list">
             `;
@@ -589,60 +664,51 @@ class AdminPricing {
                 const tier4 = subcat.volumeRules[3]?.price || '';
 
                 html += `
-                    <div class="subcategory-row" data-category-id="${subcat._id}">
+                    <div class="subcategory-row ${isMixMatch ? 'is-mixmatch' : ''}"
+                         data-category-id="${subcat._id}"
+                         data-is-mixmatch="${isMixMatch}"
+                         data-folder-name="${subcat.folderName}"
+                         data-base-price="${subcat.basePrice || 0}">
                         <div class="col-name">
                             <span class="subcat-name">${subcat.folderName}</span>
                             <span class="photo-count">${subcat.photoCount} photos</span>
                         </div>
                         <div class="col-qb">
-                            <span class="qb-code">${subcat.qbItem || 'No QB'}</span>
+                            <span class="qb-code">${subcat.qbItem || '-'}</span>
                         </div>
-                        <div class="col-pricing">
-                            ${isMixMatch ? `
-                                <!-- 4 TIERS para Mix & Match -->
-                                <div class="tier-input-group">
-                                    <label>1-5:</label>
-                                    <input type="number" class="tier-price-input" 
-                                        data-tier="1" 
-                                        data-original="${tier1}"
-                                        value="${tier1}" 
-                                        placeholder="119.00" step="0.01" min="0">
-                                </div>
-                                <div class="tier-input-group">
-                                    <label>6-12:</label>
-                                    <input type="number" class="tier-price-input" 
-                                        data-tier="2" 
-                                        data-original="${tier2}"
-                                        value="${tier2}" 
-                                        placeholder="115.00" step="0.01" min="0">
-                                </div>
-                                <div class="tier-input-group">
-                                    <label>13-36:</label>
-                                    <input type="number" class="tier-price-input" 
-                                        data-tier="3" 
-                                        data-original="${tier3}"
-                                        value="${tier3}" 
-                                        placeholder="105.00" step="0.01" min="0">
-                                </div>
-                                <div class="tier-input-group">
-                                    <label>37+:</label>
-                                    <input type="number" class="tier-price-input" 
-                                        data-tier="4" 
-                                        data-original="${tier4}"
-                                        value="${tier4}" 
-                                        placeholder="99.00" step="0.01" min="0">
-                                </div>
-                            ` : `
-                                <!-- 1 TIER apenas para não-Mix&Match -->
-                                <div class="tier-input-group single-tier">
-                                    <label>Base Price:</label>
-                                    <input type="number" class="tier-price-input" 
-                                        data-tier="base" 
-                                        data-original="${tier1}"
-                                        value="${tier1}" 
-                                        placeholder="0.00" step="0.01" min="0">
-                                </div>
-                            `}
+                        ${isMixMatch ? `
+                            <div class="col-tier">
+                                <input type="number" class="tier-price-input" data-tier="1"
+                                    data-original="${tier1}" value="${tier1}" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="col-tier">
+                                <input type="number" class="tier-price-input" data-tier="2"
+                                    data-original="${tier2}" value="${tier2}" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="col-tier">
+                                <input type="number" class="tier-price-input" data-tier="3"
+                                    data-original="${tier3}" value="${tier3}" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="col-tier">
+                                <input type="number" class="tier-price-input" data-tier="4"
+                                    data-original="${tier4}" value="${tier4}" placeholder="0" step="1" min="0">
+                            </div>
+                        ` : `
+                            <div class="col-tier col-tier-span">
+                                <span class="base-price-label">Base:</span>
+                                <input type="number" class="tier-price-input base-only" data-tier="base"
+                                    data-original="${tier1}" value="${tier1}" placeholder="0" step="1" min="0">
+                            </div>
+                        `}
+                        <div class="col-toggle">
+                            <label class="mix-match-toggle" title="${isMixMatch ? 'Disable Mix & Match' : 'Enable Mix & Match'}">
+                                <input type="checkbox" class="mix-match-checkbox"
+                                    ${isMixMatch ? 'checked' : ''}
+                                    data-category-id="${subcat._id}"
+                                    data-original="${isMixMatch}">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-text">${isMixMatch ? 'ON' : 'OFF'}</span>
                         </div>
                     </div>
                 `;
@@ -702,6 +768,28 @@ class AdminPricing {
                 }
 
                 this.updateSelectionCount();
+            });
+        });
+
+        // Mix & Match toggle checkboxes
+        document.querySelectorAll('.mix-match-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                e.preventDefault();
+                const isChecked = e.target.checked;
+                const categoryId = e.target.dataset.categoryId;
+                const row = e.target.closest('.subcategory-row');
+                const folderName = row.dataset.folderName;
+
+                // Reverter checkbox temporariamente até confirmação
+                e.target.checked = !isChecked;
+
+                if (isChecked) {
+                    // Ativar Mix & Match - mostrar modal para configurar tiers
+                    this.showEnableMixMatchModal(categoryId, folderName, row);
+                } else {
+                    // Desativar Mix & Match - mostrar modal para selecionar preço base
+                    this.showDisableMixMatchModal(categoryId, folderName, row);
+                }
             });
         });
 
@@ -2018,6 +2106,28 @@ class AdminPricing {
         }
     }
 
+    handleMixMatchFilter(value) {
+        this.filters.mixMatch = value;
+        this.currentPage = 1;
+        if (this.allCategories.length > 0) {
+            this.applyLocalFilters();
+            this.renderFromCache();
+        } else {
+            this.loadCategories();
+        }
+    }
+
+    handleTierConfigFilter(value) {
+        this.filters.tierConfig = value;
+        this.currentPage = 1;
+        if (this.allCategories.length > 0) {
+            this.applyLocalFilters();
+            this.renderFromCache();
+        } else {
+            this.loadCategories();
+        }
+    }
+
     handleSort(value) {
         this.filters.sortBy = value;
         this.currentPage = 1;
@@ -2159,6 +2269,316 @@ class AdminPricing {
 
     showError(message) {
         this.showNotification(message, 'error');
+    }
+
+    // ===== MIX & MATCH TOGGLE MODALS =====
+
+    /**
+     * Modal para ATIVAR Mix & Match - permite configurar os 4 tiers
+     */
+    showEnableMixMatchModal(categoryId, folderName, row) {
+        // Obter preço base atual para sugerir valores
+        const currentBasePrice = parseFloat(row.dataset.basePrice) || 0;
+
+        // Sugerir preços padrão (decrescentes)
+        const suggestedTier1 = currentBasePrice > 0 ? currentBasePrice : '';
+        const suggestedTier2 = currentBasePrice > 0 ? Math.round(currentBasePrice * 0.95) : '';
+        const suggestedTier3 = currentBasePrice > 0 ? Math.round(currentBasePrice * 0.88) : '';
+        const suggestedTier4 = currentBasePrice > 0 ? Math.round(currentBasePrice * 0.80) : '';
+
+        const modalHtml = `
+            <div id="mixMatchEnableModal" class="modal-overlay mix-match-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-layer-group"></i> Enable Mix & Match</h3>
+                        <button class="modal-close" onclick="adminPricing.closeMixMatchModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="modal-subtitle">Configure volume pricing tiers for:</p>
+                        <p class="modal-category-name"><strong>${folderName}</strong></p>
+
+                        <div class="tier-config-form">
+                            <div class="tier-config-row">
+                                <label><span class="tier-badge bronze">Bronze</span> 1-5 units:</label>
+                                <div class="price-input-wrapper">
+                                    <span class="currency">$</span>
+                                    <input type="number" id="mmTier1" value="${suggestedTier1}" placeholder="119" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="tier-config-row">
+                                <label><span class="tier-badge silver">Silver</span> 6-12 units:</label>
+                                <div class="price-input-wrapper">
+                                    <span class="currency">$</span>
+                                    <input type="number" id="mmTier2" value="${suggestedTier2}" placeholder="115" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="tier-config-row">
+                                <label><span class="tier-badge gold">Gold</span> 13-36 units:</label>
+                                <div class="price-input-wrapper">
+                                    <span class="currency">$</span>
+                                    <input type="number" id="mmTier3" value="${suggestedTier3}" placeholder="105" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="tier-config-row">
+                                <label><span class="tier-badge diamond">Diamond</span> 37+ units:</label>
+                                <div class="price-input-wrapper">
+                                    <span class="currency">$</span>
+                                    <input type="number" id="mmTier4" value="${suggestedTier4}" placeholder="99" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="modal-hint"><i class="fas fa-info-circle"></i> Prices should decrease as quantity increases.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-cancel" onclick="adminPricing.closeMixMatchModal()">Cancel</button>
+                        <button class="btn-confirm" onclick="adminPricing.confirmEnableMixMatch('${categoryId}')">
+                            <i class="fas fa-check"></i> Enable Mix & Match
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remover modal existente se houver
+        this.closeMixMatchModal();
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Focar no primeiro input
+        setTimeout(() => {
+            const firstInput = document.getElementById('mmTier1');
+            if (firstInput) firstInput.focus();
+        }, 100);
+    }
+
+    /**
+     * Modal para DESATIVAR Mix & Match - permite selecionar qual preço manter
+     */
+    showDisableMixMatchModal(categoryId, folderName, row) {
+        // Obter os preços atuais dos tiers
+        const tierInputs = row.querySelectorAll('.tier-price-input');
+        const tiers = [];
+
+        tierInputs.forEach(input => {
+            const tier = input.dataset.tier;
+            const price = parseFloat(input.value) || 0;
+            if (price > 0) {
+                tiers.push({ tier, price });
+            }
+        });
+
+        // Criar opções de preço
+        const tierLabels = {
+            '1': 'Bronze (1-5)',
+            '2': 'Silver (6-12)',
+            '3': 'Gold (13-36)',
+            '4': 'Diamond (37+)'
+        };
+
+        let priceOptionsHtml = tiers.map((t, index) => `
+            <label class="price-option ${index === 0 ? 'recommended' : ''}">
+                <input type="radio" name="basePriceSelection" value="${t.price}" ${index === 0 ? 'checked' : ''}>
+                <span class="option-label">${tierLabels[t.tier] || 'Tier ' + t.tier}</span>
+                <span class="option-price">$${t.price.toFixed(2)}</span>
+                ${index === 0 ? '<span class="recommended-badge">Recommended</span>' : ''}
+            </label>
+        `).join('');
+
+        // Se não há tiers, usar preço base
+        if (tiers.length === 0) {
+            const basePrice = parseFloat(row.dataset.basePrice) || 0;
+            priceOptionsHtml = `
+                <label class="price-option recommended">
+                    <input type="radio" name="basePriceSelection" value="${basePrice}" checked>
+                    <span class="option-label">Current Base Price</span>
+                    <span class="option-price">$${basePrice.toFixed(2)}</span>
+                </label>
+            `;
+        }
+
+        const modalHtml = `
+            <div id="mixMatchDisableModal" class="modal-overlay mix-match-modal">
+                <div class="modal-content">
+                    <div class="modal-header warning">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Disable Mix & Match</h3>
+                        <button class="modal-close" onclick="adminPricing.closeMixMatchModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="modal-subtitle">Remove volume pricing for:</p>
+                        <p class="modal-category-name"><strong>${folderName}</strong></p>
+
+                        <p class="modal-warning">
+                            <i class="fas fa-info-circle"></i>
+                            All volume tiers will be removed. Select the price to keep as the base price:
+                        </p>
+
+                        <div class="price-options-list">
+                            ${priceOptionsHtml}
+                        </div>
+
+                        <label class="custom-price-option">
+                            <input type="radio" name="basePriceSelection" value="custom">
+                            <span class="option-label">Custom price:</span>
+                            <div class="price-input-wrapper small">
+                                <span class="currency">$</span>
+                                <input type="number" id="customBasePrice" placeholder="0.00" step="0.01" min="0"
+                                    onclick="document.querySelector('input[value=custom]').checked = true">
+                            </div>
+                        </label>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-cancel" onclick="adminPricing.closeMixMatchModal()">Cancel</button>
+                        <button class="btn-confirm warning" onclick="adminPricing.confirmDisableMixMatch('${categoryId}')">
+                            <i class="fas fa-times"></i> Disable Mix & Match
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remover modal existente se houver
+        this.closeMixMatchModal();
+
+        // Adicionar ao DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    closeMixMatchModal() {
+        const enableModal = document.getElementById('mixMatchEnableModal');
+        const disableModal = document.getElementById('mixMatchDisableModal');
+        if (enableModal) enableModal.remove();
+        if (disableModal) disableModal.remove();
+    }
+
+    /**
+     * Confirmar ativação do Mix & Match
+     */
+    async confirmEnableMixMatch(categoryId) {
+        const tier1 = parseFloat(document.getElementById('mmTier1')?.value) || 0;
+        const tier2 = parseFloat(document.getElementById('mmTier2')?.value) || 0;
+        const tier3 = parseFloat(document.getElementById('mmTier3')?.value) || 0;
+        const tier4 = parseFloat(document.getElementById('mmTier4')?.value) || 0;
+
+        // Validar que todos os tiers estão preenchidos
+        if (tier1 <= 0 || tier2 <= 0 || tier3 <= 0 || tier4 <= 0) {
+            this.showNotification('Please fill in all tier prices', 'warning');
+            return;
+        }
+
+        // Validar que preços são decrescentes
+        if (tier1 < tier2 || tier2 < tier3 || tier3 < tier4) {
+            this.showNotification('Prices should decrease as quantity increases (Bronze > Silver > Gold > Diamond)', 'warning');
+            return;
+        }
+
+        try {
+            this.setLoading(true);
+
+            const response = await fetch('/api/pricing/bulk-update-individual', {
+                method: 'POST',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    updates: [{
+                        categoryId,
+                        basePrice: tier1,
+                        participatesInMixMatch: true,
+                        volumeTiers: [
+                            { min: 1, max: 5, price: tier1 },
+                            { min: 6, max: 12, price: tier2 },
+                            { min: 13, max: 36, price: tier3 },
+                            { min: 37, max: null, price: tier4 }
+                        ]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Mix & Match enabled successfully!', 'success');
+                this.closeMixMatchModal();
+
+                // Recarregar dados
+                await this.loadCategories(true);
+                await this.loadAndRenderGrouped();
+            } else {
+                throw new Error(data.message || 'Failed to enable Mix & Match');
+            }
+
+        } catch (error) {
+            console.error('Error enabling Mix & Match:', error);
+            this.showNotification(error.message || 'Error enabling Mix & Match', 'error');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    /**
+     * Confirmar desativação do Mix & Match
+     */
+    async confirmDisableMixMatch(categoryId) {
+        // Obter preço selecionado
+        const selectedOption = document.querySelector('input[name="basePriceSelection"]:checked');
+        let newBasePrice = 0;
+
+        if (!selectedOption) {
+            this.showNotification('Please select a base price', 'warning');
+            return;
+        }
+
+        if (selectedOption.value === 'custom') {
+            newBasePrice = parseFloat(document.getElementById('customBasePrice')?.value) || 0;
+            if (newBasePrice <= 0) {
+                this.showNotification('Please enter a valid custom price', 'warning');
+                return;
+            }
+        } else {
+            newBasePrice = parseFloat(selectedOption.value);
+        }
+
+        try {
+            this.setLoading(true);
+
+            const response = await fetch('/api/pricing/bulk-update-individual', {
+                method: 'POST',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    updates: [{
+                        categoryId,
+                        basePrice: newBasePrice,
+                        participatesInMixMatch: false,
+                        volumeTiers: [] // Tiers serão removidos no backend
+                    }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Mix & Match disabled successfully!', 'success');
+                this.closeMixMatchModal();
+
+                // Recarregar dados
+                await this.loadCategories(true);
+                await this.loadAndRenderGrouped();
+            } else {
+                throw new Error(data.message || 'Failed to disable Mix & Match');
+            }
+
+        } catch (error) {
+            console.error('Error disabling Mix & Match:', error);
+            this.showNotification(error.message || 'Error disabling Mix & Match', 'error');
+        } finally {
+            this.setLoading(false);
+        }
     }
 }
 

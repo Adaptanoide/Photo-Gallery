@@ -868,7 +868,9 @@ class CDEIncrementalSync {
         console.log(`[SYNC] 🧮 Recalculando preços para seleção ${selection.selectionId}...`);
 
         // Categorias Mix & Match (contagem global)
+        // NOTA: Migrando para usar participatesInMixMatch do banco
         const GLOBAL_MIX_MATCH_CATEGORIES = [
+            'Brazilian Cowhides',
             'Colombian Cowhides',
             'Brazil Best Sellers',
             'Brazil Top Selected Categories'

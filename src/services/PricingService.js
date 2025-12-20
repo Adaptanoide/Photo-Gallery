@@ -257,6 +257,21 @@ class PricingService {
                             .filter(p => p)
                             .join(' → ');
 
+                        // ✅ NOVO: Determinar automaticamente se participa do Mix & Match
+                        // baseado na categoria principal (primeiro nível do caminho)
+                        const MIX_MATCH_MAIN_CATEGORIES = [
+                            'Brazilian Cowhides',
+                            'Colombian Cowhides',
+                            'Brazil Best Sellers',
+                            'Brazil Top Selected Categories'
+                        ];
+
+                        const pathParts = categoryData.r2Path.split('/').filter(p => p);
+                        const mainCategory = pathParts[0] || '';
+                        const shouldParticipateInMixMatch = MIX_MATCH_MAIN_CATEGORIES.some(
+                            mixCat => mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
+                        );
+
                         category = new PhotoCategory({
                             googleDriveId: categoryData.r2Key, // Usar r2Key como ID
                             googleDrivePath: categoryData.r2Path,
@@ -264,6 +279,7 @@ class PricingService {
                             folderName: categoryData.folderName,
                             photoCount: categoryData.photoCount,
                             basePrice: 0,
+                            participatesInMixMatch: shouldParticipateInMixMatch, // ✅ NOVO
                             metadata: {
                                 level: categoryData.level,
                                 modifiedTime: new Date()
@@ -274,7 +290,8 @@ class PricingService {
                         await category.save();
                         created++;
                         const status = categoryData.photoCount > 0 ? `${categoryData.photoCount} fotos` : 'VAZIA';
-                        console.log(`✅ Nova categoria: ${displayName} (${status})`);
+                        const mixMatchStatus = shouldParticipateInMixMatch ? '🎯 M&M' : '';
+                        console.log(`✅ Nova categoria: ${displayName} (${status}) ${mixMatchStatus}`);
 
                     } else if (forceRefresh || category.photoCount !== categoryData.photoCount) {
                         // Atualizar categoria existente

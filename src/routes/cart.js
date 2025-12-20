@@ -6,13 +6,20 @@ const CartService = require('../services/CartService');
 const PhotoCategory = require('../models/PhotoCategory');
 const AccessCode = require('../models/AccessCode');
 const Selection = require('../models/Selection');
+const CDEQueries = require('../ai/CDEQueries');
+
+// Instância do CDEQueries para catálogo
+const cdeQueries = new CDEQueries();
 
 const router = express.Router();
 
 // ============================================
 // GLOBAL MIX & MATCH CONFIGURATION
 // ============================================
+// NOTA: Esta lista está sendo mantida temporariamente para compatibilidade
+// O sistema está migrando para usar participatesInMixMatch do banco de dados
 const GLOBAL_MIX_MATCH_CATEGORIES = [
+    'Brazilian Cowhides',
     'Colombian Cowhides',
     'Brazil Best Sellers',
     'Brazil Top Selected Categories'
@@ -185,6 +192,174 @@ router.post('/add', validateRequest, async (req, res) => {
             success: false,
             message: userMessage,
             errorCode: statusCode // 🆕 Para debugging no frontend
+        });
+    }
+});
+
+/**
+ * POST /api/cart/add-catalog
+ * Adicionar produto de catálogo ao carrinho (com quantidade)
+ */
+router.post('/add-catalog', validateRequest, async (req, res) => {
+    try {
+        const {
+            sessionId, clientCode, clientName,
+            qbItem, productName, category,
+            quantity, unitPrice, thumbnailUrl
+        } = req.body;
+
+        if (!qbItem) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código do produto (qbItem) é obrigatório'
+            });
+        }
+
+        const qty = parseInt(quantity) || 1;
+        if (qty < 1 || qty > 100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Quantidade deve estar entre 1 e 100'
+            });
+        }
+
+        console.log(`[ROUTE] Adicionando ${qty}x ${productName || qbItem} ao carrinho de ${clientName}`);
+
+        // Verificar estoque no CDE
+        const stockInfo = await cdeQueries.getCatalogProductStock(qbItem);
+        if (stockInfo.available < qty) {
+            return res.status(400).json({
+                success: false,
+                message: `Estoque insuficiente. Disponível: ${stockInfo.available}`,
+                available: stockInfo.available
+            });
+        }
+
+        // Buscar IDHs disponíveis para reservar
+        const availableIDHs = await cdeQueries.getAvailableCatalogIDHs(qbItem, qty);
+        if (availableIDHs.length < qty) {
+            return res.status(400).json({
+                success: false,
+                message: `Não foi possível reservar ${qty} unidades. Disponível: ${availableIDHs.length}`,
+                available: availableIDHs.length
+            });
+        }
+
+        const idhsToReserve = availableIDHs.slice(0, qty).map(row => row.AIDH);
+
+        // Adicionar ao carrinho via CartService
+        const result = await CartService.addCatalogToCart(
+            sessionId,
+            clientCode,
+            clientName,
+            {
+                qbItem,
+                productName: productName || `Product ${qbItem}`,
+                category: category || 'Catalog Product',
+                quantity: qty,
+                unitPrice: unitPrice || 0,
+                thumbnailUrl,
+                reservedIDHs: idhsToReserve
+            }
+        );
+
+        // Recalcular totais
+        let totals = null;
+        if (result.success && result.cart) {
+            totals = await calculateCartTotals(result.cart);
+        }
+
+        res.status(201).json({
+            ...result,
+            totals
+        });
+
+    } catch (error) {
+        console.error('[ROUTE] Erro ao adicionar catálogo:', error.message);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * PUT /api/cart/update-catalog-quantity
+ * Atualizar quantidade de produto de catálogo no carrinho
+ */
+router.put('/update-catalog-quantity', validateRequest, async (req, res) => {
+    try {
+        const { sessionId, qbItem, quantity } = req.body;
+
+        if (!qbItem) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código do produto (qbItem) é obrigatório'
+            });
+        }
+
+        const newQty = parseInt(quantity);
+        if (newQty < 0 || newQty > 100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Quantidade deve estar entre 0 e 100'
+            });
+        }
+
+        console.log(`[ROUTE] Atualizando quantidade de ${qbItem} para ${newQty}`);
+
+        const result = await CartService.updateCatalogQuantity(sessionId, qbItem, newQty);
+
+        // Recalcular totais
+        let totals = null;
+        if (result.success && result.cart) {
+            totals = await calculateCartTotals(result.cart);
+        }
+
+        res.json({
+            ...result,
+            totals
+        });
+
+    } catch (error) {
+        console.error('[ROUTE] Erro ao atualizar quantidade:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/cart/remove-catalog/:qbItem
+ * Remover produto de catálogo do carrinho
+ */
+router.delete('/remove-catalog/:qbItem', validateRequest, async (req, res) => {
+    try {
+        const { qbItem } = req.params;
+        const { sessionId } = req.body;
+
+        console.log(`[ROUTE] Removendo produto de catálogo ${qbItem} do carrinho`);
+
+        const result = await CartService.removeCatalogFromCart(sessionId, qbItem);
+
+        // Recalcular totais
+        let totals = null;
+        if (result.success && result.cart) {
+            totals = await calculateCartTotals(result.cart);
+        }
+
+        res.json({
+            ...result,
+            totals
+        });
+
+    } catch (error) {
+        console.error('[ROUTE] Erro ao remover produto de catálogo:', error.message);
+        res.status(error.message.includes('não encontrado') ? 404 : 500).json({
+            success: false,
+            message: error.message
         });
     }
 });
@@ -554,7 +729,7 @@ router.get('/stats/system', async (req, res) => {
 
 /**
  * Função auxiliar para calcular totais do carrinho
- * Mantida simples mas funcional
+ * ATUALIZADO: Agora usa participatesInMixMatch do banco de dados
  */
 async function calculateCartTotals(cart) {
     if (!cart || cart.totalItems === 0) {
@@ -576,15 +751,47 @@ async function calculateCartTotals(cart) {
     const isSpecialSelection = accessCode?.accessType === 'special';
 
     // ============================================
-    // SEPARAR ITEMS EM 2 GRUPOS
+    // PASSO 1: Extrair categorias únicas e buscar do banco
     // ============================================
-    const globalMixMatchItems = {}; // Items das 3 categorias principais
-    const separateItems = {};       // Items de outras categorias
+    const uniqueCategoryPaths = [...new Set(cart.items.map(item => item.category || 'uncategorized'))];
+
+    // Buscar todas as categorias do banco de uma vez
+    const categoryMixMatchMap = {};
+
+    for (const categoryPath of uniqueCategoryPaths) {
+        let cleanPath = categoryPath.endsWith('/') ? categoryPath.slice(0, -1) : categoryPath;
+        const normalizedPath = cleanPath.replace(/ → /g, '/');
+
+        const category = await PhotoCategory.findOne({
+            $or: [
+                { googleDrivePath: normalizedPath },
+                { googleDrivePath: normalizedPath + '/' },
+                { displayName: cleanPath }
+            ]
+        });
+
+        if (category) {
+            // PRIORIDADE: Usar participatesInMixMatch do banco de dados
+            categoryMixMatchMap[categoryPath] = category.participatesInMixMatch === true;
+            console.log(`📊 [MIX&MATCH] ${cleanPath}: participatesInMixMatch = ${category.participatesInMixMatch}`);
+        } else {
+            // FALLBACK: Usar lista hardcoded se categoria não encontrada
+            categoryMixMatchMap[categoryPath] = isGlobalMixMatch(categoryPath);
+            console.log(`⚠️ [MIX&MATCH] ${cleanPath}: Categoria não encontrada, usando fallback = ${categoryMixMatchMap[categoryPath]}`);
+        }
+    }
+
+    // ============================================
+    // PASSO 2: SEPARAR ITEMS EM 2 GRUPOS BASEADO NO BANCO
+    // ============================================
+    const globalMixMatchItems = {}; // Items que participam do Mix & Match
+    const separateItems = {};       // Items que NÃO participam
 
     cart.items.forEach(item => {
         const categoryPath = item.category || 'uncategorized';
+        const isMixMatch = categoryMixMatchMap[categoryPath] || false;
 
-        if (isGlobalMixMatch(categoryPath)) {
+        if (isMixMatch) {
             if (!globalMixMatchItems[categoryPath]) {
                 globalMixMatchItems[categoryPath] = [];
             }

@@ -834,6 +834,155 @@ class CDEQueries {
         return stats.sort((a, b) => b.calls - a.calls);
     }
 
+    // ========== QUERIES PARA CATALOG PRODUCTS ==========
+
+    // Query: Listar todos os produtos de catálogo (sem foto) com estoque
+    async getAllCatalogProducts() {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbItem,
+                MAX(items.ADESCRIPTION) as name,
+                MAX(items.ACATEGORIA) as category,
+                MAX(items.ORIGEN) as origin,
+                COUNT(*) as stock,
+                0 as basePrice
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
+            AND inv.AQBITEM IS NOT NULL
+            AND inv.AQBITEM != ''
+            GROUP BY inv.AQBITEM
+            HAVING stock > 0
+            ORDER BY category, name
+        `;
+
+        return this.executeQuery('getAllCatalogProducts', query);
+    }
+
+    // Query: Buscar estoque de um QBITEM específico (sem foto)
+    async getCatalogProductStock(qbItem) {
+        const query = `
+            SELECT
+                COUNT(*) as stock,
+                COUNT(CASE WHEN AESTADOP = 'INGRESADO' THEN 1 END) as available,
+                COUNT(CASE WHEN AESTADOP = 'PRE-SELECTED' THEN 1 END) as reserved
+            FROM tbinventario
+            WHERE AQBITEM = ?
+            AND (ATIPOETIQUETA IS NULL OR ATIPOETIQUETA = '')
+        `;
+
+        const result = await this.executeQuery('getCatalogProductStock', query, [qbItem]);
+        return result[0] || { stock: 0, available: 0, reserved: 0 };
+    }
+
+    // Query: Buscar detalhes de um produto de catálogo
+    async getCatalogProductDetails(qbItem) {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbItem,
+                MAX(items.ADESCRIPTION) as name,
+                MAX(items.ACATEGORIA) as category,
+                MAX(items.ORIGEN) as origin,
+                0 as basePrice,
+                COUNT(*) as totalStock,
+                SUM(CASE WHEN inv.AESTADOP = 'INGRESADO' THEN 1 ELSE 0 END) as availableStock,
+                SUM(CASE WHEN inv.AESTADOP = 'PRE-SELECTED' THEN 1 ELSE 0 END) as reservedStock
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AQBITEM = ?
+            AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
+            GROUP BY inv.AQBITEM
+        `;
+
+        const result = await this.executeQuery('getCatalogProductDetails', query, [qbItem]);
+        return result[0] || null;
+    }
+
+    // Query: Buscar IDHs disponíveis de um produto de catálogo
+    async getAvailableCatalogIDHs(qbItem, limit = 100) {
+        const query = `
+            SELECT AIDH
+            FROM tbinventario
+            WHERE AQBITEM = ?
+            AND AESTADOP = 'INGRESADO'
+            AND (ATIPOETIQUETA IS NULL OR ATIPOETIQUETA = '')
+            ORDER BY AFECHA ASC
+            LIMIT ?
+        `;
+
+        return this.executeQuery('getAvailableCatalogIDHs', query, [qbItem, limit]);
+    }
+
+    // Query: Buscar produtos de catálogo por categoria
+    async getCatalogProductsByCategory(category) {
+        const query = `
+            SELECT
+                inv.AQBITEM as qbItem,
+                MAX(items.ADESCRIPTION) as name,
+                MAX(items.ACATEGORIA) as category,
+                MAX(items.ORIGEN) as origin,
+                COUNT(*) as stock,
+                0 as basePrice
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
+            AND items.ACATEGORIA = ?
+            GROUP BY inv.AQBITEM
+            HAVING stock > 0
+            ORDER BY name
+        `;
+
+        return this.executeQuery('getCatalogProductsByCategory', query, [category]);
+    }
+
+    // Query: Listar categorias de catálogo com contagem
+    async getCatalogCategories() {
+        const query = `
+            SELECT
+                COALESCE(items.ACATEGORIA, 'Uncategorized') as category,
+                COUNT(DISTINCT inv.AQBITEM) as productCount,
+                SUM(CASE WHEN inv.AESTADOP = 'INGRESADO' THEN 1 ELSE 0 END) as totalStock
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
+            AND inv.AESTADOP = 'INGRESADO'
+            GROUP BY items.ACATEGORIA
+            HAVING totalStock > 0
+            ORDER BY totalStock DESC
+        `;
+
+        return this.executeQuery('getCatalogCategories', query);
+    }
+
+    // Query: Buscar produtos de catálogo com padrão de QBITEM
+    async getCatalogProductsByPattern(pattern) {
+        const searchPattern = pattern.includes('%') ? pattern : `${pattern}%`;
+        const query = `
+            SELECT
+                inv.AQBITEM as qbItem,
+                MAX(items.ADESCRIPTION) as name,
+                MAX(items.ACATEGORIA) as category,
+                MAX(items.ORIGEN) as origin,
+                COUNT(*) as stock,
+                0 as basePrice
+            FROM tbinventario inv
+            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+            WHERE inv.AESTADOP = 'INGRESADO'
+            AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
+            AND inv.AQBITEM LIKE ?
+            GROUP BY inv.AQBITEM
+            HAVING stock > 0
+            ORDER BY stock DESC
+            LIMIT 50
+        `;
+
+        return this.executeQuery('getCatalogProductsByPattern', query, [searchPattern]);
+    }
+
+    // ========== FIM QUERIES CATALOG ==========
+
     // Fechar pool corretamente
     async close() {
         if (this.pool) {

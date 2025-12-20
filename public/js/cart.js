@@ -986,6 +986,11 @@ window.CartSystem = {
         // Verificar se é um ghost item
         const isGhost = item.ghostStatus === 'ghost';
 
+        // Check if catalog product
+        if (item.isCatalogProduct) {
+            return this.renderCatalogCartItem(item);
+        }
+
         // URL do thumbnail
         const thumbnailUrl = item.thumbnailUrl ||
             `https://images.sunshinecowhides-gallery.com/_thumbnails/${item.driveFileId}`;
@@ -1023,7 +1028,7 @@ window.CartSystem = {
                 <div class="cart-item-info" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
                     <div class="cart-item-title ${isGhost ? 'ghost-text' : ''}">${item.fileName}</div>
                     <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${item.category}</div>
-                    
+
                     ${!isGhost ? `
                         <div class="cart-item-bottom" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px;">
                             ${(window.shouldShowPrices && window.shouldShowPrices()) ? `
@@ -1052,6 +1057,134 @@ window.CartSystem = {
                 </div>
             </div>
         `;
+    },
+
+    /**
+     * Renderizar item de CATÁLOGO no carrinho (com quantidade)
+     */
+    renderCatalogCartItem(item) {
+        const quantity = item.quantity || 1;
+        const unitPrice = item.unitPrice || 0;
+        const totalPrice = unitPrice * quantity;
+        const productName = item.productName || item.fileName || 'Product';
+        const qbItem = item.qbItem || '';
+
+        const showPrices = window.shouldShowPrices && window.shouldShowPrices();
+
+        return `
+            <div class="cart-item catalog-item" data-qbitem="${qbItem}" data-drive-file-id="${item.driveFileId || qbItem}">
+                <div class="cart-item-image" style="cursor: default;">
+                    ${item.thumbnailUrl ?
+                        `<img src="${item.thumbnailUrl}" alt="${productName}" loading="lazy">` :
+                        `<div class="placeholder"><i class="fas fa-box"></i></div>`
+                    }
+                </div>
+                <div class="cart-item-info" style="cursor: default;">
+                    <div class="cart-item-title">${productName}</div>
+                    <div class="cart-item-category">
+                        <i class="fas fa-tag" style="color: #B87333; margin-right: 4px;"></i>
+                        ${item.category || 'Catalog Product'}
+                    </div>
+
+                    <div class="cart-item-quantity">
+                        <button class="qty-btn-small" onclick="CartSystem.updateCatalogQty('${qbItem}', -1)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <span style="margin: 0 8px; font-weight: 600;">Qty: ${quantity}</span>
+                        <button class="qty-btn-small" onclick="CartSystem.updateCatalogQty('${qbItem}', 1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+
+                    ${showPrices && unitPrice > 0 ? `
+                        <div class="cart-item-price" style="margin-top: 6px;">
+                            <span class="price-value" style="font-size: 0.85rem; color: #666;">
+                                ${window.CurrencyManager ? CurrencyManager.format(unitPrice) : '$' + unitPrice.toFixed(2)} × ${quantity} =
+                            </span>
+                            <span class="cart-item-total">
+                                ${window.CurrencyManager ? CurrencyManager.format(totalPrice) : '$' + totalPrice.toFixed(2)}
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="cart-item-actions">
+                    <button class="cart-item-remove" title="Remove item" onclick="CartSystem.removeCatalogItem('${qbItem}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Atualizar quantidade de item de catálogo
+     */
+    async updateCatalogQty(qbItem, delta) {
+        try {
+            const item = this.state.items.find(i => i.isCatalogProduct && i.qbItem === qbItem);
+            if (!item) return;
+
+            const newQty = (item.quantity || 1) + delta;
+            if (newQty < 1) {
+                // Remove item
+                await this.removeCatalogItem(qbItem);
+                return;
+            }
+
+            const response = await fetch('/api/cart/update-catalog-quantity', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId: this.state.sessionId,
+                    qbItem,
+                    quantity: newQty
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || 'Error updating quantity');
+            }
+
+            // Reload cart
+            await this.loadCart();
+
+        } catch (error) {
+            console.error('❌ Error updating catalog quantity:', error);
+            this.showNotification(error.message, 'error');
+        }
+    },
+
+    /**
+     * Remover item de catálogo
+     */
+    async removeCatalogItem(qbItem) {
+        try {
+            const response = await fetch(`/api/cart/remove-catalog/${encodeURIComponent(qbItem)}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId: this.state.sessionId
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || 'Error removing item');
+            }
+
+            // Reload cart
+            await this.loadCart();
+
+            // Dispatch event to update catalog buttons
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: { itemCount: this.state.totalItems, items: this.state.items }
+            }));
+
+        } catch (error) {
+            console.error('❌ Error removing catalog item:', error);
+            this.showNotification(error.message, 'error');
+        }
     },
 
     // Abrir foto do carrinho em modal fullscreen

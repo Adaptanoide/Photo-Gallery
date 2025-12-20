@@ -158,6 +158,11 @@ class EmailService {
                 }
             }
 
+            // Separar items por tipo (fotos vs catálogo)
+            const allItems = selectionData.items || [];
+            const photoItems = allItems.filter(item => !item.isCatalogProduct);
+            const catalogItems = allItems.filter(item => item.isCatalogProduct);
+
             const templateData = {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
@@ -168,7 +173,13 @@ class EmailService {
                 createdAt: new Date().toLocaleString('pt-BR'),
                 observations: selectionData.observations,
                 salesRep: selectionData.salesRep || 'Unassigned',
-                clientCurrency: clientCurrency
+                clientCurrency: clientCurrency,
+                // Novos campos para catálogo
+                photoItems: photoItems,
+                catalogItems: catalogItems,
+                photoCount: photoItems.length,
+                catalogCount: catalogItems.length,
+                totalUnits: catalogItems.reduce((sum, item) => sum + (item.quantity || 1), 0) + photoItems.length
             };
 
             // Aplicar template
@@ -324,6 +335,94 @@ class EmailService {
      * Gerar HTML para nova seleção
      */
     generateNewSelectionHtml(data) {
+        // Gerar HTML da lista de fotos
+        let photoItemsHtml = '';
+        if (data.photoItems && data.photoItems.length > 0) {
+            photoItemsHtml = `
+                <div class="items-section" style="margin: 20px 0;">
+                    <h4 style="color: #333; margin-bottom: 10px;">📷 Selected Photos (${data.photoCount})</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #D4AF37;">Photo</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #D4AF37;">Category</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #D4AF37;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.photoItems.slice(0, 20).map(item => `
+                                <tr>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">${item.fileName || item.driveFileId}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">${item.category || '-'}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.price > 0 ? '$' + item.price.toFixed(2) : 'TBD'}</td>
+                                </tr>
+                            `).join('')}
+                            ${data.photoItems.length > 20 ? `
+                                <tr>
+                                    <td colspan="3" style="padding: 8px; text-align: center; color: #666; font-style: italic;">
+                                        ... and ${data.photoItems.length - 20} more photos
+                                    </td>
+                                </tr>
+                            ` : ''}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Gerar HTML da lista de produtos de catálogo
+        let catalogItemsHtml = '';
+        if (data.catalogItems && data.catalogItems.length > 0) {
+            const catalogTotal = data.catalogItems.reduce((sum, item) => {
+                return sum + ((item.unitPrice || 0) * (item.quantity || 1));
+            }, 0);
+
+            catalogItemsHtml = `
+                <div class="items-section" style="margin: 20px 0;">
+                    <h4 style="color: #333; margin-bottom: 10px;">📦 Catalog Products (${data.catalogCount} items, ${data.catalogItems.reduce((s, i) => s + (i.quantity || 1), 0)} units)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #B87333;">Product</th>
+                                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #B87333;">Qty</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333;">Unit Price</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.catalogItems.map(item => `
+                                <tr>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">
+                                        ${item.productName || item.qbItem}
+                                        <br><small style="color: #888;">${item.category || ''}</small>
+                                    </td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity || 1}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.unitPrice > 0 ? '$' + item.unitPrice.toFixed(2) : 'TBD'}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">
+                                        ${item.unitPrice > 0 ? '$' + ((item.unitPrice || 0) * (item.quantity || 1)).toFixed(2) : 'TBD'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">Catalog Subtotal:</td>
+                                <td style="padding: 8px; text-align: right; font-weight: bold; color: #B87333;">$${catalogTotal.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Descrição dos itens
+        let itemsDescription = '';
+        if (data.photoCount > 0 && data.catalogCount > 0) {
+            itemsDescription = `${data.photoCount} photos + ${data.catalogCount} catalog products (${data.totalUnits} total units)`;
+        } else if (data.catalogCount > 0) {
+            itemsDescription = `${data.catalogCount} catalog products (${data.totalUnits} units)`;
+        } else {
+            itemsDescription = `${data.photoCount} photos`;
+        }
+
         return `
             <!DOCTYPE html>
             <html>
@@ -341,44 +440,47 @@ class EmailService {
                 <div class="header">
                     <h1> New Customer Selection!</h1>
                 </div>
-                
+
                 <div class="content">
                     <p>Hello!</p>
-                    
+
                     <p>A new selection has been created and needs your attention:</p>
-                    
+
                     <div class="info-box">
                         <h3>📋 Selection Details</h3>
                         <p><strong>Customer:</strong> ${data.clientName} (${data.clientCode})</p>
                         <p><strong>Sales Rep:</strong> ${data.salesRep}</p>
-                        <p><strong>Selected Items:</strong> ${data.totalItems} photos</p>
+                        <p><strong>Selected Items:</strong> ${itemsDescription}</p>
                         <p><strong>Total Value:</strong> ${data.totalValue}${['Vicky', 'Eduarda', 'Vicky / Eduarda'].some(rep => rep.toLowerCase() === (data.salesRep || '').toLowerCase()) ? ' <span style="color: #dc3545; font-style: italic;">(Retail - Prices subject to change)</span>' : ''}</p>
                         <p><strong>Date/Time:</strong> ${data.createdAt}</p>
                     </div>
-                    
+
+                    ${photoItemsHtml}
+                    ${catalogItemsHtml}
+
                     ${data.observations ? `
                         <div class="info-box">
                             <h3>📝 Client Observations</h3>
                             <p style="font-style: italic; color: #555;">"${data.observations}"</p>
                         </div>
                     ` : ''}
-                    
+
                     <p>🔗 <strong>Access the admin panel</strong> to process this selection and contact the customer.</p>
-                    
+
                     <p>Best regards,<br>Sunshine Cowhides System</p>
                 </div>
-                
+
                 <div class="footer">
                     This email was automatically sent by Sunshine Cowhides system
                 </div>
 
                 <div style="text-align: center; margin: 40px 0;">
-                    <a href="https://sunshinecowhides-gallery.com/" 
-                    style="background-color: #D4AF37; 
-                            color: white; 
-                            padding: 15px 35px; 
-                            text-decoration: none; 
-                            border-radius: 5px; 
+                    <a href="https://sunshinecowhides-gallery.com/"
+                    style="background-color: #D4AF37;
+                            color: white;
+                            padding: 15px 35px;
+                            text-decoration: none;
+                            border-radius: 5px;
                             display: inline-block;
                             font-weight: bold;">
                         Visit Our Gallery

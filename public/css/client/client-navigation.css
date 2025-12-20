@@ -681,11 +681,11 @@
 
     /* Estilo para "Contact for Price" */
     .breadcrumb-price-badge.contact-price {
-        background: #6b7280;
+        background: #22c55e;
     }
 
     .breadcrumb-price-badge.contact-price:hover {
-        background: #4b5563;
+        background: #16a34a;
     }
 
     /* Estilo para "No price" */
