@@ -1,2 +1,697 @@
-/* client-catalog.css - Stub */
-/* Catalog styles - to be implemented */
+/* ============================================
+   CLIENT-CATALOG.CSS - Sunshine Cowhides
+   Clean, Professional Design for Catalog System
+   ============================================ */
+
+/* ============================================
+   HEADER MAIN TABS - Integrated Navigation
+   ============================================ */
+
+.header-main-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 20px;
+}
+
+.main-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ffffff;
+    opacity: 0.7;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.main-tab:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.main-tab.active {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: 600;
+}
+
+.main-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: #fff;
+    border-radius: 2px;
+}
+
+.main-tab i {
+    font-size: 1rem;
+}
+
+.main-tab span {
+    display: inline;
+}
+
+/* ============================================
+   COMPACT SEARCH - Icon that expands
+   ============================================ */
+
+.search-container.compact {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-container.compact .search-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-container.compact .search-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.search-container.compact .search-wrapper {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+}
+
+.search-container.compact.expanded .search-toggle-btn {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.search-container.compact.expanded .search-wrapper {
+    width: 300px;
+    opacity: 1;
+    padding: 4px;
+}
+
+.search-container.compact .search-input {
+    flex: 1;
+    border: none;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    background: transparent;
+    outline: none;
+}
+
+.search-container.compact .search-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 4px;
+    transition: all 0.2s ease;
+}
+
+.search-container.compact .search-close-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* ============================================
+   CATALOG GRID - Product Cards
+   ============================================ */
+
+.catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.catalog-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.catalog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: var(--gold-primary, #B87333);
+}
+
+.catalog-card.out-of-stock {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Card Image */
+.catalog-image {
+    position: relative;
+    height: 180px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.catalog-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.catalog-card:hover .catalog-image img {
+    transform: scale(1.05);
+}
+
+.catalog-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #9ca3af;
+}
+
+.catalog-placeholder i {
+    font-size: 2.5rem;
+    opacity: 0.5;
+}
+
+.catalog-placeholder span {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Stock Badge */
+.catalog-stock-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.catalog-stock-badge.in-stock {
+    background: #22c55e;
+    color: #fff;
+}
+
+.catalog-stock-badge.low-stock {
+    background: #f59e0b;
+    color: #fff;
+}
+
+.catalog-stock-badge.out-of-stock {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* Card Info */
+.catalog-info {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.catalog-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.catalog-category {
+    font-size: 0.8rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.catalog-category i {
+    color: var(--gold-primary, #B87333);
+    font-size: 0.75rem;
+}
+
+.catalog-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gold-primary, #B87333);
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.catalog-price.contact {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.catalog-stock-info {
+    font-size: 0.8rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.catalog-stock-info i {
+    color: #22c55e;
+    font-size: 0.7rem;
+}
+
+.catalog-stock-info.low i {
+    color: #f59e0b;
+}
+
+/* Card Actions */
+.catalog-actions {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Quantity Selector */
+.qty-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.qty-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: #fff;
+    color: #374151;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.qty-btn:hover:not(:disabled) {
+    background: var(--gold-primary, #B87333);
+    color: #fff;
+}
+
+.qty-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.qty-value {
+    width: 50px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Add to Cart Button */
+.btn-add-catalog {
+    width: 100%;
+    padding: 12px;
+    background: var(--gold-primary, #B87333);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+.btn-add-catalog:hover:not(:disabled) {
+    background: #9a6229;
+    transform: translateY(-1px);
+}
+
+.btn-add-catalog:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+}
+
+.btn-add-catalog.in-cart {
+    background: #22c55e;
+}
+
+.btn-add-catalog.in-cart:hover {
+    background: #16a34a;
+}
+
+/* ============================================
+   CATALOG LOADING & EMPTY STATES
+   ============================================ */
+
+.catalog-loading,
+.catalog-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.catalog-loading i,
+.catalog-empty i {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.catalog-loading i {
+    color: var(--gold-primary, #B87333);
+    opacity: 1;
+}
+
+.catalog-empty h3 {
+    margin: 0 0 10px;
+    color: #374151;
+    font-size: 1.2rem;
+}
+
+.catalog-empty p {
+    margin: 0;
+    font-size: 0.95rem;
+    max-width: 400px;
+}
+
+/* ============================================
+   CART - Catalog Items
+   ============================================ */
+
+.cart-item.catalog-item {
+    border-left: 3px solid var(--gold-primary, #B87333);
+}
+
+.cart-item.catalog-item .item-qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.cart-item.catalog-item .qty-btn-sm {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.cart-item.catalog-item .qty-btn-sm:hover {
+    background: var(--gold-primary, #B87333);
+    color: #fff;
+    border-color: var(--gold-primary, #B87333);
+}
+
+.cart-item.catalog-item .item-qty-value {
+    font-weight: 600;
+    min-width: 30px;
+    text-align: center;
+}
+
+.cart-item.catalog-item .item-total {
+    font-weight: 600;
+    color: var(--gold-primary, #B87333);
+}
+
+/* ============================================
+   RESPONSIVE - Mobile Adjustments
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .header-main-tabs {
+        margin: 0 10px;
+        gap: 2px;
+    }
+
+    .main-tab {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .main-tab span {
+        display: none;
+    }
+
+    .main-tab i {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Tabs go below header on mobile */
+    .header-main-tabs {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        margin: 0;
+        padding: 8px 16px;
+        justify-content: space-around;
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-tab {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 16px;
+        color: #6b7280;
+        opacity: 1;
+    }
+
+    .main-tab.active {
+        color: var(--gold-primary, #B87333);
+        background: rgba(184, 115, 51, 0.1);
+    }
+
+    .main-tab.active::after {
+        display: none;
+    }
+
+    .main-tab span {
+        display: block;
+        font-size: 0.7rem;
+    }
+
+    .main-tab i {
+        font-size: 1.2rem;
+    }
+
+    /* Adjust main content for bottom tabs */
+    .main {
+        padding-bottom: 80px;
+    }
+
+    /* Compact search full width on mobile */
+    .search-container.compact.expanded .search-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: 0;
+        z-index: 10000;
+        padding: 10px;
+    }
+
+    /* Catalog grid adjustments */
+    .catalog-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .catalog-image {
+        height: 140px;
+    }
+
+    .catalog-info {
+        padding: 12px;
+    }
+
+    .catalog-name {
+        font-size: 0.85rem;
+    }
+
+    .catalog-price {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .catalog-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .catalog-card {
+        flex-direction: row;
+    }
+
+    .catalog-image {
+        width: 120px;
+        height: auto;
+        min-height: 120px;
+    }
+
+    .catalog-info {
+        padding: 10px;
+    }
+
+    .catalog-actions {
+        padding: 0 10px 10px;
+    }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+body.dark-mode .main-tab {
+    color: #e0e0e0;
+}
+
+body.dark-mode .main-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .main-tab.active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .catalog-card {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .catalog-card:hover {
+    border-color: var(--gold-primary, #B87333);
+}
+
+body.dark-mode .catalog-name {
+    color: #f0f0f0;
+}
+
+body.dark-mode .catalog-category,
+body.dark-mode .catalog-stock-info {
+    color: #999;
+}
+
+body.dark-mode .catalog-image {
+    background: linear-gradient(135deg, #3d3d3d, #2d2d2d);
+}
+
+body.dark-mode .catalog-placeholder {
+    color: #666;
+}
+
+body.dark-mode .qty-selector {
+    background: #3d3d3d;
+}
+
+body.dark-mode .qty-btn {
+    background: #2d2d2d;
+    color: #e0e0e0;
+}
+
+body.dark-mode .qty-value {
+    color: #f0f0f0;
+}
+
+body.dark-mode .catalog-loading,
+body.dark-mode .catalog-empty {
+    color: #999;
+}
+
+body.dark-mode .catalog-empty h3 {
+    color: #f0f0f0;
+}
+
+@media (max-width: 768px) {
+    body.dark-mode .header-main-tabs {
+        background: #1a1a1a;
+        border-color: #3d3d3d;
+    }
+
+    body.dark-mode .main-tab {
+        color: #999;
+    }
+
+    body.dark-mode .main-tab.active {
+        color: var(--gold-primary, #B87333);
+        background: rgba(184, 115, 51, 0.15);
+    }
+}

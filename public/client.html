@@ -50,10 +50,28 @@
 <body class="client-page">
     <header class="client-luxury-header">
         <div class="container">
+            <!-- HEADER LEFT: Logo -->
             <div class="client-header-logo" onclick="navigateToRoot()">
                 <img src="/images/logo-transparent.png" alt="Sunshine Cowhides" class="header-logo-img">
                 <span>Sunshine Cowhides - Gallery</span>
             </div>
+
+            <!-- HEADER CENTER: Main Navigation Tabs -->
+            <nav class="header-main-tabs" id="headerMainTabs">
+                <button class="main-tab active" data-tab="cowhides" data-type="photo" onclick="switchMainTab('cowhides', 'photo')">
+                    <i class="fas fa-cow"></i>
+                    <span>Cowhides</span>
+                </button>
+                <button class="main-tab" data-tab="designer-rugs" data-type="catalog" onclick="switchMainTab('designer-rugs', 'catalog')">
+                    <i class="fas fa-rug"></i>
+                    <span>Designer Rugs</span>
+                </button>
+                <button class="main-tab" data-tab="accessories" data-type="catalog" onclick="switchMainTab('accessories', 'catalog')">
+                    <i class="fas fa-gem"></i>
+                    <span>Accessories</span>
+                </button>
+            </nav>
+
             <!-- DROPDOWN DE FILTROS NO HEADER (APENAS DESKTOP) -->
             <div class="header-filters-dropdown">
                 <button class="header-filters-btn" onclick="toggleFiltersDropdown()">
@@ -176,20 +194,20 @@
                     </div>
                 </div>
             </div>
-            <!-- BARRA DE BUSCA CENTRAL -->
-            <div class="search-container">
+            <!-- BARRA DE BUSCA COMPACTA -->
+            <div class="search-container compact">
+                <button class="search-toggle-btn" onclick="toggleSearchExpand()" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
                 <div class="search-wrapper">
                     <input type="text" id="globalSearch" class="search-input"
-                        placeholder="Search products, categories, or patterns..." autocomplete="off">
-                    <button class="search-button" onclick="executeGlobalSearch()">
-                        <i class="fas fa-search"></i>
+                        placeholder="Search..." autocomplete="off">
+                    <button class="search-close-btn" onclick="toggleSearchExpand()">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-
-                <!-- Dropdown de sugestões (inicialmente oculto) -->
-                <div class="search-suggestions-dropdown" id="searchSuggestionsDropdown">
-                    <!-- As sugestões vão aparecer aqui dinamicamente -->
-                </div>
+                <!-- Dropdown de sugestões -->
+                <div class="search-suggestions-dropdown" id="searchSuggestionsDropdown"></div>
             </div>
             <nav class="client-header-nav">
                 <!-- Welcome text (currency will be inserted after this) -->
@@ -318,8 +336,8 @@
             <!-- Conteúdo principal -->
             <div id="clientContent" style="display: none;">
 
-                <!-- Gallery Tabs (Cowhides | Designer Rugs | Accessories) -->
-                <div id="galleryTabsContainer"></div>
+                <!-- Container para produtos de catálogo -->
+                <div id="catalogContainer" style="display: none;"></div>
 
                 <!-- Navegação breadcrumb -->
                 <div id="breadcrumbContainer" class="breadcrumb-container" style="display: none;">

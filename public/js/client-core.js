@@ -952,14 +952,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar dados iniciais
     loadClientData();
 
-    // Inicializar tabs de galeria (Cowhides | Designer Rugs | Accessories)
-    setTimeout(() => {
-        if (window.GalleryTabs && document.getElementById('galleryTabsContainer')) {
-            GalleryTabs.init();
-            console.log('🏷️ Gallery Tabs initialized');
-        }
-    }, 500);
-
     // Inicializar botão scroll to top
     const scrollBtn = document.getElementById('scrollToTop');
     if (scrollBtn) {
