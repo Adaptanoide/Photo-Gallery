@@ -7,9 +7,14 @@ const PhotoCategory = require('../models/PhotoCategory');
 const AccessCode = require('../models/AccessCode');
 const Selection = require('../models/Selection');
 const CDEQueries = require('../ai/CDEQueries');
+const CDEWriter = require('../services/CDEWriter');
+const CatalogSyncService = require('../services/CatalogSyncService');
 
 // Instância do CDEQueries para catálogo
 const cdeQueries = new CDEQueries();
+
+// Instância do CatalogSyncService para sincronização de estoque
+const catalogSyncService = CatalogSyncService.getInstance();
 
 const router = express.Router();
 
@@ -205,6 +210,7 @@ router.post('/add-catalog', validateRequest, async (req, res) => {
         const {
             sessionId, clientCode, clientName,
             qbItem, productName, category,
+            catalogCategory,  // ✅ Para categorização correta no carrinho
             quantity, unitPrice, thumbnailUrl
         } = req.body;
 
@@ -225,29 +231,63 @@ router.post('/add-catalog', validateRequest, async (req, res) => {
 
         console.log(`[ROUTE] Adicionando ${qty}x ${productName || qbItem} ao carrinho de ${clientName}`);
 
-        // Verificar estoque no CDE
+        // =====================================================
+        // ESTOQUE LÓGICO - NÃO ALTERA CDE, APENAS VERIFICA
+        // O CDE permanece inalterado para produtos de catálogo
+        // A reserva é apenas lógica no MongoDB
+        // =====================================================
+
+        // Verificar estoque físico no CDE (apenas leitura)
         const stockInfo = await cdeQueries.getCatalogProductStock(qbItem);
-        if (stockInfo.available < qty) {
+        console.log(`[ROUTE] 📦 Estoque físico CDE para ${qbItem}: ${stockInfo.available}`);
+
+        // Verificar estoque lógico disponível (físico - reservado - confirmado)
+        const CatalogProduct = require('../models/CatalogProduct');
+        let catalogProduct = await CatalogProduct.findOne({ qbItem });
+
+        // ✅ CRIAR PRODUTO NO MONGODB SE NÃO EXISTIR
+        if (!catalogProduct) {
+            console.log(`[ROUTE] 📝 Criando CatalogProduct para ${qbItem} no MongoDB...`);
+            catalogProduct = new CatalogProduct({
+                qbItem,
+                name: productName || `Product ${qbItem}`,
+                category: category || 'Catalog Product',
+                displayCategory: catalogCategory || 'other',
+                currentStock: stockInfo.available,
+                availableStock: stockInfo.available,
+                reservedInCarts: 0,
+                confirmedInSelections: 0,
+                isActive: true
+            });
+            await catalogProduct.save();
+            console.log(`[ROUTE] ✅ CatalogProduct ${qbItem} criado com estoque ${stockInfo.available}`);
+        } else {
+            // Atualizar estoque físico do CDE se mudou
+            if (catalogProduct.currentStock !== stockInfo.available) {
+                catalogProduct.currentStock = stockInfo.available;
+                catalogProduct.recalculateAvailableStock();
+                await catalogProduct.save();
+            }
+        }
+
+        // Calcular estoque disponível considerando reservas locais
+        const reservedInCarts = catalogProduct.reservedInCarts || 0;
+        const confirmedInSelections = catalogProduct.confirmedInSelections || 0;
+        const logicalAvailable = stockInfo.available - reservedInCarts - confirmedInSelections;
+
+        console.log(`[ROUTE] 📊 Estoque lógico: ${stockInfo.available} - ${reservedInCarts} (carrinhos) - ${confirmedInSelections} (seleções) = ${logicalAvailable}`);
+
+        if (logicalAvailable < qty) {
             return res.status(400).json({
                 success: false,
-                message: `Estoque insuficiente. Disponível: ${stockInfo.available}`,
-                available: stockInfo.available
+                message: `Estoque insuficiente. Disponível: ${Math.max(0, logicalAvailable)}`,
+                available: Math.max(0, logicalAvailable)
             });
         }
 
-        // Buscar IDHs disponíveis para reservar
-        const availableIDHs = await cdeQueries.getAvailableCatalogIDHs(qbItem, qty);
-        if (availableIDHs.length < qty) {
-            return res.status(400).json({
-                success: false,
-                message: `Não foi possível reservar ${qty} unidades. Disponível: ${availableIDHs.length}`,
-                available: availableIDHs.length
-            });
-        }
+        console.log(`[ROUTE] ✅ Reserva lógica aprovada: ${qty} unidades de ${qbItem}`);
 
-        const idhsToReserve = availableIDHs.slice(0, qty).map(row => row.AIDH);
-
-        // Adicionar ao carrinho via CartService
+        // Adicionar ao carrinho via CartService (sem reserva de IDHs no CDE)
         const result = await CartService.addCatalogToCart(
             sessionId,
             clientCode,
@@ -256,10 +296,11 @@ router.post('/add-catalog', validateRequest, async (req, res) => {
                 qbItem,
                 productName: productName || `Product ${qbItem}`,
                 category: category || 'Catalog Product',
+                catalogCategory: catalogCategory || null,
                 quantity: qty,
                 unitPrice: unitPrice || 0,
-                thumbnailUrl,
-                reservedIDHs: idhsToReserve
+                thumbnailUrl
+                // NÃO passa reservedIDHs - estoque é apenas lógico
             }
         );
 
@@ -267,6 +308,13 @@ router.post('/add-catalog', validateRequest, async (req, res) => {
         let totals = null;
         if (result.success && result.cart) {
             totals = await calculateCartTotals(result.cart);
+        }
+
+        // ✅ SINCRONIZAR ESTOQUE LÓGICO (em background)
+        if (result.success && qbItem) {
+            catalogSyncService.syncSingleProduct(qbItem).catch(syncErr => {
+                console.warn(`[ROUTE] ⚠️ Erro ao sincronizar estoque de ${qbItem}:`, syncErr.message);
+            });
         }
 
         res.status(201).json({
@@ -317,6 +365,13 @@ router.put('/update-catalog-quantity', validateRequest, async (req, res) => {
             totals = await calculateCartTotals(result.cart);
         }
 
+        // ✅ SINCRONIZAR ESTOQUE LÓGICO (em background)
+        if (result.success && qbItem) {
+            catalogSyncService.syncSingleProduct(qbItem).catch(syncErr => {
+                console.warn(`[ROUTE] ⚠️ Erro ao sincronizar estoque de ${qbItem}:`, syncErr.message);
+            });
+        }
+
         res.json({
             ...result,
             totals
@@ -350,6 +405,13 @@ router.delete('/remove-catalog/:qbItem', validateRequest, async (req, res) => {
             totals = await calculateCartTotals(result.cart);
         }
 
+        // ✅ SINCRONIZAR ESTOQUE LÓGICO (em background)
+        if (result.success && qbItem) {
+            catalogSyncService.syncSingleProduct(qbItem).catch(syncErr => {
+                console.warn(`[ROUTE] ⚠️ Erro ao sincronizar estoque de ${qbItem}:`, syncErr.message);
+            });
+        }
+
         res.json({
             ...result,
             totals
@@ -379,12 +441,21 @@ router.delete('/remove/:driveFileId', validateRequest, async (req, res) => {
         // 🆕 Passar clientCode para fallback
         const result = await CartService.removeFromCart(sessionId, driveFileId, clientCode);
 
+        // ⭐ OTIMIZAÇÃO: Calcular totais uma única vez e retornar na resposta
+        let totals = null;
+        if (result.success && result.cart) {
+            totals = await calculateCartTotals(result.cart);
+        }
+
         // 🆕 Log de sucesso
         if (result.success) {
             console.log(`[CART-REMOVE] ✅ Sucesso | Session: ${sessionId?.substring(0, 8)}... | Itens restantes: ${result.cart?.totalItems || 0}`);
         }
 
-        res.json(result);
+        res.json({
+            ...result,
+            totals: totals  // ✅ Incluir totais na resposta
+        });
 
     } catch (error) {
         // 🆕 Log de erro estruturado
@@ -728,8 +799,23 @@ router.get('/stats/system', async (req, res) => {
 });
 
 /**
+ * ⭐ CACHE para evitar cálculos duplicados
+ * Armazena resultado por 1 segundo baseado no hash do carrinho
+ */
+const totalsCache = new Map();
+const CACHE_TTL_MS = 1000; // 1 segundo
+
+function getCartHash(cart) {
+    if (!cart || !cart.items) return 'empty';
+    // Hash simples baseado em: clientCode + quantidade de itens + IDs dos itens
+    const itemIds = cart.items.map(i => i.driveFileId || i.qbItem || 'unknown').sort().join(',');
+    return `${cart.clientCode}_${cart.totalItems}_${itemIds}`;
+}
+
+/**
  * Função auxiliar para calcular totais do carrinho
  * ATUALIZADO: Agora usa participatesInMixMatch do banco de dados
+ * ⭐ OTIMIZADO: Cache de 1s para evitar cálculos repetidos
  */
 async function calculateCartTotals(cart) {
     if (!cart || cart.totalItems === 0) {
@@ -739,6 +825,14 @@ async function calculateCartTotals(cart) {
             total: 0,
             mixMatchInfo: null
         };
+    }
+
+    // ⭐ Verificar cache antes de calcular
+    const cartHash = getCartHash(cart);
+    const cached = totalsCache.get(cartHash);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+        console.log(`⚡ [CACHE] Retornando totais do cache (${cart.totalItems} itens)`);
+        return cached.result;
     }
 
     let subtotalMixMatch = 0;      // Subtotal Mix & Match (Tier 1)
@@ -755,12 +849,30 @@ async function calculateCartTotals(cart) {
     // ============================================
     const uniqueCategoryPaths = [...new Set(cart.items.map(item => item.category || 'uncategorized'))];
 
+    // Identificar quais categorias têm APENAS produtos de catálogo (para não mostrar warnings)
+    const catalogOnlyCategories = new Set();
+    for (const categoryPath of uniqueCategoryPaths) {
+        const itemsInCategory = cart.items.filter(item => (item.category || 'uncategorized') === categoryPath);
+        const allAreCatalog = itemsInCategory.every(item => item.isCatalogProduct);
+        if (allAreCatalog) {
+            catalogOnlyCategories.add(categoryPath);
+        }
+    }
+
     // Buscar todas as categorias do banco de uma vez
     const categoryMixMatchMap = {};
 
     for (const categoryPath of uniqueCategoryPaths) {
         let cleanPath = categoryPath.endsWith('/') ? categoryPath.slice(0, -1) : categoryPath;
         const normalizedPath = cleanPath.replace(/ → /g, '/');
+
+        // Se a categoria só tem produtos de catálogo, não precisa buscar no MongoDB
+        // Produtos de catálogo nunca participam do Mix & Match
+        if (catalogOnlyCategories.has(categoryPath)) {
+            categoryMixMatchMap[categoryPath] = false;
+            console.log(`📦 [CATÁLOGO] ${cleanPath}: Categoria de produtos de estoque (não participa do Mix & Match)`);
+            continue;
+        }
 
         const category = await PhotoCategory.findOne({
             $or: [
@@ -789,6 +901,17 @@ async function calculateCartTotals(cart) {
 
     cart.items.forEach(item => {
         const categoryPath = item.category || 'uncategorized';
+
+        // ✅ IMPORTANTE: Produtos de catálogo (stock) NUNCA participam do Mix & Match
+        // Mix & Match é exclusivo para fotos únicas de Natural Cowhides
+        if (item.isCatalogProduct) {
+            if (!separateItems[categoryPath]) {
+                separateItems[categoryPath] = [];
+            }
+            separateItems[categoryPath].push(item);
+            return; // Não verificar Mix & Match para produtos de catálogo
+        }
+
         const isMixMatch = categoryMixMatchMap[categoryPath] || false;
 
         if (isMixMatch) {
@@ -873,52 +996,86 @@ async function calculateCartTotals(cart) {
     // PROCESSAR CATEGORIAS SEPARADAS
     // ============================================
     for (const [categoryPath, items] of Object.entries(separateItems)) {
-        const quantity = items.length;
+        // ✅ Separar produtos de catálogo de fotos únicas
+        const catalogItems = items.filter(item => item.isCatalogProduct);
+        const uniquePhotoItems = items.filter(item => !item.isCatalogProduct);
 
-        let cleanPath = categoryPath.endsWith('/')
-            ? categoryPath.slice(0, -1)
-            : categoryPath;
+        // ============================================
+        // PROCESSAR PRODUTOS DE CATÁLOGO (STOCK)
+        // ============================================
+        if (catalogItems.length > 0) {
+            catalogItems.forEach(item => {
+                // Usar unitPrice do próprio item (definido quando adicionado)
+                const unitPrice = item.unitPrice || 0;
+                const qty = item.quantity || 1;
+                const itemTotal = unitPrice * qty;
 
-        // ✅ CORREÇÃO: Converter setas de volta para barras para busca no MongoDB
-        const normalizedPath = cleanPath.replace(/ → /g, '/');
+                if (unitPrice > 0) {
+                    subtotalOthers += itemTotal;
+                    totalOthers += itemTotal;
+                    console.log(`   📦 [CATÁLOGO] ${item.productName}: ${qty} × $${unitPrice} = $${itemTotal}`);
+                } else {
+                    console.log(`   📦 [CATÁLOGO] ${item.productName}: ${qty} × (sem preço) - NÃO contabilizado`);
+                }
 
-        console.log(`🔍 [SEPARADO] Buscando categoria: "${cleanPath}"`);
-        console.log(`🔍 [SEPARADO] Path normalizado: "${normalizedPath}"`);
+                // Manter preços do item
+                item.price = itemTotal;
+                item.formattedPrice = unitPrice > 0 ? `$${itemTotal.toFixed(2)}` : 'No price';
+            });
+        }
 
-        const category = await PhotoCategory.findOne({
-            $or: [
-                { googleDrivePath: normalizedPath },
-                { googleDrivePath: normalizedPath + '/' },
-                { displayName: cleanPath }  // displayName já usa setas
-            ]
-        });
+        // ============================================
+        // PROCESSAR FOTOS ÚNICAS (não Mix & Match)
+        // ============================================
+        if (uniquePhotoItems.length > 0) {
+            const quantity = uniquePhotoItems.length;
 
-        let pricePerItem = items[0].price || items[0].basePrice || 0;
+            let cleanPath = categoryPath.endsWith('/')
+                ? categoryPath.slice(0, -1)
+                : categoryPath;
 
-        if (category) {
-            console.log(`✅ [SEPARADO] Categoria encontrada: ${category.displayName} (QB: ${category.qbItem || 'N/A'})`);
+            // ✅ CORREÇÃO: Converter setas de volta para barras para busca no MongoDB
+            const normalizedPath = cleanPath.replace(/ → /g, '/');
 
-            const priceResult = await category.getPriceForClient(cart.clientCode, quantity);
-            pricePerItem = priceResult.finalPrice;
+            console.log(`🔍 [SEPARADO] Buscando categoria: "${cleanPath}"`);
+            console.log(`🔍 [SEPARADO] Path normalizado: "${normalizedPath}"`);
 
-            console.log(`   🔸 ${category.displayName}: ${quantity} items × $${pricePerItem} (tier próprio)`);
-
-            // Para categorias separadas: subtotal = total (sem desconto de tier global)
-            subtotalOthers += quantity * pricePerItem;
-            totalOthers += quantity * pricePerItem;
-
-            // Atualizar preço de cada item
-            items.forEach(item => {
-                item.price = pricePerItem;
-                item.basePrice = pricePerItem;  // Para não Mix & Match, base = current
-                item.formattedPrice = `$${pricePerItem.toFixed(2)}`;
+            const category = await PhotoCategory.findOne({
+                $or: [
+                    { googleDrivePath: normalizedPath },
+                    { googleDrivePath: normalizedPath + '/' },
+                    { displayName: cleanPath }  // displayName já usa setas
+                ]
             });
 
-        } else {
-            console.warn(`⚠️ [SEPARADO] Categoria NÃO encontrada para path: "${cleanPath}"`);
+            let pricePerItem = uniquePhotoItems[0].price || uniquePhotoItems[0].basePrice || 0;
 
-            subtotalOthers += quantity * pricePerItem;
-            totalOthers += quantity * pricePerItem;
+            if (category) {
+                console.log(`✅ [SEPARADO] Categoria encontrada: ${category.displayName} (QB: ${category.qbItem || 'N/A'})`);
+
+                const priceResult = await category.getPriceForClient(cart.clientCode, quantity);
+                pricePerItem = priceResult.finalPrice;
+
+                console.log(`   💰 Base Price: $${priceResult.basePrice || pricePerItem}`);
+                console.log(`   🔸 ${category.displayName}: ${quantity} items × $${pricePerItem} (tier próprio)`);
+
+                // Para categorias separadas: subtotal = total (sem desconto de tier global)
+                subtotalOthers += quantity * pricePerItem;
+                totalOthers += quantity * pricePerItem;
+
+                // Atualizar preço de cada item
+                uniquePhotoItems.forEach(item => {
+                    item.price = pricePerItem;
+                    item.basePrice = pricePerItem;  // Para não Mix & Match, base = current
+                    item.formattedPrice = `$${pricePerItem.toFixed(2)}`;
+                });
+
+            } else {
+                console.warn(`⚠️ [SEPARADO] Categoria NÃO encontrada para path: "${cleanPath}"`);
+
+                subtotalOthers += quantity * pricePerItem;
+                totalOthers += quantity * pricePerItem;
+            }
         }
     }
 
@@ -975,13 +1132,28 @@ async function calculateCartTotals(cart) {
     console.log(`   Discount: -$${discount.toFixed(2)}`);
     console.log(`   TOTAL FINAL: $${total.toFixed(2)}\n`);
 
-    return {
+    const result = {
         subtotal: subtotal,
         discount: discount,
         total: total,
         discountPercent: subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0,
         mixMatchInfo: mixMatchInfo
     };
+
+    // ⭐ Salvar no cache antes de retornar
+    totalsCache.set(cartHash, {
+        result: result,
+        timestamp: Date.now()
+    });
+
+    // Limpar cache antigo (mais de 10 segundos)
+    for (const [key, value] of totalsCache.entries()) {
+        if (Date.now() - value.timestamp > 10000) {
+            totalsCache.delete(key);
+        }
+    }
+
+    return result;
 }
 
 // ============================================

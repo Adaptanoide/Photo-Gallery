@@ -13,7 +13,7 @@
     /* === CORES PRINCIPAIS === */
     --luxury-dark: #2c2c34;
     --luxury-medium: #3a3a42;
-    --luxury-light: #f8f9fa;
+    --luxury-light: rgb(255, 255, 255);
     
     /* Bronze/Cobre */
     --gold-primary: #B87333;

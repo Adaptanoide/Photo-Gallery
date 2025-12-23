@@ -56,21 +56,13 @@
                 <span>Sunshine Cowhides - Gallery</span>
             </div>
 
-            <!-- HEADER CENTER: Main Navigation Tabs -->
-            <nav class="header-main-tabs" id="headerMainTabs">
-                <button class="main-tab active" data-tab="cowhides" data-type="photo" onclick="switchMainTab('cowhides', 'photo')">
-                    <i class="fas fa-cow"></i>
-                    <span>Cowhides</span>
+            <!-- HEADER CENTER: Home + Filters -->
+            <div id="simpleNav" class="header-nav-clean">
+                <button class="nav-home-btn" onclick="showHomepage()" title="Go to Homepage">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
                 </button>
-                <button class="main-tab" data-tab="designer-rugs" data-type="catalog" onclick="switchMainTab('designer-rugs', 'catalog')">
-                    <i class="fas fa-rug"></i>
-                    <span>Designer Rugs</span>
-                </button>
-                <button class="main-tab" data-tab="accessories" data-type="catalog" onclick="switchMainTab('accessories', 'catalog')">
-                    <i class="fas fa-gem"></i>
-                    <span>Accessories</span>
-                </button>
-            </nav>
+            </div>
 
             <!-- DROPDOWN DE FILTROS NO HEADER (APENAS DESKTOP) -->
             <div class="header-filters-dropdown">
@@ -194,15 +186,13 @@
                     </div>
                 </div>
             </div>
-            <!-- BARRA DE BUSCA COMPACTA -->
-            <div class="search-container compact">
-                <button class="search-toggle-btn" onclick="toggleSearchExpand()" title="Search">
-                    <i class="fas fa-search"></i>
-                </button>
-                <div class="search-wrapper">
+            <!-- BARRA DE BUSCA SEMPRE VISÍVEL -->
+            <div class="search-container always-visible">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
                     <input type="text" id="globalSearch" class="search-input"
-                        placeholder="Search..." autocomplete="off">
-                    <button class="search-close-btn" onclick="toggleSearchExpand()">
+                        placeholder="Search products..." autocomplete="off">
+                    <button class="search-clear-btn" onclick="clearSearch()" title="Clear search">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -342,16 +332,12 @@
                 <!-- Navegação breadcrumb -->
                 <div id="breadcrumbContainer" class="breadcrumb-container" style="display: none;">
                     <nav class="breadcrumb">
-                        <button class="breadcrumb-back-btn" onclick="navigateBack()" style="display:none;">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <button class="breadcrumb-item home-btn" onclick="navigateToRoot()">
-                            <i class="fas fa-home"></i> Home
+                        <button class="breadcrumb-item back-btn" onclick="goBackOneLevel()">
+                            <i class="fas fa-arrow-left"></i> Back
                         </button>
                         <div id="breadcrumbPath"></div>
                         <!-- Info no breadcrumb (DESKTOP ONLY) -->
                         <div class="breadcrumb-info-group">
-                            <span id="breadcrumbPriceHint" class="breadcrumb-price-hint" onclick="openChatWithPriceQuestion()">Click to chat</span>
                             <span id="breadcrumbPriceBadge" class="breadcrumb-price-badge"></span>
                             <span id="breadcrumbPhotoCount" class="breadcrumb-photo-count"></span>
                         </div>
@@ -381,6 +367,14 @@
                     <!-- Categorias principais -->
                     <div id="categoriesContainer" class="categories-grid">
                         <!-- Categorias serão carregadas aqui -->
+                    </div>
+
+                    <!-- Header da categoria (título + descrição) -->
+                    <div id="categoryHeaderContainer" class="category-header-container" style="display: none;">
+                        <div class="category-header-info">
+                            <h2 id="categoryHeaderTitle"><i class="fas fa-folder"></i> <span>Category Name</span></h2>
+                            <p id="categoryHeaderDescription">Category description goes here</p>
+                        </div>
                     </div>
 
                     <!-- Subcategorias/pastas -->
@@ -895,14 +889,14 @@
     <script src="/js/image-utils.js?v=3"></script>
     <script src="js/app.js?v=3"></script>
     <script src="js/zoom.js?v=3"></script>
-    <script src="js/cart.js?v=3"></script>
+    <script src="js/cart.js?v=8"></script>
     <script src="js/virtualGallery.js?v=3"></script>
     <script src="js/client-core.js?v=3"></script>
     <script src="js/client-gallery.js?v=3"></script>
     <script src="js/client-chat.js?v=4"></script>
     <script src="js/client-commerce.js?v=3"></script>
     <script src="js/client-profile.js?v=1"></script>
-    <script src="js/client-catalog.js?v=1"></script>
+    <script src="js/client-catalog.js?v=3"></script>
     <script src="/js/ui-system.js?v=3"></script>
     <script src="js/currency-manager.js?v=1"></script>
 

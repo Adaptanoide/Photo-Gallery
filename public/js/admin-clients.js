@@ -658,9 +658,7 @@ class AdminClients {
                             <div class="col-category">Category</div>
                             <div class="col-qb">QB Item</div>
                             <div class="col-qty">Qty</div>
-                            <div class="col-tier">Tier</div>
                             <div class="col-price">Price</div>
-                            <div class="col-next">Next Tier</div>
                             <div class="col-subtotal">Subtotal</div>
                         </div>
                     </div>
@@ -2073,35 +2071,33 @@ class AdminClients {
             let totalValue = 0;
             const categoriesHTML = cart.categorySummary.map((cat, catIndex) => {
                 totalValue += cat.totalValue || 0;
-                const tierIndex = cat.currentTier?.index || 0;
-                const tierClass = tierIndex > 0 ? `tier-${tierIndex}` : 'tier-base';
-                const tierText = tierIndex > 0 ? `Tier ${tierIndex}` : 'Base';
-
-                // Próximo tier
-                let nextHint = '<span class="next-empty">—</span>';
-                if (cat.nextTier) {
-                    nextHint = `<span class="next-hint">+${cat.nextTier.itemsNeeded} → T${cat.nextTier.index}</span>`;
-                } else if (tierIndex >= 4) {
-                    nextHint = `<span class="max-hint"><i class="fas fa-crown"></i> MAX</span>`;
-                }
 
                 // Thumbnails com lightbox
                 const thumbsHTML = cat.items ? cat.items.map((item, itemIndex) => {
-                    const r2Path = item.r2Key || '';
-                    const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
-                    const thumbUrl = `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
+                    let thumbUrl = '';
+
+                    // Para produtos de catálogo, usar thumbnailUrl diretamente
+                    if (cat.isCatalogProduct && item.thumbnailUrl) {
+                        thumbUrl = item.thumbnailUrl;
+                    } else {
+                        // Para fotos únicas, construir URL
+                        const r2Path = item.r2Key || '';
+                        const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
+                        thumbUrl = `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
+                    }
 
                     return `
                     <div class="thumb-item" title="${item.name}" onclick="adminClients.openLightbox(${catIndex}, ${itemIndex})">
                         <img src="${thumbUrl}" alt="${item.name}" loading="lazy"
                              onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.add('no-img');">
                         <span class="thumb-name">${item.name}</span>
+                        ${item.quantity > 1 ? `<span class="thumb-qty">×${item.quantity}</span>` : ''}
                     </div>
                     `;
                 }).join('') : '';
 
                 return `
-                <div class="cart-category" data-index="${catIndex}" id="cartCat${catIndex}">
+                <div class="cart-category ${cat.isCatalogProduct ? 'catalog-product' : 'photo-category'}" data-index="${catIndex}" id="cartCat${catIndex}">
                     <div class="cat-row" onclick="adminClients.toggleCategory(${catIndex})">
                         <div class="col-category">
                             <i class="fas fa-chevron-right cat-arrow"></i>
@@ -2111,9 +2107,7 @@ class AdminClients {
                             <span class="qb-badge">${cat.qbItem || '—'}</span>
                         </div>
                         <div class="col-qty">${cat.count}</div>
-                        <div class="col-tier"><span class="tier-badge ${tierClass}">${tierText}</span></div>
                         <div class="col-price">$${cat.currentPrice}</div>
-                        <div class="col-next">${nextHint}</div>
                         <div class="col-subtotal">$${cat.totalValue.toLocaleString()}</div>
                     </div>
                     <div class="cat-items" style="display: none;">
@@ -2455,9 +2449,16 @@ class AdminClients {
 
         const cat = this.cartCategories[catIndex];
         const item = cat.items[itemIndex];
-        const r2Path = item.r2Key || '';
-        const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
-        const fullUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+
+        // Para produtos de catálogo, usar thumbnailUrl convertido para full
+        let fullUrl = '';
+        if (cat.isCatalogProduct && item.thumbnailUrl) {
+            fullUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
+        } else {
+            const r2Path = item.r2Key || '';
+            const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
+            fullUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+        }
 
         document.getElementById('lightboxImage').src = fullUrl;
         document.getElementById('lightboxName').textContent = item.name;
@@ -2491,9 +2492,16 @@ class AdminClients {
     updateLightboxImage() {
         const cat = this.cartCategories[this.currentCategoryIndex];
         const item = cat.items[this.currentImageIndex];
-        const r2Path = item.r2Key || '';
-        const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
-        const fullUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+
+        // Para produtos de catálogo, usar thumbnailUrl convertido para full
+        let fullUrl = '';
+        if (cat.isCatalogProduct && item.thumbnailUrl) {
+            fullUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
+        } else {
+            const r2Path = item.r2Key || '';
+            const encodedPath = r2Path.split('/').map(part => encodeURIComponent(part)).join('/');
+            fullUrl = `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
+        }
 
         document.getElementById('lightboxImage').src = fullUrl;
         document.getElementById('lightboxName').textContent = item.name;

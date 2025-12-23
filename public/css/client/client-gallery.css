@@ -1,6 +1,62 @@
 /* public/css/client/client-gallery.css */
 /* ===== GALLERY - CARDS, GRIDS, PHOTOS ===== */
 
+/* ============================================ */
+/* CATEGORY HEADER - Title + Description       */
+/* Styled to match subcategories-header        */
+/* ============================================ */
+
+.category-header-container {
+    margin-bottom: 24px;
+    padding: 0;
+}
+
+.category-header-container .category-header-info h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.category-header-container .category-header-info h2 i {
+    color: #B87333;
+    font-size: 1.5rem;
+}
+
+.category-header-container .category-header-info p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Dark Mode */
+body.dark-mode .category-header-container .category-header-info h2 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .category-header-container .category-header-info p {
+    color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .category-header-container {
+        margin-bottom: 16px;
+    }
+
+    .category-header-container .category-header-info h2 {
+        font-size: 1.5rem;
+    }
+
+    .category-header-container .category-header-info p {
+        font-size: 0.9rem;
+    }
+}
+
 /* === CATEGORIES & FOLDERS GRID === */
 .categories-grid,
 .folders-grid {
@@ -72,29 +128,16 @@
     color: var(--text-secondary);
     margin: 0 0 1rem 0;
     line-height: 1.5;
-    min-height: 48px;
-    max-height: 48px;
-    overflow: hidden;
+    min-height: 40px;
+    /* Removed max-height to allow full description display */
 }
 
-/* Category metadata */
-.folder-stats {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(212, 165, 116, 0.2);
-    flex-wrap: wrap;
-}
+/* Category metadata - see FOLDER STATS section below for main styles */
 
 .folder-stats span {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    background: var(--gold-light);
     color: var(--gold-primary);
     padding: 0.25rem 0.25rem;
     border-radius: 12px;
@@ -102,35 +145,48 @@
     font-weight: 500;
 }
 
-/* Price badges GREEN - nas categorias principais */
+/* ============================================
+   PRICE BADGES - ESTILO LIMPO (sem fundo)
+   ============================================ */
 .category-price-badge,
 .folder-price-badge {
-    background: #27ae60 !important;
-    color: white !important;
-    padding: 5px 12px;
-    border-radius: 15px;
+    background: transparent !important;
+    color: #10b981 !important;
+    padding: 4px 8px;
+    border-radius: 6px;
     font-size: 0.95rem;
-    font-weight: 600;
-    display: inline-block;
-    margin-left: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
 }
 
-/* Contact for price - verde também */
+.category-price-badge i,
+.folder-price-badge i {
+    font-size: 0.85rem;
+    color: #10b981;
+}
+
+/* Contact for price - estilo limpo */
 .contact-price {
-    background: #22c55e;
-    color: white;
-    padding: 0.3rem 0.8rem;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    background: transparent;
+    color: #6b7280;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-style: italic;
 }
 
-/* Badge no título da galeria */
+/* Badge no título da galeria (breadcrumb) - manter com destaque */
 .gallery-header .category-price-badge {
-    display: inline-block;
-    background: #22c55e;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #10b981;
     color: white;
-    padding: 0.4rem 1rem;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 1.0rem;
     font-weight: 600;
@@ -138,18 +194,16 @@
     vertical-align: middle;
 }
 
-/* Price badges in cards */
+/* Price badges in cards - estilo limpo */
 .folder-stats span:has(.fa-tag) {
-    background: #27ae60;
-    color: white !important;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    background: transparent;
+    color: #10b981 !important;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    margin-top: 5px;
+    gap: 0px;
 }
 
 .folder-stats .fa-tag {
@@ -404,11 +458,25 @@
     display: block;
 }
 
-/* Forçar posição correta com sidebar */
-.photos-gallery #priceProgressContainer,
-.photos-gallery .price-info-container {
-    margin-left: -1rem;
-    margin-right: -1rem;
+/* Forçar posição correta com sidebar - MOBILE ONLY */
+/* On desktop, remove negative margins to prevent overlap with cart */
+@media (max-width: 768px) {
+    .photos-gallery #priceProgressContainer,
+    .photos-gallery .price-info-container {
+        margin-left: -1rem;
+        margin-right: -1rem;
+    }
+}
+
+/* Desktop: keep progress bar within main content bounds */
+@media (min-width: 769px) {
+    .photos-gallery #priceProgressContainer,
+    .photos-gallery .price-info-container {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 
 .price-info-inline {
@@ -651,12 +719,12 @@
     position: relative;
 }
 
-/* Preço no canto superior direito */
+/* Preço no canto superior direito - soft emerald */
 .price-corner {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: #27ae60;
+    background: #10b981;
     color: white;
     padding: 5px 12px;
     border-radius: 20px;
@@ -724,49 +792,55 @@
 }
 
 /* ============================================ */
-/* FOLDER STATS - HORIZONTAL SEM QUEBRA        */
+/* FOLDER STATS - HORIZONTAL ROW LAYOUT        */
 /* ============================================ */
 
 .folder-stats {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
     align-items: center;
+    justify-content: flex-start;
     gap: 12px;
     margin-top: auto;
-    flex-wrap: nowrap; /* Nunca quebrar linha */
+    padding-top: 1rem;
+    flex-wrap: wrap;
+    /* Price and stock badges side by side */
 }
 
 /* ============================================ */
-/* PREÇO - À ESQUERDA                          */
+/* PREÇO - ESTILO LIMPO (sem fundo)            */
 /* ============================================ */
 
 .folder-price-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
+    gap: 5px;
+    padding: 4px 8px;
+    background: transparent;
+    color: #10b981;
     border-radius: 6px;
     font-weight: 700;
-    font-size: 1.05rem;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    font-size: 1.1rem;
     flex-shrink: 0;
     white-space: nowrap;
+}
+
+.folder-price-badge i {
+    color: #10b981;
+    font-size: 0.9rem;
 }
 
 .contact-price {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: #22c55e;
-    color: white;
+    gap: 5px;
+    padding: 4px 8px;
+    background: transparent;
+    color: #6b7280;
     border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+    font-weight: 500;
+    font-size: 0.9rem;
+    font-style: italic;
     flex-shrink: 0;
     white-space: nowrap;
 }
@@ -775,18 +849,18 @@
 /* CONTADOR - À DIREITA (CAIXA CHEIA)         */
 /* ============================================ */
 
-/* Light Mode - Subtle gray badge */
+/* Light Mode - CLEAN GRAY STYLE (no background) */
 .photo-count-badge {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 10px;
-    background: #f0f0f0;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     color: #6b7280;
     font-weight: 500;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
     white-space: nowrap;
     min-width: fit-content;
@@ -808,25 +882,21 @@
 /* ============================================ */
 
 .out-of-stock-inline {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
+    gap: 4px;
+    padding: 4px 8px;
     background: #fef2f2;
-    border: 1px solid #fecaca;
     color: #b91c1c;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.85rem;
+    font-weight: 600;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    flex-shrink: 0;
     white-space: nowrap;
-    min-width: fit-content;
 }
 
 .out-of-stock-inline i {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     flex-shrink: 0;
 }
 
@@ -841,36 +911,41 @@
 }
 
 /* ============================================ */
-/* RESPONSIVIDADE                              */
+/* RESPONSIVIDADE - FOLDER CARDS               */
 /* ============================================ */
 
 @media (max-width: 768px) {
     .folder-stats {
         flex-direction: column;
-        align-items: center;
-        gap: 8px;
+        align-items: stretch;
+        gap: 10px;
         width: 100%;
     }
 
     .folder-price-badge,
     .contact-price {
         width: 100%;
-        max-width: 280px;
         justify-content: center;
         text-align: center;
         display: flex;
         padding: 10px 16px;
+        font-size: 1rem;
     }
 
     .photo-count-badge,
     .out-of-stock-inline {
         width: 100%;
-        max-width: 280px;
         justify-content: center;
         text-align: center;
         font-size: 0.85rem;
-        padding: 8px 12px;
+        padding: 10px 12px;
         display: flex;
+    }
+
+    /* Ensure cards don't get too tall */
+    .folder-card,
+    .category-card {
+        min-height: 200px;
     }
 }
 
@@ -1102,34 +1177,35 @@
     white-space: nowrap;
 }
 
-/* Mix & Match Badge na barra de progresso */
+/* Mix & Match Badge na barra de progresso - ESTILO AMARELO SÓLIDO */
 .mix-match-badge {
-    background: linear-gradient(135deg, #B87333 0%, #D4A574 100%);
-    color: white;
-    padding: 5px 12px;
-    border-radius: 16px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    background: #F5C451;
+    color: #1a1a1a;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 6px rgba(184, 115, 51, 0.3);
+    box-shadow: 0 2px 6px rgba(245, 196, 81, 0.3);
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    gap: 6px;
+    border: none;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     white-space: nowrap;
 }
 
 .mix-match-badge:hover {
-    background: linear-gradient(135deg, #A0522D 0%, #B87333 100%);
+    background: #E5B441;
     transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(184, 115, 51, 0.4);
+    box-shadow: 0 3px 10px rgba(245, 196, 81, 0.5);
 }
 
 .mix-match-badge i {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
+    color: #1a1a1a;
 }
 
 /* Hint text ao lado do badge Mix & Match */
@@ -1483,8 +1559,12 @@ body.dark-mode .folder-card.out-of-stock:hover .out-of-stock-inline {
 
 /* Price Badge - Keep green but darker */
 body.dark-mode .folder-price-badge {
-    background: #28a745 !important;
-    color: white !important;
+    background: transparent !important;
+    color: #34d399 !important;
+}
+
+body.dark-mode .folder-price-badge i {
+    color: #34d399 !important;
 }
 
 /* Contact for Price */

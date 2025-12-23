@@ -403,9 +403,9 @@
     color: #999 !important;
 }
 
-/* Price badge in modal */
+/* Price badge in modal - soft emerald green */
 .modal-price-badge {
-    background: #27ae60;
+    background: #10b981;
     color: white !important;
     padding: 6px 12px;
     border-radius: 12px;
@@ -422,7 +422,7 @@
 }
 
 .modal-price-badge.contact-price {
-    background: #22c55e;
+    background: #10b981;
 }
 
 /* Volume pricing display */

@@ -163,6 +163,11 @@ class EmailService {
             const photoItems = allItems.filter(item => !item.isCatalogProduct);
             const catalogItems = allItems.filter(item => item.isCatalogProduct);
 
+            // FALLBACK: Se items não foi passado, usar totalItems como photoCount
+            const effectivePhotoCount = allItems.length > 0
+                ? photoItems.length
+                : (selectionData.totalItems || 0);
+
             const templateData = {
                 clientName: selectionData.clientName,
                 clientCode: selectionData.clientCode,
@@ -177,9 +182,9 @@ class EmailService {
                 // Novos campos para catálogo
                 photoItems: photoItems,
                 catalogItems: catalogItems,
-                photoCount: photoItems.length,
+                photoCount: effectivePhotoCount,
                 catalogCount: catalogItems.length,
-                totalUnits: catalogItems.reduce((sum, item) => sum + (item.quantity || 1), 0) + photoItems.length
+                totalUnits: catalogItems.reduce((sum, item) => sum + (item.quantity || 1), 0) + effectivePhotoCount
             };
 
             // Aplicar template
@@ -376,35 +381,50 @@ class EmailService {
             const catalogTotal = data.catalogItems.reduce((sum, item) => {
                 return sum + ((item.unitPrice || 0) * (item.quantity || 1));
             }, 0);
+            const totalCatalogUnits = data.catalogItems.reduce((s, i) => s + (i.quantity || 1), 0);
+
+            // Singular/plural
+            const itemsWord = data.catalogCount === 1 ? 'item' : 'items';
+            const unitsWord = totalCatalogUnits === 1 ? 'unit' : 'units';
 
             catalogItemsHtml = `
                 <div class="items-section" style="margin: 20px 0;">
-                    <h4 style="color: #333; margin-bottom: 10px;">📦 Catalog Products (${data.catalogCount} items, ${data.catalogItems.reduce((s, i) => s + (i.quantity || 1), 0)} units)</h4>
+                    <h4 style="color: #333; margin: 0 0 10px 0;">
+                        📦 Stock Products
+                        <span style="font-size: 12px; background: #6b7280; color: white; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">
+                            ${data.catalogCount} ${itemsWord} • ${totalCatalogUnits} ${unitsWord}
+                        </span>
+                    </h4>
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
                             <tr style="background: #f8f9fa;">
-                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #B87333;">Product</th>
-                                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #B87333;">Qty</th>
-                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333;">Unit Price</th>
-                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333;">Total</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #B87333; color: #333;">QB Item</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #B87333; color: #333;">Product</th>
+                                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #B87333; color: #333;">Qty</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333; color: #333;">Unit</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333; color: #333;">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${data.catalogItems.map(item => `
                                 <tr>
                                     <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">
-                                        ${item.productName || item.qbItem}
-                                        <br><small style="color: #888;">${item.category || ''}</small>
+                                        <strong style="color: #B87333; font-family: monospace; font-size: 12px;">
+                                            ${item.qbItem || '—'}
+                                        </strong>
                                     </td>
-                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity || 1}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">
+                                        ${item.productName || item.fileName || '—'}
+                                    </td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold;">${item.quantity || 1}</td>
                                     <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.unitPrice > 0 ? '$' + item.unitPrice.toFixed(2) : 'TBD'}</td>
-                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${item.unitPrice > 0 ? '#16a34a' : '#999'};">
                                         ${item.unitPrice > 0 ? '$' + ((item.unitPrice || 0) * (item.quantity || 1)).toFixed(2) : 'TBD'}
                                     </td>
                                 </tr>
                             `).join('')}
                             <tr style="background: #f8f9fa;">
-                                <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">Catalog Subtotal:</td>
+                                <td colspan="4" style="padding: 8px; text-align: right; font-weight: bold;">Stock Subtotal:</td>
                                 <td style="padding: 8px; text-align: right; font-weight: bold; color: #B87333;">$${catalogTotal.toFixed(2)}</td>
                             </tr>
                         </tbody>
@@ -413,14 +433,18 @@ class EmailService {
             `;
         }
 
-        // Descrição dos itens
+        // Descrição dos itens - com singular/plural correto
         let itemsDescription = '';
+        const photoWord = data.photoCount === 1 ? 'photo' : 'photos';
+        const catalogWord = data.catalogCount === 1 ? 'stock product' : 'stock products';
+        const totalUnitsWord = data.totalUnits === 1 ? 'unit' : 'units';
+
         if (data.photoCount > 0 && data.catalogCount > 0) {
-            itemsDescription = `${data.photoCount} photos + ${data.catalogCount} catalog products (${data.totalUnits} total units)`;
+            itemsDescription = `${data.photoCount} ${photoWord} + ${data.catalogCount} ${catalogWord} (${data.totalUnits} total ${totalUnitsWord})`;
         } else if (data.catalogCount > 0) {
-            itemsDescription = `${data.catalogCount} catalog products (${data.totalUnits} units)`;
+            itemsDescription = `${data.catalogCount} ${catalogWord} (${data.totalUnits} ${totalUnitsWord})`;
         } else {
-            itemsDescription = `${data.photoCount} photos`;
+            itemsDescription = `${data.photoCount} ${photoWord}`;
         }
 
         return `

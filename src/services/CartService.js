@@ -290,42 +290,60 @@ class CartService {
 
             // 3. APENAS SE NÃO FOR GHOST: Liberar produto e atualizar CDE
             if (!isGhostItem) {
-                // ✅ DETECTAR SE É COMING SOON
-                const isComingSoonItem = itemToRemove?.transitStatus === 'coming_soon';
-                const correctCDEStatus = isComingSoonItem ? 'PRE-TRANSITO' : 'INGRESADO';
+                // ✅ IMPORTANTE: Verificar se é produto de CATÁLOGO (stock)
+                // Produtos de catálogo NÃO existem no tbinventario do CDE
+                const isCatalogProduct = itemToRemove?.isCatalogProduct === true;
 
-                // Liberar no MongoDB
-                await UnifiedProductComplete.updateOne(
-                    { driveFileId },
-                    {
-                        $set: {
-                            status: 'available',
-                            cdeStatus: correctCDEStatus  // ✅ MUDOU AQUI!
-                        },
-                        $unset: { reservedBy: 1 }
+                if (isCatalogProduct) {
+                    // ============================================
+                    // PRODUTO DE CATÁLOGO (STOCK) - APENAS LÓGICO
+                    // NÃO altera CDE - apenas remove do carrinho MongoDB
+                    // O CatalogSyncService recalcula o estoque disponível
+                    // ============================================
+                    console.log(`[CART] 📦 Produto de catálogo removido: ${itemToRemove.productName || itemToRemove.qbItem}`);
+                    console.log(`[CART] 📊 Estoque lógico será recalculado pelo CatalogSyncService`);
+                    // NÃO chama CDEWriter - o estoque no CDE permanece inalterado
+                } else {
+                    // ============================================
+                    // FOTO ÚNICA - LIBERAR NO CDE
+                    // ============================================
+                    // ✅ DETECTAR SE É COMING SOON
+                    const isComingSoonItem = itemToRemove?.transitStatus === 'coming_soon';
+                    const correctCDEStatus = isComingSoonItem ? 'PRE-TRANSITO' : 'INGRESADO';
+
+                    // Liberar no MongoDB
+                    await UnifiedProductComplete.updateOne(
+                        { driveFileId },
+                        {
+                            $set: {
+                                status: 'available',
+                                cdeStatus: correctCDEStatus
+                            },
+                            $unset: { reservedBy: 1 }
+                        }
+                    );
+                    console.log(`[CART] Produto liberado com status: ${correctCDEStatus}`);
+
+                    // 🚀 Atualizar CDE EM BACKGROUND (não esperar)
+                    const fileName = driveFileId.split('/').pop();
+                    const photoNumber = fileName.match(/(\d+)/)?.[1];
+                    if (photoNumber) {
+                        // ✅ DETECTAR TABELA DO ITEM REMOVIDO
+                        const cdeTable = itemToRemove?.cdeTable || 'tbinventario';
+                        console.log(`[CART] 🎯 Vai liberar foto ${photoNumber} em ${cdeTable}`);
+
+                        // EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
+                        CDEWriter.markAsAvailable(photoNumber, cdeTable)
+                            .then(() => {
+                                console.log(`[CDE] ✅ Foto ${photoNumber} liberada em background de ${cdeTable}`);
+                            })
+                            .catch(cdeError => {
+                                console.error(`[CDE] ⚠️ Erro ao liberar em background: ${cdeError.message}`);
+                                // Sync vai corrigir depois
+                            });
+
+                        console.log(`[CART] CDE será liberado em background de ${cdeTable}`);
                     }
-                );
-                console.log(`[CART] Produto liberado com status: ${correctCDEStatus}`);  // ✅ MUDOU AQUI!
-
-                // 🚀 Atualizar CDE EM BACKGROUND (não esperar)
-                const fileName = driveFileId.split('/').pop();
-                const photoNumber = fileName.match(/(\d+)/)?.[1];
-                if (photoNumber) {
-                    // ✅ DETECTAR TABELA DO ITEM REMOVIDO
-                    const cdeTable = itemToRemove?.cdeTable || 'tbinventario';
-                    console.log(`[CART] 🎯 Vai liberar foto ${photoNumber} em ${cdeTable}`);
-
-                    // EXECUÇÃO ASSÍNCRONA - NÃO ESPERA RESPOSTA!
-                    CDEWriter.markAsAvailable(photoNumber, cdeTable)  // ✅ PASSAR TABELA
-                        .then(() => {
-                            console.log(`[CDE] ✅ Foto ${photoNumber} liberada em background de ${cdeTable}`);
-                        })
-                        .catch(cdeError => {
-                            console.error(`[CDE] ⚠️ Erro ao liberar em background: ${cdeError.message}`);
-                            // Sync vai corrigir depois
-                        });
-
-                    console.log(`[CART] CDE será liberado em background de ${cdeTable}`);
                 }
             } else {
                 // Para ghost items, apenas limpar a reserva local sem mudar status
@@ -356,20 +374,54 @@ class CartService {
     /**
      * PROCESSAR ITEM EXPIRADO
      * Quando detecta que um item expirou, libera instantaneamente
+     * ✅ ATUALIZADO: Suporta produtos de catálogo (stock)
      */
     static async processExpiredItem(item, cart) {
         let cdeConnection = null;
-        const photoNumber = this.extractPhotoNumber(item.fileName);
 
         try {
-            console.log(`[EXPIRE] Processando item expirado: ${item.fileName}`);
+            // ============================================
+            // PRODUTO DE CATÁLOGO (STOCK) - Apenas remove do carrinho
+            // O CatalogSyncService recalcula o estoque automaticamente
+            // ============================================
+            if (item.isCatalogProduct) {
+                console.log(`[EXPIRE] 📦 Processando item de catálogo expirado: ${item.productName || item.qbItem}`);
+
+                // Remover do carrinho usando qbItem ou driveFileId
+                await Cart.updateOne(
+                    { _id: cart._id },
+                    {
+                        $pull: { items: { qbItem: item.qbItem } },
+                        $inc: { totalItems: -1 }
+                    }
+                );
+
+                // Sincronizar estoque lógico imediatamente
+                try {
+                    const CatalogSyncService = require('./CatalogSyncService');
+                    const syncService = CatalogSyncService.getInstance();
+                    await syncService.syncSingleProduct(item.qbItem);
+                    console.log(`[EXPIRE] ✅ Estoque de ${item.qbItem} sincronizado após expiração`);
+                } catch (syncErr) {
+                    console.warn(`[EXPIRE] ⚠️ Erro ao sincronizar estoque:`, syncErr.message);
+                }
+
+                console.log(`[EXPIRE] ✅ Item de catálogo ${item.qbItem} liberado por expiração`);
+                return true;
+            }
+
+            // ============================================
+            // FOTO ÚNICA - Atualiza CDE e MongoDB
+            // ============================================
+            const photoNumber = this.extractPhotoNumber(item.fileName);
+            console.log(`[EXPIRE] Processando foto expirada: ${item.fileName}`);
 
             // 1. ATUALIZAÇÃO INSTANTÂNEA DO CDE
             if (photoNumber) {
                 cdeConnection = await this.getCDEConnection();
 
                 await cdeConnection.execute(
-                    `UPDATE tbinventario 
+                    `UPDATE tbinventario
                      SET AESTADOP = 'INGRESADO',
                          RESERVEDUSU = NULL,
                          AFECHA = NOW()
@@ -747,10 +799,12 @@ class CartService {
 
     /**
      * Adicionar produto de catálogo ao carrinho
+     * ESTOQUE LÓGICO - NÃO ALTERA CDE
+     * Apenas registra no MongoDB, o CatalogSyncService calcula disponibilidade
      */
     static async addCatalogToCart(sessionId, clientCode, clientName, catalogData) {
         try {
-            const { qbItem, productName, category, quantity, unitPrice, thumbnailUrl, reservedIDHs } = catalogData;
+            const { qbItem, productName, category, catalogCategory, quantity, unitPrice, thumbnailUrl } = catalogData;
 
             console.log(`[CART-CATALOG] Adicionando ${quantity}x ${productName} (${qbItem}) ao carrinho de ${clientCode}`);
 
@@ -777,27 +831,28 @@ class CartService {
                 // Atualizar quantidade existente
                 const existing = cart.items[existingIndex];
                 existing.quantity = (existing.quantity || 0) + quantity;
-                existing.reservedIDHs = [...(existing.reservedIDHs || []), ...reservedIDHs];
+                existing.price = existing.unitPrice * existing.quantity;
                 console.log(`[CART-CATALOG] Quantidade atualizada para ${existing.quantity}`);
             } else {
                 // Adicionar novo item de catálogo
                 cart.items.push({
-                    productId: new (require('mongoose')).Types.ObjectId(), // ID temporário
-                    driveFileId: `catalog_${qbItem}_${Date.now()}`, // ID único para catálogo
+                    productId: new (require('mongoose')).Types.ObjectId(),
+                    driveFileId: `catalog_${qbItem}_${Date.now()}`,
                     fileName: productName,
                     category: category,
+                    catalogCategory: catalogCategory || null,
                     thumbnailUrl: thumbnailUrl || null,
-                    price: unitPrice * quantity, // Preço total
+                    price: unitPrice * quantity,
                     basePrice: unitPrice,
                     addedAt: new Date(),
                     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
-                    // Campos de catálogo
+                    // Campos de catálogo (estoque lógico)
                     isCatalogProduct: true,
                     qbItem: qbItem,
                     productName: productName,
                     quantity: quantity,
-                    unitPrice: unitPrice,
-                    reservedIDHs: reservedIDHs || []
+                    unitPrice: unitPrice
+                    // NÃO usa reservedIDHs - estoque é apenas lógico
                 });
             }
 
@@ -826,6 +881,8 @@ class CartService {
 
     /**
      * Atualizar quantidade de produto de catálogo
+     * ESTOQUE LÓGICO - NÃO ALTERA CDE
+     * Apenas atualiza MongoDB, o CatalogSyncService recalcula disponibilidade
      */
     static async updateCatalogQuantity(sessionId, qbItem, newQuantity) {
         try {
@@ -842,16 +899,20 @@ class CartService {
                 throw new Error('Produto não encontrado no carrinho');
             }
 
+            const item = cart.items[itemIndex];
+            const currentQuantity = item.quantity || 0;
+
             if (newQuantity <= 0) {
-                // Remover item
+                // Remover item completamente
                 cart.items.splice(itemIndex, 1);
-                console.log(`[CART-CATALOG] Item removido`);
-            } else {
-                // Atualizar quantidade
-                const item = cart.items[itemIndex];
+                console.log(`[CART-CATALOG] Item removido do carrinho`);
+                console.log(`[CART-CATALOG] 📊 Estoque lógico será recalculado automaticamente`);
+            } else if (newQuantity !== currentQuantity) {
+                // Atualizando quantidade (aumentando ou reduzindo)
+                console.log(`[CART-CATALOG] Alterando de ${currentQuantity} para ${newQuantity}`);
                 item.quantity = newQuantity;
                 item.price = item.unitPrice * newQuantity;
-                console.log(`[CART-CATALOG] Quantidade atualizada para ${newQuantity}`);
+                console.log(`[CART-CATALOG] 📊 Estoque lógico será recalculado automaticamente`);
             }
 
             await cart.save();

@@ -360,7 +360,7 @@
         max-width: 150px;
     }
 
-    .breadcrumb-item.home-btn {
+    .breadcrumb-item.back-btn {
         padding: 0.4rem 0.5rem;
         display: none !important;
         /* NOVO - Esconder Home no mobile */
@@ -937,7 +937,7 @@
         max-width: 120px;
     }
 
-    .breadcrumb-item.home-btn span {
+    .breadcrumb-item.back-btn span {
         display: none;
         /* Show only icon */
     }

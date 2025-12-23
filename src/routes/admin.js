@@ -1154,26 +1154,75 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
         );
 
         // 🆕 AGREGAR POR CATEGORIA para resumo
+        // Separar: fotos únicas por categoria, catálogo por qbItem
         const categoryMap = new Map();
 
         for (const item of validItems) {
-            const categoryPath = item.category || '';
-            if (!categoryMap.has(categoryPath)) {
-                categoryMap.set(categoryPath, {
-                    category: categoryPath,
+            let groupKey;
+            let displayCategory;
+
+            if (item.isCatalogProduct) {
+                // Produtos de catálogo: agrupar por qbItem
+                groupKey = `catalog_${item.qbItem || item.productName || item.fileName}`;
+                displayCategory = item.productName || item.fileName || item.category || 'Catalog Product';
+            } else {
+                // Fotos únicas: agrupar por categoria (path)
+                groupKey = item.category || 'Uncategorized';
+                displayCategory = item.category || 'Uncategorized';
+            }
+
+            if (!categoryMap.has(groupKey)) {
+                categoryMap.set(groupKey, {
+                    category: displayCategory,
+                    groupKey: groupKey,
+                    isCatalogProduct: item.isCatalogProduct || false,
+                    qbItemFromItem: item.qbItem || null,
                     items: [],
                     count: 0
                 });
             }
-            const cat = categoryMap.get(categoryPath);
+            const cat = categoryMap.get(groupKey);
             cat.items.push(item);
-            cat.count++;
+            cat.count += item.quantity || 1;
         }
 
         // 🆕 BUSCAR INFO DE PREÇO/TIER para cada categoria
         const categorySummary = [];
 
-        for (const [categoryPath, catData] of categoryMap) {
+        for (const [groupKey, catData] of categoryMap) {
+            const categoryPath = catData.category;
+
+            // Para produtos de catálogo, usar dados do próprio item
+            if (catData.isCatalogProduct) {
+                const firstItem = catData.items[0];
+                const totalValue = catData.items.reduce((sum, item) =>
+                    sum + ((item.unitPrice || item.price || 0) * (item.quantity || 1)), 0);
+
+                categorySummary.push({
+                    category: categoryPath,
+                    groupKey: groupKey,
+                    shortName: categoryPath,
+                    qbItem: catData.qbItemFromItem || '',
+                    count: catData.count,
+                    basePrice: firstItem?.unitPrice || firstItem?.price || 0,
+                    currentPrice: firstItem?.unitPrice || firstItem?.price || 0,
+                    totalValue: totalValue,
+                    currentTier: null,
+                    nextTier: null,
+                    allTiers: [],
+                    isCatalogProduct: true,
+                    items: catData.items.map(item => ({
+                        r2Key: item.r2Key || item.driveFileId || item.thumbnailUrl,
+                        name: item.productName || item.fileName || item.name || 'Unnamed',
+                        price: item.unitPrice || item.price || 0,
+                        quantity: item.quantity || 1,
+                        thumbnailUrl: item.thumbnailUrl
+                    }))
+                });
+                continue;
+            }
+
+            // Para fotos únicas: buscar info de preço/tier
             // Normalizar path para busca (converter " → " para "/")
             const normalizedPath = categoryPath.replace(/ → /g, '/').replace(/\/$/, '');
 
@@ -1255,9 +1304,13 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
                 }
             }
 
+            // Mostrar caminho completo para melhor identificação
+            const shortName = categoryPath || 'Unknown Category';
+
             categorySummary.push({
                 category: categoryPath,
-                shortName: categoryPath.split(' → ').filter(s => s.trim()).pop() || categoryPath,
+                groupKey: groupKey,
+                shortName: shortName,
                 qbItem: qbItem,
                 count: catData.count,
                 basePrice: basePrice,
@@ -1271,6 +1324,7 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
                     max: t.max,
                     price: t.price
                 })),
+                isCatalogProduct: false,
                 // 🆕 ITEMS para expandir com thumbnails
                 items: catData.items.map(item => ({
                     r2Key: item.r2Key || item.driveFileId,
@@ -1280,8 +1334,12 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
             });
         }
 
-        // Ordenar por quantidade (maior primeiro)
-        categorySummary.sort((a, b) => b.count - a.count);
+        // Ordenar: fotos únicas primeiro, depois catálogo, ambos por nome
+        categorySummary.sort((a, b) => {
+            if (a.isCatalogProduct && !b.isCatalogProduct) return 1;
+            if (!a.isCatalogProduct && b.isCatalogProduct) return -1;
+            return a.shortName.localeCompare(b.shortName);
+        });
 
         const cartData = {
             _id: cart._id,

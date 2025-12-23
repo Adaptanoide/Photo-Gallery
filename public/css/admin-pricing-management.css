@@ -3,6 +3,446 @@
 /* ===== PRICING MANAGEMENT CSS - LUXURY GOLD EDITION - SUNSHINE COWHIDES =====
    CSS específico para gestão de preços com paleta dourada luxuosa */
 
+/* ===== PRICING SECTION HEADER ===== */
+.pricing-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 8px;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border-subtle);
+    gap: 1rem;
+}
+
+.pricing-tabs-row {
+    display: flex;
+    gap: 6px;
+}
+
+.pricing-tab-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pricing-tab-btn:hover:not(.active) {
+    color: var(--text-primary);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.pricing-tab-btn.active {
+    background: linear-gradient(135deg, #D4AF37 0%, #C9A227 50%, #B8963E 100%);
+    color: #FFFFFF !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+.pricing-tab-btn i {
+    font-size: 1rem;
+}
+
+.pricing-tab-btn.active i {
+    color: #FFFFFF !important;
+}
+
+.pricing-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pricing-header-actions .last-refresh-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.pricing-header-actions .btn-primary {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+/* ===== INLINE FILTERS (Header) ===== */
+.pricing-header-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.header-filter-input {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    min-width: 120px;
+}
+
+.header-filter-input:focus {
+    outline: none;
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.header-filter-input::placeholder {
+    color: var(--text-muted);
+}
+
+.header-filter-select {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    min-width: 100px;
+}
+
+.header-filter-select:focus {
+    outline: none;
+    border-color: var(--gold-primary);
+}
+
+.header-filter-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Tab Toolbar */
+.pricing-tab-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.toolbar-stats {
+    display: flex;
+    align-items: center;
+}
+
+.toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-sm {
+    padding: 6px 12px !important;
+    font-size: 0.85rem !important;
+}
+
+/* Tab Content */
+.pricing-tab-content {
+    display: none;
+}
+
+.pricing-tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== STOCK PRODUCTS - LISTA PLANA PADRONIZADA ===== */
+.stock-products-container {
+    padding: 0;
+}
+
+.stock-products-flat-list {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+/* Stock Products Scrollbar Styling */
+.stock-products-flat-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.stock-products-flat-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.stock-products-flat-list::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 4px;
+}
+
+.stock-products-flat-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+}
+
+/* Stock List Header Row - STICKY */
+.stock-list-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: 1fr 80px 160px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.875rem 1.25rem;
+    background: #2a2a2f;
+    border-bottom: 2px solid var(--border-subtle);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.stock-list-header .header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stock-list-header .header-qbitem {
+    min-width: 90px;
+    text-align: center;
+}
+
+.stock-list-header .header-name {
+    flex: 1;
+}
+
+.stock-list-header .header-stock {
+    text-align: center;
+}
+
+.stock-list-header .header-price {
+    text-align: right;
+    padding-right: 40px;
+}
+
+/* Stock Product Item - Estilo padronizado igual ao Unique Photos */
+.stock-product-item {
+    display: grid;
+    grid-template-columns: 1fr 80px 160px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.2s ease;
+}
+
+.stock-product-item:last-child {
+    border-bottom: none;
+}
+
+.stock-product-item:hover {
+    background: rgba(212, 175, 55, 0.04);
+}
+
+.stock-product-item.has-price {
+    background: rgba(34, 197, 94, 0.03);
+}
+
+.stock-product-item.no-price {
+    background: transparent;
+}
+
+.stock-product-item.modified {
+    background: rgba(245, 158, 11, 0.08);
+}
+
+/* Product Info - QBItem + Name */
+.stock-product-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.stock-product-qbitem {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gold-primary);
+    background: rgba(212, 175, 55, 0.12);
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    min-width: 90px;
+    text-align: center;
+}
+
+.stock-product-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Stock Count */
+.stock-product-stock {
+    text-align: center;
+}
+
+.stock-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.stock-count.in-stock {
+    color: var(--success);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.stock-count.out-stock {
+    color: var(--text-muted);
+    background: rgba(100, 100, 100, 0.1);
+}
+
+/* Price Input */
+.stock-product-price {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stock-product-price .price-symbol {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.stock-price-input {
+    width: 90px;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    text-align: right;
+    transition: all 0.2s ease;
+}
+
+.stock-price-input:focus {
+    outline: none;
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.stock-product-item.modified .stock-price-input {
+    border-color: var(--warning);
+    background: rgba(245, 158, 11, 0.15);
+}
+
+.stock-product-item.has-price .stock-price-input {
+    border-color: rgba(34, 197, 94, 0.4);
+}
+
+/* Save Button */
+.btn-save-price {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-save-price:hover {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+/* Responsive - Stock Products */
+@media (max-width: 768px) {
+    .pricing-section-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pricing-tabs-row {
+        width: 100%;
+    }
+
+    .pricing-tab-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .pricing-header-filters {
+        width: 100%;
+        max-width: none;
+    }
+
+    .pricing-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .stock-product-item {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .stock-product-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .stock-product-stock {
+        text-align: left;
+    }
+
+    .stock-product-price {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
 /* ===== CABEÇALHO DA SEÇÃO PREÇOS ===== */
 
 /* ===== STATS INLINE NO HEADER ===== */
@@ -95,18 +535,7 @@
     }
 }
 
-.pricing-section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 1.75rem 2rem;
-    background: linear-gradient(135deg, var(--luxury-medium), rgba(58, 58, 66, 0.8));
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--border-radius-large);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
+/* Estilo antigo removido - usando definição no topo do arquivo */
 
 .pricing-title {
     font-size: 1.8rem;
@@ -191,13 +620,13 @@
 /* ===== FILTROS DE PREÇOS LUXUOSOS ===== */
 
 .pricing-filters {
-    background: linear-gradient(135deg, var(--luxury-medium), rgba(58, 58, 66, 0.8));
+    background: linear-gradient(135deg, var(--luxury-medium), rgba(58, 58, 66, 0.95));
     border: 1px solid var(--border-subtle);
     border-radius: var(--border-radius-large);
     padding: 1.0rem;
     margin-bottom: 1.0rem;
     backdrop-filter: blur(20px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .pricing-filters .filters-row {
@@ -1504,7 +1933,6 @@
 }
 
 /* Remover estilos antigos conflitantes */
-.pricing-section-header,
 .sync-status-card {
     display: none !important;
 }
@@ -2260,7 +2688,7 @@
 
 /* ===== BULK EDIT - GROUPED CATEGORIES ===== */
 .bulk-categories-list {
-    max-height: calc(100vh - 320px);
+    max-height: calc(100vh - 200px);
     overflow-y: auto;
     margin-top: 16px;
     padding-right: 4px;

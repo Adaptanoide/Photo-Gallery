@@ -287,43 +287,53 @@
                 </div>
 
                 <div id="section-pricing" class="content-section" style="display: none;">
-                    <!-- Container Card para o Header (IGUAL AO SELECTION) -->
-                    <div class="section-header-card">
-                        <div class="selections-section-header">
-                            <h2 class="selections-title">
-                                <i class="fas fa-dollar-sign"></i>
-                                Price Management
-                                <span class="pricing-stats-inline" id="pricingStatsInline">
-                                    <span class="stat-separator">|</span>
-                                    <span id="inlineTotalCount">-</span> categories
-                                    (<span id="inlinePricedCount" class="stat-success">-</span> priced,
-                                    <span id="inlineNeedPriceCount" class="stat-warning">-</span> need pricing)
-                                </span>
-                            </h2>
-                            <div class="selections-actions">
-                                <span id="pricingModifiedIndicator" class="modified-indicator" style="display: none;">
-                                    <i class="fas fa-exclamation-circle"></i>
-                                    <span id="pricingModifiedCount">0</span> modified
-                                </span>
-                                <button id="btnDiscardChanges" class="btn btn-secondary" style="display: none;">
-                                    <i class="fas fa-undo"></i>
-                                    Discard
-                                </button>
-                                <button id="btnSaveAllChanges" class="btn btn-success" style="display: none;">
-                                    <i class="fas fa-save"></i>
-                                    Save Changes
-                                </button>
-                                <div class="refresh-container">
-                                    <span id="lastRefreshInfo" class="last-refresh-info" title="Last price data refresh">
-                                        <i class="fas fa-clock"></i>
-                                        <span id="lastRefreshText">Loading...</span>
-                                    </span>
-                                    <button id="btnSyncDrive" class="btn btn-primary">
-                                        <i class="fas fa-sync-alt"></i>
-                                        Refresh
-                                    </button>
-                                </div>
-                            </div>
+                    <!-- ===== PRICING HEADER COMPACTO ===== -->
+                    <div class="pricing-section-header">
+                        <!-- Tabs -->
+                        <div class="pricing-tabs-row">
+                            <button class="pricing-tab-btn active" data-tab="unique-photos" onclick="switchPricingTab('unique-photos')">
+                                <i class="fas fa-images"></i>
+                                <span>Unique Photos</span>
+                            </button>
+                            <button class="pricing-tab-btn" data-tab="stock-products" onclick="switchPricingTab('stock-products')">
+                                <i class="fas fa-boxes"></i>
+                                <span>Stock Products</span>
+                            </button>
+                        </div>
+
+                        <!-- Filtros Inline - Unique Photos -->
+                        <div class="pricing-header-filters" id="filters-unique-photos">
+                            <input type="text" id="searchCategories" class="header-filter-input" placeholder="Search category...">
+                            <select id="sortCategories" class="header-filter-select">
+                                <option value="name">Name A-Z</option>
+                                <option value="name-desc">Name Z-A</option>
+                                <option value="price-high">Price ↓</option>
+                                <option value="price-low">Price ↑</option>
+                                <option value="mixmatch">Mix & Match</option>
+                            </select>
+                        </div>
+
+                        <!-- Filtros Inline - Stock Products -->
+                        <div class="pricing-header-filters" id="filters-stock-products" style="display: none;">
+                            <input type="text" id="stockProductSearch" class="header-filter-input" placeholder="Search product...">
+                            <select id="sortStockProducts" class="header-filter-select" onchange="sortStockProducts()">
+                                <option value="name">Name A-Z</option>
+                                <option value="name-desc">Name Z-A</option>
+                                <option value="price-high">Price ↓</option>
+                                <option value="price-low">Price ↑</option>
+                                <option value="stock">Stock ↓</option>
+                            </select>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="pricing-header-actions">
+                            <span id="lastRefreshInfo" class="last-refresh-info" title="Last refresh">
+                                <i class="fas fa-clock"></i>
+                                <span id="lastRefreshText">-</span>
+                            </span>
+                            <button id="btnSyncDrive" class="btn btn-primary btn-sm">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -353,41 +363,36 @@
                         </div>
                     </div>
 
-                    <!-- Filtros simplificados -->
-                    <div class="pricing-filters">
-                        <div class="filters-row">
-                            <div class="filter-group search-group">
-                                <label class="filter-label">Search</label>
-                                <input type="text" id="searchCategories" class="filter-input"
-                                    placeholder="Category name or QBITEM...">
+                    <!-- ===== TAB CONTENT: UNIQUE PHOTOS ===== -->
+                    <div id="tab-unique-photos" class="pricing-tab-content active">
+                        <!-- ===== INTERFACE TIPO PDF ===== -->
+                        <div id="pricingConfigContainer" class="pricing-config-container">
+                            <!-- Loading inicial -->
+                            <div class="pricing-config-loading" id="pricingConfigLoading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading categories...</p>
                             </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Sort by</label>
-                                <select id="sortCategories" class="filter-select">
-                                    <option value="name">Name A-Z</option>
-                                    <option value="name-desc">Name Z-A</option>
-                                    <option value="price-high">Price: High → Low</option>
-                                    <option value="price-low">Price: Low → High</option>
-                                    <option value="mixmatch">Mix & Match First</option>
-                                    <option value="photos">Most Photos</option>
-                                </select>
+
+                            <!-- Container da interface (preenchido via JS) -->
+                            <div id="pricingConfigContent" class="pricing-config-content" style="display: none;">
+                                <!-- Será preenchido por renderGroupedCategories() -->
                             </div>
                         </div>
                     </div>
+                    <!-- END TAB: UNIQUE PHOTOS -->
 
-                    <!-- ===== INTERFACE TIPO PDF (substitui tabela) ===== -->
-                    <div id="pricingConfigContainer" class="pricing-config-container">
-                        <!-- Loading inicial -->
-                        <div class="pricing-config-loading" id="pricingConfigLoading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <p>Loading categories...</p>
-                        </div>
-
-                        <!-- Container da interface (preenchido via JS) -->
-                        <div id="pricingConfigContent" class="pricing-config-content" style="display: none;">
-                            <!-- Será preenchido por renderGroupedCategories() -->
+                    <!-- ===== TAB CONTENT: STOCK PRODUCTS ===== -->
+                    <div id="tab-stock-products" class="pricing-tab-content">
+                        <!-- Products Container -->
+                        <div id="stockProductsContainer" class="stock-products-container pricing-config-container">
+                            <div class="pricing-config-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading stock products...</p>
+                            </div>
                         </div>
                     </div>
+                    <!-- END TAB: STOCK PRODUCTS -->
+
                 </div>
 
                 <!-- ===== MODAL PARA EDITAR QB ITEM ===== -->

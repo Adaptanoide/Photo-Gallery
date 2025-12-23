@@ -99,6 +99,84 @@ router.post('/finalize', async (req, res) => {
                 });
             }
 
+            // ✅ SEPARAR FOTOS ÚNICAS E PRODUTOS DE CATÁLOGO
+            let photoItems = validItems.filter(item => !item.isCatalogProduct);
+            const catalogItems = validItems.filter(item => item.isCatalogProduct);
+
+            console.log(`📦 Items separados: ${photoItems.length} fotos únicas, ${catalogItems.length} produtos de catálogo`);
+            if (catalogItems.length > 0) {
+                catalogItems.forEach(item => {
+                    console.log(`  📦 Catálogo: ${item.productName || item.fileName} x${item.quantity} @ $${item.unitPrice}`);
+                });
+            }
+
+            // =====================================================
+            // ✅ VALIDAÇÃO DE ESTOQUE PARA PRODUTOS DE CATÁLOGO
+            // Verifica se ainda há estoque disponível antes de confirmar
+            // IMPORTANTE: Não conta o carrinho ATUAL como reserva (são os itens sendo confirmados)
+            // =====================================================
+            if (catalogItems.length > 0) {
+                const CatalogProduct = require('../models/CatalogProduct');
+
+                const unavailableCatalogItems = [];
+
+                for (const item of catalogItems) {
+                    const catalogProduct = await CatalogProduct.findOne({ qbItem: item.qbItem });
+
+                    if (!catalogProduct) {
+                        unavailableCatalogItems.push({
+                            qbItem: item.qbItem,
+                            productName: item.productName || item.fileName,
+                            requested: item.quantity,
+                            available: 0,
+                            reason: 'Produto não encontrado'
+                        });
+                    } else {
+                        // ✅ CORREÇÃO: Calcular estoque disponível SEM contar o carrinho atual
+                        // Fórmula: physicalStock - confirmedInSelections - reservasDeOUTROScarrinhos
+                        // Como o item está no carrinho atual, ele já foi contado em reservedInCarts
+                        // Então somamos de volta a quantidade do carrinho atual
+                        const physicalStock = catalogProduct.currentStock || 0;
+                        const confirmedInSelections = catalogProduct.confirmedInSelections || 0;
+                        const reservedInOtherCarts = Math.max(0, (catalogProduct.reservedInCarts || 0) - item.quantity);
+
+                        const effectiveAvailable = physicalStock - confirmedInSelections - reservedInOtherCarts;
+
+                        console.log(`  📊 ${item.qbItem}: physical=${physicalStock} - selections=${confirmedInSelections} - otherCarts=${reservedInOtherCarts} = ${effectiveAvailable} (pedido: ${item.quantity})`);
+
+                        if (effectiveAvailable < item.quantity) {
+                            unavailableCatalogItems.push({
+                                qbItem: item.qbItem,
+                                productName: item.productName || item.fileName,
+                                requested: item.quantity,
+                                available: effectiveAvailable,
+                                reason: `Estoque insuficiente (disponível: ${effectiveAvailable})`
+                            });
+                        } else {
+                            console.log(`  ✅ ${item.qbItem}: ${item.quantity} de ${effectiveAvailable} disponíveis`);
+                        }
+                    }
+                }
+
+                // Se algum item não tem estoque suficiente, bloquear a seleção
+                if (unavailableCatalogItems.length > 0) {
+                    console.log(`❌ VALIDAÇÃO FALHOU: ${unavailableCatalogItems.length} produtos sem estoque suficiente`);
+                    unavailableCatalogItems.forEach(item => {
+                        console.log(`  ❌ ${item.productName}: ${item.reason}`);
+                    });
+
+                    await session.abortTransaction();
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Alguns produtos de catálogo não estão mais disponíveis',
+                        unavailableItems: unavailableCatalogItems,
+                        errorCode: 'CATALOG_STOCK_UNAVAILABLE'
+                    });
+                }
+
+                console.log(`✅ Validação de estoque concluída: todos os ${catalogItems.length} produtos disponíveis`);
+            }
+
             // Substituir cart.items pelos validItems
             cart.items = validItems;
             cart.totalItems = validItems.length;
@@ -130,43 +208,66 @@ router.post('/finalize', async (req, res) => {
                 }
             }
 
-            // 2. Buscar produtos detalhados
-            const productIds = cart.items.map(item => item.productId);
+            // 2. Buscar produtos detalhados (APENAS FOTOS, NÃO CATÁLOGO)
+            const photoProductIds = photoItems.map(item => item.productId).filter(Boolean);
             console.log('🔍 DEBUG COMPLETO:');
-            console.log('  Cart items:', cart.items.length);
-            console.log('  ProductIds:', productIds);
+            console.log('  Total items:', cart.items.length);
+            console.log('  Photo items:', photoItems.length);
+            console.log('  Catalog items:', catalogItems.length);
+            console.log('  PhotoProductIds:', photoProductIds.length);
             console.log('  SessionId:', sessionId);
             console.log('  ClientCode:', clientCode);
 
-            // Buscar SEM filtros primeiro para debug
-            const allProducts = await UnifiedProductComplete.find({
-                _id: { $in: productIds }
-            }).session(session);
+            // Buscar produtos apenas para FOTOS (catálogo não tem UnifiedProductComplete)
+            let products = [];
+            if (photoProductIds.length > 0) {
+                // Buscar SEM filtros primeiro para debug
+                const allProducts = await UnifiedProductComplete.find({
+                    _id: { $in: photoProductIds }
+                }).session(session);
 
-            console.log(`  Produtos encontrados (sem filtro): ${allProducts.length}`);
-            if (allProducts.length > 0) {
-                allProducts.forEach(p => {
-                    console.log(`    - ${p.fileName}: status=${p.status}, clientCode=${p.reservedBy?.clientCode}, sessionId=${p.reservedBy?.sessionId}`);
-                });
-            }
+                console.log(`  Produtos encontrados (sem filtro): ${allProducts.length}`);
+                if (allProducts.length > 0) {
+                    allProducts.forEach(p => {
+                        console.log(`    - ${p.fileName}: status=${p.status}, clientCode=${p.reservedBy?.clientCode}, sessionId=${p.reservedBy?.sessionId}`);
+                    });
+                }
 
-            // Agora buscar com filtros
-            const products = await UnifiedProductComplete.find({
-                _id: { $in: productIds },
-                $or: [
-                    { status: 'available' },
-                    {
-                        status: 'reserved',
-                        'reservedBy.clientCode': clientCode
+                // Agora buscar com filtros
+                products = await UnifiedProductComplete.find({
+                    _id: { $in: photoProductIds },
+                    $or: [
+                        { status: 'available' },
+                        {
+                            status: 'reserved',
+                            'reservedBy.clientCode': clientCode
+                        }
+                    ]
+                }).session(session);
+
+                console.log(`  Produtos válidos: ${products.length}`);
+
+                // Se algumas fotos não estão disponíveis, continuar com as disponíveis
+                if (products.length !== photoItems.length) {
+                    const availableIds = products.map(p => p._id.toString());
+                    const unavailableItems = photoItems.filter(item => !availableIds.includes(item.productId?.toString()));
+
+                    console.log(`  ⚠️ AVISO: ${unavailableItems.length} fotos não disponíveis:`);
+                    unavailableItems.forEach(item => {
+                        console.log(`    - ${item.fileName} (não reservada ou indisponível)`);
+                    });
+
+                    // Filtrar photoItems para apenas os disponíveis
+                    photoItems = photoItems.filter(item => availableIds.includes(item.productId?.toString()));
+                    console.log(`  ✅ Continuando com ${products.length} fotos disponíveis`);
+
+                    // Se NENHUMA foto está disponível E não há catálogo, aí sim é erro
+                    if (products.length === 0 && catalogItems.length === 0) {
+                        throw new Error('Nenhuma foto do carrinho está disponível para finalização');
                     }
-                ]
-            }).session(session);
-
-            console.log(`  Produtos válidos: ${products.length}`);
-
-            if (products.length !== cart.totalItems) {
-                console.log(`  ❌ ERRO: Esperado ${cart.totalItems}, encontrado ${products.length}`);
-                throw new Error('Alguns itens do carrinho não estão mais disponíveis');
+                }
+            } else {
+                console.log('  ℹ️ Nenhuma foto única no carrinho (apenas produtos de catálogo)');
             }
 
             // 3. ✅ BUSCAR SALES REP DO CLIENTE
@@ -199,50 +300,59 @@ router.post('/finalize', async (req, res) => {
             // 4. Criar referência da seleção (R2 não precisa criar pasta física)
             console.log(`📁 Preparando seleção para cliente ${clientName}...`);
 
+            // Calcular total de itens disponíveis (fotos válidas + catálogo)
+            const actualItemCount = photoItems.length + catalogItems.length;
+
             // Criar objeto folderResult para compatibilidade
             const folderResult = {
                 success: true,
                 folderId: `selection-${clientCode}-${Date.now()}`,
-                folderName: `${clientName}_${new Date().toISOString().split('T')[0]}_${cart.totalItems}_items`,
+                folderName: `${clientName}_${new Date().toISOString().split('T')[0]}_${actualItemCount}_items`,
                 path: 'VIRTUAL_PATH'
             };
 
             console.log(`✅ Seleção preparada: ${folderResult.folderName}`);
 
-            // 5. Preparar dados dos produtos para movimentação
+            // 5. Preparar dados dos produtos para movimentação (APENAS FOTOS)
             const photosToMove = products.map(product => {
-                const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
+                const cartItem = photoItems.find(item => item.driveFileId === product.driveFileId);
                 return {
                     driveFileId: product.driveFileId,
                     fileName: product.fileName,
                     category: product.category,
-                    qbItem: product.qbItem,  // ← ADICIONAR ESTA LINHA!
+                    qbItem: product.qbItem,
                     productId: product._id,
                     thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl
                 };
             });
 
-            // 6. SISTEMA DE TAGS: Marcar fotos como reservadas (SEM MOVER!)
-            console.log(`🏷️ [TAGS] Marcando ${photosToMove.length} fotos como RESERVADAS...`);
-
-            // Extrair IDs das fotos
-            const photoIds = photosToMove.map(p => p.driveFileId);
-
-            // Importar PhotoTagService
-            const PhotoTagService = require('../services/PhotoTagService');
-
             // Gerar ID da seleção (sempre normal)
             selectionId = Selection.generateSelectionId();
 
-            // Usar tags ao invés de mover
-            const tagResult = await PhotoTagService.reservePhotos(
-                photoIds,
-                selectionId,
-                clientCode
-            );
+            // 6. SISTEMA DE TAGS: Marcar fotos como reservadas (SEM MOVER!)
+            // Só processar se houver fotos únicas
+            let tagResult = { photosTagged: 0 };
+            if (photosToMove.length > 0) {
+                console.log(`🏷️ [TAGS] Marcando ${photosToMove.length} fotos como RESERVADAS...`);
 
-            console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como reservadas`);
-            console.log('📍 [TAGS] Nenhuma movimentação física realizada!');
+                // Extrair IDs das fotos
+                const photoIds = photosToMove.map(p => p.driveFileId);
+
+                // Importar PhotoTagService
+                const PhotoTagService = require('../services/PhotoTagService');
+
+                // Usar tags ao invés de mover
+                tagResult = await PhotoTagService.reservePhotos(
+                    photoIds,
+                    selectionId,
+                    clientCode
+                );
+
+                console.log(`✅ [TAGS] ${tagResult.photosTagged} fotos marcadas como reservadas`);
+                console.log('📍 [TAGS] Nenhuma movimentação física realizada!');
+            } else {
+                console.log('ℹ️ [TAGS] Nenhuma foto única para marcar (apenas produtos de catálogo)');
+            }
 
             // Criar moveResult fake para compatibilidade com código existente
             const moveResult = {
@@ -278,6 +388,53 @@ router.post('/finalize', async (req, res) => {
             const galleryType = hasComingSoon ? 'coming_soon' : 'available';
             console.log(`🚢 Tipo de galeria: ${galleryType} (${hasComingSoon ? 'TEM' : 'NÃO TEM'} items em trânsito)`);
 
+            // ✅ PREPARAR ITEMS DA SELEÇÃO (FOTOS + CATÁLOGO)
+            // Items de fotos únicas
+            const photoSelectionItems = products.map(product => {
+                const cartItem = photoItems.find(item => item.driveFileId === product.driveFileId);
+                return {
+                    productId: product._id,
+                    driveFileId: product.driveFileId,
+                    fileName: product.fileName,
+                    category: product.category,
+                    thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
+                    originalPath: product.category,
+                    price: cartItem?.price || 0,
+                    selectedAt: cartItem?.addedAt || new Date(),
+                    transitStatus: cartItem?.transitStatus || null,
+                    cdeTable: cartItem?.cdeTable || 'tbinventario',
+                    isCatalogProduct: false
+                };
+            });
+
+            // Items de catálogo
+            const catalogSelectionItems = catalogItems.map(item => ({
+                productId: item.productId || null,
+                driveFileId: item.driveFileId,
+                fileName: item.productName || item.fileName,
+                category: item.category,
+                thumbnailUrl: item.thumbnailUrl,
+                originalPath: item.category,
+                price: item.price || (item.unitPrice * item.quantity),
+                selectedAt: item.addedAt || new Date(),
+                transitStatus: null,
+                cdeTable: 'tbinventario',
+                // ✅ CAMPOS DE CATÁLOGO
+                isCatalogProduct: true,
+                qbItem: item.qbItem,
+                productName: item.productName || item.fileName,
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                reservedIDHs: item.reservedIDHs || []
+            }));
+
+            // Combinar todos os items
+            const allSelectionItems = [...photoSelectionItems, ...catalogSelectionItems];
+
+            // Contar total de unidades (fotos = 1 cada, catálogo = quantity cada)
+            const totalUnits = photoSelectionItems.length + catalogItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            console.log(`📊 Total items: ${allSelectionItems.length} (${photoSelectionItems.length} fotos + ${catalogSelectionItems.length} catálogo = ${totalUnits} unidades)`);
+
             // Criar nova seleção
             const selectionData = {
                 selectionId,
@@ -287,25 +444,9 @@ router.post('/finalize', async (req, res) => {
                 clientCompany: companyName,
                 salesRep: salesRep,
                 customerNotes: observations || null,
-                galleryType: galleryType,  // ✅ NOVO!
-                items: products.map(product => {
-                    const cartItem = cart.items.find(item => item.driveFileId === product.driveFileId);
-
-                    return {
-                        productId: product._id,
-                        driveFileId: product.driveFileId,
-                        fileName: product.fileName,
-                        category: product.category,
-                        thumbnailUrl: cartItem?.thumbnailUrl || product.thumbnailUrl,
-                        originalPath: product.category,
-                        price: cartItem?.price || 0,
-                        selectedAt: cartItem?.addedAt || new Date(),
-                        // ✅ NOVO: Campos Coming Soon
-                        transitStatus: cartItem?.transitStatus || null,
-                        cdeTable: cartItem?.cdeTable || 'tbinventario'
-                    };
-                }),
-                totalItems: cart.totalItems,
+                galleryType: galleryType,
+                items: allSelectionItems,
+                totalItems: allSelectionItems.length,
                 totalValue: totalValue,
                 clientCurrency: clientCurrency,
                 currencyRate: currencyRate,
@@ -320,7 +461,7 @@ router.post('/finalize', async (req, res) => {
             };
 
             selection = new Selection(selectionData);
-            selection.addMovementLog('created', `Seleção criada com ${cart.totalItems} itens`);
+            selection.addMovementLog('created', `Seleção criada com ${allSelectionItems.length} itens`);
 
             await selection.save({ session });
 
@@ -360,107 +501,126 @@ router.post('/finalize', async (req, res) => {
             }
             // ===== FIM DA DESATIVAÇÃO =====
 
-            // 9. Atualizar status dos produtos
-            console.log(`🏷️ Marcando ${productIds.length} produtos com selectionId: ${selectionId}`);
+            // 9. Atualizar status dos produtos (APENAS FOTOS - Catálogo não tem UnifiedProductComplete)
+            if (photoProductIds.length > 0) {
+                console.log(`🏷️ Marcando ${photoProductIds.length} fotos com selectionId: ${selectionId}`);
 
-            // PRIMEIRA ETAPA: Atualizar status e campos básicos incluindo cdeStatus
-            const updateResult = await UnifiedProductComplete.updateMany(
-                { _id: { $in: productIds } },
-                {
-                    $set: {
-                        status: 'in_selection',
-                        cdeStatus: 'CONFIRMED',
-                        reservedAt: new Date(),
-                    },
-                    $unset: { 'cartAddedAt': 1 }
-                }
-            ).session(session);
-
-            console.log(`📊 Primeira etapa - updateResult: ${JSON.stringify(updateResult)}`);
-
-            // SEGUNDA ETAPA: Adicionar selectionId especificamente
-            const selectionUpdateResult = await UnifiedProductComplete.updateMany(
-                { _id: { $in: productIds } },
-                {
-                    $set: {
-                        'selectionId': String(selectionId),
-                        'reservedBy.inSelection': true,
-                        'reservedBy.selectionId': String(selectionId)
+                // PRIMEIRA ETAPA: Atualizar status e campos básicos incluindo cdeStatus
+                const updateResult = await UnifiedProductComplete.updateMany(
+                    { _id: { $in: photoProductIds } },
+                    {
+                        $set: {
+                            status: 'in_selection',
+                            cdeStatus: 'CONFIRMED',
+                            reservedAt: new Date(),
+                        },
+                        $unset: { 'cartAddedAt': 1 }
                     }
-                }
-            ).session(session);
+                ).session(session);
 
-            console.log(`📊 Segunda etapa - selectionUpdateResult: ${JSON.stringify(selectionUpdateResult)}`);
+                console.log(`📊 Primeira etapa - updateResult: ${JSON.stringify(updateResult)}`);
 
-            // ========== 🆕 ATUALIZAR CDE EM BACKGROUND COM SALES REP ==========
-            console.log('📡 Atualizando CDE em background...');
-            const CDEWriter = require('../services/CDEWriter');
-
-            // Extrair números das fotos E TABELAS CDE
-            const photoNumbers = products
-                .map(p => p.fileName.match(/\d+/)?.[0])
-                .filter(Boolean);
-
-            // ✅ EXTRAIR cdeTables DOS PRODUTOS
-            const cdeTables = products.map(p => p.cdeTable || 'tbinventario');
-
-            console.log(`[CDE] 🚀 Confirmação de ${photoNumbers.length} fotos agendada em background`);
-            console.log(`[CDE] 📊 Tabelas: ${cdeTables.filter(t => t === 'tbetiqueta').length} em tbetiqueta, ${cdeTables.filter(t => t === 'tbinventario').length} em tbinventario`);
-
-            // Processar em background usando BULK UPDATE
-            setImmediate(async () => {
-                console.log(`[CDE-BG] Iniciando confirmação BULK de ${photoNumbers.length} fotos...`);
-                console.log(`[CDE-BG] 👤 Sales Rep: ${salesRep}`);
-
-                const startTime = Date.now();
-
-                try {
-                    // ✅ AGORA PASSA cdeTables COMO 5º PARÂMETRO!
-                    const confirmedCount = await CDEWriter.bulkMarkAsConfirmed(
-                        photoNumbers,
-                        clientCode,
-                        clientName,
-                        salesRep,
-                        cdeTables  // ✅ NOVO: Array de tabelas CDE!
-                    );
-
-                    const duration = Date.now() - startTime;
-                    const failedCount = photoNumbers.length - confirmedCount;
-
-                    console.log(`[CDE-BG] ✅ Confirmação BULK concluída em ${duration}ms`);
-                    console.log(`[CDE-BG] 📊 Resultado: ${confirmedCount}/${photoNumbers.length} sucessos, ${failedCount} falhas`);
-                    console.log(`[CDE-BG] 👤 RESERVEDUSU atualizado com Sales Rep: ${salesRep}`);
-
-                    if (failedCount > 0) {
-                        console.log(`[CDE-BG] ⚠️ ${failedCount} fotos não foram confirmadas (sync vai corrigir automaticamente)`);
+                // SEGUNDA ETAPA: Adicionar selectionId especificamente
+                const selectionUpdateResult = await UnifiedProductComplete.updateMany(
+                    { _id: { $in: photoProductIds } },
+                    {
+                        $set: {
+                            'selectionId': String(selectionId),
+                            'reservedBy.inSelection': true,
+                            'reservedBy.selectionId': String(selectionId)
+                        }
                     }
-                } catch (error) {
-                    console.error(`[CDE-BG] ❌ Erro no bulk confirm:`, error.message);
-                    console.log(`[CDE-BG] ℹ️ Sync vai corrigir automaticamente em até 5 minutos`);
-                }
-            });
+                ).session(session);
 
-            console.log('[CDE] ⚡ Cliente não precisa esperar - resposta imediata');
-            // ========== FIM DA ATUALIZAÇÃO CDE ==========
-
-            const verifyUpdate = await UnifiedProductComplete.findOne(
-                { _id: productIds[0] },
-                { selectionId: 1, status: 1 }
-            ).session(session);
-
-            console.log(`✅ Verificação pós-update:`, {
-                selectionId: verifyUpdate?.selectionId,
-                status: verifyUpdate?.status
-            });
-
-            if (!verifyUpdate?.selectionId) {
-                console.error('⚠️ AVISO: selectionId não foi salvo corretamente!');
+                console.log(`📊 Segunda etapa - selectionUpdateResult: ${JSON.stringify(selectionUpdateResult)}`);
+            } else {
+                console.log('ℹ️ Nenhuma foto única para atualizar status (apenas produtos de catálogo)');
             }
+
+            // ========== 🆕 ATUALIZAR CDE EM BACKGROUND COM SALES REP (APENAS FOTOS) ==========
+            if (products.length > 0) {
+                console.log('📡 Atualizando CDE em background (fotos únicas)...');
+                const CDEWriter = require('../services/CDEWriter');
+
+                // Extrair números das fotos E TABELAS CDE
+                const photoNumbers = products
+                    .map(p => p.fileName.match(/\d+/)?.[0])
+                    .filter(Boolean);
+
+                // ✅ EXTRAIR cdeTables DOS PRODUTOS
+                const cdeTables = products.map(p => p.cdeTable || 'tbinventario');
+
+                console.log(`[CDE] 🚀 Confirmação de ${photoNumbers.length} fotos agendada em background`);
+                console.log(`[CDE] 📊 Tabelas: ${cdeTables.filter(t => t === 'tbetiqueta').length} em tbetiqueta, ${cdeTables.filter(t => t === 'tbinventario').length} em tbinventario`);
+
+                // Processar em background usando BULK UPDATE
+                setImmediate(async () => {
+                    console.log(`[CDE-BG] Iniciando confirmação BULK de ${photoNumbers.length} fotos...`);
+                    console.log(`[CDE-BG] 👤 Sales Rep: ${salesRep}`);
+
+                    const startTime = Date.now();
+
+                    try {
+                        const confirmedCount = await CDEWriter.bulkMarkAsConfirmed(
+                            photoNumbers,
+                            clientCode,
+                            clientName,
+                            salesRep,
+                            cdeTables
+                        );
+
+                        const duration = Date.now() - startTime;
+                        const failedCount = photoNumbers.length - confirmedCount;
+
+                        console.log(`[CDE-BG] ✅ Confirmação BULK concluída em ${duration}ms`);
+                        console.log(`[CDE-BG] 📊 Resultado: ${confirmedCount}/${photoNumbers.length} sucessos, ${failedCount} falhas`);
+                        console.log(`[CDE-BG] 👤 RESERVEDUSU atualizado com Sales Rep: ${salesRep}`);
+
+                        if (failedCount > 0) {
+                            console.log(`[CDE-BG] ⚠️ ${failedCount} fotos não foram confirmadas (sync vai corrigir automaticamente)`);
+                        }
+                    } catch (error) {
+                        console.error(`[CDE-BG] ❌ Erro no bulk confirm:`, error.message);
+                        console.log(`[CDE-BG] ℹ️ Sync vai corrigir automaticamente em até 5 minutos`);
+                    }
+                });
+
+                console.log('[CDE] ⚡ Cliente não precisa esperar - resposta imediata');
+
+                // Verificação pós-update
+                const verifyUpdate = await UnifiedProductComplete.findOne(
+                    { _id: photoProductIds[0] },
+                    { selectionId: 1, status: 1 }
+                ).session(session);
+
+                console.log(`✅ Verificação pós-update:`, {
+                    selectionId: verifyUpdate?.selectionId,
+                    status: verifyUpdate?.status
+                });
+
+                if (!verifyUpdate?.selectionId) {
+                    console.error('⚠️ AVISO: selectionId não foi salvo corretamente!');
+                }
+            } else {
+                console.log('ℹ️ [CDE] Nenhuma foto única para confirmar no CDE (apenas produtos de catálogo)');
+                console.log('📦 [CATALOG] Produtos de catálogo não alteram CDE por enquanto');
+            }
+            // ========== FIM DA ATUALIZAÇÃO CDE ==========
 
             // 11. Enviar email de notificação (em background)
             setImmediate(async () => {
                 try {
                     console.log(`📧 Enviando notificação de nova seleção...`);
+
+                    // Log detalhado dos items para email
+                    const photoItemsForEmail = cart.items.filter(i => !i.isCatalogProduct);
+                    const catalogItemsForEmail = cart.items.filter(i => i.isCatalogProduct);
+                    console.log(`📧 Email terá: ${photoItemsForEmail.length} fotos + ${catalogItemsForEmail.length} produtos de catálogo`);
+                    if (catalogItemsForEmail.length > 0) {
+                        catalogItemsForEmail.forEach(item => {
+                            console.log(`  📦 Email catalog: ${item.qbItem} - ${item.productName || item.fileName} x${item.quantity} @ $${item.unitPrice}`);
+                        });
+                    }
 
                     const emailService = EmailService.getInstance();
                     const emailResult = await emailService.notifyNewSelection({
@@ -473,6 +633,7 @@ router.post('/finalize', async (req, res) => {
                         totalValue: totalValue,
                         clientCurrency: clientCurrency,
                         observations: observations || '',
+                        items: cart.items, // Lista de items com isCatalogProduct flag
                         googleDriveInfo: {
                             clientFolderName: folderResult.folderName
                         },

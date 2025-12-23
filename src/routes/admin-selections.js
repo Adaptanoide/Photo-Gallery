@@ -275,7 +275,13 @@ router.get('/:selectionId', async (req, res) => {
                 category: item.category,
                 price: item.price || 0,
                 thumbnailUrl: item.thumbnailUrl,
-                originalPath: item.originalPath
+                originalPath: item.originalPath,
+                // ===== CAMPOS PARA CATALOG PRODUCTS =====
+                isCatalogProduct: item.isCatalogProduct || false,
+                qbItem: item.qbItem || null,
+                productName: item.productName || null,
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0
             })),
             totalItems: selection.totalItems || selection.items.length,
             totalValue: selection.totalValue || selection.items.reduce((sum, item) => sum + (item.price || 0), 0),
@@ -514,10 +520,13 @@ router.post('/:selectionId/cancel', async (req, res) => {
         };
         await selection.save({ session });
 
-        // 2. Liberar fotos no MongoDB
+        // 2. Liberar fotos no MongoDB (apenas fotos únicas, não catalog products)
         console.log('🏷️ [TAGS] Liberando fotos para disponível...');
 
-        const productIds = selection.items.map(item => item.productId);
+        // ✅ Filtrar apenas fotos únicas (catalog products não têm productId)
+        const productIds = selection.items
+            .filter(item => !item.isCatalogProduct && item.productId)
+            .map(item => item.productId);
 
         // ✅ DETECTAR SE É COMING SOON
         const isComingSoon = selection.galleryType === 'coming_soon';
@@ -545,19 +554,27 @@ router.post('/:selectionId/cancel', async (req, res) => {
 
         console.log(`✅ ${updateResult.modifiedCount} fotos liberadas com status: ${correctCDEStatus}`);
 
-        // 3. Liberar no CDE EM BACKGROUND usando BULK UPDATE
+        // 3. Liberar no CDE EM BACKGROUND usando BULK UPDATE (apenas fotos únicas!)
         console.log('📡 Liberando fotos no CDE em background...');
         const CDEWriter = require('../services/CDEWriter');
 
-        // ✅ Extrair números E TABELAS das fotos
-        const photoNumbers = selection.items
+        // ✅ FILTRAR apenas fotos únicas (não catalog products)
+        const photoItems = selection.items.filter(item => !item.isCatalogProduct);
+        const catalogItems = selection.items.filter(item => item.isCatalogProduct);
+
+        // ✅ Extrair números E TABELAS apenas das fotos únicas
+        const photoNumbers = photoItems
             .map(item => item.fileName?.match(/(\d+)/)?.[1])
             .filter(Boolean);
 
-        const cdeTables = selection.items.map(item => item.cdeTable || 'tbinventario');
+        const cdeTables = photoItems.map(item => item.cdeTable || 'tbinventario');
 
+        console.log(`[CANCEL] 📦 Items: ${photoItems.length} fotos únicas + ${catalogItems.length} produtos de catálogo`);
         console.log(`[CANCEL] 🚀 Liberação BULK de ${photoNumbers.length} fotos agendada em background`);
         console.log(`[CANCEL] 📊 Tabelas: ${cdeTables.filter(t => t === 'tbetiqueta').length} em tbetiqueta, ${cdeTables.filter(t => t === 'tbinventario').length} em tbinventario`);
+        if (catalogItems.length > 0) {
+            console.log(`[CANCEL] ℹ️ ${catalogItems.length} produtos de catálogo NÃO vão para CDE`);
+        }
 
         // Processar em background usando BULK UPDATE
         setImmediate(async () => {
@@ -690,7 +707,7 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
             });
         }
 
-        // 2. Preparar TODAS as fotos para o carrinho
+        // 2. Preparar TODAS as fotos E produtos de catálogo para o carrinho
         const validItems = selection.items.map(item => {
             const photoMatch = item.fileName?.match(/(\d+)/);
             const photoNumber = photoMatch ? photoMatch[1].padStart(5, '0') : null;
@@ -702,9 +719,22 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
                 category: item.category,
                 thumbnailUrl: item.thumbnailUrl,
                 price: item.price,
-                photoNumber: photoNumber
+                photoNumber: photoNumber,
+                // ✅ Preservar campos de catálogo
+                isCatalogProduct: item.isCatalogProduct || false,
+                qbItem: item.qbItem || null,
+                productName: item.productName || item.fileName,
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || item.price || 0,
+                reservedIDHs: item.reservedIDHs || []
             };
-        }).filter(item => item.photoNumber !== null);
+        });
+
+        // Separar fotos únicas e produtos de catálogo
+        const uniquePhotos = validItems.filter(item => !item.isCatalogProduct && item.photoNumber);
+        const catalogProducts = validItems.filter(item => item.isCatalogProduct);
+
+        console.log(`[REOPEN] 📦 Itens: ${uniquePhotos.length} fotos únicas, ${catalogProducts.length} produtos de catálogo`);
 
         // 3. Reativar cliente
         const AccessCode = require('../models/AccessCode');
@@ -718,11 +748,9 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
         const newSessionId = `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)); // 24h
 
-        const newCart = new Cart({
-            sessionId: newSessionId,
-            clientCode: selection.clientCode,
-            clientName: selection.clientName,
-            items: validItems.map(item => ({
+        // Criar itens do carrinho preservando tipo (foto única vs catálogo)
+        const cartItems = validItems.map(item => {
+            const baseItem = {
                 productId: item.productId,
                 driveFileId: item.driveFileId,
                 fileName: item.fileName,
@@ -732,38 +760,62 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
                 basePrice: item.price || 0,
                 expiresAt: expiresAt,
                 addedAt: new Date()
-            })),
-            totalItems: validItems.length,
+            };
+
+            // Se for produto de catálogo, adicionar campos específicos
+            if (item.isCatalogProduct) {
+                return {
+                    ...baseItem,
+                    isCatalogProduct: true,
+                    qbItem: item.qbItem,
+                    productName: item.productName,
+                    quantity: item.quantity || 1,
+                    unitPrice: item.unitPrice || item.price || 0,
+                    reservedIDHs: item.reservedIDHs || []
+                };
+            }
+
+            return baseItem;
+        });
+
+        const newCart = new Cart({
+            sessionId: newSessionId,
+            clientCode: selection.clientCode,
+            clientName: selection.clientName,
+            items: cartItems,
+            totalItems: cartItems.length,
             isActive: true
         });
 
         await newCart.save({ session });
 
-        // 5. Atualizar produtos no MongoDB
-        const productIds = validItems.map(item => item.productId);
+        // 5. Atualizar produtos no MongoDB (APENAS FOTOS ÚNICAS - catálogo não está no UnifiedProductComplete)
+        const photoProductIds = uniquePhotos.map(item => item.productId).filter(Boolean);
 
-        await UnifiedProductComplete.updateMany(
-            { _id: { $in: productIds } },
-            {
-                $set: {
-                    status: 'reserved',
-                    cdeStatus: 'PRE-SELECTED',
-                    reservedBy: {
-                        clientCode: selection.clientCode,
-                        sessionId: newSessionId,
-                        expiresAt: expiresAt
+        if (photoProductIds.length > 0) {
+            await UnifiedProductComplete.updateMany(
+                { _id: { $in: photoProductIds } },
+                {
+                    $set: {
+                        status: 'reserved',
+                        cdeStatus: 'PRE-SELECTED',
+                        reservedBy: {
+                            clientCode: selection.clientCode,
+                            sessionId: newSessionId,
+                            expiresAt: expiresAt
+                        }
+                    },
+                    $unset: {
+                        selectionId: 1,
+                        soldAt: 1
                     }
-                },
-                $unset: {
-                    selectionId: 1,
-                    soldAt: 1
                 }
-            }
-        ).session(session);
+            ).session(session);
+        }
 
-        // 6. Atualizar CDE em BACKGROUND (BULK)
+        // 6. Atualizar CDE em BACKGROUND (BULK) - APENAS FOTOS ÚNICAS
         const CDEWriter = require('../services/CDEWriter');
-        const photoNumbers = validItems.map(item => item.photoNumber).filter(Boolean);
+        const photoNumbers = uniquePhotos.map(item => item.photoNumber).filter(Boolean);
 
         console.log(`[REOPEN] 🚀 Reserva BULK de ${photoNumbers.length} fotos agendada em background`);
 
@@ -809,7 +861,9 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
             error: null,
             metadata: {
                 newSessionId: newSessionId,
-                validItems: validItems.length
+                totalItems: cartItems.length,
+                uniquePhotos: uniquePhotos.length,
+                catalogProducts: catalogProducts.length
             }
         });
 
@@ -820,6 +874,7 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
         // Commit da transação
         await session.commitTransaction();
         console.log(`✅ Carrinho reaberto com sucesso!`);
+        console.log(`📦 Carrinho ${newSessionId} salvo - ${cartItems.length} itens (${uniquePhotos.length} fotos, ${catalogProducts.length} catálogo)`);
 
         res.json({
             success: true,
@@ -827,7 +882,9 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
             data: {
                 newSessionId: newSessionId,
                 clientCode: selection.clientCode,
-                totalItems: validItems.length,
+                totalItems: cartItems.length,
+                uniquePhotos: uniquePhotos.length,
+                catalogProducts: catalogProducts.length,
                 expiresAt: expiresAt
             },
             info: 'CDE está sendo atualizado em background'
@@ -1114,6 +1171,8 @@ router.post('/:selectionId/remove-items', async (req, res) => {
         const UnifiedProductComplete = require('../models/UnifiedProductComplete');
         const CDEWriter = require('../services/CDEWriter');
         const removedItems = [];
+        const removedPhotoItems = [];  // ✅ Apenas fotos únicas
+        const removedCatalogItems = []; // ✅ Apenas produtos de catálogo
         const photoNumbersToRelease = [];
 
         // PRIMEIRA PASSADA: Identificar items e preparar dados
@@ -1124,11 +1183,19 @@ router.post('/:selectionId/remove-items', async (req, res) => {
 
             if (itemIndex !== -1) {
                 const removedItem = selection.items[itemIndex];
-                const photoNumber = removedItem.fileName.replace('.webp', '');
 
                 // Guardar para processar
                 removedItems.push(removedItem);
-                photoNumbersToRelease.push(photoNumber);
+
+                // ✅ Separar fotos únicas de catalog products
+                if (removedItem.isCatalogProduct) {
+                    removedCatalogItems.push(removedItem);
+                    console.log(`  📦 Catalog item: ${removedItem.productName || removedItem.fileName} (não vai para CDE)`);
+                } else {
+                    removedPhotoItems.push(removedItem);
+                    const photoNumber = removedItem.fileName.replace('.webp', '');
+                    photoNumbersToRelease.push(photoNumber);
+                }
 
                 // Remover da seleção
                 selection.items.splice(itemIndex, 1);
@@ -1143,48 +1210,56 @@ router.post('/:selectionId/remove-items', async (req, res) => {
         }
 
         console.log(`🗑️ Removendo ${removedItems.length} items da seleção ${selectionId}`);
+        console.log(`   📸 ${removedPhotoItems.length} fotos únicas (vão para MongoDB + CDE)`);
+        console.log(`   📦 ${removedCatalogItems.length} produtos de catálogo (apenas removidos da seleção)`);
 
-        // SEGUNDA PASSADA: Atualizar MongoDB (BULK)
-        await UnifiedProductComplete.updateMany(
-            {
-                $or: removedItems.map(item => ({
-                    fileName: item.fileName
-                }))
-            },
-            {
-                $set: {
-                    status: 'available',
-                    cdeStatus: 'INGRESADO'
+        // SEGUNDA PASSADA: Atualizar MongoDB (BULK) - APENAS FOTOS ÚNICAS
+        if (removedPhotoItems.length > 0) {
+            await UnifiedProductComplete.updateMany(
+                {
+                    $or: removedPhotoItems.map(item => ({
+                        fileName: item.fileName
+                    }))
                 },
-                $unset: {
-                    selectionId: 1,
-                    reservedBy: 1,
-                    soldAt: 1,
-                    reservedAt: 1
+                {
+                    $set: {
+                        status: 'available',
+                        cdeStatus: 'INGRESADO'
+                    },
+                    $unset: {
+                        selectionId: 1,
+                        reservedBy: 1,
+                        soldAt: 1,
+                        reservedAt: 1
+                    }
                 }
-            }
-        );
+            );
+        }
 
-        // TERCEIRA PASSADA: Atualizar CDE em BACKGROUND (BULK)
-        console.log(`[REMOVE] 🚀 Liberação BULK de ${photoNumbersToRelease.length} fotos agendada em background`);
+        // TERCEIRA PASSADA: Atualizar CDE em BACKGROUND (BULK) - APENAS SE HOUVER FOTOS
+        if (photoNumbersToRelease.length > 0) {
+            console.log(`[REMOVE] 🚀 Liberação BULK de ${photoNumbersToRelease.length} fotos agendada em background`);
 
-        setImmediate(async () => {
-            console.log(`[REMOVE-BG] Iniciando liberação BULK de ${photoNumbersToRelease.length} fotos...`);
-            const startTime = Date.now();
+            setImmediate(async () => {
+                console.log(`[REMOVE-BG] Iniciando liberação BULK de ${photoNumbersToRelease.length} fotos...`);
+                const startTime = Date.now();
 
-            try {
-                const releasedCount = await CDEWriter.bulkMarkAsAvailable(photoNumbersToRelease);
+                try {
+                    const releasedCount = await CDEWriter.bulkMarkAsAvailable(photoNumbersToRelease);
 
-                const duration = Date.now() - startTime;
-                console.log(`[REMOVE-BG] ✅ Liberação BULK concluída em ${duration}ms`);
-                console.log(`[REMOVE-BG] 📊 Resultado: ${releasedCount}/${photoNumbersToRelease.length} fotos liberadas no CDE`);
-            } catch (error) {
-                console.error(`[REMOVE-BG] ❌ Erro no bulk release:`, error.message);
-                console.log(`[REMOVE-BG] ℹ️ Sync vai corrigir em até 5 minutos`);
-            }
-        });
+                    const duration = Date.now() - startTime;
+                    console.log(`[REMOVE-BG] ✅ Liberação BULK concluída em ${duration}ms`);
+                    console.log(`[REMOVE-BG] 📊 Resultado: ${releasedCount}/${photoNumbersToRelease.length} fotos liberadas no CDE`);
+                } catch (error) {
+                    console.error(`[REMOVE-BG] ❌ Erro no bulk release:`, error.message);
+                    console.log(`[REMOVE-BG] ℹ️ Sync vai corrigir em até 5 minutos`);
+                }
+            });
 
-        console.log('[REMOVE] ⚡ Admin não precisa esperar - resposta imediata');
+            console.log('[REMOVE] ⚡ Admin não precisa esperar - resposta imediata');
+        } else {
+            console.log(`[REMOVE] ℹ️ Nenhuma foto para liberar no CDE (apenas produtos de catálogo)`);
+        }
 
         // Atualizar totais
         selection.totalItems = selection.items.length;

@@ -176,6 +176,13 @@
             // Guardar nome da categoria
             navigationState.currentCategoryName = data.folder.name;
 
+            // ✅ Ensure breadcrumb price badge is updated after all setup is complete
+            setTimeout(() => {
+                if (typeof window.updateBreadcrumbPriceBadge === 'function') {
+                    window.updateBreadcrumbPriceBadge();
+                }
+            }, 100);
+
         } catch (error) {
             console.error('Error loading photos:', error);
             showNoContent('Error loading photos', error.message);
@@ -285,6 +292,9 @@
                 breadcrumbPriceBadge.className = 'breadcrumb-price-badge no-price';
             }
 
+            // ✅ Limpar inline display:none que pode ter sido setado pelo catalog
+            breadcrumbPriceBadge.style.display = '';
+
             // Adicionar click listener para abrir chat
             if (!breadcrumbPriceBadge.dataset.clickListenerAdded) {
                 breadcrumbPriceBadge.addEventListener('click', function(e) {
@@ -388,6 +398,8 @@
         const breadcrumbPhotoCount = document.getElementById('breadcrumbPhotoCount');
         if (breadcrumbPhotoCount && window.innerWidth > 768) {
             breadcrumbPhotoCount.innerHTML = `<i class="fas fa-images"></i> ${photos.length} photo(s)`;
+            // ✅ Limpar inline display:none que pode ter sido setado pelo catalog
+            breadcrumbPhotoCount.style.display = '';
         }
 
         if (USE_VIRTUAL_SCROLLING && window.virtualGallery) {
@@ -2035,20 +2047,23 @@ window.updateBreadcrumbPriceBadge = function() {
     const customPrice = window.currentCustomPrice;
 
     if (!shouldShowPrices()) {
-        breadcrumbPriceBadge.innerHTML = '<i class="fas fa-tag"></i> Contact for Price';
+        breadcrumbPriceBadge.innerHTML = '<i class="fas fa-comment-dollar"></i> Contact for Price';
         breadcrumbPriceBadge.className = 'breadcrumb-price-badge contact-price';
     } else if (customPrice) {
         const formattedPrice = window.CurrencyManager ? CurrencyManager.format(parseFloat(customPrice)) : '$' + parseFloat(customPrice).toFixed(2);
-        breadcrumbPriceBadge.innerHTML = `<i class="fas fa-tag"></i> ${formattedPrice}`;
+        breadcrumbPriceBadge.innerHTML = `<i class="fas fa-comment-dollar"></i> ${formattedPrice}`;
         breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
     } else if (categoryPrice && categoryPrice.hasPrice) {
         const formattedPrice = window.CurrencyManager ? CurrencyManager.format(categoryPrice.basePrice || categoryPrice.price) : categoryPrice.formattedPrice;
-        breadcrumbPriceBadge.innerHTML = `<i class="fas fa-tag"></i> ${formattedPrice}`;
+        breadcrumbPriceBadge.innerHTML = `<i class="fas fa-comment-dollar"></i> ${formattedPrice}`;
         breadcrumbPriceBadge.className = 'breadcrumb-price-badge';
     } else {
-        breadcrumbPriceBadge.innerHTML = '<i class="fas fa-tag"></i> Price on request';
+        breadcrumbPriceBadge.innerHTML = '<i class="fas fa-comment-dollar"></i> Price on request';
         breadcrumbPriceBadge.className = 'breadcrumb-price-badge no-price';
     }
+
+    // ✅ Limpar inline display:none que pode ter sido setado pelo catalog
+    breadcrumbPriceBadge.style.display = '';
 };
 
 // ===== REAGIR A MUDANÇAS DE MOEDA =====

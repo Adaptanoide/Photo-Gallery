@@ -218,24 +218,24 @@ const selectionSchema = new mongoose.Schema({
         }
     }],
 
-    // ===== ITEMS EXISTENTES (MANTIDOS COMO ESTÃO) =====
+    // ===== ITEMS (FOTOS ÚNICAS + PRODUTOS DE CATÁLOGO) =====
     items: [{
+        // Flag para diferenciar tipo de item
+        isCatalogProduct: {
+            type: Boolean,
+            default: false,
+            comment: 'true = Stock Product (catalog), false = Unique Photo'
+        },
+
+        // ===== CAMPOS PARA FOTOS ÚNICAS =====
         productId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product',
-            required: true
+            required: function() { return !this.isCatalogProduct; }
         },
         driveFileId: {
             type: String,
-            required: true
-        },
-        fileName: {
-            type: String,
-            required: true
-        },
-        category: {
-            type: String,
-            required: true
+            required: function() { return !this.isCatalogProduct; }
         },
         thumbnailUrl: {
             type: String
@@ -246,18 +246,9 @@ const selectionSchema = new mongoose.Schema({
         newPath: {
             type: String // Novo caminho após movimentação
         },
-        price: {
-            type: Number,
-            default: 0
-        },
-        selectedAt: {
-            type: Date,
-            default: Date.now
-        },
         movedAt: {
             type: Date
         },
-        // ===== COMING SOON FIELDS =====
         transitStatus: {
             type: String,
             enum: ['coming_soon', null],
@@ -269,6 +260,50 @@ const selectionSchema = new mongoose.Schema({
             enum: ['tbinventario', 'tbetiqueta', null],
             default: null,
             comment: 'Tabela CDE onde item está registrado'
+        },
+
+        // ===== CAMPOS PARA PRODUTOS DE CATÁLOGO =====
+        qbItem: {
+            type: String,
+            comment: 'QB Item code for catalog products'
+        },
+        productName: {
+            type: String,
+            comment: 'Product name for catalog products'
+        },
+        quantity: {
+            type: Number,
+            default: 1,
+            min: 1,
+            comment: 'Quantity for catalog products'
+        },
+        unitPrice: {
+            type: Number,
+            default: 0,
+            comment: 'Unit price for catalog products'
+        },
+        reservedIDHs: [{
+            type: String,
+            comment: 'Reserved IDH codes for catalog products'
+        }],
+
+        // ===== CAMPOS COMUNS =====
+        fileName: {
+            type: String,
+            required: true
+        },
+        category: {
+            type: String,
+            required: true
+        },
+        price: {
+            type: Number,
+            default: 0,
+            comment: 'Total price (for photos = unit, for catalog = qty * unitPrice)'
+        },
+        selectedAt: {
+            type: Date,
+            default: Date.now
         }
     }],
     totalItems: {
@@ -505,9 +540,17 @@ selectionSchema.methods.addMovementLog = function (action, details, success = tr
     });
 };
 
-// Método para calcular valor total
+// Método para calcular valor total (suporta fotos + catálogo)
 selectionSchema.methods.calculateTotalValue = function () {
-    this.totalValue = this.items.reduce((total, item) => total + (item.price || 0), 0);
+    this.totalValue = this.items.reduce((total, item) => {
+        if (item.isCatalogProduct) {
+            // Catalog: usar unitPrice * quantity ou price já calculado
+            return total + (item.price || ((item.unitPrice || 0) * (item.quantity || 1)));
+        } else {
+            // Photo: usar price direto
+            return total + (item.price || 0);
+        }
+    }, 0);
     return this.totalValue;
 };
 

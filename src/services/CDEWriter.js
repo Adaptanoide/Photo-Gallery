@@ -752,6 +752,142 @@ class CDEWriter {
             if (connection) await connection.end();
         }
     }
+
+    // =====================================================
+    // CATALOG PRODUCTS - Reserva por AIDH (não tem foto)
+    // =====================================================
+
+    /**
+     * MARCAR IDHs DE CATÁLOGO COMO PRE-SELECTED
+     * Usa AIDH em vez de ATIPOETIQUETA (produtos sem foto)
+     */
+    static async markCatalogIDHsAsReserved(idhs, clientCode, clientName = 'Client', salesRep = 'Unassigned') {
+        let connection = null;
+
+        if (!Array.isArray(idhs) || idhs.length === 0) {
+            console.log('[CDE-CATALOG] Nenhum IDH para reservar');
+            return { success: true, reserved: 0 };
+        }
+
+        try {
+            connection = await this.getConnection();
+            const reservedusu = this.buildReservedusu(clientName, clientCode, salesRep);
+
+            console.log(`[CDE-CATALOG] Reservando ${idhs.length} IDHs para ${reservedusu}`);
+
+            // Construir placeholders para IN clause
+            const placeholders = idhs.map(() => '?').join(',');
+
+            const [result] = await connection.execute(
+                `UPDATE tbinventario
+                 SET AESTADOP = 'PRE-SELECTED',
+                     RESERVEDUSU = ?,
+                     AFECHA = NOW()
+                 WHERE AIDH IN (${placeholders})
+                 AND AESTADOP = 'INGRESADO'
+                 AND (ATIPOETIQUETA IS NULL OR ATIPOETIQUETA = '')`,
+                [reservedusu, ...idhs]
+            );
+
+            console.log(`[CDE-CATALOG] ✅ ${result.affectedRows}/${idhs.length} IDHs reservados`);
+
+            return {
+                success: true,
+                reserved: result.affectedRows,
+                total: idhs.length
+            };
+
+        } catch (error) {
+            console.error(`[CDE-CATALOG] ❌ Erro ao reservar IDHs:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * LIBERAR IDHs DE CATÁLOGO (voltar para INGRESADO)
+     * Usado quando carrinho expira ou item é removido
+     */
+    static async releaseCatalogIDHs(idhs) {
+        let connection = null;
+
+        if (!Array.isArray(idhs) || idhs.length === 0) {
+            console.log('[CDE-CATALOG] Nenhum IDH para liberar');
+            return { success: true, released: 0 };
+        }
+
+        try {
+            connection = await this.getConnection();
+
+            console.log(`[CDE-CATALOG] Liberando ${idhs.length} IDHs`);
+
+            const placeholders = idhs.map(() => '?').join(',');
+
+            const [result] = await connection.execute(
+                `UPDATE tbinventario
+                 SET AESTADOP = 'INGRESADO',
+                     RESERVEDUSU = NULL,
+                     AFECHA = NOW()
+                 WHERE AIDH IN (${placeholders})
+                 AND AESTADOP IN ('PRE-SELECTED', 'CONFIRMED')
+                 AND (ATIPOETIQUETA IS NULL OR ATIPOETIQUETA = '')`,
+                idhs
+            );
+
+            console.log(`[CDE-CATALOG] ✅ ${result.affectedRows}/${idhs.length} IDHs liberados`);
+
+            return {
+                success: true,
+                released: result.affectedRows,
+                total: idhs.length
+            };
+
+        } catch (error) {
+            console.error(`[CDE-CATALOG] ❌ Erro ao liberar IDHs:`, error.message);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    /**
+     * VERIFICAR STATUS DE IDHs DE CATÁLOGO
+     * Útil para debug e sincronização
+     */
+    static async checkCatalogIDHsStatus(idhs) {
+        let connection = null;
+
+        if (!Array.isArray(idhs) || idhs.length === 0) {
+            return [];
+        }
+
+        try {
+            connection = await this.getConnection();
+
+            const placeholders = idhs.map(() => '?').join(',');
+
+            const [rows] = await connection.execute(
+                `SELECT AIDH, AQBITEM, AESTADOP, RESERVEDUSU
+                 FROM tbinventario
+                 WHERE AIDH IN (${placeholders})`,
+                idhs
+            );
+
+            return rows.map(row => ({
+                idh: row.AIDH,
+                qbItem: row.AQBITEM,
+                status: row.AESTADOP,
+                reservedBy: row.RESERVEDUSU
+            }));
+
+        } catch (error) {
+            console.error(`[CDE-CATALOG] ❌ Erro ao verificar IDHs:`, error.message);
+            return [];
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
 }
 
 module.exports = CDEWriter;

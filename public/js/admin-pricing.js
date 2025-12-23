@@ -2611,3 +2611,559 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== GLOBAL FUNCTIONS FOR HTML =====
 window.adminPricing = adminPricing;
+
+// =====================================================
+// STOCK PRODUCTS PRICING MANAGEMENT
+// =====================================================
+
+// Global state for stock products
+const stockProductsState = {
+    products: [],
+    categories: {},
+    originalPrices: {},
+    modifiedPrices: {},
+    isLoaded: false,
+    searchQuery: ''
+};
+
+/**
+ * Switch between Unique Photos and Stock Products tabs
+ */
+function switchPricingTab(tabId) {
+    // Update tab buttons
+    document.querySelectorAll('.pricing-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+
+    // Update tab content
+    document.querySelectorAll('.pricing-tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `tab-${tabId}`);
+    });
+
+    // Toggle inline filters visibility
+    const filtersUniquePhotos = document.getElementById('filters-unique-photos');
+    const filtersStockProducts = document.getElementById('filters-stock-products');
+
+    if (filtersUniquePhotos) {
+        filtersUniquePhotos.style.display = tabId === 'unique-photos' ? 'flex' : 'none';
+    }
+    if (filtersStockProducts) {
+        filtersStockProducts.style.display = tabId === 'stock-products' ? 'flex' : 'none';
+    }
+
+    // Load stock products if switching to that tab
+    if (tabId === 'stock-products' && !stockProductsState.isLoaded) {
+        loadStockProducts();
+    }
+
+    console.log(`📋 Switched to tab: ${tabId}`);
+}
+
+/**
+ * Load stock products from API
+ */
+async function loadStockProducts() {
+    const container = document.getElementById('stockProductsContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="pricing-config-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading stock products...</p>
+        </div>
+    `;
+
+    try {
+        // Usar sunshineSession igual às outras rotas do admin
+        const sessionData = localStorage.getItem('sunshineSession');
+        const token = sessionData ? JSON.parse(sessionData).token : null;
+
+        if (!token) {
+            throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        }
+
+        const response = await fetch('/api/pricing/stock-products', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to load stock products');
+        }
+
+        // API returns { categories: [{category, products: [...]}] }
+        // Convert to the format we need: { categoryName: [products] }
+        const categoriesArray = data.categories || [];
+        const byCategory = {};
+        const allProducts = [];
+
+        categoriesArray.forEach(cat => {
+            byCategory[cat.category] = cat.products || [];
+            allProducts.push(...(cat.products || []));
+        });
+
+        stockProductsState.products = allProducts;
+        stockProductsState.categories = byCategory;
+        stockProductsState.isLoaded = true;
+
+        // Store original prices
+        allProducts.forEach(p => {
+            stockProductsState.originalPrices[p.qbItem] = p.basePrice || 0;
+        });
+
+        // Update stats
+        updateStockStats(data.stats);
+
+        // Update tab count
+        const countEl = document.getElementById('stockProductsCount');
+        if (countEl) countEl.textContent = allProducts.length;
+
+        // Render products
+        renderStockProducts();
+
+        // Setup search
+        setupStockSearch();
+
+        console.log(`✅ Loaded ${allProducts.length} stock products in ${Object.keys(byCategory).length} categories`);
+
+    } catch (error) {
+        console.error('Error loading stock products:', error);
+        container.innerHTML = `
+            <div class="error-message" style="text-align: center; padding: 2rem; color: var(--danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading stock products: ${error.message}</p>
+                <button class="btn btn-primary" onclick="loadStockProducts()">
+                    <i class="fas fa-sync"></i> Retry
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Update stock products stats in the banner
+ */
+function updateStockStats(stats) {
+    if (!stats) return;
+
+    const els = {
+        total: document.getElementById('stockTotalProducts'),
+        priced: document.getElementById('stockPricedCount'),
+        needPricing: document.getElementById('stockNeedPricing'),
+        totalUnits: document.getElementById('stockTotalUnits')
+    };
+
+    // API returns: totalProducts, productsWithPrice, productsWithoutPrice, totalStock
+    if (els.total) els.total.textContent = stats.totalProducts || stats.total || 0;
+    if (els.priced) els.priced.textContent = stats.productsWithPrice || stats.withPrice || 0;
+    if (els.needPricing) els.needPricing.textContent = stats.productsWithoutPrice || stats.withoutPrice || 0;
+    if (els.totalUnits) els.totalUnits.textContent = stats.totalStock || 0;
+}
+
+/**
+ * Render stock products as flat list (sorted alphabetically)
+ */
+function renderStockProducts() {
+    const container = document.getElementById('stockProductsContainer');
+    if (!container) return;
+
+    let products = [...stockProductsState.products];
+    const searchQuery = stockProductsState.searchQuery.toLowerCase();
+
+    // Filter products if search is active
+    if (searchQuery) {
+        products = products.filter(p =>
+            p.name?.toLowerCase().includes(searchQuery) ||
+            p.qbItem?.toLowerCase().includes(searchQuery)
+        );
+    }
+
+    // Sort products
+    const sortBy = document.getElementById('sortStockProducts')?.value || 'name';
+    products = sortStockProductsArray(products, sortBy);
+
+    if (products.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>No products found${searchQuery ? ` for "${searchQuery}"` : ''}</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Render flat list with header row
+    const html = `
+        <div class="pricing-config-content" style="display: block;">
+            <div class="stock-products-flat-list">
+                <div class="stock-list-header">
+                    <div class="header-info">
+                        <span class="header-qbitem">QB ITEM</span>
+                        <span class="header-name">PRODUCT NAME</span>
+                    </div>
+                    <div class="header-stock">STOCK</div>
+                    <div class="header-price">PRICE</div>
+                </div>
+                ${products.map(p => renderStockProductRow(p)).join('')}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+/**
+ * Sort stock products array
+ */
+function sortStockProductsArray(products, sortBy) {
+    return [...products].sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                return (a.name || '').localeCompare(b.name || '');
+            case 'name-desc':
+                return (b.name || '').localeCompare(a.name || '');
+            case 'price-high':
+                return (b.basePrice || 0) - (a.basePrice || 0);
+            case 'price-low':
+                return (a.basePrice || 0) - (b.basePrice || 0);
+            case 'stock':
+                return (b.currentStock || 0) - (a.currentStock || 0);
+            default:
+                return (a.name || '').localeCompare(b.name || '');
+        }
+    });
+}
+
+/**
+ * Sort handler for dropdown
+ */
+function sortStockProducts() {
+    renderStockProducts();
+}
+
+/**
+ * Render a single stock product row (estilo padronizado)
+ */
+function renderStockProductRow(product) {
+    const hasPrice = (product.basePrice || 0) > 0;
+    const isModified = stockProductsState.modifiedPrices[product.qbItem] !== undefined;
+    const currentPrice = isModified
+        ? stockProductsState.modifiedPrices[product.qbItem]
+        : (product.basePrice || '');
+
+    const rowClass = isModified ? 'modified' : (hasPrice ? 'has-price' : 'no-price');
+
+    return `
+        <div class="stock-product-item ${rowClass}" data-qbitem="${product.qbItem}">
+            <div class="stock-product-info">
+                <span class="stock-product-qbitem">${product.qbItem || '-'}</span>
+                <span class="stock-product-name">${product.name || 'Unnamed Product'}</span>
+            </div>
+            <div class="stock-product-stock">
+                <span class="stock-count ${product.currentStock > 0 ? 'in-stock' : 'out-stock'}">
+                    ${product.currentStock || 0}
+                </span>
+            </div>
+            <div class="stock-product-price">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input"
+                    data-qbitem="${product.qbItem}"
+                    value="${currentPrice}"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    onchange="handleStockPriceChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+                <button class="btn-save-price" onclick="quickSaveStockPrice('${product.qbItem}')" title="Save">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Format category name for display
+ */
+function formatCategoryName(category) {
+    if (!category) return 'Other';
+    return category
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+}
+
+/**
+ * Toggle category collapse/expand
+ */
+function toggleStockCategory(header) {
+    const group = header.closest('.stock-category-group');
+    const list = group.querySelector('.stock-products-list');
+    const toggle = header.querySelector('.stock-category-toggle');
+
+    list.style.display = list.style.display === 'none' ? 'block' : 'none';
+    toggle.classList.toggle('collapsed', list.style.display === 'none');
+}
+
+/**
+ * Handle price input change
+ */
+function handleStockPriceChange(input) {
+    const qbItem = input.dataset.qbitem;
+    const newPrice = parseFloat(input.value) || 0;
+    const originalPrice = stockProductsState.originalPrices[qbItem] || 0;
+
+    if (newPrice !== originalPrice) {
+        stockProductsState.modifiedPrices[qbItem] = newPrice;
+        input.classList.add('modified');
+        input.classList.remove('has-price');
+    } else {
+        delete stockProductsState.modifiedPrices[qbItem];
+        input.classList.remove('modified');
+        if (newPrice > 0) input.classList.add('has-price');
+    }
+
+    updateSaveButton();
+}
+
+/**
+ * Handle keydown in price input (Enter to save)
+ */
+function handleStockPriceKeydown(event, input) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        quickSaveStockPrice(input.dataset.qbitem);
+    }
+}
+
+/**
+ * Update the save button visibility
+ */
+function updateSaveButton() {
+    const btn = document.getElementById('btnSaveStockPrices');
+    if (!btn) return;
+
+    const hasChanges = Object.keys(stockProductsState.modifiedPrices).length > 0;
+    btn.style.display = hasChanges ? 'flex' : 'none';
+}
+
+/**
+ * Quick save a single product price
+ */
+async function quickSaveStockPrice(qbItem) {
+    const input = document.querySelector(`input[data-qbitem="${qbItem}"]`);
+    if (!input) return;
+
+    const price = parseFloat(input.value) || 0;
+
+    try {
+        const sessionData = localStorage.getItem('sunshineSession');
+        const token = sessionData ? JSON.parse(sessionData).token : null;
+
+        if (!token) {
+            throw new Error('Sessão expirada');
+        }
+
+        const response = await fetch(`/api/pricing/stock-products/${qbItem}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ price })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to save price');
+        }
+
+        // Update state
+        stockProductsState.originalPrices[qbItem] = price;
+        delete stockProductsState.modifiedPrices[qbItem];
+
+        // Update UI
+        input.classList.remove('modified');
+        if (price > 0) input.classList.add('has-price');
+
+        updateSaveButton();
+        updateStockCategoryStats();
+
+        // Show toast notification
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Price saved: ${qbItem} → $${price.toFixed(2)}`, 'success');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('success', `Price saved: ${qbItem} → $${price.toFixed(2)}`);
+        }
+
+        console.log(`✅ Saved price for ${qbItem}: $${price}`);
+
+    } catch (error) {
+        console.error('Error saving stock price:', error);
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Error saving price: ${error.message}`, 'error');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('error', `Error saving price: ${error.message}`);
+        } else {
+            alert(`Error saving price: ${error.message}`);
+        }
+    }
+}
+
+/**
+ * Save all modified prices
+ */
+async function saveAllStockPrices() {
+    const modified = stockProductsState.modifiedPrices;
+    const updates = Object.entries(modified).map(([qbItem, price]) => ({
+        qbItem,
+        price
+    }));
+
+    if (updates.length === 0) return;
+
+    const btn = document.getElementById('btnSaveStockPrices');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        btn.disabled = true;
+    }
+
+    try {
+        const sessionData = localStorage.getItem('sunshineSession');
+        const token = sessionData ? JSON.parse(sessionData).token : null;
+
+        if (!token) {
+            throw new Error('Sessão expirada');
+        }
+
+        const response = await fetch('/api/pricing/stock-products/bulk', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ updates })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to save prices');
+        }
+
+        // Update state
+        updates.forEach(u => {
+            stockProductsState.originalPrices[u.qbItem] = u.price;
+        });
+        stockProductsState.modifiedPrices = {};
+
+        // Update UI - remove modified class from all
+        document.querySelectorAll('.stock-price-input.modified').forEach(input => {
+            input.classList.remove('modified');
+            const price = parseFloat(input.value) || 0;
+            if (price > 0) input.classList.add('has-price');
+        });
+
+        updateSaveButton();
+        updateStockCategoryStats();
+
+        // Show success notification
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`${updates.length} prices saved successfully!`, 'success');
+        } else {
+            alert(`${updates.length} prices saved successfully!`);
+        }
+
+        console.log(`✅ Bulk saved ${updates.length} prices`);
+
+    } catch (error) {
+        console.error('Error bulk saving prices:', error);
+        alert(`Error saving prices: ${error.message}`);
+    } finally {
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+            btn.disabled = false;
+        }
+    }
+}
+
+/**
+ * Update category stats after saving
+ */
+function updateStockCategoryStats() {
+    document.querySelectorAll('.stock-category-group').forEach(group => {
+        const products = group.querySelectorAll('.stock-product-row');
+        let pricedCount = 0;
+
+        products.forEach(row => {
+            const input = row.querySelector('.stock-price-input');
+            if (input && parseFloat(input.value) > 0) {
+                pricedCount++;
+            }
+        });
+
+        const stats = group.querySelector('.stock-category-stats');
+        if (stats) {
+            const pricedSpan = stats.querySelector('.stat-priced');
+            const pendingSpan = stats.querySelector('.stat-pending');
+
+            if (pricedSpan) pricedSpan.textContent = `${pricedCount} priced`;
+
+            const pendingCount = products.length - pricedCount;
+            if (pendingSpan) {
+                pendingSpan.textContent = `${pendingCount} pending`;
+                pendingSpan.style.display = pendingCount > 0 ? '' : 'none';
+            }
+        }
+    });
+
+    // Update global stats
+    let totalPriced = 0;
+    let totalPending = 0;
+
+    document.querySelectorAll('.stock-price-input').forEach(input => {
+        if (parseFloat(input.value) > 0) {
+            totalPriced++;
+        } else {
+            totalPending++;
+        }
+    });
+
+    const pricedEl = document.getElementById('stockPricedCount');
+    const pendingEl = document.getElementById('stockNeedPricing');
+
+    if (pricedEl) pricedEl.textContent = totalPriced;
+    if (pendingEl) pendingEl.textContent = totalPending;
+}
+
+/**
+ * Setup search functionality for stock products
+ */
+function setupStockSearch() {
+    const searchInput = document.getElementById('stockProductSearch');
+    if (!searchInput) return;
+
+    let debounceTimer;
+
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            stockProductsState.searchQuery = e.target.value;
+            renderStockProducts();
+        }, 300);
+    });
+}
+
+// Export functions globally
+window.switchPricingTab = switchPricingTab;
+window.loadStockProducts = loadStockProducts;
+window.sortStockProducts = sortStockProducts;
+window.handleStockPriceChange = handleStockPriceChange;
+window.handleStockPriceKeydown = handleStockPriceKeydown;
+window.quickSaveStockPrice = quickSaveStockPrice;
+window.saveAllStockPrices = saveAllStockPrices;

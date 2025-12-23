@@ -506,9 +506,26 @@ class AdminSelections {
                 } catch (err) {
                     console.log('Erro buscando empresa:', err);
                 }
-                // Buscar QB items para as categorias
-                const categories = [...new Set(data.selection.items.map(item => item.category))];
-                const qbMap = await this.fetchQBItems(categories);
+                // Separar categorias de fotos vs catalog products
+                const photoItems = data.selection.items.filter(item => !item.isCatalogProduct);
+                const catalogItems = data.selection.items.filter(item => item.isCatalogProduct);
+
+                // Buscar QB items apenas para categorias de fotos
+                const photoCategories = [...new Set(photoItems.map(item => item.category))];
+                let qbMap = {};
+
+                if (photoCategories.length > 0) {
+                    qbMap = await this.fetchQBItems(photoCategories);
+                }
+
+                // Adicionar QB items de catálogo diretamente (já vêm com qbItem no item)
+                catalogItems.forEach(item => {
+                    if (item.qbItem) {
+                        qbMap[item.category] = item.qbItem;
+                    }
+                });
+
+                console.log(`📊 QB Map: ${photoCategories.length} fotos buscadas, ${catalogItems.length} catálogo direto`);
 
                 // Adicionar QB items aos dados
                 data.selection.qbMap = qbMap;
@@ -670,47 +687,100 @@ class AdminSelections {
         }
     }
 
-    // ===== HIGHLIGHT QB TAB =====
+    // ===== HIGHLIGHT QB TAB (DROPDOWN) =====
     highlightQBTab(index) {
-        const tabs = document.querySelectorAll('#selectionQBNav .qb-tab');
-        tabs.forEach((tab, i) => {
-            tab.classList.toggle('active', i === index);
-        });
+        const dropdown = document.getElementById('selectionQBNav');
+        if (dropdown && dropdown.tagName === 'SELECT') {
+            dropdown.value = index;
+        }
     }
 
     // ===== GROUP ITEMS BY CATEGORY =====
+    // Fotos únicas: agrupadas por subcategoria (folder path)
+    // Produtos de catálogo: cada produto é uma "categoria" separada com seu QB code
     groupItemsByCategory(selection) {
         const grouped = {};
+
         selection.items.forEach(item => {
-            if (!grouped[item.category]) {
-                grouped[item.category] = {
+            let groupKey;
+            let shortName;
+            let qbItem;
+
+            if (item.isCatalogProduct) {
+                // CATÁLOGO: Agrupar por qbItem (cada produto é uma entrada)
+                groupKey = `catalog_${item.qbItem || item.productName}`;
+                shortName = item.productName || item.fileName || 'Catalog Product';
+                qbItem = item.qbItem || null;
+            } else {
+                // FOTOS ÚNICAS: Agrupar por subcategoria (folder path)
+                // Mostrar caminho completo para melhor identificação
+                groupKey = item.category;
+                shortName = item.category || 'Unknown Category';
+                qbItem = selection.qbMap ? selection.qbMap[item.category] : null;
+            }
+
+            if (!grouped[groupKey]) {
+                grouped[groupKey] = {
                     category: item.category,
-                    shortName: item.category.split(' → ').filter(s => s.trim()).pop() || item.category,
+                    groupKey: groupKey,
+                    shortName: shortName,
                     items: [],
                     count: 0,
                     value: 0,
-                    qbItem: selection.qbMap ? selection.qbMap[item.category] : null
+                    qbItem: qbItem,
+                    isCatalogProduct: item.isCatalogProduct || false
                 };
             }
-            grouped[item.category].items.push(item);
-            grouped[item.category].count++;
-            grouped[item.category].value += item.price || 0;
+
+            grouped[groupKey].items.push(item);
+            grouped[groupKey].count += item.quantity || 1;
+            grouped[groupKey].value += (item.price || 0) * (item.quantity || 1);
         });
-        return Object.values(grouped);
+
+        // Ordenar: fotos únicas primeiro, depois catálogo por nome
+        return Object.values(grouped).sort((a, b) => {
+            if (a.isCatalogProduct && !b.isCatalogProduct) return 1;
+            if (!a.isCatalogProduct && b.isCatalogProduct) return -1;
+            return a.shortName.localeCompare(b.shortName);
+        });
     }
 
-    // ===== RENDER QB NAVIGATION =====
+    // ===== RENDER QB NAVIGATION (DROPDOWN) =====
     renderQBNavigation(categoriesData, qbMap) {
         const navContainer = document.getElementById('selectionQBNav');
-        const tabsHTML = categoriesData.map((cat, i) => {
-            const qbCode = cat.qbItem || cat.shortName.substring(0, 8);
-            return `<button class="qb-tab ${i === 0 ? 'active' : ''}"
-                           onclick="adminSelections.goToCategory(${i})"
-                           title="${cat.category}">
-                ${qbCode}
-            </button>`;
-        }).join('');
-        navContainer.innerHTML = tabsHTML;
+
+        // Separar fotos únicas e produtos de catálogo
+        const photoCategories = categoriesData.filter(c => !c.isCatalogProduct);
+        const catalogProducts = categoriesData.filter(c => c.isCatalogProduct);
+
+        let optionsHTML = '';
+
+        // Grupo de fotos únicas
+        if (photoCategories.length > 0) {
+            optionsHTML += `<optgroup label="📷 Unique Photos (${photoCategories.length})">`;
+            photoCategories.forEach((cat) => {
+                const i = categoriesData.indexOf(cat);
+                const qbCode = cat.qbItem || '—';
+                // Mostrar nome mais completo (até 50 chars)
+                const displayName = cat.shortName.length > 50 ? cat.shortName.substring(0, 50) + '...' : cat.shortName;
+                optionsHTML += `<option value="${i}">${qbCode} - ${displayName} (${cat.count})</option>`;
+            });
+            optionsHTML += `</optgroup>`;
+        }
+
+        // Grupo de produtos de catálogo
+        if (catalogProducts.length > 0) {
+            optionsHTML += `<optgroup label="📦 Catalog Products (${catalogProducts.length})">`;
+            catalogProducts.forEach((cat) => {
+                const i = categoriesData.indexOf(cat);
+                const qbCode = cat.qbItem || '—';
+                const displayName = cat.shortName.length > 50 ? cat.shortName.substring(0, 50) + '...' : cat.shortName;
+                optionsHTML += `<option value="${i}">${qbCode} - ${displayName} (${cat.count})</option>`;
+            });
+            optionsHTML += `</optgroup>`;
+        }
+
+        navContainer.innerHTML = optionsHTML;
     }
 
     // ===== RENDER SELECTION CATEGORIES =====
@@ -722,10 +792,42 @@ class AdminSelections {
             const qbBadge = cat.qbItem
                 ? `<span class="qb-badge">${cat.qbItem}</span>`
                 : `<span class="qb-badge empty">—</span>`;
-            const escapedCategory = cat.category.replace(/'/g, "\\'");
+            const escapedCategory = (cat.groupKey || cat.category).replace(/'/g, "\\'");
 
+            // Produtos de catálogo: expansível como fotos únicas
+            if (cat.isCatalogProduct) {
+                return `
+                <div class="selection-category catalog-product" data-index="${catIndex}" id="selCat${catIndex}" data-is-catalog="true">
+                    <div class="cat-row" onclick="adminSelections.toggleSelCategory(${catIndex})">
+                        <div class="col-checkbox">
+                            ${canRemove ? `
+                                <input type="checkbox"
+                                    class="cat-select-all"
+                                    data-category="${escapedCategory}"
+                                    data-cat-index="${catIndex}"
+                                    data-is-catalog="true"
+                                    onclick="event.stopPropagation(); adminSelections.toggleCategorySelection(${catIndex}, '${escapedCategory}');"
+                                    title="Select all in this category">
+                            ` : ''}
+                        </div>
+                        <div class="col-category" title="${cat.shortName}">
+                            <i class="fas fa-chevron-right cat-arrow"></i>
+                            <span class="cat-name">${cat.shortName}</span>
+                        </div>
+                        <div class="col-qb">${qbBadge}</div>
+                        <div class="col-qty">${cat.count}</div>
+                        <div class="col-value">$${cat.value.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <div class="cat-items" style="display: none;" data-rendered="false">
+                        <!-- Items loaded on expand -->
+                    </div>
+                </div>
+                `;
+            }
+
+            // Fotos únicas: expansível com subcategorias
             return `
-            <div class="selection-category" data-index="${catIndex}" id="selCat${catIndex}">
+            <div class="selection-category photo-category" data-index="${catIndex}" id="selCat${catIndex}" data-is-catalog="false">
                 <div class="cat-row" onclick="adminSelections.toggleSelCategory(${catIndex})">
                     <div class="col-checkbox">
                         ${canRemove ? `
@@ -737,7 +839,7 @@ class AdminSelections {
                                 title="Select all in this category">
                         ` : ''}
                     </div>
-                    <div class="col-category">
+                    <div class="col-category" title="${cat.category}">
                         <i class="fas fa-chevron-right cat-arrow"></i>
                         <span class="cat-name">${cat.shortName}</span>
                     </div>
@@ -795,6 +897,12 @@ class AdminSelections {
         setTimeout(selectAll, 50);
     }
 
+    // ===== TOGGLE CATALOG PRODUCT SELECTION =====
+    toggleCatalogProductSelection(catIndex) {
+        // Para produtos de catálogo, apenas atualiza o estado do botão de remover
+        this.updateRemoveButtonState();
+    }
+
     // ===== TOGGLE SELECTION CATEGORY =====
     toggleSelCategory(index) {
         const category = document.querySelector(`.selection-category[data-index="${index}"]`);
@@ -802,6 +910,8 @@ class AdminSelections {
 
         const itemsDiv = category.querySelector('.cat-items');
         const arrow = category.querySelector('.cat-arrow');
+        if (!itemsDiv || !arrow) return;
+
         const isExpanded = category.classList.contains('expanded');
 
         if (isExpanded) {
@@ -832,7 +942,7 @@ class AdminSelections {
 
         const photosHTML = cat.items.map((item, itemIndex) => {
             const thumbUrl = this.getThumbnailUrl(item);
-            const itemName = item.fileName || item.name || 'Unknown';
+            const itemName = item.productName || item.fileName || item.name || 'Unknown';
 
             if (viewMode === 'grid') {
                 return `
@@ -948,7 +1058,10 @@ class AdminSelections {
 
     // ===== QB NAVIGATION FUNCTIONS =====
     goToCategory(index) {
-        // Update active tab
+        // Convert to number (dropdown passes string)
+        index = parseInt(index, 10);
+
+        // Update active dropdown
         this.highlightQBTab(index);
         this.currentQBIndex = index;
 
@@ -1076,7 +1189,7 @@ class AdminSelections {
 
         // Update image and info
         document.getElementById('selectionLightboxImage').src = imageUrl;
-        document.getElementById('selectionLightboxName').textContent = item.fileName || item.name || '';
+        document.getElementById('selectionLightboxName').textContent = item.productName || item.fileName || item.name || '';
         document.getElementById('selectionLightboxPrice').textContent = `$${(item.price || 0).toFixed(2)}`;
 
         lightbox.classList.add('active');
@@ -1174,17 +1287,14 @@ class AdminSelections {
                         </div>
                     </div>
 
-                    <!-- QB Items Navigation -->
+                    <!-- QB Items Navigation - DROPDOWN STYLE -->
                     <div class="selection-nav-section">
-                        <button class="nav-btn" onclick="adminSelections.prevQBCategory()" title="Previous">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <div id="selectionQBNav" class="qb-nav-tabs">
-                            <!-- QB tabs will be filled via JS -->
+                        <div class="qb-dropdown-container">
+                            <label style="color: #999; font-size: 12px; margin-right: 8px;">Jump to:</label>
+                            <select id="selectionQBNav" class="qb-dropdown" onchange="adminSelections.goToCategory(this.value)">
+                                <!-- Options will be filled via JS -->
+                            </select>
                         </div>
-                        <button class="nav-btn" onclick="adminSelections.nextQBCategory()" title="Next">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
                         <div class="view-toggle-btns">
                             <button class="view-btn active" onclick="adminSelections.setViewMode('list')" title="List View">
                                 <i class="fas fa-list"></i>
@@ -1199,7 +1309,7 @@ class AdminSelections {
                     <div class="selection-columns-header">
                         <div class="col-checkbox"></div>
                         <div class="col-category">Category</div>
-                        <div class="col-qb">QB Item</div>
+                        <div class="col-qb">QB</div>
                         <div class="col-qty">Qty</div>
                         <div class="col-value">Value</div>
                     </div>
@@ -1560,7 +1670,14 @@ class AdminSelections {
         // 1. Se já tem thumbnailUrl no banco, usar direto
         if (item.thumbnailUrl) return item.thumbnailUrl;
 
-        // 2. Tentar construir a partir de category + fileName
+        // 2. Produtos de catálogo - verificar propriedades específicas
+        if (item.isCatalogProduct) {
+            if (item.productImage) return item.productImage;
+            if (item.imageUrl) return item.imageUrl;
+            if (item.image) return item.image;
+        }
+
+        // 3. Tentar construir a partir de category + fileName
         if (item.category && item.fileName) {
             // category format: "NATURAL COWHIDES → Premium" - usar primeira parte
             const categoryPath = item.category.split(' → ')[0].trim();
@@ -1569,7 +1686,7 @@ class AdminSelections {
             return `https://images.sunshinecowhides-gallery.com/_thumbnails/${encodedPath}`;
         }
 
-        // 3. Fallback para ImageUtils
+        // 4. Fallback para ImageUtils
         if (window.ImageUtils && window.ImageUtils.getThumbnailUrl) {
             return window.ImageUtils.getThumbnailUrl(item);
         }
@@ -1584,7 +1701,14 @@ class AdminSelections {
             return item.thumbnailUrl.replace('/_thumbnails/', '/');
         }
 
-        // 2. Tentar construir a partir de category + fileName
+        // 2. Produtos de catálogo - verificar propriedades específicas
+        if (item.isCatalogProduct) {
+            if (item.productImage) return item.productImage.replace('/_thumbnails/', '/');
+            if (item.imageUrl) return item.imageUrl.replace('/_thumbnails/', '/');
+            if (item.image) return item.image.replace('/_thumbnails/', '/');
+        }
+
+        // 3. Tentar construir a partir de category + fileName
         if (item.category && item.fileName) {
             const categoryPath = item.category.split(' → ')[0].trim();
             const path = `${categoryPath}/${item.fileName}`;
@@ -1592,12 +1716,12 @@ class AdminSelections {
             return `https://images.sunshinecowhides-gallery.com/${encodedPath}`;
         }
 
-        // 3. Fallback para ImageUtils
+        // 4. Fallback para ImageUtils
         if (window.ImageUtils && window.ImageUtils.getFullImageUrl) {
             return window.ImageUtils.getFullImageUrl(item);
         }
 
-        // 4. Fallback final
+        // 5. Fallback final
         if (item.r2Key || item.id) {
             const key = item.r2Key || item.id;
             return `https://images.sunshinecowhides-gallery.com/${key}`;
@@ -2455,14 +2579,85 @@ class AdminSelections {
 
     // ===== NOTIFICATIONS =====
     showNotification(message, type = 'info') {
-        // Integration with app.js notification system
-        if (window.showNotification) {
-            window.showNotification(message, type);
-        } else {
-            // Fallback to alert
-            const typeLabel = type.toUpperCase();
-            alert(`[${typeLabel}] ${message}`);
+        // ✅ Sempre usar toast próprio (evita alert nativo do browser)
+        this.showToast(message, type);
+    }
+
+    // ✅ Toast notification independente (não depende de app.js)
+    showToast(message, type = 'info') {
+        // Criar container se não existir
+        let container = document.getElementById('admin-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'admin-toast-container';
+            container.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 99999;
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 10px;
+                pointer-events: none;
+            `;
+            document.body.appendChild(container);
         }
+
+        // Cores por tipo
+        const colors = {
+            success: { bg: '#10b981', icon: '✓' },
+            error: { bg: '#ef4444', icon: '✕' },
+            warning: { bg: '#f59e0b', icon: '⚠' },
+            info: { bg: '#3b82f6', icon: 'ℹ' }
+        };
+        const config = colors[type] || colors.info;
+
+        // Criar toast
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            background: ${config.bg};
+            color: white;
+            padding: 14px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: auto;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        `;
+        toast.innerHTML = `
+            <span style="font-size: 18px;">${config.icon}</span>
+            <span>${message}</span>
+        `;
+
+        // Adicionar animação CSS se não existir
+        if (!document.getElementById('toast-animation-style')) {
+            const style = document.createElement('style');
+            style.id = 'toast-animation-style';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateY(100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateY(0); opacity: 1; }
+                    to { transform: translateY(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        container.appendChild(toast);
+
+        // Remover após 4 segundos
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
     }
 
     // ===== REVERT SOLD TO AVAILABLE =====
@@ -2668,43 +2863,39 @@ class AdminSelections {
         }
 
         const modalHTML = `
-            <div id="poNumberModal" class="selection-details-modal" style="display: none;">
-                <div class="selection-details-content" style="max-width: 500px;">
-                    <div class="selection-details-header">
-                        <h3 class="selection-details-title">
+            <div id="poNumberModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: none; align-items: center; justify-content: center;">
+                <div style="background: #2a2a2a; border-radius: 12px; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid #444;">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; color: #daa520; font-size: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-file-excel"></i>
                             CDE Export - PO Number
                         </h3>
-                        <button class="selection-details-close po-modal-close-btn">
+                        <button class="po-modal-close-btn" style="background: none; border: none; color: #999; font-size: 20px; cursor: pointer; padding: 0; line-height: 1;">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <div class="selection-details-body" style="padding: 30px;">
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 10px; font-weight: bold; font-size: 16px;">
-                                Enter CDE PO Number:
-                            </label>
-                            <input 
-                                type="text" 
-                                id="cdePoNumber" 
-                                class="form-control" 
-                                placeholder="Ex: PO-2025-001"
-                                style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px;"
-                            >
-                            <small style="color: #666; display: block; margin-top: 10px;">
-                                This will be used in the PO. Number column for CDE import
-                            </small>
-                        </div>
-                        <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
-                            <button 
-                                class="btn-modal-action po-modal-cancel-btn" 
-                                style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    <div style="padding: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #eee;">
+                            Enter CDE PO Number:
+                        </label>
+                        <input
+                            type="text"
+                            id="cdePoNumber"
+                            placeholder="Ex: PO-2025-001"
+                            style="width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #555; border-radius: 6px; background: #1a1a1a; color: #fff; box-sizing: border-box;"
+                        >
+                        <small style="color: #888; display: block; margin-top: 8px; font-size: 12px;">
+                            This will be used in the PO. Number column for CDE import
+                        </small>
+                        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button
+                                class="po-modal-cancel-btn"
+                                style="padding: 8px 16px; background: #555; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
                                 Cancel
                             </button>
-                            <button 
-                                id="confirmPONumber" 
-                                class="btn-modal-action"
-                                style="padding: 10px 30px; background: #daa520; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                            <button
+                                id="confirmPONumber"
+                                style="padding: 8px 20px; background: #daa520; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
                                 Generate Excel
                             </button>
                         </div>
@@ -2794,7 +2985,7 @@ class AdminSelections {
             const poNumber = document.getElementById('cdePoNumber').value.trim();
 
             if (!poNumber) {
-                alert('Please enter a PO Number');
+                this.showNotification('Please enter a PO Number', 'warning');
                 document.getElementById('cdePoNumber').focus();
                 return;
             }
@@ -2833,31 +3024,60 @@ class AdminSelections {
                 console.log('   selection.clientCompany =', selection.clientCompany);
             }
 
-            // 🆕 FUNÇÃO PARA LIMPAR STRINGS PARA CSV/MYSQL (VERSÃO 2.0)
+            // 🆕 FUNÇÃO PARA LIMPAR STRINGS PARA CSV/MYSQL (VERSÃO 3.0)
             const cleanForCSV = (text) => {
                 if (!text) return '';
 
                 return String(text)
-                    // Remover aspas duplas
-                    .replace(/"/g, '')
-                    // Remover aspas simples (se necessário, descomente a linha abaixo)
-                    // .replace(/'/g, '')
-                    // 🆕 REMOVER PONTOS
-                    .replace(/\./g, '')
-                    // Converter setas para barras
-                    .replace(/[►→'>]/g, '/')
-                    // Remover espaços ao redor das barras
-                    .replace(/\s*\/\s*/g, '/')
-                    // Remover barras duplicadas
-                    .replace(/\/+/g, '/')
-                    // Remover barra final
-                    .replace(/\/$/, '')
-                    // Remover caracteres de controle e especiais problemáticos
-                    .replace(/[\x00-\x1F\x7F]/g, '')
-                    // Remover vírgulas (que quebram CSV)
-                    .replace(/,/g, '-')
-                    // Limpar espaços múltiplos
-                    .replace(/\s+/g, ' ')
+                    // ===== ASPAS E ESCAPE =====
+                    .replace(/"/g, '')           // Aspas duplas
+                    .replace(/'/g, '')           // Aspas simples (problemático em SQL)
+                    .replace(/`/g, '')           // Backticks
+                    .replace(/\\/g, '')          // Backslash (escape character)
+
+                    // ===== CARACTERES SQL/PHP PERIGOSOS =====
+                    .replace(/;/g, '')           // Ponto-virgula (SQL injection)
+                    .replace(/--/g, '-')         // SQL comment
+                    .replace(/#/g, '')           // MySQL comment / PHP issue
+                    .replace(/%/g, '')           // SQL wildcard / encoding
+                    .replace(/&/g, 'and')        // HTML entity / URL encoding
+                    .replace(/\$/g, '')          // PHP variable
+                    .replace(/@/g, '')           // SQL variable
+
+                    // ===== CARACTERES HTML/XML =====
+                    .replace(/</g, '')           // HTML tag
+                    .replace(/>/g, '')           // HTML tag
+                    .replace(/\|/g, '-')         // Pipe
+
+                    // ===== PONTUACAO ESPECIAL =====
+                    .replace(/\./g, '')          // Pontos
+                    .replace(/,/g, '-')          // Virgulas (quebram CSV)
+                    .replace(/:/g, '-')          // Dois pontos
+                    .replace(/\(/g, '')          // Parenteses
+                    .replace(/\)/g, '')
+                    .replace(/\[/g, '')          // Colchetes
+                    .replace(/\]/g, '')
+                    .replace(/\{/g, '')          // Chaves
+                    .replace(/\}/g, '')
+
+                    // ===== SETAS E SIMBOLOS UNICODE =====
+                    .replace(/[►→➜➤⟶⇒]/g, ' ')   // Setas para espaco
+                    .replace(/[•·°™®©]/g, '')    // Simbolos especiais
+
+                    // ===== BARRAS - CONVERTER PARA ESPACO =====
+                    .replace(/\s*\/\s*/g, ' ')   // Barras para espaco
+                    .replace(/\s*\\\s*/g, ' ')   // Backslash para espaco
+
+                    // ===== CARACTERES DE CONTROLE =====
+                    .replace(/[\x00-\x1F\x7F]/g, '')  // ASCII control chars
+                    .replace(/[\u2000-\u200F]/g, '') // Unicode spaces/controls
+                    .replace(/[\uFEFF]/g, '')        // BOM
+
+                    // ===== LIMPEZA FINAL =====
+                    .replace(/\s+/g, ' ')        // Espacos multiplos
+                    .replace(/-+/g, '-')         // Hifens multiplos
+                    .replace(/^-/, '')           // Hifen inicial
+                    .replace(/-$/, '')           // Hifen final
                     .trim();
             };
 
@@ -2866,9 +3086,16 @@ class AdminSelections {
             const reservedusu = `${clientNameFormatted}-${selection.clientCode || '0000'}`;
             console.log('RESERVEDUSU será:', reservedusu);
 
-            // Agrupar por QB Item e COLETAR FOTOS POR CATEGORIA
+            // ✅ SEPARAR FOTOS ÚNICAS de PRODUTOS DE CATÁLOGO
+            const uniquePhotos = selection.items.filter(item => !item.isCatalogProduct);
+            const catalogProducts = selection.items.filter(item => item.isCatalogProduct);
+
+            console.log(`📷 Fotos únicas: ${uniquePhotos.length}`);
+            console.log(`📦 Produtos de catálogo: ${catalogProducts.length}`);
+
+            // ===== AGRUPAR FOTOS ÚNICAS POR CATEGORIA =====
             const qbGroups = {};
-            for (const item of selection.items) {
+            for (const item of uniquePhotos) {
                 const qbCode = await this.getQBForCategory(item.category) || 'NO-QB';
 
                 if (!qbGroups[qbCode]) {
@@ -2895,7 +3122,7 @@ class AdminSelections {
                 }
             }
 
-            // Calcular preço médio
+            // Calcular preço médio para fotos
             Object.values(qbGroups).forEach(group => {
                 if (group.totalQty > 0) {
                     group.unitPrice = group.totalAmount / group.totalQty;
@@ -2905,37 +3132,59 @@ class AdminSelections {
             // Criar dados da planilha - FORMATO LIMPO SEM CARACTERES PROBLEMÁTICOS
             const excelData = [];
 
-            // Adicionar linhas com fotos ESPECÍFICAS de cada categoria
+            // 🆕 LIMPAR COMPANY NAME E PO NUMBER UMA VEZ
+            const cleanCompanyName = cleanForCSV(companyName);
+            const cleanPoNumber = cleanForCSV(poNumber);
+
+            // ===== 1. ADICIONAR FOTOS ÚNICAS (agrupadas por categoria) =====
             Object.values(qbGroups).forEach(group => {
                 // String de fotos APENAS desta categoria
                 const categoryPhotoNumbers = group.photoNumbers.join('-');
 
-                // 🆕 LIMPAR ITEM NAME - REMOVE ASPAS E CARACTERES PROBLEMÁTICOS
+                // LIMPAR ITEM NAME
                 let itemName = cleanForCSV(group.categoryName);
-
-                console.log(`✅ Categoria limpa para CSV: ${itemName}`);
-
-                // 🆕 LIMPAR TAMBÉM O COMPANY NAME E PO NUMBER
-                const cleanCompanyName = cleanForCSV(companyName);
-                const cleanPoNumber = cleanForCSV(poNumber);
-                const cleanReservedusu = cleanForCSV(reservedusu);
                 const cleanQbCode = cleanForCSV(group.qbCode);
 
-                excelData.push([
-                    selection.clientName,    // ✅ Coluna 1: Nome do cliente (Mary Devos)
-                    cleanPoNumber,           // ✅ Coluna 2: PO Number (COLUNA CDE)
-                    cleanCompanyName,        // ✅ Coluna 3: Company (Gastamo Group)
-                    categoryPhotoNumbers,    // ✅ Coluna 4: Foto numbers
-                    cleanQbCode,             // ✅ Coluna 5: QB Code
-                    itemName,                // ✅ Coluna 6: Categoria
-                    group.totalQty,          // ✅ Coluna 7: Quantidade
-                    group.unitPrice.toFixed(2),    // ✅ Coluna 8: Preço unitário
-                    group.totalAmount.toFixed(2)   // ✅ Coluna 9: Total
-                ]);
+                console.log(`📷 Foto categoria: ${itemName} | QB: ${cleanQbCode} | Fotos: ${group.photoNumbers.length}`);
 
-                // LOG para debug
-                console.log(`Categoria ${group.qbCode}: ${group.photoNumbers.length} fotos`);
+                excelData.push([
+                    selection.clientName,    // Coluna 1: Nome do cliente
+                    cleanPoNumber,           // Coluna 2: PO Number
+                    cleanCompanyName,        // Coluna 3: Company
+                    categoryPhotoNumbers,    // Coluna 4: Foto numbers
+                    cleanQbCode,             // Coluna 5: QB Code
+                    itemName,                // Coluna 6: Categoria
+                    group.totalQty,          // Coluna 7: Quantidade
+                    group.unitPrice.toFixed(2),    // Coluna 8: Preço unitário
+                    group.totalAmount.toFixed(2)   // Coluna 9: Total
+                ]);
             });
+
+            // ===== 2. ADICIONAR PRODUTOS DE CATÁLOGO (cada um em sua própria linha) =====
+            catalogProducts.forEach(item => {
+                // Usar qbItem do próprio item (definido ao adicionar ao carrinho)
+                const qbCode = cleanForCSV(item.qbItem || 'NO-QB');
+                const productName = cleanForCSV(item.productName || item.fileName || 'Catalog Product');
+                const quantity = item.quantity || 1;
+                const unitPrice = item.unitPrice || item.price || 0;
+                const totalAmount = unitPrice * quantity;
+
+                console.log(`📦 Catálogo: ${productName} | QB: ${qbCode} | Qty: ${quantity} | $${unitPrice}`);
+
+                excelData.push([
+                    selection.clientName,    // Coluna 1: Nome do cliente
+                    cleanPoNumber,           // Coluna 2: PO Number
+                    cleanCompanyName,        // Coluna 3: Company
+                    '',                      // Coluna 4: Vazio (sem foto number para catálogo)
+                    qbCode,                  // Coluna 5: QB Code
+                    productName,             // Coluna 6: Nome do produto
+                    quantity,                // Coluna 7: Quantidade
+                    unitPrice.toFixed(2),    // Coluna 8: Preço unitário
+                    totalAmount.toFixed(2)   // Coluna 9: Total
+                ]);
+            });
+
+            console.log(`✅ Total de linhas no CSV: ${excelData.length}`);
 
             // Criar workbook
             const workbook = XLSX.utils.book_new();
@@ -2973,11 +3222,11 @@ class AdminSelections {
             console.log(`✅ Total de categorias: ${Object.keys(qbGroups).length}`);
             console.log(`✅ Arquivo limpo para import MySQL`);
 
-            this.showNotification(`Planilha CDE baixada com PO: ${poNumber} | RESERVEDUSU: ${reservedusu}`, 'success');
+            this.showNotification(`CDE spreadsheet downloaded - PO: ${poNumber}`, 'success');
 
         } catch (error) {
-            console.error('Erro ao gerar Excel:', error);
-            this.showNotification('Erro ao gerar planilha: ' + error.message, 'error');
+            console.error('Error generating Excel:', error);
+            this.showNotification('Error generating spreadsheet: ' + error.message, 'error');
         }
     }
 
@@ -3362,7 +3611,6 @@ class AdminSelections {
             const date = new Date(correction.timestamp).toLocaleString();
             const extraData = correction.extraData || {};
             const removedPhotos = extraData.removedPhotos || [];
-            const tierChange = extraData.tierChange || {};
             const recalc = extraData.recalculation || {};
 
             correctionsHTML += `
@@ -3380,18 +3628,7 @@ class AdminSelections {
                                 </ul>
                             </div>
                         ` : ''}
-                        
-                        ${tierChange.from && tierChange.to ? `
-                            <div class="correction-section">
-                                <strong><i class="fas fa-layer-group"></i> Tier Change:</strong>
-                                <span class="tier-change">
-                                    <span class="tier-old">${tierChange.from}</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                    <span class="tier-new">${tierChange.to}</span>
-                                </span>
-                            </div>
-                        ` : ''}
-                        
+
                         ${recalc.totalRecalculado !== undefined ? `
                             <div class="correction-section">
                                 <strong><i class="fas fa-calculator"></i> New Total:</strong>
@@ -3436,7 +3673,7 @@ class AdminSelections {
                         
                         <div class="correction-note">
                             <i class="fas fa-lightbulb"></i>
-                            <span>Prices have been automatically recalculated based on the new quantity tier.</span>
+                            <span>Prices have been automatically recalculated.</span>
                         </div>
                     </div>
                     <div class="modal-footer">

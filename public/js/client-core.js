@@ -333,7 +333,14 @@ window.loadClientDataAfterMode = async function () {
 
         updateClientInterface(data);
         updatePriceFilterVisibility();
-        showCategories();
+
+        // Se o sistema de catálogo está ativo (homepage), não mostrar categorias da galeria
+        // O catalog já terá chamado showHomepage() que esconde tudo
+        if (window.CatalogState && window.CatalogState.currentView === 'homepage') {
+            console.log('📦 Catalog homepage active - skipping showCategories()');
+        } else {
+            showCategories();
+        }
 
         if (window.updateFilterVisibility) {
             await window.updateFilterVisibility();
@@ -571,19 +578,16 @@ window.navigateToSubfolder = async function (folderId, folderName) {
 }
 
 window.navigateToRoot = function () {
-    // ✅ DETECTAR se está em modo Coming Soon
-    if (window.navigationState.isComingSoon) {
-        console.log('🏠 Home → Coming Soon');
-        navigationState.currentPath = [];
-        navigationState.currentFolderId = null;
-        if (window.loadComingSoonCategories) {
-            window.loadComingSoonCategories();
-        }
+    // ✅ Sempre redirecionar para a homepage do catálogo
+    console.log('🏠 navigateToRoot → Catalog Homepage');
+    navigationState.currentPath = [];
+    navigationState.currentFolderId = null;
+
+    // Usar sistema de catálogo se disponível
+    if (window.showHomepage) {
+        window.showHomepage();
     } else {
-        // Comportamento normal (Available Now)
-        console.log('🏠 Home → Available Now');
-        navigationState.currentPath = [];
-        navigationState.currentFolderId = null;
+        // Fallback para galeria antiga
         showCategories();
     }
 }
@@ -699,6 +703,20 @@ window.showSubfolders = function (folders) {
     document.getElementById('foldersContainer').style.display = 'grid';
     document.getElementById('breadcrumbContainer').style.display = 'block';
 
+    // ✅ Mostrar category header se houver contexto do catálogo
+    const ctx = window.CatalogState?.breadcrumbContext;
+    if (ctx && ctx.subcategoryName) {
+        // Buscar descrição e ícone da subcategoria
+        const category = window.MAIN_CATEGORIES?.[ctx.categoryKey];
+        const subcategory = category?.subcategories?.[ctx.subcategoryKey];
+        const description = subcategory?.description || '';
+        const icon = category?.icon || 'fa-folder';
+
+        window.updateCategoryHeader(ctx.subcategoryName, description, icon);
+    } else {
+        window.hideCategoryHeader();
+    }
+
     const containerEl = document.getElementById('foldersContainer');
 
     containerEl.innerHTML = folders.map(folder => {
@@ -723,15 +741,18 @@ window.showSubfolders = function (folders) {
         // ✅ Classe CSS para cards sem estoque APENAS em níveis finais
         const outOfStockClass = (!hasAvailablePhotos && !hasSubfolders) ? 'out-of-stock' : '';
 
+        // ✅ Limpar nome para exibição (remove "1.", "2.", etc.)
+        const displayName = window.cleanName ? window.cleanName(folder.name) : folder.name;
+
         return `
-            <div class="folder-card ${outOfStockClass}" 
-                data-folder-id="${folder.id.replace(/"/g, '&quot;')}" 
+            <div class="folder-card ${outOfStockClass}"
+                data-folder-id="${folder.id.replace(/"/g, '&quot;')}"
                 data-folder-name="${folder.name.replace(/"/g, '&quot;')}"
                 data-has-subfolders="${hasSubfolders}"
                 data-available-count="${availableCount}">
-                
+
                 <div class="folder-card-header">
-                    <h4>${folder.name}</h4>
+                    <h4>${displayName}</h4>
                 </div>
                 
                 <div class="folder-description">${description}</div>
@@ -799,6 +820,9 @@ window.updateBreadcrumb = function () {
     const pathEl = document.getElementById('breadcrumbPath');
     const container = document.getElementById('breadcrumbContainer');
 
+    // Referência ao Back button fixo do HTML
+    const fixedBackBtn = container?.querySelector('.breadcrumb > .back-btn');
+
     // Se está na home (path vazio), mostrar mensagem orientadora
     if (!navigationState.currentPath || navigationState.currentPath.length === 0) {
         if (pathEl) {
@@ -811,7 +835,33 @@ window.updateBreadcrumb = function () {
         if (container) {
             container.style.display = 'block';
         }
+        // Mostrar Back fixo quando não há contexto
+        if (fixedBackBtn) fixedBackBtn.style.display = 'flex';
         return;
+    }
+
+    // ✅ Verificar se há contexto do catálogo
+    const ctx = window.CatalogState?.breadcrumbContext;
+    let catalogPrefixHtml = '';
+
+    if (ctx && ctx.categoryKey) {
+        // Esconder Back fixo do HTML (vamos usar o do JavaScript)
+        if (fixedBackBtn) fixedBackBtn.style.display = 'none';
+
+        // Back button do catálogo
+        catalogPrefixHtml += `
+            <button class="breadcrumb-item back-btn catalog-back" onclick="window.goBackOneLevel()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        `;
+        // Categoria principal (ex: Natural Cowhides)
+        catalogPrefixHtml += `
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <button class="breadcrumb-item" onclick="window.openCategory('${ctx.categoryKey}')">${ctx.categoryName}</button>
+        `;
+    } else {
+        // Mostrar Back fixo quando não há contexto do catálogo
+        if (fixedBackBtn) fixedBackBtn.style.display = 'flex';
     }
 
     const breadcrumbHtml = navigationState.currentPath.map((item, index) => {
@@ -844,7 +894,7 @@ window.updateBreadcrumb = function () {
         `;
     }).join('');
 
-    pathEl.innerHTML = breadcrumbHtml;
+    pathEl.innerHTML = catalogPrefixHtml + breadcrumbHtml;
 }
 
 // ===== FUNÇÕES DE UI =====
@@ -853,6 +903,19 @@ window.hideAllContainers = function () {
     document.getElementById('foldersContainer').style.display = 'none';
     document.getElementById('photosContainer').style.display = 'none';
     document.getElementById('noContentMessage').style.display = 'none';
+
+    // Esconder também o catalogContainer (sistema de homepage)
+    const catalogContainer = document.getElementById('catalogContainer');
+    if (catalogContainer) {
+        catalogContainer.style.display = 'none';
+    }
+
+    // Esconder category header
+    const categoryHeaderContainer = document.getElementById('categoryHeaderContainer');
+    if (categoryHeaderContainer) {
+        categoryHeaderContainer.style.display = 'none';
+    }
+
     const loadingEl = document.getElementById('navigationLoading');
     if (loadingEl) {
         loadingEl.style.display = 'none';
@@ -867,6 +930,31 @@ window.hideAllContainers = function () {
     const breadcrumbPhotoCount = document.getElementById('breadcrumbPhotoCount');
     if (breadcrumbPhotoCount) {
         breadcrumbPhotoCount.innerHTML = '';
+    }
+}
+
+// ===== CATEGORY HEADER - Título + Descrição =====
+window.updateCategoryHeader = function (title, description, icon = null) {
+    const container = document.getElementById('categoryHeaderContainer');
+    const titleEl = document.getElementById('categoryHeaderTitle');
+    const descEl = document.getElementById('categoryHeaderDescription');
+
+    if (!container || !titleEl || !descEl) return;
+
+    if (title) {
+        // Clean title without icons
+        titleEl.innerHTML = `<span>${title}</span>`;
+        descEl.textContent = description || '';
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+window.hideCategoryHeader = function () {
+    const container = document.getElementById('categoryHeaderContainer');
+    if (container) {
+        container.style.display = 'none';
     }
 }
 
@@ -1017,6 +1105,227 @@ document.addEventListener('click', function (event) {
         button.classList.remove('active');
     }
 });
+
+// ===== BARRA DE BUSCA EXPANSÍVEL =====
+window.toggleSearchExpand = function() {
+    const searchContainer = document.querySelector('.search-container');
+    if (!searchContainer) return;
+
+    const isExpanded = searchContainer.classList.contains('expanded');
+
+    if (isExpanded) {
+        searchContainer.classList.remove('expanded');
+        const input = searchContainer.querySelector('.search-input');
+        if (input) input.value = '';
+    } else {
+        searchContainer.classList.add('expanded');
+        const input = searchContainer.querySelector('.search-input');
+        if (input) {
+            setTimeout(() => input.focus(), 100);
+        }
+    }
+};
+
+// Fechar busca ao clicar fora
+document.addEventListener('click', function(event) {
+    const searchContainer = document.querySelector('.search-container');
+    if (!searchContainer) return;
+
+    // For compact mode
+    if (!event.target.closest('.search-container') && searchContainer.classList.contains('expanded')) {
+        searchContainer.classList.remove('expanded');
+    }
+
+    // For always-visible mode - close suggestions
+    const suggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
+    if (suggestionsDropdown && !event.target.closest('.search-container')) {
+        suggestionsDropdown.classList.remove('show');
+    }
+});
+
+// ===== GLOBAL SEARCH FUNCTIONALITY =====
+window.clearSearch = function() {
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+    const suggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
+    if (suggestionsDropdown) {
+        suggestionsDropdown.classList.remove('show');
+        suggestionsDropdown.innerHTML = '';
+    }
+};
+
+// Search cache for products
+let searchProductsCache = null;
+let searchCacheTimestamp = 0;
+const SEARCH_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Initialize search on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) return;
+
+    let searchTimeout = null;
+
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+
+        // Clear previous timeout
+        if (searchTimeout) clearTimeout(searchTimeout);
+
+        // Hide suggestions if query is empty
+        if (query.length < 2) {
+            const dropdown = document.getElementById('searchSuggestionsDropdown');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+                dropdown.innerHTML = '';
+            }
+            return;
+        }
+
+        // Debounce search
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    });
+
+    // Handle Enter key
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const query = e.target.value.trim();
+            if (query.length >= 2) {
+                performSearch(query, true);
+            }
+        }
+        if (e.key === 'Escape') {
+            const dropdown = document.getElementById('searchSuggestionsDropdown');
+            if (dropdown) dropdown.classList.remove('show');
+        }
+    });
+});
+
+// Perform search and show results
+async function performSearch(query, showAll = false) {
+    const dropdown = document.getElementById('searchSuggestionsDropdown');
+    if (!dropdown) return;
+
+    // Show loading
+    dropdown.innerHTML = '<div class="search-loading" style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+    dropdown.classList.add('show');
+
+    try {
+        // Get products from cache or API
+        const products = await getSearchProducts();
+
+        // Filter products by query
+        const queryLower = query.toLowerCase();
+        const matches = products.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const qbItem = (p.qbItem || '').toLowerCase();
+            const category = (p.category || '').toLowerCase();
+            return name.includes(queryLower) || qbItem.includes(queryLower) || category.includes(queryLower);
+        });
+
+        // Render results
+        if (matches.length === 0) {
+            dropdown.innerHTML = `
+                <div class="search-no-results">
+                    <i class="fas fa-search"></i>
+                    No products found for "${query}"
+                </div>
+            `;
+        } else {
+            const resultsToShow = showAll ? matches : matches.slice(0, 8);
+            let html = '';
+
+            for (const product of resultsToShow) {
+                const price = product.price || product.basePrice;
+                const formattedPrice = price ? (window.formatPrice ? window.formatPrice(price) : `$${price.toFixed(2)}`) : '';
+                const stock = product.stock || 0;
+                const stockClass = stock > 0 ? '' : 'out-of-stock';
+
+                html += `
+                    <div class="search-suggestion-item ${stockClass}" onclick="openSearchResult('${product.qbItem}')">
+                        <div class="suggestion-icon">
+                            <i class="fas fa-tag"></i>
+                        </div>
+                        <div class="suggestion-info">
+                            <div class="suggestion-name">${product.name || product.qbItem}</div>
+                            <div class="suggestion-category">${product.category || 'Product'} ${stock > 0 ? `• ${stock} in stock` : '• Out of stock'}</div>
+                        </div>
+                        ${formattedPrice ? `<div class="suggestion-price">${formattedPrice}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            if (!showAll && matches.length > 8) {
+                html += `
+                    <div class="search-suggestion-item" onclick="performSearch('${query}', true)" style="justify-content: center; color: #B87333; font-weight: 600;">
+                        <i class="fas fa-search"></i>
+                        <span>View all ${matches.length} results</span>
+                    </div>
+                `;
+            }
+
+            dropdown.innerHTML = html;
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        dropdown.innerHTML = '<div class="search-no-results"><i class="fas fa-exclamation-circle"></i> Error searching products</div>';
+    }
+}
+
+// Get products for search (with caching)
+async function getSearchProducts() {
+    const now = Date.now();
+
+    // Return cached data if still valid
+    if (searchProductsCache && (now - searchCacheTimestamp) < SEARCH_CACHE_DURATION) {
+        return searchProductsCache;
+    }
+
+    // Fetch fresh data
+    try {
+        const response = await fetch('/api/catalog/products?category=all&limit=1000', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (data.success && data.products) {
+            searchProductsCache = data.products;
+            searchCacheTimestamp = now;
+            return data.products;
+        }
+    } catch (error) {
+        console.error('Failed to fetch products for search:', error);
+    }
+
+    return searchProductsCache || [];
+}
+
+// Open search result - navigate to product
+window.openSearchResult = function(qbItem) {
+    console.log('🔍 Opening product:', qbItem);
+
+    // Close search dropdown
+    const dropdown = document.getElementById('searchSuggestionsDropdown');
+    if (dropdown) dropdown.classList.remove('show');
+
+    // Clear search input
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) searchInput.value = '';
+
+    // For now, show an alert with the product ID
+    // This can be expanded to navigate to the product detail view
+    if (window.showProductDetail) {
+        window.showProductDetail(qbItem);
+    } else {
+        // Fallback: scroll to or highlight the product if visible
+        console.log('Product detail view not implemented yet. Product:', qbItem);
+    }
+};
 
 // ===== REAGIR A MUDANÇAS DE MOEDA =====
 window.addEventListener('currencyChanged', (e) => {

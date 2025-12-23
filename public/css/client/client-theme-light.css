@@ -55,22 +55,20 @@ body.client-page::before {
 
 /* ===== AJUSTES ESPECÍFICOS PARA COMPONENTES ===== */
 
-/* Header do Cliente - Fundo Bronze elegante */
+/* Header do Cliente - Clean / Branco */
 .client-page .client-luxury-header {
-    background: #B87333;
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid #b87333;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Logo no tema light */
 .client-page .client-header-logo {
-    color: #ffffff;
+    color: #1f2937;
 }
 
 .client-page .client-header-logo i {
     color: var(--gold-primary);
-    filter: drop-shadow(0 2px 4px rgba(184, 115, 51, 0.2));
 }
 
 /* Botão de logout elegante */
@@ -96,7 +94,6 @@ body.client-page::before {
 .client-page .error-content,
 .client-page .navigation-loading {
     background: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .client-page .category-card:hover,
@@ -121,9 +118,10 @@ body.client-page::before {
 }
 
 .client-page .breadcrumb-item.current {
-    background: rgba(184, 115, 51, 0.15);
-    color: #4a5568;
-    border: brown 1px solid;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    font-weight: 600;
 }
 
 /* Back navigation */
@@ -318,7 +316,7 @@ body.client-page::before {
 
 .client-page .folder-stats span {
     color: #4a5568;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 /* Photo price badges */
@@ -408,7 +406,7 @@ body.client-page::before {
 
 .client-luxury-header {
     padding: 10px 0;
-    /* Reduzir padding vertical */
+    background: #ffffff !important;
 }
 
 /* Esconder o ícone de sol se ainda existir */

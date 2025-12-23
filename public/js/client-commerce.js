@@ -425,9 +425,8 @@ window.PriceProgressBar = {
                 <div class="progress-bar-label" id="progressLabel">Your Progress: Start adding photos!</div>
                 <div class="progress-bar-right">
                     <div class="progress-bar-incentive" id="progressIncentive"></div>
-                    <span class="mix-match-hint" onclick="openMixMatchInfoModal()"><i class="fas fa-info-circle"></i> What's this?</span>
                     <span id="mixMatchBadge" class="mix-match-badge" onclick="openMixMatchInfoModal()">
-                        <i class="fas fa-layer-group"></i> Mix & Match
+                         MIX & MATCH <i class="fas fa-info-circle"></i>
                     </span>
                 </div>
             </div>
@@ -472,14 +471,27 @@ window.PriceProgressBar = {
         if (window.isSpecialSelection) {
             relevantItemCount = window.CartSystem.state.totalItems;
         } else {
-            let currentCategoryName = null;
-            if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
-                const lastPath = window.navigationState.currentPath[window.navigationState.currentPath.length - 1];
-                currentCategoryName = lastPath.name;
-            }
+            // ✅ IMPORTANTE: Contar APENAS itens que participam do Mix & Match
+            // Mix & Match é exclusivo para fotos únicas de Natural Cowhides
+            relevantItemCount = window.CartSystem.state.items.filter(item => {
+                // Excluir produtos de catálogo (stock) - eles NUNCA participam do Mix & Match
+                if (item.isCatalogProduct) {
+                    return false;
+                }
 
-            // Contar TODOS os itens do carrinho (global)
-            relevantItemCount = window.CartSystem.state.totalItems;
+                // Verificar se a categoria do item participa do Mix & Match
+                const category = item.category || item.fullPath || '';
+                const mainCategory = category.includes(' → ')
+                    ? category.split(' → ')[0].trim()
+                    : category.includes('/')
+                        ? category.split('/')[0].trim()
+                        : category;
+
+                // Verificar se é uma categoria Mix & Match
+                return GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
+                    mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
+                );
+            }).length;
         }
 
         // Atualizar tiers

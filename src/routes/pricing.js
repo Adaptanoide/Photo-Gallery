@@ -3,6 +3,7 @@
 const express = require('express');
 const PricingService = require('../services/PricingService');
 const PhotoCategory = require('../models/PhotoCategory');
+const CatalogProduct = require('../models/CatalogProduct');
 const AccessCode = require('../models/AccessCode');
 const { authenticateToken } = require('./auth');
 
@@ -2387,6 +2388,397 @@ router.post('/bulk-update-individual', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error processing bulk update',
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// STOCK PRODUCTS PRICING ROUTES
+// Gerenciamento de preços para produtos de estoque
+// ============================================
+
+/**
+ * GET /api/pricing/stock-products
+ * Lista todos os produtos de stock com seus preços
+ * Agrupa por categoria para facilitar visualização
+ * Se não houver produtos no MongoDB, busca do cache CDE
+ */
+router.get('/stock-products', authenticateToken, async (req, res) => {
+    try {
+        console.log('📦 [STOCK-PRICING] Buscando produtos de stock...');
+
+        // 1. Buscar preços do MongoDB (fonte de verdade para preços)
+        const mongoProducts = await CatalogProduct.find({ isActive: true }).lean();
+        const priceMap = {};
+        mongoProducts.forEach(p => {
+            priceMap[p.qbItem] = p.basePrice || 0;
+        });
+        console.log(`📦 [STOCK-PRICING] ${mongoProducts.length} preços carregados do MongoDB`);
+
+        // 2. SEMPRE buscar produtos do CDE (fonte de verdade para produtos/stock)
+        let products = [];
+
+        try {
+            const CDEQueries = require('../ai/CDEQueries');
+            const queries = new CDEQueries();
+            const cdeProducts = await queries.getAllCatalogProducts();
+
+            if (cdeProducts && cdeProducts.length > 0) {
+                // Mergear produtos do CDE com preços do MongoDB
+                products = cdeProducts.map(p => ({
+                    qbItem: p.qbItem,
+                    name: p.name,
+                    category: p.category,
+                    origin: p.origin,
+                    currentStock: p.stock || p.availableStock || 0,
+                    basePrice: priceMap[p.qbItem] || 0,
+                    hasPrice: (priceMap[p.qbItem] || 0) > 0
+                }));
+
+                console.log(`📦 [STOCK-PRICING] ${products.length} produtos do CDE com preços mergeados`);
+            }
+        } catch (cdeError) {
+            console.error('❌ [STOCK-PRICING] Erro ao buscar do CDE:', cdeError.message);
+            // Fallback: usar MongoDB se CDE falhar
+            products = mongoProducts.map(p => ({
+                qbItem: p.qbItem,
+                name: p.name,
+                category: p.category,
+                origin: p.origin,
+                currentStock: p.currentStock || 0,
+                basePrice: p.basePrice || 0,
+                hasPrice: (p.basePrice || 0) > 0
+            }));
+            console.log(`📦 [STOCK-PRICING] Fallback: ${products.length} produtos do MongoDB`);
+        }
+
+        // Agrupar por categoria
+        const byCategory = {};
+        for (const product of products) {
+            const cat = product.category || 'General';
+            if (!byCategory[cat]) {
+                byCategory[cat] = {
+                    category: cat,
+                    products: [],
+                    totalProducts: 0,
+                    productsWithPrice: 0,
+                    productsWithoutPrice: 0
+                };
+            }
+            byCategory[cat].products.push(product);
+            byCategory[cat].totalProducts++;
+            if (product.hasPrice) {
+                byCategory[cat].productsWithPrice++;
+            } else {
+                byCategory[cat].productsWithoutPrice++;
+            }
+        }
+
+        // Estatísticas globais
+        const totalStock = products.reduce((sum, p) => sum + (p.currentStock || 0), 0);
+        const stats = {
+            totalProducts: products.length,
+            productsWithPrice: products.filter(p => p.hasPrice).length,
+            productsWithoutPrice: products.filter(p => !p.hasPrice).length,
+            totalCategories: Object.keys(byCategory).length,
+            totalStock
+        };
+
+        console.log(`📦 [STOCK-PRICING] ${stats.totalProducts} produtos, ${stats.productsWithPrice} com preço, ${stats.totalStock} em estoque`);
+
+        res.json({
+            success: true,
+            stats,
+            categories: Object.values(byCategory)
+        });
+
+    } catch (error) {
+        console.error('❌ [STOCK-PRICING] Erro ao buscar produtos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar produtos de stock',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/pricing/stock-products/stats
+ * Estatísticas rápidas dos preços de stock
+ */
+router.get('/stock-products/stats', authenticateToken, async (req, res) => {
+    try {
+        const stats = await CatalogProduct.aggregate([
+            { $match: { isActive: true } },
+            {
+                $group: {
+                    _id: null,
+                    totalProducts: { $sum: 1 },
+                    productsWithPrice: {
+                        $sum: { $cond: [{ $gt: ['$basePrice', 0] }, 1, 0] }
+                    },
+                    productsWithoutPrice: {
+                        $sum: { $cond: [{ $eq: ['$basePrice', 0] }, 1, 0] }
+                    },
+                    totalStock: { $sum: '$currentStock' },
+                    avgPrice: { $avg: '$basePrice' },
+                    minPrice: { $min: { $cond: [{ $gt: ['$basePrice', 0] }, '$basePrice', null] } },
+                    maxPrice: { $max: '$basePrice' }
+                }
+            }
+        ]);
+
+        res.json({
+            success: true,
+            stats: stats[0] || {
+                totalProducts: 0,
+                productsWithPrice: 0,
+                productsWithoutPrice: 0,
+                totalStock: 0,
+                avgPrice: 0,
+                minPrice: 0,
+                maxPrice: 0
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ [STOCK-PRICING] Erro ao buscar stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar estatísticas',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * PUT /api/pricing/stock-products/bulk
+ * Atualização em massa de preços de stock
+ * IMPORTANTE: Esta rota deve vir ANTES de /:qbItem para não ser capturada como parâmetro
+ */
+router.put('/stock-products/bulk', authenticateToken, async (req, res) => {
+    try {
+        const { updates } = req.body;
+
+        if (!updates || !Array.isArray(updates)) {
+            return res.status(400).json({
+                success: false,
+                message: 'updates deve ser um array de {qbItem, basePrice}'
+            });
+        }
+
+        console.log(`💰 [STOCK-PRICING] Bulk update: ${updates.length} produtos`);
+
+        const results = {
+            success: 0,
+            failed: 0,
+            errors: []
+        };
+
+        for (const update of updates) {
+            try {
+                if (!update.qbItem) {
+                    results.failed++;
+                    results.errors.push({ qbItem: update.qbItem, error: 'qbItem obrigatório' });
+                    continue;
+                }
+
+                const price = parseFloat(update.basePrice || 0);
+                if (isNaN(price) || price < 0) {
+                    results.failed++;
+                    results.errors.push({ qbItem: update.qbItem, error: 'Preço inválido' });
+                    continue;
+                }
+
+                await CatalogProduct.findOneAndUpdate(
+                    { qbItem: update.qbItem },
+                    { basePrice: price, updatedAt: new Date() },
+                    { upsert: true }
+                );
+
+                results.success++;
+            } catch (err) {
+                results.failed++;
+                results.errors.push({ qbItem: update.qbItem, error: err.message });
+            }
+        }
+
+        console.log(`✅ [STOCK-PRICING] Bulk update: ${results.success} OK, ${results.failed} falhas`);
+
+        res.json({
+            success: results.failed === 0,
+            message: `${results.success} produtos atualizados`,
+            results
+        });
+
+    } catch (error) {
+        console.error('❌ [STOCK-PRICING] Erro no bulk update:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro no bulk update',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * PUT /api/pricing/stock-products/:qbItem
+ * Atualiza o preço de um produto de stock específico
+ * IMPORTANTE: Esta rota deve vir DEPOIS das rotas específicas (/bulk, /stats, etc)
+ */
+router.put('/stock-products/:qbItem', authenticateToken, async (req, res) => {
+    try {
+        const { qbItem } = req.params;
+        // Aceitar tanto 'price' quanto 'basePrice' para flexibilidade
+        const { price, basePrice } = req.body;
+        const priceValue = basePrice !== undefined ? basePrice : price;
+
+        console.log(`💰 [STOCK-PRICING] Atualizando preço: ${qbItem} -> $${priceValue}`);
+
+        if (priceValue === undefined || priceValue === null) {
+            return res.status(400).json({
+                success: false,
+                message: 'price ou basePrice é obrigatório'
+            });
+        }
+
+        const finalPrice = parseFloat(priceValue);
+        if (isNaN(finalPrice) || finalPrice < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Preço deve ser um número >= 0'
+            });
+        }
+
+        // Buscar e atualizar o produto
+        const product = await CatalogProduct.findOneAndUpdate(
+            { qbItem: qbItem },
+            {
+                basePrice: finalPrice,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!product) {
+            // Se não existe no MongoDB, criar com dados mínimos
+            console.log(`📝 [STOCK-PRICING] Produto não existe, criando: ${qbItem}`);
+            const newProduct = new CatalogProduct({
+                qbItem: qbItem,
+                name: qbItem,
+                basePrice: finalPrice,
+                isActive: true
+            });
+            await newProduct.save();
+
+            return res.json({
+                success: true,
+                message: 'Produto criado com preço',
+                product: newProduct
+            });
+        }
+
+        console.log(`✅ [STOCK-PRICING] Preço atualizado: ${qbItem} = $${finalPrice}`);
+
+        res.json({
+            success: true,
+            message: 'Preço atualizado com sucesso',
+            product: {
+                qbItem: product.qbItem,
+                name: product.name,
+                basePrice: product.basePrice,
+                currentStock: product.currentStock
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ [STOCK-PRICING] Erro ao atualizar preço:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao atualizar preço',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/pricing/stock-products/sync-from-cde
+ * Sincroniza produtos do CDE para o MongoDB (cria registros para novos produtos)
+ * Não sobrescreve preços existentes!
+ */
+router.post('/stock-products/sync-from-cde', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔄 [STOCK-PRICING] Sincronizando produtos do CDE...');
+
+        // Importar CDEQueries dinamicamente
+        const CDEQueries = require('../ai/CDEQueries');
+        const queries = new CDEQueries();
+
+        // Buscar todos os produtos do CDE
+        const cdeProducts = await queries.getAllCatalogProducts();
+
+        if (!cdeProducts || cdeProducts.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Nenhum produto encontrado no CDE',
+                created: 0,
+                updated: 0
+            });
+        }
+
+        let created = 0;
+        let updated = 0;
+
+        for (const cdeProduct of cdeProducts) {
+            try {
+                // Verificar se já existe
+                const existing = await CatalogProduct.findOne({ qbItem: cdeProduct.qbItem });
+
+                if (existing) {
+                    // Atualizar dados do CDE, MAS NÃO o preço!
+                    existing.name = cdeProduct.name || existing.name;
+                    existing.category = cdeProduct.category || existing.category;
+                    existing.origin = cdeProduct.origin || existing.origin;
+                    existing.currentStock = cdeProduct.stock || 0;
+                    existing.lastCDESync = new Date();
+                    await existing.save();
+                    updated++;
+                } else {
+                    // Criar novo com preço = 0
+                    const newProduct = new CatalogProduct({
+                        qbItem: cdeProduct.qbItem,
+                        name: cdeProduct.name || cdeProduct.qbItem,
+                        category: cdeProduct.category || 'General',
+                        origin: cdeProduct.origin || null,
+                        currentStock: cdeProduct.stock || 0,
+                        basePrice: 0, // Preço será definido manualmente
+                        isActive: true,
+                        lastCDESync: new Date()
+                    });
+                    await newProduct.save();
+                    created++;
+                }
+            } catch (err) {
+                console.error(`❌ Erro ao sincronizar ${cdeProduct.qbItem}:`, err.message);
+            }
+        }
+
+        console.log(`✅ [STOCK-PRICING] Sync concluído: ${created} criados, ${updated} atualizados`);
+
+        res.json({
+            success: true,
+            message: `Sincronização concluída`,
+            totalCDE: cdeProducts.length,
+            created,
+            updated
+        });
+
+    } catch (error) {
+        console.error('❌ [STOCK-PRICING] Erro na sincronização:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro na sincronização com CDE',
             error: error.message
         });
     }

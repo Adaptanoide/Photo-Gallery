@@ -1,16 +1,15 @@
 /* public/css/client/client-layout.css */
 /* ===== LAYOUT STRUCTURE - HEADER, CONTAINERS ===== */
 
-/* === HEADER LUXUOSO DO CLIENTE === */
+/* === HEADER CLEAN / BRANCO === */
 .client-luxury-header {
-    background: rgba(44, 44, 52, 0.95);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-subtle);
-    padding: 1rem 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 0;
     position: sticky;
     top: 0;
     z-index: 9001;
-    box-shadow: var(--shadow);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .client-luxury-header .container {
@@ -18,30 +17,35 @@
     justify-content: flex-start;
     align-items: center;
     max-width: 100%;
-    padding: 6px 10px 6px 10px;
+    padding: 6px 15px;
 }
 
 /* Posicionamento dos elementos do header */
 .client-header-logo {
-    margin-right: 20px;
-    /* Espaço entre logo e filtros */
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+
+/* Hide logo text to make room for navigation - always hidden */
+.client-header-logo span {
+    display: none !important;
 }
 
 .header-filters-dropdown {
     margin-right: 0;
-    /* Remove margin-right auto */
+    flex-shrink: 0;
+    margin-left: 5px;
 }
 
 .client-header-nav {
-    margin-left: auto;
-    /* Garante que fica na direita */
+    flex-shrink: 0;
 }
 
 /* ===== BARRA DE BUSCA CENTRAL ===== */
 .search-container {
-    flex: 1;
-    max-width: 900px;
-    margin: 0px 24px 0px 0px;
+    flex: 0 0 auto;
+    max-width: 300px;
+    margin: 0;
     position: relative;
 }
 
@@ -234,23 +238,34 @@
 .client-header-logo span {
     font-size: 1.2rem;
     font-weight: 500;
-    color: #ffffff;
+    color: #1f2937;
 }
 
 /* Navigation */
 .client-header-nav {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     margin-right: 4px;
 }
 
 /* Welcome text in header */
 .header-welcome-text {
-    color: #ffffff;
-    font-size: 14px;
+    color: #6b7280;
+    font-size: 12px;
     font-weight: 500;
-    margin-right: 10px;
+    margin-right: 5px;
+    white-space: nowrap;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Hide welcome text on smaller screens to make room for nav */
+@media (max-width: 1200px) {
+    .header-welcome-text {
+        display: none !important;
+    }
 }
 
 /* Hide on mobile */
@@ -359,9 +374,10 @@
     align-items: center;
     background: #ffffff;
     border-radius: 8px;
-    padding: 4px;
+    padding: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-left: 15px;
+    margin-left: 5px;
+    flex-shrink: 0;
 }
 
 @media (min-width: 769px) {
@@ -573,9 +589,9 @@ i.fa.dropdown-chevron,
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    border: 1px solid var(--gold-primary);
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--gold-primary);
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #B87333;
     cursor: pointer;
     align-items: center;
     justify-content: center;
@@ -584,7 +600,7 @@ i.fa.dropdown-chevron,
 }
 
 .mobile-profile-btn:active {
-    background: rgba(184, 115, 51, 0.3);
+    background: rgba(184, 115, 51, 0.15);
     transform: scale(0.95);
 }
 
@@ -1285,9 +1301,15 @@ body.dark-mode .container {
     background-color: transparent;
 }
 
-/* Header - Keep bronze theme but darken slightly */
+/* Header - Dark mode */
+body.dark-mode .client-luxury-header {
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 body.dark-mode .client-header {
-    background: linear-gradient(135deg, #4a2c1a 0%, #8B5A2B 100%);
+    background: #1e1e1e;
     border-bottom: 1px solid #333;
 }
 
@@ -1566,7 +1588,7 @@ body.dark-mode .loading-section {
 
 /* Welcome text */
 body.dark-mode .header-welcome-text {
-    color: #f0f0f0;
+    color: #999;
 }
 
 /* Selection Counter */
@@ -2329,7 +2351,7 @@ body.dark-mode .breadcrumb {
 }
 
 body.dark-mode .breadcrumb-item,
-body.dark-mode .breadcrumb-item.home-btn {
+body.dark-mode .breadcrumb-item.back-btn {
     color: #999 !important;
     background: transparent !important;
 }
@@ -2477,4 +2499,414 @@ body.dark-mode .swal2-title {
 
 body.dark-mode .swal2-html-container {
     color: #c0c0c0 !important;
+}
+
+/* ============================================
+   DARK MODE - HEADER NAVIGATION BUTTONS
+   ============================================ */
+
+body.dark-mode #simpleNav button {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode #simpleNav button:hover {
+    background: #B87333 !important;
+    border-color: #B87333 !important;
+    color: white !important;
+}
+
+body.dark-mode #simpleNav button.active {
+    background: #B87333 !important;
+    border-color: #B87333 !important;
+    color: white !important;
+}
+
+body.dark-mode #simpleNav .nav-home-btn {
+    background: #333 !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode #simpleNav .nav-home-btn:hover {
+    background: rgba(184, 115, 51, 0.15) !important;
+    border-color: #B87333 !important;
+    color: #c9a67a !important;
+}
+
+body.dark-mode #simpleNav .nav-home-btn:active {
+    background: #B87333 !important;
+    color: white !important;
+}
+
+body.dark-mode #simpleNav .nav-home-btn i {
+    color: #B87333 !important;
+}
+
+body.dark-mode #simpleNav .nav-home-btn:hover i {
+    color: #c9a67a !important;
+}
+
+body.dark-mode #simpleNav .nav-home-btn:active i {
+    color: white !important;
+}
+
+/* ============================================
+   HEADER NAVIGATION BUTTONS (Desktop)
+   ============================================ */
+
+/* Container for navigation buttons */
+#simpleNav {
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    margin: 0 15px;
+}
+
+@media (min-width: 769px) {
+    #simpleNav {
+        display: flex;
+    }
+}
+
+/* Navigation buttons */
+#simpleNav button {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+#simpleNav button:hover {
+    background: #B87333;
+    border-color: #B87333;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(184, 115, 51, 0.25);
+}
+
+#simpleNav button:active {
+    transform: translateY(0);
+    background: #a0612a;
+}
+
+#simpleNav button.active {
+    background: #B87333;
+    border-color: #B87333;
+    color: white;
+}
+
+/* Clean navigation mode (just Home button) */
+#simpleNav.header-nav-clean {
+    gap: 10px;
+}
+
+#simpleNav .nav-home-btn {
+    background: #ffffff !important;
+    border: 1px solid #ffffff !important;
+    color: #B87333 !important;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    outline: none;
+}
+
+#simpleNav .nav-home-btn:hover {
+    background: #B87333 !important;
+    border-color: #B87333 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
+}
+
+#simpleNav .nav-home-btn:hover i,
+#simpleNav .nav-home-btn:hover span {
+    color: #ffffff !important;
+}
+
+#simpleNav .nav-home-btn:focus {
+    outline: none;
+    border-color: #B87333;
+}
+
+#simpleNav .nav-home-btn:active {
+    transform: translateY(0);
+}
+
+#simpleNav .nav-home-btn i {
+    font-size: 14px;
+    color: #B87333;
+    transition: color 0.25s ease;
+}
+
+#simpleNav .nav-home-btn span {
+    color: #B87333;
+    transition: color 0.25s ease;
+}
+
+/* ============================================
+   EXPANDABLE SEARCH BAR
+   ============================================ */
+
+/* Search container compact mode */
+.search-container.compact {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.search-container.compact .search-toggle-btn {
+    background: white;
+    border: none;
+    color: #B87333;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.search-container.compact .search-toggle-btn:hover {
+    background: var(--gold-primary);
+    color: white;
+}
+
+.search-container.compact .search-wrapper {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.search-container.compact.expanded .search-wrapper {
+    width: 300px;
+    opacity: 1;
+}
+
+.search-container.compact.expanded .search-toggle-btn {
+    display: none;
+}
+
+.search-container.compact .search-close-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    padding: 10px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.search-container.compact .search-close-btn:hover {
+    color: #B87333;
+}
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+    #simpleNav {
+        display: none !important;
+    }
+
+    .search-container.compact {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   ALWAYS VISIBLE SEARCH BAR
+   ============================================ */
+
+.search-container.always-visible {
+    flex: 1 1 auto !important;
+    min-width: 200px;
+    max-width: none !important;
+    margin: 0 15px 0 0;
+    position: relative;
+}
+
+.search-container.always-visible .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 0px 8px 8px 0px;
+    padding: 0 12px;
+    height: 40px;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.search-container.always-visible .search-input-wrapper:focus-within {
+    box-shadow: 0 4px 16px rgba(184, 115, 51, 0.2);
+}
+
+.search-container.always-visible .search-icon {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.search-container.always-visible .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #1f2937;
+    background: transparent;
+    padding: 0;
+}
+
+.search-container.always-visible .search-input::placeholder {
+    color: #9ca3af;
+}
+
+.search-container.always-visible .search-clear-btn {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    padding: 6px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.search-container.always-visible .search-clear-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Show clear button when input has text */
+.search-container.always-visible .search-input:not(:placeholder-shown) + .search-clear-btn {
+    display: flex;
+}
+
+/* Search suggestions dropdown */
+.search-container.always-visible .search-suggestions-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.search-container.always-visible .search-suggestions-dropdown.show {
+    display: block;
+}
+
+.search-suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.search-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.search-suggestion-item:hover {
+    background: #f9fafb;
+}
+
+.search-suggestion-item .suggestion-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(184, 115, 51, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #B87333;
+    flex-shrink: 0;
+}
+
+.search-suggestion-item .suggestion-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-suggestion-item .suggestion-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-suggestion-item .suggestion-category {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.search-suggestion-item .suggestion-price {
+    font-weight: 700;
+    color: #27ae60;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.search-no-results {
+    padding: 24px 16px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.search-no-results i {
+    font-size: 2rem;
+    color: #d1d5db;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Responsive - search bar */
+@media (max-width: 992px) {
+    .search-container.always-visible {
+        max-width: 300px;
+        margin: 0 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-container.always-visible {
+        display: none !important;
+    }
 }

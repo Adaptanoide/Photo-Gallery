@@ -160,7 +160,7 @@ async function enrichFoldersWithAvailableCounts(folders, prefix = '') {
                         isActive: true
                     });
 
-                    console.log(`[ENRICH] ${folder.name}: ✅ Encontrado! ${availableCount} fotos available (qbItem: ${category.qbItem})`);
+                    console.log(`[ENRICH] ${folder.name}: ✅ Encontrado! ${availableCount} fotos available (qbItem: ${category.qbItem}, price: $${category.basePrice})`);
                 } else {
                     console.log(`[ENRICH] ${folder.name}: ⚠️ NÃO encontrado no PhotoCategory`);
                 }
@@ -169,7 +169,9 @@ async function enrichFoldersWithAvailableCounts(folders, prefix = '') {
                     ...folder,
                     availableCount: availableCount,
                     hasAvailablePhotos: availableCount > 0,
-                    hasSubfolders: false
+                    hasSubfolders: false,
+                    price: category?.basePrice || null,
+                    description: category?.description || null
                 };
 
             } catch (error) {
@@ -178,7 +180,9 @@ async function enrichFoldersWithAvailableCounts(folders, prefix = '') {
                     ...folder,
                     availableCount: 0,
                     hasAvailablePhotos: false,
-                    hasSubfolders: folder.hasSubfolders || false
+                    hasSubfolders: folder.hasSubfolders || false,
+                    price: null,
+                    description: null
                 };
             }
         })

@@ -838,22 +838,94 @@ class CDEQueries {
 
     // Query: Listar todos os produtos de catálogo (sem foto) com estoque
     async getAllCatalogProducts() {
+        // Query OTIMIZADA que busca TODOS os produtos de catálogo (sem foto), incluindo sem estoque
+        // Usa LEFT JOIN ao invés de NOT IN (muito mais rápido)
+        // Prioriza dados do tbinventario (com estoque real) e complementa com items table
         const query = `
             SELECT
-                inv.AQBITEM as qbItem,
-                MAX(items.ADESCRIPTION) as name,
-                MAX(items.ACATEGORIA) as category,
-                MAX(items.ORIGEN) as origin,
-                COUNT(*) as stock,
+                qbItem,
+                MAX(name) as name,
+                MAX(category) as category,
+                MAX(origin) as origin,
+                MAX(stock) as stock,
                 0 as basePrice
-            FROM tbinventario inv
-            LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
-            WHERE inv.AESTADOP = 'INGRESADO'
-            AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
-            AND inv.AQBITEM IS NOT NULL
-            AND inv.AQBITEM != ''
-            GROUP BY inv.AQBITEM
-            HAVING stock > 0
+            FROM (
+                -- Produtos com estoque no inventário (sem foto)
+                SELECT
+                    inv.AQBITEM as qbItem,
+                    items.ADESCRIPTION as name,
+                    items.ACATEGORIA as category,
+                    items.ORIGEN as origin,
+                    COUNT(*) as stock
+                FROM tbinventario inv
+                LEFT JOIN items ON inv.AQBITEM = items.AQBITEM
+                WHERE inv.AESTADOP = 'INGRESADO'
+                AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
+                AND inv.AQBITEM IS NOT NULL
+                AND inv.AQBITEM != ''
+                GROUP BY inv.AQBITEM, items.ADESCRIPTION, items.ACATEGORIA, items.ORIGEN
+
+                UNION ALL
+
+                -- Produtos de catálogo SEM estoque (otimizado com LEFT JOIN)
+                SELECT
+                    i.AQBITEM as qbItem,
+                    i.ADESCRIPTION as name,
+                    i.ACATEGORIA as category,
+                    i.ORIGEN as origin,
+                    0 as stock
+                FROM items i
+                LEFT JOIN (
+                    SELECT DISTINCT AQBITEM
+                    FROM tbinventario
+                    WHERE AESTADOP = 'INGRESADO'
+                    AND (ATIPOETIQUETA IS NULL OR ATIPOETIQUETA = '')
+                ) inv_stock ON i.AQBITEM = inv_stock.AQBITEM
+                WHERE inv_stock.AQBITEM IS NULL
+                AND i.AQBITEM IS NOT NULL
+                AND i.AQBITEM != ''
+                AND i.AQBITEM NOT LIKE '%P'
+                AND (
+                    -- Catalog items (7xxx, 6xxx)
+                    i.AQBITEM LIKE '7%'
+                    OR i.AQBITEM LIKE '6%'
+                    -- Special cowhide descriptions
+                    OR i.ADESCRIPTION LIKE '%Printed%'
+                    OR i.ADESCRIPTION LIKE '%Devore%'
+                    OR i.ADESCRIPTION LIKE '%Metallic%'
+                    OR i.ADESCRIPTION LIKE '%Dyed%'
+                    -- Furniture category and keywords
+                    OR i.ACATEGORIA = 'MOBILIARIO'
+                    OR i.ADESCRIPTION LIKE '%Chair%'
+                    OR i.ADESCRIPTION LIKE '%Puff%'
+                    OR i.ADESCRIPTION LIKE '%Pouf%'
+                    OR i.ADESCRIPTION LIKE '%Ottoman%'
+                    OR i.ADESCRIPTION LIKE '%Footstool%'
+                    OR i.ADESCRIPTION LIKE '%Foot Stool%'
+                    OR i.ADESCRIPTION LIKE '%Bench%'
+                    OR i.ADESCRIPTION LIKE '%Wingback%'
+                    OR i.ADESCRIPTION LIKE '%Barrel%'
+                    OR i.ADESCRIPTION LIKE '%Swivel%'
+                    -- Accessories category and keywords
+                    OR i.ACATEGORIA = 'ACCESORIOS'
+                    OR i.ACATEGORIA = 'ACCESORIO'
+                    OR i.ADESCRIPTION LIKE '%Bag%'
+                    OR i.ADESCRIPTION LIKE '%Duffle%'
+                    OR i.ADESCRIPTION LIKE '%Handbag%'
+                    OR i.ADESCRIPTION LIKE '%Crossbody%'
+                    OR i.ADESCRIPTION LIKE '%Purse%'
+                    OR i.ADESCRIPTION LIKE '%Tote%'
+                    OR i.ADESCRIPTION LIKE '%Pillow%'
+                    OR i.ADESCRIPTION LIKE '%Coaster%'
+                    OR i.ADESCRIPTION LIKE '%Place Mat%'
+                    OR i.ADESCRIPTION LIKE '%Slipper%'
+                    OR i.ADESCRIPTION LIKE '%Stocking%'
+                    OR i.ADESCRIPTION LIKE '%Napkin%'
+                    OR i.ADESCRIPTION LIKE '%Wine%'
+                    OR i.ADESCRIPTION LIKE '%Koozie%'
+                )
+            ) AS combined
+            GROUP BY qbItem
             ORDER BY category, name
         `;
 

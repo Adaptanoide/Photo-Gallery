@@ -6,6 +6,235 @@
  * Integração com backend CartService via APIs REST
  */
 
+// ===== MAPEAMENTO ROBUSTO DE CATEGORIAS =====
+// Apenas 8 categorias permitidas no carrinho:
+// 1. Brazil Best Sellers (Natural Cowhides)
+// 2. Brazil Top Selected (Natural Cowhides)
+// 3. Colombian Cowhides (Natural Cowhides)
+// 4. Specialty Cowhides
+// 5. Small Accent Hides
+// 6. Patchwork Rugs
+// 7. Accessories
+// 8. Furniture
+
+// Mapeia catalogCategory (produtos de stock) → categoria principal do carrinho
+const CATALOG_CATEGORY_MAP = {
+    // Small Accent Hides
+    'sheepskin': 'Small Accent Hides',
+    'calfskin': 'Small Accent Hides',
+    'goatskin': 'Small Accent Hides',
+
+    // Specialty Cowhides
+    'printed': 'Specialty Cowhides',
+    'metallic': 'Specialty Cowhides',
+    'dyed': 'Specialty Cowhides',
+
+    // Patchwork Rugs
+    'chevron-rugs': 'Patchwork Rugs',
+    'standard-patchwork': 'Patchwork Rugs',
+    'runner-rugs': 'Patchwork Rugs',
+    'bedside-rugs': 'Patchwork Rugs',
+
+    // Accessories
+    'pillows': 'Accessories',
+    'bags-purses': 'Accessories',
+    'table-kitchen': 'Accessories',
+    'slippers': 'Accessories',
+    'scraps-diy': 'Accessories',
+    'gifts-seasonal': 'Accessories',
+
+    // Furniture
+    'pouf-ottoman': 'Furniture',
+    'leather-furniture': 'Furniture',
+    'foot-stool': 'Furniture'
+};
+
+// Mapeia folderPath (fotos únicas) → categoria principal do carrinho
+const FOLDER_PATH_MAP = {
+    // Natural Cowhides (3 especiais)
+    'Brazil Best Sellers': 'Brazil Best Sellers',
+    'Brazil Top Selected Categories': 'Brazil Top Selected',
+    'Colombian Cowhides': 'Colombian Cowhides',
+
+    // Small Accent Hides
+    'Sheepskins': 'Small Accent Hides',
+
+    // Specialty Cowhides
+    'Cowhide Hair On BRA With Leather Binding And Lined': 'Specialty Cowhides',
+
+    // Patchwork Rugs
+    'Rodeo Rugs': 'Patchwork Rugs'
+};
+
+// Mapeia categorias CDE (UPPERCASE) → categoria principal do carrinho
+const CDE_CATEGORY_MAP = {
+    // CDE main categories
+    'COWHIDES': 'Specialty Cowhides',
+    'SMALL HIDES': 'Small Accent Hides',
+    'ACCESORIOS': 'Accessories',
+    'ACCESORIO': 'Accessories',
+    'ACCESSORIES': 'Accessories',
+    'MOBILIARIO': 'Furniture',
+    'FURNITURE': 'Furniture',
+    'PUFFS': 'Furniture',
+    'DESIGNER': 'Patchwork Rugs',
+    'DESIGNER RUG': 'Patchwork Rugs',
+    'RODEO RUGS': 'Patchwork Rugs',
+
+    // ✅ SHEEPSKIN e subcategorias de Small Hides
+    'SHEEPSKIN': 'Small Accent Hides',
+    'SHEEPSKINS': 'Small Accent Hides',
+    'CALFSKIN': 'Small Accent Hides',
+    'CALFSKINS': 'Small Accent Hides',
+    'GOATSKIN': 'Small Accent Hides',
+    'GOATSKINS': 'Small Accent Hides',
+
+    // ✅ Subcategorias de Specialty Cowhides
+    'PRINTED': 'Specialty Cowhides',
+    'METALLIC': 'Specialty Cowhides',
+    'DYED': 'Specialty Cowhides',
+    'DEVORE': 'Specialty Cowhides'
+};
+
+/**
+ * Limpar prefixos numéricos (1., 2., etc.) do texto
+ * Usado apenas para exibição no cliente
+ */
+function cleanNumberPrefixes(text) {
+    if (!text) return text;
+    // Remove padrões como "1. ", "2. ", "10. " no início de cada parte
+    return text.replace(/(\s|^)\d+\.\s+/g, '$1').trim();
+}
+
+/**
+ * Extrair a categoria PRINCIPAL de um path completo
+ * "Colombian Cowhides → 1. Medium → Exotic M" → "Colombian Cowhides"
+ */
+function extractMainCategory(fullPath) {
+    if (!fullPath) return fullPath;
+
+    // Se contém " → ", pegar a primeira parte
+    if (fullPath.includes(' → ')) {
+        return fullPath.split(' → ')[0].trim();
+    }
+
+    // Se contém "/", pegar a primeira parte
+    if (fullPath.includes('/')) {
+        return fullPath.split('/')[0].trim();
+    }
+
+    return fullPath;
+}
+
+/**
+ * Determinar a categoria de exibição no carrinho
+ * REGRA: Apenas 8 categorias são permitidas no carrinho
+ * @param {string} rawCategory - Categoria raw do item (pode ser path completo, catalogCategory, ou CDE category)
+ * @param {object} item - Item completo (opcional) para acesso a catalogCategory
+ * @returns {string} Nome da categoria para exibição no carrinho
+ */
+function getCategoryDisplayName(rawCategory, item = null) {
+    if (!rawCategory) return 'Other';
+
+    // ✅ PRIORIDADE 0: Verificar pelo NOME DO PRODUTO (para corrigir erros do CDE)
+    // Isso garante que produtos vão para a categoria correta mesmo se CDE classificar errado
+    if (item) {
+        const productName = (item.productName || item.fileName || '').toLowerCase();
+
+        // Small Accent Hides
+        if (productName.includes('sheepskin')) {
+            return 'Small Accent Hides';
+        }
+        if (productName.includes('calfskin')) {
+            return 'Small Accent Hides';
+        }
+        if (productName.includes('goatskin')) {
+            return 'Small Accent Hides';
+        }
+
+        // Accessories (Bags, Purses, Pillows, etc.)
+        if (productName.includes('bag') || productName.includes('purse') || productName.includes('crossbody') ||
+            productName.includes('duffle') || productName.includes('handbag') || productName.includes('tote')) {
+            return 'Accessories';
+        }
+        if (productName.includes('pillow')) {
+            return 'Accessories';
+        }
+        if (productName.includes('coaster') || productName.includes('placemat') || productName.includes('napkin')) {
+            return 'Accessories';
+        }
+        if (productName.includes('slipper')) {
+            return 'Accessories';
+        }
+        if (productName.includes('stocking') || productName.includes('ornament')) {
+            return 'Accessories';
+        }
+
+        // Patchwork Rugs
+        if (productName.includes('chevron') || productName.includes('patchwork') || productName.includes('designer rug') ||
+            productName.includes('bedside') || productName.includes('runner') || productName.includes('rug designer')) {
+            return 'Patchwork Rugs';
+        }
+
+        // Furniture
+        if (productName.includes('puff') || productName.includes('pouf') || productName.includes('ottoman') ||
+            productName.includes('foot stool') || productName.includes('chair') || productName.includes('bench') ||
+            productName.includes('stool') || productName.includes('furniture')) {
+            return 'Furniture';
+        }
+    }
+
+    // ✅ PRIORIDADE 1: Se item tem catalogCategory, usar mapeamento de catálogo
+    if (item && item.catalogCategory) {
+        const catLower = item.catalogCategory.toLowerCase();
+        if (CATALOG_CATEGORY_MAP[catLower]) {
+            return CATALOG_CATEGORY_MAP[catLower];
+        }
+    }
+
+    // ✅ PRIORIDADE 2: Extrair categoria principal de paths completos
+    const mainCategory = extractMainCategory(rawCategory);
+
+    // ✅ PRIORIDADE 3: Verificar se é uma pasta de fotos únicas (folderPath)
+    if (FOLDER_PATH_MAP[mainCategory]) {
+        return FOLDER_PATH_MAP[mainCategory];
+    }
+
+    // ✅ PRIORIDADE 4: Verificar no mapeamento de catálogo (catalogCategory lowercase)
+    const catLower = mainCategory.toLowerCase();
+    if (CATALOG_CATEGORY_MAP[catLower]) {
+        return CATALOG_CATEGORY_MAP[catLower];
+    }
+
+    // ✅ PRIORIDADE 5: Verificar categoria CDE (UPPERCASE)
+    const upperMain = mainCategory.toUpperCase();
+    if (CDE_CATEGORY_MAP[upperMain]) {
+        return CDE_CATEGORY_MAP[upperMain];
+    }
+
+    // ✅ PRIORIDADE 6: Verificar com raw category completo
+    const rawUpper = rawCategory.toUpperCase();
+    if (CDE_CATEGORY_MAP[rawUpper]) {
+        return CDE_CATEGORY_MAP[rawUpper];
+    }
+
+    // ✅ PRIORIDADE 7: Verificar categorias especiais (Colombia)
+    if (mainCategory.toLowerCase().includes('colombian')) {
+        return 'Colombian Cowhides';
+    }
+    if (mainCategory.toLowerCase().includes('brazil best')) {
+        return 'Brazil Best Sellers';
+    }
+    if (mainCategory.toLowerCase().includes('brazil top')) {
+        return 'Brazil Top Selected';
+    }
+
+    // ✅ FALLBACK: Retornar categoria principal capitalizada
+    // Mas NÃO criar novas categorias - mapear para a mais próxima
+    console.warn(`⚠️ [CART] Categoria não mapeada: "${rawCategory}" → usando "Other"`);
+    return 'Other';
+}
+
 // ===== ESTADO GLOBAL DO CARRINHO =====
 window.CartSystem = {
     // Função para formatar tempo de forma legível
@@ -37,6 +266,52 @@ window.CartSystem = {
         // Apenas segundos
         return `${secs}s`;
     },
+
+    /**
+     * Obter descrição detalhada do item (subcategoria, tamanho, etc.)
+     * Mostra o caminho completo da categoria como era antes
+     * Remove prefixos numéricos (1., 2., etc.) para exibição limpa
+     */
+    getItemSubDescription(item) {
+        // Se tem fullPath, mostrar COMPLETO (sem prefixos numéricos)
+        if (item.fullPath) {
+            let cleanPath = item.fullPath.replace(/→\s*$/, '').trim();
+            if (cleanPath) {
+                return cleanNumberPrefixes(cleanPath);
+            }
+        }
+
+        // Se tem pathLevels, juntar todos em um caminho completo
+        if (item.pathLevels && item.pathLevels.length > 0) {
+            return cleanNumberPrefixes(item.pathLevels.join(' → '));
+        }
+
+        // ✅ Se category contém " → " é um caminho completo - mostrar limpo!
+        if (item.category && item.category.includes(' → ')) {
+            // Limpar trailing → e prefixos numéricos
+            const cleanPath = item.category.replace(/→\s*$/, '').trim();
+            return cleanNumberPrefixes(cleanPath);
+        }
+
+        // Se tem category com subcategorias (formato "Category/Subcategory")
+        if (item.category && item.category.includes('/')) {
+            const cleanCat = item.category.replace(/\/$/, '');
+            return cleanNumberPrefixes(cleanCat.replace(/\//g, ' → '));
+        }
+
+        // Para catálogo, mostrar categoria com ícone
+        if (item.isCatalogProduct) {
+            return `<i class="fas fa-tag" style="margin-right: 4px; color: #B87333;"></i>${getCategoryDisplayName(item.category)}`;
+        }
+
+        // Fallback: mostrar a categoria original
+        if (item.category) {
+            return getCategoryDisplayName(item.category);
+        }
+
+        return '';
+    },
+
     // Estado do carrinho
     state: {
         sessionId: null,
@@ -287,10 +562,25 @@ window.CartSystem = {
 
     /**
      * Remover item do carrinho
+     * ⭐ OTIMIZADO: Usa dados da resposta ao invés de fazer loadCart() extra
      */
     async removeItem(driveFileId) {
         try {
             this.setLoading(true);
+
+            // ✅ ANTES DE REMOVER: Guardar dados do item se for catálogo (para restaurar estoque na UI)
+            const isCatalogItem = driveFileId && driveFileId.startsWith('catalog_');
+            let catalogItemData = null;
+            if (isCatalogItem) {
+                const itemBeforeRemove = this.state.items.find(i => i.driveFileId === driveFileId);
+                if (itemBeforeRemove) {
+                    catalogItemData = {
+                        qbItem: itemBeforeRemove.qbItem,
+                        quantity: itemBeforeRemove.quantity || 1
+                    };
+                    console.log(`📦 Item de catálogo detectado: ${catalogItemData.qbItem} x${catalogItemData.quantity}`);
+                }
+            }
 
             // 🆕 Buscar clientCode para fallback no backend
             const clientSession = this.getClientSession();
@@ -303,7 +593,7 @@ window.CartSystem = {
                 },
                 body: JSON.stringify({
                     sessionId: this.state.sessionId,
-                    clientCode: clientCode  // 🆕 Enviar clientCode para fallback
+                    clientCode: clientCode
                 })
             });
 
@@ -313,47 +603,56 @@ window.CartSystem = {
                 throw new Error(result.message || 'Error removing item');
             }
 
-            // Atualizar estado local
-            await this.loadCart();
+            // ⭐ OTIMIZAÇÃO: Usar dados da resposta diretamente (evita loadCart() extra)
+            if (result.success && result.cart) {
+                this.state.items = result.cart.items || [];
+                this.state.totalItems = result.cart.totalItems || 0;
+                console.log(`✅ Estado atualizado da resposta - ${this.state.totalItems} itens`);
 
-            // ✅ NOVO: Disparar evento para atualizar tiers globalmente
+                // Atualizar UI com dados recebidos
+                this.updateUI();
+                this.startTimers();
+            } else {
+                // Fallback: se resposta não tem cart, buscar do servidor
+                console.warn('⚠️ Resposta sem dados do cart, fazendo fallback...');
+                await this.loadCart();
+            }
+
+            // Disparar evento para atualizar tiers globalmente
             window.dispatchEvent(new CustomEvent('cartUpdated', {
                 detail: {
                     itemCount: this.state.totalItems,
-                    items: this.state.items
+                    items: this.state.items,
+                    totals: result.totals  // ✅ Incluir totais do backend
                 }
             }));
             console.log('🔔 Evento cartUpdated disparado:', this.state.totalItems, 'items');
 
-            // 🔴 DESABILITADO: Atualizar badge de preço
-            /*
-            if (window.updateCategoryPriceBadge) {
-                setTimeout(() => window.updateCategoryPriceBadge(), 100);
-            }
-            
-            if (window.updateModalPriceBadge) {
-                setTimeout(() => window.updateModalPriceBadge(), 150);
-            }
-            
-            if (window.PriceProgressBar && window.PriceProgressBar.updateProgress) {
-                window.PriceProgressBar.updateProgress();
-            }
-            */
+            setTimeout(() => this.updateToggleButton(), 100);
 
-            setTimeout(() => this.updateToggleButton(), 300); // Delay para sincronizar
-            // Sincronizar com thumbnails
             if (window.syncThumbnailButtons) {
                 window.syncThumbnailButtons();
             }
             console.log(`✅ Item ${driveFileId} removido do carrinho`);
 
+            // ✅ APÓS REMOVER: Disparar evento para restaurar estoque de catálogo na UI
+            if (isCatalogItem && catalogItemData && catalogItemData.qbItem) {
+                window.dispatchEvent(new CustomEvent('catalogStockRestored', {
+                    detail: {
+                        qbItem: catalogItemData.qbItem,
+                        quantityRestored: catalogItemData.quantity
+                    }
+                }));
+                console.log(`📊 Evento catalogStockRestored disparado: ${catalogItemData.qbItem} +${catalogItemData.quantity}`);
+            }
+
             return result;
 
         } catch (error) {
             console.error('❌ Erro ao remover item:', error);
-            // Usar amarelo para itens reservados
             const notificationType = error.message?.includes('reserved') ? 'warning' : 'error';
-            this.showNotification(error.message, notificationType); throw error;
+            this.showNotification(error.message, notificationType);
+            throw error;
         } finally {
             this.setLoading(false);
         }
@@ -841,25 +1140,36 @@ window.CartSystem = {
         // 🔴 REMOVIDO: Busca de descontos no backend (otimização)
         let discountDetails = {};
 
-        // Agrupar itens por categoria
+        // Agrupar itens por categoria (usando nome de EXIBIÇÃO para agrupar)
         const categories = {};
         this.state.items.forEach(item => {
-            // Pegar categoria completa primeiro
-            let cat = (item.pathLevels && item.pathLevels.length > 0)
-                ? item.pathLevels[item.pathLevels.length - 1]
-                : item.category || 'Uncategorized';
+            // ✅ ESTRATÉGIA ROBUSTA DE CATEGORIZAÇÃO:
+            // 1. Para produtos de catálogo: usar catalogCategory
+            // 2. Para fotos únicas: usar PRIMEIRO nível do path (categoria principal)
+            // 3. Fallback: usar category do item
 
-            // Processar nome da categoria
-            if (cat.endsWith('/')) {
-                cat = cat.slice(0, -1);
-            }
-            const lastSlash = cat.lastIndexOf('/');
-            if (lastSlash !== -1) {
-                cat = cat.substring(lastSlash + 1);
+            let rawCat;
+
+            if (item.isCatalogProduct && item.catalogCategory) {
+                // Produto de catálogo - usar catalogCategory diretamente
+                rawCat = item.catalogCategory;
+            } else if (item.fullPath) {
+                // Foto única com fullPath - extrair categoria principal
+                rawCat = item.fullPath;
+            } else if (item.pathLevels && item.pathLevels.length > 0) {
+                // Foto única com pathLevels - pegar PRIMEIRO nível (categoria principal)
+                rawCat = item.pathLevels[0];
+            } else {
+                // Fallback para category
+                rawCat = item.category || 'Uncategorized';
             }
 
-            if (!categories[cat]) categories[cat] = [];
-            categories[cat].push(item);
+            // ✅ USAR NOME DE EXIBIÇÃO para agrupar
+            // Passar item completo para acesso a catalogCategory
+            const displayCat = getCategoryDisplayName(rawCat, item);
+
+            if (!categories[displayCat]) categories[displayCat] = [];
+            categories[displayCat].push(item);
         });
 
         // Renderizar com separadores e collapse
@@ -882,19 +1192,20 @@ window.CartSystem = {
             const categoryId = category.replace(/[^a-zA-Z0-9]/g, '_');
 
             // Cabeçalho da categoria
-            // Verificar se categoria participa do Mix & Match
+            // Verificar se categoria participa do Mix & Match (usa categoria original do item)
             const fullPath = items[0].category || items[0].fullPath || category;
             const isMixMatch = window.isGlobalMixMatch && window.isGlobalMixMatch(fullPath);
 
+            // ✅ category já é o nome de exibição (agrupamos por displayName)
             html += `
             <div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')" style="cursor: pointer;">
                 <div class="category-left">
                     <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
                     ${isMixMatch ? '<span class="category-badge mix-match">🎯 Mix & Match</span>' : '<span class="category-badge regular">📦 Regular</span>'}
                     <span class="category-label" title="${items[0].fullPath || category}">${category}</span>
-                    <span class="category-count">${itemCount}</span>
                 </div>
                 <div class="category-right">
+                    <span class="category-count">${itemCount}</span>
                     ${(window.shouldShowPrices && window.shouldShowPrices() && categoryTotal > 0) ?
                     `<span class="category-subtotal">${window.CurrencyManager ? CurrencyManager.format(categoryTotal) : '$' + categoryTotal.toFixed(2)}</span>` :
                     ''
@@ -949,6 +1260,25 @@ window.CartSystem = {
             document.querySelectorAll('.cart-item').forEach(item => {
                 const fileId = item.dataset.driveFileId.replace(/&quot;/g, '"');
 
+                // ✅ PRODUTOS DE CATÁLOGO - Preview simples
+                if (item.classList.contains('catalog-item')) {
+                    const qbItem = item.dataset.qbitem;
+
+                    // Clique na imagem - abre preview simples
+                    const img = item.querySelector('.cart-item-image');
+                    if (img) {
+                        img.style.cursor = 'pointer';
+                        img.onclick = (e) => {
+                            e.stopPropagation();
+                            this.openCatalogPreview(qbItem);
+                        };
+                    }
+
+                    // Os botões +/- e lixeira já têm handlers inline
+                    return;
+                }
+
+                // ✅ FOTOS ÚNICAS - Modal fullscreen
                 // Clique na imagem
                 const img = item.querySelector('.cart-item-image');
                 if (img) {
@@ -1027,7 +1357,7 @@ window.CartSystem = {
                 </div>
                 <div class="cart-item-info" style="cursor: ${isGhost ? 'not-allowed' : 'pointer'};">
                     <div class="cart-item-title ${isGhost ? 'ghost-text' : ''}">${item.fileName}</div>
-                    <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${item.category}</div>
+                    <div class="cart-item-category ${isGhost ? 'ghost-text' : ''}">${this.getItemSubDescription(item)}</div>
 
                     ${!isGhost ? `
                         <div class="cart-item-bottom" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px;">
@@ -1071,6 +1401,30 @@ window.CartSystem = {
 
         const showPrices = window.shouldShowPrices && window.shouldShowPrices();
 
+        // ✅ Determinar o que mostrar no preço
+        let priceHtml = '';
+        if (showPrices) {
+            if (unitPrice > 0) {
+                priceHtml = `
+                    <div class="cart-item-price" style="margin-top: 6px;">
+                        <span class="price-value" style="font-size: 0.85rem; color: #666;">
+                            ${window.CurrencyManager ? CurrencyManager.format(unitPrice) : '$' + unitPrice.toFixed(2)} × ${quantity} =
+                        </span>
+                        <span class="cart-item-total">
+                            ${window.CurrencyManager ? CurrencyManager.format(totalPrice) : '$' + totalPrice.toFixed(2)}
+                        </span>
+                    </div>
+                `;
+            } else {
+                // ✅ Mostrar "No price" quando não tem preço configurado
+                priceHtml = `
+                    <div class="cart-item-price no-price" style="margin-top: 6px;">
+                        <span style="color: #999; font-size: 0.85rem; font-style: italic;">No price</span>
+                    </div>
+                `;
+            }
+        }
+
         return `
             <div class="cart-item catalog-item" data-qbitem="${qbItem}" data-drive-file-id="${item.driveFileId || qbItem}">
                 <div class="cart-item-image" style="cursor: default;">
@@ -1081,34 +1435,21 @@ window.CartSystem = {
                 </div>
                 <div class="cart-item-info" style="cursor: default;">
                     <div class="cart-item-title">${productName}</div>
-                    <div class="cart-item-category">
-                        <i class="fas fa-tag" style="color: #B87333; margin-right: 4px;"></i>
-                        ${item.category || 'Catalog Product'}
-                    </div>
 
-                    <div class="cart-item-quantity">
-                        <button class="qty-btn-small" onclick="CartSystem.updateCatalogQty('${qbItem}', -1)">
+                    <div class="cart-item-quantity" onclick="event.stopPropagation()">
+                        <button class="qty-btn-small" onclick="event.stopPropagation(); CartSystem.updateCatalogQty('${qbItem}', -1)">
                             <i class="fas fa-minus"></i>
                         </button>
                         <span style="margin: 0 8px; font-weight: 600;">Qty: ${quantity}</span>
-                        <button class="qty-btn-small" onclick="CartSystem.updateCatalogQty('${qbItem}', 1)">
+                        <button class="qty-btn-small" onclick="event.stopPropagation(); CartSystem.updateCatalogQty('${qbItem}', 1)">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
 
-                    ${showPrices && unitPrice > 0 ? `
-                        <div class="cart-item-price" style="margin-top: 6px;">
-                            <span class="price-value" style="font-size: 0.85rem; color: #666;">
-                                ${window.CurrencyManager ? CurrencyManager.format(unitPrice) : '$' + unitPrice.toFixed(2)} × ${quantity} =
-                            </span>
-                            <span class="cart-item-total">
-                                ${window.CurrencyManager ? CurrencyManager.format(totalPrice) : '$' + totalPrice.toFixed(2)}
-                            </span>
-                        </div>
-                    ` : ''}
+                    ${priceHtml}
                 </div>
-                <div class="cart-item-actions">
-                    <button class="cart-item-remove" title="Remove item" onclick="CartSystem.removeCatalogItem('${qbItem}')">
+                <div class="cart-item-actions" onclick="event.stopPropagation()">
+                    <button class="cart-item-remove" title="Remove item" onclick="event.stopPropagation(); CartSystem.removeCatalogItem('${qbItem}')">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -1118,15 +1459,17 @@ window.CartSystem = {
 
     /**
      * Atualizar quantidade de item de catálogo
+     * ⭐ OTIMIZADO: Usa dados da resposta ao invés de fazer loadCart() extra
      */
     async updateCatalogQty(qbItem, delta) {
         try {
             const item = this.state.items.find(i => i.isCatalogProduct && i.qbItem === qbItem);
             if (!item) return;
 
-            const newQty = (item.quantity || 1) + delta;
+            const oldQty = item.quantity || 1;
+            const newQty = oldQty + delta;
+
             if (newQty < 1) {
-                // Remove item
                 await this.removeCatalogItem(qbItem);
                 return;
             }
@@ -1146,8 +1489,35 @@ window.CartSystem = {
                 throw new Error(result.message || 'Error updating quantity');
             }
 
-            // Reload cart
-            await this.loadCart();
+            // ⭐ OTIMIZAÇÃO: Usar dados da resposta diretamente
+            if (result.success && result.cart) {
+                this.state.items = result.cart.items || [];
+                this.state.totalItems = result.cart.totalItems || 0;
+                this.updateUI();
+            } else {
+                await this.loadCart();
+            }
+
+            // Disparar evento para atualização de tiers
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: {
+                    itemCount: this.state.totalItems,
+                    items: this.state.items,
+                    totals: result.totals
+                }
+            }));
+
+            // ✅ ATUALIZAR ESTOQUE NO CATÁLOGO
+            // delta > 0 = aumentou qty no carrinho = diminui estoque disponível
+            // delta < 0 = diminuiu qty no carrinho = aumenta estoque disponível
+            const stockChange = -delta; // Inverso: +1 no carrinho = -1 no estoque
+            window.dispatchEvent(new CustomEvent('catalogStockChanged', {
+                detail: {
+                    qbItem: qbItem,
+                    stockChange: stockChange
+                }
+            }));
+            console.log(`📊 Estoque atualizado: ${qbItem} ${stockChange > 0 ? '+' : ''}${stockChange}`);
 
         } catch (error) {
             console.error('❌ Error updating catalog quantity:', error);
@@ -1157,9 +1527,14 @@ window.CartSystem = {
 
     /**
      * Remover item de catálogo
+     * ⭐ OTIMIZADO: Usa dados da resposta ao invés de fazer loadCart() extra
      */
     async removeCatalogItem(qbItem) {
         try {
+            // ✅ Guardar quantidade antes de remover (para restaurar estoque na UI)
+            const itemBeforeRemove = this.state.items.find(i => i.isCatalogProduct && i.qbItem === qbItem);
+            const quantityRemoved = itemBeforeRemove?.quantity || 1;
+
             const response = await fetch(`/api/cart/remove-catalog/${encodeURIComponent(qbItem)}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
@@ -1173,18 +1548,174 @@ window.CartSystem = {
                 throw new Error(result.message || 'Error removing item');
             }
 
-            // Reload cart
-            await this.loadCart();
+            // ⭐ OTIMIZAÇÃO: Usar dados da resposta diretamente
+            if (result.success && result.cart) {
+                this.state.items = result.cart.items || [];
+                this.state.totalItems = result.cart.totalItems || 0;
+                console.log(`✅ Catálogo removido - ${this.state.totalItems} itens restantes`);
+
+                this.updateUI();
+                this.startTimers();
+            } else {
+                // Fallback
+                await this.loadCart();
+            }
 
             // Dispatch event to update catalog buttons
             window.dispatchEvent(new CustomEvent('cartUpdated', {
-                detail: { itemCount: this.state.totalItems, items: this.state.items }
+                detail: {
+                    itemCount: this.state.totalItems,
+                    items: this.state.items,
+                    totals: result.totals
+                }
             }));
+
+            // ✅ Dispatch event to restore catalog stock in UI
+            window.dispatchEvent(new CustomEvent('catalogStockRestored', {
+                detail: {
+                    qbItem: qbItem,
+                    quantityRestored: quantityRemoved
+                }
+            }));
+            console.log(`📊 Evento catalogStockRestored disparado: ${qbItem} +${quantityRemoved}`);
 
         } catch (error) {
             console.error('❌ Error removing catalog item:', error);
             this.showNotification(error.message, 'error');
         }
+    },
+
+    // ============================================
+    // PREVIEW SIMPLES PARA PRODUTOS DE CATÁLOGO
+    // ============================================
+    openCatalogPreview(qbItem) {
+        const item = this.state.items.find(i => i.isCatalogProduct && i.qbItem === qbItem);
+        if (!item) {
+            console.error('Produto de catálogo não encontrado:', qbItem);
+            return;
+        }
+
+        const productName = item.productName || item.fileName || 'Product';
+        const thumbnailUrl = item.thumbnailUrl;
+        const quantity = item.quantity || 1;
+        const unitPrice = item.unitPrice || 0;
+
+        // Criar overlay simples
+        const overlay = document.createElement('div');
+        overlay.id = 'catalog-preview-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            cursor: pointer;
+        `;
+
+        // Conteúdo do preview
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            cursor: default;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        `;
+        content.onclick = (e) => e.stopPropagation();
+
+        // Imagem
+        if (thumbnailUrl) {
+            const img = document.createElement('img');
+            img.src = thumbnailUrl;
+            img.alt = productName;
+            img.style.cssText = `
+                max-width: 400px;
+                max-height: 400px;
+                object-fit: contain;
+                border-radius: 8px;
+            `;
+            content.appendChild(img);
+        } else {
+            const placeholder = document.createElement('div');
+            placeholder.innerHTML = '<i class="fas fa-box" style="font-size: 80px; color: #ccc;"></i>';
+            placeholder.style.cssText = `
+                width: 200px;
+                height: 200px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f5f5f5;
+                border-radius: 8px;
+            `;
+            content.appendChild(placeholder);
+        }
+
+        // Título
+        const title = document.createElement('h3');
+        title.textContent = productName;
+        title.style.cssText = `
+            margin: 0;
+            color: #333;
+            font-size: 1.2rem;
+            text-align: center;
+        `;
+        content.appendChild(title);
+
+        // Info
+        const info = document.createElement('div');
+        info.style.cssText = `
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 0.95rem;
+        `;
+        info.innerHTML = `
+            <span><strong>Qty:</strong> ${quantity}</span>
+            ${unitPrice > 0 ? `<span><strong>Price:</strong> $${unitPrice.toFixed(2)}</span>` : ''}
+        `;
+        content.appendChild(info);
+
+        // Botão fechar
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '<i class="fas fa-times"></i> Close';
+        closeBtn.style.cssText = `
+            padding: 10px 25px;
+            background: #B87333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-top: 10px;
+        `;
+        closeBtn.onclick = () => overlay.remove();
+        content.appendChild(closeBtn);
+
+        overlay.appendChild(content);
+        overlay.onclick = () => overlay.remove();
+
+        // ESC para fechar
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        document.body.appendChild(overlay);
+        console.log(`📷 Preview aberto para produto de catálogo: ${productName}`);
     },
 
     // Abrir foto do carrinho em modal fullscreen
@@ -2253,14 +2784,28 @@ async function generateOrderSummary() {
     // Usar apenas dados locais
     let discountDetails = {};
 
-    // Agrupar por categoria
+    // Agrupar por categoria (usando nome de EXIBIÇÃO para agrupar)
     const categories = {};
     items.forEach(item => {
-        const cat = item.category || 'Uncategorized';
-        if (!categories[cat]) {
-            categories[cat] = [];
+        // ✅ MESMA ESTRATÉGIA ROBUSTA de renderCartItems
+        let rawCat;
+
+        if (item.isCatalogProduct && item.catalogCategory) {
+            rawCat = item.catalogCategory;
+        } else if (item.fullPath) {
+            rawCat = item.fullPath;
+        } else if (item.pathLevels && item.pathLevels.length > 0) {
+            rawCat = item.pathLevels[0];
+        } else {
+            rawCat = item.category || 'Uncategorized';
         }
-        categories[cat].push(item);
+
+        // ✅ USAR NOME DE EXIBIÇÃO para agrupar
+        const displayCat = getCategoryDisplayName(rawCat, item);
+        if (!categories[displayCat]) {
+            categories[displayCat] = [];
+        }
+        categories[displayCat].push(item);
     });
 
     let html = '';
@@ -2309,14 +2854,14 @@ async function generateOrderSummary() {
         grandTotal += categoryTotal;
         totalItems += categoryItems.length; // ✅ CORRIGIDO - só conta válidos
 
-        // Header da categoria (clicável)
+        // Header da categoria (clicável) - category já é o nome de exibição
         html += `
             <div class="summary-category">
                 <div class="summary-category-header" style="cursor: pointer; padding: 8px 0; background: #f8f9fa; margin: 5px 0; padding: 8px;">
                     <i class="fas fa-chevron-down category-toggle-icon" style="margin-right: 8px; font-size: 12px;"></i>
                     <strong>${category}</strong>
                     <span style="float: right; color: #666;">
-                        ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'} 
+                        ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'}
                         ${showPrices && categoryTotal > 0 ? `| ${window.CurrencyManager ? CurrencyManager.format(categoryTotal) : '$' + categoryTotal.toFixed(2)}` : ''}
                     </span>
                 </div>

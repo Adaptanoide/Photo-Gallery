@@ -2557,43 +2557,84 @@ body.modal-open {
     color: #1a1a1a;
 }
 
-.qb-nav-tabs {
+/* QB Navigation - Dropdown Style */
+.qb-dropdown-container {
     display: flex;
-    gap: 6px;
+    align-items: center;
     flex: 1;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
 }
 
-.qb-nav-tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.qb-tab {
-    padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #888;
+.qb-dropdown {
+    flex: 1;
+    max-width: 450px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: #e0e0e0;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.8em;
+    font-size: 0.85em;
     font-weight: 500;
-    white-space: nowrap;
     transition: all 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 35px;
 }
 
-.qb-tab:hover {
+.qb-dropdown:hover {
     background: rgba(212, 175, 55, 0.15);
-    border-color: rgba(212, 175, 55, 0.3);
-    color: #ccc;
+    border-color: rgba(212, 175, 55, 0.5);
 }
 
-.qb-tab.active {
-    background: var(--gold-primary, #d4af37);
+.qb-dropdown:focus {
+    outline: none;
     border-color: var(--gold-primary, #d4af37);
-    color: #1a1a1a;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.qb-dropdown option {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    padding: 8px 12px;
+}
+
+/* Optgroup labels - melhor contraste */
+.qb-dropdown optgroup {
+    background: #1a1a1a;
+    color: var(--gold-primary, #d4af37);
     font-weight: 600;
+    font-size: 0.9em;
+    padding: 10px 8px 6px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Custom scrollbar para dropdown (Firefox) */
+.qb-dropdown {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 175, 55, 0.4) rgba(42, 42, 42, 0.5);
+}
+
+/* Custom scrollbar para dropdown (Chrome, Safari, Edge) */
+.qb-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.qb-dropdown::-webkit-scrollbar-track {
+    background: rgba(42, 42, 42, 0.5);
+    border-radius: 4px;
+}
+
+.qb-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.4);
+    border-radius: 4px;
+}
+
+.qb-dropdown::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.6);
 }
 
 /* View Toggle Buttons */
@@ -2635,9 +2676,9 @@ body.modal-open {
     gap: 8px;
     padding: 8px 12px 8px 15px;
     background: rgba(0, 0, 0, 0.3);
-    font-size: 0.7em;
+    font-size: 0.95em;
     font-weight: 600;
-    color: #777;
+    color: #ffffff;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -2764,7 +2805,11 @@ body.modal-open {
 .selection-category .cat-name {
     color: #fff;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .selection-category .col-qb {
@@ -2792,23 +2837,48 @@ body.modal-open {
     padding-right: 5px;
 }
 
-/* QB Badge */
+/* QB Badge - Clean simple style (no background) */
 .selection-category .qb-badge {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    background: transparent;
+    color: #ffffff;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.90rem;
+    font-weight: 400;
     font-family: 'Consolas', 'Monaco', monospace;
     letter-spacing: 0.3px;
-    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.25);
+    box-shadow: none;
 }
 
 .selection-category .qb-badge.empty {
-    background: rgba(100, 100, 100, 0.3);
-    color: #666;
-    box-shadow: none;
+    background: transparent;
+    color: #555;
+}
+
+/* ===== CATALOG PRODUCTS - Same style as unique photos ===== */
+.selection-category.catalog-product {
+    border-left-color: transparent;
+}
+
+.selection-category.catalog-product:hover {
+    border-left-color: var(--gold-primary, #d4af37);
+}
+
+.selection-category.catalog-product .cat-row {
+    cursor: pointer;
+}
+
+/* ===== PHOTO CATEGORIES - Clean style ===== */
+.selection-category.photo-category {
+    border-left-color: transparent;
+}
+
+.selection-category.photo-category:hover {
+    border-left-color: var(--gold-primary, #d4af37);
+}
+
+.selection-category.photo-category .cat-row {
+    cursor: pointer;
 }
 
 /* Category Items */
