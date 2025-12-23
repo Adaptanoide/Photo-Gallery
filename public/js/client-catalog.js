@@ -189,7 +189,7 @@ const MAIN_CATEGORIES = {
                 description: 'Long runner rugs 2.5X8 for hallways and spaces',
                 viewType: 'stock',
                 catalogCategory: 'runner-rugs',
-                thumbnail: '/images/thumbnailsCards/runners subcard.png'
+                thumbnail: '/images/thumbnailsCards/Runners subcard.png'
             },
             'bedside-rugs': {
                 name: 'Bedside Rugs',
@@ -203,7 +203,7 @@ const MAIN_CATEGORIES = {
                 description: 'Handcrafted rodeo rugs with star and longhorn designs',
                 viewType: 'photo',
                 folderPath: 'Rodeo Rugs',
-                thumbnail: '/images/thumbnailsCards/rodeo rugs subcard.png'
+                thumbnail: '/images/thumbnailsCards/Rodeo Rugs subcard.png'
             }
         }
     },
