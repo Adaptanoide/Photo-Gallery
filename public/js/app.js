@@ -520,7 +520,7 @@ function showAdminTransition(adminName) {
                 opacity: 0;
                 transform: translateY(10px);
             ">
-                <img src="/images/LogoToca.png" alt="Sunshine Cowhides" style="
+                <img src="https://images.sunshinecowhides-gallery.com/_assets/LogoToca.png" alt="Sunshine Cowhides" style="
                     width: 140px;
                     height: 140px;
                     border-radius: 50%;

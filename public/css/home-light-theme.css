@@ -308,7 +308,7 @@ body.home-page .form-group input:focus {
     }
 
     body.home-page .luxury-container {
-        padding-bottom: 50px;
+        padding-bottom: 120px; /* Space for holiday notice */
     }
 
     body.home-page .luxury-logo i {
@@ -354,7 +354,7 @@ body.home-page .form-group input:focus {
     body.home-page .luxury-container {
         max-width: 100%;
         padding: 0 1rem;
-        padding-bottom: 45px;
+        padding-bottom: 120px; /* Space for holiday notice */
     }
 
     body.home-page .luxury-logo i {
@@ -927,7 +927,7 @@ body.home-page.dark-mode .holiday-notice-content {
 @media (max-width: 768px) {
     .holiday-notice {
         top: auto;
-        bottom: 50px;
+        bottom: 15px;
         left: 50%;
         transform: translateX(-50%);
         width: calc(100% - 30px);
