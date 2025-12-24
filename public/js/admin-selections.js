@@ -35,6 +35,7 @@ class AdminSelections {
     init() {
         console.log('🛒 Initializing Selection Management...');
         this.bindEvents();
+        this.initActionMenuHandler();
         this.loadStatistics();
         this.loadSelections();
         console.log('✅ Selection Management initialized');
@@ -393,89 +394,173 @@ class AdminSelections {
     }
 
     getActionButtons(selection) {
-        let buttons = '';
+        // Build action items based on status
+        let actions = [];
 
         // VIEW para TODOS os status (sempre primeiro)
-        buttons += `
-            <button class="special-btn-icon btn-view" 
-                    onclick="adminSelections.viewSelection('${selection.selectionId}')" 
-                    data-tooltip="View Details">
-                <i class="fas fa-eye"></i>
-            </button>
-        `;
+        actions.push({
+            icon: 'fas fa-eye',
+            label: 'View Details',
+            class: 'action-view',
+            onclick: `adminSelections.viewSelection('${selection.selectionId}')`
+        });
 
-        // APPROVE (Mark as Sold) - segundo botão, só para PENDING
+        // APPROVE (Mark as Sold) - só para PENDING
         if (selection.status === 'pending') {
-            buttons += `
-                <button class="special-btn-icon btn-approve" 
-                        onclick="adminSelections.approveSelection('${selection.selectionId}')"
-                        data-tooltip="Mark as Sold">
-                    <i class="fas fa-check-circle"></i>
-                </button>
-            `;
+            actions.push({
+                icon: 'fas fa-check-circle',
+                label: 'Mark as Sold',
+                class: 'action-approve',
+                onclick: `adminSelections.approveSelection('${selection.selectionId}')`
+            });
         }
 
         // SEND DOWNLOAD LINK - para PENDING e FINALIZED
         if (selection.status === 'pending' || selection.status === 'finalized') {
-            buttons += `
-                <button class="special-btn-icon btn-send-link" 
-                        onclick="adminSelections.sendDownloadLink('${selection.selectionId}')" 
-                        data-tooltip="Send Download Link to Client">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            `;
+            actions.push({
+                icon: 'fas fa-paper-plane',
+                label: 'Send Download Link',
+                class: 'action-send',
+                onclick: `adminSelections.sendDownloadLink('${selection.selectionId}')`
+            });
         }
 
         // PENDING - adiciona Reopen e Cancel
         if (selection.status === 'pending') {
-            buttons += `
-                <button class="special-btn-icon btn-reopen" 
-                        onclick="adminSelections.reopenCart('${selection.selectionId}')"
-                        data-tooltip="Reopen for Client">
-                    <i class="fas fa-undo"></i>
-                </button>
-                <button class="special-btn-icon btn-cancel" 
-                        onclick="adminSelections.cancelSelection('${selection.selectionId}')"
-                        data-tooltip="Cancel Selection">
-                    <i class="fas fa-times-circle"></i>
-                </button>
-            `;
+            actions.push({
+                icon: 'fas fa-undo',
+                label: 'Reopen for Client',
+                class: 'action-reopen',
+                onclick: `adminSelections.reopenCart('${selection.selectionId}')`
+            });
+            actions.push({
+                icon: 'fas fa-times-circle',
+                label: 'Cancel Selection',
+                class: 'action-cancel',
+                onclick: `adminSelections.cancelSelection('${selection.selectionId}')`
+            });
         }
 
         // FINALIZED (SOLD) - adiciona botão Cancel
         if (selection.status === 'finalized') {
-            buttons += `
-                <button class="special-btn-icon btn-cancel" 
-                        onclick="adminSelections.cancelSoldSelection('${selection.selectionId}')"
-                        data-tooltip="Cancel Sale & Release Photos">
-                    <i class="fas fa-times-circle"></i>
-                </button>
-            `;
+            actions.push({
+                icon: 'fas fa-times-circle',
+                label: 'Cancel Sale',
+                class: 'action-cancel',
+                onclick: `adminSelections.cancelSoldSelection('${selection.selectionId}')`
+            });
         }
 
         // CONFIRMED - adiciona Force Cancel (para limpeza)
         else if (selection.status === 'confirmed') {
-            buttons += `
-                <button class="special-btn-icon btn-force" 
-                        onclick="adminSelections.forceCancelSelection('${selection.selectionId}')" 
-                        data-tooltip="⚠️ Force Cancel">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </button>
-            `;
+            actions.push({
+                icon: 'fas fa-exclamation-triangle',
+                label: 'Force Cancel',
+                class: 'action-force',
+                onclick: `adminSelections.forceCancelSelection('${selection.selectionId}')`
+            });
         }
 
-        // DELETE - apenas para seleções canceladas (para limpeza da interface)
+        // DELETE - apenas para seleções canceladas
         if (selection.status === 'cancelled') {
-            buttons += `
-                <button class="special-btn-icon btn-delete" 
-                        onclick="adminSelections.deleteSelection('${selection.selectionId}')"
-                        data-tooltip="Delete Selection">
-                    <i class="fas fa-trash"></i>
-                </button>
-            `;
+            actions.push({
+                icon: 'fas fa-trash',
+                label: 'Delete',
+                class: 'action-delete',
+                onclick: `adminSelections.deleteSelection('${selection.selectionId}')`
+            });
         }
 
-        return buttons;
+        // Build dropdown menu HTML
+        const menuItems = actions.map(action => `
+            <button class="action-menu-item ${action.class}" onclick="${action.onclick}; adminSelections.closeActionMenu(event);">
+                <i class="${action.icon}"></i>
+                <span>${action.label}</span>
+            </button>
+        `).join('');
+
+        return `
+            <div class="action-menu-container">
+                <button class="action-menu-trigger" onclick="adminSelections.toggleActionMenu(event)">
+                    <span>Actions</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="action-menu-dropdown">
+                    ${menuItems}
+                </div>
+            </div>
+        `;
+    }
+
+    // Toggle action menu dropdown
+    toggleActionMenu(event) {
+        event.stopPropagation();
+        const trigger = event.currentTarget;
+        const container = trigger.closest('.action-menu-container');
+        const dropdown = container.querySelector('.action-menu-dropdown');
+        const parentRow = container.closest('tr');
+
+        // Close all other open menus and remove active class from rows
+        document.querySelectorAll('.action-menu-dropdown.open').forEach(menu => {
+            if (menu !== dropdown) {
+                menu.classList.remove('open');
+                const row = menu.closest('tr');
+                if (row) row.classList.remove('dropdown-active');
+            }
+        });
+
+        // Toggle this menu
+        const isOpening = !dropdown.classList.contains('open');
+        dropdown.classList.toggle('open');
+
+        // Add/remove active class to parent row for z-index
+        if (parentRow) {
+            if (isOpening) {
+                parentRow.classList.add('dropdown-active');
+            } else {
+                parentRow.classList.remove('dropdown-active');
+            }
+        }
+
+        if (dropdown.classList.contains('open')) {
+            // Check if dropdown should open upward
+            this.positionDropdown(container, dropdown);
+        }
+    }
+
+    // Position dropdown (up or down based on available space)
+    positionDropdown(container, dropdown) {
+        const containerRect = container.getBoundingClientRect();
+        const dropdownHeight = dropdown.offsetHeight || 200; // Estimate if not rendered yet
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - containerRect.bottom;
+        const spaceAbove = containerRect.top;
+
+        // If not enough space below, open upward
+        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+            dropdown.classList.add('open-up');
+        } else {
+            dropdown.classList.remove('open-up');
+        }
+    }
+
+    // Close action menu
+    closeActionMenu(event) {
+        if (event) event.stopPropagation();
+        document.querySelectorAll('.action-menu-dropdown.open').forEach(menu => {
+            menu.classList.remove('open');
+            const row = menu.closest('tr');
+            if (row) row.classList.remove('dropdown-active');
+        });
+    }
+
+    // Initialize global click handler to close menus
+    initActionMenuHandler() {
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-menu-container')) {
+                this.closeActionMenu();
+            }
+        });
     }
 
     // ===== VIEW SELECTION DETAILS =====
@@ -3514,6 +3599,10 @@ class AdminSelections {
             const selectionData = await selectionResponse.json();
             const selection = selectionData.selection;
 
+            // Show styled confirmation modal before sending
+            const confirmed = await this.showDownloadLinkConfirmModal(selection);
+            if (!confirmed) return;
+
             // Mostrar loading
             UISystem.showToast('info', 'Checking email...');
 
@@ -3580,6 +3669,83 @@ class AdminSelections {
             console.error('Error sending download link:', error);
             UISystem.showToast('error', `Error: ${error.message}`);
         }
+    }
+
+    // ===== STYLED CONFIRMATION MODAL FOR DOWNLOAD LINK (UISystem pattern) =====
+    showDownloadLinkConfirmModal(selection) {
+        return new Promise((resolve) => {
+            const clientName = selection?.clientName || 'Client';
+            const itemCount = selection?.totalItems || 0;
+            const email = selection?.clientEmail || 'registered email';
+
+            const modalId = 'downloadLinkConfirm-' + Date.now();
+            const modal = document.createElement('div');
+            modal.className = 'ui-modal-backdrop';
+            modal.id = modalId;
+            modal.innerHTML = `
+                <div class="ui-modal">
+                    <div class="ui-modal-header">
+                        <span class="modal-icon">📧</span>
+                        <h3>Send Download Link</h3>
+                        <button class="modal-close" id="${modalId}-close">✕</button>
+                    </div>
+                    <div class="ui-modal-body">
+                        <p class="confirm-message">You are about to send a download link to the client:</p>
+                        <div class="confirm-details">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <i class="fas fa-user" style="color: #d4af37; width: 16px;"></i>
+                                <span style="font-weight: 500;">${clientName}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <i class="fas fa-images" style="color: #d4af37; width: 16px;"></i>
+                                <span>${itemCount} photos to download</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-envelope" style="color: #d4af37; width: 16px;"></i>
+                                <span>${email}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ui-modal-footer">
+                        <button class="btn-secondary" id="${modalId}-cancel">
+                            Cancel
+                        </button>
+                        <button class="btn-primary" id="${modalId}-confirm">
+                            Send Link
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            const cleanup = () => {
+                if (modal) modal.remove();
+            };
+
+            document.getElementById(`${modalId}-close`).onclick = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            document.getElementById(`${modalId}-cancel`).onclick = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            document.getElementById(`${modalId}-confirm`).onclick = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            // Close on backdrop click
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    cleanup();
+                    resolve(false);
+                }
+            };
+        });
     }
 
     // ===== ATUALIZAR BADGE DO SIDEBAR =====

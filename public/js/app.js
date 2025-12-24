@@ -228,12 +228,8 @@ async function handleAdminLogin(e) {
             AppState.userType = 'admin';
             AppState.currentUser = data.user;
 
-            showNotification('Login successful!', 'success');
             closeModal('adminModal');
-
-            setTimeout(() => {
-                redirectToAdmin();
-            }, 1000);
+            showAdminTransition(data.user.username || username);
 
         } else {
             showNotification(data.message || 'Credenciais inválidas', 'error');
@@ -310,11 +306,8 @@ async function handleDirectClientLogin(e) {
             AppState.accessCode = code;
             AppState.currentUser = data.client;
 
-            showNotification(`Welcome, ${data.client.name}!`, 'success');
-
-            setTimeout(() => {
-                redirectToClient();
-            }, 1000);
+            // Show beautiful transition instead of simple notification
+            showLoginTransition(data.client.name);
 
         } else {
             // Detectar se está bloqueado por diferentes mensagens
@@ -467,8 +460,142 @@ function logout() {
     }, 1000);
 }
 
+// ===== BEAUTIFUL LOGIN TRANSITION =====
+function showLoginTransition(clientName) {
+    const transition = document.getElementById('loginTransition');
+    const nameElement = document.getElementById('transitionName');
+
+    if (!transition) {
+        // Fallback if transition element doesn't exist
+        showNotification(`Welcome, ${clientName}!`, 'success');
+        setTimeout(() => redirectToClient(), 1000);
+        return;
+    }
+
+    // Set the client name
+    if (nameElement) {
+        nameElement.textContent = clientName;
+    }
+
+    // Show the transition overlay
+    transition.classList.add('active');
+
+    // Reset animations by removing and re-adding classes
+    const content = transition.querySelector('.transition-content');
+    const loaderBar = transition.querySelector('.loader-bar');
+
+    if (loaderBar) {
+        loaderBar.style.animation = 'none';
+        loaderBar.offsetHeight; // Trigger reflow
+        loaderBar.style.animation = 'loadProgress 2.8s ease forwards 0.3s';
+    }
+
+    // Redirect after animation completes
+    // Keep white screen visible until redirect (no exit animation)
+    setTimeout(() => {
+        redirectToClient();
+    }, 3500);
+}
+
+// ===== BEAUTIFUL ADMIN LOGIN TRANSITION - DARK THEME =====
+function showAdminTransition(adminName) {
+    // Create the transition overlay dynamically - Dark gold theme
+    const transitionHTML = `
+        <div id="adminTransition" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1a1a1a;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: adminFadeIn 0.4s ease forwards;
+        ">
+            <div style="
+                text-align: center;
+                animation: adminSlideUp 0.5s ease 0.1s forwards;
+                opacity: 0;
+                transform: translateY(10px);
+            ">
+                <img src="/images/LogoToca.png" alt="Sunshine Cowhides" style="
+                    width: 140px;
+                    height: 140px;
+                    border-radius: 50%;
+                    margin-bottom: 24px;
+                ">
+                <div style="margin-bottom: 8px;">
+                    <span style="
+                        display: block;
+                        font-size: 1rem;
+                        color: #888;
+                        margin-bottom: 4px;
+                        font-weight: 400;
+                    ">Welcome,</span>
+                    <span style="
+                        display: block;
+                        font-size: 1.8rem;
+                        font-weight: 600;
+                        color: #d4af37;
+                    ">${adminName}</span>
+                </div>
+                <span style="
+                    display: block;
+                    font-size: 0.85rem;
+                    color: #666;
+                    margin-bottom: 28px;
+                    font-weight: 500;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                ">Admin Portal</span>
+                <div style="
+                    width: 180px;
+                    height: 3px;
+                    background: #333;
+                    border-radius: 3px;
+                    margin: 0 auto;
+                    overflow: hidden;
+                ">
+                    <div style="
+                        width: 0%;
+                        height: 100%;
+                        background: linear-gradient(90deg, #d4af37, #f4d03f);
+                        border-radius: 3px;
+                        animation: adminLoadProgress 2.5s ease forwards 0.3s;
+                        box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+                    "></div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes adminFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes adminSlideUp {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes adminLoadProgress {
+                0% { width: 0%; }
+                100% { width: 100%; }
+            }
+        </style>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', transitionHTML);
+
+    // Redirect after animation completes
+    setTimeout(() => {
+        redirectToAdmin();
+    }, 3200);
+}
+
 // Expor funções globais necessárias
 window.showAdminLogin = showAdminLogin;
 window.showClientLogin = showClientLogin;
 window.closeModal = closeModal;
 window.logout = logout;
+window.showLoginTransition = showLoginTransition;

@@ -307,7 +307,7 @@
 }
 
 .btn-warning {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: linear-gradient(135deg, #f59e0b00, #d9770600);
     color: white;
     border: 1px solid #d97706;
 }

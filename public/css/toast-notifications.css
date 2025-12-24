@@ -170,3 +170,24 @@ body .notification.show {
     top: 20px !important;
     bottom: auto !important;
 }
+
+/* ===== LOGIN PAGE (home-page) - Toast at bottom to not overlap logo ===== */
+body.home-page .notification,
+body.home-page .toast-notification {
+    top: auto !important;
+    bottom: 100px !important;
+    transform: translateX(-50%) translateY(100px) !important;
+}
+
+body.home-page .notification.show,
+body.home-page .toast-notification.show {
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+/* Mobile - toast ainda mais acima do footer */
+@media (max-width: 768px) {
+    body.home-page .notification,
+    body.home-page .toast-notification {
+        bottom: 120px !important;
+    }
+}

@@ -105,6 +105,11 @@
                         </a>
                     </div>
                     <div class="nav-item">
+                        <a href="#feedback" class="nav-link" data-section="feedback">
+                            <i class="fas fa-comment-dots"></i>
+                            <span class="nav-text">Client Feedback</span>
+                            <span class="pending-badge" id="sidebarFeedbackBadge" style="display: none;">0</span>
+                        </a>
                     </div>
                     <div class="nav-item"> <!-- SEM display:none -->
                         <a href="#settings" class="nav-link" data-section="settings">
@@ -1038,6 +1043,104 @@
                     </div>
                 </div>
 
+                <!-- ===== SEÇÃO FEEDBACK ===== -->
+                <div id="section-feedback" class="content-section" style="display: none;">
+                    <!-- Header -->
+                    <div class="selections-section-header">
+                        <h2 class="selections-title">
+                            <i class="fas fa-comment-dots"></i>
+                            Client Feedback
+                        </h2>
+                        <div class="selections-actions">
+                            <button id="btnRefreshFeedback" class="btn btn-secondary" onclick="loadFeedback()">
+                                <i class="fas fa-sync-alt"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="selection-stats" style="display: block;">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Total Feedback</div>
+                                        <div class="stat-value" id="totalFeedback">-</div>
+                                        <div class="stat-description">All time</div>
+                                    </div>
+                                    <div class="stat-icon primary">
+                                        <i class="fas fa-comments"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">New</div>
+                                        <div class="stat-value" id="newFeedback">-</div>
+                                        <div class="stat-description">Unread messages</div>
+                                    </div>
+                                    <div class="stat-icon warning">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-title">Suggestions</div>
+                                        <div class="stat-value" id="suggestionFeedback">-</div>
+                                        <div class="stat-description">Ideas from clients</div>
+                                    </div>
+                                    <div class="stat-icon success">
+                                        <i class="fas fa-lightbulb"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="selections-filters">
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Status</label>
+                                <select id="filterFeedbackStatus" class="filter-select" onchange="loadFeedback()">
+                                    <option value="">All Status</option>
+                                    <option value="new">🔵 New</option>
+                                    <option value="read">👁️ Read</option>
+                                    <option value="resolved">✅ Resolved</option>
+                                    <option value="archived">📁 Archived</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Type</label>
+                                <select id="filterFeedbackType" class="filter-select" onchange="loadFeedback()">
+                                    <option value="">All Types</option>
+                                    <option value="suggestion">💡 Suggestion</option>
+                                    <option value="issue">⚠️ Issue</option>
+                                    <option value="question">❓ Question</option>
+                                    <option value="praise">⭐ Praise</option>
+                                    <option value="general">📝 General</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feedback List -->
+                    <div id="feedbackList" class="feedback-list">
+                        <div class="loading-section">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            </div>
+                            <p>Loading feedback...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Seção Configurações (Hidden por padrão) -->
                 <div id="section-settings" class="content-section">
                     <!-- Loading -->
@@ -1681,6 +1784,7 @@
     <script src="js/admin-clients.js"></script>
     <script src="js/admin-pricing.js"></script>
     <script src="js/admin-selections.js"></script>
+    <script src="js/admin-feedback.js"></script>
     <script src="js/admin-config.js"></script>
     <script src="js/inventory-monitor.js"></script>
     <script src="/js/ui-system.js"></script>

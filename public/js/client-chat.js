@@ -18,17 +18,31 @@ class ChatManager {
     updateBadge() {
         const badge = document.getElementById('chatUnreadBadge');
         const button = document.getElementById('chatFloatBtn');
-        if (!badge) return;
+        const mobileBadge = document.getElementById('mobileChatBadge');
+        const mobileBtn = document.getElementById('mobileChatBtn');
 
-        if (this.unreadCount > 0) {
-            badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
-            badge.style.display = 'flex';
-            // Adicionar animação de atenção no botão
-            if (button) button.classList.add('has-notification');
-        } else {
-            badge.style.display = 'none';
-            // Remover animação
-            if (button) button.classList.remove('has-notification');
+        const badgeText = this.unreadCount > 99 ? '99+' : this.unreadCount;
+
+        // Update floating button badge
+        if (badge) {
+            if (this.unreadCount > 0) {
+                badge.textContent = badgeText;
+                badge.style.display = 'flex';
+                if (button) button.classList.add('has-notification');
+            } else {
+                badge.style.display = 'none';
+                if (button) button.classList.remove('has-notification');
+            }
+        }
+
+        // Update mobile header button badge
+        if (mobileBadge) {
+            if (this.unreadCount > 0) {
+                mobileBadge.textContent = badgeText;
+                if (mobileBtn) mobileBtn.classList.add('has-unread');
+            } else {
+                if (mobileBtn) mobileBtn.classList.remove('has-unread');
+            }
         }
     }
 
@@ -197,6 +211,23 @@ class ChatManager {
                             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
                         </svg>
                         <p>Start a conversation with our sales team!</p>
+
+                        <!-- Quick suggestion chips -->
+                        <div class="chat-suggestions" id="chatSuggestions">
+                            <p class="suggestions-label">Quick questions:</p>
+                            <button class="suggestion-chip" data-message="Hi! I'd like to see some cowhides">
+                                <i class="fas fa-eye"></i> See cowhides
+                            </button>
+                            <button class="suggestion-chip" data-message="What are the shipping options and costs?">
+                                <i class="fas fa-truck"></i> Shipping info
+                            </button>
+                            <button class="suggestion-chip" data-message="I need help choosing the right size">
+                                <i class="fas fa-ruler"></i> Help with size
+                            </button>
+                            <button class="suggestion-chip" data-message="Do you have any special offers right now?">
+                                <i class="fas fa-tags"></i> Special offers
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -255,6 +286,19 @@ class ChatManager {
         document.getElementById('chatInput').addEventListener('input', (e) => {
             e.target.style.height = 'auto';
             e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+        });
+
+        // Suggestion chips - click to send message
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const message = chip.getAttribute('data-message');
+                if (message) {
+                    // Put message in input and send
+                    const input = document.getElementById('chatInput');
+                    input.value = message;
+                    this.sendMessage();
+                }
+            });
         });
     }
 

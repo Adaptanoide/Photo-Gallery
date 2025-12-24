@@ -1591,6 +1591,22 @@ body.dark-mode .dropdown-label {
     line-height: 1.5;
 }
 
+/* Also support h3 and p for filtered results cards */
+.subcategory-card.folder-card.has-thumbnail h3 {
+    color: #ffffff;
+    font-size: 1.4rem;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.subcategory-card.folder-card.has-thumbnail p {
+    color: rgba(255,255,255,0.9);
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
 /* Hover effect */
 .subcategory-card.folder-card.has-thumbnail:hover {
     transform: translateY(-8px);
@@ -1614,11 +1630,13 @@ body.dark-mode .dropdown-label {
         min-height: 220px;
     }
 
-    .subcategory-card.folder-card.has-thumbnail h4 {
+    .subcategory-card.folder-card.has-thumbnail h4,
+    .subcategory-card.folder-card.has-thumbnail h3 {
         font-size: 1.2rem;
     }
 
-    .subcategory-card.folder-card.has-thumbnail .folder-description {
+    .subcategory-card.folder-card.has-thumbnail .folder-description,
+    .subcategory-card.folder-card.has-thumbnail p {
         font-size: 0.85rem;
     }
 }
@@ -3411,6 +3429,12 @@ body.dark-mode .stock-action-row .qty-selector {
         align-items: flex-start;
     }
 
+    /* FIX: Push stock header below fixed breadcrumb on mobile */
+    .catalog-subcategories .stock-header {
+        margin-top: 55px !important;
+        padding-top: 10px !important;
+    }
+
     .stock-header-stats {
         width: 100%;
         justify-content: flex-start;
@@ -3599,15 +3623,18 @@ body.dark-mode .stock-action-row .qty-selector {
 }
 
 .category-sidebar .sidebar-card-name {
-    padding: 8px 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #374151;
+    padding: 10px 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1f2937;
     text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    background: #fafafa;
+    line-height: 1.3;
+    background: linear-gradient(to bottom, #fafafa, #f0f0f0);
+    border-top: 1px solid rgba(0,0,0,0.05);
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .category-sidebar .sidebar-card:hover {
@@ -3626,8 +3653,10 @@ body.dark-mode .stock-action-row .qty-selector {
 }
 
 .category-sidebar .sidebar-card.active .sidebar-card-name {
-    background: #B87333;
+    background: linear-gradient(to bottom, #B87333, #9A5F2A);
     color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 /* Body class when sidebar is visible - shift main content */
@@ -3680,8 +3709,9 @@ body.dark-mode .category-sidebar .sidebar-card {
 }
 
 body.dark-mode .category-sidebar .sidebar-card-name {
-    color: #d1d5db;
-    background: #2d3748;
+    color: #f0f0f0;
+    background: linear-gradient(to bottom, #2d3748, #1f2937);
+    font-weight: 700;
 }
 
 body.dark-mode .category-sidebar .sidebar-card:hover {
@@ -3693,8 +3723,9 @@ body.dark-mode .category-sidebar .sidebar-card.active {
 }
 
 body.dark-mode .category-sidebar .sidebar-card.active .sidebar-card-name {
-    background: #B87333;
+    background: linear-gradient(to bottom, #B87333, #9A5F2A);
     color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 /* Mobile responsiveness - sidebar becomes bottom drawer */
@@ -3741,8 +3772,9 @@ body.dark-mode .category-sidebar .sidebar-card.active .sidebar-card-name {
     }
 
     .category-sidebar .sidebar-card-name {
-        padding: 6px 8px;
-        font-size: 0.7rem;
+        padding: 8px 6px;
+        font-size: 0.75rem;
+        min-height: 32px;
     }
 
     body.has-category-sidebar main {

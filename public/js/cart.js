@@ -2267,9 +2267,18 @@ async function finalizeSelection() {
     }
 }
 
-// NOVA FUNÇÃO: Modal de confirmação
+// NOVA FUNÇÃO: Modal de confirmação - Clean Design
 function showConfirmationModal(validItems, ghostCount) {
-    // Criar HTML do modal - SEM usar classes .modal ou .modal-content para evitar conflitos CSS
+    // Calcular total se preços estiverem visíveis
+    const showPrices = window.shouldShowPrices && window.shouldShowPrices();
+    let totalValue = 0;
+    if (showPrices) {
+        validItems.forEach(item => {
+            if (item.price > 0) totalValue += item.price;
+        });
+    }
+    const formattedTotal = window.CurrencyManager ? CurrencyManager.format(totalValue) : `$${totalValue.toFixed(2)}`;
+
     const modalHTML = `
         <style>
             #confirmSelectionModal * { box-sizing: border-box; }
@@ -2277,107 +2286,104 @@ function showConfirmationModal(validItems, ghostCount) {
                 from { opacity: 0; transform: scale(0.95) translateY(-10px); }
                 to { opacity: 1; transform: scale(1) translateY(0); }
             }
+            #confirmSelectionModal .confirm-header-icon {
+                width: 56px; height: 56px; background: linear-gradient(135deg, #B87333 0%, #D4A574 100%);
+                border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
+            }
+            #confirmSelectionModal .info-card {
+                background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px;
+                display: flex; align-items: flex-start; gap: 12px;
+            }
+            #confirmSelectionModal .info-card i { color: #B87333; font-size: 16px; margin-top: 2px; }
+            #confirmSelectionModal .info-card strong { color: #374151; font-size: 0.9rem; }
+            #confirmSelectionModal .info-card p { margin: 4px 0 0 0; color: #6b7280; font-size: 0.85rem; line-height: 1.5; }
         </style>
         <div id="confirmSelectionModal" style="
-            display: flex !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            background: rgba(0,0,0,0.6) !important;
-            backdrop-filter: blur(4px);
-            z-index: 99999 !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 20px !important;
-            margin: 0 !important;
+            display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important;
+            width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.6) !important;
+            backdrop-filter: blur(4px); z-index: 99999 !important; align-items: center !important;
+            justify-content: center !important; padding: 20px !important; margin: 0 !important;
         ">
             <div id="confirmModalBox" style="
-                background: white !important;
-                border-radius: 16px !important;
-                max-width: 520px !important;
-                width: 100% !important;
-                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
-                animation: confirmModalSlideIn 0.3s ease !important;
-                overflow: hidden !important;
-                max-height: 90vh !important;
-                height: auto !important;
+                background: white !important; border-radius: 16px !important; max-width: 480px !important;
+                width: 100% !important; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
+                animation: confirmModalSlideIn 0.3s ease !important; overflow: hidden !important;
+                max-height: 90vh !important; display: flex; flex-direction: column;
             ">
-                <!-- Header -->
-                <div style="background: linear-gradient(135deg, #B87333, #A0522D); padding: 20px 24px; color: white;">
-                    <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-clipboard-check" style="font-size: 20px;"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 1.25rem; font-weight: 600; margin: 0;">Confirm Your Selection</div>
-                            <div style="font-size: 0.9rem; opacity: 0.95; margin-top: 4px;"><i class="fas fa-box"></i> ${validItems.length} item${validItems.length > 1 ? 's' : ''} selected</div>
-                        </div>
+                <!-- Header - Clean White -->
+                <div style="padding: 24px 24px 16px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+                    <div class="confirm-header-icon" style="margin: 0 auto 16px;">
+                        <i class="fas fa-clipboard-check" style="font-size: 24px; color: white;"></i>
                     </div>
+                    <h2 style="margin: 0 0 6px; font-size: 1.35rem; font-weight: 600; color: #1f2937;">Confirm Your Selection</h2>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
+                        <i class="fas fa-box" style="margin-right: 6px; color: #B87333;"></i>
+                        ${validItems.length} item${validItems.length > 1 ? 's' : ''} selected
+                        ${showPrices && totalValue > 0 ? `<span style="margin-left: 8px; font-weight: 600; color: #166534;">• ${formattedTotal}</span>` : ''}
+                    </p>
                 </div>
 
-                <!-- Body -->
-                <div style="padding: 24px;">
+                <!-- Body - Scrollable -->
+                <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
                     ${ghostCount > 0 ? `
                         <div style="background: #fef3cd; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 16px;"></i>
-                            <span style="color: #92400e; font-size: 0.9rem;">${ghostCount} unavailable item(s) will be removed</span>
+                            <span style="color: #92400e; font-size: 0.875rem;">${ghostCount} unavailable item(s) will be removed</span>
                         </div>
                     ` : ''}
 
-                    <!-- Info Cards -->
-                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 16px;">
-                            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                <i class="fas fa-rocket" style="color: #16a34a; font-size: 16px; margin-top: 2px;"></i>
-                                <div>
-                                    <strong style="color: #166534; font-size: 0.95rem;">What happens next?</strong>
-                                    <p style="margin: 6px 0 0 0; color: #166534; font-size: 0.875rem; line-height: 1.5;">Our team will review and contact you. Your items will be reserved.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 16px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <i class="fas fa-clock" style="color: #2563eb; font-size: 16px;"></i>
-                                <span style="color: #1e40af; font-size: 0.875rem;"><strong>Hours:</strong> Mon-Fri, 8 AM - 3:30 PM EST (Fort Myers, FL)</span>
-                            </div>
+                    <!-- Info Card -->
+                    <div class="info-card" style="margin-bottom: 16px;">
+                        <i class="fas fa-handshake"></i>
+                        <div>
+                            <strong>What happens next?</strong>
+                            <p>Our team will review your selection and contact you shortly to confirm details, shipping, and payment options.</p>
                         </div>
                     </div>
 
-                    <!-- Textarea -->
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #374151;">
-                            <i class="fas fa-comment-dots" style="color: #B87333; margin-right: 6px;"></i>
-                            Additional Notes <span style="font-weight: 400; color: #9ca3af;">(optional)</span>
+                    <!-- Notes Section - Prominent -->
+                    <div style="background: #f8fafc; border: 2px solid #B87333; border-radius: 12px; padding: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-weight: 600; font-size: 1rem; color: #1f2937;">
+                            <i class="fas fa-edit" style="color: #B87333; font-size: 20px;"></i>
+                            Additional Notes
                         </label>
+                        <p style="margin: 0 0 14px 0; font-size: 0.85rem; color: #6b7280; line-height: 1.6;">
+                            Share your shipping address, delivery instructions, questions, or any special requests for your order.
+                        </p>
                         <textarea id="clientObservations" style="
-                            width: 100%;
-                            padding: 14px;
-                            border: 1px solid #d1d5db;
-                            border-radius: 10px;
-                            resize: vertical;
-                            font-size: 0.95rem;
-                            font-family: inherit;
-                            min-height: 100px;
-                            max-height: 150px;
-                            transition: border-color 0.2s, box-shadow 0.2s;
-                        " placeholder="Shipping address, questions, special requests..." onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.1)';" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"></textarea>
+                            width: 100%; padding: 16px; border: 1px solid #e5e7eb; border-radius: 10px;
+                            resize: vertical; font-size: 0.95rem; font-family: inherit; min-height: 140px;
+                            transition: border-color 0.2s, box-shadow 0.2s; background: white; line-height: 1.5;
+                        " placeholder="e.g., Shipping address, special delivery instructions, questions about items, or any other notes for our team..."
+                        onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.15)';"
+                        onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none';"></textarea>
                     </div>
                 </div>
 
-                <!-- Footer -->
-                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button onclick="cancelConfirmation()" style="padding: 12px 24px; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">Cancel</button>
-                    <button onclick="proceedWithSelection()" style="padding: 12px 28px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#16a34a'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#22c55e'; this.style.transform='translateY(0)'">
-                        <i class="fas fa-check"></i> Confirm
+                <!-- Footer - Fixed -->
+                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: space-between; flex-shrink: 0;">
+                    <button onclick="cancelConfirmation()" style="
+                        padding: 12px 20px; background: white; color: #6b7280; border: 1px solid #e5e7eb;
+                        border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
+                    " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#d1d5db';"
+                       onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                        Cancel
+                    </button>
+                    <button onclick="proceedWithSelection()" style="
+                        padding: 12px 28px; background: linear-gradient(135deg, #B87333, #A0522D); color: white;
+                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
+                        display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
+                        transition: all 0.2s;
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(184, 115, 51, 0.4)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(184, 115, 51, 0.3)';">
+                        <i class="fas fa-check"></i> Confirm Selection
                     </button>
                 </div>
             </div>
         </div>
     `;
 
-    // Adicionar modal ao body
     const modalDiv = document.createElement('div');
     modalDiv.innerHTML = modalHTML;
     document.body.appendChild(modalDiv);
@@ -2455,155 +2461,92 @@ window.proceedWithSelection = async function () {
     }
 }
 
-// Modal de sucesso melhorado
+// Modal de sucesso - Clean Design
 function showSuccessModalWithMessage(result) {
     const itemCount = result.selection.totalItems;
-    const itemText = itemCount === 1 ? 'item has' : 'items have';
+    const itemText = itemCount === 1 ? 'item' : 'items';
 
     const modalHTML = `
         <style>
             #successModal * { box-sizing: border-box; }
-            @keyframes successModalFadeIn {
-                from { opacity: 0; transform: scale(0.9); }
-                to { opacity: 1; transform: scale(1); }
+            @keyframes successModalSlideIn {
+                from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
             }
-            @keyframes successCheckPop {
-                0% { transform: scale(0); opacity: 0; }
-                50% { transform: scale(1.2); }
-                100% { transform: scale(1); opacity: 1; }
+            #successModal .info-card {
+                background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px;
+                display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;
             }
-            @keyframes successPulse {
-                0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-                50% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
-            }
+            #successModal .info-card i { color: #B87333; font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+            #successModal .info-card strong { color: #374151; font-size: 0.9rem; display: block; margin-bottom: 4px; }
+            #successModal .info-card p { margin: 0; color: #6b7280; font-size: 0.85rem; line-height: 1.5; }
         </style>
         <div id="successModal" style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 99999;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
         ">
             <div style="
-                background: white;
-                border-radius: 20px;
-                max-width: 480px;
-                width: 100%;
-                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
-                animation: successModalFadeIn 0.35s ease;
-                overflow: hidden;
+                background: white; border-radius: 16px; max-width: 440px; width: 100%;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); animation: successModalSlideIn 0.3s ease;
+                overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;
             ">
-                <!-- Header com gradiente verde -->
-                <div style="
-                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                    padding: 32px 24px;
-                    text-align: center;
-                    position: relative;
-                ">
-                    <!-- Ícone de sucesso -->
+                <!-- Header - Simple with small icon -->
+                <div style="padding: 20px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #f0f0f0;">
                     <div style="
-                        width: 72px;
-                        height: 72px;
-                        background: white;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        margin: 0 auto 16px;
-                        animation: successCheckPop 0.5s ease 0.2s both, successPulse 2s ease-in-out infinite 0.7s;
+                        width: 42px; height: 42px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+                        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
                     ">
-                        <i class="fas fa-check" style="color: #22c55e; font-size: 32px;"></i>
+                        <i class="fas fa-check" style="color: white; font-size: 18px;"></i>
                     </div>
-
-                    <h2 style="margin: 0; font-size: 1.6rem; font-weight: 700; color: white;">
-                        Selection Confirmed!
-                    </h2>
-
-                    <p style="margin: 10px 0 0; font-size: 1.1rem; color: rgba(255,255,255,0.95);">
-                        <strong>${itemCount}</strong> ${itemText} been reserved
-                    </p>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #1f2937;">Selection Confirmed</h2>
+                        <p style="margin: 2px 0 0; color: #6b7280; font-size: 0.85rem;">
+                            <strong style="color: #166534;">${itemCount}</strong> ${itemText} reserved for you
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Body -->
-                <div style="padding: 24px;">
-                    <!-- Next Steps -->
-                    <div style="
-                        background: #f8fafc;
-                        border: 1px solid #e2e8f0;
-                        border-radius: 12px;
-                        padding: 20px;
-                        margin-bottom: 16px;
-                    ">
-                        <h4 style="margin: 0 0 14px; color: #334155; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-clipboard-list" style="color: #B87333;"></i>
-                            What happens next?
-                        </h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.8;">
-                            <li>Our sales team will contact you <strong>within 24 hours</strong></li>
-                            <li>Your selected items are now reserved</li>
-                            <li>Payment & shipping will be discussed with your representative</li>
-                        </ul>
+                <div style="padding: 18px 24px; overflow-y: auto; flex: 1;">
+                    <!-- What's Next -->
+                    <div class="info-card">
+                        <i class="fas fa-phone-alt"></i>
+                        <div>
+                            <strong>What happens now?</strong>
+                            <p>Our sales team will contact you within <strong>24-48 hours</strong> to discuss shipping options, payment methods, and finalize your order.</p>
+                        </div>
                     </div>
 
-                    <!-- Access Notice -->
-                    <div style="
-                        background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
-                        border: 1px solid #fcd34d;
-                        border-radius: 12px;
-                        padding: 16px;
-                        display: flex;
-                        align-items: flex-start;
-                        gap: 12px;
-                    ">
-                        <div style="
-                            width: 32px;
-                            height: 32px;
-                            background: #fbbf24;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            flex-shrink: 0;
-                        ">
-                            <i class="fas fa-pause" style="color: white; font-size: 12px;"></i>
-                        </div>
+                    <!-- Items Reserved -->
+                    <div class="info-card">
+                        <i class="fas fa-bookmark"></i>
                         <div>
-                            <p style="margin: 0 0 4px; font-weight: 600; color: #92400e; font-size: 0.9rem;">
-                                Gallery access paused
-                            </p>
-                            <p style="margin: 0; color: #a16207; font-size: 0.85rem; line-height: 1.4;">
-                                Your sales rep will reactivate your access after confirming your order.
-                            </p>
+                            <strong>Your items are reserved</strong>
+                            <p>The ${itemText} you selected ${itemCount === 1 ? 'is' : 'are'} now on hold and won't be available to other clients until we complete your order.</p>
+                        </div>
+                    </div>
+
+                    <!-- Gallery Note -->
+                    <div class="info-card" style="background: #fffbeb; border-color: #fde68a;">
+                        <i class="fas fa-info-circle" style="color: #d97706;"></i>
+                        <div>
+                            <strong style="color: #92400e;">Gallery access</strong>
+                            <p style="color: #78350f;">Your gallery will be temporarily paused. Your sales representative will reactivate it after confirming your order details.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer -->
-                <div style="padding: 0 24px 24px; text-align: center;">
-                    <button onclick="location.href='/'" style="
-                        padding: 14px 32px;
-                        background: #B87333;
-                        color: white;
-                        border: none;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        font-size: 1rem;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 10px;
-                        box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
-                        transition: all 0.2s;
-                        width: 100%;
-                        justify-content: center;
-                    " onmouseover="this.style.background='#A0522D'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#B87333'; this.style.transform='translateY(0)'">
+                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb;">
+                    <button onclick="showFeedbackModal()" style="
+                        padding: 12px 24px; background: linear-gradient(135deg, #B87333, #A0522D); color: white;
+                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
+                        display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+                        box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3); transition: all 0.2s;
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(184, 115, 51, 0.4)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(184, 115, 51, 0.3)';">
                         <i class="fas fa-home"></i> Return to Home
                     </button>
                 </div>
@@ -2613,6 +2556,186 @@ function showSuccessModalWithMessage(result) {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
+
+// ============================================
+// FEEDBACK MODAL SYSTEM
+// ============================================
+
+function showFeedbackModal() {
+    // Get client name from session
+    const session = JSON.parse(localStorage.getItem('sunshineSession') || '{}');
+    const clientName = session.user?.name || 'Client';
+    const clientCode = session.accessCode || '';
+
+    const feedbackHTML = `
+        <style>
+            #feedbackModal * { box-sizing: border-box; }
+            @keyframes feedbackModalSlideIn {
+                from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            #feedbackModal .feedback-type-btn {
+                flex: 1; min-width: 100px; padding: 12px 10px; border: 2px solid #e5e7eb;
+                border-radius: 10px; background: white; cursor: pointer; text-align: center;
+                transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; gap: 6px;
+            }
+            #feedbackModal .feedback-type-btn:hover { border-color: #B87333; background: #faf7f5; }
+            #feedbackModal .feedback-type-btn.selected { border-color: #B87333; background: #faf7f5; }
+            #feedbackModal .feedback-type-btn i { font-size: 20px; color: #9ca3af; transition: color 0.2s; }
+            #feedbackModal .feedback-type-btn.selected i { color: #B87333; }
+            #feedbackModal .feedback-type-btn span { font-size: 0.8rem; color: #6b7280; font-weight: 500; }
+            #feedbackModal .feedback-type-btn.selected span { color: #B87333; }
+        </style>
+        <div id="feedbackModal" style="
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100000;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        ">
+            <div style="
+                background: white; border-radius: 16px; max-width: 440px; width: 100%;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); animation: feedbackModalSlideIn 0.3s ease;
+                overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;
+            ">
+                <!-- Header -->
+                <div style="padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="
+                            width: 40px; height: 40px; background: linear-gradient(135deg, #B87333, #A0522D);
+                            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+                        ">
+                            <i class="fas fa-comment-dots" style="color: white; font-size: 16px;"></i>
+                        </div>
+                        <div>
+                            <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #1f2937;">Share your feedback</h2>
+                            <p style="margin: 2px 0 0; color: #9ca3af; font-size: 0.8rem;">Help us improve your experience</p>
+                        </div>
+                    </div>
+                    <button onclick="skipFeedback()" style="
+                        background: none; border: none; color: #9ca3af; cursor: pointer;
+                        font-size: 1.1rem; padding: 4px; transition: color 0.2s;
+                    " onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+                    <p style="margin: 0 0 14px; font-size: 0.85rem; color: #6b7280;">
+                        What type of feedback would you like to share?
+                    </p>
+
+                    <!-- Feedback Types -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
+                        <button class="feedback-type-btn" data-type="suggestion" onclick="selectFeedbackType(this)">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Suggestion</span>
+                        </button>
+                        <button class="feedback-type-btn" data-type="issue" onclick="selectFeedbackType(this)">
+                            <i class="fas fa-bug"></i>
+                            <span>Issue</span>
+                        </button>
+                        <button class="feedback-type-btn" data-type="question" onclick="selectFeedbackType(this)">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Question</span>
+                        </button>
+                        <button class="feedback-type-btn" data-type="praise" onclick="selectFeedbackType(this)">
+                            <i class="fas fa-star"></i>
+                            <span>Praise</span>
+                        </button>
+                    </div>
+
+                    <!-- Message -->
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; font-weight: 500; color: #374151;">
+                            Your message <span style="color: #9ca3af;">(optional)</span>
+                        </label>
+                        <textarea id="feedbackMessage" style="
+                            width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px;
+                            resize: vertical; font-size: 0.9rem; font-family: inherit; min-height: 140px;
+                            transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa;
+                        " placeholder="Tell us what's on your mind..."
+                        onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.1)'; this.style.background='white';"
+                        onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'; this.style.background='#fafafa';"></textarea>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 10px;">
+                    <button onclick="skipFeedback()" style="
+                        flex: 1; padding: 11px 16px; background: white; color: #6b7280;
+                        border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;
+                        font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
+                    " onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
+                        Skip
+                    </button>
+                    <button onclick="submitFeedback('${clientName}', '${clientCode}')" style="
+                        flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #B87333, #A0522D);
+                        color: white; border: none; border-radius: 8px; cursor: pointer;
+                        font-size: 0.9rem; font-weight: 600; display: flex; align-items: center;
+                        justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(184, 115, 51, 0.3);
+                        transition: all 0.2s;
+                    " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-paper-plane"></i> Send Feedback
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove success modal first
+    const successModal = document.getElementById('successModal');
+    if (successModal) successModal.remove();
+
+    document.body.insertAdjacentHTML('beforeend', feedbackHTML);
+}
+
+window.showFeedbackModal = showFeedbackModal;
+
+// Selected feedback type
+let selectedFeedbackType = null;
+
+function selectFeedbackType(btn) {
+    // Remove selected from all
+    document.querySelectorAll('#feedbackModal .feedback-type-btn').forEach(b => b.classList.remove('selected'));
+    // Add selected to clicked
+    btn.classList.add('selected');
+    selectedFeedbackType = btn.dataset.type;
+}
+window.selectFeedbackType = selectFeedbackType;
+
+function skipFeedback() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.remove();
+    location.href = '/';
+}
+window.skipFeedback = skipFeedback;
+
+async function submitFeedback(clientName, clientCode) {
+    const message = document.getElementById('feedbackMessage')?.value || '';
+    const type = selectedFeedbackType || 'general';
+
+    // Even if no message, still track the type selection
+    try {
+        await fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                clientName,
+                clientCode,
+                type,
+                message,
+                page: 'selection-complete'
+            })
+        });
+    } catch (e) {
+        console.log('Feedback not saved, continuing anyway');
+    }
+
+    // Redirect home
+    location.href = '/';
+}
+window.submitFeedback = submitFeedback;
 
 /**
  * Processar seleção em background (invisível para o cliente)
@@ -2732,12 +2855,20 @@ document.addEventListener('DOMContentLoaded', () => {
 function openOrderSummary() {
     const modal = document.getElementById('orderSummaryModal');
     const body = document.getElementById('orderSummaryBody');
+    const subtitle = document.getElementById('orderSummarySubtitle');
 
-    // Gerar conteúdo ASSÍNCRONO agora
+    // Update subtitle with item count
+    const allItems = CartSystem.state.items || [];
+    const validItems = allItems.filter(item => !item.ghostStatus || item.ghostStatus !== 'ghost');
+    if (subtitle) {
+        subtitle.textContent = `${validItems.length} item${validItems.length !== 1 ? 's' : ''} in your selection`;
+    }
+
+    // Generate content asynchronously
     generateOrderSummary().then(summaryHTML => {
         body.innerHTML = summaryHTML;
 
-        // Ativar funcionalidade de collapse após renderizar
+        // Enable collapse functionality after render
         setTimeout(() => {
             document.querySelectorAll('.summary-category-header').forEach(header => {
                 header.addEventListener('click', function () {
@@ -2747,7 +2878,7 @@ function openOrderSummary() {
         }, 100);
     });
 
-    // Mostrar modal
+    // Show modal
     modal.style.display = 'flex';
 }
 

@@ -83,7 +83,8 @@
       "Bash(cmd /c \"taskkill /F /PID 23348\")",
       "Bash(wmic process:*)",
       "Bash(cmd /c \"tasklist /FI \"\"PID eq 23348\"\"\")",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

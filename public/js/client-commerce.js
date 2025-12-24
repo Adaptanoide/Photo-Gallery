@@ -29,73 +29,16 @@ document.addEventListener('click', function (e) {
     }
 }, true); // TRUE = captura ANTES de qualquer outro evento
 
-// ===== FILTROS DINÂMICOS BASEADOS NO ACESSO =====
+// ===== SETUP FILTERS (NEW UNIVERSAL SYSTEM) =====
 window.setupDynamicFilters = async function () {
-    console.log('🔍 Configurando filtros dinâmicos...');
-
-    try {
-        // Buscar categorias que o cliente tem acesso
-        const data = await window.CategoriesCache.fetch();
-        const categories = data.categories || [];
-
-        // Analisar quais tipos existem nas categorias permitidas
-        const availableTypes = new Set();
-
-        categories.forEach(cat => {
-            const name = (cat.name || '').toLowerCase();
-
-            // Detectar tipos presentes
-            if (name.includes('brindle')) availableTypes.add('brindle');
-            if (name.includes('black') && name.includes('white')) availableTypes.add('black-white');
-            if (name.includes('brown') && name.includes('white')) availableTypes.add('brown-white');
-            if (name.includes('salt') || name.includes('pepper')) availableTypes.add('salt-pepper');
-            if (name.includes('tricolor')) availableTypes.add('tricolor');
-            if (name.includes('grey')) availableTypes.add('brindle-grey');
-            if (name.includes('backbone')) availableTypes.add('brindle-white-backbone');
-            if (name.includes('belly')) availableTypes.add('brindle-white-belly');
-            if (name.includes('exotic')) availableTypes.add('exotic');
-        });
-
-        console.log('✅ Tipos disponíveis:', Array.from(availableTypes));
-
-        // Ocultar radio buttons que não se aplicam
-        document.querySelectorAll('input[name="typePattern"]').forEach(radio => {
-            const value = radio.value;
-            const label = radio.parentElement;
-
-            // Sempre mostrar "All Types"
-            if (value === '' || value === 'all') {
-                label.style.display = '';
-                return;
-            }
-
-            // Mapear valores para tipos detectados
-            const typeMap = {
-                'black-white': 'black-white',
-                'brindle': 'brindle',
-                'brindle-grey': 'brindle-grey',
-                'brindle-white-backbone': 'brindle-white-backbone',
-                'brindle-white-belly': 'brindle-white-belly',
-                'brown-white': 'brown-white',
-                'salt-pepper': 'salt-pepper',
-                'tricolor': 'tricolor'
-            };
-
-            // Mostrar/Ocultar baseado no que existe
-            if (availableTypes.has(typeMap[value])) {
-                label.style.display = '';
-            } else {
-                label.style.display = 'none';
-            }
-        });
-
-        // Contar quantos filtros estão visíveis
-        const visibleFilters = document.querySelectorAll('input[name="typePattern"]:not([value=""]):not([style*="display: none"])').length;
-        console.log(`📊 ${visibleFilters} filtros visíveis de tipo`);
-
-    } catch (error) {
-        console.error('Erro configurando filtros dinâmicos:', error);
-    }
+    console.log('🔍 Setting up universal filters...');
+    // Show ALL main categories in filter - no hiding
+    // The filter will just return empty results if no products match
+    document.querySelectorAll('input[name="categoryFilter"]').forEach(radio => {
+        const label = radio.parentElement;
+        label.style.display = '';
+    });
+    console.log('✅ All category filters visible');
 }
 
 // ===== VERIFICAR DEPENDÊNCIAS =====
@@ -959,167 +902,194 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== SISTEMA DE FILTROS ORIGINAL RESTAURADO =====
 
 window.autoApplyFilters = async function () {
-    console.log('🔍 Aplicando filtros automaticamente...');
+    console.log('🔍 Applying filters...');
 
-    // Limpar fotos antigas
-    const photosGrid = document.getElementById('photosGrid');
-    if (photosGrid) {
-        photosGrid.innerHTML = '';
-    }
-
-    const photosContainer = document.getElementById('photosContainer');
-    if (photosContainer) {
-        photosContainer.style.display = 'none';
-    }
-
-    const categoriesContainer = document.getElementById('categoriesContainer');
-    if (categoriesContainer) {
-        categoriesContainer.style.display = 'grid';
-    }
-
-    const breadcrumbContainer = document.getElementById('breadcrumbContainer');
-    if (breadcrumbContainer) {
-        breadcrumbContainer.style.display = 'none';
-    }
-
-    // Coletar filtros selecionados
+    // Coletar filtros selecionados (NOVO SISTEMA)
     const selectedFilters = {
-        types: [],
-        prices: []
+        category: '',      // Main category (natural-cowhides, accessories, etc.)
+        prices: []         // Price ranges
     };
 
-    // Type/Pattern (funciona tanto para mobile quanto desktop)
-    document.querySelectorAll('input[name="typePattern"]:checked').forEach(cb => {
-        if (cb.value) { // Ignorar "All Types" que tem value=""
-            selectedFilters.types.push(cb.value);
-        }
-    });
+    // Category filter (radio - both mobile and desktop)
+    const categoryRadio = document.querySelector('input[name="categoryFilter"]:checked');
+    const isAllCategoriesSelected = categoryRadio && categoryRadio.value === '';
 
-    // Price ranges - Coletar de AMBOS: mobile (#priceFilters) e desktop (name="priceRange")
-    // Mobile sidebar
-    document.querySelectorAll('#priceFilters input[type="checkbox"]:checked').forEach(cb => {
-        if (!selectedFilters.prices.includes(cb.value)) {
-            selectedFilters.prices.push(cb.value);
-        }
-    });
-    // Desktop dropdown
+    if (categoryRadio && categoryRadio.value) {
+        selectedFilters.category = categoryRadio.value;
+    }
+
+    // Price ranges - Collect from BOTH: mobile (#priceFilters) and desktop (name="priceRange")
     document.querySelectorAll('input[name="priceRange"]:checked').forEach(cb => {
         if (!selectedFilters.prices.includes(cb.value)) {
             selectedFilters.prices.push(cb.value);
         }
     });
 
-    console.log('📌 Filtros selecionados:', selectedFilters);
+    console.log('📌 Selected filters:', selectedFilters);
+    console.log('📌 All Categories selected:', isAllCategoriesSelected);
 
-    try {
-        // Buscar todas as categorias
-        const data = await window.CategoriesCache.fetch();
-        let filteredCategories = data.categories || [];
+    // Check if any filter is active
+    // "All Categories" counts as an active filter when explicitly selected
+    const hasActiveFilters = selectedFilters.category || selectedFilters.prices.length > 0;
 
-        // Aplicar filtros de tipo
-        if (selectedFilters.types.length > 0) {
-            filteredCategories = filteredCategories.filter(category => {
-                const catName = (category.name || '').toLowerCase();
-                return selectedFilters.types.some(type => {
-                    if (type === 'salt-pepper') {
-                        return catName.includes('salt') || catName.includes('pepper');
-                    }
-                    if (type === 'black-white') {
-                        return catName.includes('black') && catName.includes('white');
-                    }
-                    if (type === 'brown-white') {
-                        // Procurar por "brown & white" OU "brown and white"
-                        return (catName.includes('brown & white') || catName.includes('brown and white'));
-                    }
-                    if (type === 'light tones') {
-                        return catName.includes('light tones') || catName.includes('light');
-                    }
-                    if (type === 'dark tones') {
-                        return catName.includes('dark tones') || catName.includes('dark');
-                    }
-                    // Para todos os outros, buscar exatamente como está
-                    return catName.includes(type);
-                });
-            });
+    // Only return to homepage if NO filters AND "All Categories" was NOT explicitly clicked
+    // This function is called when user interacts with filters, so we show results
+    if (!hasActiveFilters && !isAllCategoriesSelected) {
+        // No filters at all - show homepage
+        console.log('📌 No filters active - showing categories');
+        window.showCategories();
+        return;
+    }
+
+    // Get MAIN_CATEGORIES from client-catalog.js
+    const MAIN_CATEGORIES = window.MAIN_CATEGORIES;
+    if (!MAIN_CATEGORIES) {
+        console.error('❌ MAIN_CATEGORIES not found');
+        window.showCategories();
+        return;
+    }
+
+    // Collect subcategories to display
+    let subcategoriesToShow = [];
+
+    // If category filter is active, show subcategories of that main category
+    if (selectedFilters.category) {
+        const mainCat = MAIN_CATEGORIES[selectedFilters.category];
+        if (mainCat && mainCat.subcategories) {
+            for (const [subKey, sub] of Object.entries(mainCat.subcategories)) {
+                if (!sub.hidden) {
+                    subcategoriesToShow.push({
+                        mainKey: selectedFilters.category,
+                        subKey: subKey,
+                        ...sub
+                    });
+                }
+            }
         }
+    } else {
+        // No category filter - show all subcategories from all main categories
+        for (const [mainKey, mainCat] of Object.entries(MAIN_CATEGORIES)) {
+            if (mainCat.subcategories) {
+                for (const [subKey, sub] of Object.entries(mainCat.subcategories)) {
+                    if (!sub.hidden) {
+                        subcategoriesToShow.push({
+                            mainKey: mainKey,
+                            subKey: subKey,
+                            ...sub
+                        });
+                    }
+                }
+            }
+        }
+    }
 
-        // Aplicar filtros de preço (comparar em USD - valores do banco)
-        if (selectedFilters.prices.length > 0 && window.shouldShowPrices()) {
-            filteredCategories = filteredCategories.filter(category => {
-                // Usar minPrice, ou price, ou basePrice (em USD)
-                const categoryPrice = category.minPrice || category.price || category.basePrice || 0;
+    // Apply price filter if needed (this would need price data from backend)
+    // For now, we show all subcategories since thumbnails don't have price info directly
+    if (selectedFilters.prices.length > 0) {
+        console.log('💰 Price filter active - filtering by price range');
+        // Price filtering will happen at the backend category level
+        // We need to fetch price data first
+        try {
+            const data = await window.CategoriesCache.fetch();
+            const categoryPrices = {};
 
-                if (categoryPrice === 0) return false; // Ignorar categorias sem preço
+            // Build price map from backend data
+            (data.categories || []).forEach(cat => {
+                const price = cat.minPrice || cat.price || cat.basePrice || 0;
+                categoryPrices[cat.name.toLowerCase()] = price;
+            });
+
+            // Filter subcategories by price
+            subcategoriesToShow = subcategoriesToShow.filter(sub => {
+                const subName = (sub.name || '').toLowerCase();
+                const subFolder = (sub.folderPath || '').toLowerCase();
+
+                // Find matching price from backend
+                let matchedPrice = 0;
+                for (const [catName, price] of Object.entries(categoryPrices)) {
+                    if (catName.includes(subName) || subName.includes(catName) ||
+                        catName.includes(subFolder) || subFolder.includes(catName)) {
+                        matchedPrice = price;
+                        break;
+                    }
+                }
+
+                if (matchedPrice === 0) return true; // Keep if no price data
 
                 return selectedFilters.prices.some(range => {
                     const [min, max] = range.split('-').map(Number);
-                    // Comparar preço da categoria (USD) com faixa selecionada (USD)
-                    return categoryPrice >= min && categoryPrice <= (max || 999999);
+                    return matchedPrice >= min && matchedPrice <= (max || 999999);
                 });
             });
+        } catch (error) {
+            console.warn('Could not apply price filter:', error);
         }
-
-        console.log(`✅ ${filteredCategories.length} categorias após filtros`);
-        displayFilteredCategories(filteredCategories);
-
-    } catch (error) {
-        console.error('Erro ao aplicar filtros:', error);
     }
+
+    console.log(`✅ ${subcategoriesToShow.length} subcategories to show`);
+    displayFilteredSubcategories(subcategoriesToShow, selectedFilters);
 }
 
-// ===== ESCONDER FILTROS SEM PERMISSÃO =====
+// ===== UPDATE FILTER VISIBILITY BASED ON CLIENT ACCESS =====
 window.updateFilterVisibility = async function () {
-    console.log('🔒 Verificando filtros disponíveis para o cliente...');
-
-    try {
-        // Buscar categorias permitidas - JÁ VEM FILTRADAS DO BACKEND!
-        const data = await window.CategoriesCache.fetch();
-        const allowedCategories = data.categories || [];
-
-        // Verificar quais tipos existem
-        const availableTypes = new Set();
-
-        allowedCategories.forEach(category => {
-            const catName = (category.name || '').toLowerCase();
-
-            if (catName.includes('brindle')) availableTypes.add('brindle');
-            if (catName.includes('salt') || catName.includes('pepper')) availableTypes.add('salt-pepper');
-            if (catName.includes('black') && catName.includes('white')) availableTypes.add('black-white');
-            if (catName.includes('tricolor')) availableTypes.add('tricolor');
-            if (catName.includes('exotic')) availableTypes.add('exotic');
-        });
-
-        console.log('✅ Tipos disponíveis para este cliente:', Array.from(availableTypes));
-
-        // Por enquanto, não esconder nada - apenas logar
-        // Podemos implementar isso depois se necessário
-
-    } catch (error) {
-        console.error('Erro ao verificar filtros:', error);
-    }
+    console.log('🔒 Checking available filters for client...');
+    // Just call setupDynamicFilters which handles everything
+    await window.setupDynamicFilters();
 }
 
-window.displayFilteredCategories = function (categories) {
+/**
+ * Display filtered subcategories with thumbnails
+ * Uses MAIN_CATEGORIES structure for proper card rendering
+ */
+window.displayFilteredSubcategories = function (subcategories, filters) {
     const container = document.getElementById('categoriesContainer');
     if (!container) return;
 
-    // Mostrar breadcrumb
-    document.getElementById('breadcrumbContainer').style.display = 'block';
-    document.getElementById('backNavigation').style.display = 'none';
+    // Hide photos container
+    const photosContainer = document.getElementById('photosContainer');
+    if (photosContainer) {
+        photosContainer.style.display = 'none';
+    }
 
-    // Atualizar breadcrumb
+    // Hide stock container if exists
+    const catalogContent = document.getElementById('catalogContent');
+    if (catalogContent) {
+        catalogContent.style.display = 'none';
+    }
+
+    // Show breadcrumb
+    const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+    if (breadcrumbContainer) {
+        breadcrumbContainer.style.display = 'block';
+    }
+
+    const backNav = document.getElementById('backNavigation');
+    if (backNav) {
+        backNav.style.display = 'none';
+    }
+
+    // Get filter label for breadcrumb
+    let filterLabel = 'Filtered Results';
+    if (filters.category) {
+        const MAIN_CATEGORIES = window.MAIN_CATEGORIES;
+        if (MAIN_CATEGORIES && MAIN_CATEGORIES[filters.category]) {
+            filterLabel = MAIN_CATEGORIES[filters.category].name;
+        }
+    }
+
+    // Update breadcrumb
     const breadcrumbPath = document.getElementById('breadcrumbPath');
     if (breadcrumbPath) {
         breadcrumbPath.innerHTML = `
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-            <span class="breadcrumb-item current">Filtered Results (${categories.length})</span>
+            <span class="breadcrumb-item current">${filterLabel} (${subcategories.length})</span>
         `;
     }
 
-    // Limpar container
+    // Clear container
     container.innerHTML = '';
 
-    if (categories.length === 0) {
+    if (subcategories.length === 0) {
         container.innerHTML = `
             <div class="no-results-container">
                 <div class="no-results-icon">
@@ -1127,78 +1097,58 @@ window.displayFilteredCategories = function (categories) {
                 </div>
                 <h3 class="no-results-title">No categories match your filters</h3>
                 <p class="no-results-text">Try adjusting your filter criteria or clear all filters to see all categories</p>
-                <button onclick="clearAllFilters(); window.showCategories();" class="btn-clear-filters">
+                <button onclick="clearAllFilters();" class="btn-clear-filters">
                     <i class="fas fa-times"></i> Clear Filters
                 </button>
             </div>
         `;
+        container.style.display = 'grid';
         return;
     }
 
-    // Renderizar categorias filtradas - SEMPRE COMO CARDS COM DESCRIÇÃO
-    categories.forEach(category => {
-        const categoryCard = document.createElement('div');
-        categoryCard.className = 'category-card';
-        categoryCard.onclick = () => {
-            // Navegar para a categoria
-            const categoryId = category.driveId || category.id;
-            const categoryName = category.displayName || category.name;
+    // Use processCategoryThumbnail from client-catalog.js
+    const processThumbnail = window.processCategoryThumbnail || ((url) => url);
 
-            // Construir path navegável
-            if (categoryName.includes(' → ')) {
-                const parts = categoryName.split(' → ');
-                window.navigationState.currentPath = parts.map((part, index) => ({
-                    id: index === 0 ? categoryId.split('/')[0] : categoryId,
-                    name: part.trim()
-                }));
-            } else {
-                window.navigationState.currentPath = [{ id: categoryId, name: categoryName }];
-            }
+    // Render subcategories with thumbnails (same style as homepage)
+    let html = '';
+    for (const sub of subcategories) {
+        const hasThumbnail = sub.thumbnail ? true : false;
+        const thumbnailUrl = processThumbnail(sub.thumbnail);
+        const thumbnailStyle = hasThumbnail ? `style="background-image: url('${thumbnailUrl}');"` : '';
 
-            window.navigationState.currentFolderId = categoryId;
-            window.updateBreadcrumb();
-            window.loadFolderContents(categoryId);
-        };
-
-        const displayName = category.displayName || category.name;
-        const cleanName = displayName.split(' → ').pop();
-
-        // Gerar descrição baseada no nome da categoria
-        const description = generateCategoryDescription(cleanName);
-
-        // Determinar preço a mostrar
-        let priceHTML = '';
-        if (window.shouldShowPrices && window.shouldShowPrices()) {
-            // Verificar se categoria tem dados de preço
-            if (category.minPrice || category.maxPrice || category.price) {
-                const minP = category.minPrice || category.price;
-                const maxP = category.maxPrice || category.price;
-                const priceStr = minP === maxP
-                    ? (window.CurrencyManager ? CurrencyManager.format(minP) : `$${minP.toFixed(2)}`)
-                    : (window.CurrencyManager ? `${CurrencyManager.format(minP)} - ${CurrencyManager.format(maxP)}` : `$${minP.toFixed(2)} - $${maxP.toFixed(2)}`);
-                priceHTML = `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${priceStr}</span>`;
-            } else {
-                // Sem dados de preço, mostrar contact
-                priceHTML = '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>';
-            }
+        if (hasThumbnail) {
+            // Card with thumbnail - full background image style
+            html += `
+                <div class="subcategory-card folder-card has-thumbnail" ${thumbnailStyle}
+                     onclick="window.openSubcategory('${sub.mainKey}', '${sub.subKey}')">
+                    <div class="card-overlay">
+                        <h3>${sub.name}</h3>
+                        <p>${sub.description || ''}</p>
+                    </div>
+                </div>
+            `;
         } else {
-            // Cliente não pode ver preços
-            priceHTML = '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>';
+            // Regular card without thumbnail
+            html += `
+                <div class="subcategory-card folder-card no-thumbnail"
+                     onclick="window.openSubcategory('${sub.mainKey}', '${sub.subKey}')">
+                    <div class="card-content">
+                        <h3>${sub.name}</h3>
+                        <p>${sub.description || ''}</p>
+                    </div>
+                </div>
+            `;
         }
+    }
 
-        categoryCard.innerHTML = `
-            <h3>${cleanName}</h3>
-            <p>${description}</p>
-            <div class="folder-stats">
-                ${priceHTML}
-            </div>
-        `;
-
-        container.appendChild(categoryCard);
-    });
-
+    container.innerHTML = html;
     container.style.display = 'grid';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
 }
+
+// Keep old function for backwards compatibility
+window.displayFilteredCategories = window.displayFilteredSubcategories;
 
 // Adicionar função auxiliar para gerar descrições
 window.generateCategoryDescription = function (categoryName) {
@@ -1263,42 +1213,27 @@ window.applyFilters = async function () {
 }
 
 window.clearAllFilters = function () {
-    // Resetar o objeto de filtros ativos
-    window.activeFilters = {
-        type: [],
-        tone: [],
-        size: [],
-        price: { min: null, max: null }
-    };
+    // Reset filter state
+    window.filterState = window.filterState || {};
+    window.filterState.inStockOnly = false;
 
-    // Desmarcar radio buttons
-    document.querySelectorAll('input[name="typePattern"]').forEach(rb => {
-        rb.checked = false;
+    // Reset category filter - mark "All Categories" as selected
+    document.querySelectorAll('input[name="categoryFilter"]').forEach(rb => {
+        rb.checked = rb.value === '';
     });
 
-    // Marcar "All Types" como selecionado
-    const allTypesRadio = document.querySelector('input[name="typePattern"][value=""]');
-    if (allTypesRadio) {
-        allTypesRadio.checked = true;
-    }
-
-    // Desmarcar checkboxes do sidebar (mobile)
-    document.querySelectorAll('#filterSidebar input[type="checkbox"]').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-
-    // Desmarcar checkboxes do dropdown (desktop)
+    // Uncheck all price range checkboxes (both mobile and desktop)
     document.querySelectorAll('input[name="priceRange"]').forEach(checkbox => {
         checkbox.checked = false;
     });
 
-    // Limpar campos de preço
-    const priceMin = document.getElementById('priceMin');
-    const priceMax = document.getElementById('priceMax');
-    if (priceMin) priceMin.value = '';
-    if (priceMax) priceMax.value = '';
+    // Uncheck in-stock filter (both mobile and desktop)
+    const inStockDesktop = document.getElementById('inStockFilter');
+    const inStockMobile = document.getElementById('inStockFilterMobile');
+    if (inStockDesktop) inStockDesktop.checked = false;
+    if (inStockMobile) inStockMobile.checked = false;
 
-    // NOVO: Fechar o dropdown após limpar
+    // Close the dropdown after clearing
     const dropdown = document.getElementById('filtersDropdown');
     const button = document.querySelector('.header-filters-btn');
     if (dropdown) {
@@ -1308,7 +1243,7 @@ window.clearAllFilters = function () {
         button.classList.remove('active');
     }
 
-    // Voltar para categorias principais
+    // Return to main categories
     window.showCategories();
 }
 

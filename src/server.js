@@ -220,6 +220,7 @@ app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/currency', currencyRoutes);
 app.use('/api/import', require('./routes/data-import'));
 app.use('/api/leads', require('./routes/leads'));
+app.use('/api/feedback', require('./routes/feedback'));
 
 // Servir página Leads CRM
 app.get('/leads', (req, res) => {

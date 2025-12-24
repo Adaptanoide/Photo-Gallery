@@ -73,81 +73,36 @@
                 </button>
 
                 <div id="filtersDropdown" class="filters-dropdown-content">
+                    <!-- Category Filter -->
                     <div class="dropdown-section">
-                        <h4>Type/Pattern</h4>
+                        <h4>Category</h4>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="" checked onchange="applyFilters()">
-                            <span>All Types</span>
+                            <input type="radio" name="categoryFilter" value="" checked onchange="applyFilters()">
+                            <span>All Categories</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="black-white" onchange="applyFilters()">
-                            <span>Black & White</span>
+                            <input type="radio" name="categoryFilter" value="natural-cowhides" onchange="applyFilters()">
+                            <span>Natural Cowhides</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="brindle" onchange="applyFilters()">
-                            <span>Brindle</span>
+                            <input type="radio" name="categoryFilter" value="specialty-cowhides" onchange="applyFilters()">
+                            <span>Specialty Cowhides</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="brindle grey" onchange="applyFilters()">
-                            <span>Brindle Grey</span>
+                            <input type="radio" name="categoryFilter" value="small-accent-hides" onchange="applyFilters()">
+                            <span>Small Accent Hides</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="brindle white backbone"
-                                onchange="applyFilters()">
-                            <span>Brindle White Backbone</span>
+                            <input type="radio" name="categoryFilter" value="patchwork-rugs" onchange="applyFilters()">
+                            <span>Patchwork Rugs</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="brindle white belly"
-                                onchange="applyFilters()">
-                            <span>Brindle White Belly</span>
+                            <input type="radio" name="categoryFilter" value="accessories" onchange="applyFilters()">
+                            <span>Accessories</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="brown-white" onchange="applyFilters()">
-                            <span>Brown & White</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="champagne" onchange="applyFilters()">
-                            <span>Champagne</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="dark tones" onchange="applyFilters()">
-                            <span>Dark Tones</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="exotic" onchange="applyFilters()">
-                            <span>Exotic</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="grey beige" onchange="applyFilters()">
-                            <span>Grey Beige</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="hereford" onchange="applyFilters()">
-                            <span>Hereford</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="light tones" onchange="applyFilters()">
-                            <span>Light Tones</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="natural white" onchange="applyFilters()">
-                            <span>Natural White</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="palomino" onchange="applyFilters()">
-                            <span>Palomino</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="salt-pepper" onchange="applyFilters()">
-                            <span>Salt & Pepper</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="taupe" onchange="applyFilters()">
-                            <span>Taupe</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="radio" name="typePattern" value="tricolor" onchange="applyFilters()">
-                            <span>Tricolor</span>
+                            <input type="radio" name="categoryFilter" value="furniture" onchange="applyFilters()">
+                            <span>Furniture</span>
                         </label>
                     </div>
 
@@ -163,15 +118,11 @@
                             <span>$50 - $100</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="checkbox" name="priceRange" value="100-150" onchange="applyFilters()">
-                            <span>$100 - $150</span>
+                            <input type="checkbox" name="priceRange" value="100-200" onchange="applyFilters()">
+                            <span>$100 - $200</span>
                         </label>
                         <label class="dropdown-checkbox">
-                            <input type="checkbox" name="priceRange" value="150-200" onchange="applyFilters()">
-                            <span>$150 - $200</span>
-                        </label>
-                        <label class="dropdown-checkbox">
-                            <input type="checkbox" name="priceRange" value="200-999" onchange="applyFilters()">
+                            <input type="checkbox" name="priceRange" value="200-9999" onchange="applyFilters()">
                             <span>Over $200</span>
                         </label>
                     </div>
@@ -206,6 +157,12 @@
                 <!-- Botão de Filtros (só mobile) -->
                 <button onclick="toggleFilters()" class="mobile-filter-btn">
                     <i class="fas fa-filter"></i>
+                </button>
+
+                <!-- Botão de Chat (só mobile) -->
+                <button onclick="window.chatManager?.toggleChat()" class="mobile-chat-btn" id="mobileChatBtn">
+                    <i class="fas fa-comment-dots"></i>
+                    <span class="mobile-chat-badge" id="mobileChatBadge">0</span>
                 </button>
 
                 <button onclick="openCartSidebar()" class="client-cart-btn">
@@ -495,7 +452,7 @@
                     <i class="fas fa-filter"></i>
                     <span>Filters</span>
                 </h3>
-                <button class="filter-close-btn" onclick="toggleFilters()" style="display:none;">
+                <button class="filter-close-btn" onclick="toggleFilters()">
                     <i class="fas fa-times"></i>
                 </button>
                 <button onclick="clearAllFilters()" class="btn-clear-filters">
@@ -505,59 +462,64 @@
 
             <!-- Conteúdo dos Filtros -->
             <div class="filter-content">
-                <!-- 1º: Type/Pattern -->
+                <!-- Category Filter -->
                 <div class="filter-section">
-                    <h4>Type/Pattern</h4>
-                    <div class="filter-options" id="typeFilters">
+                    <h4>Category</h4>
+                    <div class="filter-options" id="categoryFilters">
                         <label class="filter-checkbox">
-                            <input type="radio" name="typePattern" value="brindle" onchange="applyFilters()">
-                            <span>Brindle</span>
+                            <input type="radio" name="categoryFilter" value="" checked onchange="applyFilters()">
+                            <span>All Categories</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="radio" name="typePattern" value="salt-pepper" onchange="applyFilters()">
-                            <span>Salt & Pepper</span>
+                            <input type="radio" name="categoryFilter" value="natural-cowhides" onchange="applyFilters()">
+                            <span>Natural Cowhides</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="radio" name="typePattern" value="black-white" onchange="applyFilters()">
-                            <span>Black & White</span>
+                            <input type="radio" name="categoryFilter" value="specialty-cowhides" onchange="applyFilters()">
+                            <span>Specialty Cowhides</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="radio" name="typePattern" value="tricolor" onchange="applyFilters()">
-                            <span>Tricolor</span>
+                            <input type="radio" name="categoryFilter" value="small-accent-hides" onchange="applyFilters()">
+                            <span>Small Accent Hides</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="radio" name="typePattern" value="exotic" onchange="applyFilters()">
-                            <span>Exotic</span>
+                            <input type="radio" name="categoryFilter" value="patchwork-rugs" onchange="applyFilters()">
+                            <span>Patchwork Rugs</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="radio" name="categoryFilter" value="accessories" onchange="applyFilters()">
+                            <span>Accessories</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="radio" name="categoryFilter" value="furniture" onchange="applyFilters()">
+                            <span>Furniture</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- 3º: Price Range -->
+                <!-- Price Range Filter -->
                 <div class="filter-section">
                     <h4>Price Range</h4>
                     <div class="filter-options" id="priceFilters">
                         <label class="filter-checkbox">
-                            <input type="checkbox" value="0-50" onchange="applyFilters()">
+                            <input type="checkbox" name="priceRange" value="0-50" onchange="applyFilters()">
                             <span>Under $50</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="checkbox" value="50-100" onchange="applyFilters()">
+                            <input type="checkbox" name="priceRange" value="50-100" onchange="applyFilters()">
                             <span>$50 - $100</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="checkbox" value="100-150" onchange="applyFilters()">
-                            <span>$100 - $150</span>
+                            <input type="checkbox" name="priceRange" value="100-200" onchange="applyFilters()">
+                            <span>$100 - $200</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="checkbox" value="150-200" onchange="applyFilters()">
-                            <span>$150 - $200</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" value="200-999" onchange="applyFilters()">
+                            <input type="checkbox" name="priceRange" value="200-9999" onchange="applyFilters()">
                             <span>Over $200</span>
                         </label>
                     </div>
                 </div>
+
             </div>
 
             <!-- Botão Apply & Close para mobile -->
@@ -677,25 +639,34 @@
         </div>
     </div>
 
-    <!-- Order Summary Modal -->
+    <!-- Order Summary Modal - Clean Design -->
     <div id="orderSummaryModal" class="order-summary-modal" style="display: none;">
         <div class="order-summary-overlay" onclick="closeOrderSummary()"></div>
         <div class="order-summary-content">
             <div class="order-summary-header">
-                <h2>
-                    <i class="fas fa-receipt"></i>
-                    Order Summary
-                </h2>
+                <div class="order-summary-header-left">
+                    <div class="order-summary-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="order-summary-title-group">
+                        <h2>Order Summary</h2>
+                        <span class="order-summary-subtitle" id="orderSummarySubtitle">Review your selection</span>
+                    </div>
+                </div>
                 <button class="order-summary-close" onclick="closeOrderSummary()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
             <div class="order-summary-body" id="orderSummaryBody">
-                <!-- Conteúdo será preenchido via JavaScript -->
+                <!-- Content filled via JavaScript -->
             </div>
 
             <div class="order-summary-footer">
+                <div class="order-summary-footer-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Click "Complete Reservation" to finalize</span>
+                </div>
                 <button class="btn-summary-close" onclick="closeOrderSummary()">
                     <i class="fas fa-times"></i> Close
                 </button>

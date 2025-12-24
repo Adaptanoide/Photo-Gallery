@@ -37,7 +37,74 @@ class AdminClients {
         this.setupEventListeners();
         this.loadInitialData();
         this.startDateUpdateTimer();
+        this.initClientActionMenuHandler();
         console.log('✅ Client Management initialized');
+    }
+
+    // ===== CLIENT ACTION MENU DROPDOWN =====
+    toggleClientActionMenu(event) {
+        event.stopPropagation();
+        const trigger = event.currentTarget;
+        const container = trigger.closest('.client-action-menu-container');
+        const dropdown = container.querySelector('.client-action-menu-dropdown');
+        const parentRow = container.closest('tr');
+
+        // Close all other open menus
+        document.querySelectorAll('.client-action-menu-dropdown.open').forEach(menu => {
+            if (menu !== dropdown) {
+                menu.classList.remove('open');
+                const row = menu.closest('tr');
+                if (row) row.classList.remove('dropdown-active');
+            }
+        });
+
+        // Toggle this menu
+        const isOpening = !dropdown.classList.contains('open');
+        dropdown.classList.toggle('open');
+
+        // Add/remove active class to parent row for z-index
+        if (parentRow) {
+            if (isOpening) {
+                parentRow.classList.add('dropdown-active');
+            } else {
+                parentRow.classList.remove('dropdown-active');
+            }
+        }
+
+        if (dropdown.classList.contains('open')) {
+            this.positionClientActionDropdown(container, dropdown);
+        }
+    }
+
+    positionClientActionDropdown(container, dropdown) {
+        const containerRect = container.getBoundingClientRect();
+        const dropdownHeight = dropdown.offsetHeight || 250;
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - containerRect.bottom;
+        const spaceAbove = containerRect.top;
+
+        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+            dropdown.classList.add('open-up');
+        } else {
+            dropdown.classList.remove('open-up');
+        }
+    }
+
+    closeClientActionMenu(event) {
+        if (event) event.stopPropagation();
+        document.querySelectorAll('.client-action-menu-dropdown.open').forEach(menu => {
+            menu.classList.remove('open');
+            const row = menu.closest('tr');
+            if (row) row.classList.remove('dropdown-active');
+        });
+    }
+
+    initClientActionMenuHandler() {
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.client-action-menu-container')) {
+                this.closeClientActionMenu();
+            }
+        });
     }
 
     // Função para mostrar modal de confirmação customizado
@@ -964,7 +1031,9 @@ class AdminClients {
             let cartBadge = '';
             if (client.cartInfo && client.cartInfo.itemCount > 0) {
                 cartBadge = `
-                    <div class="cart-indicator" title="${client.cartInfo.itemCount} items in cart">
+                    <div class="cart-indicator" title="${client.cartInfo.itemCount} items in cart"
+                         onclick="adminClients.openCartControl('${client._id || client.code}')"
+                         style="cursor: pointer;">
                         <i class="fas fa-clock"></i>
                         <span class="cart-badge-count">${client.cartInfo.itemCount}</span>
                     </div>
@@ -1007,23 +1076,34 @@ class AdminClients {
                     </td>
                     <td class="client-actions-cell">
                         <div class="action-buttons">
-                            <button class="special-btn-icon cart" onclick="adminClients.openCartControl('${client._id || client.code}')" title="Cart Control">
-                                <i class="fas fa-shopping-cart"></i>
-                            </button>
-                            <button class="special-btn-icon settings" onclick="adminClients.openSettingsModal('${client._id || client.code}')" title="Permissions">
-                                <i class="fas fa-key"></i>
-                            </button>
-                            <button class="special-btn-icon edit" onclick="adminClients.editClient('${client._id || client.code}')" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="special-btn-icon ${client.isActive ? 'deactivate' : 'activate'}" 
-                                    onclick="adminClients.toggleClientStatus('${client._id || client.code}')" 
-                                    title="${client.isActive ? 'Deactivate' : 'Activate'}">
-                                <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
-                            </button>
-                            <button class="special-btn-icon delete" onclick="adminClients.deleteClient('${client._id || client.code}')" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="client-action-menu-container">
+                                <button class="client-action-menu-trigger" onclick="adminClients.toggleClientActionMenu(event)">
+                                    <span>Actions</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="client-action-menu-dropdown">
+                                    <button class="client-action-menu-item action-cart" onclick="adminClients.openCartControl('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
+                                        <i class="fas fa-shopping-cart"></i>
+                                        <span>Cart Control</span>
+                                    </button>
+                                    <button class="client-action-menu-item action-permissions" onclick="adminClients.openSettingsModal('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
+                                        <i class="fas fa-key"></i>
+                                        <span>Permissions</span>
+                                    </button>
+                                    <button class="client-action-menu-item action-edit" onclick="adminClients.editClient('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Edit Client</span>
+                                    </button>
+                                    <button class="client-action-menu-item action-toggle" onclick="adminClients.toggleClientStatus('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
+                                        <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
+                                        <span>${client.isActive ? 'Deactivate' : 'Activate'}</span>
+                                    </button>
+                                    <button class="client-action-menu-item action-delete" onclick="adminClients.deleteClient('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
+                                        <i class="fas fa-trash"></i>
+                                        <span>Delete</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -1848,7 +1928,7 @@ class AdminClients {
                 cartContainer.innerHTML = `
                     <div class="cart-empty">
                         <i class="fas fa-shopping-cart" style="font-size: 2rem; color: var(--text-muted);"></i>
-                        <p style="margin-top: 0.5rem;">No items in cart</p>
+                        <p style="margin-top: 0.5rem;">Empty cart</p>
                     </div>
                 `;
                 return;
@@ -2019,7 +2099,7 @@ class AdminClients {
                 document.getElementById('cartLastActivity').textContent = 'Empty cart';
                 document.getElementById('cartTimeControl').innerHTML = '<span class="empty-msg">No cart to manage</span>';
                 document.getElementById('cartCategoryNav').innerHTML = '';
-                document.getElementById('cartCategoriesList').innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-cart"></i><p>No items in cart</p></div>';
+                document.getElementById('cartCategoriesList').innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-cart"></i><p>Empty cart</p></div>';
                 document.getElementById('cartTotalItems').textContent = '0 items';
                 document.getElementById('cartTotalValue').textContent = '= $0';
                 return;

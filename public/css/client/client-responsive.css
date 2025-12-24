@@ -361,9 +361,19 @@
     }
 
     .breadcrumb-item.back-btn {
-        padding: 0.4rem 0.5rem;
-        display: none !important;
-        /* NOVO - Esconder Home no mobile */
+        padding: 0.5rem 0.8rem;
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        background: var(--gold-primary, #B87333) !important;
+        color: white !important;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb-item.back-btn i {
+        color: white !important;
     }
 
     .breadcrumb-separator {
@@ -630,7 +640,7 @@
     /* Rate rules - sem bordas extras */
     #priceProgressContainer {
         position: fixed !important;
-        top: 130px !important;
+        top: 120px !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 84;
@@ -649,7 +659,7 @@
         background: white;
         border-bottom: 1px solid #e0e0e0;
         position: fixed !important;
-        top: 140px !important;
+        top: 130px !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 83;
@@ -1567,5 +1577,505 @@
         background: #252525 !important;
         border-top-color: #3d3d3d !important;
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
+    }
+}
+
+/* ============================================
+   MOBILE FIXES - December 2025
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* === FIX 1: Header buttons distribution === */
+    .client-luxury-header .container {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+        flex-direction: row-reverse !important;
+    }
+
+    /* Hide desktop-only elements */
+    .header-filters-dropdown,
+    #simpleNav,
+    .search-container,
+    .header-welcome-text {
+        display: none !important;
+    }
+
+    /* Mobile header buttons row */
+    .client-header-logo {
+        order: 1 !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    .mobile-filter-btn {
+        order: 2 !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    .mobile-currency-btn {
+        order: 3 !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    .client-cart-btn {
+        order: 4 !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    .mobile-profile-btn {
+        order: 5 !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* === FIX 2: Home button correct colors === */
+    .client-header-logo {
+        background: var(--gold-primary, #B87333) !important;
+        color: white !important;
+        border: none !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+    }
+
+    .client-header-logo::after {
+        color: white !important;
+    }
+
+    /* All header buttons uniform size and style */
+    .mobile-filter-btn,
+    .mobile-currency-btn,
+    .client-cart-btn,
+    .mobile-profile-btn {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.1rem !important;
+        background: white !important;
+        color: #B87333 !important;
+        border: 1.5px solid #B87333 !important;
+    }
+
+    .mobile-filter-btn:hover,
+    .mobile-currency-btn:hover,
+    .client-cart-btn:hover,
+    .mobile-profile-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    /* === FIX 3: Welcome title and homepage padding === */
+    .catalog-homepage {
+        padding-top: 70px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .homepage-header {
+        margin-bottom: 20px !important;
+        padding: 10px !important;
+    }
+
+    .homepage-header h1 {
+        font-size: 1.5rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .homepage-header p {
+        font-size: 0.95rem !important;
+    }
+
+    /* Homepage grid single column on mobile */
+    .homepage-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 0 10px !important;
+    }
+
+    /* === FIX 4: Chat button in header on mobile === */
+    .category-sidebar {
+        z-index: 9990 !important;
+    }
+
+    /* Hide floating chat button on mobile - use header button instead */
+    .chat-float-button,
+    #chatFloatBtn {
+        display: none !important;
+    }
+
+    /* Mobile header chat button */
+    .mobile-chat-btn {
+        order: 3 !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.1rem !important;
+        background: white !important;
+        color: #B87333 !important;
+        border: 1.5px solid #B87333 !important;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .mobile-chat-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    /* Badge on mobile chat button */
+    .mobile-chat-btn .mobile-chat-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #dc3545;
+        color: white;
+        font-size: 0.65rem;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .mobile-chat-btn.has-unread .mobile-chat-badge {
+        display: flex;
+    }
+
+    /* Reorder header buttons with chat */
+    .mobile-currency-btn {
+        order: 4 !important;
+    }
+
+    .client-cart-btn {
+        order: 5 !important;
+    }
+
+    .mobile-profile-btn {
+        order: 6 !important;
+    }
+
+    /* === FIX 5: Filter sidebar full screen and not cut === */
+    .filter-sidebar {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        padding-bottom: 100px !important;
+    }
+
+    .filter-sidebar.active {
+        left: 0 !important;
+    }
+
+    .filter-container {
+        max-height: calc(100vh - 160px) !important;
+        max-height: calc(100dvh - 160px) !important;
+        overflow-y: auto !important;
+        padding-bottom: 20px !important;
+    }
+
+    /* Filter header - white background on mobile */
+    .filter-header {
+        background: #ffffff !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        padding: 12px 15px !important;
+    }
+
+    .filter-header h3 {
+        color: #1f2937 !important;
+    }
+
+    .filter-header h3 i {
+        color: #B87333 !important;
+    }
+
+    /* Show close button on mobile */
+    .filter-close-btn {
+        display: flex !important;
+        order: 3;
+    }
+
+    /* Ensure Apply button is always visible */
+    .filter-actions-mobile {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding: 15px !important;
+        padding-bottom: calc(15px + env(safe-area-inset-bottom)) !important;
+        background: white !important;
+        border-top: 1px solid #e0e0e0 !important;
+        z-index: 10005 !important;
+    }
+
+    /* === FIX 6: Spacing adjustments === */
+    .subcategories-header {
+        padding: 10px 15px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .subcategories-header h2 {
+        font-size: 1.2rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    .subcategories-grid {
+        padding: 0 10px 20px 10px !important;
+        gap: 10px !important;
+    }
+
+    /* === FIX 7: Folder cards spacing on mobile === */
+    .folders-grid {
+        gap: 10px !important;
+        padding: 0 10px !important;
+    }
+
+    .folders-grid .folder-card {
+        padding: 1rem !important;
+        min-height: auto !important;
+    }
+
+    .folders-grid .folder-card .card-content h4 {
+        font-size: 1rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    .folders-grid .folder-description {
+        font-size: 0.85rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* === FIX 8: Gallery content spacing === */
+    /* Base padding for catalog container - no breadcrumb */
+    .catalog-container {
+        padding-top: 65px !important;
+    }
+
+    /* Catalog container ID - base */
+    #catalogContainer {
+        padding-top: 5px !important;
+    }
+
+    /* When breadcrumb is visible, add extra spacing */
+    body.has-breadcrumb #catalogContainer {
+        padding-top: 55px !important;
+    }
+
+    /* Catalog subcategories container - the main wrapper for stock products */
+    .catalog-subcategories {
+        padding: 10px !important;
+        padding-top: 15px !important;
+        margin: 0 !important;
+    }
+
+    /* Stock header title (like "Printed Cowhides") */
+    .stock-header {
+        margin-top: 0 !important;
+        padding: 15px 10px 10px 10px !important;
+    }
+
+    .stock-header h2 {
+        font-size: 1.3rem !important;
+        margin-bottom: 5px !important;
+    }
+
+    .stock-header p {
+        font-size: 0.9rem !important;
+        color: #666 !important;
+    }
+
+    /* Stock/Product grid spacing on mobile */
+    .stock-grid {
+        gap: 10px !important;
+        padding: 0 8px 12px 8px !important;
+    }
+
+    .stock-card {
+        margin: 0 !important;
+    }
+
+    .stock-card .stock-info {
+        padding: 8px !important;
+    }
+
+    .stock-card .stock-info h4 {
+        font-size: 0.9rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    .gallery-content {
+        padding: 10px !important;
+    }
+
+    /* Category header container spacing */
+    .category-header-container {
+        margin-bottom: 10px !important;
+        padding: 10px 15px !important;
+    }
+
+    .category-header-container h2 {
+        font-size: 1.2rem !important;
+    }
+
+    /* === FIX 9: Breadcrumb visibility on mobile === */
+    /* Only show breadcrumb when JavaScript sets display:block */
+    /* By default it's hidden (set in HTML with style="display: none;") */
+    .breadcrumb-container[style*="display: block"],
+    .breadcrumb-container[style*="display:block"] {
+        display: block !important;
+        position: fixed !important;
+        top: 60px !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9995 !important;
+        background: white !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        padding: 10px 12px !important;
+    }
+
+    /* Keep breadcrumb hidden when style says none */
+    .breadcrumb-container[style*="display: none"],
+    .breadcrumb-container[style*="display:none"] {
+        display: none !important;
+    }
+
+    /* Breadcrumb nav flex container */
+    .breadcrumb-container .breadcrumb {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* Back button styling in breadcrumb - always visible */
+    .breadcrumb .back-btn,
+    .breadcrumb .breadcrumb-item.back-btn {
+        display: flex !important;
+        background: #B87333 !important;
+        color: white !important;
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        border: none !important;
+        cursor: pointer;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0 !important;
+        font-size: 0.85rem !important;
+    }
+
+    .breadcrumb .back-btn i,
+    .breadcrumb .breadcrumb-item.back-btn i {
+        color: white !important;
+    }
+
+    /* Breadcrumb path items - container */
+    .breadcrumb #breadcrumbPath {
+        flex: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        overflow: hidden !important;
+        min-width: 0 !important;
+    }
+
+    /* Hide all breadcrumb items except the LAST one (current) */
+    .breadcrumb #breadcrumbPath .breadcrumb-item,
+    .breadcrumb #breadcrumbPath .breadcrumb-separator,
+    .breadcrumb #breadcrumbPath button:not(:last-of-type) {
+        display: none !important;
+    }
+
+    /* Show only the LAST/CURRENT item with ellipsis */
+    .breadcrumb #breadcrumbPath .breadcrumb-item.current,
+    .breadcrumb #breadcrumbPath .breadcrumb-item:last-child,
+    .breadcrumb #breadcrumbPath > span:last-child {
+        display: block !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+        font-size: 0.85rem !important;
+        color: #374151 !important;
+        background: #f3f4f6 !important;
+        padding: 6px 10px !important;
+        border-radius: 6px !important;
+    }
+
+    /* === FIX 10: CATALOG BREADCRUMB - HIDE on mobile (use fixed breadcrumb instead) === */
+    /* The #breadcrumbContainer fixed at top already shows navigation */
+    /* Hide the inline .catalog-breadcrumb to avoid duplicate back buttons */
+    .catalog-breadcrumb {
+        display: none !important;
+    }
+
+    /* === FIX 12: DYNAMIC Content spacing based on breadcrumb visibility === */
+    /* Uses body.has-breadcrumb class added by JavaScript (setBreadcrumbVisible function) */
+
+    /* Base spacing - no breadcrumb (homepage) */
+    .catalog-subcategories {
+        padding-top: 5px !important;
+    }
+
+    .subcategories-header {
+        margin-top: 5px !important;
+        padding-top: 5px !important;
+    }
+
+    .category-header-container {
+        margin-top: 5px !important;
+        padding-top: 5px !important;
+    }
+
+    /* === FIX 13: Extra spacing WHEN breadcrumb is visible === */
+    /* Breadcrumb is fixed at top:60px with ~50px height = content starts at ~110px */
+    body.has-breadcrumb .catalog-subcategories {
+        padding-top: 50px !important;
+    }
+
+    body.has-breadcrumb .subcategories-header {
+        margin-top: 45px !important;
+        padding-top: 10px !important;
+    }
+
+    body.has-breadcrumb .category-header-container {
+        margin-top: 130px !important;
+        padding-top: 10px !important;
+    }
+
+    body.has-breadcrumb .stock-header {
+        margin-top: 65px !important;
+    }
+
+    body.has-breadcrumb .gallery-content {
+        padding-top: 50px !important;
+    }
+
+    /* === FIX 11: Prevent duplicate Back buttons in breadcrumb === */
+    /* Hide any back button inside #breadcrumbPath - use only the fixed HTML one */
+    #breadcrumbPath > .back-btn,
+    #breadcrumbPath > .breadcrumb-item.back-btn {
+        display: none !important;
+    }
+
+    /* Ensure the fixed back button (direct child of .breadcrumb) is visible */
+    .breadcrumb > .breadcrumb-item.back-btn {
+        display: flex !important;
     }
 }

@@ -406,22 +406,12 @@ body.home-page .company-logo {
     object-fit: contain;
     filter: drop-shadow(0 8px 30px rgba(184, 115, 51, 0.2));
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: logoFloat 6s ease-in-out infinite;
+    /* Removed floating animation */
 }
 
 body.home-page .company-logo:hover {
-    transform: scale(1.05) translateY(-5px);
+    transform: scale(1.02);
     filter: drop-shadow(0 12px 40px rgba(184, 115, 51, 0.3));
-}
-
-/* Animação suave de flutuação */
-@keyframes logoFloat {
-    0%, 100% {
-        transform: translateY(0px);
-    }
-    50% {
-        transform: translateY(-8px);
-    }
 }
 
 /* Responsivo */
@@ -808,4 +798,194 @@ body.home-page.dark-mode #accessModal .modal-content::-webkit-scrollbar-thumb:ho
 body.home-page.dark-mode #accessModal .modal-content {
     scrollbar-width: thin;
     scrollbar-color: #555 #1e1e1e;
+}
+
+/* ============================================
+   FALLING SNOW EFFECT
+   ============================================ */
+.snowflakes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+}
+
+.snowflake {
+    position: absolute;
+    top: -20px;
+    color: rgba(180, 180, 180, 0.6);
+    font-size: 1rem;
+    animation: snowfall linear infinite;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+.snowflake:nth-child(1) { left: 5%; animation-duration: 8s; animation-delay: 0s; font-size: 0.8rem; }
+.snowflake:nth-child(2) { left: 15%; animation-duration: 10s; animation-delay: 1s; font-size: 1.2rem; }
+.snowflake:nth-child(3) { left: 25%; animation-duration: 9s; animation-delay: 2s; font-size: 0.9rem; }
+.snowflake:nth-child(4) { left: 35%; animation-duration: 11s; animation-delay: 0.5s; font-size: 1rem; }
+.snowflake:nth-child(5) { left: 50%; animation-duration: 8s; animation-delay: 3s; font-size: 0.7rem; }
+.snowflake:nth-child(6) { left: 60%; animation-duration: 12s; animation-delay: 1.5s; font-size: 1.1rem; }
+.snowflake:nth-child(7) { left: 70%; animation-duration: 9s; animation-delay: 2.5s; font-size: 0.8rem; }
+.snowflake:nth-child(8) { left: 80%; animation-duration: 10s; animation-delay: 0.8s; font-size: 1rem; }
+.snowflake:nth-child(9) { left: 90%; animation-duration: 11s; animation-delay: 4s; font-size: 0.9rem; }
+.snowflake:nth-child(10) { left: 95%; animation-duration: 8s; animation-delay: 2s; font-size: 0.7rem; }
+
+@keyframes snowfall {
+    0% {
+        top: -20px;
+        opacity: 1;
+        transform: translateX(0) rotate(0deg);
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        top: 100vh;
+        opacity: 0.3;
+        transform: translateX(30px) rotate(360deg);
+    }
+}
+
+/* ============================================
+   HOLIDAY NOTICE BANNER - Friendly Style
+   ============================================ */
+.holiday-notice {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    animation: slideInLeft 0.6s ease-out;
+}
+
+.holiday-notice-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(135deg, #2d5a3d 0%, #1a3d29 100%);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.holiday-notice-content > i {
+    font-size: 24px;
+    color: #e8c547;
+    opacity: 1;
+}
+
+.holiday-notice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.holiday-notice-text strong {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.holiday-notice-text span {
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.holiday-notice-text .holiday-wish {
+    color: #e8c547;
+    font-weight: 500;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Holiday Notice - Dark Mode */
+body.home-page.dark-mode .holiday-notice-content {
+    background: linear-gradient(135deg, #1e3d2a 0%, #0f2418 100%);
+    box-shadow: 0 4px 20px rgba(30, 61, 42, 0.4);
+}
+
+/* Holiday Notice - Responsive */
+@media (max-width: 768px) {
+    .holiday-notice {
+        top: auto;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 30px);
+        max-width: 320px;
+    }
+
+    .holiday-notice-content {
+        padding: 14px 16px;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .holiday-notice-content > i {
+        font-size: 20px;
+    }
+
+    .holiday-notice-text strong {
+        font-size: 12px;
+    }
+
+    .holiday-notice-text span {
+        font-size: 11px;
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+}
+
+/* ============================================
+   CHRISTMAS LOGO WITH SANTA HAT (Image)
+   ============================================ */
+body.home-page .christmas-logo {
+    width: 200px;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+    body.home-page .christmas-logo {
+        width: 170px;
+        max-height: 190px;
+    }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 480px) {
+    body.home-page .christmas-logo {
+        width: 140px;
+        max-height: 160px;
+    }
 }

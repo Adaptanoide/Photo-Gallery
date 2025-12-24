@@ -94,9 +94,9 @@ const catalogCache = {
                 const queries = getCDEQueries();
                 const startTime = Date.now();
 
-                // Timeout de 30 segundos (query complexa com furniture)
+                // Timeout de 10 segundos - erro rápido, fallback para dados antigos
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('CDE query timeout after 30s')), 30000)
+                    setTimeout(() => reject(new Error('CDE query timeout after 10s')), 10000)
                 );
 
                 const products = await Promise.race([

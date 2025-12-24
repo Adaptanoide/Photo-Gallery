@@ -212,6 +212,11 @@ class AdminDashboard {
 
         // Fechar sidebar em mobile após navegação
 
+        // Load feedback when navigating to feedback section
+        if (section === 'feedback' && window.initFeedbackSection) {
+            setTimeout(() => window.initFeedbackSection(), 100);
+        }
+
         // Atualizar título da página
         const titles = {
             dashboard: 'Dashboard',
@@ -222,6 +227,7 @@ class AdminDashboard {
             reports: 'Reports',
             marketing: 'Email Marketing',
             'inventoryMonitor': 'Inventory Status Monitor',
+            feedback: 'Client Feedback',
             settings: 'Settings'
         };
 

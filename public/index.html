@@ -40,6 +40,32 @@
         <i class="fas fa-moon" id="darkModeIconLogin"></i>
     </button>
 
+    <!-- Falling Snow Effect -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+        <div class="snowflake">&#10052;</div>
+    </div>
+
+    <!-- Holiday Notice Banner -->
+    <div class="holiday-notice">
+        <div class="holiday-notice-content">
+            <i class="fas fa-gift"></i>
+            <div class="holiday-notice-text">
+                <strong>Holiday Break</strong>
+                <span>We will be closed from Dec 24 to Jan 03.</span>
+                <span class="holiday-wish">Happy Holidays!</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Header Simplificado -->
     <header class="luxury-header">
         <div class="container">
@@ -58,7 +84,7 @@
                 <!-- Logo e Título Elegante -->
                 <div class="luxury-brand">
                     <div class="luxury-logo">
-                        <img src="/images/logo-transparent.png" alt="Sunshine Cowhides Logo" class="company-logo">
+                        <img src="/images/LogoToca.png" alt="Sunshine Cowhides Logo with Santa Hat" class="company-logo christmas-logo">
                     </div>
                     <h1 class="luxury-title">Welcome</h1>
                     <p class="luxury-subtitle">
@@ -132,7 +158,7 @@
                 </p>
             </div>
         </div>
-        <!-- Access Verification Modal -->
+        <!-- Access Verification Modal - Clean Design -->
         <div id="accessModal" class="modal" style="
             display: none;
             position: fixed;
@@ -141,6 +167,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             z-index: 9999;
             overflow: auto;
             align-items: center;
@@ -148,82 +175,215 @@
         ">
             <div class="modal-content" style="
                 position: relative;
-                max-width: 520px;
+                max-width: 480px;
                 width: 90%;
-                padding: 30px;
                 background: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                border-radius: 16px;
+                box-shadow: 0 25px 50px rgba(0,0,0,0.25);
                 max-height: 90vh;
-                overflow-y: auto;
+                overflow: hidden;
                 margin: auto;
+                display: flex;
+                flex-direction: column;
+                animation: accessModalSlideIn 0.3s ease;
             ">
-                <span class="close" onclick="closeModal('accessModal')" style="
-                    position: absolute;
-                    right: 20px;
-                    top: 20px;
-                    font-size: 28px;
-                    color: #999;
-                    cursor: pointer;
-                    z-index: 10;
-                ">&times;</span>
+                <style>
+                    @keyframes accessModalSlideIn {
+                        from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+                        to { opacity: 1; transform: scale(1) translateY(0); }
+                    }
+                    #accessModal .info-card {
+                        background: #fafafa;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 10px;
+                        padding: 14px 16px;
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 12px;
+                        margin-bottom: 10px;
+                    }
+                    #accessModal .info-card-icon {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                    }
+                    #accessModal .info-card-content h4 {
+                        margin: 0 0 4px 0;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        color: #374151;
+                    }
+                    #accessModal .info-card-content p {
+                        margin: 0;
+                        font-size: 0.82rem;
+                        color: #6b7280;
+                        line-height: 1.5;
+                    }
+                    #accessModal .info-card-content ul {
+                        margin: 6px 0 0 0;
+                        padding-left: 16px;
+                        font-size: 0.82rem;
+                        color: #6b7280;
+                        line-height: 1.7;
+                    }
+                    body.dark-mode #accessModal .modal-content {
+                        background: #1e1e1e !important;
+                        border: 1px solid #3d3d3d !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-header {
+                        background: #252525 !important;
+                        border-bottom-color: #3d3d3d !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-header h2 {
+                        color: #e0e0e0 !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-subtitle {
+                        color: #888 !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-close {
+                        background: #333 !important;
+                        color: #888 !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-close:hover {
+                        background: #444 !important;
+                        color: #d4a574 !important;
+                    }
+                    body.dark-mode #accessModal .info-card {
+                        background: #252525 !important;
+                        border-color: #3d3d3d !important;
+                    }
+                    body.dark-mode #accessModal .info-card-content h4 {
+                        color: #e0e0e0 !important;
+                    }
+                    body.dark-mode #accessModal .info-card-content p,
+                    body.dark-mode #accessModal .info-card-content ul {
+                        color: #a0a0a0 !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-footer {
+                        background: #252525 !important;
+                        border-top-color: #3d3d3d !important;
+                    }
+                    body.dark-mode #accessModal .access-modal-footer p {
+                        color: #888 !important;
+                    }
+                </style>
 
-                <!-- Ícone de cadeado -->
-                <div style="text-align: center; margin-bottom: 20px; padding-top: 10px;">
-                    <i class="fas fa-lock" style="color: #B87333; font-size: 60px;"></i>
+                <!-- Header -->
+                <div class="access-modal-header" style="
+                    padding: 20px 24px;
+                    border-bottom: 1px solid #f0f0f0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: white;
+                    flex-shrink: 0;
+                ">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="
+                            width: 48px;
+                            height: 48px;
+                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+                        ">
+                            <i class="fas fa-lock" style="font-size: 20px; color: white;"></i>
+                        </div>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 1.15rem; font-weight: 600;">Access Paused</h2>
+                            <span class="access-modal-subtitle" style="font-size: 0.82rem; color: #6b7280;">Your selection is being processed</span>
+                        </div>
+                    </div>
+                    <button class="access-modal-close" onclick="closeModal('accessModal')" style="
+                        width: 36px;
+                        height: 36px;
+                        background: #f3f4f6;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        color: #6b7280;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.2s ease;
+                    "><i class="fas fa-times"></i></button>
                 </div>
 
-                <!-- Título -->
-                <h2 style="text-align: center; margin-bottom: 25px; color: #333;">Access Temporarily Disabled</h2>
+                <!-- Body -->
+                <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+                    <!-- Why blocked -->
+                    <div class="info-card">
+                        <div class="info-card-icon" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
+                            <i class="fas fa-info-circle" style="color: #b45309; font-size: 16px;"></i>
+                        </div>
+                        <div class="info-card-content">
+                            <h4>Why is my access paused?</h4>
+                            <p>You recently completed a selection, and our team is now processing your order. This temporary pause ensures your items are properly reserved and prepared for invoicing.</p>
+                        </div>
+                    </div>
 
-                <!-- Explicação principal -->
-                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #856404; font-size: 16px;">
-                        <i class="fas fa-info-circle"></i> Why is my access blocked?
-                    </h4>
-                    <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px; line-height: 1.6;">
-                        If you <strong>recently completed a selection</strong>, your access has been temporarily
-                        disabled while our team processes your order internally.
-                    </p>
-                    <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
-                        This is a <strong>standard procedure</strong> that ensures your selection is properly handled
-                        and prepared for invoicing.
-                    </p>
+                    <!-- How to regain -->
+                    <div class="info-card">
+                        <div class="info-card-icon" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+                            <i class="fas fa-headset" style="color: #1d4ed8; font-size: 16px;"></i>
+                        </div>
+                        <div class="info-card-content">
+                            <h4>Need to make changes?</h4>
+                            <p>Contact your sales representative who can:</p>
+                            <ul>
+                                <li>Re-enable access for new selections</li>
+                                <li>Update you on your order status</li>
+                                <li>Assist with any modifications</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Processing time -->
+                    <div class="info-card">
+                        <div class="info-card-icon" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
+                            <i class="fas fa-clock" style="color: #059669; font-size: 16px;"></i>
+                        </div>
+                        <div class="info-card-content">
+                            <h4>Processing Time</h4>
+                            <p>Your order is typically processed within 24 hours. Our team will contact you shortly with next steps.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Como obter acesso novamente -->
-                <div style="background: #f0f8ff; border-left: 4px solid #0066cc; padding: 15px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #004080; font-size: 16px;">
-                        <i class="fas fa-unlock-alt"></i> How to regain access?
-                    </h4>
-                    <p style="margin: 0 0 10px 0; color: #004080; font-size: 14px;">
-                        Contact your sales representative who can:
-                    </p>
-                    <ul style="margin: 0; padding-left: 20px; color: #004080; font-size: 14px; line-height: 1.8;">
-                        <li>Enable temporary access for new selections</li>
-                        <li>Update you on your order status</li>
-                        <li>Assist with any modifications needed</li>
-                    </ul>
+                <!-- Footer -->
+                <div class="access-modal-footer" style="
+                    padding: 16px 24px;
+                    border-top: 1px solid #e5e7eb;
+                    background: #f9fafb;
+                    flex-shrink: 0;
+                ">
+                    <button onclick="closeModal('accessModal')" style="
+                        width: 100%;
+                        padding: 12px 20px;
+                        background: linear-gradient(135deg, #B87333, #A0522D);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        box-shadow: 0 2px 8px rgba(184, 115, 51, 0.3);
+                        transition: all 0.2s ease;
+                    ">
+                        <i class="fas fa-check"></i> I Understand
+                    </button>
                 </div>
-
-                <!-- Tempo estimado -->
-                <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin-bottom: 25px;">
-                    <p style="margin: 0; color: #2e7d32; font-size: 14px;">
-                        <i class="fas fa-clock"></i> <strong>Processing Time:</strong> Your order is typically processed
-                        within 24 hours. You will be contacted by our team shortly.
-                    </p>
-                </div>
-
-                <!-- Mensagem de suporte -->
-                <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; font-style: italic;">
-                    We appreciate your patience. Our team is working to provide you with the best service.
-                </p>
-
-                <!-- Botão -->
-                <button onclick="closeModal('accessModal')" class="btn btn-primary btn-full"
-                    style="background: #B87333; border: none; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%;">
-                    <i class="fas fa-check"></i> OK, I Understand
-                </button>
             </div>
         </div>
 
@@ -268,6 +428,126 @@
             updateDarkModeUILogin(isDark);
         })();
     </script>
+
+    <!-- ===== LOGIN TRANSITION OVERLAY - Clean White Design ===== -->
+    <div id="loginTransition" class="login-transition">
+        <div class="transition-content">
+            <img src="/images/LogoToca.png" alt="Sunshine Cowhides" class="transition-logo">
+            <div class="transition-text">
+                <span class="transition-welcome">Welcome,</span>
+                <span class="transition-name" id="transitionName"></span>
+            </div>
+            <div class="transition-loader">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* ===== CLEAN WHITE LOGIN TRANSITION ===== */
+        .login-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ffffff;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        .login-transition.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .transition-content {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease;
+        }
+
+        .login-transition.active .transition-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .transition-logo {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            margin-bottom: 28px;
+        }
+
+        .transition-text {
+            margin-bottom: 36px;
+        }
+
+        .transition-welcome {
+            display: block;
+            font-size: 1.1rem;
+            color: #999;
+            margin-bottom: 6px;
+            font-weight: 400;
+        }
+
+        .transition-name {
+            display: block;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #B87333;
+        }
+
+        .transition-loader {
+            width: 200px;
+            height: 3px;
+            background: #eee;
+            border-radius: 3px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .loader-bar {
+            width: 0%;
+            height: 100%;
+            background: #B87333;
+            border-radius: 3px;
+            animation: loadProgress 2.8s ease forwards 0.2s;
+        }
+
+        @keyframes loadProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .login-transition.exit {
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .transition-logo {
+                width: 130px;
+                height: 130px;
+            }
+            .transition-welcome {
+                font-size: 1rem;
+            }
+            .transition-name {
+                font-size: 1.7rem;
+            }
+            .transition-loader {
+                width: 160px;
+            }
+        }
+    </style>
 </body>
 
 </html>

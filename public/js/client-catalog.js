@@ -551,6 +551,9 @@ window.showHomepage = function() {
     // Hide photo gallery containers
     hidePhotoContainers();
 
+    // HIDE breadcrumb on homepage (unified management)
+    setBreadcrumbVisible(false);
+
     // Remove category sidebar if present
     const sidebar = document.querySelector('.category-sidebar');
     if (sidebar) sidebar.remove();
@@ -712,9 +715,8 @@ async function showDirectPhotoGallery(categoryKey, category) {
     const catalogContainer = document.getElementById('catalogContainer');
     if (catalogContainer) catalogContainer.style.display = 'none';
 
-    // Show breadcrumb container
-    const breadcrumbContainer = document.getElementById('breadcrumbContainer');
-    if (breadcrumbContainer) breadcrumbContainer.style.display = 'block';
+    // SHOW breadcrumb with first subcategory name (unified management)
+    setBreadcrumbVisible(true, firstSubcat.name);
 
     // Create or update the tabs bar
     createDirectGalleryTabs(categoryKey, category, subcatEntries, firstSubcatKey);
@@ -738,7 +740,7 @@ function createDirectGalleryTabs(categoryKey, category, subcatEntries, activeKey
     let sidebarHtml = `
         <aside class="category-sidebar">
             <div class="sidebar-header">
-                <span class="sidebar-title">${category.name}</span>
+                <span class="sidebar-title">Browse Categories</span>
             </div>
             <div class="sidebar-nav">
     `;
@@ -787,6 +789,9 @@ window.switchDirectGalleryTab = async function(categoryKey, subcategoryKey) {
         subcategoryName: subcategory.name
     };
 
+    // Update breadcrumb with new subcategory name (unified management)
+    setBreadcrumbVisible(true, subcategory.name);
+
     // Update active sidebar card
     document.querySelectorAll('.category-sidebar .sidebar-card').forEach(card => {
         card.classList.remove('active');
@@ -817,9 +822,8 @@ function showSubcategories(categoryKey, category) {
     if (sidebar) sidebar.remove();
     document.body.classList.remove('has-category-sidebar');
 
-    // Esconder breadcrumb antigo da galeria
-    const oldBreadcrumb = document.getElementById('breadcrumbContainer');
-    if (oldBreadcrumb) oldBreadcrumb.style.display = 'none';
+    // SHOW breadcrumb with category name (unified management)
+    setBreadcrumbVisible(true, category.name);
 
     const container = document.getElementById('catalogContainer');
     if (!container) return;
@@ -908,8 +912,9 @@ function renderSubcategories(categoryKey, category) {
 
 /**
  * Open a subcategory
+ * If parent category is all-photo based (like Natural Cowhides), shows with sidebar
  */
-window.openSubcategory = function(categoryKey, subcategoryKey) {
+window.openSubcategory = async function(categoryKey, subcategoryKey) {
     console.log(`📄 Opening subcategory: ${categoryKey}/${subcategoryKey}`);
 
     const category = MAIN_CATEGORIES[categoryKey];
@@ -918,8 +923,62 @@ window.openSubcategory = function(categoryKey, subcategoryKey) {
     const subcategory = category.subcategories[subcategoryKey];
     if (!subcategory) return;
 
+    CatalogState.currentCategory = categoryKey;
     CatalogState.currentSubcategory = subcategoryKey;
 
+    // Check if this is an all-photo category that should have a sidebar
+    // (like Natural Cowhides where all subcategories are photo-based)
+    if (category.hasSubcategories) {
+        const subcats = Object.values(category.subcategories).filter(s => !s.hidden);
+        const allPhotoBased = subcats.every(sub => sub.viewType === 'photo');
+
+        if (allPhotoBased && subcats.length > 1) {
+            // This category should have sidebar navigation
+            console.log('🚀 Using sidebar mode for all-photo category');
+
+            // Check if sidebar already exists
+            const existingSidebar = document.querySelector('.category-sidebar');
+            if (!existingSidebar) {
+                // Create sidebar with this subcategory as active
+                const subcatEntries = Object.entries(category.subcategories).filter(([k, v]) => !v.hidden);
+                createDirectGalleryTabs(categoryKey, category, subcatEntries, subcategoryKey);
+            }
+
+            // Update state
+            CatalogState.currentView = 'direct-gallery';
+            CatalogState.directGalleryCategory = categoryKey;
+            CatalogState.directGallerySubcategories = Object.entries(category.subcategories).filter(([k, v]) => !v.hidden);
+            CatalogState.breadcrumbContext = {
+                categoryKey: categoryKey,
+                categoryName: category.name,
+                subcategoryKey: subcategoryKey,
+                subcategoryName: subcategory.name
+            };
+
+            // Update active sidebar card
+            document.querySelectorAll('.category-sidebar .sidebar-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            const activeCard = document.querySelector(`.category-sidebar .sidebar-card[data-subkey="${subcategoryKey}"]`);
+            if (activeCard) activeCard.classList.add('active');
+
+            // Hide catalog container
+            const catalogContainer = document.getElementById('catalogContainer');
+            if (catalogContainer) catalogContainer.style.display = 'none';
+
+            // Show breadcrumb
+            const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+            if (breadcrumbContainer) breadcrumbContainer.style.display = 'block';
+
+            // Navigate to the folder
+            if (subcategory.folderPath && window.navigateToCategory) {
+                await window.navigateToCategory(subcategory.folderPath, subcategory.name);
+            }
+            return;
+        }
+    }
+
+    // Default behavior for non-sidebar categories
     showProducts(categoryKey, subcategoryKey, subcategory.viewType);
 };
 
@@ -1022,9 +1081,9 @@ async function showStockProducts(categoryKey, subcategoryKey, config) {
 
     hidePhotoContainers();
 
-    // Esconder breadcrumb antigo da galeria
-    const oldBreadcrumb = document.getElementById('breadcrumbContainer');
-    if (oldBreadcrumb) oldBreadcrumb.style.display = 'none';
+    // SHOW breadcrumb with product name (unified management)
+    const currentName = config.name || 'Products';
+    setBreadcrumbVisible(true, currentName);
 
     const container = document.getElementById('catalogContainer');
     if (!container) return;
@@ -1527,8 +1586,17 @@ async function loadMixedStock(content, config) {
  * Render stock grid for mixed view (simplified, no breadcrumb)
  */
 function renderMixedStockGrid(container, products, config) {
+    // Apply In Stock filter if enabled
+    let filteredProducts = [...products];
+    if (window.filterState && window.filterState.inStockOnly) {
+        filteredProducts = filteredProducts.filter(p =>
+            (p.availableStock ?? p.currentStock ?? p.stock ?? 0) > 0
+        );
+        console.log(`📦 In Stock filter: ${products.length} → ${filteredProducts.length} products`);
+    }
+
     // Sort: products with stock first (usa estoque lógico disponível)
-    const sortedProducts = [...products].sort((a, b) => {
+    const sortedProducts = filteredProducts.sort((a, b) => {
         const stockA = a.availableStock ?? a.currentStock ?? a.stock ?? 0;
         const stockB = b.availableStock ?? b.currentStock ?? b.stock ?? 0;
         if (stockA > 0 && stockB === 0) return -1;
@@ -1644,8 +1712,17 @@ function renderStockGrid(container, products, config, categoryKey) {
         return;
     }
 
+    // Apply In Stock filter if enabled
+    let filteredProducts = [...products];
+    if (window.filterState && window.filterState.inStockOnly) {
+        filteredProducts = filteredProducts.filter(p =>
+            (p.availableStock ?? p.currentStock ?? p.stock ?? 0) > 0
+        );
+        console.log(`📦 In Stock filter: ${products.length} → ${filteredProducts.length} products`);
+    }
+
     // Ordenar: produtos COM estoque primeiro, SEM estoque no final (usa estoque lógico disponível)
-    const sortedProducts = [...products].sort((a, b) => {
+    const sortedProducts = filteredProducts.sort((a, b) => {
         const stockA = a.availableStock ?? a.currentStock ?? a.stock ?? 0;
         const stockB = b.availableStock ?? b.currentStock ?? b.stock ?? 0;
         // Produtos com estoque primeiro (ordem decrescente de estoque)
@@ -2009,24 +2086,62 @@ window.addStockToCart = async function(qbItem) {
 };
 
 // ============================================
-// BREADCRUMB
+// BREADCRUMB - UNIFIED MANAGEMENT
 // ============================================
+
+/**
+ * Central function to show/hide breadcrumb and manage spacing class
+ * ALWAYS use this instead of directly manipulating the breadcrumb
+ */
+function setBreadcrumbVisible(visible, currentName = '') {
+    const container = document.getElementById('breadcrumbContainer');
+    const pathElement = document.getElementById('breadcrumbPath');
+
+    if (!container) return;
+
+    if (visible) {
+        container.style.display = 'block';
+        document.body.classList.add('has-breadcrumb');
+
+        // Update the current item text if provided
+        if (currentName && pathElement) {
+            pathElement.innerHTML = `<span class="breadcrumb-item current">${currentName}</span>`;
+        }
+
+        // Show the fixed HTML back button
+        const fixedBackBtn = container.querySelector('.breadcrumb > .breadcrumb-item.back-btn');
+        if (fixedBackBtn) {
+            fixedBackBtn.style.display = 'flex';
+        }
+    } else {
+        container.style.display = 'none';
+        document.body.classList.remove('has-breadcrumb');
+    }
+}
 
 function updateCatalogBreadcrumb(items) {
     const container = document.getElementById('breadcrumbContainer');
     if (!container) return;
 
-    container.style.display = 'block';
-
     const breadcrumb = container.querySelector('.breadcrumb') || container;
     const pathElement = breadcrumb.querySelector('#breadcrumbPath') || breadcrumb;
+
+    // Hide the FIXED back button from HTML - we'll use the one generated in pathElement
+    // The fixed button is a direct child of .breadcrumb, not inside #breadcrumbPath
+    const fixedBackBtn = container.querySelector('.breadcrumb > .breadcrumb-item.back-btn');
+    if (fixedBackBtn) {
+        fixedBackBtn.style.display = 'none';
+    }
 
     // Se está na homepage, esconder o breadcrumb ou mostrar mensagem simples
     if (items.length === 1 && items[0].name === 'Home' && !items[0].path) {
         // Esconder breadcrumb na homepage - a mensagem "Welcome" já está no header
-        container.style.display = 'none';
+        setBreadcrumbVisible(false);
         return;
     }
+
+    // Show breadcrumb and add class for CSS spacing
+    setBreadcrumbVisible(true);
 
     let html = '';
 
@@ -2141,6 +2256,8 @@ function showPhotoContainers() {
 // ============================================
 
 window.MAIN_CATEGORIES = MAIN_CATEGORIES;
+window.processCategoryThumbnail = processCategoryThumbnail;
+window.getThumbnailUrl = getThumbnailUrl;
 window.toggleNavDropdown = function() {}; // Legacy - not used anymore
 window.navigateTo = function(cat, sub, type) {
     // Legacy function - redirect to new system
