@@ -7,13 +7,32 @@
     position: sticky;
     top: 65px;
     z-index: 100;
-    padding: 8px 30px; /* Match content area padding */
+    padding: 8px 20px;
 }
 
-/* Desktop - Align with main content */
+/* Desktop - Breadcrumb dentro do mesmo fluxo do conteúdo */
 @media (min-width: 769px) {
+    /* Sem sidebar: alinhado à esquerda (igual ao Printed Cowhides) */
     .breadcrumb-container {
-        padding: 8px 0px;
+        padding: 12px 32px;
+        max-width: none;
+        margin: 0;
+    }
+
+    .breadcrumb-container .breadcrumb {
+        padding: 0;
+    }
+
+    /* Com sidebar: sem margin extra, apenas padding reduzido para alinhar com conteúdo */
+    body.has-category-sidebar .breadcrumb-container {
+        max-width: none;
+        margin: 0;
+        padding: 10px 10px 10px 0px;
+    }
+
+    /* Sidebar colapsado: mesmo padding */
+    body.has-category-sidebar.sidebar-collapsed .breadcrumb-container {
+        padding: 12px 10px;
     }
 }
 
@@ -644,8 +663,8 @@
 
     /* Ajustar margem do conteúdo principal já que não tem mais sidebar */
     .main .container {
-        margin-left: 0px !important;
-        margin-right: 0px !important;
+        margin-left: 40px !important;
+        margin-right: 40px !important;
     }
 }
 
@@ -716,18 +735,17 @@
         50% { opacity: 1; }
     }
 
-    /* Badge de preço - estilo limpo */
+    /* Badge de preço - estilo clean (apenas texto verde) */
     .breadcrumb-price-badge {
         display: none; /* Escondido até ter conteúdo */
-        background: #10b981;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 20px;
+        background: none;
+        color: #10b981;
+        padding: 0;
+        border: none;
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+        transition: color 0.2s ease;
     }
 
     /* Mostrar quando tiver conteúdo */
@@ -738,27 +756,25 @@
     }
 
     .breadcrumb-price-badge:hover {
-        background: #059669;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        color: #059669;
     }
 
     /* Estilo para "Contact for Price" */
     .breadcrumb-price-badge.contact-price {
-        background: #6b7280;
+        color: #6b7280;
     }
 
     .breadcrumb-price-badge.contact-price:hover {
-        background: #4b5563;
+        color: #4b5563;
     }
 
     /* Estilo para "No price" */
     .breadcrumb-price-badge.no-price {
-        background: #9ca3af;
+        color: #9ca3af;
     }
 
     .breadcrumb-price-badge.no-price:hover {
-        background: #6b7280;
+        color: #6b7280;
     }
 
     /* Contador de fotos */
@@ -875,11 +891,11 @@ body.dark-mode .breadcrumb-price {
 
 /* Breadcrumb Price Badge - White text on green */
 body.dark-mode .breadcrumb-price-badge {
-    color: #ffffff !important;
+    color: #34d399 !important;
 }
 
 body.dark-mode .breadcrumb-price-badge i {
-    color: #ffffff !important;
+    color: #34d399 !important;
 }
 
 /* Breadcrumb Price Hint - More visible in dark mode */

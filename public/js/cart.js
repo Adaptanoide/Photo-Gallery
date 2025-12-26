@@ -2175,6 +2175,7 @@ window.toggleCartSidebar = function () {
         toggleBtn.classList.remove('collapsed');
         if (main) main.classList.remove('cart-collapsed');
         if (scrollToTop) scrollToTop.classList.remove('cart-hidden');
+        document.body.classList.remove('cart-collapsed');
         localStorage.setItem('cartCollapsed', 'false');
     } else {
         // Colapsar - Carrinho desliza para fora
@@ -2182,6 +2183,7 @@ window.toggleCartSidebar = function () {
         toggleBtn.classList.add('collapsed');
         if (main) main.classList.add('cart-collapsed');
         if (scrollToTop) scrollToTop.classList.add('cart-hidden');
+        document.body.classList.add('cart-collapsed');
         localStorage.setItem('cartCollapsed', 'true');
     }
 };
@@ -2203,6 +2205,7 @@ window.restoreCartState = function () {
         toggleBtn.classList.add('collapsed');
         if (main) main.classList.add('cart-collapsed');
         if (scrollToTop) scrollToTop.classList.add('cart-hidden');
+        document.body.classList.add('cart-collapsed');
     }
 };
 

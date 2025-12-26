@@ -558,6 +558,10 @@ window.showHomepage = function() {
     const sidebar = document.querySelector('.category-sidebar');
     if (sidebar) sidebar.remove();
     document.body.classList.remove('has-category-sidebar');
+    document.body.classList.remove('sidebar-collapsed'); // Also remove collapsed class
+
+    // Reset sidebar collapsed state when going to homepage
+    localStorage.removeItem('sidebarCollapsed');
 
     // Get or create catalog container
     let container = document.getElementById('catalogContainer');
@@ -662,6 +666,14 @@ window.openCategory = function(categoryKey) {
         return;
     }
 
+    // Reset sidebar collapsed state when entering a DIFFERENT main category
+    // This ensures sidebar starts expanded when switching between main categories
+    const previousCategory = CatalogState.directGalleryCategory || CatalogState.currentCategory;
+    if (previousCategory && previousCategory !== categoryKey) {
+        localStorage.removeItem('sidebarCollapsed');
+        document.body.classList.remove('sidebar-collapsed'); // Also remove body class
+    }
+
     CatalogState.currentCategory = categoryKey;
     setActiveNavButton(categoryKey);
 
@@ -736,11 +748,18 @@ function createDirectGalleryTabs(categoryKey, category, subcatEntries, activeKey
     const existingSidebar = document.querySelector('.category-sidebar');
     if (existingSidebar) existingSidebar.remove();
 
-    // Create sidebar HTML (no back button - we have Home in header and Back in breadcrumb)
+    // Check if sidebar was previously collapsed (respects user preference within same category)
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    const collapsedClass = isCollapsed ? 'collapsed' : '';
+
+    // Create sidebar HTML with toggle button
     let sidebarHtml = `
-        <aside class="category-sidebar">
-            <div class="sidebar-header">
+        <aside class="category-sidebar ${collapsedClass}">
+            <div class="sidebar-header" onclick="toggleCategorySidebar()" style="cursor: pointer;" title="Click to toggle">
                 <span class="sidebar-title">Browse Categories</span>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
             </div>
             <div class="sidebar-nav">
     `;
@@ -769,6 +788,29 @@ function createDirectGalleryTabs(categoryKey, category, subcatEntries, activeKey
 
     // Add class to body to shift content
     document.body.classList.add('has-category-sidebar');
+
+    // Apply or remove collapsed state from body
+    if (isCollapsed) {
+        document.body.classList.add('sidebar-collapsed');
+    } else {
+        document.body.classList.remove('sidebar-collapsed');
+    }
+}
+
+/**
+ * Toggle category sidebar collapsed state
+ */
+window.toggleCategorySidebar = function() {
+    const sidebar = document.querySelector('.category-sidebar');
+    if (!sidebar) return;
+
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    document.body.classList.toggle('sidebar-collapsed', isCollapsed);
+
+    // Save preference
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+
+    console.log(`📁 Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`);
 }
 
 /**
@@ -822,7 +864,7 @@ function showSubcategories(categoryKey, category) {
     if (sidebar) sidebar.remove();
     document.body.classList.remove('has-category-sidebar');
 
-    // SHOW breadcrumb with category name (unified management)
+    // SHOW global breadcrumb for subcategories (same as other levels)
     setBreadcrumbVisible(true, category.name);
 
     const container = document.getElementById('catalogContainer');
@@ -1081,9 +1123,8 @@ async function showStockProducts(categoryKey, subcategoryKey, config) {
 
     hidePhotoContainers();
 
-    // SHOW breadcrumb with product name (unified management)
-    const currentName = config.name || 'Products';
-    setBreadcrumbVisible(true, currentName);
+    // SHOW global breadcrumb for stock categories (same as photo categories)
+    setBreadcrumbVisible(true, config.name || 'Products');
 
     const container = document.getElementById('catalogContainer');
     if (!container) return;
@@ -1185,9 +1226,8 @@ async function showMixedView(categoryKey, subcategoryKey, subcategory) {
 
     hidePhotoContainers();
 
-    // Hide the gallery breadcrumb to prevent duplication
-    const galleryBreadcrumb = document.getElementById('breadcrumbContainer');
-    if (galleryBreadcrumb) galleryBreadcrumb.style.display = 'none';
+    // SHOW global breadcrumb for mixed view categories (like Sheepskins)
+    setBreadcrumbVisible(true, subcategory?.name || 'Products');
 
     const category = MAIN_CATEGORIES[categoryKey];
     const container = document.getElementById('catalogContainer');
@@ -1206,15 +1246,6 @@ async function showMixedView(categoryKey, subcategoryKey, subcategory) {
     // Show loading while we fetch counts
     container.innerHTML = `
         <div class="catalog-subcategories">
-            <nav class="catalog-breadcrumb">
-                <button class="breadcrumb-back" onclick="goBackOneLevel()">
-                    <i class="fas fa-arrow-left"></i> Back
-                </button>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
-                <button class="breadcrumb-link" onclick="openCategory('${categoryKey}')">${category?.name || categoryKey}</button>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
-                <span class="breadcrumb-current">${subcategory?.name || 'Products'}</span>
-            </nav>
             <div class="stock-loading">
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>Loading...</p>
@@ -1252,19 +1283,9 @@ async function showMixedView(categoryKey, subcategoryKey, subcategory) {
         console.error('Error fetching counts:', error);
     }
 
-    // Render mixed view with tabs
+    // Render mixed view with tabs (breadcrumb is handled globally)
     container.innerHTML = `
         <div class="catalog-subcategories">
-            <nav class="catalog-breadcrumb">
-                <button class="breadcrumb-back" onclick="goBackOneLevel()">
-                    <i class="fas fa-arrow-left"></i> Back
-                </button>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
-                <button class="breadcrumb-link" onclick="openCategory('${categoryKey}')">${category?.name || categoryKey}</button>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
-                <span class="breadcrumb-current">${subcategory?.name || 'Products'}</span>
-            </nav>
-
             <div class="mixed-header">
                 <div class="mixed-header-info">
                     <h2>${subcategory?.name || 'Products'}</h2>
@@ -2099,13 +2120,22 @@ function setBreadcrumbVisible(visible, currentName = '') {
 
     if (!container) return;
 
+    // Always hide Mix & Match badge when using this function (it's for non-photo views)
+    const mmBadge = document.getElementById('breadcrumbMixMatchBadge');
+    if (mmBadge) {
+        mmBadge.style.display = 'none';
+    }
+
     if (visible) {
         container.style.display = 'block';
         document.body.classList.add('has-breadcrumb');
 
-        // Update the current item text if provided
+        // Update the current item text if provided (with separator)
         if (currentName && pathElement) {
-            pathElement.innerHTML = `<span class="breadcrumb-item current">${currentName}</span>`;
+            pathElement.innerHTML = `
+                <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+                <span class="breadcrumb-item current">${currentName}</span>
+            `;
         }
 
         // Show the fixed HTML back button
