@@ -393,8 +393,14 @@ window.PriceProgressBar = {
         // Mas SOMENTE se estamos vendo fotos (não subcategorias ou cards)
         const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
         const photosContainer = document.getElementById('photosContainer');
-        const isViewingPhotos = photosContainer && photosContainer.style.display !== 'none' &&
-                                photosContainer.querySelectorAll('.photo-card, .gallery-photo').length > 0;
+        const photosGrid = document.getElementById('photosGrid');
+
+        // Verificar se está vendo fotos (galeria normal ou virtual)
+        // Virtual gallery usa .photo-thumbnail dentro de photosGrid
+        const isContainerVisible = photosContainer && photosContainer.style.display !== 'none';
+        const hasNormalPhotos = isContainerVisible && photosContainer.querySelectorAll('.photo-card, .gallery-photo').length > 0;
+        const hasVirtualPhotos = isContainerVisible && photosGrid && photosGrid.querySelectorAll('.photo-thumbnail').length > 0;
+        const isViewingPhotos = hasNormalPhotos || hasVirtualPhotos;
 
         if (breadcrumbMmBadge && window.innerWidth > 768 && isViewingPhotos) {
             breadcrumbMmBadge.style.display = '';
