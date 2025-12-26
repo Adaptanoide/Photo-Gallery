@@ -184,10 +184,16 @@ window.toggleMobileMixMatch = function() {
 // NOTA: Esta lista é usada como FALLBACK enquanto migramos para
 // usar participatesInMixMatch do banco de dados
 const GLOBAL_MIX_MATCH_CATEGORIES = [
+    'Natural Cowhides',
     'Brazilian Cowhides',
     'Colombian Cowhides',
     'Brazil Best Sellers',
     'Brazil Top Selected Categories'
+];
+
+// Keys das categorias Mix & Match para verificação direta
+const MIX_MATCH_CATEGORY_KEYS = [
+    'natural-cowhides'
 ];
 
 // ✅ NOVO: Armazenar participatesInMixMatch da API para a categoria atual
@@ -195,32 +201,41 @@ window.currentCategoryMixMatchStatus = null;
 
 /**
  * Verifica se a categoria atual participa do Mix & Match global
- * PRIORIDADE: Usar valor da API se disponível, senão fallback para lista hardcoded
+ * PRIORIDADE: 1) API, 2) CatalogState, 3) NavigationState
  */
 function isCurrentCategoryMixMatch() {
-    if (!window.navigationState || !window.navigationState.currentPath || window.navigationState.currentPath.length === 0) {
-        return false;
-    }
-
     // ✅ PRIORIDADE 1: Usar valor da API se disponível
     if (window.currentCategoryMixMatchStatus !== null) {
-        console.log('🔍 Mix & Match (via API):', window.currentCategoryMixMatchStatus);
         return window.currentCategoryMixMatchStatus;
     }
 
-    // ✅ FALLBACK: Usar lista hardcoded se API não disponível
-    const mainCategory = window.navigationState.currentPath[0].name;
+    // ✅ PRIORIDADE 2: Verificar CatalogState (disponível ao ver subcategorias)
+    if (window.CatalogState && window.CatalogState.currentCategory) {
+        const catKey = window.CatalogState.currentCategory;
+        if (MIX_MATCH_CATEGORY_KEYS.includes(catKey)) {
+            return true;
+        }
+        // Também verificar pelo nome da categoria no MAIN_CATEGORIES
+        const mainCats = window.MAIN_CATEGORIES;
+        if (mainCats && mainCats[catKey]) {
+            const catName = mainCats[catKey].name;
+            const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
+                catName.includes(mixCat) || mixCat.includes(catName)
+            );
+            if (isMixMatch) return true;
+        }
+    }
 
-    console.log('🔍 Verificando Mix & Match (fallback):', mainCategory);
+    // ✅ PRIORIDADE 3: Verificar NavigationState (disponível após navegar para fotos)
+    if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
+        const mainCategory = window.navigationState.currentPath[0].name;
+        const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
+            mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
+        );
+        if (isMixMatch) return true;
+    }
 
-    // Verificar se está na lista
-    const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
-        mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
-    );
-
-    console.log('   → É Mix & Match?', isMixMatch);
-
-    return isMixMatch;
+    return false;
 }
 
 // Expor globalmente para uso em outros módulos
