@@ -390,11 +390,13 @@ window.PriceProgressBar = {
         }
 
         // Mix & Match ativo - mostrar badge no breadcrumb
-        // Se temos rate rules, é uma categoria Mix & Match
+        // Mostrar se temos rate rules OU se estamos em categoria Mix & Match (mesmo vendo subcategorias)
         const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
+        const isMixMatchCategory = this.rateRules.length > 0 ||
+                                   (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch());
 
         // Mostrar badge Mix & Match no breadcrumb quando categoria é Mix & Match
-        if (breadcrumbMmBadge && this.rateRules.length > 0) {
+        if (breadcrumbMmBadge && isMixMatchCategory) {
             breadcrumbMmBadge.style.display = '';
         } else if (breadcrumbMmBadge) {
             breadcrumbMmBadge.style.display = 'none';
@@ -1341,6 +1343,13 @@ window.displayFilteredSubcategories = function (subcategories, filters) {
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
             <span class="breadcrumb-item current">${filterLabel} (${subcategories.length})</span>
         `;
+    }
+
+    // Mostrar badge Mix & Match se estamos em categoria Mix & Match
+    const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
+    if (breadcrumbMmBadge) {
+        const isMixMatch = window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch();
+        breadcrumbMmBadge.style.display = isMixMatch ? '' : 'none';
     }
 
     // Clear container

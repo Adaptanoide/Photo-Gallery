@@ -2120,10 +2120,11 @@ function setBreadcrumbVisible(visible, currentName = '') {
 
     if (!container) return;
 
-    // Always hide Mix & Match badge when using this function (it's for non-photo views)
+    // Mostrar badge Mix & Match se estamos em categoria Mix & Match
     const mmBadge = document.getElementById('breadcrumbMixMatchBadge');
     if (mmBadge) {
-        mmBadge.style.display = 'none';
+        const isMixMatch = window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch();
+        mmBadge.style.display = isMixMatch ? '' : 'none';
     }
 
     if (visible) {
