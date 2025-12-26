@@ -510,10 +510,10 @@ window.PriceProgressBar = {
                         ? category.split('/')[0].trim()
                         : category;
 
-                // Verificar se é uma categoria Mix & Match
-                return GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
-                    mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
-                );
+                // Verificar se é Natural Cowhides (única categoria Mix & Match)
+                return mainCategory === 'Natural Cowhides' ||
+                       mainCategory.includes('Brazil Best Sellers') ||
+                       mainCategory.includes('Brazil Top Selected');
             }).length;
         }
 
