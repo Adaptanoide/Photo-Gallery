@@ -181,58 +181,31 @@ window.toggleMobileMixMatch = function() {
 }
 
 // ===== CATEGORIAS MIX & MATCH (GLOBAL TIERS) =====
-// NOTA: Esta lista é usada como FALLBACK enquanto migramos para
-// usar participatesInMixMatch do banco de dados
-const GLOBAL_MIX_MATCH_CATEGORIES = [
-    'Natural Cowhides',
-    'Brazilian Cowhides',
-    'Colombian Cowhides',
-    'Brazil Best Sellers',
-    'Brazil Top Selected Categories'
-];
-
-// Keys das categorias Mix & Match para verificação direta
-const MIX_MATCH_CATEGORY_KEYS = [
-    'natural-cowhides'
-];
-
-// ✅ NOVO: Armazenar participatesInMixMatch da API para a categoria atual
-window.currentCategoryMixMatchStatus = null;
+// APENAS Natural Cowhides participa do Mix & Match
+const MIX_MATCH_CATEGORY_KEY = 'natural-cowhides';
 
 /**
  * Verifica se a categoria atual participa do Mix & Match global
- * PRIORIDADE: 1) API, 2) CatalogState, 3) NavigationState
+ * APENAS retorna true para Natural Cowhides e suas subcategorias
  */
 function isCurrentCategoryMixMatch() {
-    // ✅ PRIORIDADE 1: Usar valor da API se disponível
-    if (window.currentCategoryMixMatchStatus !== null) {
-        return window.currentCategoryMixMatchStatus;
-    }
-
-    // ✅ PRIORIDADE 2: Verificar CatalogState (disponível ao ver subcategorias)
-    if (window.CatalogState && window.CatalogState.currentCategory) {
+    // Verificar CatalogState (disponível quando navegando no catálogo)
+    if (window.CatalogState) {
         const catKey = window.CatalogState.currentCategory;
-        if (MIX_MATCH_CATEGORY_KEYS.includes(catKey)) {
+        const directGallery = window.CatalogState.directGalleryCategory;
+
+        // Verificar se está em Natural Cowhides (categoria ou galeria direta)
+        if (catKey === MIX_MATCH_CATEGORY_KEY || directGallery === MIX_MATCH_CATEGORY_KEY) {
             return true;
         }
-        // Também verificar pelo nome da categoria no MAIN_CATEGORIES
-        const mainCats = window.MAIN_CATEGORIES;
-        if (mainCats && mainCats[catKey]) {
-            const catName = mainCats[catKey].name;
-            const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
-                catName.includes(mixCat) || mixCat.includes(catName)
-            );
-            if (isMixMatch) return true;
-        }
     }
 
-    // ✅ PRIORIDADE 3: Verificar NavigationState (disponível após navegar para fotos)
+    // Verificar NavigationState (para quando está vendo fotos)
     if (window.navigationState && window.navigationState.currentPath && window.navigationState.currentPath.length > 0) {
         const mainCategory = window.navigationState.currentPath[0].name;
-        const isMixMatch = GLOBAL_MIX_MATCH_CATEGORIES.some(mixCat =>
-            mainCategory.includes(mixCat) || mixCat.includes(mainCategory)
-        );
-        if (isMixMatch) return true;
+        if (mainCategory === 'Natural Cowhides') {
+            return true;
+        }
     }
 
     return false;
