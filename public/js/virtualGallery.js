@@ -154,10 +154,9 @@ class VirtualGallery {
                     ${this.categoryPrice?.formattedPrice || 'Check price'}
                 </div>
                 
-                <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
-                        data-photo-id="${photo.id.replace(/"/g, '&quot;')}" 
-                        data-photo-index="${photoIndex}"
-                        title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
+                <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}"
+                        data-photo-id="${photo.id.replace(/"/g, '&quot;')}"
+                        data-photo-index="${photoIndex}">
                     <i class="fas fa-${isInCart ? 'times' : 'shopping-cart'}"></i>
                     <span>${isInCart ? 'Remove' : 'Add'}</span>
                 </button>

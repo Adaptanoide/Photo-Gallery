@@ -107,6 +107,7 @@ body.client-page::before {
     background: #ffffff;
     padding-left: 6px;
     padding-top: 20px;
+    padding-bottom: 5px;
 }
 
 .client-page .breadcrumb-item {

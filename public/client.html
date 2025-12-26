@@ -283,10 +283,7 @@
             <!-- Conteúdo principal -->
             <div id="clientContent" style="display: none;">
 
-                <!-- Container para produtos de catálogo -->
-                <div id="catalogContainer" style="display: none;"></div>
-
-                <!-- Navegação breadcrumb -->
+                <!-- Navegação breadcrumb (ANTES do conteúdo para aparecer no topo) -->
                 <div id="breadcrumbContainer" class="breadcrumb-container" style="display: none;">
                     <nav class="breadcrumb">
                         <button class="breadcrumb-item back-btn" onclick="goBackOneLevel()">
@@ -295,11 +292,17 @@
                         <div id="breadcrumbPath"></div>
                         <!-- Info no breadcrumb (DESKTOP ONLY) -->
                         <div class="breadcrumb-info-group">
+                            <button id="breadcrumbMixMatchBadge" class="badge-mixmatch badge-mixmatch-btn breadcrumb-mm-badge" onclick="openMixMatchInfoModal()" style="display: none;">
+                                MIX & MATCH <i class="fas fa-info-circle"></i>
+                            </button>
                             <span id="breadcrumbPriceBadge" class="breadcrumb-price-badge"></span>
                             <span id="breadcrumbPhotoCount" class="breadcrumb-photo-count"></span>
                         </div>
                     </nav>
                 </div>
+
+                <!-- Container para produtos de catálogo -->
+                <div id="catalogContainer" style="display: none;"></div>
 
                 <!-- Navegação de volta -->
                 <div id="backNavigation" class="back-navigation" style="display: none;">

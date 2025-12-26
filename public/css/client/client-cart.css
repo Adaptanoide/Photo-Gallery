@@ -671,7 +671,7 @@
 @media (min-width: 769px) {
     .sidebar-toggle-btn {
         position: fixed;
-        right: 340px; /* Posição perfeita na borda do carrinho */
+        right: 340px; /* Posição na borda do carrinho */
         top: 50%;
         transform: translateY(-50%);
         width: 24px;
@@ -706,7 +706,7 @@
 
     /* Quando colapsado, botão move para a borda direita da tela */
     .sidebar-toggle-btn.collapsed {
-        right: 0;
+        right: 18px; /* Offset para não ficar atrás do scrollbar */
     }
 
     .sidebar-toggle-btn.collapsed i {

@@ -292,8 +292,13 @@
                 breadcrumbPriceBadge.className = 'breadcrumb-price-badge no-price';
             }
 
-            // ✅ Limpar inline display:none que pode ter sido setado pelo catalog
-            breadcrumbPriceBadge.style.display = '';
+            // ✅ Mostrar badge APENAS para categorias que NÃO são Mix & Match
+            // Mix & Match mostra preços nos tiers, não precisa do badge
+            if (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch()) {
+                breadcrumbPriceBadge.style.display = 'none';
+            } else {
+                breadcrumbPriceBadge.style.display = '';
+            }
 
             // Adicionar click listener para abrir chat
             if (!breadcrumbPriceBadge.dataset.clickListenerAdded) {
@@ -445,10 +450,9 @@
                             ${photo.customPrice ? (window.CurrencyManager ? CurrencyManager.format(parseFloat(photo.customPrice)) : `$${parseFloat(photo.customPrice).toFixed(2)}`) : (categoryPrice?.hasPrice && window.CurrencyManager ? CurrencyManager.format(categoryPrice.price || categoryPrice.basePrice) : (categoryPrice?.formattedPrice || 'Price on request'))}
                         </div>
                         
-                        <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}" 
-                                data-photo-id="${photo.id.replace(/"/g, '&quot;')}" 
-                                data-photo-index="${index}"
-                                title="${isInCart ? 'Remove from cart' : 'Add to cart'}">
+                        <button class="thumbnail-cart-btn ${isInCart ? 'in-cart' : ''}"
+                                data-photo-id="${photo.id.replace(/"/g, '&quot;')}"
+                                data-photo-index="${index}">
                             <span>${isInCart ? 'Remove' : 'Add'}</span>
                         </button>
                         
@@ -516,8 +520,7 @@
 
                                 // Atualizar o botão para mostrar "Remove"
                                 cartBtn.classList.add('in-cart');
-                                cartBtn.innerHTML = '<span>Remove</span>';  // Sem ícone X
-                                cartBtn.title = 'Remove from cart';
+                                cartBtn.innerHTML = '<span>Remove</span>';
 
                                 // Remover qualquer indicação de unavailable do elemento pai
                                 const photoElement = cartBtn.closest('.photo-item');
@@ -1294,7 +1297,6 @@
                                     cartBtn.innerHTML = '<span>Remove</span>';
                                     cartBtn.style.backgroundColor = '#dc3545';
                                     cartBtn.style.color = 'white';
-                                    cartBtn.title = 'Remove from cart';
                                 }
                             }
 
@@ -1601,15 +1603,13 @@
                 if (isInCart) {
                     cartBtn.classList.add('in-cart');
                     cartBtn.innerHTML = '<span>Remove</span>';
-                    cartBtn.title = 'Remove from cart';
-                    cartBtn.style.backgroundColor = '#dc3545';  // ADICIONAR ESTA LINHA
-                    cartBtn.style.color = 'white';              // ADICIONAR ESTA LINHA
+                    cartBtn.style.backgroundColor = '#dc3545';
+                    cartBtn.style.color = 'white';
                 } else {
                     cartBtn.classList.remove('in-cart');
                     cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Add</span>';
-                    cartBtn.title = 'Add to cart';
-                    cartBtn.style.backgroundColor = '';  // STRING VAZIA
-                    cartBtn.style.color = '';           // STRING VAZIA            // ADICIONAR ESTA LINHA
+                    cartBtn.style.backgroundColor = '';
+                    cartBtn.style.color = '';
                 }
             }
         });
@@ -1996,48 +1996,6 @@
     }
 })();
 
-// ===== MOBILE: TOGGLE TIERS =====
-function initMobileTierToggle() {
-    if (window.innerWidth > 768) return;
-
-    const priceContainer = document.getElementById('priceProgressContainer');
-    if (!priceContainer) return;
-
-    const wrapper = priceContainer.querySelector('.price-progress-wrapper');
-    if (!wrapper) return;
-
-    // Criar botão toggle se não existir
-    let toggleBtn = priceContainer.querySelector('.toggle-tiers-btn');
-    if (!toggleBtn) {
-        toggleBtn = document.createElement('button');
-        toggleBtn.className = 'toggle-tiers-btn';
-        toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> View all prices';
-
-        toggleBtn.addEventListener('click', function () {
-            wrapper.classList.toggle('expanded');
-            if (wrapper.classList.contains('expanded')) {
-                this.innerHTML = '<i class="fas fa-chevron-up"></i> Hide';
-            } else {
-                this.innerHTML = '<i class="fas fa-chevron-down"></i> View all prices';
-            }
-        });
-
-        priceContainer.appendChild(toggleBtn);
-    }
-}
-
-// Chamar quando carregar fotos
-const originalLoadPhotos = window.loadPhotos;
-window.loadPhotos = async function (folderId) {
-    await originalLoadPhotos(folderId);
-    setTimeout(initMobileTierToggle, 500);
-};
-
-// Inicializar ao carregar
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(initMobileTierToggle, 1000);
-});
-
 // ===== FUNÇÃO PARA ATUALIZAR BREADCRUMB PRICE BADGE =====
 window.updateBreadcrumbPriceBadge = function() {
     const breadcrumbPriceBadge = document.getElementById('breadcrumbPriceBadge');
@@ -2062,8 +2020,12 @@ window.updateBreadcrumbPriceBadge = function() {
         breadcrumbPriceBadge.className = 'breadcrumb-price-badge no-price';
     }
 
-    // ✅ Limpar inline display:none que pode ter sido setado pelo catalog
-    breadcrumbPriceBadge.style.display = '';
+    // ✅ Mostrar badge APENAS para categorias que NÃO são Mix & Match
+    if (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch()) {
+        breadcrumbPriceBadge.style.display = 'none';
+    } else {
+        breadcrumbPriceBadge.style.display = '';
+    }
 };
 
 // ===== REAGIR A MUDANÇAS DE MOEDA =====

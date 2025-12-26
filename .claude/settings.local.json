@@ -84,7 +84,13 @@
       "Bash(wmic process:*)",
       "Bash(cmd /c \"tasklist /FI \"\"PID eq 23348\"\"\")",
       "Bash(git reset:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cmd /c \"del /f /q nul 2>nul\")",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" status --porcelain)",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add public/css/client/client-catalog.css public/css/client/client-navigation.css public/css/client/client-layout.css public/js/client-catalog.js public/js/cart.js)",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" commit:*)",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" push origin main)",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add .claude/settings.local.json public/client.html public/css/client/client-cart.css public/css/client/client-gallery.css public/css/client/client-responsive.css public/css/client/client-theme-light.css public/js/client-commerce.js public/js/client-gallery.js public/js/virtualGallery.js)"
     ],
     "deny": [],
     "ask": []

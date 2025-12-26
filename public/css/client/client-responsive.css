@@ -739,7 +739,7 @@
         /* Sempre 2 colunas */
         gap: 1rem;
         padding: 15px;
-        margin-top: 166px;
+        margin-top: 82px;
         padding-left: 35px;
         padding-right: 35px;
     }
@@ -1849,6 +1849,14 @@
     .folders-grid .folder-card {
         padding: 1rem !important;
         min-height: auto !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .folders-grid .folder-card .card-content {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     .folders-grid .folder-card .card-content h4 {
@@ -1859,6 +1867,28 @@
     .folders-grid .folder-description {
         font-size: 0.85rem !important;
         margin-bottom: 0.5rem !important;
+    }
+
+    /* FIX: Folder stats - price and count side by side */
+    .folders-grid .folder-stats {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 8px !important;
+        flex-wrap: nowrap !important;
+        padding-top: 0.5rem !important;
+        margin-top: auto !important;
+    }
+
+    .folders-grid .folder-price-badge {
+        flex-shrink: 0 !important;
+    }
+
+    .folders-grid .photo-count-badge {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
     }
 
     /* === FIX 8: Gallery content spacing === */
@@ -2034,7 +2064,7 @@
     }
 
     .subcategories-header {
-        margin-top: 5px !important;
+        margin-top: 60px !important;
         padding-top: 5px !important;
     }
 
@@ -2050,7 +2080,7 @@
     }
 
     body.has-breadcrumb .subcategories-header {
-        margin-top: 45px !important;
+        margin-top: 30px !important;
         padding-top: 10px !important;
     }
 
@@ -2060,7 +2090,7 @@
     }
 
     body.has-breadcrumb .stock-header {
-        margin-top: 65px !important;
+        margin-top: 35px !important;
     }
 
     body.has-breadcrumb .gallery-content {

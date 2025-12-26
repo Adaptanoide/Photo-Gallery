@@ -632,7 +632,7 @@ body.dark-mode .category-header-container .category-header-info p {
     /* Ajustar posição dos tiers já que gallery-header foi escondido */
     #priceProgressContainer,
     .price-info-container {
-        top: 145px !important;
+        top: 140px !important;
     }
 }
 
@@ -915,30 +915,37 @@ body.dark-mode .category-header-container .category-header-info p {
 /* ============================================ */
 
 @media (max-width: 768px) {
+    /* Esconder badge Mix & Match do breadcrumb no mobile */
+    .breadcrumb-mm-badge {
+        display: none !important;
+    }
+
+    /* FIXED: Keep folder-stats as row on mobile for side-by-side layout */
     .folder-stats {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
         width: 100%;
     }
 
     .folder-price-badge,
     .contact-price {
-        width: 100%;
+        flex-shrink: 0;
         justify-content: center;
         text-align: center;
         display: flex;
-        padding: 10px 16px;
-        font-size: 1rem;
+        padding: 6px 12px;
+        font-size: 0.9rem;
     }
 
     .photo-count-badge,
     .out-of-stock-inline {
-        width: 100%;
+        flex-shrink: 0;
         justify-content: center;
         text-align: center;
         font-size: 0.85rem;
-        padding: 10px 12px;
+        padding: 6px 10px;
         display: flex;
     }
 
@@ -963,7 +970,422 @@ body.dark-mode .category-header-container .category-header-info p {
 }
 
 /* ============================================
-   MIX & MATCH - COMPACTO E DISCRETO
+   MIX & MATCH - NOVO LAYOUT COMPACTO (Desktop)
+   ============================================ */
+
+.mix-match-container {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 0 0 10px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* Header row - header + incentivo na mesma linha */
+.mm-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+/* Badge Mix & Match no desktop - escondido (agora fica no breadcrumb) */
+.mm-header-row .badge-mixmatch {
+    display: none;
+}
+
+/* Badge Mix & Match no breadcrumb (desktop) */
+.breadcrumb-mm-badge {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    box-shadow: 0 1px 4px rgba(245, 196, 81, 0.3);
+    animation: none;
+    margin-right: 8px;
+}
+
+.breadcrumb-mm-badge i {
+    font-size: 0.65rem;
+}
+
+.breadcrumb-mm-badge:hover {
+    box-shadow: 0 2px 8px rgba(245, 196, 81, 0.5);
+}
+
+/* Header clicável */
+.mm-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.mm-header:hover {
+    opacity: 0.7;
+}
+
+.mm-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.mm-help {
+    font-size: 11px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.mm-help i {
+    font-size: 10px;
+}
+
+/* Incentivo (legacy - mantido para compatibilidade) */
+.mm-incentive {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* Tier wrapper - container para incentivo + tier item */
+.mm-tier-wrapper {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+/* Incentivo dinâmico acima de cada tier - posicionado absolutamente */
+.mm-tier-incentive {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 3px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    position: absolute;
+    top: -26px;
+    left: 0;
+    z-index: 1;
+}
+
+.mm-tier-incentive i {
+    font-size: 10px;
+    color: #f5c451;
+}
+
+.mm-tier-incentive .incentive-text strong {
+    color: #047857;
+}
+
+.mm-incentive i {
+    font-size: 10px;
+    color: #10b981;
+}
+
+/* Tiers em linha */
+.mm-tiers-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    margin-top: 28px;
+    position: relative;
+}
+
+.mm-tier-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Label "Your price tier" - posicionado no topo esquerdo do tier */
+.mm-tier-label-top {
+    display: none;
+    position: absolute;
+    top: -10px;
+    left: -2px;
+    font-size: 9px;
+    color: #fff;
+    background: #a67c52;
+    padding: 2px 8px;
+    border-radius: 4px 4px 4px 1px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.mm-tier-item.active .mm-tier-label-top {
+    display: block;
+}
+
+.mm-tier-item.active {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.mm-tier-item.completed {
+    opacity: 0.5;
+}
+
+.mm-tier-price {
+    font-size: 15px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.mm-tier-item.active .mm-tier-price {
+    color: #059669;
+    font-size: 16px;
+}
+
+.mm-tier-range {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Cores por tier */
+.mm-tier-item.tier-bronze {
+    border-color: #e5d9cd;
+}
+.mm-tier-item.tier-bronze.active {
+    border-color: #a67c52;
+    border-width: 2px;
+    background: linear-gradient(to bottom, #fdfcfb, #faf6f3);
+}
+.mm-tier-item.tier-bronze.active .mm-tier-label-top {
+    background: #a67c52;
+}
+
+.mm-tier-item.tier-silver {
+    border-color: #dde1e6;
+}
+.mm-tier-item.tier-silver.active {
+    border-color: #6c757d;
+    border-width: 2px;
+    background: linear-gradient(to bottom, #fdfdfd, #f8f9fa);
+}
+.mm-tier-item.tier-silver.active .mm-tier-label-top {
+    background: #6c757d;
+}
+
+.mm-tier-item.tier-gold {
+    border-color: #f5e6b8;
+}
+.mm-tier-item.tier-gold.active {
+    border-color: #b8860b;
+    border-width: 2px;
+    background: linear-gradient(to bottom, #fffef9, #fffbeb);
+}
+.mm-tier-item.tier-gold.active .mm-tier-label-top {
+    background: #b8860b;
+}
+
+.mm-tier-item.tier-diamond {
+    border-color: #c5e4f7;
+}
+.mm-tier-item.tier-diamond.active {
+    border-color: #0077b6;
+    border-width: 2px;
+    background: linear-gradient(to bottom, #f8fcff, #f0f9ff);
+}
+.mm-tier-item.tier-diamond.active .mm-tier-label-top {
+    background: #0077b6;
+}
+
+/* Barra de progresso */
+.mm-progress-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mm-progress-track {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mm-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mm-next-tier {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.mm-next-tier i {
+    font-size: 9px;
+    color: #9ca3af;
+}
+
+/* Desktop: Esconder layout mobile */
+.mobile-mix-match {
+    display: none;
+}
+
+/* Mobile: Esconder novo layout desktop e mostrar layout mobile */
+@media (max-width: 768px) {
+    .mix-match-container {
+        display: none;
+    }
+
+    /* Esconder badge verde de preço quando Mix & Match mobile está presente */
+    .mobile-mix-match ~ .gallery-price-info,
+    .mobile-mix-match ~ .category-price-badge,
+    #priceProgressContainer:has(.mobile-mix-match) ~ .gallery-price-info {
+        display: none !important;
+    }
+
+    .mobile-mix-match {
+        display: block;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .mobile-mm-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #fafafa;
+    }
+
+    .mobile-mm-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Badge Mix & Match clicável no mobile */
+    .mobile-mm-badge {
+        font-size: 0.65rem !important;
+        padding: 4px 10px !important;
+        animation: none !important;
+    }
+
+    .mobile-mm-badge i {
+        font-size: 0.7rem !important;
+    }
+
+    .mobile-mm-photo-count {
+        font-size: 11px;
+        color: #9ca3af;
+        background: none;
+        padding: 0;
+    }
+
+    .mobile-mm-header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mobile-mm-tier-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        background: linear-gradient(135deg, #d4a574 0%, #b8956c 100%);
+        color: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-mm-tier-badge.tier-bronze {
+        background: linear-gradient(135deg, #d4a574 0%, #b8956c 100%);
+    }
+
+    .mobile-mm-tier-badge.tier-silver {
+        background: linear-gradient(135deg, #a8a8a8 0%, #8c8c8c 100%);
+    }
+
+    .mobile-mm-tier-badge.tier-gold {
+        background: linear-gradient(135deg, #f0c14b 0%, #d4a730 100%);
+    }
+
+    .mobile-mm-tier-badge.tier-diamond {
+        background: linear-gradient(135deg, #5ba3d4 0%, #3d8abf 100%);
+    }
+
+    .mobile-mm-price {
+        font-size: 14px;
+        font-weight: 800;
+        color: #059669;
+    }
+
+    .mobile-mm-content {
+        padding: 10px 14px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .mobile-mm-progress {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .mobile-mm-progress-bar {
+        height: 5px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .mobile-mm-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #059669, #10b981);
+        border-radius: 3px;
+        transition: width 0.4s ease;
+    }
+
+    .mobile-mm-incentive {
+        font-size: 13px;
+        color: #6b7280;
+        text-align: center;
+    }
+
+    .mobile-mm-incentive strong {
+        color: #059669;
+    }
+}
+
+/* ============================================
+   MIX & MATCH - LAYOUT LEGADO (mantido para mobile)
    ============================================ */
 
 /* Barra de Progresso */

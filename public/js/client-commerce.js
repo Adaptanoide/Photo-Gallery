@@ -160,6 +160,26 @@ window.syncCartUIFromRemove = function (photoId) {
     }
 }
 
+// ===== MOBILE: Toggle Mix & Match =====
+window.toggleMobileMixMatch = function() {
+    const container = document.getElementById('mobileMixMatch');
+    const content = document.getElementById('mobileMmContent');
+    const toggle = document.getElementById('mobileMmToggle');
+
+    if (container && content && toggle) {
+        container.classList.toggle('collapsed');
+        if (container.classList.contains('collapsed')) {
+            content.style.display = 'none';
+            toggle.classList.remove('fa-chevron-up');
+            toggle.classList.add('fa-chevron-down');
+        } else {
+            content.style.display = 'block';
+            toggle.classList.remove('fa-chevron-down');
+            toggle.classList.add('fa-chevron-up');
+        }
+    }
+}
+
 // ===== CATEGORIAS MIX & MATCH (GLOBAL TIERS) =====
 // NOTA: Esta lista é usada como FALLBACK enquanto migramos para
 // usar participatesInMixMatch do banco de dados
@@ -345,62 +365,133 @@ window.PriceProgressBar = {
 
         if (!shouldShowPrices()) {
             priceBarContainer.style.display = 'none';
+            // Esconder badge Mix & Match no breadcrumb
+            const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
+            if (breadcrumbMmBadge) {
+                breadcrumbMmBadge.style.display = 'none';
+            }
             return;
         }
 
-        // ✅ NOVO: Verificar se é categoria Mix & Match
-        if (!isCurrentCategoryMixMatch()) {
-            console.log('⚠️ Categoria NÃO é Mix & Match - ocultando barra de tiers');
-            priceBarContainer.style.display = 'none';
-            return;
-        }
-
+        // Se não tem rate rules, esconder tiers e mostrar badge de preço único
         if (this.rateRules.length === 0) {
             priceBarContainer.style.display = 'none';
+            // Mostrar badge de preço para categorias com preço único (não Mix & Match)
+            const breadcrumbBadge = document.getElementById('breadcrumbPriceBadge');
+            if (breadcrumbBadge && window.innerWidth > 768) {
+                breadcrumbBadge.style.display = '';
+            }
+            // Esconder badge Mix & Match no breadcrumb (não é Mix & Match)
+            const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
+            if (breadcrumbMmBadge) {
+                breadcrumbMmBadge.style.display = 'none';
+            }
             return;
         }
 
-        // HTML com barra de progresso visual + medalhas
-        let html = `
+        // Mix & Match ativo - mostrar badge no breadcrumb no desktop
+        // Mas SOMENTE se estamos vendo fotos (não subcategorias ou cards)
+        const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
+        const photosContainer = document.getElementById('photosContainer');
+        const isViewingPhotos = photosContainer && photosContainer.style.display !== 'none' &&
+                                photosContainer.querySelectorAll('.photo-card, .gallery-photo').length > 0;
 
-        <div class="progress-bar-container">
-            <div class="progress-bar-header">
-                <div class="progress-bar-label" id="progressLabel">Your Progress: Start adding photos!</div>
-                <div class="progress-bar-right">
-                    <div class="progress-bar-incentive" id="progressIncentive"></div>
-                    <span id="mixMatchBadge" class="mix-match-badge" onclick="openMixMatchInfoModal()">
-                         MIX & MATCH <i class="fas fa-info-circle"></i>
-                    </span>
-                </div>
-            </div>
-            <div class="progress-bar-track">
-                <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
-            </div>
-        </div>
-
-        <div class="price-progress-wrapper">
-        `;
+        if (breadcrumbMmBadge && window.innerWidth > 768 && isViewingPhotos) {
+            breadcrumbMmBadge.style.display = '';
+        } else if (breadcrumbMmBadge) {
+            breadcrumbMmBadge.style.display = 'none';
+        }
 
         // Nomes e classes de cores para cada tier
         const tierNames = ['Bronze', 'Silver', 'Gold', 'Diamond'];
         const tierClasses = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-diamond'];
 
+        // Build tier items HTML - cada tier tem um label "Your price tier" que aparece só quando ativo
+        // + incentivo dinâmico que aparece acima do próximo tier a ser desbloqueado
+        let tierItemsHtml = '';
         this.rateRules.forEach((rule, index) => {
-            const label = rule.to === 999 ? `${rule.from}+` : `${rule.from}-${rule.to}`;
-            const isFirst = index === 0;
-            const tierName = tierNames[index] || `Tier ${index + 1}`;
+            const label = rule.to === 999 ? `${rule.from}+ hides` : `up to ${rule.to} hides`;
             const tierClass = tierClasses[index] || '';
+            const tierName = tierNames[index] || `Tier ${index + 1}`;
+            const price = window.CurrencyManager ? CurrencyManager.format(rule.price) : '$' + rule.price;
 
-            html += `
-                <div class="price-tier ${tierClass} ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}" data-tier="${index}">
-                    <div class="tier-name">${tierName}</div>
-                    <div class="tier-label">${label} hides</div>
-                    <div class="tier-price">${window.CurrencyManager ? CurrencyManager.format(rule.price) : '$' + rule.price}</div>
+            tierItemsHtml += `
+                <div class="mm-tier-wrapper" data-tier-index="${index}">
+                    <div class="mm-tier-incentive" id="mmTierIncentive${index}" style="display: none;">
+                        <i class="fas fa-lightbulb"></i> <span class="incentive-text"></span>
+                    </div>
+                    <div class="mm-tier-item ${tierClass}" data-min="${rule.from}" data-max="${rule.to}" data-tier="${index}" data-tier-name="${tierName}">
+                        <span class="mm-tier-label-top">Your price tier - ${tierName}</span>
+                        <span class="mm-tier-price">${price}</span>
+                        <span class="mm-tier-range">${label}</span>
+                    </div>
                 </div>
             `;
         });
 
-        html += '</div>'; // Fecha price-progress-wrapper
+        // Build mobile tier items HTML (layout antigo para mobile)
+        let mobileTierItemsHtml = '';
+        this.rateRules.forEach((rule, index) => {
+            const label = rule.to === 999 ? `${rule.from}+` : `${rule.from}-${rule.to}`;
+            const tierClass = tierClasses[index] || '';
+            const tierName = tierNames[index] || `Tier ${index + 1}`;
+            const price = window.CurrencyManager ? CurrencyManager.format(rule.price) : '$' + rule.price;
+
+            mobileTierItemsHtml += `
+                <div class="price-tier ${tierClass}" data-min="${rule.from}" data-max="${rule.to}" data-tier="${index}">
+                    <span class="tier-name">${tierName}</span>
+                    <span class="tier-label">${label} hides</span>
+                    <span class="tier-price">${price}/each</span>
+                </div>
+            `;
+        });
+
+        // HTML com novo layout clean - Desktop (compacto)
+        // + Layout mobile antigo (escondido no desktop pelo CSS)
+        let html = `
+        <!-- DESKTOP: Novo layout compacto -->
+        <div class="mix-match-container">
+            <!-- Tiers em linha (com incentivo dinâmico acima de cada tier) -->
+            <div class="mm-tiers-row">
+                ${tierItemsHtml}
+            </div>
+
+            <!-- Barra de progresso -->
+            <div class="mm-progress-section">
+                <div class="mm-progress-track">
+                    <div class="mm-progress-fill" id="progressBarFill" style="width: 0%"></div>
+                </div>
+                <div class="mm-next-tier" id="mmNextTier">
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="mmNextTierName">Silver</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MOBILE: Layout dinâmico e clean (fixo) -->
+        <div class="mobile-mix-match" id="mobileMixMatch">
+            <div class="mobile-mm-header">
+                <div class="mobile-mm-header-left">
+                    <button class="badge-mixmatch badge-mixmatch-btn mobile-mm-badge" onclick="openMixMatchInfoModal()">
+                        MIX & MATCH <i class="fas fa-info-circle"></i>
+                    </button>
+                    <span class="mobile-mm-photo-count" id="mobilePhotoCount"></span>
+                </div>
+                <div class="mobile-mm-header-right">
+                    <span class="mobile-mm-tier-badge" id="mobileTierBadge">Bronze</span>
+                    <span class="mobile-mm-price" id="mobileTierPrice">${window.CurrencyManager ? CurrencyManager.format(this.rateRules[0]?.price || this.basePrice) : '$' + (this.rateRules[0]?.price || this.basePrice)}/ea</span>
+                </div>
+            </div>
+            <div class="mobile-mm-content">
+                <div class="mobile-mm-progress">
+                    <div class="mobile-mm-progress-bar">
+                        <div class="mobile-mm-progress-fill" id="mobileProgressFill" style="width: 0%"></div>
+                    </div>
+                    <span class="mobile-mm-incentive" id="mobileIncentive">Add items to save more!</span>
+                </div>
+            </div>
+        </div>
+        `;
 
         priceBarContainer.innerHTML = html;
         priceBarContainer.style.display = 'block';
@@ -437,7 +528,21 @@ window.PriceProgressBar = {
             }).length;
         }
 
-        // Atualizar tiers
+        // Atualizar tiers (novo layout)
+        document.querySelectorAll('.mm-tier-item').forEach(tier => {
+            tier.classList.remove('active', 'completed');
+
+            const min = parseInt(tier.dataset.min);
+            const max = parseInt(tier.dataset.max);
+
+            if (relevantItemCount >= min && relevantItemCount <= max) {
+                tier.classList.add('active');
+            } else if (relevantItemCount > max) {
+                tier.classList.add('completed');
+            }
+        });
+
+        // Atualizar também os tiers antigos (para compatibilidade)
         document.querySelectorAll('.price-tier').forEach(tier => {
             tier.classList.remove('active', 'completed');
 
@@ -574,23 +679,35 @@ window.PriceProgressBar = {
         }
 
         // ============================================
-        // ATUALIZAR BARRA DE PROGRESSO VISUAL
+        // ATUALIZAR BARRA DE PROGRESSO VISUAL (NOVO LAYOUT)
         // ============================================
-        const progressLabel = document.getElementById('progressLabel');
         const progressBarFill = document.getElementById('progressBarFill');
+        const mmNextTier = document.getElementById('mmNextTier');
+        const mmNextTierName = document.getElementById('mmNextTierName');
+        const mmIncentive = document.getElementById('mmIncentive');
+
+        // Legacy elements (para compatibilidade)
+        const progressLabel = document.getElementById('progressLabel');
         const progressIncentive = document.getElementById('progressIncentive');
 
-        if (progressLabel && progressBarFill && this.rateRules.length > 0) {
-            // Encontrar próximo tier
-            let nextTierTarget = this.rateRules[this.rateRules.length - 1].from; // Último tier por padrão
+        if (this.rateRules.length > 0) {
+            // Encontrar tier atual e próximo tier
+            let nextTierTarget = this.rateRules[this.rateRules.length - 1].from;
             let currentTierName = 'Bronze';
+            let currentTierIndex = 0;
             let nextTierName = '';
+            let currentTierPrice = this.basePrice;
+            let currentTierMax = this.rateRules[0]?.to || 5;
             const tierNames = ['Bronze', 'Silver', 'Gold', 'Diamond'];
+            const tierClasses = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-diamond'];
 
             for (let i = 0; i < this.rateRules.length; i++) {
                 const rule = this.rateRules[i];
                 if (relevantItemCount >= rule.from && relevantItemCount <= rule.to) {
                     currentTierName = tierNames[i] || `Tier ${i + 1}`;
+                    currentTierIndex = i;
+                    currentTierPrice = rule.price;
+                    currentTierMax = rule.to;
                     if (i < this.rateRules.length - 1) {
                         nextTierTarget = this.rateRules[i + 1].from;
                         nextTierName = tierNames[i + 1] || `Tier ${i + 2}`;
@@ -599,36 +716,169 @@ window.PriceProgressBar = {
                 }
             }
 
-            // Calcular porcentagem
+            // Calcular porcentagem para a barra
             let percentage = 0;
             if (relevantItemCount > 0) {
                 percentage = Math.min((relevantItemCount / nextTierTarget) * 100, 100);
             }
 
-            // Atualizar label
-            if (relevantItemCount === 0) {
-                progressLabel.textContent = `Your Progress: Start adding photos!`;
-            } else if (percentage >= 100) {
-                progressLabel.textContent = `Your Progress: ${relevantItemCount} items • ${currentTierName} tier (Best price!)`;
-            } else {
-                progressLabel.textContent = `Your Progress: ${relevantItemCount}/${nextTierTarget} items to ${tierNames[Math.min(this.rateRules.findIndex(r => r.from > relevantItemCount), tierNames.length - 1)]} tier`;
+            // Formatar preço
+            const formattedPrice = window.CurrencyManager ?
+                CurrencyManager.format(currentTierPrice) :
+                `$${currentTierPrice}`;
+
+            // ========== NOVO LAYOUT ==========
+            // Atualizar barra de progresso
+            if (progressBarFill) {
+                progressBarFill.style.width = `${percentage}%`;
             }
 
-            // Animar barra
-            progressBarFill.style.width = `${percentage}%`;
+            // Atualizar próximo tier indicator
+            if (mmNextTier && mmNextTierName) {
+                const icon = mmNextTier.querySelector('i');
+                if (relevantItemCount === 0) {
+                    // Carrinho vazio - esconder indicador
+                    mmNextTier.style.display = 'none';
+                } else if (nextTierName && percentage < 100) {
+                    // Mostrar próximo tier
+                    mmNextTier.style.display = 'flex';
+                    mmNextTierName.textContent = nextTierName;
+                    icon?.classList.remove('fa-trophy');
+                    icon?.classList.add('fa-arrow-right');
+                } else {
+                    // No último tier - mostrar "Best!"
+                    mmNextTier.style.display = 'flex';
+                    mmNextTierName.textContent = 'Best!';
+                    icon?.classList.remove('fa-arrow-right');
+                    icon?.classList.add('fa-trophy');
+                }
+            }
 
-            // ✅ NOVO: Atualizar incentivo para próximo tier
+            // Atualizar incentivo dinâmico (acima do próximo tier a desbloquear)
+            // Primeiro esconder todos os incentivos
+            for (let i = 0; i < this.rateRules.length; i++) {
+                const tierIncentive = document.getElementById(`mmTierIncentive${i}`);
+                if (tierIncentive) {
+                    tierIncentive.style.display = 'none';
+                }
+            }
+
+            // Mostrar incentivo acima do TIER ATUAL (não do próximo)
+            if (window.innerWidth > 768) {
+                if (relevantItemCount > 0 && percentage < 100 && nextTierName) {
+                    // Encontrar o índice do tier ATUAL (onde o usuário está)
+                    const currentTierIndex = this.rateRules.findIndex(r => relevantItemCount >= r.from && relevantItemCount <= r.to);
+                    if (currentTierIndex >= 0) {
+                        const tierIncentive = document.getElementById(`mmTierIncentive${currentTierIndex}`);
+                        if (tierIncentive) {
+                            const itemsNeeded = nextTierTarget - relevantItemCount;
+                            const incentiveText = tierIncentive.querySelector('.incentive-text');
+                            if (incentiveText) {
+                                incentiveText.innerHTML = `Add ${itemsNeeded} more for <strong>${nextTierName}</strong>`;
+                            }
+                            tierIncentive.style.display = 'flex';
+                        }
+                    }
+                } else if (percentage >= 100) {
+                    // No último tier - mostrar trophy acima do último tier
+                    const lastTierIndex = this.rateRules.length - 1;
+                    const tierIncentive = document.getElementById(`mmTierIncentive${lastTierIndex}`);
+                    if (tierIncentive) {
+                        const icon = tierIncentive.querySelector('i');
+                        const incentiveText = tierIncentive.querySelector('.incentive-text');
+                        if (icon) {
+                            icon.classList.remove('fa-lightbulb');
+                            icon.classList.add('fa-trophy');
+                        }
+                        if (incentiveText) {
+                            incentiveText.innerHTML = `<strong>Best price unlocked!</strong>`;
+                        }
+                        tierIncentive.style.display = 'flex';
+                    }
+                }
+            }
+
+            // Esconder badge verde do breadcrumb (tiers já mostram preços)
+            const breadcrumbBadge = document.getElementById('breadcrumbPriceBadge');
+            if (breadcrumbBadge && window.innerWidth > 768) {
+                breadcrumbBadge.style.display = 'none';
+            }
+
+            // ========== MOBILE: Atualizar layout dinâmico ==========
+            const mobileTierBadge = document.getElementById('mobileTierBadge');
+            const mobileTierPrice = document.getElementById('mobileTierPrice');
+            const mobileProgressFill = document.getElementById('mobileProgressFill');
+            const mobileIncentive = document.getElementById('mobileIncentive');
+
+            if (mobileTierBadge) {
+                mobileTierBadge.textContent = currentTierName;
+                mobileTierBadge.className = 'mobile-mm-tier-badge tier-' + currentTierName.toLowerCase();
+            }
+
+            if (mobileTierPrice) {
+                mobileTierPrice.textContent = formattedPrice + '/each';
+            }
+
+            if (mobileProgressFill) {
+                mobileProgressFill.style.width = `${percentage}%`;
+            }
+
+            if (mobileIncentive) {
+                if (relevantItemCount === 0) {
+                    mobileIncentive.innerHTML = 'Add items to unlock savings!';
+                } else if (percentage >= 100) {
+                    mobileIncentive.innerHTML = '<strong>🎉 Best price unlocked!</strong>';
+                } else if (nextTierName) {
+                    const itemsNeeded = nextTierTarget - relevantItemCount;
+                    mobileIncentive.innerHTML = `Add <strong>${itemsNeeded} more</strong> for <strong>${nextTierName}</strong> tier`;
+                }
+            }
+
+            // Atualizar contagem de fotos no mobile (total da subcategoria atual)
+            const mobilePhotoCount = document.getElementById('mobilePhotoCount');
+            if (mobilePhotoCount) {
+                const totalPhotos = window.navigationState?.currentPhotos?.length || 0;
+                if (totalPhotos > 0) {
+                    const unitText = totalPhotos === 1 ? 'unit' : 'units';
+                    mobilePhotoCount.textContent = `${totalPhotos} ${unitText}`;
+                }
+            }
+
+            // Esconder mobileInfoBar inteiro no mobile para Mix & Match
+            // (o preço e contagem agora estão no Mix & Match header)
+            if (window.innerWidth <= 768) {
+                const mobileInfoBar = document.getElementById('mobileInfoBar');
+                if (mobileInfoBar) {
+                    mobileInfoBar.style.display = 'none';
+                }
+            }
+
+            // ========== LEGACY LAYOUT (para compatibilidade) ==========
+            if (progressLabel) {
+                if (relevantItemCount === 0) {
+                    progressLabel.textContent = `Your Progress: Start adding photos!`;
+                } else if (percentage >= 100) {
+                    progressLabel.textContent = `Your Progress: ${relevantItemCount} items • ${currentTierName} tier (Best price!)`;
+                } else {
+                    progressLabel.textContent = `Your Progress: ${relevantItemCount}/${nextTierTarget} items to ${tierNames[Math.min(this.rateRules.findIndex(r => r.from > relevantItemCount), tierNames.length - 1)]} tier`;
+                }
+            }
+
             if (progressIncentive) {
                 let incentiveText = '';
-
                 if (relevantItemCount > 0 && percentage < 100 && nextTierName) {
                     const itemsNeeded = nextTierTarget - relevantItemCount;
                     incentiveText = `💡 Add ${itemsNeeded} more for ${nextTierName}!`;
                 } else if (percentage >= 100) {
                     incentiveText = `🎉 Best price unlocked!`;
                 }
-
                 progressIncentive.textContent = incentiveText;
+            }
+        } else {
+            // Categoria SEM rate rules (preço único) - garantir que badge seja visível (desktop only)
+            const breadcrumbBadge = document.getElementById('breadcrumbPriceBadge');
+            if (breadcrumbBadge && window.innerWidth > 768) {
+                breadcrumbBadge.style.display = '';
             }
         }
         // ============================================
