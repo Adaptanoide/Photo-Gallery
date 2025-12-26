@@ -912,9 +912,11 @@ body.dark-mode .category-header-container .category-header-info p {
 /* ============================================ */
 
 @media (max-width: 768px) {
-    /* Esconder badge Mix & Match do breadcrumb no mobile */
+    /* Badge Mix & Match no breadcrumb mobile - agora visível */
     .breadcrumb-mm-badge {
-        display: none !important;
+        font-size: 0.6rem;
+        padding: 3px 8px;
+        margin-left: auto;
     }
 
     /* FIXED: Keep folder-stats as row on mobile for side-by-side layout */

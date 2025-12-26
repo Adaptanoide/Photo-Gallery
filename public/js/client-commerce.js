@@ -402,7 +402,8 @@ window.PriceProgressBar = {
         const hasVirtualPhotos = isContainerVisible && photosGrid && photosGrid.querySelectorAll('.photo-thumbnail').length > 0;
         const isViewingPhotos = hasNormalPhotos || hasVirtualPhotos;
 
-        if (breadcrumbMmBadge && window.innerWidth > 768 && isViewingPhotos) {
+        // Mostrar badge Mix & Match no breadcrumb (mobile e desktop) quando vendo fotos
+        if (breadcrumbMmBadge && isViewingPhotos) {
             breadcrumbMmBadge.style.display = '';
         } else if (breadcrumbMmBadge) {
             breadcrumbMmBadge.style.display = 'none';

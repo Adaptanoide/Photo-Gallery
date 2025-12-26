@@ -671,11 +671,15 @@
 /* === BREADCRUMB PRICE BADGE (DESKTOP ONLY) === */
 /* ============================================ */
 
-/* Esconder info group no mobile */
+/* Mobile: mostrar apenas badge Mix & Match no breadcrumb */
 .breadcrumb-info-group {
-    display: none;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
+/* Esconder price badge, photo count e hint no mobile */
 .breadcrumb-price-badge,
 .breadcrumb-photo-count,
 .breadcrumb-price-hint {
