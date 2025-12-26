@@ -389,21 +389,12 @@ window.PriceProgressBar = {
             return;
         }
 
-        // Mix & Match ativo - mostrar badge no breadcrumb no desktop
-        // Mas SOMENTE se estamos vendo fotos (não subcategorias ou cards)
+        // Mix & Match ativo - mostrar badge no breadcrumb
+        // Se temos rate rules, é uma categoria Mix & Match
         const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
-        const photosContainer = document.getElementById('photosContainer');
-        const photosGrid = document.getElementById('photosGrid');
 
-        // Verificar se está vendo fotos (galeria normal ou virtual)
-        // Virtual gallery usa .photo-thumbnail dentro de photosGrid
-        const isContainerVisible = photosContainer && photosContainer.style.display !== 'none';
-        const hasNormalPhotos = isContainerVisible && photosContainer.querySelectorAll('.photo-card, .gallery-photo').length > 0;
-        const hasVirtualPhotos = isContainerVisible && photosGrid && photosGrid.querySelectorAll('.photo-thumbnail').length > 0;
-        const isViewingPhotos = hasNormalPhotos || hasVirtualPhotos;
-
-        // Mostrar badge Mix & Match no breadcrumb (mobile e desktop) quando vendo fotos
-        if (breadcrumbMmBadge && isViewingPhotos) {
+        // Mostrar badge Mix & Match no breadcrumb quando categoria é Mix & Match
+        if (breadcrumbMmBadge && this.rateRules.length > 0) {
             breadcrumbMmBadge.style.display = '';
         } else if (breadcrumbMmBadge) {
             breadcrumbMmBadge.style.display = 'none';
