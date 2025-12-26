@@ -22,4 +22,4 @@ sunshine-cowhides-gallery.env
 scripts/
 sync.log
 data/
-.claude/
+.claude/nul
