@@ -754,46 +754,37 @@ window.PriceProgressBar = {
                 }
             }
 
-            // Atualizar incentivo dinâmico (acima do próximo tier a desbloquear)
-            // Primeiro esconder todos os incentivos
-            for (let i = 0; i < this.rateRules.length; i++) {
-                const tierIncentive = document.getElementById(`mmTierIncentive${i}`);
-                if (tierIncentive) {
-                    tierIncentive.style.display = 'none';
-                }
-            }
-
-            // Mostrar incentivo acima do TIER ATUAL (não do próximo)
+            // Atualizar incentivo no final da barra de progresso (mm-next-tier)
+            // Desktop only - mostra "Add X more for Silver" ou "Best price!" no lugar de "→ Silver"
             if (window.innerWidth > 768) {
-                if (relevantItemCount > 0 && percentage < 100 && nextTierName) {
-                    // Encontrar o índice do tier ATUAL (onde o usuário está)
-                    const currentTierIndex = this.rateRules.findIndex(r => relevantItemCount >= r.from && relevantItemCount <= r.to);
-                    if (currentTierIndex >= 0) {
-                        const tierIncentive = document.getElementById(`mmTierIncentive${currentTierIndex}`);
-                        if (tierIncentive) {
-                            const itemsNeeded = nextTierTarget - relevantItemCount;
-                            const incentiveText = tierIncentive.querySelector('.incentive-text');
-                            if (incentiveText) {
-                                incentiveText.innerHTML = `Add ${itemsNeeded} more for <strong>${nextTierName}</strong>`;
-                            }
-                            tierIncentive.style.display = 'flex';
+                const mmNextTier = document.getElementById('mmNextTier');
+                const mmNextTierName = document.getElementById('mmNextTierName');
+                const mmNextTierIcon = mmNextTier?.querySelector('i');
+
+                if (mmNextTier && mmNextTierName) {
+                    if (relevantItemCount > 0 && percentage < 100 && nextTierName) {
+                        const itemsNeeded = nextTierTarget - relevantItemCount;
+                        mmNextTierName.innerHTML = `Add ${itemsNeeded} more for <strong>${nextTierName}</strong>`;
+                        if (mmNextTierIcon) {
+                            mmNextTierIcon.className = 'fas fa-lightbulb';
+                            mmNextTierIcon.style.color = '#f5c451';
                         }
-                    }
-                } else if (percentage >= 100) {
-                    // No último tier - mostrar trophy acima do último tier
-                    const lastTierIndex = this.rateRules.length - 1;
-                    const tierIncentive = document.getElementById(`mmTierIncentive${lastTierIndex}`);
-                    if (tierIncentive) {
-                        const icon = tierIncentive.querySelector('i');
-                        const incentiveText = tierIncentive.querySelector('.incentive-text');
-                        if (icon) {
-                            icon.classList.remove('fa-lightbulb');
-                            icon.classList.add('fa-trophy');
+                        mmNextTier.classList.add('has-incentive');
+                    } else if (percentage >= 100) {
+                        mmNextTierName.innerHTML = `<strong>🎉 Best price!</strong>`;
+                        if (mmNextTierIcon) {
+                            mmNextTierIcon.style.display = 'none';
                         }
-                        if (incentiveText) {
-                            incentiveText.innerHTML = `<strong>Best price unlocked!</strong>`;
+                        mmNextTier.classList.add('has-incentive', 'completed');
+                    } else {
+                        // Sem itens ou estado inicial - mostrar próximo tier
+                        mmNextTierName.textContent = nextTierName || 'Silver';
+                        if (mmNextTierIcon) {
+                            mmNextTierIcon.className = 'fas fa-arrow-right';
+                            mmNextTierIcon.style.color = '#9ca3af';
+                            mmNextTierIcon.style.display = '';
                         }
-                        tierIncentive.style.display = 'flex';
+                        mmNextTier.classList.remove('has-incentive', 'completed');
                     }
                 }
             }

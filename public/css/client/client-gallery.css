@@ -1062,21 +1062,9 @@ body.dark-mode .category-header-container .category-header-info p {
     position: relative;
 }
 
-/* Incentivo dinâmico acima de cada tier - posicionado absolutamente */
+/* Incentivo dinâmico acima de cada tier - ESCONDIDO no desktop (movido para mm-next-tier) */
 .mm-tier-incentive {
-    display: none;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    color: #059669;
-    background: #ecfdf5;
-    padding: 3px 10px;
-    border-radius: 10px;
-    white-space: nowrap;
-    position: absolute;
-    top: -26px;
-    left: 0;
-    z-index: 1;
+    display: none !important;
 }
 
 .mm-tier-incentive i {
@@ -1245,6 +1233,25 @@ body.dark-mode .category-header-container .category-header-info p {
 .mm-next-tier i {
     font-size: 9px;
     color: #9ca3af;
+}
+
+/* Incentivo no final da barra */
+.mm-next-tier.has-incentive {
+    color: #059669;
+    font-size: 11px;
+}
+
+.mm-next-tier.has-incentive i {
+    color: #f5c451;
+    font-size: 11px;
+}
+
+.mm-next-tier.has-incentive strong {
+    color: #047857;
+}
+
+.mm-next-tier.completed {
+    color: #059669;
 }
 
 /* Desktop: Esconder layout mobile */
