@@ -777,21 +777,9 @@
         color: #6b7280;
     }
 
-    /* Contador de fotos */
+    /* Contador de fotos - ESCONDIDO no desktop */
     .breadcrumb-photo-count {
-        display: none;
-        background: #ffffff;
-        color: #4b5563;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-
-    .breadcrumb-photo-count:not(:empty) {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
+        display: none !important;
     }
 }
 

@@ -458,6 +458,7 @@ window.PriceProgressBar = {
 
             <!-- Barra de progresso -->
             <div class="mm-progress-section">
+                <div class="mm-tier-counter" id="mmTierCounter">0/5</div>
                 <div class="mm-progress-track">
                     <div class="mm-progress-fill" id="progressBarFill" style="width: 0%"></div>
                 </div>
@@ -731,6 +732,20 @@ window.PriceProgressBar = {
             // Atualizar barra de progresso
             if (progressBarFill) {
                 progressBarFill.style.width = `${percentage}%`;
+            }
+
+            // Atualizar contador de tier (ex: "3/5", "8/12")
+            const mmTierCounter = document.getElementById('mmTierCounter');
+            if (mmTierCounter) {
+                if (relevantItemCount === 0) {
+                    mmTierCounter.style.display = 'none';
+                } else {
+                    mmTierCounter.style.display = 'flex';
+                    // Mostrar X/Y onde Y é o máximo do tier atual ou próximo target
+                    const currentRule = this.rateRules[currentTierIndex];
+                    const tierMax = currentRule?.to === 999 ? `${currentRule?.from}+` : (nextTierTarget - 1);
+                    mmTierCounter.textContent = `${relevantItemCount}/${tierMax}`;
+                }
             }
 
             // Atualizar próximo tier indicator
