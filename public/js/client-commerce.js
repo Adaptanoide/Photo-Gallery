@@ -734,17 +734,20 @@ window.PriceProgressBar = {
                 progressBarFill.style.width = `${percentage}%`;
             }
 
-            // Atualizar contador de tier (ex: "3/5", "8/12")
+            // Atualizar contador de tier (ex: "1/6", "6/13")
+            // Mostra progresso para o PRÓXIMO tier
             const mmTierCounter = document.getElementById('mmTierCounter');
             if (mmTierCounter) {
                 if (relevantItemCount === 0) {
                     mmTierCounter.style.display = 'none';
-                } else {
+                } else if (percentage >= 100) {
+                    // No último tier (Diamond) - mostrar apenas o total
                     mmTierCounter.style.display = 'flex';
-                    // Mostrar X/Y onde Y é o máximo do tier atual ou próximo target
-                    const currentRule = this.rateRules[currentTierIndex];
-                    const tierMax = currentRule?.to === 999 ? `${currentRule?.from}+` : (nextTierTarget - 1);
-                    mmTierCounter.textContent = `${relevantItemCount}/${tierMax}`;
+                    mmTierCounter.textContent = `${relevantItemCount}`;
+                } else {
+                    // Mostrar X/Y onde Y é o início do próximo tier
+                    mmTierCounter.style.display = 'flex';
+                    mmTierCounter.textContent = `${relevantItemCount}/${nextTierTarget}`;
                 }
             }
 

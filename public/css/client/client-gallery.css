@@ -238,10 +238,7 @@ body.dark-mode .category-header-container .category-header-info p {
 /* === PHOTOS GALLERY === */
 .photos-gallery {
     background: var(--luxury-medium);
-    border-radius: var(--border-radius-large);
     padding: 2rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-subtle);
     position: relative;
     overflow: visible;
 }
@@ -969,19 +966,6 @@ body.dark-mode .category-header-container .category-header-info p {
     }
 }
 
-/* ============================================
-   MIX & MATCH - NOVO LAYOUT COMPACTO (Desktop)
-   ============================================ */
-
-.mix-match-container {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin: 0 0 10px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
 /* Header row - header + incentivo na mesma linha */
 .mm-header-row {
     display: flex;
@@ -1206,15 +1190,12 @@ body.dark-mode .category-header-container .category-header-info p {
     gap: 10px;
 }
 
-/* Contador de tier (ex: "3/5") */
+/* Contador de tier (ex: "1/6") - sem background */
 .mm-tier-counter {
     display: none;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: #059669;
-    background: #ecfdf5;
-    padding: 2px 8px;
-    border-radius: 10px;
     white-space: nowrap;
 }
 
@@ -1247,10 +1228,13 @@ body.dark-mode .category-header-container .category-header-info p {
     color: #9ca3af;
 }
 
-/* Incentivo no final da barra */
+/* Incentivo no final da barra - fundo verde claro */
 .mm-next-tier.has-incentive {
-    color: #059669;
+    background: #ecfdf5;
+    color: #6b7280;
     font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 10px;
 }
 
 .mm-next-tier.has-incentive i {
@@ -1259,11 +1243,14 @@ body.dark-mode .category-header-container .category-header-info p {
 }
 
 .mm-next-tier.has-incentive strong {
-    color: #047857;
+    color: #059669;
 }
 
 .mm-next-tier.completed {
+    background: #ecfdf5;
     color: #059669;
+    padding: 3px 10px;
+    border-radius: 10px;
 }
 
 /* Desktop: Esconder layout mobile */
