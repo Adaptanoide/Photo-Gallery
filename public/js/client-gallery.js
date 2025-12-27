@@ -91,10 +91,6 @@
             const session = JSON.parse(savedSession);
             console.log('🔑 Cliente identificado:', session.accessCode);
 
-            // Limpar rate rules ao mudar de categoria
-            window.specialSelectionRateRules = null;
-            window.specialSelectionBasePrice = null;
-
             const response = await fetchWithAuth(`/api/gallery/photos?prefix=${encodeURIComponent(folderId)}`);
             const data = await response.json();
 
@@ -108,67 +104,54 @@
 
             // Inicializar Price Progress Bar
             if (window.PriceProgressBar) {
-                window.isSpecialSelection = (data.clientType === 'special');
-                console.log('🎯 MARCADO como Special Selection:', window.isSpecialSelection);
-
                 // Controlar sidebar
                 const sidebar = document.getElementById('filterSidebar');
                 if (sidebar) {
-                    if (window.isSpecialSelection) {
-                        sidebar.style.display = 'block';
-                        const filterContainer = sidebar.querySelector('.filter-container');
-                        if (filterContainer) {
-                            filterContainer.style.display = 'none';
-                        }
-                    } else {
-                        sidebar.style.display = 'block';
-                        const filterContainer = sidebar.querySelector('.filter-container');
-                        if (filterContainer) {
-                            filterContainer.style.display = 'block';
-                        }
+                    sidebar.style.display = 'block';
+                    const filterContainer = sidebar.querySelector('.filter-container');
+                    if (filterContainer) {
+                        filterContainer.style.display = 'block';
                     }
                 }
 
-                // Rate rules para Special Selection
-                if (data.clientType === 'special' && data.rateRules && data.rateRules.length > 0) {
-                    window.specialSelectionRateRules = data.rateRules;
-                    window.specialSelectionBasePrice = data.baseCategoryPrice;
-                    window.PriceProgressBar.renderSpecialSelection(data.rateRules, data.baseCategoryPrice);
-                } else {
-                    window.specialSelectionRateRules = null;
-                    window.specialSelectionBasePrice = null;
-                    if (data.clientType === 'special') {
-                        window.PriceProgressBar.hide();
-                        // ADICIONE AQUI - Ajustar info bar quando não tem rate rules
-                        const infoBar = document.getElementById('mobileInfoBar');
-                        if (infoBar && window.innerWidth <= 768) {
-                            infoBar.classList.add('no-rate-rules');
-                        }
-                    } else {
-                        window.PriceProgressBar.init(navigationState.currentFolderId);
-                        // Remover classe primeiro
-                        const infoBar = document.getElementById('mobileInfoBar');
-                        if (infoBar && window.innerWidth <= 768) {
-                            infoBar.classList.remove('no-rate-rules');
-                            // Remover também do grid de fotos
-                            const photosGrid = document.querySelector('.photos-grid');
-                            if (photosGrid) {
-                                photosGrid.classList.remove('no-rate-rules');
-                            }
+                // IMPORTANTE: Só inicializar PriceProgressBar para Natural Cowhides
+                const isMixMatch = window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch();
 
-                            // Verificar se realmente tem rate rules após init
-                            setTimeout(() => {
-                                const priceContainer = document.getElementById('priceProgressContainer');
-                                if (priceContainer && priceContainer.style.display === 'none') {
-                                    infoBar.classList.add('no-rate-rules');
-                                    // Ajustar também o grid de fotos
-                                    const photosGrid = document.querySelector('.photos-grid');
-                                    if (photosGrid) {
-                                        photosGrid.classList.add('no-rate-rules');
-                                    }
-                                }
-                            }, 500);
+                if (isMixMatch) {
+                    window.PriceProgressBar.init(navigationState.currentFolderId);
+                    // Remover classe primeiro
+                    const infoBar = document.getElementById('mobileInfoBar');
+                    if (infoBar && window.innerWidth <= 768) {
+                        infoBar.classList.remove('no-rate-rules');
+                        // Remover também do grid de fotos
+                        const photosGrid = document.querySelector('.photos-grid');
+                        if (photosGrid) {
+                            photosGrid.classList.remove('no-rate-rules');
                         }
+
+                        // Verificar se realmente tem rate rules após init
+                        setTimeout(() => {
+                            const priceContainer = document.getElementById('priceProgressContainer');
+                            if (priceContainer && priceContainer.style.display === 'none') {
+                                infoBar.classList.add('no-rate-rules');
+                                // Ajustar também o grid de fotos
+                                const photosGrid = document.querySelector('.photos-grid');
+                                if (photosGrid) {
+                                    photosGrid.classList.add('no-rate-rules');
+                                }
+                            }
+                        }, 500);
+                    }
+                } else {
+                    // Categorias sem Mix & Match - esconder barra e ajustar layout
+                    window.PriceProgressBar.hide();
+                    const infoBar = document.getElementById('mobileInfoBar');
+                    if (infoBar && window.innerWidth <= 768) {
+                        infoBar.classList.add('no-rate-rules');
+                    }
+                    const photosGrid = document.querySelector('.photos-grid');
+                    if (photosGrid) {
+                        photosGrid.classList.add('no-rate-rules');
                     }
                 }
             }
@@ -844,6 +827,54 @@
         }
     }
 
+    // ===== OPEN CART FROM MODAL (Mobile) =====
+    window.openCartFromModal = function() {
+        // Store flag that we opened cart from modal
+        window.cartOpenedFromModal = true;
+
+        // Store current modal state
+        window.modalStateBeforeCart = {
+            photoIndex: navigationState.currentPhotoIndex,
+            folderId: navigationState.currentFolderId,
+            photos: navigationState.currentPhotos
+        };
+
+        // Hide the photo modal (but don't close it completely)
+        document.getElementById('photoModal').style.display = 'none';
+
+        // Open the cart sidebar
+        if (typeof window.openCartSidebar === 'function') {
+            window.openCartSidebar();
+        } else if (typeof window.toggleCart === 'function') {
+            window.toggleCart();
+        }
+
+        console.log('🛒 Cart opened from modal');
+    }
+
+    // ===== RETURN TO MODAL FROM CART =====
+    window.returnToModalFromCart = function() {
+        if (window.cartOpenedFromModal && window.modalStateBeforeCart) {
+            // Close cart
+            const cartSidebar = document.getElementById('cartSidebar');
+            if (cartSidebar) {
+                cartSidebar.classList.remove('active');
+            }
+
+            // Restore modal
+            const state = window.modalStateBeforeCart;
+            if (state.photos && state.photos.length > 0) {
+                window.openPhotoModal(state.photoIndex);
+            }
+
+            // Clear flags
+            window.cartOpenedFromModal = false;
+            window.modalStateBeforeCart = null;
+
+            console.log('📸 Returned to modal from cart');
+        }
+    }
+
     // ===== INFORMAÇÕES COMERCIAIS =====
     window.updateModalCommercialInfo = async function (photo, photoIndex, totalPhotos) {
         // Se está vendo do carrinho, mostrar categoria + contexto
@@ -953,6 +984,36 @@
 
             let priceInfo = null;
             let currentFolderId = navigationState.currentFolderId;
+            const isViewingFromCart = navigationState.isViewingCart || window.modalOpenedFromCart;
+
+            // Verificar se é foto de Natural Cowhides (para Mix & Match)
+            let isNaturalCowhidesPhoto = false;
+            if (isViewingFromCart && photo) {
+                // Usar helper robusto que verifica fullPath, category e subcategorias conhecidas
+                const fullPath = photo.fullPath || '';
+                const category = photo.category || '';
+                const pathLevels = photo.pathLevels || [];
+
+                // Usar função helper global se disponível, senão verificação simples
+                if (window.isNaturalCowhidesPath) {
+                    isNaturalCowhidesPhoto = window.isNaturalCowhidesPath(fullPath) ||
+                                             window.isNaturalCowhidesPath(category) ||
+                                             pathLevels.some(level => window.isNaturalCowhidesPath(level));
+                } else {
+                    // Fallback: verificação básica + subcategorias conhecidas
+                    // Natural Cowhides has 3 main categories:
+                    // 1. Brazil Best Sellers, 2. Brazil Top Selected Categories, 3. Colombian Cowhides
+                    const text = (fullPath + ' ' + category).toUpperCase();
+                    isNaturalCowhidesPhoto = text.includes('NATURAL COWHIDES') ||
+                                             text.includes('BRAZIL BEST SELLERS') ||
+                                             text.includes('BRAZIL TOP SELECTED') ||
+                                             text.includes('COLOMBIAN COWHIDES') ||
+                                             text.includes('BRAZIL FIRST SELECTION') ||
+                                             text.includes('BEST VALUE') ||
+                                             text.includes('BRINDLE');
+                }
+                console.log('🔍 [MODAL] isNaturalCowhidesPhoto:', isNaturalCowhidesPhoto, 'fullPath:', fullPath, 'category:', category);
+            }
 
             if (photo && photo.customPrice) {
                 priceInfo = {
@@ -960,6 +1021,51 @@
                     formattedPrice: window.CurrencyManager ? CurrencyManager.format(parseFloat(photo.customPrice)) : `$${parseFloat(photo.customPrice).toFixed(2)}`
                 };
                 console.log('💰 Usando customPrice da Special Selection:', photo.customPrice);
+            } else if (isViewingFromCart && photo && (photo.hasPrice || photo.price || photo.formattedPrice)) {
+                // ✅ Visualizando do carrinho - usar preço da foto
+                priceInfo = {
+                    hasPrice: true,
+                    formattedPrice: photo.formattedPrice || (window.CurrencyManager ? CurrencyManager.format(photo.price) : `$${photo.price}`)
+                };
+                console.log('💰 [MODAL] Usando preço do carrinho:', priceInfo.formattedPrice);
+            } else if (isViewingFromCart && isNaturalCowhidesPhoto) {
+                // ✅ Foto Natural Cowhides do carrinho sem preço - buscar preço base
+                try {
+                    console.log('🔍 [MODAL] Buscando preço para Natural Cowhides do carrinho...');
+                    const savedSession = localStorage.getItem('sunshineSession');
+                    const clientCode = savedSession ? JSON.parse(savedSession).accessCode : '';
+                    const response = await fetch(`/api/pricing/category-price?prefix=natural-cowhides&clientCode=${encodeURIComponent(clientCode)}`);
+                    const data = await response.json();
+                    if (data.success && data.category && data.category.hasPrice) {
+                        priceInfo = {
+                            hasPrice: true,
+                            formattedPrice: data.category.formattedPrice || (window.CurrencyManager ? CurrencyManager.format(data.category.finalPrice) : `$${data.category.finalPrice}`)
+                        };
+                        console.log('💰 [MODAL] Preço Natural Cowhides carregado:', priceInfo.formattedPrice);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Não foi possível buscar preço Natural Cowhides:', e);
+                }
+            } else if (isViewingFromCart && photo && photo.category) {
+                // ✅ Foto de outra categoria do carrinho sem preço - buscar preço da categoria
+                try {
+                    console.log('🔍 [MODAL] Buscando preço para categoria do carrinho:', photo.category);
+                    // Usar fullPath se disponível, senão category
+                    const categoryPath = photo.fullPath || photo.category;
+                    const savedSession = localStorage.getItem('sunshineSession');
+                    const clientCode = savedSession ? JSON.parse(savedSession).accessCode : '';
+                    const response = await fetch(`/api/pricing/category-price?prefix=${encodeURIComponent(categoryPath)}&clientCode=${encodeURIComponent(clientCode)}`);
+                    const data = await response.json();
+                    if (data.success && data.category && data.category.hasPrice) {
+                        priceInfo = {
+                            hasPrice: true,
+                            formattedPrice: data.category.formattedPrice || (window.CurrencyManager ? CurrencyManager.format(data.category.finalPrice) : `$${data.category.finalPrice}`)
+                        };
+                        console.log('💰 [MODAL] Preço da categoria carregado:', priceInfo.formattedPrice);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Não foi possível buscar preço da categoria:', e);
+                }
             } else {
                 console.log('🔍 [MODAL] Buscando preço para:', currentFolderId);
                 priceInfo = currentFolderId ? await loadCategoryPrice(currentFolderId) : null;
@@ -968,22 +1074,38 @@
 
             const savedSession = localStorage.getItem('sunshineSession');
             const clientCode = savedSession ? JSON.parse(savedSession).accessCode : null;
-            let rangeData;
+            let rangeData = { success: false, data: null };
 
-            if (window.specialSelectionRateRules) {
-                rangeData = {
-                    success: true,
-                    data: {
-                        ranges: window.specialSelectionRateRules.map(rule => ({
-                            min: rule.from,
-                            max: rule.to,
-                            price: rule.price
-                        }))
+            if (isNaturalCowhidesPhoto) {
+                // ✅ Foto de Natural Cowhides do carrinho - buscar rate rules para Mix & Match
+                // USAR fullPath convertido para formato de API (substituir " → " por "/")
+                let categoryIdForRules = 'natural-cowhides';
+                if (photo) {
+                    // Prioridade: fullPath > category > fallback
+                    const pathSource = photo.fullPath || photo.category || '';
+                    if (pathSource) {
+                        // Converter "Brazil Best Sellers → Best Value" para "Brazil Best Sellers/Best Value/"
+                        categoryIdForRules = pathSource
+                            .replace(/ → /g, '/')
+                            .replace(/→/g, '/')
+                            .replace(/\/$/, '') + '/';  // Garantir que termina com /
                     }
-                };
-            } else {
-                const rangeResponse = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(currentFolderId)}&clientCode=${encodeURIComponent(clientCode)}`);
-                rangeData = await rangeResponse.json();
+                }
+                try {
+                    console.log('🔍 [MODAL] Buscando rate rules com path:', categoryIdForRules);
+                    const rangeResponse = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(categoryIdForRules)}&clientCode=${encodeURIComponent(clientCode || '')}`);
+                    rangeData = await rangeResponse.json();
+                    console.log('💰 [MODAL] Rate rules para subcategoria:', rangeData);
+                } catch (e) {
+                    console.warn('⚠️ Não foi possível buscar rate rules:', e);
+                }
+            } else if (currentFolderId) {
+                try {
+                    const rangeResponse = await fetch(`/api/pricing/category-ranges?categoryId=${encodeURIComponent(currentFolderId)}&clientCode=${encodeURIComponent(clientCode || '')}`);
+                    rangeData = await rangeResponse.json();
+                } catch (e) {
+                    console.warn('⚠️ Não foi possível buscar rate rules:', e);
+                }
             }
 
             const photoIndex = navigationState.currentPhotoIndex;
@@ -992,6 +1114,13 @@
             if (priceInfo && priceInfo.hasPrice) {
                 document.getElementById('modalPhotoSize').innerHTML = '';
                 document.getElementById('modalPhotoDate').innerHTML = '';
+
+                // ✅ SEMPRE esconder rate-rules-bar primeiro (será mostrado apenas para Mix & Match)
+                const existingRateBar = document.querySelector('.modal-rate-rules-bar');
+                if (existingRateBar) {
+                    existingRateBar.classList.remove('active');
+                    existingRateBar.innerHTML = '';
+                }
 
                 // ✅ CALCULAR cartCount
                 let cartCount = 0;
@@ -1040,9 +1169,21 @@
                           onclick="event.stopPropagation(); document.getElementById('photoModal').style.display='none'; setTimeout(() => window.openChatWithPriceQuestion(), 300);">
                         ${currentTierPrice}
                     </span>
-                    <span style="margin: 0 10px;">-</span>
-                    ${photoIndex + 1} / ${totalPhotos}
+                    <span class="modal-counter-separator" style="margin: 0 10px;">-</span>
+                    <span class="modal-photo-count">${photoIndex + 1} / ${totalPhotos}</span>
                 `;
+
+                // Update modal header cart badge count
+                const modalCartBadgeCount = document.getElementById('modalCartBadgeCount');
+                if (modalCartBadgeCount) {
+                    modalCartBadgeCount.textContent = cartCount;
+                }
+
+                // Update footer cart badge for mobile
+                const footerCartCount = document.getElementById('footerCartCount');
+                if (footerCartCount) {
+                    footerCartCount.textContent = cartCount;
+                }
 
                 // Adicionar ícone de chat ao badge
                 setTimeout(() => {
@@ -1052,9 +1193,11 @@
                     }
                 }, 100);
 
-                // ✅ MOSTRAR tiers SOMENTE se for Mix & Match
+                // ✅ MOSTRAR tiers SOMENTE se for Mix & Match (Natural Cowhides)
+                // TAMBÉM considerar isNaturalCowhidesPhoto para fotos do carrinho
                 const gridEl = document.getElementById('modalDiscountGrid');
-                if (gridEl && hasMultipleTiers) {
+                const isMixMatchCategory = isNaturalCowhidesPhoto || (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch());
+                if (gridEl && hasMultipleTiers && isMixMatchCategory) {
                     let volumeHTML = '<div class="modal-volume-pricing">';
 
                     rangeData.data.ranges.forEach((range, index) => {
@@ -1077,46 +1220,66 @@
                         `;
                     });
 
-                    volumeHTML += `
-                        <span class="cart-count">
-                            <i class="fas fa-shopping-cart"></i> ${cartCount} items
-                        </span>
-                    `;
-
+                    // Cart count removed - now shown in header cart badge button
                     volumeHTML += '</div>';
                     gridEl.innerHTML = volumeHTML;
 
-                    // Criar barra compacta para mobile
+                    // Criar barra compacta para mobile - APENAS para Natural Cowhides (Mix & Match)
                     if (window.innerWidth <= 768) {
                         let rateBar = document.querySelector('.modal-rate-rules-bar');
-                        if (!rateBar) {
-                            rateBar = document.createElement('div');
-                            rateBar.className = 'modal-rate-rules-bar';
-                            document.getElementById('photoModal').appendChild(rateBar);
+
+                        // ✅ Só mostrar tiers se for categoria Mix & Match (Natural Cowhides)
+                        // TAMBÉM considerar isNaturalCowhidesPhoto para fotos do carrinho
+                        const isMixMatch = isNaturalCowhidesPhoto || (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch());
+
+                        if (isMixMatch) {
+                            if (!rateBar) {
+                                rateBar = document.createElement('div');
+                                rateBar.className = 'modal-rate-rules-bar';
+                                document.getElementById('photoModal').appendChild(rateBar);
+                            }
+
+                            let compactHTML = '';
+                            rangeData.data.ranges.forEach((range, index) => {
+                                const isActive = cartCount >= range.min && (!range.max || cartCount <= range.max);
+                                const tierClass = isActive ? 'tier-item active' : 'tier-item';
+
+                                if (index > 0) compactHTML += '<span class="separator">|</span>';
+                                compactHTML += `<span class="${tierClass}">${range.min}${range.max ? `-${range.max}` : '+'}: ${window.CurrencyManager ? CurrencyManager.format(range.price) : '$' + range.price}</span>`;
+                            });
+
+                            rateBar.innerHTML = compactHTML;
+                            rateBar.classList.add('active');
+                        } else if (rateBar) {
+                            // Esconder se não for Mix & Match
+                            rateBar.classList.remove('active');
+                            rateBar.innerHTML = '';
                         }
-
-                        let compactHTML = '';
-                        rangeData.data.ranges.forEach((range, index) => {
-                            const isActive = cartCount >= range.min && (!range.max || cartCount <= range.max);
-                            const tierClass = isActive ? 'tier-item active' : 'tier-item';
-
-                            if (index > 0) compactHTML += '<span class="separator">|</span>';
-                            compactHTML += `<span class="${tierClass}">${range.min}${range.max ? `-${range.max}` : '+'}: ${window.CurrencyManager ? CurrencyManager.format(range.price) : '$' + range.price}</span>`;
-                        });
-
-                        rateBar.innerHTML = compactHTML;
-                        rateBar.classList.add('active');
                     }
                     gridEl.style.display = window.innerWidth <= 768 ? 'none' : 'block';
                 } else if (gridEl) {
                     // Ocultar grid para categorias regulares
                     gridEl.style.display = 'none';
+
+                    // ✅ ESCONDER rate-rules-bar para categorias que NÃO são Mix & Match
+                    const rateBar = document.querySelector('.modal-rate-rules-bar');
+                    if (rateBar) {
+                        rateBar.classList.remove('active');
+                        rateBar.innerHTML = '';
+                    }
                 }
 
             } else {
                 document.getElementById('modalPhotoCounter').textContent = `${photoIndex + 1} / ${totalPhotos}`;
                 const gridEl = document.getElementById('modalDiscountGrid');
                 if (gridEl) gridEl.style.display = 'none';
+
+                // ✅ ESCONDER rate-rules-bar quando não há preço
+                const rateBar = document.querySelector('.modal-rate-rules-bar');
+                if (rateBar) {
+                    rateBar.classList.remove('active');
+                    rateBar.innerHTML = '';
+                }
             }
         } catch (error) {
             console.error('Erro ao atualizar preço do modal:', error);
@@ -2050,3 +2213,90 @@ window.addEventListener('currencyChanged', (e) => {
         }, 100);
     }
 });
+
+// ===== SWIPE GESTURES FOR PHOTO MODAL =====
+(function() {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    const minSwipeDistance = 50; // Minimum distance for swipe
+    const maxVerticalDistance = 100; // Max vertical movement to still count as horizontal swipe
+
+    let swipeDisabled = false;
+
+    function handleTouchStart(e) {
+        // Ignore touches on buttons and interactive elements
+        const target = e.target;
+        if (target.closest('button, .btn, .nav-btn, .modal-cart-badge-btn, .btn-close, .zoom-btn-simple, a')) {
+            swipeDisabled = true;
+            return;
+        }
+        swipeDisabled = false;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
+
+    function handleTouchMove(e) {
+        touchEndX = e.touches[0].clientX;
+        touchEndY = e.touches[0].clientY;
+    }
+
+    function handleTouchEnd(e) {
+        // Skip if swipe was disabled (touch started on button)
+        if (swipeDisabled) {
+            swipeDisabled = false;
+            return;
+        }
+
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = Math.abs(touchEndY - touchStartY);
+
+        // Only trigger if horizontal swipe is significant and vertical movement is small
+        if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
+            if (deltaX > 0) {
+                // Swipe RIGHT → Previous photo
+                console.log('👈 Swipe right - previous photo');
+                if (typeof window.prevPhoto === 'function') {
+                    window.prevPhoto();
+                }
+            } else {
+                // Swipe LEFT → Next photo
+                console.log('👉 Swipe left - next photo');
+                if (typeof window.nextPhoto === 'function') {
+                    window.nextPhoto();
+                }
+            }
+        }
+
+        // Reset values
+        touchStartX = 0;
+        touchStartY = 0;
+        touchEndX = 0;
+        touchEndY = 0;
+    }
+
+    // Setup swipe listeners when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const photoModal = document.getElementById('photoModal');
+        if (photoModal) {
+            // Add touch event listeners to the modal
+            photoModal.addEventListener('touchstart', handleTouchStart, { passive: true });
+            photoModal.addEventListener('touchmove', handleTouchMove, { passive: true });
+            photoModal.addEventListener('touchend', handleTouchEnd, { passive: true });
+            console.log('👆 Swipe gestures enabled for photo modal');
+        }
+    });
+
+    // Also try to setup after a delay (in case modal is created dynamically)
+    setTimeout(function() {
+        const photoModal = document.getElementById('photoModal');
+        if (photoModal && !photoModal._swipeEnabled) {
+            photoModal.addEventListener('touchstart', handleTouchStart, { passive: true });
+            photoModal.addEventListener('touchmove', handleTouchMove, { passive: true });
+            photoModal.addEventListener('touchend', handleTouchEnd, { passive: true });
+            photoModal._swipeEnabled = true;
+            console.log('👆 Swipe gestures enabled for photo modal (delayed)');
+        }
+    }, 2000);
+})();

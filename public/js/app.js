@@ -229,7 +229,8 @@ async function handleAdminLogin(e) {
             AppState.currentUser = data.user;
 
             closeModal('adminModal');
-            showAdminTransition(data.user.username || username);
+            // Skip transition animation, redirect immediately
+            redirectToAdmin();
 
         } else {
             showNotification(data.message || 'Credenciais inválidas', 'error');
@@ -487,14 +488,13 @@ function showLoginTransition(clientName) {
     if (loaderBar) {
         loaderBar.style.animation = 'none';
         loaderBar.offsetHeight; // Trigger reflow
-        loaderBar.style.animation = 'loadProgress 2.8s ease forwards 0.3s';
+        loaderBar.style.animation = 'loadProgress 1.5s ease forwards 0.2s';
     }
 
-    // Redirect after animation completes
-    // Keep white screen visible until redirect (no exit animation)
+    // Redirect after animation completes - 2 seconds max
     setTimeout(() => {
         redirectToClient();
-    }, 3500);
+    }, 2000);
 }
 
 // ===== BEAUTIFUL ADMIN LOGIN TRANSITION - DARK THEME =====

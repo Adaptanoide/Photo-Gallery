@@ -662,3 +662,28 @@ body.dark-mode .chat-tooltip-arrow {
 body.dark-mode .chat-unread-badge {
     border-color: #2a2a2a !important;
 }
+
+/* Suggestion chips dark mode */
+body.dark-mode .suggestion-chip {
+    background: #3d3d3d !important;
+    border-color: #555 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .suggestion-chip:hover {
+    background: #B87333 !important;
+    border-color: #B87333 !important;
+    color: white !important;
+}
+
+body.dark-mode .suggestion-chip i {
+    color: #B87333 !important;
+}
+
+body.dark-mode .suggestion-chip:hover i {
+    color: white !important;
+}
+
+body.dark-mode .chat-suggestions .suggestions-label {
+    color: #888 !important;
+}

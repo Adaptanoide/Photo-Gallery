@@ -192,11 +192,16 @@
     transition: var(--transition);
 }
 
-/* Borda esquerda dourada para itens quando categoria expandida (fotos únicas) */
+/* Items dentro do grupo de categoria - clean, sem borda pesada */
 .category-items .cart-item {
-    border-left: 3px solid var(--gold-primary);
-    margin-left: 5px;
-    padding-left: 10px;
+    border-left: none;
+    margin: 0;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.category-items .cart-item:last-child {
+    border-bottom: none;
 }
 
 .cart-item:hover {
@@ -310,25 +315,33 @@
     transform: scale(1.1);
 }
 
-/* Category divider */
+/* ============================================
+   CATEGORY GROUP - Unified container for header + items
+   ============================================ */
+.category-group {
+    margin: 0 8px 12px 8px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--luxury-dark);
+}
+
+/* Category header (divider) */
 .category-divider {
-    padding: 8px 12px;
-    background: transparent;
-    border-bottom: 1px solid rgba(184, 115, 51, 0.3);
+    padding: 10px 12px;
+    background: rgba(184, 115, 51, 0.04);
+    border-bottom: 1px solid var(--border-subtle);
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border: #b8733375 1px solid;
-    margin-right: 10px;
-    margin-left: 5px;
-    margin-bottom: 6px;
-    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin: 0;
+    border-radius: 0;
 }
 
 .category-divider:hover {
-    background: rgba(184, 115, 51, 0.05);
+    background: rgba(184, 115, 51, 0.08);
 }
 
 .category-left {
@@ -467,32 +480,103 @@
     margin-bottom: 0.25rem;
 }
 
-/* Review summary link */
-.review-summary-link {
-    text-align: center;
-    margin: 3px 0 10px 0;
+/* ============================================
+   CART TOTALS - Footer Summary
+   Labels left, values right
+   ============================================ */
+.cart-totals-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
 }
 
-.review-summary-link a {
-    color: #777777;
-    text-decoration: none;
+.cart-totals-simple .subtotal-line,
+.cart-totals-simple .discount-line,
+.cart-totals-simple .total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.cart-totals-simple .subtotal-line span:first-child,
+.cart-totals-simple .discount-line span:first-child,
+.cart-totals-simple .total-line span:first-child {
+    text-align: left;
+    color: var(--text-secondary);
+}
+
+.cart-totals-simple .subtotal-line span:last-child,
+.cart-totals-simple .discount-line span:last-child,
+.cart-totals-simple .total-line span:last-child {
+    text-align: right;
+    font-weight: 500;
+}
+
+.cart-totals-simple .discount-line {
+    color: #28a745;
+}
+
+.cart-totals-simple .total-line {
+    border-top: 1px solid var(--border-subtle);
+    margin-top: 4px;
+    padding-top: 10px;
+}
+
+.cart-totals-simple .total-line span:first-child {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.cart-totals-simple .total-line span:last-child {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* ============================================
+   CART FOOTER ROW - Items + Review Summary
+   ============================================ */
+.cart-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0 12px 0;
+    padding: 0 2px;
+}
+
+.cart-items-label {
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
+}
+
+/* Review Summary Button - Subtle badge style */
+.review-summary-btn {
+    background: rgba(184, 115, 51, 0.08);
+    border: 1px solid rgba(184, 115, 51, 0.2);
+    color: #666;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     transition: all 0.2s ease;
-    opacity: 0.9;
 }
 
-.review-summary-link a:hover {
-    text-decoration: underline;
-    opacity: 1;
-    transform: translateY(-1px);
+.review-summary-btn:hover {
+    background: rgba(184, 115, 51, 0.15);
+    border-color: rgba(184, 115, 51, 0.35);
+    color: #B87333;
 }
 
-.review-summary-link i {
-    font-size: 0.85rem;
+.review-summary-btn i {
+    font-size: 0.8rem;
+    color: #B87333;
 }
 
 /* Finalize button */
@@ -674,33 +758,49 @@
         right: 340px; /* Posição na borda do carrinho */
         top: 50%;
         transform: translateY(-50%);
-        width: 24px;
-        height: 60px;
+        width: 36px;
+        height: 80px;
         background: #B87333;
         border: none;
-        border-radius: 6px 0 0 6px;
+        border-radius: 8px 0 0 8px;
         cursor: pointer;
         z-index: 9002;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 8px;
         box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
-        /* Animação suave sincronizada com o carrinho */
+        color: white;
+        font-size: 12px;
         transition:
             right 0.5s cubic-bezier(0.4, 0, 0.2, 1),
             width 0.2s ease,
-            background 0.2s ease;
-        color: white;
-        font-size: 12px;
+            background 0.2s ease,
+            opacity 0.2s ease;
+    }
+
+    /* Esconder botão toggle quando dropdown de busca está aberto */
+    body.search-dropdown-open .sidebar-toggle-btn {
+        z-index: 1 !important;
+        opacity: 0.3;
+        pointer-events: none;
     }
 
     .sidebar-toggle-btn:hover {
         background: #A0522D;
-        width: 28px;
+        width: 40px;
         box-shadow: -3px 0 12px rgba(0, 0, 0, 0.2);
     }
 
-    .sidebar-toggle-btn i {
+    .sidebar-toggle-btn .toggle-cart-icon {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .sidebar-toggle-btn .toggle-chevron {
+        font-size: 11px;
+        opacity: 0.7;
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -709,7 +809,7 @@
         right: 18px; /* Offset para não ficar atrás do scrollbar */
     }
 
-    .sidebar-toggle-btn.collapsed i {
+    .sidebar-toggle-btn.collapsed .toggle-chevron {
         transform: rotate(180deg);
     }
 
@@ -963,10 +1063,76 @@ body.dark-mode .cart-total-value {
     color: #f0f0f0 !important;
 }
 
+/* Dark mode - Cart totals summary */
+body.dark-mode .cart-totals-simple .subtotal-line span:first-child,
+body.dark-mode .cart-totals-simple .total-line span:first-child {
+    color: #999 !important;
+}
+
+body.dark-mode .cart-totals-simple .subtotal-line span:last-child {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .cart-totals-simple .discount-line {
+    color: #22c55e !important;
+}
+
+body.dark-mode .cart-totals-simple .total-line {
+    border-top-color: #3d3d3d !important;
+}
+
+body.dark-mode .cart-totals-simple .total-line span:first-child {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .cart-totals-simple .total-line span:last-child {
+    color: #f0f0f0 !important;
+}
+
+/* Dark mode - Cart footer row */
+body.dark-mode .cart-items-label {
+    color: #999 !important;
+}
+
+body.dark-mode .review-summary-btn {
+    background: rgba(184, 115, 51, 0.12) !important;
+    border-color: rgba(184, 115, 51, 0.25) !important;
+    color: #b0b0b0 !important;
+}
+
+body.dark-mode .review-summary-btn:hover {
+    background: rgba(184, 115, 51, 0.2) !important;
+    border-color: rgba(184, 115, 51, 0.4) !important;
+    color: #d4a574 !important;
+}
+
+body.dark-mode .review-summary-btn i {
+    color: #d4a574 !important;
+}
+
 body.dark-mode .category-section-header {
     background: #252525 !important;
     border-color: #3d3d3d !important;
     color: #f0f0f0 !important;
+}
+
+/* Dark mode - Category group container */
+body.dark-mode .category-group {
+    border-color: #3d3d3d !important;
+    background: #252525 !important;
+}
+
+body.dark-mode .category-divider {
+    background: rgba(184, 115, 51, 0.08) !important;
+    border-bottom-color: #3d3d3d !important;
+}
+
+body.dark-mode .category-divider:hover {
+    background: rgba(184, 115, 51, 0.12) !important;
+}
+
+body.dark-mode .category-items .cart-item {
+    border-bottom-color: #3d3d3d !important;
 }
 
 body.dark-mode .category-toggle {

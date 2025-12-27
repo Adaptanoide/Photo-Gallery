@@ -54,10 +54,10 @@ const accessCodeSchema = new mongoose.Schema({
         trim: true
     },
 
-    // ===== NOVO: TIPO DE ACESSO =====
+    // ===== TIPO DE ACESSO =====
     accessType: {
         type: String,
-        enum: ['normal', 'special'],
+        enum: ['normal'],
         default: 'normal',
     },
 
@@ -84,77 +84,6 @@ const accessCodeSchema = new mongoose.Schema({
         }
     }],
 
-    // ===== NOVO: CONFIGURAÇÃO PARA ACESSO ESPECIAL =====
-    specialSelection: {
-        // Referência à seleção especial
-        selectionId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Selection',
-            required: function () {
-                return this.accessType === 'special';
-            }
-        },
-
-        // Código da seleção especial (para facilitar busca)
-        selectionCode: {
-            type: String,
-            required: function () {
-                return this.accessType === 'special';
-            }
-        },
-
-        // Nome da seleção (para exibição)
-        selectionName: {
-            type: String,
-            trim: true
-        },
-
-        // Configurações específicas de acesso
-        accessConfig: {
-            // Se cliente pode ver preços
-            showPrices: {
-                type: Boolean,
-                default: true
-            },
-
-            // Se cliente pode ver informações de desconto
-            showDiscountInfo: {
-                type: Boolean,
-                default: false
-            },
-
-            // Mensagem personalizada para o cliente
-            welcomeMessage: {
-                type: String,
-                trim: true
-            },
-
-            // Configurações de interface
-            interfaceConfig: {
-                hideOriginalCategories: {
-                    type: Boolean,
-                    default: true
-                },
-                customBranding: {
-                    type: String,
-                    trim: true
-                }
-            }
-        },
-
-        // Data de criação da associação
-        assignedAt: {
-            type: Date,
-            default: Date.now
-        },
-
-        // Admin que fez a associação
-        assignedBy: {
-            type: String,
-            default: 'admin'
-        }
-    },
-
     // ===== CAMPOS EXISTENTES MANTIDOS =====
     isActive: {
         type: Boolean,
@@ -172,7 +101,7 @@ const accessCodeSchema = new mongoose.Schema({
         type: Date
     },
 
-    // ===== NOVO: HISTÓRICO DE USO DETALHADO =====
+    // ===== HISTÓRICO DE USO DETALHADO =====
     usageHistory: [{
         accessedAt: {
             type: Date,
@@ -180,7 +109,8 @@ const accessCodeSchema = new mongoose.Schema({
         },
         accessType: {
             type: String,
-            enum: ['normal', 'special']
+            enum: ['normal'],
+            default: 'normal'
         },
         selectionAccessed: {
             type: String // ID ou nome da seleção acessada
@@ -296,58 +226,18 @@ const accessCodeSchema = new mongoose.Schema({
 accessCodeSchema.index({ code: 1 });
 accessCodeSchema.index({ accessType: 1 });
 accessCodeSchema.index({ isActive: 1, accessType: 1 });
-accessCodeSchema.index({ 'specialSelection.selectionId': 1 });
-accessCodeSchema.index({ 'specialSelection.selectionCode': 1 });
 
 // ===== MÉTODOS DO SCHEMA =====
-
-// ===== NOVO: VERIFICAR TIPO DE ACESSO =====
-accessCodeSchema.methods.isSpecialAccess = function () {
-    return this.accessType === 'special';
-};
 
 accessCodeSchema.methods.isNormalAccess = function () {
     return this.accessType === 'normal';
 };
 
-// ===== NOVO: CONFIGURAR ACESSO ESPECIAL =====
-accessCodeSchema.methods.setSpecialAccess = function (selectionData, adminUser = 'admin') {
-    this.accessType = 'special';
-    this.specialSelection = {
-        selectionId: selectionData.selectionId,
-        selectionCode: selectionData.selectionCode,
-        selectionName: selectionData.selectionName,
-        accessConfig: {
-            showPrices: selectionData.showPrices !== false,
-            showDiscountInfo: selectionData.showDiscountInfo || false,
-            welcomeMessage: selectionData.welcomeMessage || '',
-            interfaceConfig: {
-                hideOriginalCategories: selectionData.hideOriginalCategories !== false,
-                customBranding: selectionData.customBranding || ''
-            }
-        },
-        assignedAt: new Date(),
-        assignedBy: adminUser
-    };
-
-    // Limpar categorias normais se estavam configuradas
-    this.allowedCategories = [];
-
-    // Atualizar metadados
-    this.metadata.lastModifiedBy = adminUser;
-    this.metadata.lastModifiedAt = new Date();
-
-    return this;
-};
-
-// ===== NOVO: VOLTAR PARA ACESSO NORMAL =====
+// ===== CONFIGURAR ACESSO NORMAL =====
 accessCodeSchema.methods.setNormalAccess = function (allowedCategories, adminUser = 'admin') {
     this.accessType = 'normal';
     this.allowedCategories = allowedCategories || [];
 
-    // Limpar configurações especiais
-    this.specialSelection = undefined;
-
     // Atualizar metadados
     this.metadata.lastModifiedBy = adminUser;
     this.metadata.lastModifiedAt = new Date();
@@ -355,7 +245,7 @@ accessCodeSchema.methods.setNormalAccess = function (allowedCategories, adminUse
     return this;
 };
 
-// ===== NOVO: REGISTRAR USO =====
+// ===== REGISTRAR USO =====
 accessCodeSchema.methods.recordUsage = function (extraData = {}) {
     this.usageCount += 1;
     this.lastUsed = new Date();
@@ -364,7 +254,7 @@ accessCodeSchema.methods.recordUsage = function (extraData = {}) {
     this.usageHistory.push({
         accessedAt: new Date(),
         accessType: this.accessType,
-        selectionAccessed: this.isSpecialAccess() ? this.specialSelection.selectionCode : 'normal_access',
+        selectionAccessed: 'normal_access',
         ipAddress: extraData.ipAddress || null,
         userAgent: extraData.userAgent || null,
         sessionDuration: extraData.sessionDuration || null
@@ -409,37 +299,18 @@ accessCodeSchema.methods.canAccess = function () {
     return { allowed: true, reason: null };
 };
 
-// ===== NOVO: OBTER CONFIGURAÇÃO PARA CLIENTE =====
+// ===== OBTER CONFIGURAÇÃO PARA CLIENTE =====
 accessCodeSchema.methods.getClientConfig = function () {
-    const baseConfig = {
+    return {
         code: this.code,
         clientName: this.clientName,
         accessType: this.accessType,
-        isActive: this.isActive
+        isActive: this.isActive,
+        allowedCategories: this.allowedCategories
     };
-
-    if (this.isNormalAccess()) {
-        return {
-            ...baseConfig,
-            allowedCategories: this.allowedCategories
-        };
-    } else {
-        return {
-            ...baseConfig,
-            specialSelection: {
-                selectionId: this.specialSelection.selectionId,
-                selectionCode: this.specialSelection.selectionCode,
-                selectionName: this.specialSelection.selectionName,
-                showPrices: this.specialSelection.accessConfig.showPrices,
-                showDiscountInfo: this.specialSelection.accessConfig.showDiscountInfo,
-                welcomeMessage: this.specialSelection.accessConfig.welcomeMessage,
-                customBranding: this.specialSelection.accessConfig.interfaceConfig.customBranding
-            }
-        };
-    }
 };
 
-// ===== NOVO: OBTER RESUMO PARA ADMIN =====
+// ===== OBTER RESUMO PARA ADMIN =====
 accessCodeSchema.methods.getAdminSummary = function () {
     return {
         code: this.code,
@@ -449,17 +320,11 @@ accessCodeSchema.methods.getAdminSummary = function () {
         isActive: this.isActive,
         usageCount: this.usageCount,
 
-        // Configuração específica do tipo de acesso
-        configuration: this.isNormalAccess() ? {
+        // Configuração de acesso
+        configuration: {
             type: 'normal',
             allowedCategories: this.allowedCategories,
             categoriesCount: this.allowedCategories.length
-        } : {
-            type: 'special',
-            selectionCode: this.specialSelection.selectionCode,
-            selectionName: this.specialSelection.selectionName,
-            assignedBy: this.specialSelection.assignedBy,
-            assignedAt: this.specialSelection.assignedAt
         },
 
         // Metadados
@@ -497,20 +362,11 @@ accessCodeSchema.statics.findByAccessType = function (accessType, options = {}) 
     return this.find(query).sort({ createdAt: -1 });
 };
 
-// ===== NOVO: BUSCAR CÓDIGOS COM SELEÇÕES ESPECIAIS =====
-accessCodeSchema.statics.findWithSpecialSelections = function () {
-    return this.find({
-        accessType: 'special',
-        'specialSelection.selectionId': { $exists: true }
-    }).populate('specialSelection.selectionId');
-};
-
-// ===== NOVO: ESTATÍSTICAS =====
+// ===== ESTATÍSTICAS =====
 accessCodeSchema.statics.getStatistics = async function () {
     const totalCodes = await this.countDocuments();
     const activeCodes = await this.countDocuments({ isActive: true });
     const normalCodes = await this.countDocuments({ accessType: 'normal' });
-    const specialCodes = await this.countDocuments({ accessType: 'special' });
 
     const usageStats = await this.aggregate([
         {
@@ -528,8 +384,7 @@ accessCodeSchema.statics.getStatistics = async function () {
         activeCodes,
         inactiveCodes: totalCodes - activeCodes,
         accessTypes: {
-            normal: normalCodes,
-            special: specialCodes
+            normal: normalCodes
         },
         usage: usageStats[0] || {
             totalUsages: 0,
@@ -554,38 +409,13 @@ accessCodeSchema.pre('save', function (next) {
         this.advancedConfig = {};
     }
 
-    // Validar configuração de acesso especial
-    if (this.accessType === 'special') {
-        if (!this.specialSelection || !this.specialSelection.selectionId) {
-            return next(new Error('Special access requires a valid selection ID'));
-        }
-
-        // Limpar allowedCategories para acesso especial
-        this.allowedCategories = [];
-    }
-
-    // Validar configuração de acesso normal
-    if (this.accessType === 'normal') {
-        // COMENTADO - Categorias podem ser configuradas depois
-        // if (!this.allowedCategories || this.allowedCategories.length === 0) {
-        //     return next(new Error('Normal access requires at least one allowed category'));
-        // }
-
-        // Limpar specialSelection para acesso normal
-        this.specialSelection = undefined;
-    }
-
     next();
 });
 
 // Post-save: log
 accessCodeSchema.post('save', function () {
-    const type = this.accessType.toUpperCase();
-    const config = this.isNormalAccess()
-        ? `${this.allowedCategories.length} categorias`
-        : `seleção ${this.specialSelection.selectionCode}`;
-
-    console.log(`🔑 Código de acesso ${type} ${this.code} salvo - ${config} - ${this.clientName}`);
+    const config = `${this.allowedCategories.length} categorias`;
+    console.log(`🔑 Código de acesso ${this.code} salvo - ${config} - ${this.clientName}`);
 });
 
 module.exports = mongoose.model('AccessCode', accessCodeSchema);

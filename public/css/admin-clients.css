@@ -4307,3 +4307,398 @@ tr:has(.cart-indicator):hover {
 .clients-table tr.dropdown-active {
     z-index: 9998 !important;
 }
+
+/* ===== TEMA LIGHT - CLIENT MANAGEMENT (Constant Contact Style) ===== */
+/* Clean & Minimal Design - White backgrounds, blue accents, pastel colors */
+
+/* Cards e Containers */
+body.admin-light-theme .clients-section-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+body.admin-light-theme .clients-title {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+body.admin-light-theme .clients-title i {
+    color: #0066cc;
+}
+
+body.admin-light-theme .clients-filters {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+body.admin-light-theme .clients-table-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Table Header - Clean */
+body.admin-light-theme .clients-table th {
+    background: #f8fafc;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Table Cells - Legible dark text */
+body.admin-light-theme .clients-table td {
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+body.admin-light-theme .clients-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Client Code - Blue accent (Constant Contact style) */
+body.admin-light-theme .client-code-cell {
+    color: #0066cc;
+    text-shadow: none;
+}
+
+/* Client Name - Dark legible */
+body.admin-light-theme .client-name-cell {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Client Email - Muted */
+body.admin-light-theme .client-email-cell {
+    color: #64748b;
+}
+
+/* Filter Labels */
+body.admin-light-theme .filter-label {
+    color: #475569;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Filter Inputs */
+body.admin-light-theme .filter-input,
+body.admin-light-theme .filter-select {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+}
+
+body.admin-light-theme .filter-input::placeholder {
+    color: #94a3b8;
+}
+
+body.admin-light-theme .filter-input:focus,
+body.admin-light-theme .filter-select:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* Filter Button */
+body.admin-light-theme .btn-filter {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+body.admin-light-theme .btn-filter:hover {
+    background: #e2e8f0;
+}
+
+/* Category Tags - Azul pastel */
+body.admin-light-theme .category-tag {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+body.admin-light-theme .categories-more {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* Status Badges - Pastel colors */
+body.admin-light-theme .status-badge-client {
+    font-weight: 500;
+}
+
+body.admin-light-theme .status-active {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+body.admin-light-theme .status-inactive {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+/* Access Type Badges - Clean & readable */
+body.admin-light-theme .access-normal {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+body.admin-light-theme .access-special {
+    background: #fef7ed;
+    color: #b45309;
+    border-color: #fed7aa;
+    box-shadow: none;
+}
+
+/* REMOVER BOX-SHADOW DE TODOS OS BOTÕES (estado normal) */
+body.admin-light-theme .btn-view,
+body.admin-light-theme .btn-edit,
+body.admin-light-theme .btn-delete,
+body.admin-light-theme .btn-toggle,
+body.admin-light-theme .btn-action,
+body.admin-light-theme .btn-modal,
+body.admin-light-theme .btn-save,
+body.admin-light-theme .btn-cancel,
+body.admin-light-theme .modal-close,
+body.admin-light-theme .close-btn,
+body.admin-light-theme .pagination-btn,
+body.admin-light-theme .btn-filter {
+    box-shadow: none !important;
+}
+
+/* Action Buttons - Clean & minimal */
+body.admin-light-theme .btn-view {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+body.admin-light-theme .btn-view:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+/* Edit Button - Azul pastel */
+body.admin-light-theme .btn-edit {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+body.admin-light-theme .btn-edit:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+/* Delete Button - Vermelho pastel */
+body.admin-light-theme .btn-delete {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+body.admin-light-theme .btn-delete:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+/* Feedback Card - Clean white */
+body.admin-light-theme .feedback-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: none;
+}
+
+body.admin-light-theme .feedback-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: none;
+}
+
+/* Client Details Modal - Clean & minimal */
+body.admin-light-theme .modal-content,
+body.admin-light-theme .ui-modal-content {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+body.admin-light-theme .modal-header,
+body.admin-light-theme .ui-modal-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+
+body.admin-light-theme .modal-header h3,
+body.admin-light-theme .ui-modal-header h3 {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+body.admin-light-theme .modal-footer,
+body.admin-light-theme .ui-modal-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+body.admin-light-theme .modal-body,
+body.admin-light-theme .ui-modal-body {
+    color: #475569;
+}
+
+/* Form Inputs - Clean styling */
+body.admin-light-theme .form-input,
+body.admin-light-theme .form-control {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+}
+
+body.admin-light-theme .form-input::placeholder,
+body.admin-light-theme .form-control::placeholder {
+    color: #94a3b8;
+}
+
+body.admin-light-theme .form-input:focus,
+body.admin-light-theme .form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+body.admin-light-theme .form-label {
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Dropdown Menu - Clean & minimal */
+body.admin-light-theme .client-action-menu {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body.admin-light-theme .client-action-menu-item {
+    color: #475569;
+}
+
+body.admin-light-theme .client-action-menu-item:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+body.admin-light-theme .client-action-menu-item.action-delete {
+    border-top: 1px solid #f1f5f9;
+    color: #b91c1c;
+}
+
+body.admin-light-theme .client-action-menu-item.action-delete:hover {
+    background: #fef2f2;
+}
+
+/* Pending Badge - Vermelho suave */
+body.admin-light-theme .pending-badge {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* Pending Requests Badge (botão) - Vermelho suave */
+body.admin-light-theme .pending-requests-badge {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+    box-shadow: none !important;
+}
+
+/* Usage Count - Azul */
+body.admin-light-theme .usage-count {
+    color: #0066cc;
+}
+
+body.admin-light-theme .usage-last {
+    color: #64748b;
+}
+
+/* Pagination */
+body.admin-light-theme .pagination-btn {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+body.admin-light-theme .pagination-btn:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+body.admin-light-theme .pagination-btn.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: #ffffff;
+}
+
+body.admin-light-theme .pagination-info {
+    color: #64748b;
+}
+
+/* Close buttons */
+body.admin-light-theme .close-btn,
+body.admin-light-theme .modal-close {
+    color: #64748b;
+}
+
+body.admin-light-theme .close-btn:hover,
+body.admin-light-theme .modal-close:hover {
+    color: #475569;
+}
+
+/* Labels and text */
+body.admin-light-theme .section-title {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+body.admin-light-theme .section-subtitle {
+    color: #64748b;
+}
+
+/* Quick Stats */
+body.admin-light-theme .quick-stat {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+body.admin-light-theme .quick-stat-value {
+    color: #1e293b;
+}
+
+body.admin-light-theme .quick-stat-label {
+    color: #64748b;
+}
+
+/* ===== REMOVER BOX-SHADOW E TRANSFORM DO HOVER - TODOS OS BOTÕES ===== */
+body.admin-light-theme .btn-filter:hover,
+body.admin-light-theme .btn-view:hover,
+body.admin-light-theme .btn-edit:hover,
+body.admin-light-theme .btn-delete:hover,
+body.admin-light-theme .btn-toggle:hover,
+body.admin-light-theme .btn-action:hover,
+body.admin-light-theme .btn-modal:hover,
+body.admin-light-theme .btn-save:hover,
+body.admin-light-theme .btn-cancel:hover,
+body.admin-light-theme .modal-close:hover,
+body.admin-light-theme .close-btn:hover,
+body.admin-light-theme .pagination-btn:hover,
+body.admin-light-theme .feedback-card:hover,
+body.admin-light-theme .clients-table tbody tr:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}

@@ -55,8 +55,8 @@ body.client-page::before {
 
 /* ===== AJUSTES ESPECÍFICOS PARA COMPONENTES ===== */
 
-/* Header do Cliente - Clean / Branco */
-.client-page .client-luxury-header {
+/* Header do Cliente - Clean / Branco (only when NOT in dark mode) */
+body.client-page:not(.dark-mode) .client-luxury-header {
     background: #ffffff !important;
     border-bottom: 1px solid #e5e7eb !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
@@ -84,146 +84,226 @@ body.client-page::before {
     box-shadow: 0 2px 8px rgba(184, 115, 51, 0.3);
 }
 
-/* Cards e containers */
-.client-page .client-header,
-.client-page .category-card,
-.client-page .folder-card,
-.client-page .photos-gallery,
-.client-page .breadcrumb,
-.client-page .loading-section,
-.client-page .error-content,
-.client-page .navigation-loading {
+/* Cards e containers (only when NOT in dark mode) */
+body.client-page:not(.dark-mode) .client-header,
+body.client-page:not(.dark-mode) .photos-gallery,
+body.client-page:not(.dark-mode) .breadcrumb,
+body.client-page:not(.dark-mode) .error-content {
     background: #ffffff;
 }
 
-.client-page .category-card:hover,
-.client-page .folder-card:hover {
+/* Loading sections - keep transparent for clean look */
+body.client-page:not(.dark-mode) .loading-section,
+body.client-page:not(.dark-mode) .navigation-loading {
+    background: transparent;
+}
+
+/* Category/folder cards - use background-color to preserve background-image */
+body.client-page:not(.dark-mode) .category-card,
+body.client-page:not(.dark-mode) .folder-card {
+    background-color: #ffffff;
+}
+
+body.client-page:not(.dark-mode) .category-card:hover,
+body.client-page:not(.dark-mode) .folder-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border-color: var(--gold-primary);
 }
 
 /* Breadcrumb no tema light */
-.client-page .breadcrumb {
+body.client-page:not(.dark-mode) .breadcrumb {
     background: #ffffff;
     padding-left: 6px;
     padding-top: 20px;
     padding-bottom: 5px;
 }
 
-.client-page .breadcrumb-item {
+body.client-page:not(.dark-mode) .breadcrumb-item {
     color: var(--gold-primary);
 }
 
-.client-page .breadcrumb-item:hover:not(.current) {
+body.client-page:not(.dark-mode) .breadcrumb-item:hover:not(.current) {
     background: rgba(184, 115, 51, 0.1);
 }
 
-.client-page .breadcrumb-item.current {
+body.client-page:not(.dark-mode) .breadcrumb-item.current {
     background: #ffffff;
     color: #374151;
     font-weight: 600;
 }
 
 /* Back navigation */
-.client-page .back-navigation .btn {
+body.client-page:not(.dark-mode) .back-navigation .btn {
     background: #f8f9fa;
     border: 1px solid #e2e8f0;
     color: #4a5568;
 }
 
-.client-page .back-navigation .btn:hover {
+body.client-page:not(.dark-mode) .back-navigation .btn:hover {
     background: var(--gold-primary);
     color: white;
     border-color: var(--gold-primary);
 }
 
 /* Photo thumbnails */
-.client-page .photo-thumbnail {
+body.client-page:not(.dark-mode) .photo-thumbnail {
     background: #f8f9fa;
     /* Bordas e efeitos hover estão em client-gallery.css */
 }
 
 /* Cart items */
-.client-page .cart-item {
+body.client-page:not(.dark-mode) .cart-item {
     background: #ffffff;
 }
 
-.client-page .cart-item:hover {
+body.client-page:not(.dark-mode) .cart-item:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* ===== MODAL FULLSCREEN - Mantém escuro para destaque ===== */
-.client-page .photo-modal {
-    background: rgba(0, 0, 0, 0.95);
-    /* Mantém escuro para destacar a foto */
+/* Cart category group - light theme */
+body.client-page:not(.dark-mode) .category-group {
+    background: #ffffff;
+    border-color: #e5e7eb;
 }
 
-.client-page .modal-header,
-.client-page .modal-footer {
+body.client-page:not(.dark-mode) .category-divider {
+    background: #fafafa;
+    border-bottom-color: #e5e7eb;
+}
+
+body.client-page:not(.dark-mode) .category-divider:hover {
+    background: #f5f5f5;
+}
+
+body.client-page:not(.dark-mode) .category-items .cart-item {
+    border-bottom-color: #f0f0f0;
+}
+
+/* ===== PHOTO MODAL - Always Dark for Photo Viewing ===== */
+/* Photo modal should ALWAYS be dark regardless of theme */
+.client-page .photo-modal {
+    background: #000 !important;
+}
+
+.client-page .photo-modal .modal-header {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%) !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+}
+
+.client-page .photo-modal .modal-footer {
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%) !important;
+    border-top: none !important;
+    backdrop-filter: none !important;
+}
+
+.client-page .photo-modal .modal-header h4,
+.client-page .photo-modal #modalPhotoTitle,
+.client-page .photo-modal .modal-controls span {
+    color: rgba(255,255,255,0.9) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
+}
+
+.client-page .photo-modal .btn-close {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .btn-close:hover {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .nav-btn {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: rgba(255,255,255,0.9) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.client-page .photo-modal .nav-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.2) !important;
+    border-color: rgba(255,255,255,0.3) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .zoom-controls-simple {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: none !important;
+}
+
+.client-page .photo-modal .zoom-btn-simple {
+    background: transparent !important;
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.client-page .photo-modal .zoom-btn-simple:hover:not(:disabled) {
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .photo-info,
+.client-page .photo-modal .photo-info span {
+    color: rgba(255,255,255,0.6) !important;
+}
+
+.client-page .photo-modal .modal-discount-grid {
+    background: transparent !important;
+}
+
+.client-page .photo-modal .modal-volume-pricing .volume-tier {
+    color: rgba(255,255,255,0.5) !important;
+}
+
+.client-page .photo-modal .modal-volume-pricing .volume-tier.active {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #10b981 !important;
+}
+
+/* ===== OTHER MODALS - Light Theme (Not Photo Modal) ===== */
+/* These styles apply to non-photo modals like selection modal */
+body.client-page:not(.dark-mode) .selection-modal .modal-header,
+body.client-page:not(.dark-mode) .selection-modal .modal-footer {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     color: #1a1a1a;
 }
 
-.client-page .modal-header h4,
-.client-page .modal-controls span {
-    color: #1a1a1a;
-}
-
-.client-page .btn-close {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid var(--gold-primary);
-    color: var(--gold-primary);
-}
-
-.client-page .btn-close:hover {
-    background: var(--gold-primary);
-    color: white;
-}
-
-/* Navigation buttons no modal */
-.client-page .nav-btn {
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px solid var(--gold-primary);
-    color: var(--gold-primary);
-}
-
-.client-page .nav-btn:hover:not(:disabled) {
-    background: var(--gold-primary);
-    color: white;
-}
-
 /* ===== CART SIDEBAR - Tema Light ===== */
-.client-page .cart-container {
+body.client-page:not(.dark-mode) .cart-container {
     background: #ffffff;
     box-shadow: 0px 0 0px rgba(0, 0, 0, 0.1);
 }
 
-.client-page .cart-header {
+body.client-page:not(.dark-mode) .cart-header {
     background: white;
     color: #4a5568;
 }
 
-.client-page .cart-header h3 {
+body.client-page:not(.dark-mode) .cart-header h3 {
     color: #4a5568;
 }
 
-.client-page .cart-close-btn {
+body.client-page:not(.dark-mode) .cart-close-btn {
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid white;
     color: white;
 }
 
-.client-page .cart-close-btn:hover {
+body.client-page:not(.dark-mode) .cart-close-btn:hover {
     background: white;
     color: var(--gold-primary);
 }
 
-.client-page .cart-content {
+body.client-page:not(.dark-mode) .cart-content {
     background: #ffffff;
 }
 
-.client-page .cart-footer {
+body.client-page:not(.dark-mode) .cart-footer {
     background: #f8f9fa;
     border-top: 1px solid #e2e8f0;
 }
@@ -240,26 +320,26 @@ body.client-page::before {
 }
 
 /* ===== SELECTION MODAL - Light ===== */
-.client-page .selection-modal-content {
+body.client-page:not(.dark-mode) .selection-modal-content {
     background: #ffffff;
 }
 
-.client-page .selection-modal-header {
+body.client-page:not(.dark-mode) .selection-modal-header {
     background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
     color: white;
     padding: 12px;
 }
 
-.client-page .success-icon {
+body.client-page:not(.dark-mode) .success-icon {
     color: white;
 }
 
-.client-page .selection-modal-body {
+body.client-page:not(.dark-mode) .selection-modal-body {
     background: #ffffff;
 }
 
-.client-page .selection-info,
-.client-page .next-steps {
+body.client-page:not(.dark-mode) .selection-info,
+body.client-page:not(.dark-mode) .next-steps {
     background: #f8f9fa;
     border: 1px solid #e2e8f0;
 }
@@ -282,20 +362,20 @@ body.client-page::before {
 }
 
 /* ===== ZOOM CONTROLS - Elegante ===== */
-.client-page .zoom-controls-simple {
+body.client-page:not(.dark-mode) .zoom-controls-simple {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.client-page .zoom-btn-simple {
+body.client-page:not(.dark-mode) .zoom-btn-simple {
     background: transparent;
     border: none;
     color: #B87333;
 }
 
-.client-page .zoom-btn-simple:hover:not(:disabled) {
+body.client-page:not(.dark-mode) .zoom-btn-simple:hover:not(:disabled) {
     background: rgba(184, 115, 51, 0.08);
     color: #A0522D;
 }
@@ -303,18 +383,18 @@ body.client-page::before {
 /* ===== AJUSTES DE CONTRASTE ===== */
 
 /* Garantir boa legibilidade */
-.client-page .category-card h3,
-.client-page .folder-card h4,
-.client-page .gallery-header h3 {
+body.client-page:not(.dark-mode) .category-card h3,
+body.client-page:not(.dark-mode) .folder-card:not(.has-thumbnail) h4,
+body.client-page:not(.dark-mode) .gallery-header h3 {
     color: #4a5568;
 }
 
-.client-page .category-card p,
-.client-page .folder-description {
+body.client-page:not(.dark-mode) .category-card p,
+body.client-page:not(.dark-mode) .folder-card:not(.has-thumbnail) .folder-description {
     color: #4a5568;
 }
 
-.client-page .folder-stats span {
+body.client-page:not(.dark-mode) .folder-stats span {
     color: #4a5568;
     font-size: 16px;
 }
@@ -332,38 +412,38 @@ body.client-page::before {
 }
 
 /* ===== FORMULÁRIOS E INPUTS ===== */
-.client-page input,
-.client-page select,
-.client-page textarea {
+body.client-page:not(.dark-mode) input,
+body.client-page:not(.dark-mode) select,
+body.client-page:not(.dark-mode) textarea {
     background: white;
     border: 1px solid #e2e8f0;
     color: #1a1a1a;
     margin-left: revert-layer;
 }
 
-.client-page input:focus,
-.client-page select:focus,
-.client-page textarea:focus {
+body.client-page:not(.dark-mode) input:focus,
+body.client-page:not(.dark-mode) select:focus,
+body.client-page:not(.dark-mode) textarea:focus {
     border-color: var(--gold-primary);
     box-shadow: 0 0 0 3px rgba(184, 115, 51, 0.1);
 }
 
 /* ===== SCROLLBAR CUSTOMIZADA ===== */
-.client-page ::-webkit-scrollbar {
+body.client-page:not(.dark-mode) ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
 }
 
-.client-page ::-webkit-scrollbar-track {
+body.client-page:not(.dark-mode) ::-webkit-scrollbar-track {
     background: #f8f9fa;
 }
 
-.client-page ::-webkit-scrollbar-thumb {
+body.client-page:not(.dark-mode) ::-webkit-scrollbar-thumb {
     background: var(--gold-primary);
     border-radius: 5px;
 }
 
-.client-page ::-webkit-scrollbar-thumb:hover {
+body.client-page:not(.dark-mode) ::-webkit-scrollbar-thumb:hover {
     background: var(--gold-hover);
 }
 
@@ -404,9 +484,8 @@ body.client-page::before {
     /* Fixar altura do container */
 }
 
-.client-luxury-header {
+body.client-page:not(.dark-mode) .client-luxury-header {
     padding: 10px 0;
-    background: #ffffff !important;
 }
 
 /* Esconder o ícone de sol se ainda existir */

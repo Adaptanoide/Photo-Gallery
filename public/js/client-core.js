@@ -177,11 +177,6 @@ window.fetchWithAuth = async function (url, options = {}) {
 // Compatibilidade
 const navigationState = window.navigationState;
 
-// ===== CONFIGURAÇÕES GLOBAIS =====
-window.specialSelectionRateRules = null;
-window.specialSelectionBasePrice = null;
-window.isSpecialSelection = false;
-
 // ===== SISTEMA DE CACHE CENTRALIZADO =====
 window.CategoriesCache = {
     data: null,
@@ -410,72 +405,6 @@ window.showCategories = async function () {
     }
 
     const containerEl = document.getElementById('categoriesContainer');
-
-    // Verificar Special Selection
-    const savedSession = localStorage.getItem('sunshineSession');
-    if (savedSession) {
-        const session = JSON.parse(savedSession);
-        if (session.user?.accessType === 'special') {
-            window.isSpecialSelection = true;
-
-            // Manter sidebar visível mas vazia
-            const sidebar = document.getElementById('filterSidebar');
-            if (sidebar) {
-                sidebar.style.display = 'block';
-                const filterContainer = sidebar.querySelector('.filter-container');
-                if (filterContainer) {
-                    filterContainer.style.display = 'none';
-                }
-            }
-
-            try {
-                const data = await CategoriesCache.fetch();
-
-                if (data.isSpecialSelection) {
-                    // Se tem apenas 1 categoria, ir direto
-                    if (data.categories.length === 1 && data.categories[0].id === 'special_selection') {
-                        containerEl.innerHTML = `
-                            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                                <h2>Loading Special Selection...</h2>
-                                <div class="spinner"></div>
-                            </div>
-                        `;
-
-                        setTimeout(() => {
-                            if (window.loadPhotos) {
-                                window.loadPhotos('special_selection');
-                            }
-                        }, 1000);
-                        return;
-                    }
-
-                    // Múltiplas categorias virtuais
-                    containerEl.innerHTML = data.categories.map(category => `
-                        <div class="category-card special-category" onclick="loadPhotos('${category.id}')">
-                            <h3>
-                                <i class="fas fa-star"></i> 
-                                ${category.name}
-                            </h3>
-                            <p>Special Selection Category</p>
-                            <div class="folder-stats">
-                                ${shouldShowPrices() && category.formattedPrice ?
-                            `<span class="folder-price-badge"><i class="fas fa-tag"></i> ${category.formattedPrice}</span>` :
-                            (!shouldShowPrices() && category.formattedPrice ?
-                                '<span class="contact-price"><i class="fas fa-phone"></i> Contact for Price</span>' : '')}
-                            </div>
-                            <div class="category-action">
-                                <i class="fas fa-arrow-right"></i>
-                                <span>View Selection</span>
-                            </div>
-                        </div>
-                    `).join('');
-                    return;
-                }
-            } catch (error) {
-                console.error('Erro ao buscar Special Selection:', error);
-            }
-        }
-    }
 
     // CATEGORIAS NORMAIS
     const { allowedCategories } = navigationState;
@@ -1162,7 +1091,10 @@ let searchProductsCache = null;
 let searchCacheTimestamp = 0;
 const SEARCH_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Initialize search on page load
+// ❌ DESATIVADO - Busca unificada agora está em client-commerce.js
+// O listener duplicado causava sobreposição de dropdowns
+// As funções getSearchProducts() e performSearch() ainda estão disponíveis para uso
+/*
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('globalSearch');
     if (!searchInput) return;
@@ -1205,6 +1137,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+*/
 
 // Perform search and show results
 async function performSearch(query, showAll = false) {

@@ -316,84 +316,8 @@ router.get('/categories/filtered', async (req, res) => {
     console.log('🔍 ==== INICIANDO FILTROS DE CATEGORIAS ====');
 
     try {
-        // ========== VERIFICAR SPECIAL SELECTION ==========
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-
-        if (token) {
-            try {
-                const jwt = require('jsonwebtoken');
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-                // Se é cliente com Special Selection
-                if (decoded.type === 'client' && decoded.accessType === 'special') {
-                    console.log(`⭐ Cliente SPECIAL ${decoded.clientCode} - retornando categorias virtuais`);
-
-                    // Buscar a Special Selection REAL do banco
-                    const Selection = require('../models/Selection');
-                    const AccessCode = require('../models/AccessCode');
-
-                    try {
-                        const accessCode = await AccessCode.findOne({
-                            code: decoded.clientCode,
-                            accessType: 'special'
-                        }).populate('specialSelection.selectionId');
-
-                        if (accessCode && accessCode.specialSelection && accessCode.specialSelection.selectionId) {
-                            const selection = await Selection.findById(
-                                accessCode.specialSelection.selectionId
-                            );
-
-                            // Se tem categorias customizadas, retornar elas
-                            if (selection && selection.customCategories && selection.customCategories.length > 0) {
-                                const categories = selection.customCategories.map(cat => ({
-                                    id: cat.categoryId,
-                                    name: cat.categoryDisplayName || cat.categoryName,
-                                    fullPath: `special/${cat.categoryId}`,
-                                    photoCount: cat.photos ? cat.photos.length : 0,
-                                    price: cat.baseCategoryPrice || 0,
-                                    formattedPrice: `$${(cat.baseCategoryPrice || 0).toFixed(2)}`,
-                                    driveId: cat.categoryId
-                                }));
-
-                                console.log(`📦 Retornando ${categories.length} categorias virtuais`);
-
-                                return res.json({
-                                    success: true,
-                                    total: categories.length,
-                                    categories: categories,
-                                    isSpecialSelection: true,
-                                    message: 'Special Selection Categories'
-                                });
-                            }
-                        }
-                    } catch (dbError) {
-                        console.log('❌ Erro ao buscar Special Selection:', dbError.message);
-                    }
-
-                    // FALLBACK: Se não achou categorias, retornar 1 categoria padrão
-                    console.log('⚠️ Sem categorias customizadas, usando fallback');
-                    return res.json({
-                        success: true,
-                        total: 1,
-                        categories: [{
-                            id: 'special_selection',
-                            name: 'Special Selection',
-                            fullPath: 'special',
-                            photoCount: 3,
-                            price: 100,
-                            formattedPrice: '$100.00',
-                            driveId: 'special'
-                        }],
-                        isSpecialSelection: true,
-                        message: 'Special Selection Categories (Fallback)'
-                    });
-                }
-            } catch (error) {
-                console.log('Token inválido ou não é special:', error.message);
-            }
-        }
-        // ========== FIM DA VERIFICAÇÃO SPECIAL ==========
 
         // ========== FILTRAR POR PERMISSÕES DO CLIENTE ==========
         let allowedCategoryNames = null;

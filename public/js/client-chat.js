@@ -214,9 +214,9 @@ class ChatManager {
 
                         <!-- Quick suggestion chips -->
                         <div class="chat-suggestions" id="chatSuggestions">
-                            <p class="suggestions-label">Quick questions:</p>
-                            <button class="suggestion-chip" data-message="Hi! I'd like to see some cowhides">
-                                <i class="fas fa-eye"></i> See cowhides
+                            <p class="suggestions-label">QUICK QUESTIONS:</p>
+                            <button class="suggestion-chip" data-message="I'd like to get a quote for my order">
+                                <i class="fas fa-file-invoice-dollar"></i> Request quote
                             </button>
                             <button class="suggestion-chip" data-message="What are the shipping options and costs?">
                                 <i class="fas fa-truck"></i> Shipping info
@@ -299,6 +299,22 @@ class ChatManager {
                     this.sendMessage();
                 }
             });
+        });
+
+        // Click outside to close chat (desktop only)
+        document.addEventListener('click', (e) => {
+            if (!this.isOpen) return;
+
+            // Only on desktop (width > 768px)
+            if (window.innerWidth <= 768) return;
+
+            const chatWindow = document.getElementById('chatWindow');
+            const chatButton = document.getElementById('chatFloatBtn');
+
+            // If click is outside chat window and chat button
+            if (chatWindow && !chatWindow.contains(e.target) && !chatButton.contains(e.target)) {
+                this.closeChat();
+            }
         });
     }
 

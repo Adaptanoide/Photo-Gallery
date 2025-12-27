@@ -75,7 +75,7 @@ class EmailService {
                 to;
 
             const mailOptions = {
-                from: `${this.config.sender.name} <${this.config.sender.email}>`,
+                from: `Gallery <${this.config.sender.email}>`,
                 to: recipients,
                 subject: subject,
                 html: html,
@@ -187,8 +187,8 @@ class EmailService {
                 totalUnits: catalogItems.reduce((sum, item) => sum + (item.quantity || 1), 0) + effectivePhotoCount
             };
 
-            // Aplicar template
-            const subject = this.applyTemplate(this.config.templates.newSelection.subject, templateData);
+            // Subject fixo - não usa config do banco
+            const subject = `Gallery | New Selection from ${templateData.clientName}`;
             const body = this.applyTemplate(this.config.templates.newSelection.body, templateData);
 
             // HTML mais elaborado
@@ -349,9 +349,9 @@ class EmailService {
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
                             <tr style="background: #f8f9fa;">
-                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #D4AF37;">Photo</th>
-                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #D4AF37;">Category</th>
-                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #D4AF37;">Price</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #B87333;">Photo</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #B87333;">Category</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #B87333;">Price</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -359,7 +359,7 @@ class EmailService {
                                 <tr>
                                     <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">${item.fileName || item.driveFileId}</td>
                                     <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">${item.category || '-'}</td>
-                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.price > 0 ? '$' + item.price.toFixed(2) : 'TBD'}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.price > 0 ? '$' + item.price.toFixed(2) : '—'}</td>
                                 </tr>
                             `).join('')}
                             ${data.photoItems.length > 20 ? `
@@ -417,9 +417,9 @@ class EmailService {
                                         ${item.productName || item.fileName || '—'}
                                     </td>
                                     <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold;">${item.quantity || 1}</td>
-                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.unitPrice > 0 ? '$' + item.unitPrice.toFixed(2) : 'TBD'}</td>
+                                    <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">${item.unitPrice > 0 ? '$' + item.unitPrice.toFixed(2) : '—'}</td>
                                     <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${item.unitPrice > 0 ? '#16a34a' : '#999'};">
-                                        ${item.unitPrice > 0 ? '$' + ((item.unitPrice || 0) * (item.quantity || 1)).toFixed(2) : 'TBD'}
+                                        ${item.unitPrice > 0 ? '$' + ((item.unitPrice || 0) * (item.quantity || 1)).toFixed(2) : '—'}
                                     </td>
                                 </tr>
                             `).join('')}
@@ -454,15 +454,15 @@ class EmailService {
                 <meta charset="UTF-8">
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .header { background: #D4AF37; color: white; padding: 20px; text-align: center; }
+                    .header { background: #B87333; color: white; padding: 20px; text-align: center; }
                     .content { padding: 20px; }
-                    .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 15px; margin: 15px 0; }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #B87333; padding: 15px; margin: 15px 0; }
                     .footer { background: #6c757d; color: white; padding: 15px; text-align: center; font-size: 12px; }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1> New Customer Selection!</h1>
+                    <h1>New Selection Received</h1>
                 </div>
 
                 <div class="content">
@@ -500,7 +500,7 @@ class EmailService {
 
                 <div style="text-align: center; margin: 40px 0;">
                     <a href="https://sunshinecowhides-gallery.com/"
-                    style="background-color: #D4AF37;
+                    style="background-color: #B87333;
                             color: white;
                             padding: 15px 35px;
                             text-decoration: none;
@@ -629,12 +629,12 @@ class EmailService {
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
                     .container { max-width: 600px; margin: 0 auto; }
-                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
+                    .header { background: #B87333; color: white; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
                     .content { padding: 30px; background: #fff; }
-                    .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-                    .download-btn { display: inline-block; background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin: 25px 0; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
-                    .download-btn:hover { background: linear-gradient(135deg, #b8960c, #D4AF37); }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #B87333; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    .download-btn { display: inline-block; background: linear-gradient(135deg, #B87333, #A0522D); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin: 25px 0; box-shadow: 0 4px 15px rgba(184, 115, 51, 0.3); }
+                    .download-btn:hover { background: linear-gradient(135deg, #A0522D, #B87333); }
                     .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
                     .note { font-size: 13px; color: #666; margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; }
                 </style>
@@ -727,12 +727,12 @@ class EmailService {
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
                     .container { max-width: 600px; margin: 0 auto; }
-                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
+                    .header { background: #B87333; color: white; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
                     .content { padding: 30px; background: #fff; }
                     .info-box { background: #f8f9fa; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
                     .interest-box { background: #fff3cd; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-                    .action-btn { display: inline-block; background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 25px 0; }
+                    .action-btn { display: inline-block; background: linear-gradient(135deg, #B87333, #A0522D); color: white; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 25px 0; }
                     .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
                 </style>
             </head>
@@ -836,17 +836,17 @@ class EmailService {
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
                     .container { max-width: 600px; margin: 0 auto; }
-                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
+                    .header { background: #B87333; color: white; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
                     .content { padding: 30px; background: #fff; }
-                    .code-box { background: #1a1a1a; color: #D4AF37; padding: 30px; margin: 25px 0; border-radius: 12px; text-align: center; }
+                    .code-box { background: #1a1a1a; color: #B87333; padding: 30px; margin: 25px 0; border-radius: 12px; text-align: center; }
                     .code-box h2 { margin: 0 0 10px 0; font-size: 18px; color: #fff; }
                     .code-box .code { font-size: 48px; font-weight: bold; letter-spacing: 12px; font-family: 'Courier New', monospace; }
                     .steps { background: #f8f9fa; padding: 25px; margin: 20px 0; border-radius: 8px; }
                     .steps h3 { margin-top: 0; color: #333; }
                     .steps ol { margin: 0; padding-left: 20px; }
                     .steps li { margin: 10px 0; }
-                    .action-btn { display: inline-block; background: linear-gradient(135deg, #D4AF37, #b8960c); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+                    .action-btn { display: inline-block; background: linear-gradient(135deg, #B87333, #A0522D); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
                     .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
                 </style>
             </head>
@@ -939,10 +939,10 @@ class EmailService {
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
                     .container { max-width: 600px; margin: 0 auto; }
-                    .header { background: #D4AF37; color: white; padding: 30px; text-align: center; }
+                    .header { background: #B87333; color: white; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
                     .content { padding: 30px; background: #fff; }
-                    .info-box { background: #f8f9fa; border-left: 4px solid #D4AF37; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+                    .info-box { background: #f8f9fa; border-left: 4px solid #B87333; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
                     .footer { background: #2d2d2d; color: #999; padding: 20px; text-align: center; font-size: 12px; }
                 </style>
             </head>

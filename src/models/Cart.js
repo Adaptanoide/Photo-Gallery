@@ -98,6 +98,11 @@ const cartSchema = new mongoose.Schema({
             default: '',
             comment: 'Path formatado para display'
         },
+        folderId: {
+            type: String,
+            default: '',
+            comment: 'ID da pasta para buscar rate rules'
+        },
 
         // ===== CAMPOS PARA CATALOG PRODUCTS =====
         isCatalogProduct: {

@@ -184,9 +184,62 @@ window.toggleMobileMixMatch = function() {
 // APENAS Natural Cowhides participa do Mix & Match
 const MIX_MATCH_CATEGORY_KEY = 'natural-cowhides';
 
+// Subcategorias conhecidas de Natural Cowhides (para detectar fotos do carrinho)
+// As 3 categorias principais de Natural Cowhides:
+// 1. Brazil Best Sellers
+// 2. Brazil Top Selected Categories
+// 3. Colombian Cowhides
+const NATURAL_COWHIDES_SUBCATEGORIES = [
+    // Top-level categories (3 main)
+    'Brazil Best Sellers',
+    'Brazil Top Selected Categories',
+    'Brazil Top Selected',
+    'Colombian Cowhides',
+    // Common subcategories
+    'Brazil First Selection',
+    'Best Value',
+    'Premium Selection',
+    'XL Collection',
+    'Brindle',
+    'Tricolor',
+    'Speckled',
+    'Solid',
+    'Black and White',
+    'Brown and White',
+    'Exotic',
+    // Size subcategories
+    'Medium',
+    'Large',
+    'XL',
+    'XXL'
+];
+
+/**
+ * Verifica se um texto contém indicadores de Natural Cowhides
+ */
+function isNaturalCowhidesPath(text) {
+    if (!text) return false;
+    const upperText = text.toUpperCase();
+
+    // Verificação direta
+    if (upperText.includes('NATURAL COWHIDES') || upperText.includes('NATURAL-COWHIDES')) {
+        return true;
+    }
+
+    // Verificar subcategorias conhecidas
+    for (const subcat of NATURAL_COWHIDES_SUBCATEGORIES) {
+        if (upperText.includes(subcat.toUpperCase())) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /**
  * Verifica se a categoria atual participa do Mix & Match global
  * APENAS retorna true para Natural Cowhides e suas subcategorias
+ * Também verifica fotos do carrinho que pertencem a Natural Cowhides
  */
 function isCurrentCategoryMixMatch() {
     // Verificar CatalogState (disponível quando navegando no catálogo)
@@ -208,8 +261,31 @@ function isCurrentCategoryMixMatch() {
         }
     }
 
+    // Verificar se está visualizando foto do carrinho que pertence a Natural Cowhides
+    if (window.navigationState && (window.navigationState.isViewingCart || window.modalOpenedFromCart)) {
+        const photos = window.navigationState.currentPhotos;
+        const currentIndex = window.navigationState.currentPhotoIndex;
+        if (photos && photos[currentIndex]) {
+            const photo = photos[currentIndex];
+            // Usar fullPath se disponível (contém caminho completo como "Natural Cowhides → Brazil Best Sellers → ...")
+            const fullPath = photo.fullPath || '';
+            const category = photo.category || '';
+            const pathLevels = photo.pathLevels || [];
+
+            // Verificar se o caminho completo inclui Natural Cowhides
+            if (isNaturalCowhidesPath(fullPath) ||
+                isNaturalCowhidesPath(category) ||
+                pathLevels.some(level => isNaturalCowhidesPath(level))) {
+                return true;
+            }
+        }
+    }
+
     return false;
 }
+
+// Expor helper globalmente
+window.isNaturalCowhidesPath = isNaturalCowhidesPath;
 
 // Expor globalmente para uso em outros módulos
 window.isCurrentCategoryMixMatch = isCurrentCategoryMixMatch;
@@ -263,74 +339,19 @@ window.PriceProgressBar = {
         }
     },
 
-    renderSpecialSelection(rateRules, basePrice) {
-        if (!window.isSpecialSelection) return;
-
-        this.rateRules = rateRules;
-        this.basePrice = basePrice;
-
-        const sidebar = document.getElementById('filterSidebar');
-        if (!sidebar) return;
-
-        sidebar.style.display = 'block';
-        const filterContainer = sidebar.querySelector('.filter-container');
-        if (filterContainer) {
-            filterContainer.style.display = 'none';
-        }
-
-        let priceBarContainer = document.getElementById('priceProgressContainer');
-        if (!priceBarContainer) {
-            priceBarContainer = document.createElement('div');
-            priceBarContainer.id = 'priceProgressContainer';
-            // Inserir após o gallery-header, não no sidebar
-            const galleryHeader = document.querySelector('.gallery-header');
-            if (galleryHeader && galleryHeader.parentElement) {
-                galleryHeader.parentElement.insertBefore(priceBarContainer, galleryHeader.nextSibling);
-            } else {
-                sidebar.appendChild(priceBarContainer); // fallback
-            }
-        }
-
-        // HTML para Special Selection
-        let html = `
-            <div class="special-selection-header">
-                <h3 style="color: #d4af37; margin-bottom: 15px;">
-                    <i class="fas fa-star"></i> Special Selection Pricing
-                </h3>
-            </div>
-            <div class="price-progress-wrapper">
-        `;
-
-        this.rateRules.forEach((rule, index) => {
-            const label = rule.to === 999 ? `${rule.from}+` : `${rule.from}-${rule.to}`;
-            const isFirst = index === 0;
-
-            html += `
-                <div class="price-tier ${isFirst ? 'base-tier' : ''}" data-min="${rule.from}" data-max="${rule.to}">
-                    <div class="tier-label">${label} photos</div>
-                    <div class="tier-price">$${rule.price}/each</div>
-                </div>
-            `;
-        });
-
-        html += `
-            </div>
-            <div class="current-selection-info">
-                <div id="selectionCount">0 photos selected</div>
-                <div id="currentUnitPrice">Unit price: $${this.basePrice}</div>
-            </div>
-        `;
-
-        priceBarContainer.innerHTML = html;
-        priceBarContainer.style.display = 'block';
-
-        this.updateProgress();
-    },
-
     render() {
-        if (window.isSpecialSelection) {
-            if (window.specialSelectionRateRules) {
-                this.renderSpecialSelection(window.specialSelectionRateRules, window.specialSelectionBasePrice);
+        // IMPORTANTE: Só renderizar Mix & Match para Natural Cowhides
+        const isMixMatch = window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch();
+        if (!isMixMatch) {
+            // Esconder container se existir
+            const existingContainer = document.getElementById('priceProgressContainer');
+            if (existingContainer) {
+                existingContainer.style.display = 'none';
+            }
+            // Esconder badge Mix & Match no breadcrumb
+            const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
+            if (breadcrumbMmBadge) {
+                breadcrumbMmBadge.style.display = 'none';
             }
             return;
         }
@@ -378,10 +399,9 @@ window.PriceProgressBar = {
         }
 
         // Mix & Match ativo - mostrar badge no breadcrumb
-        // Mostrar se temos rate rules OU se estamos em categoria Mix & Match (mesmo vendo subcategorias)
+        // IMPORTANTE: Só mostrar para Natural Cowhides, independente de rate rules carregadas
         const breadcrumbMmBadge = document.getElementById('breadcrumbMixMatchBadge');
-        const isMixMatchCategory = this.rateRules.length > 0 ||
-                                   (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch());
+        const isMixMatchCategory = window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch();
 
         // Mostrar badge Mix & Match no breadcrumb quando categoria é Mix & Match
         if (breadcrumbMmBadge && isMixMatchCategory) {
@@ -489,33 +509,27 @@ window.PriceProgressBar = {
     updateProgress() {
         if (!window.CartSystem || !window.CartSystem.state) return;
 
-        let relevantItemCount = 0;
+        // ✅ IMPORTANTE: Contar APENAS itens que participam do Mix & Match
+        // Mix & Match é exclusivo para fotos únicas de Natural Cowhides
+        const relevantItemCount = window.CartSystem.state.items.filter(item => {
+            // Excluir produtos de catálogo (stock) - eles NUNCA participam do Mix & Match
+            if (item.isCatalogProduct) {
+                return false;
+            }
 
-        if (window.isSpecialSelection) {
-            relevantItemCount = window.CartSystem.state.totalItems;
-        } else {
-            // ✅ IMPORTANTE: Contar APENAS itens que participam do Mix & Match
-            // Mix & Match é exclusivo para fotos únicas de Natural Cowhides
-            relevantItemCount = window.CartSystem.state.items.filter(item => {
-                // Excluir produtos de catálogo (stock) - eles NUNCA participam do Mix & Match
-                if (item.isCatalogProduct) {
-                    return false;
-                }
+            // Verificar se a categoria do item participa do Mix & Match
+            const category = item.category || item.fullPath || '';
+            const mainCategory = category.includes(' → ')
+                ? category.split(' → ')[0].trim()
+                : category.includes('/')
+                    ? category.split('/')[0].trim()
+                    : category;
 
-                // Verificar se a categoria do item participa do Mix & Match
-                const category = item.category || item.fullPath || '';
-                const mainCategory = category.includes(' → ')
-                    ? category.split(' → ')[0].trim()
-                    : category.includes('/')
-                        ? category.split('/')[0].trim()
-                        : category;
-
-                // Verificar se é Natural Cowhides (única categoria Mix & Match)
-                return mainCategory === 'Natural Cowhides' ||
-                       mainCategory.includes('Brazil Best Sellers') ||
-                       mainCategory.includes('Brazil Top Selected');
-            }).length;
-        }
+            // Verificar se é Natural Cowhides (única categoria Mix & Match)
+            return mainCategory === 'Natural Cowhides' ||
+                   mainCategory.includes('Brazil Best Sellers') ||
+                   mainCategory.includes('Brazil Top Selected');
+        }).length;
 
         // Atualizar tiers (novo layout)
         document.querySelectorAll('.mm-tier-item').forEach(tier => {
@@ -577,27 +591,6 @@ window.PriceProgressBar = {
             const breadcrumbBadge = document.getElementById('breadcrumbPriceBadge');
             if (breadcrumbBadge && breadcrumbBadge.innerHTML !== '' && !breadcrumbBadge.classList.contains('no-price') && !breadcrumbBadge.classList.contains('contact-price')) {
                 breadcrumbBadge.innerHTML = `<i class="fas fa-comment-dollar"></i> ${formattedPrice}`;
-            }
-        }
-
-        // Atualizar informações para Special Selection
-        if (window.isSpecialSelection) {
-            const countEl = document.getElementById('selectionCount');
-            const priceEl = document.getElementById('currentUnitPrice');
-
-            if (countEl) {
-                countEl.textContent = `${relevantItemCount} photos selected`;
-            }
-
-            if (priceEl && this.rateRules.length > 0) {
-                let currentPrice = this.basePrice;
-                for (const rule of this.rateRules) {
-                    if (relevantItemCount >= rule.from && relevantItemCount <= rule.to) {
-                        currentPrice = rule.price;
-                        break;
-                    }
-                }
-                priceEl.textContent = `Unit price: $${currentPrice}`;
             }
         }
 
@@ -1501,139 +1494,302 @@ window.clearAllFilters = function () {
     window.showCategories();
 }
 
-// ===== SISTEMA DE BUSCA RECONSTRUÍDO COM SUGESTÕES =====
-window.handleSearchInput = function (event) {
-    const query = event.target.value.trim().toLowerCase();
+// ===== SISTEMA DE BUSCA UNIFICADO =====
+// Busca tanto produtos de catálogo (stock) quanto categorias (fotos únicas)
+// em um único dropdown organizado
 
-    if (query.length >= 2) {
-        performLiveSearch(query);
-        showSearchSuggestions(query);
-    } else if (query.length === 0) {
+// Usar variáveis globais no window para evitar conflitos com client-core.js
+if (typeof window._searchTimeout === 'undefined') window._searchTimeout = null;
+if (typeof window._searchProductsCache === 'undefined') window._searchProductsCache = null;
+if (typeof window._searchCacheTimestamp === 'undefined') window._searchCacheTimestamp = 0;
+const SEARCH_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutos
+
+window.handleSearchInput = function (event) {
+    const query = event.target.value.trim();
+
+    // Limpar timeout anterior (debounce)
+    if (window._searchTimeout) {
+        clearTimeout(window._searchTimeout);
+    }
+
+    if (query.length < 2) {
         hideSearchSuggestions();
-        window.showCategories();
+        return;
+    }
+
+    // Debounce de 300ms para evitar muitas requisições
+    window._searchTimeout = setTimeout(() => {
+        performUnifiedSearch(query);
+    }, 300);
+}
+
+// Buscar produtos de catálogo (stock)
+async function getSearchProducts() {
+    const now = Date.now();
+
+    // Retornar cache se ainda válido
+    if (window._searchProductsCache && (now - window._searchCacheTimestamp) < SEARCH_CACHE_DURATION_MS) {
+        return window._searchProductsCache;
+    }
+
+    try {
+        const response = await fetch('/api/catalog/products?category=all&limit=1000', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (data.success && data.products) {
+            window._searchProductsCache = data.products;
+            window._searchCacheTimestamp = now;
+            return data.products;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+    }
+
+    return window._searchProductsCache || [];
+}
+
+// Busca unificada - produtos E categorias
+async function performUnifiedSearch(query) {
+    const dropdown = getOrCreateSearchDropdown();
+    if (!dropdown) return;
+
+    const queryLower = query.toLowerCase();
+
+    // Mostrar loading
+    dropdown.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #666;">
+            Searching...
+        </div>
+    `;
+    showSearchDropdown();
+
+    try {
+        // Buscar em paralelo: produtos E categorias
+        const [products, categoriesData] = await Promise.all([
+            getSearchProducts(),
+            window.CategoriesCache ? window.CategoriesCache.fetch() : { categories: [] }
+        ]);
+
+        const categories = categoriesData.categories || [];
+
+        // Filtrar produtos
+        const matchedProducts = products.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const qbItem = (p.qbItem || '').toLowerCase();
+            const category = (p.category || '').toLowerCase();
+            return name.includes(queryLower) || qbItem.includes(queryLower) || category.includes(queryLower);
+        }).slice(0, 6); // Limitar a 6 produtos
+
+        // Filtrar categorias
+        const matchedCategories = categories.filter(cat => {
+            const name = (cat.name || '').toLowerCase();
+            const displayName = (cat.displayName || '').toLowerCase();
+            return name.includes(queryLower) || displayName.includes(queryLower);
+        }).slice(0, 8); // Limitar a 8 categorias
+
+        // Renderizar resultados
+        renderUnifiedResults(dropdown, query, matchedProducts, matchedCategories);
+
+    } catch (error) {
+        console.error('Erro na busca:', error);
+        dropdown.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #d32f2f;">
+                Error searching
+            </div>
+        `;
     }
 }
 
-function performLiveSearch(query) {
-    console.log('🔍 Buscando por:', query);
+function renderUnifiedResults(dropdown, query, products, categories) {
+    const queryLower = query.toLowerCase();
+    const isDark = document.body.classList.contains('dark-mode');
 
-    // Buscar nos cards de categoria visíveis
-    const cards = document.querySelectorAll('.category-card');
-    let visibleCount = 0;
+    // Dark mode colors
+    const colors = isDark ? {
+        bg: '#2d2d2d',
+        bgHover: '#3d3a35',
+        bgOOS: '#252525',
+        text: '#e0e0e0',
+        textOOS: '#888',
+        border: '#444',
+        noResult: '#999'
+    } : {
+        bg: '#fff',
+        bgHover: '#fef6ee',
+        bgOOS: '#f9f9f9',
+        text: '#333',
+        textOOS: '#666',
+        border: '#eee',
+        noResult: '#666'
+    };
 
-    cards.forEach(card => {
-        const title = card.querySelector('h3')?.textContent?.toLowerCase() || '';
-        const desc = card.querySelector('p')?.textContent?.toLowerCase() || '';
-        const fullText = title + ' ' + desc;
+    if (products.length === 0 && categories.length === 0) {
+        dropdown.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: ${colors.noResult}; font-size: 15px;">
+                No results for "<span style="color: #B87333; font-weight: 600;">${query}</span>"
+            </div>
+        `;
+        return;
+    }
 
-        if (fullText.includes(query)) {
-            card.style.display = '';
-            visibleCount++;
+    // Criar lista unificada de todos os itens
+    let allItems = [];
+
+    // Adicionar categorias
+    categories.forEach(cat => {
+        const displayName = cat.displayName || cat.name;
+        allItems.push({
+            type: 'category',
+            name: displayName,
+            highlighted: highlightMatch(displayName, queryLower),
+            id: cat.driveId || cat.id,
+            isOOS: false
+        });
+    });
+
+    // Adicionar produtos
+    products.forEach(product => {
+        const name = product.name || product.qbItem;
+        const stock = product.stock || 0;
+        allItems.push({
+            type: 'product',
+            name: name,
+            highlighted: highlightMatch(name, queryLower),
+            qbItem: product.qbItem,
+            category: product.category || product.catalogCategory || '',
+            isOOS: stock === 0
+        });
+    });
+
+    // Ordenar: itens em stock primeiro, out of stock no final
+    allItems.sort((a, b) => {
+        if (a.isOOS === b.isOOS) return 0;
+        return a.isOOS ? 1 : -1;
+    });
+
+    // Gerar HTML
+    let html = '';
+
+    allItems.forEach((item, idx) => {
+        const last = idx === allItems.length - 1;
+
+        if (item.type === 'category') {
+            html += `<div class="sr-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; border-bottom: ${last ? 'none' : '1px solid ' + colors.border}; background: ${colors.bg};"
+                onmouseover="this.style.background='${colors.bgHover}'; this.style.borderLeft='4px solid #B87333'; this.style.paddingLeft='16px';"
+                onmouseout="this.style.background='${colors.bg}'; this.style.borderLeft='none'; this.style.paddingLeft='20px';"
+                onclick="selectSearchCategory('${item.id.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}')">
+                <span style="flex: 1; font-size: 15px; color: ${colors.text}; font-weight: 400;">${item.highlighted}</span>
+                <span style="color: #B87333; font-size: 20px; font-weight: bold; margin-left: 12px;">›</span>
+            </div>`;
         } else {
-            card.style.display = 'none';
+            // Produtos Out of Stock: sem clique, sem hover, apenas exibir
+            if (item.isOOS) {
+                html += `<div class="sr-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: default; border-bottom: ${last ? 'none' : '1px solid ' + colors.border}; background: ${colors.bgOOS}; opacity: 0.6;">
+                    <span style="flex: 1; font-size: 15px; color: ${colors.textOOS}; font-weight: 400;">${item.highlighted}</span>
+                    <span style="font-size: 11px; font-weight: 700; color: #fff; background: #d32f2f; padding: 5px 10px; border-radius: 4px; text-transform: uppercase; margin-left: 12px;">OUT OF STOCK</span>
+                </div>`;
+            } else {
+                // Produtos com estoque: clicável, leva para a categoria
+                html += `<div class="sr-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; border-bottom: ${last ? 'none' : '1px solid ' + colors.border}; background: ${colors.bg};"
+                    onmouseover="this.style.background='${colors.bgHover}'; this.style.borderLeft='4px solid #B87333'; this.style.paddingLeft='16px';"
+                    onmouseout="this.style.background='${colors.bg}'; this.style.borderLeft='none'; this.style.paddingLeft='20px';"
+                    onclick="openSearchProduct('${item.qbItem}', '${item.name.replace(/'/g, "\\'")}')">
+                    <span style="flex: 1; font-size: 15px; color: ${colors.text}; font-weight: 400;">${item.highlighted}</span>
+                    <span style="color: #2e7d32; font-size: 13px; font-weight: 500; margin-left: 12px;">In Stock ›</span>
+                </div>`;
+            }
         }
     });
 
-    // Se não achou nada nos cards visíveis, buscar no cache
-    if (visibleCount === 0 && window.CategoriesCache) {
-        searchInAllCategories(query);
-    }
+    dropdown.innerHTML = html;
 }
 
-async function searchInAllCategories(query) {
-    try {
-        const data = await window.CategoriesCache.fetch();
-        const categories = data.categories || [];
-
-        const results = categories.filter(cat => {
-            const name = (cat.name || '').toLowerCase();
-            const displayName = (cat.displayName || '').toLowerCase();
-            return name.includes(query) || displayName.includes(query);
-        });
-
-        if (results.length > 0) {
-            window.displayFilteredCategories(results);
-        }
-    } catch (error) {
-        console.error('Erro na busca:', error);
-    }
+function highlightMatch(text, query) {
+    if (!query) return text;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<strong style="color: #ff9800;">$1</strong>');
 }
 
-async function showSearchSuggestions(query) {
-    try {
-        const data = await window.CategoriesCache.fetch();
-        const categories = data.categories || [];
+function getOrCreateSearchDropdown() {
+    let dropdown = document.getElementById('searchSuggestionsDropdown');
+    const isDark = document.body.classList.contains('dark-mode');
 
-        // Filtrar categorias que correspondem à busca
-        const results = categories.filter(cat => {
-            const name = (cat.name || '').toLowerCase();
-            const displayName = (cat.displayName || '').toLowerCase();
-            return name.includes(query) || displayName.includes(query);
-        }).slice(0, 10); // Limitar a 10 sugestões
+    if (!dropdown) {
+        const searchInput = document.getElementById('globalSearch');
+        if (!searchInput) return null;
 
-        // Criar ou atualizar dropdown
-        let dropdown = document.getElementById('searchSuggestionsDropdown');
+        dropdown = document.createElement('div');
+        dropdown.id = 'searchSuggestionsDropdown';
+        dropdown.className = 'search-suggestions-dropdown';
+        searchInput.parentElement.style.position = 'relative';
+        searchInput.parentElement.appendChild(dropdown);
 
-        if (!dropdown) {
-            const searchInput = document.getElementById('globalSearch');
-            if (!searchInput) return;
-
-            dropdown = document.createElement('div');
-            dropdown.id = 'searchSuggestionsDropdown';
-            dropdown.className = 'search-suggestions-dropdown';
-            dropdown.style.cssText = `
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                max-height: 300px;
-                overflow-y: auto;
-                z-index: 1000;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                display: none;
-            `;
-            searchInput.parentElement.style.position = 'relative';
-            searchInput.parentElement.appendChild(dropdown);
-        }
-
-        if (results.length > 0) {
-            let html = '';
-            results.forEach(cat => {
-                const displayName = cat.displayName || cat.name;
-                // Destacar o termo buscado
-                const highlighted = displayName.replace(
-                    new RegExp(`(${query})`, 'gi'),
-                    '<strong>$1</strong>'
-                );
-
-                html += `
-                    <div class="suggestion-item" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
-                         onmouseover="this.style.backgroundColor='#f5f5f5'"
-                         onmouseout="this.style.backgroundColor='white'"
-                         onclick="selectSuggestion('${(cat.driveId || cat.id).replace(/'/g, "\\'")}', '${displayName.replace(/'/g, "\\'")}')">
-                        <div>${highlighted}</div>
-                        <small style="color: #666;">${cat.photoCount || 0} photos</small>
-                    </div>
-                `;
-            });
-
-            dropdown.innerHTML = html;
-            dropdown.style.display = 'block';
-        } else {
-            dropdown.innerHTML = `
-                <div style="padding: 10px; color: #666;">
-                    No results for "${query}"
-                </div>
-            `;
-            dropdown.style.display = 'block';
-        }
-
-    } catch (error) {
-        console.error('Erro ao mostrar sugestões:', error);
+        // Adicionar estilos CSS para os itens de resultado
+        addSearchStyles();
     }
+
+    // Atualizar cores baseado no tema atual
+    const bgColor = isDark ? '#2d2d2d' : '#ffffff';
+    const borderColor = isDark ? '#444' : '#e0e0e0';
+    dropdown.style.cssText = `
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: ${bgColor};
+        border: 1px solid ${borderColor};
+        border-radius: 10px;
+        max-height: 450px;
+        overflow-y: auto;
+        z-index: 999999;
+        box-shadow: 0 8px 30px rgba(0,0,0,${isDark ? '0.4' : '0.18'});
+        display: none;
+        isolation: isolate;
+    `;
+
+    return dropdown;
+}
+
+function addSearchStyles() {
+    if (document.getElementById('unified-search-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'unified-search-styles';
+    style.textContent = `
+        /* Container do dropdown */
+        #searchSuggestionsDropdown {
+            border-radius: 10px !important;
+            overflow: hidden;
+        }
+
+        /* Scrollbar - Light mode */
+        #searchSuggestionsDropdown::-webkit-scrollbar {
+            width: 8px;
+        }
+        #searchSuggestionsDropdown::-webkit-scrollbar-track {
+            background: #f0f0f0;
+        }
+        #searchSuggestionsDropdown::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #B87333, #D4956A);
+            border-radius: 4px;
+        }
+        #searchSuggestionsDropdown::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #9A5F28, #B87333);
+        }
+
+        /* Scrollbar - Dark mode */
+        body.dark-mode #searchSuggestionsDropdown::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        /* Transition para hover nos itens */
+        .sr-item {
+            transition: all 0.15s ease !important;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 function hideSearchSuggestions() {
@@ -1641,12 +1797,101 @@ function hideSearchSuggestions() {
     if (dropdown) {
         dropdown.style.display = 'none';
     }
+    // Remover classe do body para restaurar z-index do botão do carrinho
+    document.body.classList.remove('search-dropdown-open');
 }
 
-window.selectSuggestion = function (categoryId, categoryName) {
-    hideSearchSuggestions();
+function showSearchDropdown() {
+    const dropdown = document.getElementById('searchSuggestionsDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'block';
+    }
+    // Adicionar classe ao body para esconder botão do carrinho
+    document.body.classList.add('search-dropdown-open');
+}
 
-    // Navegar direto para a categoria selecionada
+// Selecionar categoria (navegar para fotos)
+window.selectSearchCategory = function (categoryId, categoryName) {
+    hideSearchSuggestions();
+    clearSearchInput();
+
+    console.log('🔍 selectSearchCategory:', categoryName, categoryId);
+
+    // Mapeamento de pastas de Natural Cowhides para subcategory keys
+    // Os keys devem corresponder EXATAMENTE aos definidos em MAIN_CATEGORIES
+    const naturalCowhidesMapping = {
+        'Brazil Best Sellers': 'brazil-best-sellers',
+        'Brazil Top Selected Categories': 'brazil-top-categories',  // CORRIGIDO: era brazil-top-selected
+        'Colombian Cowhides': 'colombian-cowhides'
+        // 'Cowhide Hair On BRA...' pertence a specialty-cowhides, não natural-cowhides
+    };
+
+    // Detectar se é uma subcategoria de Natural Cowhides
+    let detectedSubcategoryKey = null;
+    let detectedFolderName = null;
+    for (const [folderName, subcatKey] of Object.entries(naturalCowhidesMapping)) {
+        if (categoryName.startsWith(folderName)) {
+            detectedSubcategoryKey = subcatKey;
+            detectedFolderName = folderName;
+            break;
+        }
+    }
+
+    if (detectedSubcategoryKey) {
+        console.log('🚀 Natural Cowhides detected:', detectedSubcategoryKey, 'folder:', detectedFolderName);
+
+        // Verificar se o sidebar já existe
+        const existingSidebar = document.querySelector('.category-sidebar');
+
+        if (!existingSidebar && window.openCategory) {
+            // Criar o sidebar primeiro
+            window.openCategory('natural-cowhides');
+        }
+
+        // Usar switchDirectGalleryTab para ir para a subcategoria correta
+        setTimeout(async () => {
+            if (window.switchDirectGalleryTab) {
+                console.log('🔄 Switching to subcategory:', detectedSubcategoryKey);
+                await window.switchDirectGalleryTab('natural-cowhides', detectedSubcategoryKey);
+            }
+
+            // Depois de mudar a subcategoria, navegar para a pasta específica se necessário
+            setTimeout(() => {
+                // Configurar o path de navegação com TODOS os níveis
+                if (categoryName.includes(' → ')) {
+                    const parts = categoryName.split(' → ');
+
+                    // Construir o path completo com IDs corretos para cada nível
+                    const pathParts = categoryId.split('/').filter(p => p);
+                    window.navigationState.currentPath = parts.map((part, index) => {
+                        // Construir o ID parcial até este nível
+                        const partialPath = pathParts.slice(0, index + 1).join('/');
+                        return {
+                            id: partialPath,
+                            name: part.trim()
+                        };
+                    });
+
+                    console.log('📍 Path configurado:', window.navigationState.currentPath);
+
+                    // Navegar para a pasta específica (subpasta)
+                    window.navigationState.currentFolderId = categoryId;
+
+                    // Atualizar o breadcrumb ANTES de carregar o conteúdo
+                    if (window.updateBreadcrumb) {
+                        window.updateBreadcrumb();
+                    }
+
+                    window.loadFolderContents(categoryId);
+                }
+                // Se não tem ' → ', a switchDirectGalleryTab já carregou o conteúdo correto
+            }, 300);
+        }, existingSidebar ? 50 : 150);
+
+        return;
+    }
+
+    // Para outras categorias, navegar normalmente
     if (categoryName.includes(' → ')) {
         const parts = categoryName.split(' → ');
         window.navigationState.currentPath = parts.map((part, index) => ({
@@ -1662,13 +1907,125 @@ window.selectSuggestion = function (categoryId, categoryName) {
     window.loadFolderContents(categoryId);
 }
 
+// Detectar subcategoria pelo nome do produto
+function detectSubcategoryFromName(productName) {
+    const name = (productName || '').toLowerCase();
+
+    // Specialty Cowhides
+    if (name.includes('devore') || name.includes('metallica') || name.includes('metallic') || name.includes('acid wash')) {
+        return { categoryKey: 'specialty-cowhides', subcategoryKey: 'devore-metallic' };
+    }
+    if (name.includes('printed') || name.includes('zebra') || name.includes('stencil') || name.includes('leopard') || name.includes('tiger') || name.includes('cheetah')) {
+        return { categoryKey: 'specialty-cowhides', subcategoryKey: 'printed-cowhides' };
+    }
+    if (name.includes('dyed') && !name.includes('undyed')) {
+        return { categoryKey: 'specialty-cowhides', subcategoryKey: 'dyed-cowhides' };
+    }
+    if (name.includes('binding') || name.includes('lined') || name.includes('leather border')) {
+        return { categoryKey: 'specialty-cowhides', subcategoryKey: 'cowhide-with-binding' };
+    }
+
+    // Small Accent Hides (chave correta: 'small-accent-hides')
+    if (name.includes('sheepskin') || name.includes('sheep') || name.includes('icelandic') || name.includes('himalayan') || name.includes('tibetan')) {
+        return { categoryKey: 'small-accent-hides', subcategoryKey: 'sheepskins' };
+    }
+    if (name.includes('calfskin') || name.includes('calf skin') || name.includes('baby calf')) {
+        return { categoryKey: 'small-accent-hides', subcategoryKey: 'calfskins' };
+    }
+    if (name.includes('goatskin') || name.includes('goat skin') || name.includes('goat hide')) {
+        return { categoryKey: 'small-accent-hides', subcategoryKey: 'goatskins' };
+    }
+
+    // Patchwork Rugs
+    if (name.includes('chevron')) {
+        return { categoryKey: 'patchwork-rugs', subcategoryKey: 'chevron-rugs' };
+    }
+    if (name.includes('runner') || name.includes('2.5x8') || name.includes('2x8')) {
+        return { categoryKey: 'patchwork-rugs', subcategoryKey: 'runner-rugs' };
+    }
+    if (name.includes('bedside') || name.includes('22x34')) {
+        return { categoryKey: 'patchwork-rugs', subcategoryKey: 'bedside-rugs' };
+    }
+    if (name.includes('rodeo') || name.includes('star rug') || name.includes('longhorn')) {
+        return { categoryKey: 'patchwork-rugs', subcategoryKey: 'rodeo-rugs' };
+    }
+    if (name.includes('patchwork') || (name.includes('rug') && (name.includes('3x5') || name.includes('4x6') || name.includes('6x8') || name.includes('9x11')))) {
+        return { categoryKey: 'patchwork-rugs', subcategoryKey: 'square-rugs' };
+    }
+
+    // Accessories
+    if (name.includes('pillow')) {
+        return { categoryKey: 'accessories', subcategoryKey: 'pillows' };
+    }
+    if (name.includes('bag') || name.includes('purse') || name.includes('handbag') || name.includes('crossbody') || name.includes('duffle') || name.includes('backpack')) {
+        return { categoryKey: 'accessories', subcategoryKey: 'bags-purses' };
+    }
+    if (name.includes('coaster') || name.includes('placemat') || name.includes('napkin') || name.includes('koozie') || name.includes('wine')) {
+        return { categoryKey: 'accessories', subcategoryKey: 'table-kitchen' };
+    }
+    if (name.includes('slipper')) {
+        return { categoryKey: 'accessories', subcategoryKey: 'slippers' };
+    }
+    if (name.includes('scrap') || name.includes('diy')) {
+        return { categoryKey: 'accessories', subcategoryKey: 'scraps-diy' };
+    }
+    if (name.includes('stocking') || name.includes('christmas') || name.includes('holiday') || name.includes('gift')) {
+        return { categoryKey: 'accessories', subcategoryKey: 'gifts-seasonal' };
+    }
+
+    // Furniture
+    if (name.includes('pouf') || name.includes('ottoman') || name.includes('cube')) {
+        return { categoryKey: 'furniture', subcategoryKey: 'pouf-ottoman' };
+    }
+    if (name.includes('stool') || name.includes('foot stool')) {
+        return { categoryKey: 'furniture', subcategoryKey: 'foot-stool' };
+    }
+    if (name.includes('chair') || name.includes('bench') || name.includes('furniture')) {
+        return { categoryKey: 'furniture', subcategoryKey: 'leather-furniture' };
+    }
+
+    return null;
+}
+
+// Abrir produto do catálogo - navega para a categoria do produto
+window.openSearchProduct = function (qbItem, productName) {
+    hideSearchSuggestions();
+    clearSearchInput();
+
+    console.log('🔍 Abrindo produto:', qbItem, 'nome:', productName);
+
+    // Detectar subcategoria pelo nome do produto
+    const detected = detectSubcategoryFromName(productName);
+
+    if (detected && window.openSubcategory) {
+        console.log('🚀 Detectado:', detected.categoryKey, detected.subcategoryKey);
+        window.openSubcategory(detected.categoryKey, detected.subcategoryKey);
+    } else {
+        console.log('⚠️ Não foi possível detectar categoria para:', productName);
+        // Ir para homepage como fallback
+        if (window.showHomepage) {
+            window.showHomepage();
+        }
+    }
+}
+
+function clearSearchInput() {
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+}
+
+// Manter compatibilidade com função antiga
+window.selectSuggestion = window.selectSearchCategory;
+
 window.executeGlobalSearch = function () {
     const searchInput = document.getElementById('globalSearch');
     if (!searchInput) return;
 
-    const query = searchInput.value.trim().toLowerCase();
+    const query = searchInput.value.trim();
     if (query.length >= 2) {
-        performLiveSearch(query);
+        performUnifiedSearch(query);
     }
 }
 
@@ -1893,4 +2250,601 @@ window.openMixMatchInfoModal = function() {
 window.closeMixMatchInfoModal = function() {
     const modal = document.getElementById('mixMatchInfoModal');
     if (modal) modal.remove();
+};
+
+// ============================================
+// HELP MODAL - Tabbed Interface
+// ============================================
+window.openHelpModal = function() {
+    const existing = document.getElementById('helpModal');
+    if (existing) existing.remove();
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const bgColor = isDark ? '#1a1a1a' : '#ffffff';
+    const headerBg = isDark ? '#252525' : '#f8f9fa';
+    const textColor = isDark ? '#e0e0e0' : '#1f2937';
+    const textMuted = isDark ? '#888' : '#6b7280';
+    const textBody = isDark ? '#bbb' : '#4b5563';
+    const borderColor = isDark ? '#333' : '#e5e7eb';
+    const accentColor = '#B87333';
+    const tabActiveBg = isDark ? '#2d2d2d' : '#ffffff';
+    const tabInactiveBg = isDark ? '#1a1a1a' : '#f3f4f6';
+    const sectionBg = isDark ? '#252525' : '#f8fafc';
+
+    const modalHTML = `
+        <style>
+            #helpModal * { box-sizing: border-box; }
+            @keyframes helpModalFadeIn {
+                from { opacity: 0; transform: scale(0.98); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            .help-tab {
+                flex: 1;
+                padding: 12px 8px;
+                border: none;
+                background: ${tabInactiveBg};
+                color: ${textMuted};
+                font-size: 0.7rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                border-bottom: 2px solid transparent;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                min-width: 0;
+            }
+            .help-tab i {
+                font-size: 16px;
+            }
+            .help-tab-text {
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+            .help-tab:hover {
+                color: ${textColor};
+                background: ${tabActiveBg};
+            }
+            .help-tab.active {
+                background: ${tabActiveBg};
+                color: ${accentColor};
+                border-bottom-color: ${accentColor};
+                font-weight: 600;
+            }
+            @media (min-width: 500px) {
+                .help-tab {
+                    flex-direction: row;
+                    gap: 6px;
+                    padding: 10px 14px;
+                    font-size: 0.8rem;
+                }
+                .help-tab i {
+                    font-size: 14px;
+                }
+            }
+            .help-content-section {
+                display: none;
+                animation: helpContentFade 0.2s ease;
+            }
+            .help-content-section.active {
+                display: block;
+            }
+            @keyframes helpContentFade {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            .help-section-title {
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: ${textColor};
+                margin: 0 0 12px 0;
+                padding-bottom: 8px;
+                border-bottom: 1px solid ${borderColor};
+            }
+            .help-step {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 12px;
+                padding: 0;
+                background: transparent;
+            }
+            .help-step-number {
+                width: 22px;
+                height: 22px;
+                background: ${accentColor};
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.7rem;
+                font-weight: 600;
+                flex-shrink: 0;
+                margin-top: 2px;
+            }
+            .help-step-content {
+                flex: 1;
+            }
+            .help-step-title {
+                font-weight: 600;
+                color: ${textColor};
+                font-size: 0.85rem;
+                margin-bottom: 4px;
+            }
+            .help-step-desc {
+                color: ${textBody};
+                font-size: 0.8rem;
+                line-height: 1.5;
+            }
+            .help-info-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 0;
+                border-bottom: 1px solid ${borderColor};
+            }
+            .help-info-row:last-child {
+                border-bottom: none;
+            }
+            .help-info-icon {
+                width: 32px;
+                height: 32px;
+                background: ${sectionBg};
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: ${accentColor};
+                flex-shrink: 0;
+            }
+            .help-tier-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+                margin: 12px 0;
+            }
+            @media (max-width: 500px) {
+                .help-tier-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .help-tab-text {
+                    font-size: 0.65rem;
+                }
+            }
+        </style>
+        <div id="helpModal" style="
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(3px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        ">
+            <div style="
+                background: ${bgColor};
+                border-radius: 12px;
+                max-width: 640px;
+                width: 100%;
+                max-height: 85vh;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+                animation: helpModalFadeIn 0.25s ease;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            ">
+                <!-- Clean Header -->
+                <div style="
+                    padding: 16px 20px;
+                    background: ${headerBg};
+                    border-bottom: 1px solid ${borderColor};
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                ">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-question-circle" style="color: ${accentColor}; font-size: 18px;"></i>
+                        <span style="font-weight: 600; color: ${textColor}; font-size: 1rem;">Help Center</span>
+                    </div>
+                    <button onclick="closeHelpModal()" style="
+                        width: 28px;
+                        height: 28px;
+                        border: none;
+                        background: transparent;
+                        cursor: pointer;
+                        color: ${textMuted};
+                        font-size: 16px;
+                        border-radius: 6px;
+                        transition: all 0.2s;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    " onmouseover="this.style.background='${sectionBg}';this.style.color='${textColor}'" onmouseout="this.style.background='transparent';this.style.color='${textMuted}'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="help-tabs-container" style="
+                    display: flex;
+                    background: ${tabInactiveBg};
+                    border-bottom: 1px solid ${borderColor};
+                ">
+                    <button class="help-tab active" onclick="switchHelpTab('navigation', this)">
+                        <i class="fas fa-compass"></i>
+                        <span class="help-tab-text">Browse</span>
+                    </button>
+                    <button class="help-tab" onclick="switchHelpTab('ordering', this)">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="help-tab-text">Order</span>
+                    </button>
+                    <button class="help-tab" onclick="switchHelpTab('mixmatch', this)">
+                        <i class="fas fa-layer-group"></i>
+                        <span class="help-tab-text">Mix&Match</span>
+                    </button>
+                    <button class="help-tab" onclick="switchHelpTab('payment', this)">
+                        <i class="fas fa-truck"></i>
+                        <span class="help-tab-text">Shipping</span>
+                    </button>
+                    <button class="help-tab" onclick="switchHelpTab('contact', this)">
+                        <i class="fas fa-headset"></i>
+                        <span class="help-tab-text">Contact</span>
+                    </button>
+                </div>
+
+                <!-- Content Area -->
+                <div id="helpModalContent" style="padding: 20px; overflow-y: auto; flex: 1; overscroll-behavior: contain;">
+
+                    <!-- Navigation Tab -->
+                    <div id="help-navigation" class="help-content-section active">
+                        <h3 class="help-section-title"><i class="fas fa-compass" style="color: ${accentColor}; margin-right: 8px;"></i>Browsing the Gallery</h3>
+
+                        <div class="help-step">
+                            <div class="help-step-number">1</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Select a Category</div>
+                                <div class="help-step-desc">From the main screen, click on any category card (Natural Cowhides, Printed Cowhides, Specialty Cowhides, etc.) to explore products within that collection.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">2</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Browse Subcategories</div>
+                                <div class="help-step-desc">Each main category contains subcategories. Click on a subcategory card to see all available items. For example, in Natural Cowhides you'll find Brazil Best Sellers, Premium Selections, and more.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">3</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">View Product Photos</div>
+                                <div class="help-step-desc">Once inside a subcategory, you'll see all available products displayed as photo thumbnails. Each photo represents a unique, one-of-a-kind piece with its own SKU number.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">4</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Navigate Back</div>
+                                <div class="help-step-desc">Use the breadcrumb navigation at the top of the page to go back to previous levels. Click on any breadcrumb item to return to that category or subcategory level.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">5</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Search Products</div>
+                                <div class="help-step-desc">Use the search bar in the header to find specific products by SKU, name, or category. Results will show matching items across all categories.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ordering Tab -->
+                    <div id="help-ordering" class="help-content-section">
+                        <h3 class="help-section-title"><i class="fas fa-shopping-cart" style="color: ${accentColor}; margin-right: 8px;"></i>How to Place an Order</h3>
+
+                        <div class="help-step">
+                            <div class="help-step-number">1</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Add Items to Cart</div>
+                                <div class="help-step-desc">Click on any product photo to add it to your cart. A green checkmark will appear on selected items. Each click toggles the selection on/off. The cart icon in the header shows your current item count.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">2</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Review Your Selection</div>
+                                <div class="help-step-desc">Click the cart icon in the header to open your cart panel. Here you'll see all selected items with their photos, SKUs, categories, and prices. The total is calculated automatically.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">3</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Remove Items (Optional)</div>
+                                <div class="help-step-desc">To remove an item from your cart, click the X button next to the item in the cart panel, or click on the photo again in the gallery to deselect it.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">4</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Add Order Notes</div>
+                                <div class="help-step-desc">Before submitting, you can add special instructions or notes about your order in the notes field at the bottom of the cart panel.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number">5</div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Submit Your Order</div>
+                                <div class="help-step-desc">Click the "Submit Order" button to send your selection. You'll receive a confirmation and our team will process your order.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mix & Match Tab -->
+                    <div id="help-mixmatch" class="help-content-section">
+                        <h3 class="help-section-title"><i class="fas fa-layer-group" style="color: ${accentColor}; margin-right: 8px;"></i>Mix & Match Program</h3>
+
+                        <p style="color: ${textBody}; font-size: 0.85rem; line-height: 1.6; margin-bottom: 16px;">
+                            Our Mix & Match program rewards you with <strong>volume discounts</strong> when purchasing from the <strong>Natural Cowhides</strong> category. The more items you add, the better price per item you get!
+                        </p>
+
+                        <div style="background: ${sectionBg}; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="font-weight: 600; color: ${textColor}; font-size: 0.9rem; margin-bottom: 12px;">
+                                <i class="fas fa-medal" style="color: ${accentColor}; margin-right: 6px;"></i>Discount Tiers
+                            </div>
+                            <div class="help-tier-grid">
+                                <div style="background: #CD7F32; color: white; padding: 10px 8px; border-radius: 6px; text-align: center;">
+                                    <div style="font-weight: 700; font-size: 0.85rem;">Bronze</div>
+                                    <div style="font-size: 0.75rem; opacity: 0.9;">1-5 items</div>
+                                </div>
+                                <div style="background: #C0C0C0; color: #333; padding: 10px 8px; border-radius: 6px; text-align: center;">
+                                    <div style="font-weight: 700; font-size: 0.85rem;">Silver</div>
+                                    <div style="font-size: 0.75rem; opacity: 0.85;">6-12 items</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; padding: 10px 8px; border-radius: 6px; text-align: center;">
+                                    <div style="font-weight: 700; font-size: 0.85rem;">Gold</div>
+                                    <div style="font-size: 0.75rem; opacity: 0.85;">13-36 items</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, #b9f2ff, #E0E7EE); color: #333; padding: 10px 8px; border-radius: 6px; text-align: center;">
+                                    <div style="font-weight: 700; font-size: 0.85rem;">Diamond</div>
+                                    <div style="font-size: 0.75rem; opacity: 0.85;">37+ items</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-check" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Combine Different Styles</div>
+                                <div class="help-step-desc">Mix any products within Natural Cowhides - different colors, patterns, sizes. All count toward your tier!</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-check" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Automatic Price Updates</div>
+                                <div class="help-step-desc">As you add items, watch the progress bar at the top. Prices automatically update when you reach a new tier.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-check" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Track Your Progress</div>
+                                <div class="help-step-desc">The yellow "Mix & Match" badge and progress bar show your current tier and how many more items until the next discount level.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment & Shipping Tab -->
+                    <div id="help-payment" class="help-content-section">
+                        <h3 class="help-section-title"><i class="fas fa-truck" style="color: ${accentColor}; margin-right: 8px;"></i>Payment & Shipping</h3>
+
+                        <p style="color: ${textBody}; font-size: 0.85rem; line-height: 1.6; margin-bottom: 16px;">
+                            After submitting your order, our sales team will contact you to finalize payment and shipping arrangements.
+                        </p>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-credit-card" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Payment Methods</div>
+                                <div class="help-step-desc">We accept various payment methods including wire transfer, credit card, and other options. Payment terms will be discussed based on your order volume and account history.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-box" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Shipping Options</div>
+                                <div class="help-step-desc">We ship worldwide via trusted freight carriers. Shipping method and costs depend on your location and order size. We'll provide a quote before finalizing your order.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-clock" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Delivery Timeframes</div>
+                                <div class="help-step-desc">Domestic orders typically ship within 3-5 business days. International shipping times vary by destination. We'll provide an estimated delivery date with your quote.</div>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-number"><i class="fas fa-hand-holding-usd" style="font-size: 10px;"></i></div>
+                            <div class="help-step-content">
+                                <div class="help-step-title">Freight Costs</div>
+                                <div class="help-step-desc">Shipping costs are calculated based on weight, dimensions, and destination. For large orders, we can arrange consolidated shipping for better rates.</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 16px; padding: 12px; background: ${sectionBg}; border-radius: 8px;">
+                            <div style="color: ${textBody}; font-size: 0.8rem; line-height: 1.6;">
+                                <i class="fas fa-info-circle" style="color: ${accentColor}; margin-right: 6px;"></i>
+                                Questions about payment or shipping? Contact our sales team and we'll be happy to assist!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Tab -->
+                    <div id="help-contact" class="help-content-section">
+                        <h3 class="help-section-title"><i class="fas fa-headset" style="color: ${accentColor}; margin-right: 8px;"></i>Contact & Support</h3>
+
+                        <div style="background: ${sectionBg}; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="font-weight: 600; color: ${textColor}; font-size: 0.9rem; margin-bottom: 12px;">
+                                <i class="fas fa-store" style="color: ${accentColor}; margin-right: 6px;"></i>Our Store
+                            </div>
+                            <div style="color: ${textBody}; font-size: 0.85rem; line-height: 1.8;">
+                                16220 Airport Park Drive<br>
+                                Suite 145<br>
+                                Ft. Myers, FL 33913
+                            </div>
+                        </div>
+
+                        <div class="help-info-row">
+                            <div class="help-info-icon"><i class="fas fa-clock"></i></div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: ${textColor}; font-size: 0.85rem;">Business Hours</div>
+                                <div style="color: ${textBody}; font-size: 0.8rem;">Monday - Friday: 7:30 AM - 3:30 PM EST</div>
+                            </div>
+                        </div>
+
+                        <div class="help-info-row">
+                            <div class="help-info-icon"><i class="fas fa-phone"></i></div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: ${textColor}; font-size: 0.85rem;">Phone</div>
+                                <div style="color: ${textBody}; font-size: 0.8rem;">+1 (305) 282-8118</div>
+                            </div>
+                        </div>
+
+                        <div class="help-info-row">
+                            <div class="help-info-icon"><i class="fab fa-whatsapp"></i></div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: ${textColor}; font-size: 0.85rem;">WhatsApp</div>
+                                <div style="color: ${textBody}; font-size: 0.8rem;">+1 (305) 283-1888</div>
+                            </div>
+                        </div>
+
+                        <div class="help-info-row">
+                            <div class="help-info-icon"><i class="fas fa-envelope"></i></div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: ${textColor}; font-size: 0.85rem;">Email</div>
+                                <div style="color: ${textBody}; font-size: 0.8rem;">sales@sunshinecowhides.com</div>
+                            </div>
+                        </div>
+
+                        <button onclick="openChatFromHelp();" style="
+                            margin-top: 20px;
+                            width: 100%;
+                            padding: 16px;
+                            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(37,211,102,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="fas fa-comments" style="color: white; font-size: 18px;"></i>
+                            </div>
+                            <div style="flex: 1; text-align: left;">
+                                <div style="font-weight: 600; color: white; font-size: 0.9rem;">Open Live Chat</div>
+                                <div style="color: rgba(255,255,255,0.9); font-size: 0.75rem;">Mon-Fri, 7:30 AM - 3:30 PM EST</div>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: white; font-size: 14px;"></i>
+                        </button>
+
+                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid ${borderColor};">
+                            <div style="font-weight: 600; color: ${textColor}; font-size: 0.85rem; margin-bottom: 10px;">
+                                <i class="fas fa-user-cog" style="color: ${accentColor}; margin-right: 6px;"></i>Account Settings
+                            </div>
+                            <p style="color: ${textBody}; font-size: 0.8rem; line-height: 1.6; margin: 0 0 8px 0;">
+                                Access your account from the profile menu <i class="fas fa-user" style="color: ${accentColor};"></i> in the header:
+                            </p>
+                            <ul style="margin: 0; padding-left: 18px; color: ${textBody}; font-size: 0.8rem; line-height: 1.7;">
+                                <li><strong>My Profile</strong> - Update your name, company, and contact info</li>
+                                <li><strong>Change Access Code</strong> - Update your login credentials</li>
+                                <li><strong>Dark Mode</strong> - Switch between light and dark themes</li>
+                                <li><strong>Help</strong> - Open this help center</li>
+                                <li><strong>Logout</strong> - Sign out of your account</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Block body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('helpModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeHelpModal();
+        }
+    });
+
+    // Prevent scroll propagation
+    const contentArea = document.getElementById('helpModalContent');
+    if (contentArea) {
+        contentArea.addEventListener('wheel', function(e) {
+            const atTop = this.scrollTop === 0;
+            const atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight;
+
+            if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+};
+
+window.switchHelpTab = function(tabId, buttonElement) {
+    // Remove active from all tabs
+    document.querySelectorAll('.help-tab').forEach(tab => tab.classList.remove('active'));
+    // Add active to clicked tab
+    buttonElement.classList.add('active');
+
+    // Hide all content sections
+    document.querySelectorAll('.help-content-section').forEach(section => section.classList.remove('active'));
+    // Show selected section
+    document.getElementById('help-' + tabId).classList.add('active');
+};
+
+window.closeHelpModal = function() {
+    const modal = document.getElementById('helpModal');
+    if (modal) {
+        modal.remove();
+        // Restore body scroll
+        document.body.style.overflow = '';
+    }
+};
+
+// Open chat from Help modal - needs delay because modal.remove() destroys button mid-click
+window.openChatFromHelp = function() {
+    // Close modal first
+    closeHelpModal();
+    // Open chat after small delay to ensure modal is fully closed
+    setTimeout(() => {
+        if (window.chatManager) {
+            window.chatManager.openChat();
+        }
+    }, 100);
 };

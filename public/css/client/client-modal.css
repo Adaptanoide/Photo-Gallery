@@ -1,7 +1,8 @@
 /* public/css/client/client-modal.css */
 /* ===== PHOTO MODAL - FULLSCREEN VIEWER ===== */
+/* Redesigned: Dark, Minimalist, Immersive */
 
-/* Modal container */
+/* Modal container - pure black */
 .photo-modal {
     position: fixed;
     top: 0;
@@ -9,7 +10,7 @@
     width: 100%;
     height: 100%;
     z-index: 10000;
-    background: rgba(0, 0, 0, 0.95);
+    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -38,7 +39,7 @@
     animation: zoomIn 0.3s ease;
 }
 
-/* Modal header */
+/* Modal header - transparent overlay */
 .modal-header {
     position: absolute;
     top: 0;
@@ -48,59 +49,64 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
-    background: #2c2c34; /* Fundo sólido - sem transparência */
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 16px 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+    border-bottom: none;
 }
 
 .modal-header h4 {
     margin: 0;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    font-weight: 600;
+    color: rgba(255,255,255,0.95);
+    font-size: 1rem;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    max-width: 60%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #modalPhotoTitle {
     margin: 0;
-    color: var(--text-primary);
-    font-size: 1.3rem;
-    font-weight: 600;
+    color: rgba(255,255,255,0.95);
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .modal-controls {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 16px;
 }
 
 .modal-controls span {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    font-weight: 400;
 }
 
-/* Close button */
+/* Close button - minimal white X */
 .btn-close {
-    background: var(--gold-primary);
-    border: 1px solid var(--gold-primary);
-    font-size: 1.2rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 1rem;
     color: white;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: var(--border-radius);
-    transition: var(--transition);
-    width: 40px;
-    height: 40px;
+    padding: 0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(10px);
 }
 
 .btn-close:hover {
-    background: white;
-    color: var(--gold-primary);
-    border-color: var(--gold-primary);
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
 }
 
 /* Modal body - image container */
@@ -126,7 +132,7 @@
     touch-action: pan-x pan-y;
 }
 
-/* Fullscreen image */
+/* Fullscreen image - maximize viewing area */
 #modalPhoto {
     max-width: 100vw;
     max-height: 100vh;
@@ -162,109 +168,116 @@
     min-height: auto;
 }
 
-/* Navigation buttons */
+/* Navigation buttons - minimal, semi-transparent */
 .nav-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%) !important;
-    background: rgba(212, 175, 55, 0.9);
-    border: 1px solid var(--gold-primary);
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    font-size: 1.2rem;
-    color: var(--luxury-dark);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.9);
     cursor: pointer;
-    transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease !important;
+    transition: all 0.2s ease !important;
     z-index: 20;
-    box-shadow: var(--shadow-gold);
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 400;
+    backdrop-filter: blur(10px);
     will-change: auto !important;
 }
 
 .nav-btn:hover:not(:disabled) {
-    background: var(--gold-primary) !important;
+    background: rgba(255,255,255,0.2) !important;
+    border-color: rgba(255,255,255,0.3) !important;
     color: white !important;
     transform: translateY(-50%) !important;
-    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: none;
 }
 
 .nav-prev {
-    left: 20px;
+    left: 16px;
 }
 
 .nav-next {
-    right: 20px;
+    right: 16px;
 }
 
 .nav-btn:disabled {
-    opacity: 0.3;
+    opacity: 0.2;
     cursor: not-allowed;
     transform: translateY(-50%);
-    background: rgba(148, 163, 184, 0.5);
-    border-color: var(--text-muted);
-    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.3);
 }
 
-/* Volume pricing no modal */
+/* Volume pricing in footer */
 .modal-discount-grid {
-    background: #f8f9fa;
-    padding: 10px 20px;
-    border-top: 1px solid #dee2e6;
+    display: none; /* Hidden by default, shown via JS when needed */
+    width: 100%;
+    padding: 8px 20px;
+    background: transparent;
+    border-top: none;
     text-align: center;
-    margin-bottom: 10px;
 }
 
 .modal-volume-pricing {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
 }
 
 .modal-volume-pricing .volume-label {
-    color: #666;
-    font-weight: 500;
-    margin-right: 10px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+    margin-right: 8px;
+    display: none; /* Hide label for cleaner look */
 }
 
 .modal-volume-pricing .volume-tier {
     display: inline-flex;
     align-items: baseline;
-    gap: 2px;
-    padding: 4px 8px;
-    color: #666;
-    transition: all 0.3s;
+    gap: 3px;
+    padding: 4px 10px;
+    color: rgba(255,255,255,0.5);
+    transition: all 0.2s;
+    border-radius: 6px;
+    font-size: 0.8rem;
 }
 
 .modal-volume-pricing .volume-tier.active {
-    background: #fff3cd;
-    padding: 6px 12px;
-    border-radius: 4px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    padding: 4px 10px;
     font-weight: 600;
-    color: #333;
+    color: #10b981;
 }
 
 .modal-volume-pricing .tier-price {
-    font-weight: 700;
-    color: #28a745;
-    font-size: 14px;
+    font-weight: 600;
+    color: #10b981;
+    font-size: 0.85rem;
 }
 
 .modal-volume-pricing .cart-count {
-    margin-left: 15px;
-    padding-left: 15px;
-    border-left: 1px solid #dee2e6;
-    color: #666;
-    font-size: larger;
-    font-weight: 600;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
-/* Modal footer */
+/* Modal footer - transparent overlay */
 .modal-footer {
     position: absolute;
     bottom: 0;
@@ -274,18 +287,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 40px 10px 30px;
-    background: #2c2c34; /* Fundo sólido - sem transparência */
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border-subtle);
-    min-height: 80px;
+    padding: 16px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    border-top: none;
+    min-height: auto;
 }
 
 .photo-info {
     display: flex;
-    gap: 1.5rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+    gap: 16px;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
     align-items: center;
 }
 
@@ -295,44 +307,46 @@
 
 .modal-actions {
     display: flex;
-    gap: 1rem;
+    gap: 10px;
+    align-items: center;
 }
 
-/* Cart toggle button */
+/* Cart toggle button - clean design */
 .btn-cart-toggle {
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    color: var(--luxury-dark);
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: var(--border-radius);
+    padding: 10px 20px;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.95rem;
-    box-shadow: var(--shadow-gold);
+    font-size: 0.9rem;
+    box-shadow: none;
 }
 
 .btn-cart-toggle:hover {
-    background: linear-gradient(135deg, var(--gold-hover), #9e7e1a);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
+    background: #10b981;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-cart-toggle.in-cart {
-    background: linear-gradient(135deg, var(--danger), #c82333);
-    color: var(--text-primary);
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
 }
 
 .btn-cart-toggle.in-cart:hover {
-    background: linear-gradient(135deg, #c82333, #a71e2a);
-    box-shadow: 0 4px 20px rgba(220, 53, 69, 0.4);
+    background: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .btn-cart-toggle:disabled {
-    background: var(--text-muted);
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -344,52 +358,52 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: var(--gold-primary);
+    color: rgba(255,255,255,0.6);
     z-index: 10;
 }
 
-/* Zoom controls - Design Elegante e Minimalista */
+/* Zoom controls - dark minimal pill */
 .zoom-controls-simple {
     position: absolute;
-    top: 100px;
-    right: 15px;
+    top: 80px;
+    right: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.95);
+    gap: 2px;
+    background: rgba(255,255,255,0.1);
     padding: 6px;
-    border-radius: 20px;
+    border-radius: 10px;
     z-index: 30;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: none;
 }
 
 .zoom-controls-simple:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    background: rgba(255,255,255,0.15);
 }
 
 .zoom-btn-simple {
     background: transparent !important;
     border: none;
-    color: #B87333 !important;
+    color: rgba(255,255,255,0.8) !important;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
     transition: all 0.2s ease;
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .zoom-btn-simple:hover:not(:disabled) {
-    background: rgba(184, 115, 51, 0.1) !important;
-    color: #A0522D !important;
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
 }
 
 .zoom-btn-simple:active:not(:disabled) {
@@ -397,50 +411,36 @@
 }
 
 .zoom-btn-simple:disabled {
-    opacity: 0.25;
+    opacity: 0.3;
     cursor: not-allowed;
     background: transparent !important;
-    color: #999 !important;
+    color: rgba(255,255,255,0.3) !important;
 }
 
-/* Price badge in modal - soft emerald green */
+/* Price badge in modal - clean green */
 .modal-price-badge {
-    background: #10b981;
+    background: rgba(16, 185, 129, 0.9);
     color: white !important;
     padding: 6px 12px;
-    border-radius: 12px;
+    border-radius: 8px;
     font-weight: 600;
     font-size: 0.9rem;
     display: inline-flex;
     align-items: center;
-    margin-right: 5px;
-    /* Prevenir oscilação */
+    margin-right: 8px;
     transition: none !important;
     animation: none !important;
     transform: none !important;
     will-change: auto;
 }
 
+.modal-price-badge i {
+    margin-left: 6px;
+    font-size: 0.75rem;
+}
+
 .modal-price-badge.contact-price {
-    background: #10b981;
-}
-
-/* Volume pricing display */
-.modal-discount-grid {
-    display: block;
-    width: 100%;
-    padding: 10px 40px;
-    background: transparent;
-    border-top: 1px solid rgba(212, 175, 55, 0.2);
-    text-align: center;
-}
-
-.modal-volume-pricing {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-size: 0.95rem;
+    background: rgba(16, 185, 129, 0.9);
 }
 
 /* Animations */
@@ -712,59 +712,22 @@
 }
 
 /* ============================================
-   DARK MODE - Fullscreen Modal Price Tiers
+   DARK MODE - Minimal changes needed
+   (Modal is already dark by default)
    ============================================ */
 
-/* Price tiers bar - more visible in dark mode */
-body.dark-mode .modal-discount-grid {
-    background: linear-gradient(180deg, #2d2d2d 0%, #252525 100%) !important;
-    border-top: 2px solid #B87333 !important;
-    padding: 12px 20px !important;
+/* Dark mode - modal already uses dark theme, minimal adjustments */
+body.dark-mode .photo-modal {
+    background: #000;
 }
 
-body.dark-mode .modal-volume-pricing {
-    background: transparent !important;
-}
-
-body.dark-mode .modal-volume-pricing .volume-label {
-    color: #a0a0a0 !important;
-}
-
-body.dark-mode .modal-volume-pricing .volume-tier {
-    color: #a0a0a0 !important;
-    background: transparent !important;
-}
-
-body.dark-mode .modal-volume-pricing .volume-tier.active {
-    background: rgba(184, 115, 51, 0.25) !important;
-    border: 1px solid rgba(184, 115, 51, 0.5) !important;
-    border-radius: 6px !important;
-    padding: 6px 12px !important;
-    color: #f0f0f0 !important;
-    font-weight: 600 !important;
-}
-
-body.dark-mode .modal-volume-pricing .tier-price {
-    color: #4caf50 !important;
-}
-
-body.dark-mode .modal-volume-pricing .volume-tier.active .tier-price {
-    color: white !important;
-}
-
-body.dark-mode .modal-volume-pricing .cart-count {
-    color: #d4a574 !important;
-    border-left-color: #444 !important;
-}
-
-/* Modal footer in dark mode - ensure it stands out */
+body.dark-mode .modal-header,
 body.dark-mode .modal-footer {
-    background: #252525 !important;
-    border-top: 1px solid #B87333 !important;
+    /* Keep transparent gradients */
 }
 
 body.dark-mode .photo-info span {
-    color: #a0a0a0 !important;
+    color: rgba(255,255,255,0.6) !important;
 }
 
 /* ============================================
@@ -797,4 +760,175 @@ body.dark-mode #mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scroll
 
 body.dark-mode #mixMatchInfoModal > div:first-of-type:not(style)::-webkit-scrollbar-thumb {
     background: #B87333;
+}
+
+/* ============================================
+   PHOTO MODAL OVERRIDES - Force Dark Theme
+   These rules override client-theme-light.css
+   Photo modal should ALWAYS be dark for viewing
+   ============================================ */
+
+/* Force dark header in photo modal - override light theme */
+.client-page .photo-modal .modal-header,
+.photo-modal .modal-header {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%) !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+}
+
+.client-page .photo-modal .modal-header h4,
+.photo-modal .modal-header h4,
+.client-page .photo-modal #modalPhotoTitle,
+.photo-modal #modalPhotoTitle {
+    color: rgba(255,255,255,0.95) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
+}
+
+.client-page .photo-modal .modal-controls span,
+.photo-modal .modal-controls span {
+    color: rgba(255,255,255,0.7) !important;
+}
+
+/* Force dark footer in photo modal */
+.client-page .photo-modal .modal-footer,
+.photo-modal .modal-footer {
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%) !important;
+    border-top: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Force dark close button */
+.client-page .photo-modal .btn-close,
+.photo-modal .btn-close {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .btn-close:hover,
+.photo-modal .btn-close:hover {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+/* Force dark navigation buttons */
+.client-page .photo-modal .nav-btn,
+.photo-modal .nav-btn {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: rgba(255,255,255,0.9) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.client-page .photo-modal .nav-btn:hover:not(:disabled),
+.photo-modal .nav-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.2) !important;
+    border-color: rgba(255,255,255,0.3) !important;
+    color: white !important;
+}
+
+/* Force dark zoom controls */
+.client-page .photo-modal .zoom-controls-simple,
+.photo-modal .zoom-controls-simple {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: none !important;
+}
+
+.client-page .photo-modal .zoom-btn-simple,
+.photo-modal .zoom-btn-simple {
+    background: transparent !important;
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.client-page .photo-modal .zoom-btn-simple:hover:not(:disabled),
+.photo-modal .zoom-btn-simple:hover:not(:disabled) {
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
+
+/* Force dark photo info text */
+.client-page .photo-modal .photo-info,
+.photo-modal .photo-info,
+.client-page .photo-modal .photo-info span,
+.photo-modal .photo-info span {
+    color: rgba(255,255,255,0.6) !important;
+}
+
+/* Force dark volume pricing */
+.client-page .photo-modal .modal-discount-grid,
+.photo-modal .modal-discount-grid {
+    background: transparent !important;
+}
+
+.client-page .photo-modal .modal-volume-pricing .volume-tier,
+.photo-modal .modal-volume-pricing .volume-tier {
+    color: rgba(255,255,255,0.5) !important;
+}
+
+.client-page .photo-modal .modal-volume-pricing .volume-tier.active,
+.photo-modal .modal-volume-pricing .volume-tier.active {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #10b981 !important;
+}
+
+.client-page .photo-modal .modal-volume-pricing .cart-count,
+.photo-modal .modal-volume-pricing .cart-count {
+    color: rgba(255,255,255,0.7) !important;
+    border-left-color: rgba(255,255,255,0.15) !important;
+}
+
+/* Modal cart badge - hidden on desktop, shown on mobile via responsive.css */
+.modal-cart-badge {
+    display: none;
+}
+
+/* Modal cart badge BUTTON - clickable cart in header */
+.modal-cart-badge-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-cart-badge-btn:hover {
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.modal-cart-badge-btn i {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.9);
+}
+
+.modal-cart-badge-btn span {
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Desktop: show cart badge button with subtle background */
+@media (min-width: 769px) {
+    .modal-cart-badge-btn {
+        display: flex;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        gap: 6px;
+    }
+
+    .modal-cart-badge-btn:hover {
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.35);
+    }
 }

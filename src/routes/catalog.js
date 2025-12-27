@@ -121,10 +121,23 @@ const catalogCache = {
                 this.consecutiveFailures++;
                 console.error(`[CACHE] ❌ Erro ao carregar (tentativa ${this.errorCount}):`, error.message);
 
-                // FALLBACK: Se temos dados antigos, usar eles
+                // FALLBACK 1: Se temos dados antigos, usar eles
                 if (this.hasStaleData()) {
                     console.log('[CACHE] 🔄 Usando dados antigos como fallback');
                     return this.products;
+                }
+
+                // FALLBACK 2: Tentar MongoDB se CDE falhou completamente
+                try {
+                    console.log('[CACHE] 🔄 Tentando fallback para MongoDB...');
+                    const mongoProducts = await this._loadFromMongoDB();
+                    if (mongoProducts && mongoProducts.length > 0) {
+                        console.log(`[CACHE] ✅ MongoDB fallback: ${mongoProducts.length} produtos`);
+                        // Não cachear dados do MongoDB (são potencialmente incompletos)
+                        return mongoProducts;
+                    }
+                } catch (mongoError) {
+                    console.error('[CACHE] ❌ MongoDB fallback também falhou:', mongoError.message);
                 }
 
                 throw error;
@@ -272,6 +285,27 @@ const catalogCache = {
         if (ms < 1000) return `${ms}ms`;
         if (ms < 60000) return `${Math.round(ms / 1000)}s`;
         return `${Math.round(ms / 60000)}min`;
+    },
+
+    // Fallback: carregar produtos do MongoDB quando CDE falha
+    async _loadFromMongoDB() {
+        const CatalogProductModel = getCatalogProduct();
+        const products = await CatalogProductModel.find({ isActive: true })
+            .select('qbItem name category origin currentStock basePrice displayCategory availableStock')
+            .lean();
+
+        // Transformar para formato compatível com CDE
+        return products.map(p => ({
+            qbItem: p.qbItem,
+            name: p.name,
+            category: p.category,
+            origin: p.origin,
+            stock: p.currentStock || 0,
+            basePrice: p.basePrice || 0,
+            displayCategory: p.displayCategory,
+            availableStock: p.availableStock || p.currentStock || 0,
+            fromMongoDB: true // Flag para identificar origem
+        }));
     }
 };
 
@@ -1029,47 +1063,119 @@ router.get('/analyze', async (req, res) => {
 
 /**
  * POST /api/catalog/sync
- * Forçar sincronização com CDE
+ * Forçar sincronização com CDE - VERSÃO ROBUSTA
+ * Usa queries por categoria para evitar timeout
  */
 router.post('/sync', async (req, res) => {
     try {
         const queries = getCDEQueries();
         const CatalogProductModel = getCatalogProduct();
 
-        console.log('[CATALOG] Iniciando sincronização com CDE...');
+        console.log('[CATALOG] Iniciando sincronização ROBUSTA com CDE...');
 
-        // Buscar produtos do CDE
-        const cdeProducts = await queries.getAllCatalogProducts();
+        // Categorias CDE para sincronizar
+        const cdeCategories = [
+            'SHEEPSKIN',
+            'SMALL HIDES',
+            'DESIGNER RUG',
+            'ACCESORIOS',
+            'ACCESORIO',
+            'MOBILIARIO',
+            'PILLOW',
+            'RODEO RUG'
+        ];
 
         let synced = 0;
         let created = 0;
         let updated = 0;
+        let errors = [];
 
-        for (const product of cdeProducts) {
-            const displayCategory = getDisplayCategory(product.category);
+        // Sincronizar por categoria (queries menores, mais rápidas)
+        for (const category of cdeCategories) {
+            try {
+                console.log(`[CATALOG] Sincronizando categoria: ${category}`);
 
-            const result = await CatalogProductModel.findOneAndUpdate(
-                { qbItem: product.qbItem },
-                {
-                    $set: {
-                        name: product.name || `Product ${product.qbItem}`,
-                        category: product.category || 'General',
-                        origin: product.origin,
-                        displayCategory,
-                        currentStock: product.stock || 0,
-                        lastCDESync: new Date(),
-                        isActive: (product.stock || 0) > 0
-                    }
-                },
-                { upsert: true, new: true }
-            );
+                // Query simples por categoria com timeout de 15s
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Timeout ao buscar ${category}`)), 15000)
+                );
 
-            synced++;
-            if (result.isNew) created++;
-            else updated++;
+                const categoryProducts = await Promise.race([
+                    queries.getCatalogProductsByCategory(category),
+                    timeoutPromise
+                ]);
+
+                console.log(`[CATALOG] ${category}: ${categoryProducts.length} produtos`);
+
+                for (const product of categoryProducts) {
+                    const displayCategory = getDisplayCategory(product.category);
+
+                    const result = await CatalogProductModel.findOneAndUpdate(
+                        { qbItem: product.qbItem },
+                        {
+                            $set: {
+                                name: product.name || `Product ${product.qbItem}`,
+                                category: product.category || 'General',
+                                origin: product.origin,
+                                displayCategory,
+                                currentStock: product.stock || 0,
+                                lastCDESync: new Date(),
+                                isActive: (product.stock || 0) > 0
+                            }
+                        },
+                        { upsert: true, new: true }
+                    );
+
+                    synced++;
+                    if (result.isNew) created++;
+                    else updated++;
+                }
+            } catch (catError) {
+                console.warn(`[CATALOG] Erro na categoria ${category}:`, catError.message);
+                errors.push({ category, error: catError.message });
+            }
+        }
+
+        // Se temos produtos no cache, também sincronizar eles
+        if (catalogCache.hasStaleData() || catalogCache.isValid()) {
+            console.log('[CATALOG] Sincronizando produtos do cache...');
+            const cachedProducts = catalogCache.products || [];
+
+            for (const product of cachedProducts) {
+                if (!product.qbItem) continue;
+
+                const displayCategory = getDisplayCategory(product.category);
+
+                try {
+                    const result = await CatalogProductModel.findOneAndUpdate(
+                        { qbItem: product.qbItem },
+                        {
+                            $set: {
+                                name: product.name || `Product ${product.qbItem}`,
+                                category: product.category || 'General',
+                                origin: product.origin,
+                                displayCategory,
+                                currentStock: product.stock || 0,
+                                lastCDESync: new Date(),
+                                isActive: true
+                            }
+                        },
+                        { upsert: true, new: true }
+                    );
+
+                    synced++;
+                    if (result.isNew) created++;
+                    else updated++;
+                } catch (prodError) {
+                    // Ignorar erros individuais
+                }
+            }
         }
 
         console.log(`[CATALOG] Sincronização concluída: ${synced} produtos (${created} novos, ${updated} atualizados)`);
+        if (errors.length > 0) {
+            console.warn(`[CATALOG] ${errors.length} categorias com erro`);
+        }
 
         res.json({
             success: true,
@@ -1077,8 +1183,10 @@ router.post('/sync', async (req, res) => {
             stats: {
                 total: synced,
                 created,
-                updated
-            }
+                updated,
+                errors: errors.length
+            },
+            errors: errors.length > 0 ? errors : undefined
         });
 
     } catch (error) {

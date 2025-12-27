@@ -1235,3 +1235,128 @@
 .btn-retry:hover {
     background: rgba(244, 67, 54, 0.3);
 }
+
+/* ===== TEMA LIGHT - COMPONENTS ===== */
+
+/* Primary Button */
+body.admin-light-theme .btn-primary {
+    background: linear-gradient(135deg, #B87333, #A0522D);
+    color: #ffffff;
+}
+
+body.admin-light-theme .btn-primary:hover {
+    background: linear-gradient(135deg, #A0522D, #8B4513);
+}
+
+/* Secondary Button */
+body.admin-light-theme .btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+body.admin-light-theme .btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+/* Stats Cards */
+body.admin-light-theme .stat-card,
+body.admin-light-theme .stats-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.admin-light-theme .stat-card:hover,
+body.admin-light-theme .stats-card:hover {
+    border-color: #B87333;
+    box-shadow: 0 4px 12px rgba(184, 115, 51, 0.1);
+}
+
+/* Info Cards */
+body.admin-light-theme .info-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+/* Alert/Notice Components */
+body.admin-light-theme .alert-info {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+body.admin-light-theme .alert-success {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+body.admin-light-theme .alert-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+body.admin-light-theme .alert-danger {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Tabs */
+body.admin-light-theme .nav-tabs .nav-link {
+    color: #4a5568;
+    background: transparent;
+}
+
+body.admin-light-theme .nav-tabs .nav-link:hover {
+    color: #B87333;
+    background: rgba(184, 115, 51, 0.05);
+}
+
+body.admin-light-theme .nav-tabs .nav-link.active {
+    color: #B87333;
+    background: #ffffff;
+    border-color: #e2e8f0 #e2e8f0 #ffffff;
+}
+
+/* Section Headers */
+body.admin-light-theme .section-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+body.admin-light-theme .section-title {
+    color: #1a1a1a;
+}
+
+/* Pagination */
+body.admin-light-theme .pagination .page-link {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #4a5568;
+}
+
+body.admin-light-theme .pagination .page-link:hover {
+    background: #f8f9fa;
+    border-color: #B87333;
+    color: #B87333;
+}
+
+body.admin-light-theme .pagination .page-item.active .page-link {
+    background: #B87333;
+    border-color: #B87333;
+    color: #ffffff;
+}
+
+/* Loading Spinner */
+body.admin-light-theme .loading-spinner {
+    border-color: #e2e8f0;
+    border-top-color: #B87333;
+}
+
+/* Empty State */
+body.admin-light-theme .empty-state {
+    color: #718096;
+}
+
+body.admin-light-theme .empty-state i {
+    color: #cbd5e1;
+}

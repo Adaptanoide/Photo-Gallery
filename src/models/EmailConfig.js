@@ -114,7 +114,7 @@ const emailConfigSchema = new mongoose.Schema({
         newSelection: {
             subject: {
                 type: String,
-                default: '[Sunshine Cowhides] New Customer Selection'
+                default: 'Gallery | New Selection from {{clientName}}'
             },
             body: {
                 type: String,

@@ -181,13 +181,12 @@ router.post('/client/verify', async (req, res) => {
         }
         // FIM DO NOVO CÓDIGO
 
-        // ========== NOVO: CRIAR TOKEN JWT PARA CLIENTE ==========
+        // ========== CRIAR TOKEN JWT PARA CLIENTE ==========
         const token = jwt.sign(
             {
                 clientCode: accessCode.code,
                 clientName: accessCode.clientName,
                 accessType: accessCode.accessType || 'normal',
-                specialSelectionId: accessCode.specialSelection?.selectionId || null,
                 type: 'client' // Para diferenciar de admin
             },
             process.env.JWT_SECRET,

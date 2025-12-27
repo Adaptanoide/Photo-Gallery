@@ -1926,22 +1926,35 @@ body.dark-mode .category-header-container .category-header-info p {
 
 /* Folder Card */
 body.dark-mode .folder-card {
-    background: #2a2a2a !important;
+    background-color: #2a2a2a !important;
     border-color: #3d3d3d !important;
 }
 
 body.dark-mode .folder-card:hover {
-    background: #333 !important;
+    background-color: #333 !important;
     border-color: #B87333 !important;
 }
 
-body.dark-mode .folder-card h4 {
+body.dark-mode .folder-card:not(.has-thumbnail) h4 {
     color: #f0f0f0 !important;
 }
 
 /* Description - Better contrast */
-body.dark-mode .folder-description {
+body.dark-mode .folder-card:not(.has-thumbnail) .folder-description {
     color: #a0a0a0 !important;
+}
+
+/* Cards with thumbnails - ALWAYS white text */
+.folder-card.has-thumbnail h4,
+.folder-card.has-thumbnail h3 {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
+}
+
+.folder-card.has-thumbnail .folder-description,
+.folder-card.has-thumbnail p {
+    color: rgba(255,255,255,0.95) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
 }
 
 /* Product Count Badge - Dark - Subtle brown style */
@@ -2004,12 +2017,12 @@ body.dark-mode .folder-stats {
 
 /* Category Cards (if different from folder) */
 body.dark-mode .category-card {
-    background: #2a2a2a !important;
+    background-color: #2a2a2a !important;
     border-color: #3d3d3d !important;
 }
 
 body.dark-mode .category-card:hover {
-    background: #333 !important;
+    background-color: #333 !important;
     border-color: #B87333 !important;
 }
 
@@ -2040,6 +2053,19 @@ body.dark-mode .progress-bar-track {
 body.dark-mode #priceProgressContainer,
 body.dark-mode .price-info-container {
     background: #252525 !important;
+    position: sticky;
+}
+
+/* Extensão visual para cima - preenche lacuna com breadcrumb */
+body.dark-mode #priceProgressContainer::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: #252525;
+    z-index: -1;
 }
 
 body.dark-mode .price-info-inline {
@@ -2084,6 +2110,64 @@ body.dark-mode .mix-match-hint:hover {
 /* Progress Bar Incentive */
 body.dark-mode .progress-bar-incentive {
     color: #66bb6a !important;
+}
+
+/* Mix & Match Tiers - Dark Mode */
+body.dark-mode .mm-tier-item {
+    background: #2d2d2d !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .mm-tier-item.active {
+    background: #333 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+body.dark-mode .mm-tier-price {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .mm-tier-item.active .mm-tier-price {
+    color: #4ade80 !important;
+}
+
+body.dark-mode .mm-tier-range {
+    color: #888 !important;
+}
+
+body.dark-mode .mix-match-container {
+    background: #252525 !important;
+}
+
+body.dark-mode .mm-header-row {
+    background: #252525 !important;
+}
+
+body.dark-mode .mm-tiers-row {
+    background: #252525 !important;
+}
+
+body.dark-mode .mm-tier-wrapper {
+    background: #252525 !important;
+}
+
+body.dark-mode .mm-progress-section {
+    background: #252525 !important;
+}
+
+/* Mobile Mix & Match Header - Dark Mode */
+body.dark-mode .mobile-mix-match {
+    background: #252525 !important;
+    border-color: #3d3d3d !important;
+}
+
+body.dark-mode .mobile-mm-header {
+    background: #2a2a2a !important;
+}
+
+body.dark-mode .mobile-mm-tier-badge {
+    background: #333 !important;
+    color: #e0e0e0 !important;
 }
 
 /* No Results */

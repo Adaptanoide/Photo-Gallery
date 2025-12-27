@@ -356,11 +356,10 @@ class GalleryQueries {
             AccessCode.countDocuments({ isActive: true }),
             AccessCode.countDocuments({ isActive: false }),
             AccessCode.countDocuments({ accessType: 'normal', isActive: true }),
-            AccessCode.countDocuments({ accessType: 'special', isActive: true }),
             AccessCode.countDocuments({ 'metadata.isVipClient': true, isActive: true })
         ]);
 
-        const [active, inactive, normalAccess, specialAccess, vipClients] =
+        const [active, inactive, normalAccess, vipClients] =
             await this.executeQuery('getClientsSummary', query);
 
         return {
@@ -368,7 +367,6 @@ class GalleryQueries {
             activeClients: active,
             inactiveClients: inactive,
             normalAccess,
-            specialAccess,
             vipClients
         };
     }

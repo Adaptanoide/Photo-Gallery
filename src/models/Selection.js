@@ -56,10 +56,10 @@ const selectionSchema = new mongoose.Schema({
         type: Number,
         default: null
     },
-    // ===== NOVO: TIPO DE SELEÇÃO =====
+    // ===== TIPO DE SELEÇÃO =====
     selectionType: {
         type: String,
-        enum: ['normal', 'special'],
+        enum: ['normal'],
         default: 'normal',
     },
 
@@ -600,11 +600,9 @@ selectionSchema.methods.calculateTotalValueWithDiscounts = function () {
     };
 };
 
-// ===== NOVO: MÉTODOS PARA SELEÇÕES ESPECIAIS =====
-
-// Verificar se é seleção especial
+// Verificar se é seleção especial (deprecated - always returns false)
 selectionSchema.methods.isSpecialSelection = function () {
-    return this.selectionType === 'special';
+    return false;
 };
 
 // Adicionar categoria customizada
@@ -860,20 +858,12 @@ selectionSchema.statics.getStatistics = async function () {
     };
 };
 
-// ===== MIDDLEWARE (EXISTENTE + NOVO) =====
+// ===== MIDDLEWARE =====
 
 // Pre-save: calcular valores
 selectionSchema.pre('save', function (next) {
-    // Atualizar contagem de itens baseado no tipo de seleção
-    if (this.selectionType === 'special') {
-        // Para seleções especiais: contar fotos nas categorias customizadas
-        this.totalItems = this.customCategories.reduce((total, category) => {
-            return total + (category.photos ? category.photos.length : 0);
-        }, 0);
-    } else {
-        // Para seleções normais: contar items como sempre
-        this.totalItems = this.items.length;
-    }
+    // Atualizar contagem de itens
+    this.totalItems = this.items.length;
 
     // Calcular valor total
     this.calculateTotalValue();
@@ -883,35 +873,12 @@ selectionSchema.pre('save', function (next) {
         this.reservationExpiredAt = new Date(Date.now() + (24 * 60 * 60 * 1000)); // 24 horas
     }
 
-    // ===== NOVO: VALIDAÇÕES PARA SELEÇÕES ESPECIAIS =====
-    if (this.selectionType === 'special') {
-        // Garantir que seleção especial tenha configuração mínima
-        if (!this.specialSelectionConfig) {
-            this.specialSelectionConfig = {
-                pricingConfig: {
-                    showPrices: true,
-                    allowGlobalDiscount: false,
-                    globalDiscountPercent: 0
-                },
-                quantityDiscounts: {
-                    enabled: false,
-                    rules: []
-                },
-                accessConfig: {
-                    isActive: true,
-                    restrictedAccess: true
-                }
-            };
-        }
-    }
-
     next();
 });
 
 // Post-save: log
 selectionSchema.post('save', function () {
-    const type = this.selectionType === 'special' ? 'ESPECIAL' : 'NORMAL';
-    console.log(`📋 Seleção ${type} ${this.selectionId} salva - ${this.totalItems} itens, status: ${this.status}`);
+    console.log(`📋 Seleção ${this.selectionId} salva - ${this.totalItems} itens, status: ${this.status}`);
 });
 
 module.exports = mongoose.model('Selection', selectionSchema);

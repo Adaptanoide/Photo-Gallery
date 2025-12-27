@@ -4,6 +4,57 @@
    CSS específico para área administrativa com paleta luxuosa dourada
    Usa variáveis do style.css como base */
 
+/* ===== TEMA LIGHT - ADMIN (Constant Contact Style) ===== */
+body.admin-light-theme {
+    /* Cores de fundo */
+    --luxury-dark: #f8fafc;
+    --luxury-medium: #ffffff;
+    --luxury-light: #1e293b;
+
+    /* Cores de destaque - Azul Constant Contact */
+    --gold-primary: #0066cc;
+    --gold-hover: #0052a3;
+    --gold-light: rgba(0, 102, 204, 0.06);
+
+    /* Cor secundária - Bronze/Copper suave (para destaques) */
+    --accent-warm: #c2884d;
+    --accent-warm-light: #fef7ed;
+
+    /* Textos - Alta legibilidade */
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+
+    /* Bordas suaves */
+    --border-subtle: #e2e8f0;
+
+    /* Cards e containers */
+    --admin-card-bg: #ffffff;
+    --admin-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --admin-card-border: 1px solid #e2e8f0;
+
+    /* Header e Sidebar */
+    --admin-header-bg: #ffffff;
+    --admin-sidebar-bg: #ffffff;
+
+    /* Inputs */
+    --admin-input-bg: #ffffff;
+    --admin-input-border: #cbd5e1;
+
+    /* Hover states */
+    --admin-hover-bg: #f1f5f9;
+}
+
+/* Variáveis padrão (tema dark) */
+body.admin-body:not(.admin-light-theme) {
+    --admin-card-bg: var(--luxury-medium);
+    --admin-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --admin-header-bg: linear-gradient(135deg, var(--luxury-medium), var(--luxury-dark));
+    --admin-sidebar-bg: linear-gradient(180deg, var(--luxury-medium) 0%, var(--luxury-dark) 100%);
+    --admin-input-bg: var(--luxury-dark);
+    --admin-hover-bg: rgba(212, 175, 55, 0.1);
+}
+
 /* ===== LAYOUT PRINCIPAL ===== */
 
 /* Body específico para área admin */
@@ -987,4 +1038,519 @@
 .sync-info-badge:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+}
+
+/* ===== TEMA LIGHT - ESTILOS ESPECÍFICOS (Constant Contact Style) ===== */
+
+/* Sidebar Light Theme - Clean Constant Contact style */
+body.admin-light-theme .admin-sidebar {
+    background: #ffffff;
+    box-shadow: 1px 0 2px rgba(0, 0, 0, 0.03);
+    border-right: 1px solid #e2e8f0;
+}
+
+body.admin-light-theme .sidebar-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+
+body.admin-light-theme .sidebar-header .logo-text {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+body.admin-light-theme .sidebar-header .logo-accent {
+    color: #0066cc;
+}
+
+body.admin-light-theme .nav-link {
+    color: #475569;
+    font-weight: 400;
+}
+
+body.admin-light-theme .nav-link:hover {
+    background: #f1f5f9;
+    color: #0066cc;
+}
+
+/* Nav link active - Estilo Constant Contact (azul claro) */
+body.admin-light-theme .nav-link.active {
+    background: #e0f2fe;
+    color: #0066cc;
+    border: none;
+    border-left: 3px solid #0066cc;
+    box-shadow: none;
+    font-weight: 500;
+}
+
+body.admin-light-theme .nav-link i {
+    color: inherit;
+}
+
+/* Header Light Theme - Clean */
+body.admin-light-theme .admin-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+body.admin-light-theme .page-title {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+body.admin-light-theme .admin-user {
+    color: #475569;
+}
+
+/* Admin User Area - Clean style */
+body.admin-light-theme .admin-user {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 25px;
+    padding: 6px 16px 6px 6px;
+    color: #475569;
+}
+
+body.admin-light-theme .admin-user:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* Avatar do admin - Clean outline style */
+body.admin-light-theme .user-avatar {
+    background: #fef7ed;
+    color: #c2884d;
+    border: 1px solid #fed7aa;
+    font-weight: 600;
+}
+
+body.admin-light-theme .user-name {
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Content Light Theme - Subtle gray background */
+body.admin-light-theme .admin-content {
+    background: #f8fafc;
+}
+
+/* Body background */
+body.admin-light-theme.admin-body {
+    background: #f8fafc;
+}
+
+/* Cards e Containers Light Theme - Clean white */
+body.admin-light-theme .clients-section-header,
+body.admin-light-theme .clients-filters,
+body.admin-light-theme .clients-table-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Inputs Light Theme */
+body.admin-light-theme .filter-input,
+body.admin-light-theme .filter-select {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+}
+
+body.admin-light-theme .filter-input:focus,
+body.admin-light-theme .filter-select:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* Table Light Theme */
+body.admin-light-theme .clients-table th {
+    color: #64748b;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+body.admin-light-theme .clients-table td {
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+body.admin-light-theme .clients-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+body.admin-light-theme .client-code-cell {
+    color: #0066cc;
+}
+
+body.admin-light-theme .client-name-cell {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Botão Toggle Theme */
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--admin-hover-bg);
+    color: var(--gold-primary);
+    border-color: var(--gold-primary);
+}
+
+.theme-toggle-btn i {
+    font-size: 1rem;
+}
+
+body.admin-light-theme .theme-toggle-btn {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+body.admin-light-theme .theme-toggle-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0066cc;
+}
+
+/* Additional Light Theme Overrides */
+body.admin-light-theme .admin-section-title {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+body.admin-light-theme .admin-section-subtitle {
+    color: #64748b;
+}
+
+/* Buttons Light Theme - Pastel & Soft Colors */
+
+/* REMOVER BOX-SHADOW DE TODOS OS BOTÕES (estado normal) */
+body.admin-light-theme button,
+body.admin-light-theme .btn,
+body.admin-light-theme .btn-primary,
+body.admin-light-theme .btn-secondary,
+body.admin-light-theme .btn-success,
+body.admin-light-theme .btn-warning,
+body.admin-light-theme .btn-danger,
+body.admin-light-theme .btn-logout,
+body.admin-light-theme .logout-btn,
+body.admin-light-theme .btn-add-client,
+body.admin-light-theme .btn-new-client,
+body.admin-light-theme .btn-share,
+body.admin-light-theme .btn-link,
+body.admin-light-theme .btn-refresh,
+body.admin-light-theme .btn-filter,
+body.admin-light-theme .btn-actions,
+body.admin-light-theme .actions-btn,
+body.admin-light-theme .copy-register-link,
+body.admin-light-theme #btnNewClient,
+body.admin-light-theme #btnRefreshClients,
+body.admin-light-theme #btnPendingRequests,
+body.admin-light-theme .theme-toggle-btn,
+body.admin-light-theme button[onclick="logout()"] {
+    box-shadow: none !important;
+}
+
+/* Primary Button - Estilo Constant Contact (outline azul) */
+body.admin-light-theme .btn-primary {
+    background: #ffffff !important;
+    color: #0066cc !important;
+    border: 1px solid #60a5fa !important;
+    font-weight: 500;
+}
+
+body.admin-light-theme .btn-primary:hover {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Secondary Button - Outline cinza */
+body.admin-light-theme .btn-secondary {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.admin-light-theme .btn-secondary:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Logout Button - Estilo Constant Contact (outline) */
+body.admin-light-theme .btn-logout,
+body.admin-light-theme .logout-btn,
+body.admin-light-theme button[onclick="logout()"] {
+    background: #ffffff !important;
+    color: #dc2626 !important;
+    border: 1px solid #fca5a5 !important;
+    font-weight: 500;
+}
+
+body.admin-light-theme .btn-logout:hover,
+body.admin-light-theme .logout-btn:hover,
+body.admin-light-theme button[onclick="logout()"]:hover {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+}
+
+/* New Client Button - Estilo Constant Contact (outline verde) */
+body.admin-light-theme .btn-add-client,
+body.admin-light-theme .btn-new-client,
+body.admin-light-theme #btnNewClient,
+body.admin-light-theme .btn-success {
+    background: #ffffff !important;
+    color: #059669 !important;
+    border: 1px solid #6ee7b7 !important;
+    font-weight: 500;
+}
+
+body.admin-light-theme .btn-add-client:hover,
+body.admin-light-theme .btn-new-client:hover,
+body.admin-light-theme #btnNewClient:hover,
+body.admin-light-theme .btn-success:hover {
+    background: #ecfdf5 !important;
+    border-color: #34d399 !important;
+}
+
+/* Share Link Button - Estilo Constant Contact (outline azul) */
+body.admin-light-theme .btn-share,
+body.admin-light-theme .btn-link,
+body.admin-light-theme .copy-register-link {
+    background: #ffffff !important;
+    color: #2563eb !important;
+    border: 1px solid #93c5fd !important;
+}
+
+body.admin-light-theme .btn-share:hover,
+body.admin-light-theme .btn-link:hover,
+body.admin-light-theme .copy-register-link:hover {
+    background: #eff6ff !important;
+    border-color: #60a5fa !important;
+}
+
+/* Refresh Button - Outline cinza */
+body.admin-light-theme .btn-refresh,
+body.admin-light-theme #btnRefreshClients,
+body.admin-light-theme .btn-secondary {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.admin-light-theme .btn-refresh:hover,
+body.admin-light-theme #btnRefreshClients:hover,
+body.admin-light-theme .btn-secondary:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Warning Button (Pending Requests) - Outline laranja */
+body.admin-light-theme .btn-warning,
+body.admin-light-theme #btnPendingRequests {
+    background: #ffffff !important;
+    color: #d97706 !important;
+    border: 1px solid #fcd34d !important;
+}
+
+body.admin-light-theme .btn-warning:hover,
+body.admin-light-theme #btnPendingRequests:hover {
+    background: #fffbeb !important;
+    border-color: #fbbf24 !important;
+}
+
+/* Filter Button - Outline cinza suave */
+body.admin-light-theme .btn-filter {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.admin-light-theme .btn-filter:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Actions Dropdown Button - Outline cinza */
+body.admin-light-theme .btn-actions,
+body.admin-light-theme .actions-btn {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 400;
+}
+
+body.admin-light-theme .btn-actions:hover,
+body.admin-light-theme .actions-btn:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Status Badge - ACTIVE (verde pastel) */
+body.admin-light-theme .status-active,
+body.admin-light-theme .badge-active {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+/* Status Badge - INACTIVE (vermelho pastel) */
+body.admin-light-theme .status-inactive,
+body.admin-light-theme .badge-inactive {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+}
+
+/* Usage Count - Azul */
+body.admin-light-theme .usage-count {
+    color: #0066cc;
+}
+
+/* Tooltips */
+body.admin-light-theme .tooltip {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+/* Scrollbar Light Theme */
+body.admin-light-theme ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+body.admin-light-theme ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+body.admin-light-theme ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+body.admin-light-theme ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Titles - Fontes mais leves */
+body.admin-light-theme .clients-title {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+body.admin-light-theme .clients-title i {
+    color: #0066cc;
+}
+
+/* Section Header Title */
+body.admin-light-theme h1,
+body.admin-light-theme h2,
+body.admin-light-theme h3 {
+    font-weight: 500;
+}
+
+/* Nav badges (notification counts) - Vermelho suave */
+body.admin-light-theme .nav-badge {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    box-shadow: none;
+}
+
+/* Pending requests badge */
+body.admin-light-theme .pending-requests-badge {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* Pagination Container - Clean white (sem background escuro) */
+body.admin-light-theme .pricing-pagination,
+body.admin-light-theme .pagination {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    backdrop-filter: none !important;
+}
+
+body.admin-light-theme .pricing-pagination .btn,
+body.admin-light-theme .pagination .btn {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.admin-light-theme .pricing-pagination .btn:hover:not(:disabled),
+body.admin-light-theme .pagination .btn:hover:not(:disabled) {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+}
+
+body.admin-light-theme .btn-page-number {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme .btn-page-number:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.admin-light-theme .btn-page-number.active {
+    background: #0066cc !important;
+    color: #ffffff !important;
+    border-color: #0066cc !important;
+}
+
+body.admin-light-theme .pagination-dots {
+    color: #64748b;
+}
+
+/* ===== REMOVER BOX-SHADOW E TRANSFORM DO HOVER - TODOS OS BOTÕES ===== */
+body.admin-light-theme button:hover,
+body.admin-light-theme .btn:hover,
+body.admin-light-theme .btn-primary:hover,
+body.admin-light-theme .btn-secondary:hover,
+body.admin-light-theme .btn-success:hover,
+body.admin-light-theme .btn-warning:hover,
+body.admin-light-theme .btn-danger:hover,
+body.admin-light-theme .btn-logout:hover,
+body.admin-light-theme .logout-btn:hover,
+body.admin-light-theme .btn-add-client:hover,
+body.admin-light-theme .btn-new-client:hover,
+body.admin-light-theme .btn-share:hover,
+body.admin-light-theme .btn-link:hover,
+body.admin-light-theme .btn-refresh:hover,
+body.admin-light-theme .btn-filter:hover,
+body.admin-light-theme .btn-actions:hover,
+body.admin-light-theme .actions-btn:hover,
+body.admin-light-theme .copy-register-link:hover,
+body.admin-light-theme #btnNewClient:hover,
+body.admin-light-theme #btnRefreshClients:hover,
+body.admin-light-theme #btnPendingRequests:hover,
+body.admin-light-theme .pricing-pagination .btn:hover,
+body.admin-light-theme .pagination .btn:hover,
+body.admin-light-theme .btn-page-number:hover,
+body.admin-light-theme .theme-toggle-btn:hover,
+body.admin-light-theme button[onclick="logout()"]:hover {
+    box-shadow: none !important;
+    transform: none !important;
 }

@@ -183,6 +183,14 @@
                     <!-- Divider -->
                     <div class="unified-menu-divider"></div>
 
+                    <!-- Theme Toggle Button -->
+                    <button class="header-theme-toggle" onclick="toggleDarkMode()" title="Toggle theme">
+                        <i class="fas fa-moon" id="headerThemeIcon"></i>
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="unified-menu-divider"></div>
+
                     <!-- Profile Dropdown -->
                     <div class="profile-dropdown-container">
                         <button class="profile-dropdown-btn" onclick="toggleProfileDropdown()" title="Account">
@@ -216,6 +224,11 @@
                         <button class="dropdown-item" onclick="toggleDarkMode()">
                             <i class="fas fa-moon" id="darkModeIcon"></i>
                             <span id="darkModeText">Dark Mode</span>
+                        </button>
+
+                        <button class="dropdown-item" onclick="openHelpModal()">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Help</span>
                         </button>
 
                         <button class="dropdown-item logout-item" onclick="logout()">
@@ -402,6 +415,10 @@
                 <h4 id="modalPhotoTitle">Photo Name</h4>
                 <div class="modal-controls">
                     <span id="modalPhotoCounter">1 / 10</span>
+                    <button id="modalCartBadgeBtn" class="modal-cart-badge-btn" onclick="openCartFromModal()" title="View Cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="modalCartBadgeCount">0</span>
+                    </button>
                     <button onclick="closePhotoModal()" class="btn-close">
                         <i class="fas fa-times"></i>
                     </button>
@@ -437,6 +454,10 @@
                     </div>
                 </div>
                 <div class="modal-actions">
+                    <span id="footerCartBadge" class="footer-cart-badge">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="footerCartCount">0</span>
+                    </span>
                     <button id="cartToggleBtn" onclick="toggleCartItem()" class="btn-cart-toggle">
                         <i class="fas fa-shopping-cart"></i>
                         <span id="cartToggleBtnText">Add to Cart</span>
@@ -537,7 +558,8 @@
     <!-- Botão Toggle do Carrinho (Desktop) - FORA do sidebar, posição fixa -->
     <button id="sidebarToggleBtn" class="sidebar-toggle-btn" onclick="toggleCartSidebar()" title="Toggle Cart">
         <span id="toggleBadge" class="toggle-badge">0</span>
-        <i class="fas fa-chevron-right"></i>
+        <i class="fas fa-shopping-cart toggle-cart-icon"></i>
+        <i class="fas fa-chevron-right toggle-chevron"></i>
     </button>
 
     <!-- Sidebar do Carrinho -->
@@ -580,16 +602,18 @@
             <!-- Footer do Carrinho - SEM TIMER GLOBAL -->
             <div id="cartFooter" class="cart-footer" style="display: none;">
                 <div class="cart-summary">
+                    <!-- TOTALS AREA (Subtotal, Discount, Total) -->
                     <div class="cart-total">
                         <span id="cartItemCount">0 items</span>
                     </div>
 
-                    <!-- LINK SIMPLES PARA REVIEW SUMMARY -->
-                    <div class="review-summary-link">
-                        <a href="#" onclick="openOrderSummary(); return false;">
+                    <!-- ITEMS COUNT + REVIEW SUMMARY - Same line -->
+                    <div class="cart-footer-row">
+                        <span id="cartItemsLabel" class="cart-items-label">0 items</span>
+                        <button class="review-summary-btn" onclick="openOrderSummary()">
                             <i class="fas fa-file-alt"></i>
                             Review Summary
-                        </a>
+                        </button>
                     </div>
 
                     <button class="btn btn-complete-selection" onclick="proceedToFinalize()">
@@ -706,6 +730,10 @@
             <button class="mobile-menu-item" onclick="toggleDarkMode()">
                 <i class="fas fa-moon" id="darkModeIconMobile"></i>
                 <span id="darkModeTextMobile">Dark Mode</span>
+            </button>
+            <button class="mobile-menu-item" onclick="closeMobileProfileMenu(); openHelpModal();">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
             </button>
             <button class="mobile-menu-item logout" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i>

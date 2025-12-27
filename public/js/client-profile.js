@@ -545,7 +545,13 @@ function initDarkMode() {
 }
 
 function updateDarkModeUI(isDark) {
-    // Desktop
+    // Header Theme Toggle Button (nova posição)
+    const headerIcon = document.getElementById('headerThemeIcon');
+    if (headerIcon) {
+        headerIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Desktop Dropdown
     const iconDesktop = document.getElementById('darkModeIcon');
     const textDesktop = document.getElementById('darkModeText');
 

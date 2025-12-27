@@ -39,19 +39,6 @@ router.get('/', async (req, res) => {
             });
         }
 
-        // ✅ NOVA LÓGICA: Selection Management SÓ vê seleções que CLIENTE processou
-        query.$or = [
-            // Seleções normais (sempre mostrar)
-            { selectionType: { $ne: 'special' } },
-            // Seleções especiais SÓ se cliente finalizou (não admin actions)
-            {
-                selectionType: 'special',
-                status: { $in: ['pending', 'finalized', 'cancelled'] },
-                // E que não foram canceladas apenas pelo admin
-                'movementLog.action': 'finalized'
-            }
-        ];
-
         // Buscar TODAS as seleções primeiro (sem paginação)
         const allSelections = await Selection.find({ ...query, isDeleted: { $ne: true } })
             .lean();
@@ -145,7 +132,7 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/selections/stats
- * Estatísticas COMPLETAS (normal + special selections)
+ * Estatísticas de seleções
  */
 router.get('/stats', async (req, res) => {
     try {

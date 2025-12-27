@@ -10,6 +10,24 @@
             console.info = function () { };
         }
     </script>
+
+    <!-- Admin Theme Toggle - Apply before render to avoid flash -->
+    <script>
+        (function() {
+            // Default: light theme (user requested light as default)
+            const savedTheme = localStorage.getItem('adminTheme') || 'light';
+            if (savedTheme === 'light') {
+                document.documentElement.classList.add('admin-light-theme-preload');
+            }
+        })();
+    </script>
+    <style>
+        /* Prevent flash of wrong theme */
+        html.admin-light-theme-preload body.admin-body {
+            background: #ffffff !important;
+        }
+    </style>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Sunshine Cowhides</title>
@@ -88,12 +106,6 @@
                         </a>
                     </div>
                     <div class="nav-item" style="display:none">
-                        <a href="#special-selections" class="nav-link" data-section="special-selections">
-                            <i class="fas fa-star"></i>
-                            <span class="nav-text">Special Selections</span>
-                        </a>
-                    </div>
-                    <div class="nav-item" style="display:none">
                         <a href="#reports" class="nav-link" data-section="reports">
                             <i class="fas fa-chart-bar"></i>
                             <span class="nav-text">Reports</span>
@@ -135,6 +147,11 @@
                     <button id="headerScanBtn" onclick="window.monitor && window.monitor.scan()"
                         style="padding: 8px 16px; border-radius: 8px; color: #000000; font: normal 12pt Arial; font-weight: 600; background: #d4af37; border: none; cursor: pointer; margin-right: 15px; display: none;">
                         <i class="fas fa-search"></i> Scan Now
+                    </button>
+                    <!-- Theme Toggle Button -->
+                    <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleAdminTheme()" title="Toggle Light/Dark Theme">
+                        <i class="fas fa-sun" id="themeIcon"></i>
+                        <span id="themeText">Light</span>
                     </button>
                     <div class="admin-user" onclick="openProfileModal()" style="cursor: pointer;" title="Profile Settings">
                         <div class="user-avatar" id="userAvatar">T</div>
@@ -1416,34 +1433,6 @@
                     </div>
                 </div>
 
-                <!-- NOVA SEÇÃO: SPECIAL SELECTIONS -->
-                <div id="section-special-selections" class="content-section" style="display: none;">
-                    <!-- Loading inicial -->
-                    <div id="specialSelectionsLoading" class="loading-section">
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i>
-                        </div>
-                        <p>Loading special selections...</p>
-                    </div>
-
-                    <!-- Erro de carregamento -->
-                    <div id="specialSelectionsError" class="error-section" style="display: none;">
-                        <div class="error-content">
-                            <i class="fas fa-exclamation-triangle fa-2x"></i>
-                            <h3>Error loading special selections</h3>
-                            <p id="specialSelectionsErrorMessage">Unable to load special selections data.</p>
-                            <button onclick="window.adminSpecialSelections?.init()" class="btn btn-primary">
-                                <i class="fas fa-redo"></i> Try again
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Conteúdo principal (será criado via JavaScript) -->
-                    <div id="specialSelectionsContent" style="display: none;">
-                        <!-- Será preenchido pelo JavaScript -->
-                    </div>
-                </div>
-
                 <!-- INVENTORY MONITOR SECTION -->
                 <div id="section-inventoryMonitor" class="content-section" style="display: none;">
                     <div class="section-header-card"
@@ -1789,6 +1778,55 @@
     <script src="js/inventory-monitor.js"></script>
     <script src="/js/ui-system.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Admin Theme Toggle Script -->
+    <script>
+        // Initialize theme on DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initAdminTheme();
+        });
+
+        function initAdminTheme() {
+            const savedTheme = localStorage.getItem('adminTheme') || 'light';
+            applyAdminTheme(savedTheme);
+        }
+
+        function toggleAdminTheme() {
+            const body = document.body;
+            const isLight = body.classList.contains('admin-light-theme');
+            const newTheme = isLight ? 'dark' : 'light';
+
+            applyAdminTheme(newTheme);
+            localStorage.setItem('adminTheme', newTheme);
+        }
+
+        function applyAdminTheme(theme) {
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+
+            // Remove preload class
+            document.documentElement.classList.remove('admin-light-theme-preload');
+
+            if (theme === 'light') {
+                body.classList.add('admin-light-theme');
+                if (icon) {
+                    icon.className = 'fas fa-moon';
+                }
+                if (text) {
+                    text.textContent = 'Dark';
+                }
+            } else {
+                body.classList.remove('admin-light-theme');
+                if (icon) {
+                    icon.className = 'fas fa-sun';
+                }
+                if (text) {
+                    text.textContent = 'Light';
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>

@@ -584,11 +584,10 @@ router.patch('/access-codes/:id/toggle', async (req, res) => {
             });
 
             if (pendingSelection) {
-                const type = pendingSelection.selectionType === 'special' ? 'ESPECIAL' : 'REGULAR';
-                console.log(`❌ Bloqueado: Cliente tem seleção ${type} pendente`);
+                console.log(`❌ Bloqueado: Cliente tem seleção pendente`);
                 return res.status(400).json({
                     success: false,
-                    message: `Client has pending ${type} selection (${pendingSelection.selectionId}). Please approve or cancel it before reactivating.`,
+                    message: `Client has pending selection (${pendingSelection.selectionId}). Please approve or cancel it before reactivating.`,
                     pendingSelection: pendingSelection.selectionId
                 });
             }

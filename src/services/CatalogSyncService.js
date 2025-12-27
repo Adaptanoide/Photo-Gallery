@@ -29,6 +29,7 @@ class CatalogSyncService {
     /**
      * START PERIODIC SYNC
      * Sincroniza estoque a cada X minutos
+     * Em produção, também sincroniza estoque físico do CDE a cada 30 minutos
      */
     startPeriodicSync(intervalMinutes = 5) {
         if (this.isRunning) {
@@ -37,14 +38,17 @@ class CatalogSyncService {
         }
 
         this.isRunning = true;
+        const isProduction = process.env.NODE_ENV === 'production';
+
         console.log(`[CATALOG-SYNC] Sincronização periódica iniciada (a cada ${intervalMinutes} minutos)`);
+        console.log(`[CATALOG-SYNC] Ambiente: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}`);
 
         // Executar imediatamente na primeira vez
         this.syncAllCatalogStock().catch(err => {
             console.error('[CATALOG-SYNC] Erro na sincronização inicial:', err.message);
         });
 
-        // Configurar intervalo
+        // Configurar intervalo para estoque lógico
         this.intervalId = setInterval(async () => {
             try {
                 await this.syncAllCatalogStock();
@@ -52,6 +56,31 @@ class CatalogSyncService {
                 console.error('[CATALOG-SYNC] Erro na sincronização periódica:', error.message);
             }
         }, intervalMinutes * 60 * 1000);
+
+        // ===== SYNC FÍSICO DO CDE - APENAS EM PRODUÇÃO =====
+        // Em produção, sincroniza estoque físico do CDE a cada 30 minutos
+        // Isso garante que o MongoDB tenha dados atualizados do CDE
+        if (isProduction) {
+            console.log('[CATALOG-SYNC] 🔄 Sync físico CDE ativado (a cada 30 minutos)');
+
+            // Aguardar 2 minutos antes da primeira sync física (dar tempo ao servidor)
+            setTimeout(() => {
+                this.syncPhysicalStockFromCDE().catch(err => {
+                    console.error('[CATALOG-SYNC] Erro na sync física inicial:', err.message);
+                });
+            }, 2 * 60 * 1000);
+
+            // Configurar intervalo de 30 minutos para sync física
+            this.physicalSyncIntervalId = setInterval(async () => {
+                try {
+                    await this.syncPhysicalStockFromCDE();
+                } catch (error) {
+                    console.error('[CATALOG-SYNC] Erro na sync física periódica:', error.message);
+                }
+            }, 30 * 60 * 1000); // 30 minutos
+        } else {
+            console.log('[CATALOG-SYNC] ⏭️ Sync físico CDE desativado (apenas em produção)');
+        }
     }
 
     /**
@@ -61,6 +90,10 @@ class CatalogSyncService {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
+        }
+        if (this.physicalSyncIntervalId) {
+            clearInterval(this.physicalSyncIntervalId);
+            this.physicalSyncIntervalId = null;
         }
         this.isRunning = false;
         console.log('[CATALOG-SYNC] Sincronização parada');

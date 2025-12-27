@@ -30,7 +30,9 @@
     border-radius: 16px;
     width: 90%;
     max-width: 600px;
-    height: auto;
+    /* FIXED HEIGHT - No jumping */
+    height: 75vh;
+    min-height: 500px;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
@@ -118,8 +120,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 24px;
-    min-height: 200px;
-    max-height: calc(85vh - 160px);
+    min-height: 0; /* Important for flex shrinking */
 }
 
 .order-summary-body::-webkit-scrollbar {
@@ -286,6 +287,79 @@
 .summary-total-line.final span:last-child {
     color: #166534;
     font-size: 1.2rem;
+}
+
+/* ============================================
+   MIX & MATCH BADGE - Category Headers (Clickable)
+   ============================================ */
+.summary-mm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 152, 0, 0.12);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #666;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.summary-mm-badge:hover {
+    background: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.5);
+    color: #e67e00;
+}
+
+.summary-mm-badge i {
+    font-size: 0.65rem;
+    color: #ff9800;
+}
+
+.summary-category.is-mix-match {
+    border-left: 3px solid #ff9800;
+}
+
+.summary-category-meta {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* Discount line in totals */
+.summary-total-line.summary-discount {
+    color: #28a745;
+}
+
+.summary-total-line.summary-discount span:last-child {
+    font-weight: 600;
+}
+
+.summary-total-line.summary-discount i {
+    color: #ff9800;
+    margin-right: 4px;
+}
+
+/* Mix & Match info text */
+.summary-mm-info {
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 8px 12px;
+    background: rgba(255, 152, 0, 0.08);
+    border-radius: 6px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.summary-mm-info i {
+    color: #ff9800;
 }
 
 /* ===== FOOTER - FIXED ===== */
@@ -495,6 +569,44 @@ body.dark-mode .order-summary-body::-webkit-scrollbar-thumb:hover {
     background: #B87333 !important;
 }
 
+/* Dark mode - Mix & Match elements */
+body.dark-mode .summary-mm-badge {
+    background: rgba(255, 152, 0, 0.15) !important;
+    border-color: rgba(255, 152, 0, 0.35) !important;
+    color: #b0b0b0 !important;
+}
+
+body.dark-mode .summary-mm-badge:hover {
+    background: rgba(255, 152, 0, 0.25) !important;
+    border-color: rgba(255, 152, 0, 0.5) !important;
+    color: #e67e00 !important;
+}
+
+body.dark-mode .summary-mm-badge i {
+    color: #e67e00 !important;
+}
+
+body.dark-mode .summary-category.is-mix-match {
+    border-left-color: #e67e00 !important;
+}
+
+body.dark-mode .summary-category-meta {
+    color: #888 !important;
+}
+
+body.dark-mode .summary-total-line.summary-discount {
+    color: #4ade80 !important;
+}
+
+body.dark-mode .summary-mm-info {
+    background: rgba(255, 152, 0, 0.12) !important;
+    color: #999 !important;
+}
+
+body.dark-mode .summary-mm-info i {
+    color: #e67e00 !important;
+}
+
 /* ============================================
    RESPONSIVE - Mobile
    ============================================ */
@@ -502,6 +614,8 @@ body.dark-mode .order-summary-body::-webkit-scrollbar-thumb:hover {
 @media (max-width: 768px) {
     .order-summary-content {
         width: 95%;
+        height: 85vh;
+        min-height: 400px;
         max-height: 90vh;
         border-radius: 12px;
     }

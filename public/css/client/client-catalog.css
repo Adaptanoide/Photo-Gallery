@@ -780,6 +780,22 @@ body.dark-mode .qty-value {
     color: #f0f0f0;
 }
 
+body.dark-mode .qty-btn-small {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-mode .qty-btn-small:hover {
+    background: #B87333;
+    border-color: #B87333;
+    color: white;
+}
+
+body.dark-mode .cart-item-quantity span {
+    color: #e0e0e0;
+}
+
 body.dark-mode .catalog-loading,
 body.dark-mode .catalog-empty {
     color: #999;
@@ -1150,7 +1166,7 @@ body.dark-mode .dropdown-label {
 }
 
 .homepage-card {
-    background: white;
+    background-color: white;
     border-radius: 16px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
     border: 1px solid #f0f0f0;
@@ -1891,12 +1907,12 @@ body.dark-mode .dropdown-label {
 
 /* Dark Mode - Photo Folder Cards */
 body.dark-mode .folders-grid .folder-card {
-    background: #2a2a2a;
+    background-color: #2a2a2a;
     border-color: #3d3d3d;
 }
 
 body.dark-mode .folders-grid .folder-card:hover {
-    background: #333;
+    background-color: #333;
     border-color: #B87333;
 }
 
@@ -2145,7 +2161,41 @@ body.dark-mode .size-pill.out-of-stock .pill-count {
    STOCK PRODUCTS VIEW
    ============================================ */
 
-.stock-loading,
+/* Stock Loading - Clean spinner style */
+.stock-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #888;
+    background: transparent;
+}
+
+/* Hide Font Awesome icon, use spinner */
+.stock-loading i {
+    display: none !important;
+}
+
+/* Clean spinner for stock loading */
+.stock-loading::before {
+    content: '';
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(184, 115, 51, 0.2);
+    border-top-color: #B87333;
+    border-radius: 50%;
+    animation: cleanSpinner 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+.stock-loading p {
+    color: #888;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Error and Empty states keep original styling */
 .stock-error,
 .stock-empty {
     text-align: center;
@@ -2153,7 +2203,6 @@ body.dark-mode .size-pill.out-of-stock .pill-count {
     color: #6b7280;
 }
 
-.stock-loading i,
 .stock-error i,
 .stock-empty i {
     font-size: 3rem;
@@ -3004,7 +3053,7 @@ body.dark-mode .homepage-header p {
 }
 
 body.dark-mode .homepage-card {
-    background: #2d2d2d;
+    background-color: #2d2d2d;
     border-color: #3d3d3d;
 }
 
@@ -3029,7 +3078,7 @@ body.dark-mode .subcategories-header p {
 }
 
 body.dark-mode .subcategory-card {
-    background: #2d2d2d;
+    background-color: #2d2d2d;
     border-color: #3d3d3d;
 }
 
@@ -3274,21 +3323,32 @@ body.dark-mode .catalog-breadcrumb .breadcrumb-sep {
    ============================================ */
 
 body.dark-mode .subcategory-card.folder-card {
-    background: #2a2a2a;
+    background-color: #2a2a2a;
     border-color: #3d3d3d;
 }
 
 body.dark-mode .subcategory-card.folder-card:hover {
-    background: #333;
+    background-color: #333;
     border-color: #B87333;
 }
 
-body.dark-mode .subcategory-card.folder-card h4 {
+body.dark-mode .subcategory-card.folder-card:not(.has-thumbnail) h4 {
     color: #f0f0f0;
 }
 
-body.dark-mode .subcategory-card.folder-card .folder-description {
+body.dark-mode .subcategory-card.folder-card:not(.has-thumbnail) .folder-description {
     color: #a0a0a0;
+}
+
+/* Cards with thumbnails - ALWAYS white text (both light and dark mode) */
+.subcategory-card.folder-card.has-thumbnail h4,
+.subcategory-card.folder-card.has-thumbnail h3 {
+    color: #ffffff !important;
+}
+
+.subcategory-card.folder-card.has-thumbnail .folder-description,
+.subcategory-card.folder-card.has-thumbnail p {
+    color: rgba(255,255,255,0.9) !important;
 }
 
 body.dark-mode .subcategory-card.folder-card .folder-stats {
@@ -3382,6 +3442,20 @@ body.dark-mode .stock-error {
 body.dark-mode .stock-empty h3,
 body.dark-mode .stock-error h3 {
     color: #f0f0f0;
+}
+
+/* Dark Mode - Stock Loading Spinner */
+body.dark-mode .stock-loading {
+    color: #666;
+}
+
+body.dark-mode .stock-loading::before {
+    border-color: rgba(184, 115, 51, 0.15);
+    border-top-color: #B87333;
+}
+
+body.dark-mode .stock-loading p {
+    color: #666;
 }
 
 /* Dark Mode - Quantity Selector */
@@ -3798,50 +3872,50 @@ body.has-category-sidebar main {
 
 /* Dark mode */
 body.dark-mode .category-sidebar {
-    background: #1a1f2e;
-    border-color: rgba(255,255,255,0.06);
+    background: #1a1a1a;
+    border-color: #3d3d3d;
 }
 
 body.dark-mode .category-sidebar .sidebar-header {
-    border-color: rgba(255,255,255,0.06);
+    border-color: #3d3d3d;
 }
 
 body.dark-mode .category-sidebar .sidebar-title {
-    color: #9ca3af;
+    color: #a0a0a0;
 }
 
 body.dark-mode .category-sidebar .sidebar-toggle {
-    color: #6b7280;
+    color: #888;
 }
 
 body.dark-mode .category-sidebar .sidebar-toggle:hover {
-    background: rgba(255,255,255,0.05);
-    color: #9ca3af;
+    background: rgba(255,255,255,0.08);
+    color: #c0c0c0;
 }
 
 body.dark-mode .category-sidebar .sidebar-card {
-    background: #252b3b;
-    border-color: rgba(255,255,255,0.06);
+    background: #2a2a2a;
+    border-color: #3d3d3d;
 }
 
 body.dark-mode .category-sidebar .sidebar-card-name {
-    color: #e5e7eb;
-    background: #252b3b;
+    color: #e0e0e0;
+    background: #2a2a2a;
 }
 
 body.dark-mode .category-sidebar .sidebar-card:hover {
-    border-color: rgba(255,255,255,0.12);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-color: #555;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 body.dark-mode .category-sidebar .sidebar-card.active {
     border-color: #B87333;
     border-width: 2px;
-    box-shadow: 0 2px 8px rgba(184, 115, 51, 0.2);
+    box-shadow: 0 2px 8px rgba(184, 115, 51, 0.25);
 }
 
 body.dark-mode .category-sidebar .sidebar-card.active .sidebar-card-name {
-    background: rgba(184, 115, 51, 0.15);
+    background: rgba(184, 115, 51, 0.2);
     color: #f0f0f0;
 }
 
@@ -3958,8 +4032,22 @@ body.dark-mode .category-sidebar .sidebar-card.active .sidebar-card-name {
 
     /* Dark mode mobile */
     body.dark-mode .category-sidebar {
-        background: #1a1f2e;
-        border-top-color: rgba(255,255,255,0.06);
+        background: #1a1a1a;
+        border-top-color: #3d3d3d;
+    }
+
+    body.dark-mode .category-sidebar .sidebar-header {
+        border-color: #3d3d3d;
+    }
+
+    body.dark-mode .category-sidebar .sidebar-card {
+        background: #2a2a2a;
+        border-color: #3d3d3d;
+    }
+
+    body.dark-mode .category-sidebar .sidebar-card-name {
+        background: #2a2a2a;
+        color: #e0e0e0;
     }
 }
 

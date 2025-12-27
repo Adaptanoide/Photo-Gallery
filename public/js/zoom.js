@@ -80,8 +80,8 @@ class PhotoZoomSimplified {
                 <button id="zoomOut" class="zoom-btn-simple zoom-out" title="Reduzir">
                     <i class="fas fa-minus"></i>
                 </button>
-                <button id="zoomReset" class="zoom-btn-simple zoom-reset" title="Resetar">
-                    <i class="fas fa-expand-arrows-alt"></i>
+                <button id="zoomReset" class="zoom-btn-simple zoom-reset" title="Resetar Zoom">
+                    <i class="fas fa-search"></i>
                 </button>
             </div>
         `;

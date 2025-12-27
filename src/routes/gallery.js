@@ -69,15 +69,10 @@ const verifyClientToken = async (req, res, next) => {
                 req.client = {
                     clientCode: decoded.clientCode,
                     clientName: decoded.clientName,
-                    accessType: accessCode?.accessType || 'normal',
-                    hasSpecialSelection: accessCode?.accessType === 'special',
-                    specialSelectionId: accessCode?.specialSelection?.selectionId || null
+                    accessType: accessCode?.accessType || 'normal'
                 };
 
                 console.log(`👤 Cliente identificado: ${req.client.clientCode} (${req.client.accessType})`);
-                if (req.client.hasSpecialSelection) {
-                    console.log(`⭐ Cliente tem SPECIAL SELECTION ativa: ${req.client.specialSelectionId}`);
-                }
             }
         } catch (error) {
             console.log('⚠️ Token inválido ou expirado:', error.message);
@@ -462,37 +457,6 @@ router.get('/structure', verifyClientToken, async (req, res) => {
         }
         // ========== FIM DO FILTRO ==========
 
-        // ========== SPECIAL SELECTION: Retornar estrutura simplificada ==========
-        if (req.client && req.client.hasSpecialSelection) {
-            console.log(`🌟 Cliente ${req.client.clientCode} tem Special Selection`);
-
-            // Preparar resposta para Special Selection
-            const responseData = {
-                success: true,
-                structure: {
-                    hasSubfolders: false,
-                    folders: [],
-                    hasImages: true,
-                    totalImages: 3
-                },
-                prefix: 'special_selection',
-                message: 'Special Selection Active'
-            };
-
-            // Cache específico para Special Selection
-            if (req.client && req.client.clientCode) {
-                const cacheKey = `${req.client.clientCode}:special_selection`;
-                structureCache.set(cacheKey, {
-                    data: responseData,
-                    timestamp: Date.now()
-                });
-                console.log(`💾 [CACHE SAVE] Special Selection - Cliente ${req.client.clientCode}`);
-            }
-
-            return res.json(responseData);
-        }
-        // ========== FIM DA VERIFICAÇÃO SPECIAL ==========
-
         const result = await StorageService.getSubfolders(prefix);
 
         if (result.folders) {
@@ -576,90 +540,6 @@ router.get('/photos', verifyClientToken, async (req, res) => {
         prefix = convertToR2Path(prefix);
 
         console.log(`📸 Buscando fotos de: ${prefix}`);
-
-        // ========== SPECIAL SELECTION: Retornar apenas fotos marcadas ==========
-        if (req.client && req.client.hasSpecialSelection) {
-            console.log(`🌟 Retornando fotos da Special Selection para categoria: ${prefix}`);
-
-            // Buscar a Special Selection
-            const Selection = require('../models/Selection');
-            const AccessCode = require('../models/AccessCode');
-
-            const accessCode = await AccessCode.findOne({
-                code: req.client.clientCode
-            });
-
-            if (accessCode?.specialSelection?.selectionId) {
-                const selection = await Selection.findById(
-                    accessCode.specialSelection.selectionId
-                );
-
-                // Buscar categoria específica
-                const category = selection.customCategories.find(
-                    cat => cat.categoryId === prefix
-                );
-
-                if (category) {
-                    console.log(`📂 Categoria encontrada: ${category.categoryName} com ${category.photos.length} fotos`);
-
-                    // Usar fotos direto da categoria (NÃO buscar no PhotoStatus)
-                    console.log(`📊 ${category.photos.length} fotos encontradas direto da categoria`);
-
-                    // Formatar direto das fotos da categoria
-                    const photos = category.photos.map(photo => ({
-                        id: photo.photoId,
-                        name: photo.fileName,
-                        fileName: photo.fileName,
-                        webViewLink: `https://images.sunshinecowhides-gallery.com/${photo.photoId}`,
-                        thumbnailLink: `https://images.sunshinecowhides-gallery.com/_thumbnails/${photo.photoId}`,
-                        size: 0,
-                        mimeType: 'image/webp',
-                        customPrice: photo.customPrice || category.baseCategoryPrice || 99
-                    }));
-
-                    return res.json({
-                        success: true,
-                        photos: photos,
-                        folder: {
-                            name: category.categoryDisplayName || category.categoryName
-                        },
-                        totalPhotos: photos.length,
-                        clientType: 'special',
-                        // ADICIONAR RATE RULES SE EXISTIR
-                        rateRules: category.rateRules && category.rateRules.length > 0 ? category.rateRules : null,
-                        baseCategoryPrice: category.baseCategoryPrice || category.customPrice || 99
-                    });
-                }
-            }
-
-            // Fallback: retornar todas se não encontrar categoria
-            console.log('⚠️ Categoria não encontrada, retornando todas');
-            const specialPhotos = await PhotoStatus.find({
-                'reservedBy.clientCode': req.client.clientCode,
-                status: 'reserved'
-            });
-
-            const photos = specialPhotos.map(photo => ({
-                id: photo.photoId,
-                name: photo.fileName,
-                fileName: photo.fileName,
-                webViewLink: `https://images.sunshinecowhides-gallery.com/${photo.photoId}`,  // ✅ AQUI
-                thumbnailLink: `https://images.sunshinecowhides-gallery.com/_thumbnails/${photo.photoId}`,  // ✅ AQUI
-                size: 0,
-                mimeType: 'image/jpeg'
-            }));
-
-            return res.json({
-                success: true,
-                photos: photos,
-                folder: {
-                    name: 'Special Selection'
-                },
-                totalPhotos: photos.length,
-                clientType: 'special'
-            });
-        }
-        // ========== FIM DA SPECIAL SELECTION ==========
 
         // NOVA ABORDAGEM: Buscar direto do MongoDB apenas fotos available
         console.log(`🔍 Buscando fotos available do MongoDB para: ${prefix}`);

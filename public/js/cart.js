@@ -742,6 +742,15 @@ window.CartSystem = {
             this.elements.sidebar.classList.remove('active');
             document.body.style.overflow = ''; // Restaurar scroll
         }
+
+        // Se cart foi aberto do modal, retornar ao modal
+        if (window.cartOpenedFromModal && window.modalStateBeforeCart) {
+            setTimeout(() => {
+                if (typeof window.returnToModalFromCart === 'function') {
+                    window.returnToModalFromCart();
+                }
+            }, 300);
+        }
     },
 
     /**
@@ -777,6 +786,18 @@ window.CartSystem = {
             this.elements.cartBadge.textContent = this.state.totalItems;
         }
 
+        // Atualizar footer cart badge no modal (mobile)
+        const footerCartCount = document.getElementById('footerCartCount');
+        if (footerCartCount) {
+            footerCartCount.textContent = this.state.totalItems;
+        }
+
+        // Atualizar modal cart badge button (mobile header)
+        const modalCartBadgeCount = document.getElementById('modalCartBadgeCount');
+        if (modalCartBadgeCount) {
+            modalCartBadgeCount.textContent = this.state.totalItems;
+        }
+
         // Atualizar badge do botão toggle (desktop colapsado)
         if (window.updateToggleBadge) {
             window.updateToggleBadge(this.state.totalItems);
@@ -809,6 +830,13 @@ window.CartSystem = {
         if (this.elements.cartBadge) {
             const itemCount = this.state.items ? this.state.items.length : 0;
             this.elements.cartBadge.textContent = itemCount;
+        }
+
+        // 2b. Atualizar footer cart badge no modal (mobile)
+        const footerCartCount = document.getElementById('footerCartCount');
+        if (footerCartCount) {
+            const itemCount = this.state.items ? this.state.items.length : 0;
+            footerCartCount.textContent = itemCount;
         }
 
         // 3. Verificar se o carrinho ficou vazio
@@ -1042,13 +1070,14 @@ window.CartSystem = {
                 this.state.totalItems === 1 ? '1 item' :
                     `${this.state.totalItems} items`;
 
-            // Nova interface com subtotal e total
-            let totalHTML = '';
-
-            // Só mostrar "X items" se showPrices = true
-            if (window.shouldShowPrices && window.shouldShowPrices()) {
-                totalHTML = `<div>${totalText}</div>`;
+            // Atualizar o label de items no footer (ao lado do Review Summary)
+            const itemsLabel = document.getElementById('cartItemsLabel');
+            if (itemsLabel) {
+                itemsLabel.textContent = totalText;
             }
+
+            // Nova interface com subtotal e total (SEM "X items" - agora está no footer row)
+            let totalHTML = '';
 
             if (cartTotal.total > 0) {
                 // Verificar se deve mostrar preços
@@ -1058,9 +1087,6 @@ window.CartSystem = {
                         <div class="total-line">
                             <span><strong>Total Items:</strong></span>
                             <span><strong>${this.state.totalItems}</strong></span>
-                        </div>
-                        <div class="contact-price" style="display: none; margin-top: 10px; padding: 10px; text-align: center;">
-                            <i class="fas fa-phone"></i> Contact for Price
                         </div>
                     </div>`;
                 } else {
@@ -1077,7 +1103,7 @@ window.CartSystem = {
                         const discountLabel = 'Quantity Discount:';
 
                         totalHTML += `
-                        <div class="discount-line" style="color: #28a745;">
+                        <div class="discount-line">
                             <span>${discountLabel}</span>
                             <span>-${cartTotal.formattedDiscountAmount}</span>
                         </div>`;
@@ -1085,9 +1111,9 @@ window.CartSystem = {
 
                     // Total final sempre
                     totalHTML += `
-                        <div class="total-line" style="border-top: 1px solid #dee2e6; margin-top: 8px; padding-top: 8px;">
-                            <span><strong>Total:</strong></span>
-                            <span><strong>${cartTotal.formattedTotal}</strong></span>
+                        <div class="total-line">
+                            <span>Total:</span>
+                            <span>${cartTotal.formattedTotal}</span>
                         </div>`;
 
                     totalHTML += `</div>`;
@@ -1191,17 +1217,15 @@ window.CartSystem = {
 
             const categoryId = category.replace(/[^a-zA-Z0-9]/g, '_');
 
-            // Cabeçalho da categoria
-            // Verificar se categoria participa do Mix & Match (usa categoria original do item)
-            const fullPath = items[0].category || items[0].fullPath || category;
-            const isMixMatch = window.isGlobalMixMatch && window.isGlobalMixMatch(fullPath);
-
             // ✅ category já é o nome de exibição (agrupamos por displayName)
+            // Envolver tudo em category-group para layout unificado
+            html += `<div class="category-group">`;
+
+            // Cabeçalho da categoria (clean, sem badge Mix & Match no carrinho)
             html += `
-            <div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')" style="cursor: pointer;">
+            <div class="category-divider" onclick="CartSystem.toggleCategory('${categoryId}')">
                 <div class="category-left">
                     <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
-                    ${isMixMatch ? '<span class="category-badge mix-match">🎯 Mix & Match</span>' : '<span class="category-badge regular">📦 Regular</span>'}
                     <span class="category-label" title="${items[0].fullPath || category}">${category}</span>
                 </div>
                 <div class="category-right">
@@ -1230,7 +1254,8 @@ window.CartSystem = {
                 html += this.renderCartItem(item);
             });
 
-            html += `</div>`;
+            html += `</div>`; // Close category-items
+            html += `</div>`; // Close category-group
         });
 
         this.elements.items.innerHTML = html;
@@ -1733,6 +1758,9 @@ window.CartSystem = {
             webViewLink: `https://images.sunshinecowhides-gallery.com/${item.driveFileId}`,
             thumbnailUrl: item.thumbnailUrl,
             category: item.category,
+            fullPath: item.fullPath || item.category,  // Include full path for Mix & Match detection
+            pathLevels: item.pathLevels || [],
+            folderId: item.folderId || '',  // ✅ NOVO: ID da pasta para buscar rate rules específicos
             price: item.price,
             formattedPrice: item.formattedPrice,
             hasPrice: item.hasPrice
@@ -2100,6 +2128,7 @@ window.toggleCartItem = async function () {
                 thumbnailUrl: ImageUtils.getThumbnailUrl(photo),
                 pathLevels: window.navigationState?.currentPath?.map(p => p.name) || [],
                 fullPath: window.navigationState?.currentPath?.map(p => p.name).join(' → ') || '',
+                folderId: window.navigationState?.currentFolderId || '',  // ✅ NOVO: Guardar folder ID para rate rules
                 basePrice: priceInfo.basePrice || 0,
                 price: priceInfo.price || 0,
                 formattedPrice: priceInfo.formattedPrice || 'No price',
@@ -2282,6 +2311,9 @@ function showConfirmationModal(validItems, ghostCount) {
     }
     const formattedTotal = window.CurrencyManager ? CurrencyManager.format(totalValue) : `$${totalValue.toFixed(2)}`;
 
+    // Check for dark mode
+    const isDarkMode = document.body.classList.contains('dark-mode');
+
     const modalHTML = `
         <style>
             #confirmSelectionModal * { box-sizing: border-box; }
@@ -2295,12 +2327,32 @@ function showConfirmationModal(validItems, ghostCount) {
                 box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
             }
             #confirmSelectionModal .info-card {
-                background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px;
+                border-radius: 10px; padding: 14px 16px;
                 display: flex; align-items: flex-start; gap: 12px;
             }
-            #confirmSelectionModal .info-card i { color: #B87333; font-size: 16px; margin-top: 2px; }
-            #confirmSelectionModal .info-card strong { color: #374151; font-size: 0.9rem; }
-            #confirmSelectionModal .info-card p { margin: 4px 0 0 0; color: #6b7280; font-size: 0.85rem; line-height: 1.5; }
+            #confirmSelectionModal .info-card i { font-size: 16px; margin-top: 2px; }
+            #confirmSelectionModal .info-card strong { font-size: 0.9rem; }
+            #confirmSelectionModal .info-card p { margin: 4px 0 0 0; font-size: 0.85rem; line-height: 1.5; }
+
+            /* Mobile optimizations */
+            @media (max-width: 480px) {
+                #confirmSelectionModal { padding: 12px !important; }
+                #confirmModalBox { border-radius: 12px !important; }
+                #confirmSelectionModal .confirm-header-icon { width: 48px; height: 48px; }
+                #confirmSelectionModal .confirm-header-icon i { font-size: 20px !important; }
+                #confirmSelectionModal .modal-header-section { padding: 16px 16px 12px !important; }
+                #confirmSelectionModal .modal-body-section { padding: 14px 16px !important; }
+                #confirmSelectionModal .info-card { padding: 12px !important; gap: 10px !important; }
+                #confirmSelectionModal .info-card i { font-size: 16px !important; }
+                #confirmSelectionModal .info-card strong { font-size: 0.85rem !important; }
+                #confirmSelectionModal .info-card p { font-size: 0.8rem !important; }
+                #confirmSelectionModal .notes-section { padding: 14px !important; }
+                #confirmSelectionModal .notes-section label { font-size: 0.9rem !important; margin-bottom: 8px !important; }
+                #confirmSelectionModal .notes-section p { font-size: 0.8rem !important; margin-bottom: 10px !important; }
+                #confirmSelectionModal #clientObservations { min-height: 100px !important; padding: 12px !important; font-size: 0.9rem !important; }
+                #confirmSelectionModal .modal-footer-section { padding: 12px 16px !important; }
+                #confirmSelectionModal .modal-footer-section button { padding: 10px 16px !important; font-size: 0.85rem !important; }
+            }
         </style>
         <div id="confirmSelectionModal" style="
             display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important;
@@ -2309,74 +2361,75 @@ function showConfirmationModal(validItems, ghostCount) {
             justify-content: center !important; padding: 20px !important; margin: 0 !important;
         ">
             <div id="confirmModalBox" style="
-                background: white !important; border-radius: 16px !important; max-width: 480px !important;
-                width: 100% !important; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
+                background: ${isDarkMode ? '#2a2a2a' : 'white'} !important; border-radius: 16px !important; max-width: 480px !important;
+                width: 100% !important; box-shadow: 0 25px 50px rgba(0, 0, 0, ${isDarkMode ? '0.5' : '0.25'}) !important;
                 animation: confirmModalSlideIn 0.3s ease !important; overflow: hidden !important;
                 max-height: 90vh !important; display: flex; flex-direction: column;
             ">
-                <!-- Header - Clean White -->
-                <div style="padding: 24px 24px 16px; text-align: center; border-bottom: 1px solid #f0f0f0;">
-                    <div class="confirm-header-icon" style="margin: 0 auto 16px;">
-                        <i class="fas fa-clipboard-check" style="font-size: 24px; color: white;"></i>
+                <!-- Header -->
+                <div class="modal-header-section" style="padding: 20px 20px 14px; text-align: center; border-bottom: 1px solid ${isDarkMode ? '#3d3d3d' : '#f0f0f0'};">
+                    <div class="confirm-header-icon" style="margin: 0 auto 12px;">
+                        <i class="fas fa-clipboard-check" style="font-size: 22px; color: white;"></i>
                     </div>
-                    <h2 style="margin: 0 0 6px; font-size: 1.35rem; font-weight: 600; color: #1f2937;">Confirm Your Selection</h2>
-                    <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
-                        <i class="fas fa-box" style="margin-right: 6px; color: #B87333;"></i>
+                    <h2 style="margin: 0 0 4px; font-size: 1.2rem; font-weight: 600; color: ${isDarkMode ? '#f0f0f0' : '#1f2937'};">Confirm Your Selection</h2>
+                    <p style="margin: 0; color: ${isDarkMode ? '#a0a0a0' : '#6b7280'}; font-size: 0.85rem;">
+                        <i class="fas fa-box" style="margin-right: 5px; color: #B87333;"></i>
                         ${validItems.length} item${validItems.length > 1 ? 's' : ''} selected
-                        ${showPrices && totalValue > 0 ? `<span style="margin-left: 8px; font-weight: 600; color: #166534;">• ${formattedTotal}</span>` : ''}
+                        ${showPrices && totalValue > 0 ? `<span style="margin-left: 6px; font-weight: 600; color: ${isDarkMode ? '#4ade80' : '#166534'};">• ${formattedTotal}</span>` : ''}
                     </p>
                 </div>
 
                 <!-- Body - Scrollable -->
-                <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+                <div class="modal-body-section" style="padding: 16px 20px; overflow-y: auto; flex: 1; background: ${isDarkMode ? '#2a2a2a' : 'white'};">
                     ${ghostCount > 0 ? `
-                        <div style="background: #fef3cd; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 16px;"></i>
-                            <span style="color: #92400e; font-size: 0.875rem;">${ghostCount} unavailable item(s) will be removed</span>
+                        <div style="background: ${isDarkMode ? 'rgba(245, 158, 11, 0.15)' : '#fef3cd'}; border-left: 3px solid #f59e0b; padding: 10px 12px; border-radius: 0 8px 8px 0; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 14px;"></i>
+                            <span style="color: ${isDarkMode ? '#fcd34d' : '#92400e'}; font-size: 0.8rem;">${ghostCount} unavailable item(s) will be removed</span>
                         </div>
                     ` : ''}
 
-                    <!-- Info Card -->
-                    <div class="info-card" style="margin-bottom: 16px;">
-                        <i class="fas fa-handshake"></i>
+                    <!-- Info Card - Compact -->
+                    <div class="info-card" style="margin-bottom: 14px; background: ${isDarkMode ? 'rgba(22, 163, 74, 0.12)' : '#f0fdf4'}; border: 1px solid ${isDarkMode ? 'rgba(34, 197, 94, 0.3)' : '#bbf7d0'}; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px;">
+                        <i class="fas fa-handshake" style="color: ${isDarkMode ? '#4ade80' : '#16a34a'}; font-size: 18px; flex-shrink: 0; margin-top: 2px;"></i>
                         <div>
-                            <strong>What happens next?</strong>
-                            <p>Our team will review your selection and contact you shortly to confirm details, shipping, and payment options.</p>
+                            <strong style="color: ${isDarkMode ? '#86efac' : '#166534'}; font-size: 0.85rem;">What happens next?</strong>
+                            <p style="margin: 4px 0 0; color: ${isDarkMode ? '#a0a0a0' : '#15803d'}; font-size: 0.8rem; line-height: 1.4;">Our team will review and contact you to confirm details, shipping, and payment.</p>
                         </div>
                     </div>
 
-                    <!-- Notes Section - Prominent -->
-                    <div style="background: #f8fafc; border: 2px solid #B87333; border-radius: 12px; padding: 20px;">
-                        <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-weight: 600; font-size: 1rem; color: #1f2937;">
-                            <i class="fas fa-edit" style="color: #B87333; font-size: 20px;"></i>
+                    <!-- Notes Section - Compact -->
+                    <div class="notes-section" style="background: ${isDarkMode ? '#333' : '#f8fafc'}; border: 2px solid #B87333; border-radius: 10px; padding: 14px;">
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: ${isDarkMode ? '#e0e0e0' : '#1f2937'};">
+                            <i class="fas fa-edit" style="color: #B87333; font-size: 16px;"></i>
                             Additional Notes
                         </label>
-                        <p style="margin: 0 0 14px 0; font-size: 0.85rem; color: #6b7280; line-height: 1.6;">
+                        <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: ${isDarkMode ? '#888' : '#6b7280'}; line-height: 1.5;">
                             Share your shipping address, delivery instructions, questions, or any special requests for your order.
                         </p>
                         <textarea id="clientObservations" style="
-                            width: 100%; padding: 16px; border: 1px solid #e5e7eb; border-radius: 10px;
-                            resize: vertical; font-size: 0.95rem; font-family: inherit; min-height: 140px;
-                            transition: border-color 0.2s, box-shadow 0.2s; background: white; line-height: 1.5;
-                        " placeholder="e.g., Shipping address, special delivery instructions, questions about items, or any other notes for our team..."
+                            width: 100%; padding: 12px; border: 1px solid ${isDarkMode ? '#555' : '#e5e7eb'}; border-radius: 8px;
+                            resize: vertical; font-size: 0.9rem; font-family: inherit; min-height: 100px;
+                            transition: border-color 0.2s, box-shadow 0.2s; background: ${isDarkMode ? '#2a2a2a' : 'white'};
+                            color: ${isDarkMode ? '#e0e0e0' : '#1f2937'}; line-height: 1.4;
+                        " placeholder="e.g., Shipping address, delivery instructions, questions about items..."
                         onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.15)';"
-                        onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none';"></textarea>
+                        onblur="this.style.borderColor='${isDarkMode ? '#555' : '#e5e7eb'}'; this.style.boxShadow='none';"></textarea>
                     </div>
                 </div>
 
                 <!-- Footer - Fixed -->
-                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: space-between; flex-shrink: 0;">
+                <div class="modal-footer-section" style="padding: 12px 20px; background: ${isDarkMode ? '#252525' : '#f9fafb'}; border-top: 1px solid ${isDarkMode ? '#3d3d3d' : '#e5e7eb'}; display: flex; gap: 10px; justify-content: space-between; flex-shrink: 0;">
                     <button onclick="cancelConfirmation()" style="
-                        padding: 12px 20px; background: white; color: #6b7280; border: 1px solid #e5e7eb;
-                        border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
-                    " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#d1d5db';"
-                       onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                        padding: 10px 16px; background: ${isDarkMode ? '#3d3d3d' : 'white'}; color: ${isDarkMode ? '#c0c0c0' : '#6b7280'}; border: 1px solid ${isDarkMode ? '#555' : '#e5e7eb'};
+                        border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+                    " onmouseover="this.style.background='${isDarkMode ? '#4d4d4d' : '#f3f4f6'}'; this.style.borderColor='${isDarkMode ? '#666' : '#d1d5db'}';"
+                       onmouseout="this.style.background='${isDarkMode ? '#3d3d3d' : 'white'}'; this.style.borderColor='${isDarkMode ? '#555' : '#e5e7eb'}';">
                         Cancel
                     </button>
                     <button onclick="proceedWithSelection()" style="
-                        padding: 12px 28px; background: linear-gradient(135deg, #B87333, #A0522D); color: white;
-                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
-                        display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
+                        padding: 10px 20px; background: linear-gradient(135deg, #B87333, #A0522D); color: white;
+                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+                        display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3);
                         transition: all 0.2s;
                     " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(184, 115, 51, 0.4)';"
                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(184, 115, 51, 0.3)';">
@@ -2468,6 +2521,40 @@ window.proceedWithSelection = async function () {
 function showSuccessModalWithMessage(result) {
     const itemCount = result.selection.totalItems;
     const itemText = itemCount === 1 ? 'item' : 'items';
+    const isDarkMode = document.body.classList.contains('dark-mode');
+
+    // Dark mode colors
+    const colors = isDarkMode ? {
+        modalBg: '#2a2a2a',
+        cardBg: '#333',
+        cardBorder: '#444',
+        headerBorder: '#444',
+        footerBg: '#1f1f1f',
+        footerBorder: '#444',
+        titleColor: '#e0e0e0',
+        subtitleColor: '#9ca3af',
+        strongColor: '#e0e0e0',
+        textColor: '#b0b0b0',
+        warnBg: '#3d3520',
+        warnBorder: '#5c4d2a',
+        warnTitle: '#fbbf24',
+        warnText: '#d4a94a'
+    } : {
+        modalBg: 'white',
+        cardBg: '#fafafa',
+        cardBorder: '#e5e7eb',
+        headerBorder: '#f0f0f0',
+        footerBg: '#f9fafb',
+        footerBorder: '#e5e7eb',
+        titleColor: '#1f2937',
+        subtitleColor: '#6b7280',
+        strongColor: '#374151',
+        textColor: '#6b7280',
+        warnBg: '#fffbeb',
+        warnBorder: '#fde68a',
+        warnTitle: '#92400e',
+        warnText: '#78350f'
+    };
 
     const modalHTML = `
         <style>
@@ -2477,12 +2564,12 @@ function showSuccessModalWithMessage(result) {
                 to { opacity: 1; transform: scale(1) translateY(0); }
             }
             #successModal .info-card {
-                background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px;
+                background: ${colors.cardBg}; border: 1px solid ${colors.cardBorder}; border-radius: 10px; padding: 14px 16px;
                 display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;
             }
             #successModal .info-card i { color: #B87333; font-size: 16px; margin-top: 2px; flex-shrink: 0; }
-            #successModal .info-card strong { color: #374151; font-size: 0.9rem; display: block; margin-bottom: 4px; }
-            #successModal .info-card p { margin: 0; color: #6b7280; font-size: 0.85rem; line-height: 1.5; }
+            #successModal .info-card strong { color: ${colors.strongColor}; font-size: 0.9rem; display: block; margin-bottom: 4px; }
+            #successModal .info-card p { margin: 0; color: ${colors.textColor}; font-size: 0.85rem; line-height: 1.5; }
         </style>
         <div id="successModal" style="
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -2490,12 +2577,12 @@ function showSuccessModalWithMessage(result) {
             display: flex; align-items: center; justify-content: center; padding: 20px;
         ">
             <div style="
-                background: white; border-radius: 16px; max-width: 440px; width: 100%;
+                background: ${colors.modalBg}; border-radius: 16px; max-width: 440px; width: 100%;
                 box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); animation: successModalSlideIn 0.3s ease;
                 overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;
             ">
                 <!-- Header - Simple with small icon -->
-                <div style="padding: 20px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #f0f0f0;">
+                <div style="padding: 20px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid ${colors.headerBorder};">
                     <div style="
                         width: 42px; height: 42px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
                         border-radius: 10px; display: flex; align-items: center; justify-content: center;
@@ -2504,9 +2591,9 @@ function showSuccessModalWithMessage(result) {
                         <i class="fas fa-check" style="color: white; font-size: 18px;"></i>
                     </div>
                     <div>
-                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #1f2937;">Selection Confirmed</h2>
-                        <p style="margin: 2px 0 0; color: #6b7280; font-size: 0.85rem;">
-                            <strong style="color: #166534;">${itemCount}</strong> ${itemText} reserved for you
+                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: ${colors.titleColor};">Selection Confirmed</h2>
+                        <p style="margin: 2px 0 0; color: ${colors.subtitleColor}; font-size: 0.85rem;">
+                            <strong style="color: #22c55e;">${itemCount}</strong> ${itemText} reserved for you
                         </p>
                     </div>
                 </div>
@@ -2518,7 +2605,7 @@ function showSuccessModalWithMessage(result) {
                         <i class="fas fa-phone-alt"></i>
                         <div>
                             <strong>What happens now?</strong>
-                            <p>Our sales team will contact you within <strong>24-48 hours</strong> to discuss shipping options, payment methods, and finalize your order.</p>
+                            <p>Our sales team will contact you within <strong style="color: #B87333;">24-48 hours</strong> to discuss shipping options, payment methods, and finalize your order.</p>
                         </div>
                     </div>
 
@@ -2532,17 +2619,17 @@ function showSuccessModalWithMessage(result) {
                     </div>
 
                     <!-- Gallery Note -->
-                    <div class="info-card" style="background: #fffbeb; border-color: #fde68a;">
+                    <div class="info-card" style="background: ${colors.warnBg}; border-color: ${colors.warnBorder};">
                         <i class="fas fa-info-circle" style="color: #d97706;"></i>
                         <div>
-                            <strong style="color: #92400e;">Gallery access</strong>
-                            <p style="color: #78350f;">Your gallery will be temporarily paused. Your sales representative will reactivate it after confirming your order details.</p>
+                            <strong style="color: ${colors.warnTitle};">Gallery access</strong>
+                            <p style="color: ${colors.warnText};">Your gallery will be temporarily paused. Your sales representative will reactivate it after confirming your order details.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer -->
-                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb;">
+                <div style="padding: 16px 24px; background: ${colors.footerBg}; border-top: 1px solid ${colors.footerBorder};">
                     <button onclick="showFeedbackModal()" style="
                         padding: 12px 24px; background: linear-gradient(135deg, #B87333, #A0522D); color: white;
                         border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
@@ -2569,6 +2656,46 @@ function showFeedbackModal() {
     const session = JSON.parse(localStorage.getItem('sunshineSession') || '{}');
     const clientName = session.user?.name || 'Client';
     const clientCode = session.accessCode || '';
+    const isDarkMode = document.body.classList.contains('dark-mode');
+
+    // Dark mode colors
+    const colors = isDarkMode ? {
+        modalBg: '#2a2a2a',
+        headerBorder: '#444',
+        footerBg: '#1f1f1f',
+        footerBorder: '#444',
+        titleColor: '#e0e0e0',
+        subtitleColor: '#9ca3af',
+        textColor: '#b0b0b0',
+        labelColor: '#c0c0c0',
+        btnBg: '#333',
+        btnBorder: '#555',
+        btnHoverBg: '#3d3a35',
+        textareaBg: '#333',
+        textareaBorder: '#555',
+        skipBtnBg: '#333',
+        skipBtnBorder: '#555',
+        skipBtnColor: '#b0b0b0',
+        skipBtnHoverBg: '#3d3d3d'
+    } : {
+        modalBg: 'white',
+        headerBorder: '#f0f0f0',
+        footerBg: '#f9fafb',
+        footerBorder: '#e5e7eb',
+        titleColor: '#1f2937',
+        subtitleColor: '#9ca3af',
+        textColor: '#6b7280',
+        labelColor: '#374151',
+        btnBg: 'white',
+        btnBorder: '#e5e7eb',
+        btnHoverBg: '#faf7f5',
+        textareaBg: '#fafafa',
+        textareaBorder: '#e5e7eb',
+        skipBtnBg: 'white',
+        skipBtnBorder: '#e5e7eb',
+        skipBtnColor: '#6b7280',
+        skipBtnHoverBg: '#f3f4f6'
+    };
 
     const feedbackHTML = `
         <style>
@@ -2577,16 +2704,21 @@ function showFeedbackModal() {
                 from { opacity: 0; transform: scale(0.95) translateY(-10px); }
                 to { opacity: 1; transform: scale(1) translateY(0); }
             }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                20%, 60% { transform: translateX(-5px); }
+                40%, 80% { transform: translateX(5px); }
+            }
             #feedbackModal .feedback-type-btn {
-                flex: 1; min-width: 100px; padding: 12px 10px; border: 2px solid #e5e7eb;
-                border-radius: 10px; background: white; cursor: pointer; text-align: center;
+                flex: 1; min-width: 100px; padding: 12px 10px; border: 2px solid ${colors.btnBorder};
+                border-radius: 10px; background: ${colors.btnBg}; cursor: pointer; text-align: center;
                 transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; gap: 6px;
             }
-            #feedbackModal .feedback-type-btn:hover { border-color: #B87333; background: #faf7f5; }
-            #feedbackModal .feedback-type-btn.selected { border-color: #B87333; background: #faf7f5; }
+            #feedbackModal .feedback-type-btn:hover { border-color: #B87333; background: ${colors.btnHoverBg}; }
+            #feedbackModal .feedback-type-btn.selected { border-color: #B87333; background: ${colors.btnHoverBg}; }
             #feedbackModal .feedback-type-btn i { font-size: 20px; color: #9ca3af; transition: color 0.2s; }
             #feedbackModal .feedback-type-btn.selected i { color: #B87333; }
-            #feedbackModal .feedback-type-btn span { font-size: 0.8rem; color: #6b7280; font-weight: 500; }
+            #feedbackModal .feedback-type-btn span { font-size: 0.8rem; color: ${colors.textColor}; font-weight: 500; }
             #feedbackModal .feedback-type-btn.selected span { color: #B87333; }
         </style>
         <div id="feedbackModal" style="
@@ -2595,12 +2727,12 @@ function showFeedbackModal() {
             display: flex; align-items: center; justify-content: center; padding: 20px;
         ">
             <div style="
-                background: white; border-radius: 16px; max-width: 440px; width: 100%;
+                background: ${colors.modalBg}; border-radius: 16px; max-width: 440px; width: 100%;
                 box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); animation: feedbackModalSlideIn 0.3s ease;
                 overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;
             ">
                 <!-- Header -->
-                <div style="padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0;">
+                <div style="padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid ${colors.headerBorder};">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="
                             width: 40px; height: 40px; background: linear-gradient(135deg, #B87333, #A0522D);
@@ -2609,21 +2741,21 @@ function showFeedbackModal() {
                             <i class="fas fa-comment-dots" style="color: white; font-size: 16px;"></i>
                         </div>
                         <div>
-                            <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #1f2937;">Share your feedback</h2>
-                            <p style="margin: 2px 0 0; color: #9ca3af; font-size: 0.8rem;">Help us improve your experience</p>
+                            <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600; color: ${colors.titleColor};">Share your feedback</h2>
+                            <p style="margin: 2px 0 0; color: ${colors.subtitleColor}; font-size: 0.8rem;">Help us improve your experience</p>
                         </div>
                     </div>
                     <button onclick="skipFeedback()" style="
                         background: none; border: none; color: #9ca3af; cursor: pointer;
                         font-size: 1.1rem; padding: 4px; transition: color 0.2s;
-                    " onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">
+                    " onmouseover="this.style.color='${isDarkMode ? '#e0e0e0' : '#6b7280'}'" onmouseout="this.style.color='#9ca3af'">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
 
                 <!-- Body -->
                 <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
-                    <p style="margin: 0 0 14px; font-size: 0.85rem; color: #6b7280;">
+                    <p style="margin: 0 0 14px; font-size: 0.85rem; color: ${colors.textColor};">
                         What type of feedback would you like to share?
                     </p>
 
@@ -2649,27 +2781,27 @@ function showFeedbackModal() {
 
                     <!-- Message -->
                     <div>
-                        <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; font-weight: 500; color: #374151;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; font-weight: 500; color: ${colors.labelColor};">
                             Your message <span style="color: #9ca3af;">(optional)</span>
                         </label>
                         <textarea id="feedbackMessage" style="
-                            width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px;
+                            width: 100%; padding: 12px 14px; border: 1px solid ${colors.textareaBorder}; border-radius: 10px;
                             resize: vertical; font-size: 0.9rem; font-family: inherit; min-height: 140px;
-                            transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa;
+                            transition: border-color 0.2s, box-shadow 0.2s; background: ${colors.textareaBg}; color: ${colors.titleColor};
                         " placeholder="Tell us what's on your mind..."
-                        onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.1)'; this.style.background='white';"
-                        onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'; this.style.background='#fafafa';"></textarea>
+                        onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.1)';"
+                        onblur="this.style.borderColor='${colors.textareaBorder}'; this.style.boxShadow='none';"></textarea>
                     </div>
 
                 </div>
 
                 <!-- Footer -->
-                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 10px;">
+                <div style="padding: 16px 24px; background: ${colors.footerBg}; border-top: 1px solid ${colors.footerBorder}; display: flex; gap: 10px;">
                     <button onclick="skipFeedback()" style="
-                        flex: 1; padding: 11px 16px; background: white; color: #6b7280;
-                        border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;
+                        flex: 1; padding: 11px 16px; background: ${colors.skipBtnBg}; color: ${colors.skipBtnColor};
+                        border: 1px solid ${colors.skipBtnBorder}; border-radius: 8px; cursor: pointer;
                         font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
-                    " onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
+                    " onmouseover="this.style.background='${colors.skipBtnHoverBg}'" onmouseout="this.style.background='${colors.skipBtnBg}'">
                         Skip
                     </button>
                     <button onclick="submitFeedback('${clientName}', '${clientCode}')" style="
@@ -2715,10 +2847,27 @@ function skipFeedback() {
 window.skipFeedback = skipFeedback;
 
 async function submitFeedback(clientName, clientCode) {
-    const message = document.getElementById('feedbackMessage')?.value || '';
-    const type = selectedFeedbackType || 'general';
+    const message = document.getElementById('feedbackMessage')?.value?.trim() || '';
+    const type = selectedFeedbackType;
 
-    // Even if no message, still track the type selection
+    // Validate - must have type selected OR message written
+    if (!type && !message) {
+        // Show inline error message
+        let errorDiv = document.getElementById('feedbackError');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.id = 'feedbackError';
+            errorDiv.style.cssText = 'background: #fee2e2; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Select a type or write something, or click Skip';
+            const bodyDiv = document.querySelector('#feedbackModal > div > div:nth-child(2)');
+            if (bodyDiv) bodyDiv.insertBefore(errorDiv, bodyDiv.firstChild);
+        }
+        // Shake animation
+        errorDiv.style.animation = 'none';
+        setTimeout(() => errorDiv.style.animation = 'shake 0.4s ease', 10);
+        return;
+    }
+
     try {
         await fetch('/api/feedback', {
             method: 'POST',
@@ -2726,7 +2875,7 @@ async function submitFeedback(clientName, clientCode) {
             body: JSON.stringify({
                 clientName,
                 clientCode,
-                type,
+                type: type || 'general',
                 message,
                 page: 'selection-complete'
             })
@@ -2914,12 +3063,10 @@ async function generateOrderSummary() {
         return '<p style="text-align: center; padding: 20px;">Your cart is empty</p>';
     }
 
-    // 🔴 REMOVIDO: Fetch de descontos do backend
-    // Usar apenas dados locais
-    let discountDetails = {};
-
     // Agrupar por categoria (usando nome de EXIBIÇÃO para agrupar)
     const categories = {};
+    const categoryMixMatch = {}; // Track Mix & Match status per category
+
     items.forEach(item => {
         // ✅ MESMA ESTRATÉGIA ROBUSTA de renderCartItems
         let rawCat;
@@ -2938,6 +3085,19 @@ async function generateOrderSummary() {
         const displayCat = getCategoryDisplayName(rawCat, item);
         if (!categories[displayCat]) {
             categories[displayCat] = [];
+            // Check if this category is Mix & Match
+            // Natural Cowhides has 3 subcategories that qualify for Mix & Match:
+            // 1. Brazil Best Sellers
+            // 2. Brazil Top Selected Categories
+            // 3. Colombian Cowhides
+            const pathToCheck = (item.fullPath || item.category || rawCat || '').toUpperCase();
+            const isNaturalCowhides =
+                pathToCheck.includes('NATURAL COWHIDES') ||
+                pathToCheck.includes('NATURAL-COWHIDES') ||
+                pathToCheck.includes('BRAZIL BEST SELLERS') ||
+                pathToCheck.includes('BRAZIL TOP SELECTED') ||
+                pathToCheck.includes('COLOMBIAN COWHIDES');
+            categoryMixMatch[displayCat] = isNaturalCowhides;
         }
         categories[displayCat].push(item);
     });
@@ -2963,10 +3123,26 @@ async function generateOrderSummary() {
     html += '<div class="summary-section-title">Items by Category</div>';
 
     let grandTotal = 0;
+    let grandSubtotal = 0;
     let totalItems = 0;
+    let mixMatchDiscount = 0;
+    let mixMatchItemCount = 0;
 
-    Object.keys(categories).forEach((category, index) => {
+    // ✅ ORDENAR: Mix & Match primeiro, depois outros alfabeticamente
+    const sortedCategories = Object.keys(categories).sort((a, b) => {
+        const aIsMixMatch = categoryMixMatch[a] ? 1 : 0;
+        const bIsMixMatch = categoryMixMatch[b] ? 1 : 0;
+        // Mix & Match vem primeiro (ordem decrescente)
+        if (bIsMixMatch !== aIsMixMatch) {
+            return bIsMixMatch - aIsMixMatch;
+        }
+        // Dentro do mesmo grupo, ordenar alfabeticamente
+        return a.localeCompare(b);
+    });
+
+    sortedCategories.forEach((category, index) => {
         const allCategoryItems = categories[category];
+        const isMixMatch = categoryMixMatch[category];
 
         // ✅ FILTRAR GHOST ITEMS DA CATEGORIA
         const categoryItems = allCategoryItems.filter(item =>
@@ -2976,30 +3152,53 @@ async function generateOrderSummary() {
         // Se todos eram ghosts, pular essa categoria
         if (categoryItems.length === 0) return;
 
-        let categoryTotal = 0;
+        let categorySubtotal = 0;
+        let categoryDiscount = 0;
 
         // Calcular total da categoria usando preços locais
         categoryItems.forEach(item => {
             if (item.price > 0) {
-                categoryTotal += item.price;
+                categorySubtotal += item.price;
+                // Track original price for discount calculation
+                if (item.originalPrice && item.originalPrice > item.price) {
+                    categoryDiscount += (item.originalPrice - item.price);
+                }
             }
         });
 
-        grandTotal += categoryTotal;
-        totalItems += categoryItems.length; // ✅ CORRIGIDO - só conta válidos
+        // Track Mix & Match items for total discount
+        if (isMixMatch) {
+            mixMatchItemCount += categoryItems.length;
+            mixMatchDiscount += categoryDiscount;
+        }
 
-        // Header da categoria (clicável) - category já é o nome de exibição
+        grandSubtotal += categorySubtotal;
+        grandTotal += categorySubtotal;
+        totalItems += categoryItems.length;
+
+        // Header da categoria com badge Mix & Match (clicável)
+        const mixMatchBadge = isMixMatch ?
+            '<button class="summary-mm-badge" onclick="event.stopPropagation(); if(window.openMixMatchInfoModal) window.openMixMatchInfoModal();"><i class="fas fa-layer-group"></i> Mix & Match</button>' : '';
+
+        const discountInfo = showPrices && categoryDiscount > 0 ?
+            `<span class="summary-category-discount">-${window.CurrencyManager ? CurrencyManager.format(categoryDiscount) : '$' + categoryDiscount.toFixed(2)}</span>` : '';
+
+        // Primeira categoria aberta por padrão, outras fechadas
+        const isExpanded = index === 0;
+        const chevronIcon = isExpanded ? 'fa-chevron-down' : 'fa-chevron-right';
+
         html += `
-            <div class="summary-category">
-                <div class="summary-category-header" style="cursor: pointer; padding: 8px 0; background: #f8f9fa; margin: 5px 0; padding: 8px;">
-                    <i class="fas fa-chevron-down category-toggle-icon" style="margin-right: 8px; font-size: 12px;"></i>
+            <div class="summary-category ${isMixMatch ? 'is-mix-match' : ''}">
+                <div class="summary-category-header">
+                    <i class="fas ${chevronIcon} category-toggle-icon"></i>
                     <strong>${category}</strong>
-                    <span style="float: right; color: #666;">
+                    ${mixMatchBadge}
+                    <span class="summary-category-meta">
                         ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'}
-                        ${showPrices && categoryTotal > 0 ? `| ${window.CurrencyManager ? CurrencyManager.format(categoryTotal) : '$' + categoryTotal.toFixed(2)}` : ''}
+                        ${showPrices && categorySubtotal > 0 ? `| ${window.CurrencyManager ? CurrencyManager.format(categorySubtotal) : '$' + categorySubtotal.toFixed(2)}` : ''}
                     </span>
                 </div>
-                <div class="summary-category-items" style="display: ${index === 0 ? 'block' : 'none'};">
+                <div class="summary-category-items" style="display: ${isExpanded ? 'block' : 'none'};">
         `;
 
         // Items da categoria (só válidos)
@@ -3009,10 +3208,46 @@ async function generateOrderSummary() {
                 price = window.CurrencyManager ? CurrencyManager.format(item.price) : `$${item.price.toFixed(2)}`;
             }
 
+            // Para fotos únicas, mostrar subcategoria + número do arquivo
+            let displayName = item.fileName;
+            if (!item.isCatalogProduct) {
+                // Tentar extrair o último nível do caminho (subcategoria mais específica)
+                // Verificar em ordem: fullPath, category, pathLevels
+                let subcategory = '';
+
+                // Opção 1: fullPath string com " → "
+                if (item.fullPath && typeof item.fullPath === 'string' && item.fullPath.includes(' → ')) {
+                    const parts = item.fullPath.split(' → ');
+                    subcategory = parts[parts.length - 1].trim();
+                }
+                // Opção 2: category string com " → " (usado pela sidebar do carrinho)
+                else if (item.category && typeof item.category === 'string' && item.category.includes(' → ')) {
+                    const parts = item.category.split(' → ');
+                    subcategory = parts[parts.length - 1].trim();
+                }
+                // Opção 3: pathLevels array com mais de 1 elemento
+                else if (item.pathLevels && Array.isArray(item.pathLevels) && item.pathLevels.length > 1) {
+                    subcategory = item.pathLevels[item.pathLevels.length - 1];
+                }
+                // Opção 4: category com "/" como separador
+                else if (item.category && typeof item.category === 'string' && item.category.includes('/')) {
+                    const parts = item.category.split('/');
+                    subcategory = parts[parts.length - 1].trim().replace(/\/$/, '');
+                }
+
+                if (subcategory) {
+                    // Limpar prefixos numéricos como "1. " ou "02. "
+                    subcategory = subcategory.replace(/^\d+\.\s*/, '');
+                    // Extrair número do arquivo (sem extensão)
+                    const fileNumber = item.fileName.replace(/\.[^.]+$/, '');
+                    displayName = `${subcategory} - ${fileNumber}`;
+                }
+            }
+
             html += `
-                <div class="summary-item" style="padding: 4px 8px; margin-left: 20px;">
-                    <span style="color: #666;">${item.fileName}</span>
-                    ${showPrices ? `<span style="float: right;">${price}</span>` : ''}
+                <div class="summary-item">
+                    <span>${displayName}</span>
+                    ${showPrices ? `<span>${price}</span>` : ''}
                 </div>
             `;
         });
@@ -3025,13 +3260,12 @@ async function generateOrderSummary() {
 
     html += '</div>';
 
-    // USAR CÁLCULO SIMPLES LOCAL
+    // USAR CÁLCULO DO SISTEMA
     const cartTotal = await CartSystem.calculateCartTotal();
 
-    // Totais
-    html += '<div class="summary-totals" style="border-top: 2px solid #dee2e6; margin-top: 15px; padding-top: 15px;">';
+    // Totais com breakdown de desconto
+    html += '<div class="summary-totals">';
 
-    // Verificar se deve mostrar preços
     if (!showPrices) {
         // Não mostrar preços - apenas quantidade
         html += `
@@ -3041,9 +3275,37 @@ async function generateOrderSummary() {
             </div>
         `;
     } else {
-        // Mostrar preços
+        // Subtotal
         html += `
-            <div class="summary-total-line final" style="font-size: 1.2em; font-weight: bold; border-top: 2px solid #333; margin-top: 10px; padding-top: 10px;">
+            <div class="summary-total-line">
+                <span>Subtotal:</span>
+                <span>${cartTotal.formattedSubtotal}</span>
+            </div>
+        `;
+
+        // Desconto Mix & Match (se houver)
+        if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
+            html += `
+                <div class="summary-total-line summary-discount">
+                    <span><i class="fas fa-layer-group"></i> Mix & Match Discount:</span>
+                    <span>-${cartTotal.formattedDiscountAmount}</span>
+                </div>
+            `;
+
+            // Info sobre Mix & Match
+            if (mixMatchItemCount > 0) {
+                html += `
+                    <div class="summary-mm-info">
+                        <i class="fas fa-info-circle"></i>
+                        ${mixMatchItemCount} items from Natural Cowhides qualify for quantity discount
+                    </div>
+                `;
+            }
+        }
+
+        // Total final
+        html += `
+            <div class="summary-total-line final">
                 <span>TOTAL:</span>
                 <span>${cartTotal.formattedTotal}</span>
             </div>

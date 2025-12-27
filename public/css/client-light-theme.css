@@ -147,44 +147,87 @@ body.client-page::before {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* ===== MODAL FULLSCREEN - Mantém escuro para destaque ===== */
+/* ===== PHOTO MODAL - Always Dark for Photo Viewing ===== */
+/* Photo modal should ALWAYS be dark regardless of theme */
 .client-page .photo-modal {
-    background: rgba(0, 0, 0, 0.95); /* Mantém escuro para destacar a foto */
+    background: #000 !important;
 }
 
-.client-page .modal-header,
-.client-page .modal-footer {
+.client-page .photo-modal .modal-header {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%) !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+}
+
+.client-page .photo-modal .modal-footer {
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%) !important;
+    border-top: none !important;
+    backdrop-filter: none !important;
+}
+
+.client-page .photo-modal .modal-header h4,
+.client-page .photo-modal #modalPhotoTitle,
+.client-page .photo-modal .modal-controls span {
+    color: rgba(255,255,255,0.9) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
+}
+
+.client-page .photo-modal .btn-close {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .btn-close:hover {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .nav-btn {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: rgba(255,255,255,0.9) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.client-page .photo-modal .nav-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.2) !important;
+    border-color: rgba(255,255,255,0.3) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .zoom-controls-simple {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: none !important;
+}
+
+.client-page .photo-modal .zoom-btn-simple {
+    background: transparent !important;
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.client-page .photo-modal .zoom-btn-simple:hover:not(:disabled) {
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
+
+.client-page .photo-modal .photo-info,
+.client-page .photo-modal .photo-info span {
+    color: rgba(255,255,255,0.6) !important;
+}
+
+.client-page .photo-modal .modal-discount-grid {
+    background: transparent !important;
+}
+
+/* ===== OTHER MODALS - Light Theme (Not Photo Modal) ===== */
+.client-page .selection-modal .modal-header,
+.client-page .selection-modal .modal-footer {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     color: #1a1a1a;
-}
-
-.client-page .modal-header h4,
-.client-page .modal-controls span {
-    color: #1a1a1a;
-}
-
-.client-page .btn-close {
-    background: rgba(184, 115, 51, 0.1);
-    border: 1px solid var(--gold-primary);
-    color: var(--gold-primary);
-}
-
-.client-page .btn-close:hover {
-    background: var(--gold-primary);
-    color: white;
-}
-
-/* Navigation buttons no modal */
-.client-page .nav-btn {
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px solid var(--gold-primary);
-    color: var(--gold-primary);
-}
-
-.client-page .nav-btn:hover:not(:disabled) {
-    background: var(--gold-primary);
-    color: white;
 }
 
 /* ===== CART SIDEBAR - Tema Light ===== */

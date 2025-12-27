@@ -1,6 +1,12 @@
 /* public/css/client/client-responsive.css */
 /* ===== RESPONSIVE - ALL MEDIA QUERIES ===== */
 
+/* === BASE STYLES (Desktop Default) === */
+/* Footer cart badge - hidden on desktop, shown on mobile */
+.footer-cart-badge {
+    display: none !important;
+}
+
 /* === DESKTOP LARGE (min-width: 1200px) - Escala mais compacta === */
 @media (min-width: 1200px) {
     /* Reduzir tamanho base da fonte para ficar mais compacto */
@@ -760,9 +766,19 @@
     }
 
     .nav-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 1.1rem;
+        width: 46px;
+        height: 46px;
+        font-size: 1.15rem;
+        background: rgba(0,0,0,0.5) !important;
+        border: 1px solid rgba(255,255,255,0.25) !important;
+        color: white !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+    }
+
+    .nav-btn:hover:not(:disabled),
+    .nav-btn:active:not(:disabled) {
+        background: rgba(0,0,0,0.7) !important;
+        border-color: rgba(255,255,255,0.4) !important;
     }
 
     .nav-prev {
@@ -797,6 +813,37 @@
     .btn-cart-toggle {
         padding: 10px 18px;
         font-size: 0.85rem;
+    }
+
+    /* ============================================
+       PHOTO MODAL - Header Cart Badge (768px)
+       Show cart badge in header, left of close button
+       ============================================ */
+    .photo-modal .modal-header .modal-cart-badge {
+        display: flex !important;
+    }
+
+    /* Hide footer cart badge on mobile */
+    .photo-modal .modal-footer .footer-cart-badge {
+        display: none !important;
+    }
+
+    /* ============================================
+       ZOOM CONTROLS - Above price tiers (768px)
+       ============================================ */
+    .photo-modal .zoom-controls-simple {
+        position: fixed !important;
+        bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        display: inline-flex !important;
+        background: rgba(0,0,0,0.7) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        gap: 6px !important;
+        z-index: 10002 !important;
     }
 
     /* === CART === */
@@ -874,25 +921,45 @@
         font-size: 0.9rem;
     }
 
-    /* Navigation Loading corrigido para mobile */
+    /* Navigation Loading - Clean minimal for mobile */
     .navigation-loading {
         position: fixed !important;
         top: 50% !important;
         left: 50% !important;
         transform: translate(-50%, -50%) !important;
         z-index: 9998 !important;
-        background: white !important;
-        padding: 1.5rem !important;
-        border-radius: 12px !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+        background: transparent !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
         min-height: auto !important;
         margin: 0 !important;
         width: auto !important;
-        max-width: 200px !important;
+        max-width: none !important;
     }
 
     .navigation-loading p {
         display: none !important;
+    }
+
+    /* Hide dots, use ::before spinner from desktop */
+    .navigation-loading .loading-dots {
+        display: none !important;
+    }
+
+    /* Override ::after - use ::before instead */
+    .navigation-loading::after {
+        display: none !important;
+    }
+
+    .navigation-loading::before {
+        content: '' !important;
+        width: 44px !important;
+        height: 44px !important;
+        border: 3px solid rgba(184, 115, 51, 0.2) !important;
+        border-top-color: #B87333 !important;
+        border-radius: 50% !important;
+        animation: cleanSpinner 0.8s linear infinite !important;
     }
 
     /* === ORDER SUMMARY === */
@@ -973,13 +1040,9 @@
         gap: 0.75rem;
     }
 
-    /* === MODAL === */
-    .modal-header,
-    .modal-footer {
-        padding: 1rem;
-    }
+    /* === MODAL - MOBILE DARK THEME === */
 
-    /* Modal ainda menor para telas pequenas */
+    /* Selection modal (success modal) */
     .selection-modal-content {
         max-height: 90vh;
     }
@@ -992,210 +1055,320 @@
         font-size: 1.1rem;
     }
 
-    /* Modal body - espaço para header e footer fixos */
+    /* Modal body - photo takes full space */
     .modal-body {
-        padding-top: 150px !important; /* Espaço para header fixo */
-        padding-bottom: 100px !important; /* Espaço para footer fixo */
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     .photo-container {
-        max-height: calc(100vh - 250px) !important;
+        max-height: 100vh !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
     }
 
-    /* Modal header organizado */
-    .modal-header {
+    /* ============================================
+       MODAL HEADER - Mobile Multi-Level Layout
+       Level 1: Close button (top right)
+       Level 2: Title
+       Level 3: Price + Counter
+       ============================================ */
+    .photo-modal .modal-header {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 10001 !important;
-        background: white !important;
-        padding: calc(env(safe-area-inset-top, 20px) + 10px) 15px 10px 15px !important;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0) 100%) !important;
+        padding: calc(env(safe-area-inset-top, 8px) + 12px) 15px 30px 15px !important;
         min-height: auto !important;
-        max-height: 140px !important;
+        max-height: none !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: flex-start !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        align-items: flex-start !important;
+        gap: 6px !important;
+        box-shadow: none !important;
+        border: none !important;
     }
 
-    /* Controls - linha superior com preço e fechar */
-    .modal-controls {
+    /* Close button - absolute top right */
+    .photo-modal .modal-header .btn-close {
+        position: absolute !important;
+        top: calc(env(safe-area-inset-top, 8px) + 12px) !important;
+        right: 15px !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        background: rgba(255,255,255,0.15) !important;
+        border: 1px solid rgba(255,255,255,0.25) !important;
+        color: white !important;
+        border-radius: 8px !important;
+        z-index: 10 !important;
+    }
+
+    /* Cart badge button - LEFT of close button */
+    .photo-modal .modal-header .modal-cart-badge-btn {
+        position: absolute !important;
+        top: calc(env(safe-area-inset-top, 8px) + 12px) !important;
+        right: 60px !important;
+        height: 36px !important;
+        padding: 0 12px !important;
+        background: rgba(255,255,255,0.15) !important;
+        border: 1px solid rgba(255,255,255,0.25) !important;
+        color: white !important;
+        border-radius: 8px !important;
+        z-index: 10 !important;
         display: flex !important;
-        justify-content: space-between !important;
         align-items: center !important;
-        order: -1 !important;
-        margin-bottom: 8px !important;
+        gap: 6px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .photo-modal .modal-header .modal-cart-badge-btn:active {
+        background: rgba(255,255,255,0.25) !important;
+    }
+
+    /* Title - Level 2, below close button area */
+    .photo-modal .modal-header h4,
+    .photo-modal #modalPhotoTitle {
+        margin-top: 44px !important;
         width: 100% !important;
+        max-width: 100% !important;
+        font-size: 0.95rem !important;
+        line-height: 1.35 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: rgba(255,255,255,0.95) !important;
+        background: transparent !important;
+        padding: 0 5px 0 0 !important;
+        margin-bottom: 2px !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
     }
 
-    /* Preço - mostrar só o badge, esconder contador */
-    #modalPhotoCounter {
-        font-size: 1rem !important;
-        font-weight: 600 !important;
+    /* Controls - Level 3, price + counter below title */
+    .photo-modal .modal-controls {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+        margin-top: 4px !important;
     }
 
-    #modalPhotoCounter span:nth-child(2),
-    #modalPhotoCounter span:last-child {
+    /* Counter on mobile */
+    .photo-modal #modalPhotoCounter {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        font-size: 0.85rem !important;
+        font-weight: 400 !important;
+        color: rgba(255,255,255,0.7) !important;
+    }
+
+    /* Price badge on mobile */
+    .photo-modal #modalPhotoCounter .modal-price-badge {
+        font-size: 0.8rem !important;
+        padding: 4px 10px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Hide the dash separator on mobile */
+    .photo-modal #modalPhotoCounter .modal-counter-separator {
         display: none !important;
     }
 
-    /* Botão fechar X */
-    .modal-header .btn-close {
-        position: relative !important;
-        width: 35px !important;
-        height: 35px !important;
+    /* Photo count text */
+    .photo-modal #modalPhotoCounter .modal-photo-count {
+        font-size: 0.8rem !important;
+        color: rgba(255,255,255,0.6) !important;
     }
 
-    /* Título com quebra e fundo */
-    .modal-header h4 {
-        font-size: 0.95rem !important;
-        line-height: 1.3 !important;
-        white-space: normal !important;
-        max-width: 100% !important;
-        background: rgba(184, 115, 51, 0.1);
-        padding: 8px;
-        border-radius: 4px;
-        margin: 0;
+    /* Cart badge in header - LEFT side of close button */
+    .photo-modal .modal-header .modal-cart-badge {
+        position: absolute !important;
+        top: calc(env(safe-area-inset-top, 8px) + 12px) !important;
+        right: 60px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        background: rgba(255,255,255,0.15) !important;
+        border: 1px solid rgba(255,255,255,0.25) !important;
+        padding: 8px 12px !important;
+        border-radius: 8px !important;
+        color: white !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        z-index: 10 !important;
     }
 
-    /* Barra de rate rules compacta acima do footer */
+    .photo-modal .modal-header .modal-cart-badge i {
+        font-size: 0.8rem !important;
+        color: rgba(255,255,255,0.8) !important;
+    }
+
+    /* Rate rules bar - dark theme */
     .modal-rate-rules-bar {
         position: fixed !important;
-        bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; /* Alinhado com footer incluindo safe-area */
+        bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
         left: 0 !important;
         right: 0 !important;
-        background: #fff !important;
-        border-top: 1px solid #ddd;
-        border-bottom: 1px solid #fff; /* Overlap branco para evitar gaps */
-        padding: 11px 11px 13px 11px !important; /* Padding extra embaixo */
-        font-size: 1.0rem !important;
+        background: rgba(0,0,0,0.85) !important;
+        border-top: none !important;
+        border-bottom: none !important;
+        padding: 10px 15px !important;
+        font-size: 0.85rem !important;
         text-align: center;
         z-index: 10000;
-        color: #000000;
+        color: rgba(255,255,255,0.7) !important;
         display: none;
-        margin: 0 !important; /* Remover margem para evitar gaps */
+        margin: 0 !important;
     }
 
     .modal-rate-rules-bar.active {
         display: block !important;
-        z-index: 10000 !important;
-        /* Força ficar na frente */
     }
 
     .modal-rate-rules-bar .tier-item {
-        color: #999;
+        color: rgba(255,255,255,0.5) !important;
     }
 
     .modal-rate-rules-bar .tier-item.active {
-        color: #B87333;
-        font-weight: bold;
+        color: #10b981 !important;
+        font-weight: 600;
     }
 
     .modal-rate-rules-bar .separator {
-        margin: 0 8px;
-        color: #ddd;
+        margin: 0 6px;
+        color: rgba(255,255,255,0.2) !important;
     }
 
-    /* Footer fixo embaixo - minimalista */
-    .modal-footer {
+    /* ============================================
+       MODAL FOOTER - Mobile Redesign
+       Cart badge + Add/Remove on right side
+       ============================================ */
+    .photo-modal .modal-footer {
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        background: #ffffff !important;
-        padding: 10px 15px !important;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0) 100%) !important;
+        padding: 25px 15px 15px 15px !important;
+        padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px)) !important;
         z-index: 10001 !important;
-        border-top: 1px solid #e0e0e0;
+        border-top: none !important;
         display: flex !important;
-        justify-content: center !important;
+        justify-content: flex-end !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 15px;
-        min-height: 60px;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        gap: 12px !important;
+        min-height: auto !important;
+        box-shadow: none !important;
     }
 
-    /* Ordem dos elementos - zoom esquerda, add direita */
-    .modal-footer .zoom-controls-simple {
-        order: 1 !important;
-        margin: 0 5px !important;
-        /* Margem menor dos dois lados */
+    /* Hide photo-info on mobile (shown via rate rules bar) */
+    .photo-modal .modal-footer .photo-info {
+        display: none !important;
     }
 
-    .modal-footer .btn-cart-toggle {
-        order: 2 !important;
-        margin: 0 5px !important;
-        /* Margem menor dos dois lados */
+    /* Modal actions container - flex row with cart badge */
+    .photo-modal .modal-footer .modal-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        margin-left: auto !important;
     }
 
-    /* Zoom controls dentro do footer */
-    .modal-footer .zoom-controls-simple {
-        position: relative !important;
-        display: inline-flex !important;
-        top: auto !important;
-        right: auto !important;
-        bottom: auto !important;
-        background: transparent !important;
-        padding: 0 !important;
+    /* Footer cart badge - HIDDEN (cart badge is in header now) */
+    .photo-modal .modal-footer .footer-cart-badge {
+        display: none !important;
+    }
+
+    /* Cart button - RIGHT side, clean */
+    .photo-modal .modal-footer .btn-cart-toggle {
         margin: 0 !important;
+        padding: 12px 24px !important;
+        font-size: 0.95rem !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
     }
 
-    /* Botão Add simplificado - SÓ "Add" */
-    .btn-cart-toggle {
-        padding: 10px 18px;
-        font-size: 0.85rem;
+    /* ============================================
+       ZOOM CONTROLS - Positioned ABOVE price tiers
+       ============================================ */
+    .photo-modal .zoom-controls-simple {
+        position: fixed !important;
+        bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        top: auto !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        background: rgba(0,0,0,0.7) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        padding: 6px 10px !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+        gap: 6px !important;
+        z-index: 10002 !important;
     }
 
-    .btn-cart-toggle span {
-        display: none;
+    .photo-modal .zoom-btn-simple {
+        width: 34px !important;
+        height: 34px !important;
+        color: rgba(255,255,255,0.85) !important;
+        font-size: 14px !important;
+        background: transparent !important;
+        border: none !important;
     }
 
-    /* Texto dinâmico baseado na classe in-cart */
-    .btn-cart-toggle:not(.in-cart)::after {
+    .photo-modal .zoom-btn-simple:hover:not(:disabled) {
+        background: rgba(255,255,255,0.15) !important;
+        color: white !important;
+    }
+
+    .photo-modal .btn-cart-toggle span {
+        display: none !important;
+    }
+
+    .photo-modal .btn-cart-toggle:not(.in-cart)::after {
         content: "Add" !important;
     }
 
-    .btn-cart-toggle.in-cart::after {
+    .photo-modal .btn-cart-toggle.in-cart::after {
         content: "Remove" !important;
     }
 
-    /* Botões de navegação */
-    .nav-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 1.1rem;
+    /* Navigation buttons - MORE VISIBLE */
+    .photo-modal .nav-btn {
+        width: 48px !important;
+        height: 48px !important;
+        border-radius: 12px !important;
+        background: rgba(0,0,0,0.6) !important;
+        border: 1px solid rgba(255,255,255,0.3) !important;
+        color: white !important;
+        font-size: 1.2rem !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+        opacity: 0.85 !important;
     }
 
-    .nav-prev {
-        left: 10px;
+    .photo-modal .nav-btn:hover:not(:disabled),
+    .photo-modal .nav-btn:active:not(:disabled) {
+        background: rgba(0,0,0,0.8) !important;
+        border-color: rgba(255,255,255,0.5) !important;
+        opacity: 1 !important;
     }
 
-    .nav-next {
-        right: 10px;
+    .photo-modal .nav-prev {
+        left: 8px !important;
     }
 
-    /* Controles de zoom - posição padrão antes do JS mover */
-    .zoom-controls-simple {
-        position: fixed !important;
-        bottom: 80px !important;
-        right: 10px !important;
-        padding: 6px 10px;
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 8px;
-        z-index: 1050;
+    .photo-modal .nav-next {
+        right: 8px !important;
     }
 
-    .zoom-btn-simple {
-        width: 35px;
-        height: 35px;
-        font-size: 0.8rem;
-    }
-
+    /* photo-info styling for mobile */
     .photo-info {
         flex-direction: column;
         gap: 0.5rem;
@@ -1369,17 +1542,26 @@
 
     /* Breadcrumb Container - Dark Mode */
     body.dark-mode .breadcrumb-container {
-        background: #252525 !important;
+        background: #1a1a1a !important;
         border-bottom-color: #3d3d3d !important;
     }
 
     body.dark-mode .breadcrumb {
         background: #2a2a2a !important;
         box-shadow: none !important;
+        border: 1px solid #3d3d3d !important;
     }
 
     body.dark-mode .breadcrumb-item:last-child {
         color: #e0e0e0 !important;
+        background: #333 !important;
+        border-radius: 20px !important;
+        padding: 6px 14px !important;
+    }
+
+    body.dark-mode .breadcrumb-back-btn,
+    body.dark-mode .breadcrumb-item.back-btn {
+        background: #B87333 !important;
     }
 
     /* Rate Rules / Price Progress Container - Dark Mode */
@@ -1484,45 +1666,50 @@
         color: white !important;
     }
 
-    /* Navigation Loading - Dark Mode */
+    /* Navigation Loading - Dark Mode (clean transparent) */
     body.dark-mode .navigation-loading {
-        background: #2d2d2d !important;
-        color: #e0e0e0 !important;
+        background: transparent !important;
+        color: #666 !important;
+    }
+
+    body.dark-mode .navigation-loading::before {
+        border-color: rgba(184, 115, 51, 0.15) !important;
+        border-top-color: #B87333 !important;
     }
 
     /* Modal Header/Footer Mobile - Dark Mode */
+    /* Modal is already dark by design, keep transparent gradients */
     body.dark-mode .modal-header {
-        background: #252525 !important;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%) !important;
     }
 
     body.dark-mode .modal-header h4 {
-        background: rgba(184, 115, 51, 0.15) !important;
-        color: #e0e0e0 !important;
+        background: transparent !important;
+        color: rgba(255,255,255,0.9) !important;
     }
 
     body.dark-mode .modal-footer {
-        background: #252525 !important;
-        border-top-color: #3d3d3d !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%) !important;
+        border-top: none !important;
     }
 
     /* Modal Rate Rules Bar - Dark Mode */
     body.dark-mode .modal-rate-rules-bar {
-        background: #252525 !important;
-        border-top-color: #3d3d3d !important;
-        border-bottom-color: #252525 !important;
-        color: #c0c0c0 !important;
+        background: rgba(0,0,0,0.85) !important;
+        border: none !important;
+        color: rgba(255,255,255,0.7) !important;
     }
 
     body.dark-mode .modal-rate-rules-bar .tier-item {
-        color: #888 !important;
+        color: rgba(255,255,255,0.5) !important;
     }
 
     body.dark-mode .modal-rate-rules-bar .tier-item.active {
-        color: #d4a574 !important;
+        color: #10b981 !important;
     }
 
     body.dark-mode .modal-rate-rules-bar .separator {
-        color: #444 !important;
+        color: rgba(255,255,255,0.2) !important;
     }
 
     /* Currency Button - Dark Mode */
@@ -1561,6 +1748,30 @@
         background: #B87333 !important;
         color: white !important;
     }
+
+    /* Mobile Chat Button - Dark Mode */
+    body.dark-mode .mobile-chat-btn {
+        background: #333 !important;
+        border-color: #B87333 !important;
+        color: #B87333 !important;
+    }
+
+    body.dark-mode .mobile-chat-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    /* Mobile Profile Button - Dark Mode */
+    body.dark-mode .mobile-profile-btn {
+        background: #333 !important;
+        border-color: #B87333 !important;
+        color: #B87333 !important;
+    }
+
+    body.dark-mode .mobile-profile-btn:hover {
+        background: #B87333 !important;
+        color: white !important;
+    }
 }
 
 /* ============================================
@@ -1568,15 +1779,16 @@
    ============================================ */
 
 @media (max-width: 480px) {
+    /* Dark mode small mobile - keep transparent gradients */
     body.dark-mode .modal-header {
-        background: #252525 !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%) !important;
+        box-shadow: none !important;
     }
 
     body.dark-mode .modal-footer {
-        background: #252525 !important;
-        border-top-color: #3d3d3d !important;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%) !important;
+        border-top: none !important;
+        box-shadow: none !important;
     }
 }
 

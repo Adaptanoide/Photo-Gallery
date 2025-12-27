@@ -1133,14 +1133,7 @@ class AdminClients {
     }
 
     renderAccessType(client) {
-        // Detectar tipo de acesso
-        const accessType = client.accessType || 'normal'; // fallback para clients antigos
-
-        if (accessType === 'special') {
-            return '<span class="access-type-badge access-special">Special</span>';
-        } else {
-            return '<span class="access-type-badge access-normal">Regular</span>';
-        }
+        return '<span class="access-type-badge access-normal">Regular</span>';
     }
 
     renderStatusBadge(client) {
@@ -1891,7 +1884,7 @@ class AdminClients {
         // Security Info
         document.getElementById('viewLastIP').textContent = client.lastIP || 'Not tracked';
         document.getElementById('viewLastDevice').textContent = client.lastDevice || 'Not tracked';
-        document.getElementById('viewAccountType').textContent = client.accessType === 'special' ? 'Special Access' : 'Standard';
+        document.getElementById('viewAccountType').textContent = 'Standard';
         document.getElementById('viewRiskLevel').textContent = isExpired ? 'Medium' : 'Low';
 
         // 🛒 NOVA PARTE: Carregar carrinho

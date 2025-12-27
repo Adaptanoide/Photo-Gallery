@@ -142,6 +142,7 @@ class CartService {
                 thumbnailUrl: itemData.thumbnailUrl || product.thumbnailUrl || `https://images.sunshinecowhides-gallery.com/_thumbnails/${product.driveFileId}`,
                 pathLevels: itemData.pathLevels || [],
                 fullPath: itemData.fullPath || '',
+                folderId: itemData.folderId || '',  // ✅ NOVO: ID da pasta para rate rules
                 price: itemData.price || 0,
                 basePrice: itemData.basePrice || 0,
                 expiresAt,
@@ -283,10 +284,29 @@ class CartService {
                 console.log(`[CART] Item é um ghost - removendo sem alterar CDE`);
             }
 
-            // 2. Remover do carrinho
-            cart.items = cart.items.filter(item => item.driveFileId !== driveFileId);
-            await cart.save();
-            console.log(`[CART] Carrinho atualizado - ${cart.items.length} items`);
+            // 2. Remover do carrinho usando operação atômica (evita conflito de versão)
+            const updateResult = await Cart.findOneAndUpdate(
+                { _id: cart._id },
+                {
+                    $pull: { items: { driveFileId: driveFileId } },
+                    $set: { lastActivity: new Date() }
+                },
+                { new: true }
+            );
+
+            if (!updateResult) {
+                throw new Error('Falha ao atualizar carrinho');
+            }
+
+            // Atualizar totalItems manualmente (findOneAndUpdate não dispara pre-save)
+            const validItems = updateResult.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+            await Cart.updateOne(
+                { _id: cart._id },
+                { $set: { totalItems: validItems.length } }
+            );
+
+            cart = updateResult;
+            console.log(`[CART] Carrinho atualizado (atômico) - ${cart.items.length} items`);
 
             // 3. APENAS SE NÃO FOR GHOST: Liberar produto e atualizar CDE
             if (!isGhostItem) {
@@ -567,8 +587,18 @@ class CartService {
 
             if (cleanResult.cleaned) {
                 console.log(`[CART-CLEAN] 🧹 ${cleanResult.removedCount} duplicatas removidas do carrinho`);
+                // Usar operação atômica para evitar conflito de versão
+                await Cart.findOneAndUpdate(
+                    { _id: cart._id },
+                    {
+                        $set: {
+                            items: cleanResult.uniqueItems,
+                            totalItems: cleanResult.uniqueItems.length,
+                            lastActivity: new Date()
+                        }
+                    }
+                );
                 cart.items = cleanResult.uniqueItems;
-                await cart.save();
                 console.log(`[CART-CLEAN] ✅ Carrinho limpo e salvo - ${cart.items.length} items únicos`);
             }
 
@@ -586,6 +616,7 @@ class CartService {
                     thumbnailUrl: item.thumbnailUrl,
                     pathLevels: item.pathLevels || [],
                     fullPath: item.fullPath || '',
+                    folderId: item.folderId || '',  // ✅ NOVO: ID da pasta para rate rules
                     price: item.price,
                     basePrice: item.basePrice,
                     expiresAt: item.expiresAt,
@@ -645,57 +676,48 @@ class CartService {
         try {
             console.log(`[GHOST] Marcando ${fileName} como ghost para cliente ${clientCode}`);
 
-            // Buscar carrinho ativo do cliente
-            const cart = await Cart.findOne({
-                clientCode,
-                isActive: true,
-                'items.fileName': fileName
-            });
+            // Usar operação atômica para evitar conflito de versão
+            const updateResult = await Cart.findOneAndUpdate(
+                {
+                    clientCode,
+                    isActive: true,
+                    'items.fileName': fileName
+                },
+                {
+                    $set: {
+                        'items.$.ghostStatus': 'ghost',
+                        'items.$.ghostReason': reason,
+                        'items.$.ghostedAt': new Date(),
+                        'items.$.price': 0,
+                        'items.$.hasPrice': false,
+                        lastActivity: new Date()
+                    }
+                },
+                { new: true }
+            );
 
-            if (!cart) {
-                console.log(`[GHOST] Carrinho não encontrado para ${clientCode}`);
+            if (!updateResult) {
+                console.log(`[GHOST] Carrinho ou item não encontrado para ${clientCode}`);
                 return false;
             }
 
-            // Encontrar e marcar o item específico
-            let itemMarked = false;
-            cart.items = cart.items.map(item => {
-                if (item.fileName === fileName) {
-                    item.ghostStatus = 'ghost';
-                    item.ghostReason = reason;
-                    item.ghostedAt = new Date();
-                    item.originalPrice = item.price || item.basePrice;
-                    // Zerar preço para não contar no total
-                    item.price = 0;
-                    item.hasPrice = false;
-                    itemMarked = true;
-                    console.log(`[GHOST] ✔ Item ${fileName} marcado como ghost`);
-                }
-                return item;
-            });
+            console.log(`[GHOST] ✔ Item ${fileName} marcado como ghost`);
 
-            if (itemMarked) {
-                await cart.save();
-
-                // Notificar o frontend através de uma flag especial
-                // que será detectada no próximo polling
-                await UnifiedProductComplete.updateOne(
-                    { fileName },
-                    {
-                        $set: {
-                            ghostNotification: {
-                                clientCode,
-                                timestamp: new Date(),
-                                reason
-                            }
+            // Notificar o frontend através de uma flag especial
+            await UnifiedProductComplete.updateOne(
+                { fileName },
+                {
+                    $set: {
+                        ghostNotification: {
+                            clientCode,
+                            timestamp: new Date(),
+                            reason
                         }
                     }
-                );
+                }
+            );
 
-                return true;
-            }
-
-            return false;
+            return true;
 
         } catch (error) {
             console.error(`[GHOST] Erro ao marcar item como ghost:`, error);
