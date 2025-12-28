@@ -2184,11 +2184,11 @@ window.updateBreadcrumbPriceBadge = function() {
     }
 
     // ✅ Mostrar badge APENAS para categorias que NÃO são Mix & Match
+    // Clear content to hide badge with smooth transition (using CSS :not(:empty))
     if (window.isCurrentCategoryMixMatch && window.isCurrentCategoryMixMatch()) {
-        breadcrumbPriceBadge.style.display = 'none';
-    } else {
-        breadcrumbPriceBadge.style.display = '';
+        breadcrumbPriceBadge.innerHTML = ''; // Empty = hidden with CSS transition
     }
+    // Note: No need for else - content is already set above
 };
 
 // ===== REAGIR A MUDANÇAS DE MOEDA =====

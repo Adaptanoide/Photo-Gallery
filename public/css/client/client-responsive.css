@@ -942,24 +942,15 @@
         display: none !important;
     }
 
-    /* Hide dots, use ::before spinner from desktop */
+    /* Keep the beautiful loading dots on mobile */
     .navigation-loading .loading-dots {
-        display: none !important;
+        display: flex !important; /* Show dots instead of spinner */
     }
 
-    /* Override ::after - use ::before instead */
-    .navigation-loading::after {
-        display: none !important;
-    }
-
-    .navigation-loading::before {
-        content: '' !important;
-        width: 44px !important;
-        height: 44px !important;
-        border: 3px solid rgba(184, 115, 51, 0.2) !important;
-        border-top-color: #B87333 !important;
-        border-radius: 50% !important;
-        animation: cleanSpinner 0.8s linear infinite !important;
+    /* Make dots slightly smaller on mobile */
+    .navigation-loading .loading-dots .dot {
+        width: 10px !important;
+        height: 10px !important;
     }
 
     /* === ORDER SUMMARY === */

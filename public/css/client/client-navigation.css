@@ -740,7 +740,9 @@
 
     /* Badge de preço - estilo clean (apenas texto verde) */
     .breadcrumb-price-badge {
-        display: none; /* Escondido até ter conteúdo */
+        display: inline-flex; /* Always in layout */
+        align-items: center;
+        gap: 6px;
         background: none;
         color: #10b981;
         padding: 0;
@@ -748,14 +750,15 @@
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: color 0.2s ease;
+        opacity: 0; /* Start hidden */
+        visibility: hidden; /* Start hidden */
+        transition: color 0.2s ease, opacity 0.3s ease, visibility 0.3s ease; /* Smooth transitions */
     }
 
     /* Mostrar quando tiver conteúdo */
     .breadcrumb-price-badge:not(:empty) {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        opacity: 1;
+        visibility: visible;
     }
 
     .breadcrumb-price-badge:hover {
