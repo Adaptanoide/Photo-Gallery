@@ -923,56 +923,193 @@ body.home-page.dark-mode .holiday-notice-content {
     box-shadow: 0 4px 20px rgba(30, 61, 42, 0.4);
 }
 
+/* ============================================
+   HOLIDAY NOTICE MOBILE BUTTON
+   Small clickable reminder in top-left corner
+   ============================================ */
+.holiday-notice-mobile-btn {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #2d5a3d 0%, #1a3d29 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(45, 90, 61, 0.3);
+    transition: all 0.3s ease;
+    animation: gentlePulse 2s ease-in-out infinite;
+}
+
+.holiday-notice-mobile-btn i {
+    color: #e8c547;
+    font-size: 18px;
+}
+
+.holiday-notice-mobile-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(45, 90, 61, 0.5);
+}
+
+.holiday-notice-mobile-btn:active {
+    transform: scale(0.95);
+}
+
+@keyframes gentlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* ============================================
+   HOLIDAY MODAL (Mobile Only)
+   ============================================ */
+.holiday-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.holiday-modal.active {
+    display: flex;
+}
+
+.holiday-modal-content {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.holiday-modal-header {
+    background: linear-gradient(135deg, #2d5a3d 0%, #1a3d29 100%);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.holiday-modal-header i {
+    color: #e8c547;
+    font-size: 24px;
+}
+
+.holiday-modal-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.holiday-modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.holiday-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.holiday-modal-body {
+    padding: 24px;
+    color: #2c2c2c;
+}
+
+.holiday-modal-body p {
+    margin: 0 0 16px 0;
+    line-height: 1.6;
+}
+
+.holiday-modal-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+
+.holiday-modal-body li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+}
+
+.holiday-modal-body li:last-child {
+    border-bottom: none;
+}
+
+.holiday-modal-body .holiday-wish {
+    text-align: center;
+    color: #2d5a3d;
+    font-weight: 600;
+    font-size: 16px;
+    margin: 20px 0 0 0;
+}
+
+/* Dark Mode for Modal */
+body.home-page.dark-mode .holiday-modal-content {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+}
+
+body.home-page.dark-mode .holiday-modal-body {
+    color: #e0e0e0;
+}
+
+body.home-page.dark-mode .holiday-modal-body li {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.home-page.dark-mode .holiday-modal-body .holiday-wish {
+    color: #34d399;
+}
+
+body.home-page.dark-mode .holiday-notice-mobile-btn {
+    background: linear-gradient(135deg, #1e3d2a 0%, #0f2418 100%);
+}
+
 /* Holiday Notice - Responsive */
 @media (max-width: 768px) {
+    /* Hide desktop banner on mobile */
     .holiday-notice {
-        top: 15px;
-        left: 15px;
-        right: 70px; /* Leave space for dark mode button */
-        bottom: auto;
-        width: auto;
-        max-width: none;
-        transform: none;
+        display: none !important;
     }
 
-    .holiday-notice-content {
-        padding: 10px 12px;
-        gap: 8px;
-        justify-content: flex-start;
-        flex-direction: row;
-    }
-
-    .holiday-notice-content > i {
-        font-size: 16px;
-        flex-shrink: 0;
-    }
-
-    .holiday-notice-text {
-        gap: 2px;
-    }
-
-    .holiday-notice-text strong {
-        font-size: 11px;
-    }
-
-    .holiday-notice-text span {
-        font-size: 10px;
-        line-height: 1.3;
-    }
-
-    .holiday-notice-text .holiday-wish {
-        margin-top: 1px;
-    }
-
-    @keyframes slideInLeft {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
+    /* Show mobile button */
+    .holiday-notice-mobile-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 }
 

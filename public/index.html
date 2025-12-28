@@ -54,15 +54,44 @@
         <div class="snowflake">&#10052;</div>
     </div>
 
-    <!-- Holiday Notice Banner -->
+    <!-- Holiday Notice Banner (Desktop) -->
     <div class="holiday-notice">
         <div class="holiday-notice-content">
             <i class="fas fa-gift"></i>
             <div class="holiday-notice-text">
                 <strong>Holiday Break</strong>
-                <span>Shipments and inquiries will be answered after January 3rd.</span>
+                <span>Shipments and inquiries will be answered after January 5th.</span>
                 <span>Your reservation can be made now.</span>
                 <span class="holiday-wish">We'll contact you as soon as we return!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holiday Notice Button (Mobile Only) -->
+    <button class="holiday-notice-mobile-btn" onclick="openHolidayModal()" title="Holiday Notice">
+        <i class="fas fa-gift"></i>
+    </button>
+
+    <!-- Holiday Modal (Mobile Only) -->
+    <div id="holidayModal" class="holiday-modal">
+        <div class="holiday-modal-content">
+            <div class="holiday-modal-header">
+                <i class="fas fa-gift"></i>
+                <h3>Holiday Break Notice</h3>
+                <button class="holiday-modal-close" onclick="closeHolidayModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="holiday-modal-body">
+                <p><strong>We will be closed from December 24th to January 5th.</strong></p>
+                <p>During this period:</p>
+                <ul>
+                    <li>📦 Shipments will be processed after January 5th</li>
+                    <li>✉️ Inquiries will be answered after January 5th</li>
+                    <li>✅ Your reservation can be made now</li>
+                    <li>📞 We'll contact you as soon as we return</li>
+                </ul>
+                <p class="holiday-wish">Happy Holidays! 🎄</p>
             </div>
         </div>
     </div>
@@ -428,6 +457,31 @@
             }
             updateDarkModeUILogin(isDark);
         })();
+
+        // Holiday Modal Functions
+        function openHolidayModal() {
+            const modal = document.getElementById('holidayModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+            }
+        }
+
+        function closeHolidayModal() {
+            const modal = document.getElementById('holidayModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = ''; // Restore scroll
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('holidayModal');
+            if (e.target === modal) {
+                closeHolidayModal();
+            }
+        });
     </script>
 
     <!-- Login transition removed - using standard spinner loading -->
