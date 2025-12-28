@@ -3932,9 +3932,26 @@ body.dark-mode .category-sidebar .sidebar-card.active .sidebar-card-name {
         max-height: 150px;
         border-right: none;
         border-top: 1px solid rgba(0,0,0,0.08);
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-        background: #fafafa;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        background: rgba(250, 250, 250, 0.98); /* More opaque background */
+        backdrop-filter: blur(10px) saturate(180%); /* Blur background content */
+        -webkit-backdrop-filter: blur(10px) saturate(180%); /* Safari support */
         transition: max-height 0.3s ease;
+        z-index: 9995; /* Ensure it stays on top */
+    }
+
+    /* Solid background layer for browsers without backdrop-filter support */
+    .category-sidebar::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #fafafa;
+        opacity: 0.95;
+        z-index: -1;
+        pointer-events: none;
     }
 
     .category-sidebar .sidebar-header {
@@ -4032,8 +4049,17 @@ body.dark-mode .category-sidebar .sidebar-card.active .sidebar-card-name {
 
     /* Dark mode mobile */
     body.dark-mode .category-sidebar {
-        background: #1a1a1a;
+        background: rgba(26, 26, 26, 0.98); /* More opaque background */
+        backdrop-filter: blur(10px) saturate(180%); /* Blur background content */
+        -webkit-backdrop-filter: blur(10px) saturate(180%); /* Safari support */
         border-top-color: #3d3d3d;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.3); /* Stronger shadow in dark mode */
+    }
+
+    /* Solid background layer for dark mode */
+    body.dark-mode .category-sidebar::before {
+        background: #1a1a1a;
+        opacity: 0.95;
     }
 
     body.dark-mode .category-sidebar .sidebar-header {
