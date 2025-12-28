@@ -382,6 +382,50 @@ router.get('/client/data', async (req, res) => {
             console.log(`📦 Sem restrições - todas ${allowedCatalogCategories.length} categorias de catálogo permitidas`);
         }
 
+        // ============================================
+        // EXTRAIR QB ITEMS E PATHS PARA VERIFICAÇÃO DE FOTOS
+        // ============================================
+        let allowedQBItems = [];
+        let allowedPhotoPaths = new Set();  // Paths das fotos (para subcategorias)
+
+        if (hasFullAccess) {
+            // Full access: buscar TODOS os QB Items e paths
+            const PhotoCategory = require('../models/PhotoCategory');
+            const allPhotos = await PhotoCategory.find({}, 'qbItem folderName googleDrivePath');
+            allowedQBItems = allPhotos.map(p => p.qbItem).filter(qb => qb);
+            // Adicionar todos os paths
+            allPhotos.forEach(p => {
+                if (p.folderName) allowedPhotoPaths.add(p.folderName);
+                if (p.googleDrivePath) {
+                    const parts = p.googleDrivePath.split('/').filter(x => x);
+                    parts.forEach(part => allowedPhotoPaths.add(part));
+                }
+            });
+        } else if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+            // Filtrar apenas QB Items (começam com dígito)
+            const qbItems = accessCode.allowedCategories.filter(item => /^\d/.test(item));
+            allowedQBItems = qbItems;
+
+            // Buscar os paths correspondentes aos QB Items
+            if (qbItems.length > 0) {
+                const PhotoCategory = require('../models/PhotoCategory');
+                const photos = await PhotoCategory.find(
+                    { qbItem: { $in: qbItems } },
+                    'qbItem folderName googleDrivePath'
+                );
+                photos.forEach(p => {
+                    if (p.folderName) allowedPhotoPaths.add(p.folderName);
+                    if (p.googleDrivePath) {
+                        const parts = p.googleDrivePath.split('/').filter(x => x);
+                        parts.forEach(part => allowedPhotoPaths.add(part));
+                    }
+                });
+            }
+        }
+
+        console.log(`📸 ${allowedQBItems.length} QB Items permitidos`);
+        console.log(`📁 ${allowedPhotoPaths.size} photo paths permitidos`);
+
         res.json({
             success: true,
             client: {
@@ -389,10 +433,12 @@ router.get('/client/data', async (req, res) => {
                 email: accessCode.clientEmail,
                 code: accessCode.code,
                 showPrices: accessCode.showPrices,
-                fullAccess: accessCode.fullAccess || false  // NOVO
+                fullAccess: accessCode.fullAccess || false
             },
             allowedCategories: allowedCategories,
-            allowedCatalogCategories: allowedCatalogCategories, // NOVO
+            allowedCatalogCategories: allowedCatalogCategories,
+            allowedQBItems: allowedQBItems,  // QB Items para verificação
+            allowedPhotoPaths: Array.from(allowedPhotoPaths),  // NOVO: Paths de fotos permitidos
             totalCategories: r2Categories.length,
             allowedCount: allowedCategories.length
         });

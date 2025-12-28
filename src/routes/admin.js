@@ -403,6 +403,35 @@ router.post('/access-codes', async (req, res) => {
             });
         }
 
+        // ===== POPULAR TODAS AS CATEGORIAS POR PADRÃO =====
+        // Se allowedCategories não foi enviado ou está vazio, dar acesso total
+        let finalAllowedCategories = allowedCategories;
+
+        if (!finalAllowedCategories || finalAllowedCategories.length === 0) {
+            console.log('🆕 Novo cliente sem categorias - habilitando TODAS por padrão...');
+
+            try {
+                // Coletar QB Items de fotos
+                const PhotoCategory = require('../models/PhotoCategory');
+                const photoCategories = await PhotoCategory.find({}, 'qbItem');
+                const qbItems = photoCategories
+                    .map(pc => pc.qbItem)
+                    .filter(qb => qb && qb.trim() !== '');
+
+                // Coletar categorias de catálogo
+                const { VALID_CATALOG_CATEGORIES } = require('../config/categoryMapping');
+                const catalogCategories = [...VALID_CATALOG_CATEGORIES];
+
+                // Combinar tudo
+                finalAllowedCategories = [...qbItems, ...catalogCategories];
+
+                console.log(`✅ ${finalAllowedCategories.length} categorias habilitadas (${qbItems.length} fotos + ${catalogCategories.length} stock)`);
+            } catch (error) {
+                console.error('⚠️ Erro ao coletar categorias padrão:', error);
+                finalAllowedCategories = []; // Fallback para vazio
+            }
+        }
+
         const accessCode = new AccessCode({
             code,
             clientName,
@@ -415,7 +444,7 @@ router.post('/access-codes', async (req, res) => {
             state,
             zipCode,
             salesRep,
-            allowedCategories,
+            allowedCategories: finalAllowedCategories,
             showPrices: req.body.showPrices !== false,
             createdBy: req.user.username
         });
@@ -836,30 +865,105 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
         );
 
         // ========================================
-        // 2. BUSCAR DADOS DE CATÁLOGO (CatalogProduct)
+        // 2. BUSCAR DADOS DE CATÁLOGO (CDE CACHE)
         // ========================================
-        const catalogCounts = await CatalogProduct.aggregate([
-            { $match: { isActive: true, availableStock: { $gt: 0 } } },
-            {
-                $group: {
-                    _id: '$displayCategory',
-                    stockCount: { $sum: 1 },
-                    totalStock: { $sum: '$availableStock' }
-                }
-            }
-        ]);
-
+        // Use CDE cache for real-time product counts
+        // This includes products like printed, metallic, dyed that don't exist in MongoDB
         const catalogCountMap = {};
-        catalogCounts.forEach(item => {
-            if (item._id) {
-                catalogCountMap[item._id] = {
-                    count: item.stockCount,
-                    totalStock: item.totalStock
-                };
-            }
-        });
 
-        console.log(`Found catalog counts for ${Object.keys(catalogCountMap).length} categories`);
+        try {
+            // Import catalog cache
+            const catalogRouter = require('./catalog');
+            const catalogCache = catalogRouter.catalogCache;
+
+            // Get products from cache (non-blocking)
+            let cacheProducts = [];
+            if (catalogCache && catalogCache.products) {
+                cacheProducts = catalogCache.products;
+                console.log(`[TREE] Using CDE cache with ${cacheProducts.length} products`);
+            } else {
+                console.warn('[TREE] ⚠️ CDE cache not available, attempting to fetch...');
+                // Try to get products (will use stale data or fetch new)
+                cacheProducts = await catalogCache.get(false);
+                console.log(`[TREE] Fetched ${cacheProducts.length} products from CDE`);
+            }
+
+            // Map CDE products to displayCategory using categoryMapping
+            const { mapProductToDisplayCategory } = require('../config/categoryMapping');
+
+            // Count products by displayCategory
+            const categoryCounts = {};
+            const bedsideProducts = []; // Debug: track bedside products
+
+            cacheProducts.forEach(product => {
+                // Map CDE product to displayCategory
+                const displayCategory = mapProductToDisplayCategory(product);
+
+                // Debug: log bedside products
+                if (product.name && product.name.toLowerCase().includes('bedside')) {
+                    bedsideProducts.push({
+                        name: product.name,
+                        mappedTo: displayCategory,
+                        stock: product.stock || 0
+                    });
+                }
+
+                if (displayCategory && displayCategory !== 'other') {
+                    if (!categoryCounts[displayCategory]) {
+                        categoryCounts[displayCategory] = {
+                            count: 0,
+                            totalStock: 0
+                        };
+                    }
+                    categoryCounts[displayCategory].count += 1;
+                    categoryCounts[displayCategory].totalStock += (product.stock || 0);
+                }
+            });
+
+            // Debug: show bedside mapping results
+            if (bedsideProducts.length > 0) {
+                console.log(`\n[TREE] 🔍 Found ${bedsideProducts.length} products with "bedside" in name:`);
+                bedsideProducts.forEach(p => {
+                    console.log(`  - "${p.name}" → ${p.mappedTo} (stock: ${p.stock})`);
+                });
+                console.log('');
+            }
+
+            // Merge with catalogCountMap
+            Object.assign(catalogCountMap, categoryCounts);
+
+            console.log(`[TREE] Found catalog counts for ${Object.keys(catalogCountMap).length} categories`);
+            Object.entries(catalogCountMap).forEach(([cat, data]) => {
+                console.log(`  - ${cat}: ${data.count} products, ${data.totalStock} stock`);
+            });
+
+        } catch (error) {
+            console.error('[TREE] ❌ Error fetching CDE cache:', error.message);
+            console.log('[TREE] Falling back to MongoDB counts...');
+
+            // Fallback to MongoDB if cache fails
+            const catalogCounts = await CatalogProduct.aggregate([
+                { $match: { isActive: true } },
+                {
+                    $group: {
+                        _id: '$displayCategory',
+                        stockCount: { $sum: 1 },
+                        totalStock: { $sum: '$availableStock' }
+                    }
+                }
+            ]);
+
+            catalogCounts.forEach(item => {
+                if (item._id) {
+                    catalogCountMap[item._id] = {
+                        count: item.stockCount,
+                        totalStock: item.totalStock
+                    };
+                }
+            });
+
+            console.log(`[TREE] MongoDB fallback: ${Object.keys(catalogCountMap).length} categories`);
+        }
 
         // ========================================
         // 3. CONSTRUIR ÁRVORE
@@ -986,7 +1090,7 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
         // ========================================
         // Cowhide with Binding
         const cowhideBindingPhotos = photoCategoriesWithCounts.filter(pc =>
-            pc.displayName && pc.displayName.includes('Cowhide with Binding')
+            pc.displayName && /Cowhide.*Binding/i.test(pc.displayName)
         );
 
         // Rodeo Rugs
@@ -1044,7 +1148,7 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
                         fullPath: subFullPath,
                         type: 'photo',
                         children: {},
-                        qbItem: matchingPhotos[0]?.qbItem || null,
+                        qbItem: null,  // No QB Item for parent - children have individual QB Items
                         catalogCategory: null,
                         photoCount: subPhotoCount,
                         stockCount: 0,
@@ -1098,6 +1202,8 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
 
                 } else if (sub.type === 'mixed') {
                     // Subcategoria mista (foto + stock)
+                    // SIMPLIFICADO: Não mostra children individuais
+                    // Quando marca esta categoria, dá acesso a TUDO (stock + todas as fotos)
                     let matchingPhotos = [];
                     if (sub.photoCategoryPath === 'Sheepskin') {
                         matchingPhotos = sheepskinPhotos;
@@ -1113,8 +1219,8 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
                         name: sub.name,
                         fullPath: subFullPath,
                         type: 'mixed',
-                        children: {},
-                        qbItem: matchingPhotos[0]?.qbItem || null,
+                        children: {},  // No children - simplified
+                        qbItem: null,  // No QB Item - will be added automatically when saving
                         catalogCategory: sub.catalogCategory,
                         photoCount: subPhotoCount,
                         stockCount: catalogData.count,
@@ -1123,32 +1229,7 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
                         hasAvailableStock: catalogData.count > 0
                     };
 
-                    // Adicionar hierarquia de fotos para mixed
-                    for (const pc of matchingPhotos) {
-                        const segments = pc.displayName.split(' → ');
-                        if (segments.length > 1) {
-                            let currentLevel = tree[mainName].children[sub.name].children;
-                            for (let i = 1; i < segments.length; i++) {
-                                const segName = segments[i];
-                                const isLast = i === segments.length - 1;
-
-                                if (!currentLevel[segName]) {
-                                    currentLevel[segName] = {
-                                        name: segName,
-                                        fullPath: isLast ? pc.displayName : `${subFullPath} → ${segments.slice(1, i + 1).join(' → ')}`,
-                                        type: 'photo',
-                                        children: {},
-                                        qbItem: isLast ? pc.qbItem : null,
-                                        catalogCategory: null,
-                                        photoCount: isLast ? pc.photoCount : 0,
-                                        stockCount: 0,
-                                        hasAvailablePhotos: isLast ? pc.photoCount > 0 : false
-                                    };
-                                }
-                                currentLevel = currentLevel[segName].children;
-                            }
-                        }
-                    }
+                    // Children removed for simplicity - admin marks one checkbox for full access
                 }
             }
 
@@ -1156,7 +1237,42 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
             tree[mainName].stockCount = mainStockCount;
         }
 
-        console.log(`Tree built with ${Object.keys(tree).length} main categories`);
+        // ========================================
+        // RECURSIVE COUNT CALCULATION
+        // ========================================
+        // Update parent nodes to sum all children counts recursively
+        function calculateRecursiveCounts(node) {
+            if (!node.children || Object.keys(node.children).length === 0) {
+                // Leaf node - return own counts
+                return {
+                    photos: node.photoCount || 0,
+                    stock: node.stockCount || 0
+                };
+            }
+
+            // Has children - sum recursively
+            let totalPhotos = 0;
+            let totalStock = 0;
+
+            Object.values(node.children).forEach(child => {
+                const childCounts = calculateRecursiveCounts(child);
+                totalPhotos += childCounts.photos;
+                totalStock += childCounts.stock;
+            });
+
+            // Update node with recursive totals
+            node.photoCount = totalPhotos;
+            node.stockCount = totalStock;
+
+            return { photos: totalPhotos, stock: totalStock };
+        }
+
+        // Apply recursive calculation to all main categories
+        Object.values(tree).forEach(mainCategory => {
+            calculateRecursiveCounts(mainCategory);
+        });
+
+        console.log(`✅ Tree built with ${Object.keys(tree).length} main categories (recursive counts applied)`);
 
         res.json({
             success: true,
@@ -1164,7 +1280,7 @@ router.get('/categories-tree', authenticateToken, async (req, res) => {
             meta: {
                 totalMainCategories: Object.keys(tree).length,
                 totalPhotoCategories: photoCategories.length,
-                totalCatalogCategories: catalogCounts.length
+                totalCatalogCategories: Object.keys(catalogCountMap).length
             }
         });
 
@@ -1333,16 +1449,55 @@ router.put('/clients/:clientId/categories', authenticateToken, async (req, res) 
         const { allowedCategories, showPrices, fullAccess } = req.body;
 
         console.log(`📁 Updating categories for client ${clientId}:`);
-        console.log(`   - ${allowedCategories.length} categories`);
+        console.log(`   - ${allowedCategories.length} categories (before processing)`);
         console.log(`   - showPrices: ${showPrices}`);
         console.log(`   - fullAccess: ${fullAccess}`);
+
+        // ========================================
+        // AUTO-EXPAND MIXED CATEGORIES
+        // ========================================
+        // For MIXED categories (stock + photos), automatically add all QB Items
+        // Example: 'sheepskin' → adds 8401, 8101, etc.
+
+        const MIXED_CATEGORIES = {
+            'sheepskin': /Sheepskin/i  // Regex to find photos
+        };
+
+        const expandedCategories = [...allowedCategories];
+
+        for (const [catalogCategory, photoRegex] of Object.entries(MIXED_CATEGORIES)) {
+            if (allowedCategories.includes(catalogCategory)) {
+                console.log(`🔄 Expanding MIXED category: ${catalogCategory}`);
+
+                // Find all QB Items for this category
+                const PhotoCategory = require('../models/PhotoCategory');
+                const photos = await PhotoCategory.find({
+                    displayName: photoRegex
+                }, 'qbItem');
+
+                const qbItems = photos
+                    .map(p => p.qbItem)
+                    .filter(qb => qb && qb.trim() !== '');
+
+                console.log(`   ✅ Found ${qbItems.length} QB Items for ${catalogCategory}:`, qbItems);
+
+                // Add QB Items to expanded categories (avoid duplicates)
+                qbItems.forEach(qb => {
+                    if (!expandedCategories.includes(qb)) {
+                        expandedCategories.push(qb);
+                    }
+                });
+            }
+        }
+
+        console.log(`   ✅ ${expandedCategories.length} categories (after expanding MIXED)`);
 
         const client = await AccessCode.findByIdAndUpdate(
             clientId,
             {
-                allowedCategories: allowedCategories,
+                allowedCategories: expandedCategories,
                 showPrices: showPrices,
-                fullAccess: fullAccess !== undefined ? fullAccess : false,  // NOVO
+                fullAccess: fullAccess !== undefined ? fullAccess : false,
                 updatedAt: new Date()
             },
             { new: true }
@@ -1356,7 +1511,6 @@ router.put('/clients/:clientId/categories', authenticateToken, async (req, res) 
         }
 
         // CRITICAL: Invalidate the client's permissions cache
-        // This ensures the client gets the new permissions on next login/refresh
         const ClientPermissionsCache = require('../models/ClientPermissionsCache');
         await ClientPermissionsCache.deleteOne({ clientCode: client.code });
         console.log(`🗑️ Permissions cache invalidated for client ${client.code}`);
@@ -1365,7 +1519,7 @@ router.put('/clients/:clientId/categories', authenticateToken, async (req, res) 
         res.json({
             success: true,
             client,
-            message: `${allowedCategories.length} categories saved`
+            message: `${expandedCategories.length} categories saved`
         });
 
     } catch (error) {

@@ -3014,6 +3014,10 @@ class AdminClients {
 
         this.currentSettingsClient = client;
 
+        // ===== RESETAR TREE PARA FORÇAR TODAS AS CATEGORIAS COLAPSADAS =====
+        // Isso garante que ao trocar de cliente, a tree não mantém o estado expandido anterior
+        this.treeLoaded = false;
+
         // Atualizar título
         document.getElementById('settingsModalTitle').textContent = `Allowed Categories - ${client.clientName}`;
 
@@ -3344,16 +3348,27 @@ class AdminClients {
         const totalItems = photoCount + stockCount;
         const hasItems = totalItems > 0;
 
-        // Contagem para exibir - usar "items" para tudo
+        // Contagem separada com ícones visuais e texto descritivo
         let countDisplay = '';
-        if (totalItems > 0) {
-            countDisplay = `<span class="tree-count">(${totalItems} items)</span>`;
+        const countParts = [];
+
+        if (photoCount > 0) {
+            const photoText = photoCount === 1 ? 'photo' : 'photos';
+            countParts.push(`<span class="tree-count-photos">📷 ${photoCount} ${photoText}</span>`);
+        }
+        if (stockCount > 0) {
+            const itemText = stockCount === 1 ? 'item' : 'items';
+            countParts.push(`<span class="tree-count-stock">📦 ${stockCount} ${itemText}</span>`);
+        }
+
+        if (countParts.length > 0) {
+            countDisplay = `<span class="tree-count">${countParts.join(' ')}</span>`;
         } else {
             countDisplay = `<span class="tree-count count-zero">(0 items)</span>`;
         }
 
         const emptyClass = !hasItems && !hasChildren ? 'category-empty' : '';
-        const emptyWarning = !hasItems && !hasChildren ? '<span class="no-stock-warning">Out of Stock</span>' : '';
+        const emptyWarning = '';
 
         // Código do item - apenas qbItem (códigos de fotos únicas)
         const itemCode = node.qbItem || '';

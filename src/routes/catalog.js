@@ -1463,4 +1463,6 @@ router.get('/stock-summary', async (req, res) => {
     }
 });
 
+// Export both router and cache for access from other modules
+router.catalogCache = catalogCache;
 module.exports = router;

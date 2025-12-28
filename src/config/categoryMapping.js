@@ -330,11 +330,135 @@ function getMainCategoryName(displayCategory) {
     return CATALOG_TO_MAIN_CATEGORY[displayCategory] || null;
 }
 
+/**
+ * Mapeia um produto CDE para displayCategory
+ * @param {Object} product - Produto do CDE com campos: name, category, origin, qbItem
+ * @returns {string} displayCategory (ex: 'printed', 'metallic', 'pillows', etc.)
+ */
+function mapProductToDisplayCategory(product) {
+    const name = (product.name || '').toLowerCase();
+    const category = (product.category || '').toLowerCase();
+    const qbItem = product.qbItem || '';
+
+    // ========================================
+    // SPECIALTY COWHIDES
+    // ========================================
+    if (name.includes('printed') || name.includes('print cowhide')) {
+        return 'printed';
+    }
+    if (name.includes('devore') || name.includes('metallic')) {
+        return 'metallic';
+    }
+    if (name.includes('dyed') && !name.includes('dyed sheepskin')) {
+        return 'dyed';
+    }
+
+    // ========================================
+    // PATCHWORK RUGS - VERIFICAR PRIMEIRO!
+    // ========================================
+    // CRÍTICO: Verificar bedside e runner ANTES de sheepskin category
+    // porque produtos "Rug Bedside" têm category="SHEEPSKIN" no CDE
+    // mas devem ir para bedside-rugs, não sheepskin!
+
+    // Runner rugs - aceita com ou sem "patchwork"
+    if (name.includes('runner') || name.includes('corredor')) {
+        return 'runner-rugs';
+    }
+    // Bedside rugs - aceita com ou sem "patchwork"
+    if (name.includes('bedside') || name.includes('beside')) {
+        return 'bedside-rugs';
+    }
+
+    // ========================================
+    // SMALL ACCENT HIDES
+    // ========================================
+    if (name.includes('sheepskin') || name.includes('sheep skin') ||
+        category.includes('sheepskin') || qbItem.startsWith('8')) {
+        return 'sheepskin';
+    }
+    if (name.includes('calfskin') || name.includes('calf skin')) {
+        return 'calfskin';
+    }
+    if (name.includes('goatskin') || name.includes('goat skin')) {
+        return 'goatskin';
+    }
+
+    // ========================================
+    // PATCHWORK RUGS - CONTINUAÇÃO
+    // ========================================
+    // Chevron rugs - depois de verificar runner e bedside
+    if (name.includes('chevron')) {
+        return 'chevron-rugs';
+    }
+    // Patchwork genérico (square rugs, etc)
+    if (name.includes('patchwork') || name.includes('patch work') ||
+        name.includes('designer rug')) {
+        return 'standard-patchwork';
+    }
+    if (name.includes('rodeo rug')) {
+        return 'designer-rugs'; // Legacy category for rodeo rugs
+    }
+
+    // ========================================
+    // ACCESSORIES
+    // ========================================
+    if (category.includes('accesorio') || category.includes('accessory')) {
+        // Subcategorias de accessories
+        if (name.includes('pillow') || name.includes('cojin') || name.includes('cushion')) {
+            return 'pillows';
+        }
+        if (name.includes('bag') || name.includes('purse') || name.includes('handbag') ||
+            name.includes('tote') || name.includes('duffle') || name.includes('crossbody')) {
+            return 'bags-purses';
+        }
+        if (name.includes('coaster') || name.includes('placemat') || name.includes('place mat') ||
+            name.includes('napkin') || name.includes('wine') || name.includes('koozie')) {
+            return 'table-kitchen';
+        }
+        if (name.includes('slipper') || name.includes('pantufla')) {
+            return 'slippers';
+        }
+        if (name.includes('scrap') || name.includes('offcut') || name.includes('remnant')) {
+            return 'scraps-diy';
+        }
+        if (name.includes('stocking') || name.includes('ornament') || name.includes('gift')) {
+            return 'gifts-seasonal';
+        }
+        // Default accessories
+        return 'accessories';
+    }
+
+    // ========================================
+    // FURNITURE
+    // ========================================
+    if (category.includes('mobiliario') || category.includes('furniture')) {
+        // Subcategorias de furniture
+        if (name.includes('pouf') || name.includes('puff') || name.includes('ottoman')) {
+            return 'pouf-ottoman';
+        }
+        if (name.includes('footstool') || name.includes('foot stool')) {
+            return 'foot-stool';
+        }
+        if (name.includes('chair') || name.includes('wingback') || name.includes('barrel') ||
+            name.includes('swivel') || name.includes('bench')) {
+            return 'leather-furniture';
+        }
+        // Default furniture
+        return 'leather-furniture';
+    }
+
+    // ========================================
+    // DEFAULT: OTHER
+    // ========================================
+    return 'other';
+}
+
 module.exports = {
     MAIN_CATEGORY_MAPPING,
     VALID_CATALOG_CATEGORIES,
     CATALOG_TO_MAIN_CATEGORY,
     getAllowedCatalogCategories,
     isCatalogCategoryAllowed,
-    getMainCategoryName
+    getMainCategoryName,
+    mapProductToDisplayCategory
 };

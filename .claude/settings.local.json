@@ -127,7 +127,10 @@
       "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :3000 ^| findstr LISTEN''\\) do taskkill /F /PID %a\")",
       "Bash(cmd /c \"for /f \"tokens=5\" %a in \\(''netstat -ano ^| findstr :3000 ^| findstr LISTEN''\\) do taskkill /F /PID %a\")",
       "Bash(cmd /c \"netstat -ano | findstr 3000\")",
-      "Bash(start /B node src/server.js)"
+      "Bash(start /B node src/server.js)",
+      "Bash(cmd /c \"taskkill /F /PID 32708\")",
+      "Bash(cmd /c \"taskkill /F /PID 32708 && echo Process killed\")",
+      "Bash(cmd /c \"tasklist | findstr node.exe\")"
     ],
     "deny": [],
     "ask": []

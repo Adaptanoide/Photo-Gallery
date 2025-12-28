@@ -530,18 +530,28 @@ class AdminSelections {
 
     // Position dropdown (up or down based on available space)
     positionDropdown(container, dropdown) {
-        const containerRect = container.getBoundingClientRect();
-        const dropdownHeight = dropdown.offsetHeight || 200; // Estimate if not rendered yet
-        const viewportHeight = window.innerHeight;
-        const spaceBelow = viewportHeight - containerRect.bottom;
-        const spaceAbove = containerRect.top;
+        // Use requestAnimationFrame to ensure dropdown is rendered
+        requestAnimationFrame(() => {
+            const containerRect = container.getBoundingClientRect();
 
-        // If not enough space below, open upward
-        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-            dropdown.classList.add('open-up');
-        } else {
-            dropdown.classList.remove('open-up');
-        }
+            // Get actual dropdown height (try multiple properties for accuracy)
+            const dropdownHeight = dropdown.scrollHeight || dropdown.offsetHeight || 250;
+
+            const viewportHeight = window.innerHeight;
+            const spaceBelow = viewportHeight - containerRect.bottom;
+            const spaceAbove = containerRect.top;
+
+            // Add a safety buffer to prevent dropdown from being too close to edges
+            const buffer = 20;
+            const requiredSpace = dropdownHeight + buffer;
+
+            // If not enough space below, open upward
+            if (spaceBelow < requiredSpace && spaceAbove > spaceBelow) {
+                dropdown.classList.add('open-up');
+            } else {
+                dropdown.classList.remove('open-up');
+            }
+        });
     }
 
     // Close action menu

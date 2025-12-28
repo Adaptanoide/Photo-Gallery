@@ -415,6 +415,20 @@ function checkSubcategoryPermission(subcategoryConfig, allowedCatalogCats, allow
 
     // Para subcategorias de foto
     if (subcategoryConfig.viewType === 'photo' && subcategoryConfig.folderPath) {
+        // NOVO: Verificar primeiro com allowedPhotoPaths (mais preciso)
+        const photoPaths = window.navigationState?.allowedPhotoPaths || [];
+        if (photoPaths.length > 0) {
+            const hasAccess = photoPaths.some(path =>
+                path.includes(subcategoryConfig.folderPath) ||
+                subcategoryConfig.folderPath.includes(path)
+            );
+            if (hasAccess) {
+                console.log(`✅ Subcategoria ${subcategoryConfig.folderPath} permitida via photoPaths`);
+                return true;
+            }
+        }
+
+        // Fallback: verificar com allowedPhotoCats (pastas R2)
         return allowedPhotoCats.some(pc => {
             if (typeof pc === 'string') {
                 return pc.includes(subcategoryConfig.folderPath);
@@ -825,10 +839,43 @@ async function showDirectPhotoGallery(categoryKey, category) {
 
     CatalogState.currentView = 'direct-gallery';
 
-    // Get all photo subcategories
-    const subcatEntries = Object.entries(category.subcategories).filter(([k, v]) => !v.hidden);
+    // Get all photo subcategories (not hidden)
+    let subcatEntries = Object.entries(category.subcategories).filter(([k, v]) => !v.hidden);
+
+    // ===== FILTRAR APENAS SUBCATEGORIAS PERMITIDAS =====
+    // Se o cliente tem restrições, mostrar apenas as subcategorias que ele tem acesso
+    const allowedPhotoCats = window.navigationState?.allowedCategories || [];
+    const hasRestrictions = allowedPhotoCats.length > 0;
+
+    if (hasRestrictions && allowedPhotoCats.length > 0) {
+        subcatEntries = subcatEntries.filter(([, subcat]) => {
+            // Verificar se o folderPath está nos paths permitidos
+            if (subcat.folderPath) {
+                // allowedPhotoCats pode ser Array de strings ou objetos
+                return allowedPhotoCats.some(pc => {
+                    if (typeof pc === 'string') {
+                        return pc.includes(subcat.folderPath);
+                    }
+                    return pc.name?.includes(subcat.folderPath) || pc.id?.includes(subcat.folderPath);
+                });
+            }
+            return false;
+        });
+
+        console.log(`🔐 Subcategorias filtradas por permissão: ${subcatEntries.length} de ${Object.keys(category.subcategories).length} permitidas`);
+    }
+
+    // Se não houver nenhuma subcategoria permitida, mostrar erro
+    if (subcatEntries.length === 0) {
+        console.warn('⚠️ Nenhuma subcategoria permitida para esta categoria');
+        showError('No accessible subcategories in this category');
+        return;
+    }
+
     const firstSubcatKey = subcatEntries[0][0];
     const firstSubcat = subcatEntries[0][1];
+
+    console.log(`📂 Primeira subcategoria permitida: ${firstSubcat.name} (${firstSubcat.folderPath})`);
 
     // Save current state
     CatalogState.currentSubcategory = firstSubcatKey;

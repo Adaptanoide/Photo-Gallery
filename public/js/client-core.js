@@ -343,11 +343,15 @@ window.loadClientDataAfterMode = async function () {
 
         navigationState.clientData = data;
         navigationState.allowedCategories = data.allowedCategories;
-        navigationState.allowedCatalogCategories = data.allowedCatalogCategories || []; // NOVO
+        navigationState.allowedCatalogCategories = data.allowedCatalogCategories || [];
+        navigationState.allowedQBItems = data.allowedQBItems || [];
+        navigationState.allowedPhotoPaths = data.allowedPhotoPaths || [];  // NOVO
 
         console.log('🔐 Permissões carregadas:', {
             catalogCats: navigationState.allowedCatalogCategories.length,
-            photoCats: navigationState.allowedCategories.length
+            photoCats: navigationState.allowedCategories.length,
+            qbItems: navigationState.allowedQBItems.length,
+            photoPaths: navigationState.allowedPhotoPaths.length
         });
 
         updateClientInterface(data);
