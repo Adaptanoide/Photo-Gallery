@@ -572,7 +572,7 @@
     }
 
     .dropdown-checkbox span {
-        color: #ffffff;
+        color: #333333;  /* Dark text for light mode */
         font-size: 0.95rem;
     }
 

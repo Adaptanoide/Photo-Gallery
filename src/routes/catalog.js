@@ -8,6 +8,48 @@
 
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const AccessCode = require('../models/AccessCode');
+const { getAllowedCatalogCategories, isCatalogCategoryAllowed } = require('../config/categoryMapping');
+
+// ============================================
+// MIDDLEWARE: Verificar token do cliente (opcional)
+// ============================================
+// Similar ao usado em gallery.js, mas não bloqueia acesso
+// Apenas identifica o cliente para aplicar filtros de permissão
+const verifyClientToken = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            if (decoded.type === 'client') {
+                // Buscar AccessCode atualizado do banco
+                const accessCode = await AccessCode.findOne({
+                    code: decoded.clientCode,
+                    isActive: true
+                });
+
+                if (accessCode) {
+                    req.client = {
+                        clientCode: decoded.clientCode,
+                        clientName: decoded.clientName,
+                        accessType: accessCode.accessType || 'normal',
+                        allowedCategories: accessCode.allowedCategories || [],
+                        showPrices: accessCode.showPrices !== false
+                    };
+                    console.log(`[CATALOG] 👤 Cliente: ${req.client.clientCode}`);
+                }
+            }
+        } catch (error) {
+            console.log('[CATALOG] ⚠️ Token inválido:', error.message);
+        }
+    }
+
+    next();
+};
 
 // ============================================
 // CACHE SYSTEM - Resiliente com Background Refresh Automático
@@ -700,8 +742,9 @@ function filterBySubcategory(products, subcategory) {
 /**
  * GET /api/catalog/products
  * Lista produtos de catálogo, opcionalmente filtrados por categoria
+ * Agora com verificação de permissões do cliente
  */
-router.get('/products', async (req, res) => {
+router.get('/products', verifyClientToken, async (req, res) => {
     try {
         const { category, refresh } = req.query;
 
@@ -711,7 +754,26 @@ router.get('/products', async (req, res) => {
         const forceRefresh = refresh === 'true';
         let products = await catalogCache.get(forceRefresh);
 
-        // Filtrar por categoria
+        // ============================================
+        // FILTRO DE PERMISSÕES DO CLIENTE
+        // ============================================
+        if (req.client && req.client.allowedCategories && req.client.allowedCategories.length > 0) {
+            const allowedCatalogCats = getAllowedCatalogCategories(req.client.allowedCategories);
+
+            // Se tem restrições e a lista de permitidas não está vazia
+            if (allowedCatalogCats.size > 0) {
+                const beforeCount = products.length;
+
+                products = products.filter(p => {
+                    const productDisplayCat = getDisplayCategory(p.category);
+                    return allowedCatalogCats.has(productDisplayCat);
+                });
+
+                console.log(`[CATALOG] 🔐 Filtro de permissões: ${beforeCount} → ${products.length} produtos`);
+            }
+        }
+
+        // Filtrar por categoria solicitada
         if (category) {
             const mapping = CATEGORY_MAP[category];
 
@@ -809,13 +871,28 @@ router.get('/products', async (req, res) => {
             }));
         }
 
+        // ============================================
+        // OCULTAR PREÇOS SE showPrices = false
+        // ============================================
+        if (req.client && req.client.showPrices === false) {
+            products = products.map(p => ({
+                ...p,
+                basePrice: 0,
+                hasPrice: false,
+                formattedPrice: 'Contact for Price',
+                priceHidden: true
+            }));
+            console.log(`[CATALOG] 💰 Preços ocultados para cliente ${req.client.clientCode}`);
+        }
+
         console.log(`[CATALOG] Retornando ${products.length} produtos`);
 
         res.json({
             success: true,
             products,
             count: products.length,
-            category: category || 'all'
+            category: category || 'all',
+            showPrices: req.client?.showPrices !== false
         });
 
     } catch (error) {
@@ -831,8 +908,9 @@ router.get('/products', async (req, res) => {
 /**
  * GET /api/catalog/products/:qbItem
  * Detalhes de um produto específico
+ * Agora com verificação de permissões
  */
-router.get('/products/:qbItem', async (req, res) => {
+router.get('/products/:qbItem', verifyClientToken, async (req, res) => {
     try {
         const { qbItem } = req.params;
         const queries = getCDEQueries();
@@ -849,6 +927,16 @@ router.get('/products/:qbItem', async (req, res) => {
         // Adicionar displayCategory
         product.displayCategory = getDisplayCategory(product.category);
         product.currentStock = product.availableStock || 0;
+
+        // Verificar permissão para este produto
+        if (req.client && req.client.allowedCategories && req.client.allowedCategories.length > 0) {
+            if (!isCatalogCategoryAllowed(product.displayCategory, req.client.allowedCategories)) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Acesso negado a este produto'
+                });
+            }
+        }
 
         // ===== MERGE COM PREÇO DO MONGODB =====
         try {

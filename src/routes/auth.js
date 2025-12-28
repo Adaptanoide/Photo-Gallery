@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const Admin = require('../models/Admin');
 const AccessCode = require('../models/AccessCode');
+const { getAllowedCatalogCategories, VALID_CATALOG_CATEGORIES } = require('../config/categoryMapping');
 
 const router = express.Router();
 
@@ -261,10 +262,26 @@ router.get('/client/data', async (req, res) => {
             console.error('❌ Erro ao buscar categorias do R2:', error);
         }
 
+        // ============================================
+        // VERIFICAR SE TEM ACESSO TOTAL (FULLACCESS)
+        // ============================================
+        const hasFullAccess = accessCode.fullAccess === true;
+
+        if (hasFullAccess) {
+            console.log('🌟 Cliente tem FULL ACCESS - acesso a TODAS as categorias (incluindo novas)!');
+        }
+
         // Processar categorias permitidas
         let allowedCategories = [];
 
-        if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+        if (hasFullAccess) {
+            // FULL ACCESS: Retornar TODAS as categorias (incluindo novas)
+            allowedCategories = r2Categories.map(cat => ({
+                id: cat.name,
+                name: cat.name
+            }));
+            console.log(`🌟 FULL ACCESS: ${allowedCategories.length} categorias disponíveis`);
+        } else if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
             // NOVO: Usar cache ao invés de fazer 105 queries
             const ClientPermissionsCache = require('../models/ClientPermissionsCache');
 
@@ -341,15 +358,41 @@ router.get('/client/data', async (req, res) => {
 
         console.log(`✅ ${allowedCategories.length} categorias permitidas para o cliente`);
 
+        // ============================================
+        // CALCULAR CATEGORIAS DE CATÁLOGO PERMITIDAS
+        // ============================================
+        let allowedCatalogCategories = [];
+
+        if (hasFullAccess) {
+            // FULL ACCESS: TODAS as categorias de catálogo
+            allowedCatalogCategories = VALID_CATALOG_CATEGORIES;
+            console.log(`🌟 FULL ACCESS: todas ${allowedCatalogCategories.length} categorias de catálogo`);
+        } else if (accessCode.allowedCategories && accessCode.allowedCategories.length > 0) {
+            // Converter Set para Array
+            const catalogCatsSet = getAllowedCatalogCategories(accessCode.allowedCategories);
+            allowedCatalogCategories = Array.from(catalogCatsSet);
+
+            // Debug: mostrar o que foi salvo vs o que foi calculado
+            const stockItems = accessCode.allowedCategories.filter(c => !/\d/.test(c));
+            console.log(`📦 ${allowedCatalogCategories.length} categorias de catálogo permitidas:`, allowedCatalogCategories);
+            console.log(`📋 Items de stock salvos:`, stockItems);
+        } else {
+            // Sem restrições = todas permitidas
+            allowedCatalogCategories = VALID_CATALOG_CATEGORIES;
+            console.log(`📦 Sem restrições - todas ${allowedCatalogCategories.length} categorias de catálogo permitidas`);
+        }
+
         res.json({
             success: true,
             client: {
                 name: accessCode.clientName,
                 email: accessCode.clientEmail,
                 code: accessCode.code,
-                showPrices: accessCode.showPrices
+                showPrices: accessCode.showPrices,
+                fullAccess: accessCode.fullAccess || false  // NOVO
             },
             allowedCategories: allowedCategories,
+            allowedCatalogCategories: allowedCatalogCategories, // NOVO
             totalCategories: r2Categories.length,
             allowedCount: allowedCategories.length
         });

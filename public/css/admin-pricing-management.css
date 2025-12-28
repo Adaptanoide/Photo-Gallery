@@ -3842,3 +3842,385 @@
         width: 100%;
     }
 }
+
+/* =====================================================
+   LIGHT THEME - PRICE MANAGEMENT
+   Clean white design with gold accents
+   ===================================================== */
+
+/* ===== PRICING SECTION HEADER - Light Theme ===== */
+body.admin-light-theme .pricing-section-header {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+}
+
+/* Tab Buttons - Light Theme */
+body.admin-light-theme .pricing-tab-btn {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+body.admin-light-theme .pricing-tab-btn:hover:not(.active) {
+    background: #f8fafc !important;
+    border-color: #fcd34d !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .pricing-tab-btn.active {
+    background: #d4af37 !important;
+    border-color: #d4af37 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+body.admin-light-theme .pricing-tab-btn i {
+    color: inherit !important;
+}
+
+/* Header Filters - Light Theme */
+body.admin-light-theme .header-filter-input,
+body.admin-light-theme .header-filter-select {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .header-filter-input::placeholder {
+    color: #9ca3af !important;
+}
+
+body.admin-light-theme .header-filter-input:focus,
+body.admin-light-theme .header-filter-select:focus {
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1) !important;
+}
+
+/* Last Refresh Info */
+body.admin-light-theme .last-refresh-info {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Refresh Button - Light Theme */
+body.admin-light-theme .pricing-header-actions .btn-primary,
+body.admin-light-theme .btn-refresh-pricing {
+    background: #ffffff !important;
+    border: 1px solid #d4af37 !important;
+    color: #b45309 !important;
+    box-shadow: none !important;
+}
+
+body.admin-light-theme .pricing-header-actions .btn-primary:hover,
+body.admin-light-theme .btn-refresh-pricing:hover {
+    background: #fffbeb !important;
+    border-color: #d4af37 !important;
+}
+
+/* ===== CATEGORY GROUP - Light Theme ===== */
+body.admin-light-theme .category-group {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.admin-light-theme .category-group:hover {
+    border-color: #d1d5db !important;
+}
+
+body.admin-light-theme .category-group.mix-match-group {
+    border-color: #fde68a !important;
+}
+
+body.admin-light-theme .category-group.mix-match-group:hover {
+    border-color: #fcd34d !important;
+}
+
+/* Category Group Header - Light Theme */
+body.admin-light-theme .category-group-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme .group-name {
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .group-name i {
+    color: #d4af37 !important;
+}
+
+body.admin-light-theme .group-count {
+    color: #64748b !important;
+}
+
+/* Mix & Match Badge - Light Theme */
+body.admin-light-theme .mix-match-badge {
+    background: #d4af37 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+/* ===== SUBCATEGORIES TABLE HEADER - Light Theme ===== */
+body.admin-light-theme .subcategories-table-header {
+    background: #fafafa !important;
+    border-bottom: 2px solid #fcd34d !important;
+    color: #92400e !important;
+}
+
+body.admin-light-theme .subcategories-list {
+    background: #ffffff !important;
+}
+
+/* ===== SUBCATEGORY ROWS - Light Theme ===== */
+body.admin-light-theme .subcategory-row {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body.admin-light-theme .subcategory-row:hover {
+    background: #fafafa !important;
+}
+
+body.admin-light-theme .subcategory-row.is-mixmatch {
+    background: #fffbeb !important;
+}
+
+body.admin-light-theme .subcategory-row.is-mixmatch:hover {
+    background: #fef7ed !important;
+}
+
+body.admin-light-theme .subcategory-row .subcat-name {
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .subcategory-row .photo-count {
+    color: #64748b !important;
+}
+
+/* QB Item Badge - Light Theme */
+body.admin-light-theme .qb-item-inline,
+body.admin-light-theme .qb-item-tag {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+}
+
+/* Tier Price Inputs - Light Theme */
+body.admin-light-theme .subcategory-row .col-tier input,
+body.admin-light-theme .tier-price-input {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .subcategory-row .col-tier input:focus,
+body.admin-light-theme .tier-price-input:focus {
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1) !important;
+}
+
+/* Toggle Switch - Light Theme */
+body.admin-light-theme .toggle-label input:checked + .toggle-slider {
+    background: #d4af37 !important;
+}
+
+body.admin-light-theme .toggle-slider {
+    background: #cbd5e1 !important;
+}
+
+body.admin-light-theme .toggle-text {
+    color: #64748b !important;
+}
+
+/* ===== STOCK LIST - Light Theme ===== */
+body.admin-light-theme .stock-list-header {
+    background: #fafafa !important;
+    border-bottom: 2px solid #fcd34d !important;
+    color: #92400e !important;
+    box-shadow: none !important;
+}
+
+body.admin-light-theme .stock-list-container,
+body.admin-light-theme .stock-products-list {
+    background: #ffffff !important;
+}
+
+body.admin-light-theme .stock-item,
+body.admin-light-theme .stock-row,
+body.admin-light-theme .product-row {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body.admin-light-theme .stock-item:hover,
+body.admin-light-theme .stock-row:hover,
+body.admin-light-theme .product-row:hover {
+    background: #fafafa !important;
+}
+
+/* Stock QB Item Badge */
+body.admin-light-theme .stock-qb-item,
+body.admin-light-theme .product-qb-item {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+}
+
+/* Stock Count Badge */
+body.admin-light-theme .stock-count,
+body.admin-light-theme .stock-badge {
+    background: #f0fdf4 !important;
+    color: #166534 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+body.admin-light-theme .stock-count.out-of-stock {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+}
+
+/* Stock Price Input */
+body.admin-light-theme .stock-price-input,
+body.admin-light-theme .product-price-input {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .stock-price-input:focus,
+body.admin-light-theme .product-price-input:focus {
+    border-color: #d4af37 !important;
+}
+
+/* Stock Item Name */
+body.admin-light-theme .stock-item-name,
+body.admin-light-theme .product-name {
+    color: #1e293b !important;
+}
+
+/* Save Button Checkmark */
+body.admin-light-theme .btn-save-price,
+body.admin-light-theme .save-price-btn {
+    background: transparent !important;
+    border: 1px solid #d1d5db !important;
+    color: #64748b !important;
+}
+
+body.admin-light-theme .btn-save-price:hover,
+body.admin-light-theme .save-price-btn:hover {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    color: #22c55e !important;
+}
+
+/* ===== PAGINATION - Light Theme ===== */
+body.admin-light-theme .pricing-pagination {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme .btn-page-number {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+body.admin-light-theme .btn-page-number:hover:not(:disabled) {
+    background: #f8fafc !important;
+    border-color: #d4af37 !important;
+}
+
+body.admin-light-theme .btn-page-number.active {
+    background: #d4af37 !important;
+    border-color: #d4af37 !important;
+    color: #ffffff !important;
+}
+
+/* ===== MODALS - Light Theme ===== */
+body.admin-light-theme .price-modal,
+body.admin-light-theme .mix-match-modal .modal-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme .price-modal-header,
+body.admin-light-theme .mix-match-modal .modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .price-modal-body,
+body.admin-light-theme .mix-match-modal .modal-body {
+    background: #ffffff !important;
+    color: #374151 !important;
+}
+
+body.admin-light-theme .price-modal-footer,
+body.admin-light-theme .mix-match-modal .modal-footer {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Modal Cancel Button */
+body.admin-light-theme .price-modal-footer .btn-secondary,
+body.admin-light-theme .mix-match-modal .btn-cancel {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+}
+
+body.admin-light-theme .price-modal-footer .btn-secondary:hover,
+body.admin-light-theme .mix-match-modal .btn-cancel:hover {
+    background: #f8fafc !important;
+}
+
+/* Modal Confirm Button */
+body.admin-light-theme .price-modal-footer .btn-primary,
+body.admin-light-theme .mix-match-modal .btn-confirm {
+    background: #d4af37 !important;
+    border: 1px solid #d4af37 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+body.admin-light-theme .price-modal-footer .btn-primary:hover,
+body.admin-light-theme .mix-match-modal .btn-confirm:hover {
+    background: #c9a227 !important;
+    transform: none !important;
+}
+
+/* ===== TIER CONFIG - Light Theme ===== */
+body.admin-light-theme .tier-config-row label {
+    color: #374151 !important;
+}
+
+body.admin-light-theme .tier-config-row input {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .tier-config-row input:focus {
+    border-color: #d4af37 !important;
+}
+
+/* ===== SCROLLBAR - Light Theme ===== */
+body.admin-light-theme .subcategories-list::-webkit-scrollbar-track,
+body.admin-light-theme .stock-list-container::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
+}
+
+body.admin-light-theme .subcategories-list::-webkit-scrollbar-thumb,
+body.admin-light-theme .stock-list-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+}
+
+body.admin-light-theme .subcategories-list::-webkit-scrollbar-thumb:hover,
+body.admin-light-theme .stock-list-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+}

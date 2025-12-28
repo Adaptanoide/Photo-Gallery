@@ -11,6 +11,7 @@ window.navigationState = {
     currentFolderId: null,
     clientData: null,
     allowedCategories: [],
+    allowedCatalogCategories: [], // NOVO: Categorias de catálogo/stock permitidas
     currentPhotos: [],
     currentPhotoIndex: 0,
     currentCategoryName: null // Para Special Selection
@@ -299,11 +300,21 @@ window.loadClientDataAfterMode = async function () {
     const loadingEl = document.getElementById('clientLoading');
     const errorEl = document.getElementById('clientError');
     const contentEl = document.getElementById('clientContent');
+    const navLoading = document.getElementById('navigationLoading');
+    const catalogContainer = document.getElementById('catalogContainer');
 
-    // Mostrar loading
-    loadingEl.style.display = 'block';
+    // 🗑️ LIMPAR APENAS catalogContainer (homepage cards)
+    // NÃO limpar categoriesContainer/contentContainer (usado para galeria de fotos)
+    if (catalogContainer) {
+        catalogContainer.innerHTML = ''; // Limpar cards antigos do cache
+        catalogContainer.style.display = 'none'; // Esconder durante loading
+    }
+
+    // Mostrar área de conteúdo com loading de 3 pontos
+    loadingEl.style.display = 'none';
     errorEl.style.display = 'none';
-    contentEl.style.display = 'none';
+    contentEl.style.display = 'block'; // ✅ Mostrar conteúdo AGORA
+    if (navLoading) navLoading.style.display = 'flex'; // ✅ Mostrar loading de 3 pontos VISÍVEL
 
     try {
         const savedSession = localStorage.getItem('sunshineSession');
@@ -316,31 +327,44 @@ window.loadClientDataAfterMode = async function () {
             throw new Error('Access code not found');
         }
 
-        const response = await fetchWithAuth(`/api/auth/client/data?code=${encodeURIComponent(session.accessCode)}`);
-        const data = await response.json();
+        // ⏱️ Criar promessa de delay mínimo de 2.5 segundos
+        const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2500));
 
-        if (!response.ok || !data.success) {
+        // 🔄 Carregar dados do servidor
+        const dataPromise = fetchWithAuth(`/api/auth/client/data?code=${encodeURIComponent(session.accessCode)}`)
+            .then(response => response.json());
+
+        // ⏳ Esperar AMBOS: dados carregarem E 2.5 segundos passarem
+        const [data] = await Promise.all([dataPromise, minLoadingTime]);
+
+        if (!data.success) {
             throw new Error(data.message || 'Error loading data');
         }
 
         navigationState.clientData = data;
         navigationState.allowedCategories = data.allowedCategories;
+        navigationState.allowedCatalogCategories = data.allowedCatalogCategories || []; // NOVO
+
+        console.log('🔐 Permissões carregadas:', {
+            catalogCats: navigationState.allowedCatalogCategories.length,
+            photoCats: navigationState.allowedCategories.length
+        });
 
         updateClientInterface(data);
         updatePriceFilterVisibility();
 
-        // Se o sistema de catálogo está ativo (homepage), não mostrar categorias da galeria
-        // O catalog já terá chamado showHomepage() que esconde tudo
-        if (window.CatalogState && window.CatalogState.currentView === 'homepage') {
-            console.log('📦 Catalog homepage active - skipping showCategories()');
-        } else {
-            showCategories();
+        // ✅ SEMPRE mostrar homepage com as permissões corretas (sistema de catálogo)
+        console.log('📦 Renderizando homepage com permissões após 2.5s...');
+        if (window.showHomepage) {
+            window.showHomepage(); // Renderiza homepage com permissões já carregadas
         }
 
         if (window.updateFilterVisibility) {
             await window.updateFilterVisibility();
         }
 
+        // ✅ Esconder loading de 3 pontos DEPOIS de renderizar
+        if (navLoading) navLoading.style.display = 'none';
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
 
@@ -965,6 +989,20 @@ window.getMainCategoryDescription = function (categoryName) {
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Client Core carregado');
+
+    // Mostrar nome do cliente no loading inicial
+    try {
+        const savedSession = localStorage.getItem('sunshineSession');
+        if (savedSession) {
+            const session = JSON.parse(savedSession);
+            const welcomeNameEl = document.getElementById('clientWelcomeName');
+            if (welcomeNameEl && session.user && session.user.name) {
+                welcomeNameEl.textContent = session.user.name;
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao carregar nome do cliente:', error);
+    }
 
     // Carregar dados iniciais
     loadClientData();

@@ -798,79 +798,378 @@ router.get('/folders-search', authenticateToken, async (req, res) => {
 });
 
 // ===== ROTA PARA TREE VIEW HIERÁRQUICA =====
+// Expandida para incluir tanto categorias de fotos quanto de catálogo
+// MANTÉM a estrutura original de PhotoCategory, apenas adiciona nível pai
 router.get('/categories-tree', authenticateToken, async (req, res) => {
     try {
         const PhotoCategory = require('../models/PhotoCategory');
         const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+        const CatalogProduct = require('../models/CatalogProduct');
+        const { MAIN_CATEGORY_MAPPING } = require('../config/categoryMapping');
 
-        console.log('🌳 Building categories tree with AVAILABLE photos only...');
+        console.log('Building categories tree (photos + catalog)...');
 
-        // 1. Buscar todas as categorias ativas
-        const categories = await PhotoCategory.find({
+        // ========================================
+        // 1. BUSCAR DADOS DE FOTOS (PhotoCategory)
+        // ========================================
+        const photoCategories = await PhotoCategory.find({
             isActive: true
         }).select('displayName qbItem googleDrivePath');
 
-        console.log(`📁 Found ${categories.length} total categories`);
+        console.log(`Found ${photoCategories.length} photo categories`);
 
-        // 2. Para cada categoria, contar apenas fotos AVAILABLE
-        const categoriesWithCounts = await Promise.all(
-            categories.map(async (cat) => {
-                // Contar fotos AVAILABLE desta categoria
+        // Contar fotos disponíveis para cada categoria
+        const photoCategoriesWithCounts = await Promise.all(
+            photoCategories.map(async (cat) => {
                 const availableCount = await UnifiedProductComplete.countDocuments({
                     category: cat.displayName,
-                    status: 'available',  // ← APENAS AVAILABLE!
+                    status: 'available',
                     isActive: true
                 });
-
                 return {
                     displayName: cat.displayName,
                     qbItem: cat.qbItem,
                     googleDrivePath: cat.googleDrivePath,
-                    photoCount: availableCount  // ← Contagem correta!
+                    photoCount: availableCount
                 };
             })
         );
 
-        console.log(`✅ Counted available photos for ${categoriesWithCounts.length} categories`);
-
-        // 3. Filtrar categorias que TEM fotos disponíveis OU que são pais de outras
-        const categoriesMap = new Map(
-            categoriesWithCounts.map(c => [c.displayName, c])
-        );
-
-        // 4. Construir estrutura hierárquica
-        const tree = {};
-
-        categoriesWithCounts.forEach(cat => {
-            const path = cat.displayName || cat.googleDrivePath || '';
-            const parts = path.split(' → ').filter(p => p);
-
-            let current = tree;
-            parts.forEach((part, index) => {
-                const fullPath = parts.slice(0, index + 1).join(' → ');
-
-                if (!current[part]) {
-                    // Se é o último nível, usar os dados da categoria
-                    const isLeaf = index === parts.length - 1;
-
-                    current[part] = {
-                        name: part,
-                        fullPath: fullPath,
-                        children: {},
-                        qbItem: isLeaf ? cat.qbItem : null,
-                        photoCount: isLeaf ? cat.photoCount : 0,
-                        hasAvailablePhotos: isLeaf ? (cat.photoCount > 0) : null  // ← NOVO CAMPO!
-                    };
+        // ========================================
+        // 2. BUSCAR DADOS DE CATÁLOGO (CatalogProduct)
+        // ========================================
+        const catalogCounts = await CatalogProduct.aggregate([
+            { $match: { isActive: true, availableStock: { $gt: 0 } } },
+            {
+                $group: {
+                    _id: '$displayCategory',
+                    stockCount: { $sum: 1 },
+                    totalStock: { $sum: '$availableStock' }
                 }
-                current = current[part].children;
-            });
+            }
+        ]);
+
+        const catalogCountMap = {};
+        catalogCounts.forEach(item => {
+            if (item._id) {
+                catalogCountMap[item._id] = {
+                    count: item.stockCount,
+                    totalStock: item.totalStock
+                };
+            }
         });
 
-        console.log(`✅ Tree built with ${Object.keys(tree).length} root categories`);
-        res.json({ success: true, tree });
+        console.log(`Found catalog counts for ${Object.keys(catalogCountMap).length} categories`);
+
+        // ========================================
+        // 3. CONSTRUIR ÁRVORE
+        // ========================================
+        const tree = {};
+
+        // ========================================
+        // 3A. NATURAL COWHIDES - Mantém estrutura original de fotos
+        // ========================================
+        // Agrupar PhotoCategories pelo PRIMEIRO segmento do displayName
+        // Ex: "Brazil Best Sellers → ..." vai para "Brazil Best Sellers"
+        const naturalCowhidesConfig = MAIN_CATEGORY_MAPPING['Natural Cowhides'];
+        const validPhotoFirstSegments = ['Brazil Best Sellers', 'Brazil Top Selected Categories', 'Colombian Cowhides'];
+
+        // Filtrar apenas fotos que pertencem a Natural Cowhides
+        const naturalCowhidesPhotos = photoCategoriesWithCounts.filter(pc => {
+            if (!pc.displayName) return false;
+            const firstSegment = pc.displayName.split(' → ')[0];
+            return validPhotoFirstSegments.includes(firstSegment);
+        });
+
+        let naturalCowhidesTotalPhotos = 0;
+
+        // Criar nó pai Natural Cowhides
+        tree['Natural Cowhides'] = {
+            name: 'Natural Cowhides',
+            fullPath: 'Natural Cowhides',
+            type: 'photo',
+            description: naturalCowhidesConfig.description,
+            children: {},
+            photoCount: 0,
+            stockCount: 0,
+            qbItem: null,
+            catalogCategory: null
+        };
+
+        // Agrupar por primeiro segmento (Brazil Best Sellers, Brazil Top Selected Categories, Colombian)
+        const photosByFirstSegment = {};
+        for (const pc of naturalCowhidesPhotos) {
+            const segments = pc.displayName.split(' → ');
+            const firstSegment = segments[0];
+
+            if (!photosByFirstSegment[firstSegment]) {
+                photosByFirstSegment[firstSegment] = [];
+            }
+            photosByFirstSegment[firstSegment].push(pc);
+        }
+
+        // Para cada primeiro segmento, criar a hierarquia
+        for (const [firstSegment, photos] of Object.entries(photosByFirstSegment)) {
+            // Calcular total de fotos para este segmento
+            const segmentTotalPhotos = photos.reduce((sum, pc) => sum + pc.photoCount, 0);
+            naturalCowhidesTotalPhotos += segmentTotalPhotos;
+
+            // Verificar se é Brazil Best Sellers (tem Mix & Match)
+            const hasMixMatch = firstSegment === 'Brazil Best Sellers';
+
+            // Criar nó do primeiro segmento (ex: Brazil Best Sellers)
+            tree['Natural Cowhides'].children[firstSegment] = {
+                name: firstSegment,
+                fullPath: `Natural Cowhides → ${firstSegment}`,
+                type: 'photo',
+                children: {},
+                qbItem: null,
+                catalogCategory: null,
+                photoCount: segmentTotalPhotos,
+                stockCount: 0,
+                hasAvailablePhotos: segmentTotalPhotos > 0,
+                hasMixMatch: hasMixMatch
+            };
+
+            // Construir árvore hierárquica para os segmentos restantes
+            for (const pc of photos) {
+                const segments = pc.displayName.split(' → ');
+
+                // Começar do segundo segmento (já temos o primeiro como nó pai)
+                let currentLevel = tree['Natural Cowhides'].children[firstSegment].children;
+
+                for (let i = 1; i < segments.length; i++) {
+                    const segmentName = segments[i];
+                    const isLastSegment = i === segments.length - 1;
+
+                    // Construir fullPath até este segmento
+                    const pathParts = ['Natural Cowhides', ...segments.slice(0, i + 1)];
+                    const segmentFullPath = pathParts.join(' → ');
+
+                    if (!currentLevel[segmentName]) {
+                        currentLevel[segmentName] = {
+                            name: segmentName,
+                            fullPath: isLastSegment ? pc.displayName : segmentFullPath,
+                            type: 'photo',
+                            children: {},
+                            qbItem: isLastSegment ? pc.qbItem : null,
+                            catalogCategory: null,
+                            photoCount: isLastSegment ? pc.photoCount : 0,
+                            stockCount: 0,
+                            hasAvailablePhotos: isLastSegment ? pc.photoCount > 0 : false
+                        };
+                    } else if (isLastSegment) {
+                        // Se já existe e é último, atualizar dados
+                        currentLevel[segmentName].qbItem = pc.qbItem;
+                        currentLevel[segmentName].photoCount = pc.photoCount;
+                        currentLevel[segmentName].fullPath = pc.displayName;
+                        currentLevel[segmentName].hasAvailablePhotos = pc.photoCount > 0;
+                    }
+
+                    // Se não é último, acumular contagem nos pais
+                    if (!isLastSegment) {
+                        currentLevel[segmentName].photoCount = (currentLevel[segmentName].photoCount || 0) + pc.photoCount;
+                        if (pc.photoCount > 0) {
+                            currentLevel[segmentName].hasAvailablePhotos = true;
+                        }
+                    }
+
+                    currentLevel = currentLevel[segmentName].children;
+                }
+            }
+        }
+
+        tree['Natural Cowhides'].photoCount = naturalCowhidesTotalPhotos;
+
+        // ========================================
+        // 3B. OUTRAS CATEGORIAS DE FOTOS (Specialty, Patchwork com fotos)
+        // ========================================
+        // Cowhide with Binding
+        const cowhideBindingPhotos = photoCategoriesWithCounts.filter(pc =>
+            pc.displayName && pc.displayName.includes('Cowhide with Binding')
+        );
+
+        // Rodeo Rugs
+        const rodeoRugsPhotos = photoCategoriesWithCounts.filter(pc =>
+            pc.displayName && pc.displayName.includes('Rodeo Rugs')
+        );
+
+        // Sheepskin (mixed - tem fotos E stock)
+        const sheepskinPhotos = photoCategoriesWithCounts.filter(pc =>
+            pc.displayName && pc.displayName.includes('Sheepskin')
+        );
+
+        // ========================================
+        // 3C. CATEGORIAS DE CATÁLOGO (Stock)
+        // ========================================
+        // Iterar sobre as categorias principais que TÊM stock
+        const stockMainCategories = ['Specialty Cowhides', 'Small Accent Hides', 'Patchwork Rugs', 'Accessories', 'Furniture'];
+
+        for (const mainName of stockMainCategories) {
+            const mainConfig = MAIN_CATEGORY_MAPPING[mainName];
+            if (!mainConfig) continue;
+
+            let mainPhotoCount = 0;
+            let mainStockCount = 0;
+
+            tree[mainName] = {
+                name: mainName,
+                fullPath: mainName,
+                type: mainConfig.type,
+                description: mainConfig.description,
+                children: {},
+                photoCount: 0,
+                stockCount: 0,
+                qbItem: null,
+                catalogCategory: null
+            };
+
+            for (const sub of mainConfig.subcategories) {
+                const subFullPath = `${mainName} → ${sub.name}`;
+
+                if (sub.type === 'photo') {
+                    // Subcategoria de foto dentro de categoria mista
+                    let matchingPhotos = [];
+                    if (sub.photoCategoryPath === 'Cowhide with Binding') {
+                        matchingPhotos = cowhideBindingPhotos;
+                    } else if (sub.photoCategoryPath === 'Rodeo Rugs') {
+                        matchingPhotos = rodeoRugsPhotos;
+                    }
+
+                    const subPhotoCount = matchingPhotos.reduce((sum, pc) => sum + pc.photoCount, 0);
+                    mainPhotoCount += subPhotoCount;
+
+                    tree[mainName].children[sub.name] = {
+                        name: sub.name,
+                        fullPath: subFullPath,
+                        type: 'photo',
+                        children: {},
+                        qbItem: matchingPhotos[0]?.qbItem || null,
+                        catalogCategory: null,
+                        photoCount: subPhotoCount,
+                        stockCount: 0,
+                        hasAvailablePhotos: subPhotoCount > 0
+                    };
+
+                    // Adicionar hierarquia de fotos
+                    for (const pc of matchingPhotos) {
+                        const segments = pc.displayName.split(' → ');
+                        if (segments.length > 1) {
+                            let currentLevel = tree[mainName].children[sub.name].children;
+                            for (let i = 1; i < segments.length; i++) {
+                                const segName = segments[i];
+                                const isLast = i === segments.length - 1;
+
+                                if (!currentLevel[segName]) {
+                                    currentLevel[segName] = {
+                                        name: segName,
+                                        fullPath: isLast ? pc.displayName : `${subFullPath} → ${segments.slice(1, i + 1).join(' → ')}`,
+                                        type: 'photo',
+                                        children: {},
+                                        qbItem: isLast ? pc.qbItem : null,
+                                        catalogCategory: null,
+                                        photoCount: isLast ? pc.photoCount : 0,
+                                        stockCount: 0,
+                                        hasAvailablePhotos: isLast ? pc.photoCount > 0 : false
+                                    };
+                                }
+                                currentLevel = currentLevel[segName].children;
+                            }
+                        }
+                    }
+
+                } else if (sub.type === 'stock') {
+                    // Subcategoria de stock puro
+                    const catalogData = catalogCountMap[sub.catalogCategory] || { count: 0, totalStock: 0 };
+                    mainStockCount += catalogData.count;
+
+                    tree[mainName].children[sub.name] = {
+                        name: sub.name,
+                        fullPath: subFullPath,
+                        type: 'stock',
+                        children: {},
+                        qbItem: null,
+                        catalogCategory: sub.catalogCategory,
+                        photoCount: 0,
+                        stockCount: catalogData.count,
+                        totalStock: catalogData.totalStock,
+                        hasAvailableStock: catalogData.count > 0
+                    };
+
+                } else if (sub.type === 'mixed') {
+                    // Subcategoria mista (foto + stock)
+                    let matchingPhotos = [];
+                    if (sub.photoCategoryPath === 'Sheepskin') {
+                        matchingPhotos = sheepskinPhotos;
+                    }
+
+                    const subPhotoCount = matchingPhotos.reduce((sum, pc) => sum + pc.photoCount, 0);
+                    const catalogData = catalogCountMap[sub.catalogCategory] || { count: 0, totalStock: 0 };
+
+                    mainPhotoCount += subPhotoCount;
+                    mainStockCount += catalogData.count;
+
+                    tree[mainName].children[sub.name] = {
+                        name: sub.name,
+                        fullPath: subFullPath,
+                        type: 'mixed',
+                        children: {},
+                        qbItem: matchingPhotos[0]?.qbItem || null,
+                        catalogCategory: sub.catalogCategory,
+                        photoCount: subPhotoCount,
+                        stockCount: catalogData.count,
+                        totalStock: catalogData.totalStock,
+                        hasAvailablePhotos: subPhotoCount > 0,
+                        hasAvailableStock: catalogData.count > 0
+                    };
+
+                    // Adicionar hierarquia de fotos para mixed
+                    for (const pc of matchingPhotos) {
+                        const segments = pc.displayName.split(' → ');
+                        if (segments.length > 1) {
+                            let currentLevel = tree[mainName].children[sub.name].children;
+                            for (let i = 1; i < segments.length; i++) {
+                                const segName = segments[i];
+                                const isLast = i === segments.length - 1;
+
+                                if (!currentLevel[segName]) {
+                                    currentLevel[segName] = {
+                                        name: segName,
+                                        fullPath: isLast ? pc.displayName : `${subFullPath} → ${segments.slice(1, i + 1).join(' → ')}`,
+                                        type: 'photo',
+                                        children: {},
+                                        qbItem: isLast ? pc.qbItem : null,
+                                        catalogCategory: null,
+                                        photoCount: isLast ? pc.photoCount : 0,
+                                        stockCount: 0,
+                                        hasAvailablePhotos: isLast ? pc.photoCount > 0 : false
+                                    };
+                                }
+                                currentLevel = currentLevel[segName].children;
+                            }
+                        }
+                    }
+                }
+            }
+
+            tree[mainName].photoCount = mainPhotoCount;
+            tree[mainName].stockCount = mainStockCount;
+        }
+
+        console.log(`Tree built with ${Object.keys(tree).length} main categories`);
+
+        res.json({
+            success: true,
+            tree,
+            meta: {
+                totalMainCategories: Object.keys(tree).length,
+                totalPhotoCategories: photoCategories.length,
+                totalCatalogCategories: catalogCounts.length
+            }
+        });
 
     } catch (error) {
-        console.error('❌ Tree build error:', error);
+        console.error('Tree build error:', error);
         res.status(500).json({
             success: false,
             message: 'Error building categories tree'
@@ -1031,15 +1330,19 @@ router.post('/map-categories', authenticateToken, async (req, res) => {
 router.put('/clients/:clientId/categories', authenticateToken, async (req, res) => {
     try {
         const { clientId } = req.params;
-        const { allowedCategories, showPrices } = req.body;
+        const { allowedCategories, showPrices, fullAccess } = req.body;
 
-        console.log(`📁 Updating categories for client ${clientId}:`, allowedCategories.length, 'categories');
+        console.log(`📁 Updating categories for client ${clientId}:`);
+        console.log(`   - ${allowedCategories.length} categories`);
+        console.log(`   - showPrices: ${showPrices}`);
+        console.log(`   - fullAccess: ${fullAccess}`);
 
         const client = await AccessCode.findByIdAndUpdate(
             clientId,
             {
                 allowedCategories: allowedCategories,
-                showPrices: showPrices,  // ADICIONAR ESTA LINHA
+                showPrices: showPrices,
+                fullAccess: fullAccess !== undefined ? fullAccess : false,  // NOVO
                 updatedAt: new Date()
             },
             { new: true }
@@ -1051,6 +1354,12 @@ router.put('/clients/:clientId/categories', authenticateToken, async (req, res) 
                 message: 'Client not found'
             });
         }
+
+        // CRITICAL: Invalidate the client's permissions cache
+        // This ensures the client gets the new permissions on next login/refresh
+        const ClientPermissionsCache = require('../models/ClientPermissionsCache');
+        await ClientPermissionsCache.deleteOne({ clientCode: client.code });
+        console.log(`🗑️ Permissions cache invalidated for client ${client.code}`);
 
         console.log(`✅ Categories updated for ${client.clientName}`);
         res.json({

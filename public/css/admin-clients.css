@@ -1589,13 +1589,11 @@
     color: var(--text-muted);
 }
 
-/* MODAL SETTINGS - TAMANHO FIXO */
+/* MODAL SETTINGS - LAYOUT LIMPO COM UM ÚNICO SCROLL */
 #clientSettingsModal .client-modal-content {
     width: 90%;
     max-width: 1200px;
-    min-height: 70vh;
-    max-height: 90vh;
-    height: auto;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
 }
@@ -1603,37 +1601,46 @@
 #clientSettingsModal .client-modal-body {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
-    max-height: calc(90vh - 180px);
-    min-height: 400px;
+    overflow-x: hidden;
+    padding: 1.5rem;
+}
+
+/* Seção de preço mais compacta e discreta */
+#clientSettingsModal .price-toggle-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(40, 40, 50, 0.6);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+}
+
+/* Light theme override */
+body.admin-light-theme #clientSettingsModal .price-toggle-section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+#clientSettingsModal .price-toggle-section .form-label-clients {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
 }
 
 #clientSettingsModal .form-section-clients {
-    height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-#clientSettingsModal .folder-search-results {
-    min-height: 60px;
-    max-height: 200px;
-    /* Altura fixa para resultados */
-    overflow-y: auto;
-    margin: 1rem 0;
-}
-
-#clientSettingsModal .selected-folders-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 300px;
-}
-
-#clientSettingsModal .selected-folders-list {
-    flex: 1;
-    overflow-y: auto;
-    max-height: 350px;
-    min-height: 200px;
+/* Tree container - foco principal */
+#clientSettingsModal #treeViewContainer {
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    background: var(--luxury-dark);
+    padding: 1rem;
+    margin: 0;
 }
 
 /* Garantir que o modal não mude de tamanho */
@@ -1643,53 +1650,45 @@
     justify-content: center;
 }
 
-/* Responsivo para telas menores */
-@media (max-height: 768px) {
-    #clientSettingsModal .client-modal-content {
-        height: 95vh;
-    }
+/* Contador de seleção */
+.tree-selection-summary {
+    text-align: right;
+    padding: 0.75rem 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-subtle);
+    margin-top: 0.5rem;
 }
 
+/* Responsivo para telas menores */
 @media (max-width: 768px) {
     #clientSettingsModal .client-modal-content {
         width: 95%;
-        height: 90vh;
+        max-height: 95vh;
     }
 }
 
-/* SCROLLBAR DOURADA PARA MODAL SETTINGS */
-#clientSettingsModal .client-modal-body::-webkit-scrollbar,
-#clientSettingsModal .folder-search-results::-webkit-scrollbar,
-#clientSettingsModal .selected-folders-list::-webkit-scrollbar {
-    width: 10px;
+/* SCROLLBAR ÚNICA DOURADA */
+#clientSettingsModal .client-modal-body::-webkit-scrollbar {
+    width: 8px;
 }
 
-#clientSettingsModal .client-modal-body::-webkit-scrollbar-track,
-#clientSettingsModal .folder-search-results::-webkit-scrollbar-track,
-#clientSettingsModal .selected-folders-list::-webkit-scrollbar-track {
+#clientSettingsModal .client-modal-body::-webkit-scrollbar-track {
     background: rgba(44, 44, 52, 0.5);
-    border-radius: 5px;
+    border-radius: 4px;
 }
 
-#clientSettingsModal .client-modal-body::-webkit-scrollbar-thumb,
-#clientSettingsModal .folder-search-results::-webkit-scrollbar-thumb,
-#clientSettingsModal .selected-folders-list::-webkit-scrollbar-thumb {
+#clientSettingsModal .client-modal-body::-webkit-scrollbar-thumb {
     background: linear-gradient(135deg, var(--gold-primary), var(--gold-hover));
-    border-radius: 5px;
-    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 }
 
-#clientSettingsModal .client-modal-body::-webkit-scrollbar-thumb:hover,
-#clientSettingsModal .folder-search-results::-webkit-scrollbar-thumb:hover,
-#clientSettingsModal .selected-folders-list::-webkit-scrollbar-thumb:hover {
+#clientSettingsModal .client-modal-body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, var(--gold-hover), #b8941f);
-    box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
 }
 
 /* Firefox */
-#clientSettingsModal .client-modal-body,
-#clientSettingsModal .folder-search-results,
-#clientSettingsModal .selected-folders-list {
+#clientSettingsModal .client-modal-body {
     scrollbar-width: thin;
     scrollbar-color: var(--gold-primary) rgba(44, 44, 52, 0.5);
 }
@@ -2682,6 +2681,15 @@ tr:has(.cart-indicator):hover {
     pointer-events: none;
 }
 
+/* Light theme loading overlay */
+body.admin-light-theme .tree-view-loading::before {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+body.admin-light-theme .tree-view-loading::after {
+    color: #b45309;
+}
+
 /* ===== PENDING REQUESTS BUTTON ===== */
 .btn-warning {
     background: linear-gradient(135deg, #f59e0b, #d97706);
@@ -3635,7 +3643,9 @@ tr:has(.cart-indicator):hover {
 
 .total-items {
     color: #fff;
-    font-size: 0.9em;
+    font-size: 0.95em;
+    font-weight: 500;
+    display: inline-block !important;
 }
 
 .total-value {
@@ -3992,7 +4002,7 @@ tr:has(.cart-indicator):hover {
 .lightbox-nav:hover {
     background: var(--gold-primary);
     color: #1a1a1a;
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%);
 }
 
 .lightbox-nav.prev {
@@ -4143,6 +4153,69 @@ tr:has(.cart-indicator):hover {
     border-color: rgba(212, 175, 55, 0.5);
 }
 
+/* ===== TOGGLE STYLES FOR CLIENT SETTINGS MODAL ===== */
+#clientSettingsModal .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+    vertical-align: middle;
+}
+
+#clientSettingsModal .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+#clientSettingsModal .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(120, 120, 130, 0.6);
+    transition: 0.25s ease;
+    border-radius: 11px;
+}
+
+#clientSettingsModal .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #fff;
+    transition: 0.25s ease;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#clientSettingsModal .toggle-switch input:checked + .toggle-slider {
+    background: #d4af37;
+}
+
+#clientSettingsModal .toggle-switch input:checked + .toggle-slider:before {
+    left: calc(100% - 19px);
+    background-color: #fff;
+}
+
+#clientSettingsModal .toggle-switch:hover .toggle-slider {
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+/* Light Theme Toggle Override */
+body.admin-light-theme #clientSettingsModal .toggle-slider {
+    background-color: #cbd5e1;
+}
+
+body.admin-light-theme #clientSettingsModal .toggle-switch input:checked + .toggle-slider {
+    background: #d4af37;
+}
+
 /* ===== ACTION MENU DROPDOWN FOR CLIENT MANAGEMENT ===== */
 .client-actions-cell {
     text-align: right !important;
@@ -4190,20 +4263,18 @@ tr:has(.cart-indicator):hover {
 }
 
 .client-action-menu-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 6px;
+    position: fixed;
+    top: 0;
+    left: 0;
     min-width: 180px;
     background: #2c2c34;
     border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    z-index: 99999;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-8px);
-    transition: all 0.2s ease;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
     overflow: hidden;
     pointer-events: none;
 }
@@ -4211,21 +4282,7 @@ tr:has(.cart-indicator):hover {
 .client-action-menu-dropdown.open {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
     pointer-events: auto;
-}
-
-/* Open upward when near bottom */
-.client-action-menu-dropdown.open-up {
-    top: auto;
-    bottom: 100%;
-    margin-top: 0;
-    margin-bottom: 6px;
-    transform: translateY(8px);
-}
-
-.client-action-menu-dropdown.open-up.open {
-    transform: translateY(0);
 }
 
 .client-action-menu-item {
@@ -4308,78 +4365,90 @@ tr:has(.cart-indicator):hover {
     z-index: 9998 !important;
 }
 
-/* ===== TEMA LIGHT - CLIENT MANAGEMENT (Constant Contact Style) ===== */
-/* Clean & Minimal Design - White backgrounds, blue accents, pastel colors */
+/* Ensure dropdown is never cut off */
+.clients-table td:last-child {
+    overflow: visible;
+}
 
-/* Cards e Containers */
+.client-action-menu-container {
+    position: relative;
+    overflow: visible;
+}
+
+/* ===== TEMA LIGHT - CLIENT MANAGEMENT (Gold & Clean Style) ===== */
+/* Clean & Minimal Design - White backgrounds, gold accents, minimal shadows */
+
+/* Section Header - Clean white with subtle gold */
 body.admin-light-theme .clients-section-header {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: none;
 }
 
 body.admin-light-theme .clients-title {
-    color: #1e293b;
-    font-weight: 500;
+    color: #1f2937;
+    font-weight: 600;
 }
 
 body.admin-light-theme .clients-title i {
-    color: #0066cc;
+    color: #d4af37;
 }
 
 body.admin-light-theme .clients-filters {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
 }
 
 body.admin-light-theme .clients-table-container {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
 }
 
-/* Table Header - Clean */
+/* Table Header - Clean with gold text */
 body.admin-light-theme .clients-table th {
-    background: #f8fafc;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-    font-weight: 500;
+    background: #fafafa !important;
+    color: #92400e !important;
+    border-bottom: 2px solid #fcd34d !important;
+    font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-/* Table Cells - Legible dark text */
+/* Table Cells */
 body.admin-light-theme .clients-table td {
-    border-bottom: 1px solid #f1f5f9;
-    color: #475569;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
 }
 
 body.admin-light-theme .clients-table tbody tr:hover {
-    background: #f8fafc;
+    background: #fffbeb;
 }
 
-/* Client Code - Blue accent (Constant Contact style) */
+/* Client Code - Gold accent */
 body.admin-light-theme .client-code-cell {
-    color: #0066cc;
+    color: #b45309;
     text-shadow: none;
+    font-weight: 600;
 }
 
-/* Client Name - Dark legible */
+/* Client Name */
 body.admin-light-theme .client-name-cell {
-    color: #1e293b;
+    color: #1f2937;
     font-weight: 500;
 }
 
-/* Client Email - Muted */
+/* Client Email */
 body.admin-light-theme .client-email-cell {
-    color: #64748b;
+    color: #6b7280;
 }
 
 /* Filter Labels */
 body.admin-light-theme .filter-label {
-    color: #475569;
+    color: #374151;
     font-weight: 500;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -4390,44 +4459,45 @@ body.admin-light-theme .filter-label {
 body.admin-light-theme .filter-input,
 body.admin-light-theme .filter-select {
     background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #1e293b;
+    border: 1px solid #d1d5db;
+    color: #1f2937;
 }
 
 body.admin-light-theme .filter-input::placeholder {
-    color: #94a3b8;
+    color: #9ca3af;
 }
 
 body.admin-light-theme .filter-input:focus,
 body.admin-light-theme .filter-select:focus {
-    border-color: #0066cc;
-    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+    border-color: #d4af37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
 /* Filter Button */
 body.admin-light-theme .btn-filter {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
 }
 
 body.admin-light-theme .btn-filter:hover {
-    background: #e2e8f0;
+    background: #f9fafb;
+    border-color: #d4af37;
 }
 
-/* Category Tags - Azul pastel */
+/* Category Tags - Gold/amber */
 body.admin-light-theme .category-tag {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
 }
 
 body.admin-light-theme .categories-more {
-    background: #f1f5f9;
-    color: #475569;
+    background: #f9fafb;
+    color: #6b7280;
 }
 
-/* Status Badges - Pastel colors */
+/* Status Badges */
 body.admin-light-theme .status-badge-client {
     font-weight: 500;
 }
@@ -4444,21 +4514,21 @@ body.admin-light-theme .status-inactive {
     border-color: #fecaca;
 }
 
-/* Access Type Badges - Clean & readable */
+/* Access Type Badges */
 body.admin-light-theme .access-normal {
-    background: #f1f5f9;
-    color: #475569;
-    border-color: #e2e8f0;
+    background: #f9fafb;
+    color: #374151;
+    border-color: #e5e7eb;
 }
 
 body.admin-light-theme .access-special {
-    background: #fef7ed;
+    background: #fffbeb;
     color: #b45309;
-    border-color: #fed7aa;
+    border-color: #fcd34d;
     box-shadow: none;
 }
 
-/* REMOVER BOX-SHADOW DE TODOS OS BOTÕES (estado normal) */
+/* Remove box-shadow from all buttons */
 body.admin-light-theme .btn-view,
 body.admin-light-theme .btn-edit,
 body.admin-light-theme .btn-delete,
@@ -4474,31 +4544,31 @@ body.admin-light-theme .btn-filter {
     box-shadow: none !important;
 }
 
-/* Action Buttons - Clean & minimal */
+/* View Button - Clean */
 body.admin-light-theme .btn-view {
     background: #ffffff;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    color: #374151;
+    border: 1px solid #d1d5db;
 }
 
 body.admin-light-theme .btn-view:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+    background: #f9fafb;
+    border-color: #d4af37;
 }
 
-/* Edit Button - Azul pastel */
+/* Edit Button - Gold */
 body.admin-light-theme .btn-edit {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fcd34d;
 }
 
 body.admin-light-theme .btn-edit:hover {
-    background: #dbeafe;
-    border-color: #93c5fd;
+    background: #fef3c7;
+    border-color: #f59e0b;
 }
 
-/* Delete Button - Vermelho pastel */
+/* Delete Button - Red */
 body.admin-light-theme .btn-delete {
     background: #fef2f2;
     color: #b91c1c;
@@ -4569,7 +4639,7 @@ body.admin-light-theme .form-control::placeholder {
 
 body.admin-light-theme .form-input:focus,
 body.admin-light-theme .form-control:focus {
-    border-color: #0066cc;
+    border-color: #d4af37;
     box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
@@ -4620,7 +4690,7 @@ body.admin-light-theme .pending-requests-badge {
 
 /* Usage Count - Azul */
 body.admin-light-theme .usage-count {
-    color: #0066cc;
+    color: #d4af37;
 }
 
 body.admin-light-theme .usage-last {
@@ -4640,8 +4710,8 @@ body.admin-light-theme .pagination-btn:hover:not(:disabled) {
 }
 
 body.admin-light-theme .pagination-btn.active {
-    background: #0066cc;
-    border-color: #0066cc;
+    background: #d4af37;
+    border-color: #d4af37;
     color: #ffffff;
 }
 
@@ -4701,4 +4771,829 @@ body.admin-light-theme .feedback-card:hover,
 body.admin-light-theme .clients-table tbody tr:hover {
     box-shadow: none !important;
     transform: none !important;
+}
+
+/* ===== DROPDOWN MENU DE AÇÕES - LIGHT THEME ===== */
+body.admin-light-theme .client-action-menu-dropdown {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.admin-light-theme .client-action-menu-item {
+    color: #475569 !important;
+    background: transparent !important;
+}
+
+body.admin-light-theme .client-action-menu-item:hover {
+    background: #f8fafc !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .client-action-menu-item.action-delete {
+    border-top: 1px solid #f1f5f9 !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme .client-action-menu-item.action-delete:hover {
+    background: #fef2f2 !important;
+}
+
+/* Botão trigger do dropdown - Light Theme - More attention */
+body.admin-light-theme .client-action-menu-trigger {
+    background: #ffffff !important;
+    border: 1px solid #c9a227 !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+body.admin-light-theme .client-action-menu-trigger:hover {
+    background: #c9a227 !important;
+    border-color: #b8972a !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ===== CART INDICATOR (BADGE LARANJA) - LIGHT THEME ===== */
+body.admin-light-theme .cart-indicator {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fcd34d;
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+body.admin-light-theme .cart-indicator i {
+    color: #d97706;
+}
+
+body.admin-light-theme .cart-badge-count {
+    background: #fbbf24 !important;
+    color: #78350f !important;
+}
+
+/* ===== CART CONTROL MODAL - LIGHT THEME ===== */
+
+/* Modal Backdrop */
+body.admin-light-theme #cartControlModal.cart-modal {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Modal Content Container */
+body.admin-light-theme #cartControlModal .cart-modal-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Fixed Top Section */
+body.admin-light-theme #cartControlModal .cart-fixed-top {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Modal Header - clean white */
+body.admin-light-theme #cartControlModal .cart-modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-title {
+    color: #374151 !important;
+    font-weight: 500 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-title i {
+    color: #64748b !important;
+}
+
+/* Last Activity - no background */
+body.admin-light-theme #cartControlModal .last-activity {
+    background: transparent !important;
+    color: #64748b !important;
+    font-weight: 400 !important;
+}
+
+body.admin-light-theme #cartControlModal .last-activity i {
+    color: #94a3b8 !important;
+}
+
+/* Close Button */
+body.admin-light-theme #cartControlModal .cart-close {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-close:hover {
+    background: #fee2e2 !important;
+}
+
+/* Time Section - clean */
+body.admin-light-theme #cartControlModal .cart-time-section {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme #cartControlModal .time-label {
+    color: #64748b !important;
+    font-weight: 400 !important;
+}
+
+body.admin-light-theme #cartControlModal .time-label i {
+    color: #94a3b8 !important;
+}
+
+/* Time Buttons */
+body.admin-light-theme #cartControlModal .time-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+body.admin-light-theme #cartControlModal .time-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme #cartControlModal .time-btn.active {
+    background: #d4af37 !important;
+    border-color: #d4af37 !important;
+    color: #ffffff !important;
+}
+
+/* Expires Display - clean, subtle border */
+body.admin-light-theme #cartControlModal .cart-countdown,
+body.admin-light-theme .cart-modal .cart-countdown,
+body.admin-light-theme .cart-countdown {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    box-shadow: none !important;
+}
+
+body.admin-light-theme #cartControlModal .countdown-label,
+body.admin-light-theme .cart-modal .countdown-label {
+    color: #64748b !important;
+    font-weight: 500 !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    background: transparent !important;
+}
+
+/* Expires time value - teal for visibility */
+body.admin-light-theme #cartControlModal .countdown-timer,
+body.admin-light-theme #cartControlModal #cartCountdown,
+body.admin-light-theme .cart-modal .countdown-timer,
+body.admin-light-theme .cart-modal #cartCountdown {
+    color: #0d9488 !important;
+    font-weight: 600 !important;
+    background: transparent !important;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace !important;
+}
+
+/* Category Navigation Section - white background */
+body.admin-light-theme #cartControlModal .cart-nav-section,
+body.admin-light-theme .cart-modal .cart-nav-section {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Nav Arrows - blue outline */
+body.admin-light-theme #cartControlModal .nav-btn,
+body.admin-light-theme .cart-modal .nav-btn {
+    background: #ffffff !important;
+    border: 1px solid #fde68a !important;
+    color: #d4af37 !important;
+}
+
+body.admin-light-theme #cartControlModal .nav-btn:hover,
+body.admin-light-theme .cart-modal .nav-btn:hover {
+    background: #fffbeb !important;
+    border-color: #fcd34d !important;
+}
+
+/* Category Tabs - white background, blue borders */
+body.admin-light-theme #cartControlModal .cat-tab,
+body.admin-light-theme .cart-modal .cat-tab {
+    background: #ffffff !important;
+    border: 1px solid #fde68a !important;
+    color: #374151 !important;
+}
+
+body.admin-light-theme #cartControlModal .cat-tab:hover,
+body.admin-light-theme .cart-modal .cat-tab:hover {
+    background: #fffbeb !important;
+    border-color: #fcd34d !important;
+    color: #1e293b !important;
+}
+
+/* Category Tabs - active: gold background */
+body.admin-light-theme #cartControlModal .cat-tab.active,
+body.admin-light-theme .cart-modal .cat-tab.active {
+    background: #d4af37 !important;
+    border-color: #d4af37 !important;
+    color: #ffffff !important;
+}
+
+/* Table Header - gold accent */
+body.admin-light-theme #cartControlModal .cart-columns-header,
+body.admin-light-theme .cart-modal .cart-columns-header,
+body.admin-light-theme .cart-columns-header {
+    background: #fffbeb !important;
+    border-bottom: none !important;
+    border-top: none !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-columns-header > div,
+body.admin-light-theme .cart-modal .cart-columns-header > div,
+body.admin-light-theme #cartControlModal .cart-columns-header .col-category,
+body.admin-light-theme #cartControlModal .cart-columns-header .col-qb,
+body.admin-light-theme #cartControlModal .cart-columns-header .col-qty,
+body.admin-light-theme #cartControlModal .cart-columns-header .col-price,
+body.admin-light-theme #cartControlModal .cart-columns-header .col-subtotal {
+    color: #92400e !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.5px !important;
+    background: transparent !important;
+}
+
+/* Items Section */
+body.admin-light-theme #cartControlModal .cart-items-section {
+    background: #ffffff !important;
+}
+
+/* Category Rows - clean, subtle */
+body.admin-light-theme #cartControlModal .cart-category {
+    background: #ffffff !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    border-left: 2px solid transparent !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-category:hover {
+    background: #fafafa !important;
+    border-left-color: #cbd5e1 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-category.expanded {
+    background: #fafafa !important;
+    border-left-color: #d4af37 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-category.expanded .cat-row {
+    background: transparent !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-category.expanded .cat-row::before {
+    background: transparent !important;
+}
+
+/* Category Header */
+body.admin-light-theme #cartControlModal .cat-header,
+body.admin-light-theme #cartControlModal .cat-row {
+    background: transparent !important;
+}
+
+body.admin-light-theme #cartControlModal .cat-arrow {
+    color: #94a3b8 !important;
+}
+
+body.admin-light-theme #cartControlModal .cat-name {
+    color: #374151 !important;
+    font-weight: 500 !important;
+}
+
+/* QB Item Badge - NO background, just styled text */
+body.admin-light-theme #cartControlModal .qb-badge {
+    background: transparent !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Column Values - softer fonts */
+body.admin-light-theme #cartControlModal .col-qty,
+body.admin-light-theme #cartControlModal .col-price {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+body.admin-light-theme #cartControlModal .col-subtotal {
+    color: #059669 !important;
+    font-weight: 600 !important;
+}
+
+/* Quantity Input */
+body.admin-light-theme #cartControlModal input[type="number"],
+body.admin-light-theme #cartControlModal .qty-input {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme #cartControlModal input[type="number"]:focus {
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1) !important;
+}
+
+/* Category Items */
+body.admin-light-theme #cartControlModal .cat-items {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme #cartControlModal .cat-item {
+    background: #ffffff !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body.admin-light-theme #cartControlModal .cat-item:hover {
+    background: #fafafa !important;
+}
+
+body.admin-light-theme #cartControlModal .item-photo-info {
+    color: #64748b !important;
+    font-weight: 400 !important;
+}
+
+/* Modal Footer - clean */
+body.admin-light-theme #cartControlModal .cart-modal-footer {
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Total - softer */
+body.admin-light-theme #cartControlModal .cart-total-section,
+body.admin-light-theme #cartControlModal .total-label {
+    color: #64748b !important;
+    font-weight: 400 !important;
+}
+
+body.admin-light-theme #cartControlModal .total-value,
+body.admin-light-theme #cartControlModal .cart-total-amount {
+    color: #059669 !important;
+    font-weight: 600 !important;
+}
+
+/* Total Items Count - visible */
+body.admin-light-theme #cartControlModal .total-items,
+body.admin-light-theme .cart-modal .total-items {
+    color: #374151 !important;
+    font-weight: 500 !important;
+    display: inline !important;
+}
+
+/* Expanded Category Row Header - gold highlight */
+body.admin-light-theme #cartControlModal .cart-category.expanded .cat-row,
+body.admin-light-theme .cart-modal .cart-category.expanded .cat-row {
+    background: #fffbeb !important;
+    border-left: 3px solid #d4af37 !important;
+    border-bottom: 1px solid #fde68a !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-category.expanded .cat-row::before {
+    background: #fffbeb !important;
+}
+
+/* Expanded Items Container - white background */
+body.admin-light-theme #cartControlModal .cat-items,
+body.admin-light-theme .cart-modal .cat-items {
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Thumbnail Items - white background */
+body.admin-light-theme #cartControlModal .thumb-item,
+body.admin-light-theme .cart-modal .thumb-item {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme #cartControlModal .thumb-item:hover,
+body.admin-light-theme .cart-modal .thumb-item:hover {
+    background: #f8fafc !important;
+    border-color: #fde68a !important;
+}
+
+/* Thumbnail Image - subtle border */
+body.admin-light-theme #cartControlModal .thumb-item img,
+body.admin-light-theme .cart-modal .thumb-item img {
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Thumbnail Name - dark font */
+body.admin-light-theme #cartControlModal .thumb-name,
+body.admin-light-theme .cart-modal .thumb-name {
+    color: #1e293b !important;
+    font-weight: 500 !important;
+}
+
+/* Cancel Button */
+body.admin-light-theme #cartControlModal .btn-cancel {
+    background: #ffffff !important;
+    border: 1px solid #fca5a5 !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme #cartControlModal .btn-cancel:hover {
+    background: #fef2f2 !important;
+}
+
+/* Save Button */
+body.admin-light-theme #cartControlModal .btn-save {
+    background: #d4af37 !important;
+    border: 1px solid #d4af37 !important;
+    color: #ffffff !important;
+}
+
+body.admin-light-theme #cartControlModal .btn-save:hover {
+    background: #c9a227 !important;
+}
+
+/* Scrollbar */
+body.admin-light-theme #cartControlModal .cart-items-section::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-items-section::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+}
+
+body.admin-light-theme #cartControlModal .cart-items-section::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+}
+
+/* Navigation Arrows */
+body.admin-light-theme #cartControlModal .tabs-nav-left,
+body.admin-light-theme #cartControlModal .tabs-nav-right {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+body.admin-light-theme #cartControlModal .tabs-nav-left:hover,
+body.admin-light-theme #cartControlModal .tabs-nav-right:hover {
+    background: #f1f5f9 !important;
+    color: #d4af37 !important;
+}
+
+/* ===== CLIENT MODAL - LIGHT THEME ===== */
+
+/* Modal Content Container */
+body.admin-light-theme .client-modal-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Modal Header */
+body.admin-light-theme .client-modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.admin-light-theme .modal-title-clients {
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .modal-title-clients i {
+    color: #d4af37 !important;
+}
+
+/* Close Button */
+body.admin-light-theme .modal-close-clients {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme .modal-close-clients:hover {
+    background: #fee2e2 !important;
+}
+
+/* Modal Body */
+body.admin-light-theme .client-modal-body {
+    background: #f8fafc !important;
+}
+
+/* Form Sections - white with gold left border */
+body.admin-light-theme .form-section-clients {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-left: 4px solid #d4af37 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Section Titles */
+body.admin-light-theme .form-section-title-clients {
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .form-section-title-clients i {
+    color: #d4af37 !important;
+}
+
+/* Form Labels */
+body.admin-light-theme .form-label-clients {
+    color: #374151 !important;
+}
+
+/* Form Inputs */
+body.admin-light-theme .form-input-clients {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #1e293b !important;
+}
+
+body.admin-light-theme .form-input-clients::placeholder {
+    color: #9ca3af !important;
+}
+
+body.admin-light-theme .form-input-clients:focus {
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
+}
+
+/* Select dropdowns */
+body.admin-light-theme .form-input-clients option {
+    background: #ffffff !important;
+    color: #1e293b !important;
+}
+
+/* Access Code Preview */
+body.admin-light-theme .code-preview {
+    background: #ffffff !important;
+    border: 2px solid #d4af37 !important;
+    color: #b45309 !important;
+    box-shadow: none !important;
+}
+
+/* Copy Button */
+body.admin-light-theme .copy-code-btn {
+    background: #d4af37 !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+body.admin-light-theme .copy-code-btn:hover {
+    background: #c9a227 !important;
+}
+
+/* Modal Footer */
+body.admin-light-theme .client-modal-footer {
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Modal Buttons - Cancel */
+body.admin-light-theme .client-modal-footer .btn-modal.btn-cancel,
+body.admin-light-theme .btn-modal.btn-cancel {
+    background: #ffffff !important;
+    border: 1px solid #fca5a5 !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme .client-modal-footer .btn-modal.btn-cancel:hover,
+body.admin-light-theme .btn-modal.btn-cancel:hover {
+    background: #fef2f2 !important;
+}
+
+/* Modal Buttons - Save */
+body.admin-light-theme .client-modal-footer .btn-modal.btn-save,
+body.admin-light-theme .btn-modal.btn-save {
+    background: #d4af37 !important;
+    border: 1px solid #d4af37 !important;
+    color: #ffffff !important;
+}
+
+body.admin-light-theme .client-modal-footer .btn-modal.btn-save:hover,
+body.admin-light-theme .btn-modal.btn-save:hover {
+    background: #c9a227 !important;
+}
+
+/* Modal Buttons - Reject (red outline) */
+body.admin-light-theme .btn-modal.btn-reject {
+    background: #ffffff !important;
+    border: 1px solid #fca5a5 !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme .btn-modal.btn-reject:hover {
+    background: #fef2f2 !important;
+}
+
+/* ===== CONFIRMATION MODAL (Activate/Deactivate) - LIGHT THEME ===== */
+
+/* Modal Content */
+body.admin-light-theme .luxury-confirm-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Header */
+body.admin-light-theme .luxury-confirm-header {
+    background: transparent !important;
+}
+
+/* Warning Icon */
+body.admin-light-theme .luxury-confirm-icon {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
+body.admin-light-theme .luxury-confirm-icon i {
+    color: #dc2626 !important;
+}
+
+/* Title */
+body.admin-light-theme .luxury-confirm-title {
+    color: #1e293b !important;
+}
+
+/* Message */
+body.admin-light-theme .luxury-confirm-message {
+    color: #374151 !important;
+}
+
+/* Details Box */
+body.admin-light-theme .luxury-confirm-details {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+/* Cancel Button */
+body.admin-light-theme .luxury-confirm-btn-cancel {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+}
+
+body.admin-light-theme .luxury-confirm-btn-cancel:hover {
+    background: #f3f4f6 !important;
+    border-color: #9ca3af !important;
+}
+
+/* Confirm Button (Delete - Red) */
+body.admin-light-theme .luxury-confirm-btn-confirm {
+    background: #dc2626 !important;
+    border: 1px solid #dc2626 !important;
+    color: #ffffff !important;
+}
+
+body.admin-light-theme .luxury-confirm-btn-confirm:hover {
+    background: #b91c1c !important;
+}
+
+/* Activate Button (Green) */
+body.admin-light-theme .luxury-confirm-btn.btn-activate {
+    background: #16a34a !important;
+    border: 1px solid #16a34a !important;
+    color: #ffffff !important;
+}
+
+body.admin-light-theme .luxury-confirm-btn.btn-activate:hover {
+    background: #15803d !important;
+}
+
+/* Deactivate Button (Orange) */
+body.admin-light-theme .luxury-confirm-btn.btn-deactivate {
+    background: #d97706 !important;
+    border: 1px solid #d97706 !important;
+    color: #ffffff !important;
+}
+
+body.admin-light-theme .luxury-confirm-btn.btn-deactivate:hover {
+    background: #b45309 !important;
+}
+
+/* ===== PERMISSIONS MODAL - LIGHT THEME ===== */
+
+/* Tree View Container - White background */
+body.admin-light-theme .tree-view-content,
+body.admin-light-theme #treeViewContent {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+}
+
+/* Tree View Section */
+body.admin-light-theme .tree-view-section {
+    background: #ffffff !important;
+}
+
+/* Category Tree Items */
+body.admin-light-theme .category-tree-item,
+body.admin-light-theme .tree-item {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body.admin-light-theme .category-tree-item:hover,
+body.admin-light-theme .tree-item:hover {
+    background: #fafafa !important;
+}
+
+/* Tree Item Text */
+body.admin-light-theme .tree-item-label,
+body.admin-light-theme .category-name {
+    color: #1e293b !important;
+}
+
+/* Tree Expand/Collapse Arrow */
+body.admin-light-theme .tree-toggle,
+body.admin-light-theme .expand-arrow {
+    color: #d4af37 !important;
+}
+
+/* Checkbox styling */
+body.admin-light-theme .tree-checkbox:checked {
+    background-color: #d4af37 !important;
+    border-color: #d4af37 !important;
+}
+
+/* Photo count text */
+body.admin-light-theme .photo-count,
+body.admin-light-theme .item-count {
+    color: #6b7280 !important;
+}
+
+/* Selection count badge */
+body.admin-light-theme .selection-badge,
+body.admin-light-theme .category-count-badge {
+    background: #fffbeb !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+}
+
+/* Save Categories Button - Gold with background */
+body.admin-light-theme .btn-save-categories,
+body.admin-light-theme .permissions-modal .btn-save,
+body.admin-light-theme #permissionsModal .btn-save,
+body.admin-light-theme [class*="permissions"] .btn-save {
+    background: #d4af37 !important;
+    border: 1px solid #d4af37 !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+
+body.admin-light-theme .btn-save-categories:hover,
+body.admin-light-theme .permissions-modal .btn-save:hover,
+body.admin-light-theme #permissionsModal .btn-save:hover,
+body.admin-light-theme [class*="permissions"] .btn-save:hover {
+    background: #c9a227 !important;
+    border-color: #c9a227 !important;
+}
+
+/* ===== LIGHTBOX - LIGHT THEME ===== */
+
+body.admin-light-theme .cart-lightbox {
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+body.admin-light-theme .lightbox-nav {
+    background: #ffffff !important;
+    border: 2px solid #d4af37 !important;
+    color: #d4af37 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.admin-light-theme .lightbox-nav:hover {
+    background: #d4af37 !important;
+    color: #ffffff !important;
+    transform: translateY(-50%) !important;
+}
+
+body.admin-light-theme .lightbox-close {
+    background: #ffffff !important;
+    border: 1px solid #fca5a5 !important;
+    color: #dc2626 !important;
+}
+
+body.admin-light-theme .lightbox-close:hover {
+    background: #fef2f2 !important;
+    transform: scale(1.05) !important;
+}
+
+body.admin-light-theme #lightboxName {
+    color: #1e293b !important;
+}
+
+body.admin-light-theme #lightboxCounter {
+    color: #d4af37 !important;
+}
+
+body.admin-light-theme #lightboxImage {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
 }

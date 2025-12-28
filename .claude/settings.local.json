@@ -121,7 +121,13 @@
       "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" log --oneline -5)",
       "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add -A)",
       "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add --all -- ':!nul')",
-      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add public/ src/ .claude/)"
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add public/ src/ .claude/)",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" commit -m \"$\\(cat <<''EOF''\nfeat: robust CDE catalog sync + MongoDB fallback system\n\n- Catalog sync now uses per-category queries \\(8 small queries vs 1 giant\\)\n- Added 15s timeout per category to prevent ECONNRESET\n- Added MongoDB fallback when CDE cache fails completely\n- Physical stock sync from CDE runs every 30min \\(production only\\)\n- Logical stock sync runs every 5min \\(cart reservations\\)\n- Cache now has 479 products with proper fallback chain\n- Various CSS/JS improvements and bug fixes\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(python:*)",
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :3000 ^| findstr LISTEN''\\) do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"for /f \"tokens=5\" %a in \\(''netstat -ano ^| findstr :3000 ^| findstr LISTEN''\\) do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"netstat -ano | findstr 3000\")",
+      "Bash(start /B node src/server.js)"
     ],
     "deny": [],
     "ask": []

@@ -1863,12 +1863,12 @@
         // Esconder selector
         document.getElementById('gallerySelector').style.display = 'none';
 
-        // Mostrar loading
+        // NÃO mostrar o loading que gira - usar apenas navigationLoading
         const loadingEl = document.getElementById('clientLoading');
         const contentEl = document.getElementById('clientContent');
 
-        if (loadingEl) loadingEl.style.display = 'block';
-        if (contentEl) contentEl.style.display = 'none';
+        if (loadingEl) loadingEl.style.display = 'none'; // Manter escondido
+        if (contentEl) contentEl.style.display = 'block'; // Mostrar conteúdo
 
         // Carregar dados baseado no modo
         if (mode === 'coming-soon') {

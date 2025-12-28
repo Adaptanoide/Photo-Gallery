@@ -333,6 +333,101 @@ const CATEGORY_INCLUSIONS = {
 };
 
 // ============================================
+// HELPER: Check if user has permission for a category
+// Used to filter homepage and subcategories
+// A category is shown ONLY if at least ONE subcategory is permitted
+// ============================================
+function checkCategoryPermission(categoryKey, categoryConfig, allowedCatalogCats, allowedPhotoCats) {
+    // Se não tem restrições, permite tudo
+    if ((!allowedCatalogCats || allowedCatalogCats.length === 0) &&
+        (!allowedPhotoCats || allowedPhotoCats.length === 0)) {
+        return true;
+    }
+
+    // Verificar se PELO MENOS UMA subcategoria está permitida
+    // A categoria principal só aparece se tiver pelo menos uma subcategoria acessível
+    if (categoryConfig.subcategories) {
+        for (const [subKey, subConfig] of Object.entries(categoryConfig.subcategories)) {
+            // Para subcategorias de stock (printed, metallic, dyed, sheepskin, etc.)
+            if (subConfig.catalogCategory) {
+                if (allowedCatalogCats.includes(subConfig.catalogCategory)) {
+                    console.log(`✅ Categoria ${categoryConfig.name} permitida via subcategoria stock: ${subConfig.catalogCategory}`);
+                    return true;
+                }
+            }
+
+            // Para subcategorias de foto (folderPath)
+            if (subConfig.viewType === 'photo' && subConfig.folderPath) {
+                const folderMatch = allowedPhotoCats.some(pc => {
+                    if (typeof pc === 'string') {
+                        return pc.includes(subConfig.folderPath);
+                    }
+                    return pc.name?.includes(subConfig.folderPath) || pc.id?.includes(subConfig.folderPath);
+                });
+                if (folderMatch) {
+                    console.log(`✅ Categoria ${categoryConfig.name} permitida via subcategoria foto: ${subConfig.folderPath}`);
+                    return true;
+                }
+            }
+
+            // Para subcategorias mistas (mixed) - verificar ambos
+            if (subConfig.viewType === 'mixed') {
+                // Verificar stock
+                if (subConfig.catalogCategory && allowedCatalogCats.includes(subConfig.catalogCategory)) {
+                    console.log(`✅ Categoria ${categoryConfig.name} permitida via subcategoria mixed/stock: ${subConfig.catalogCategory}`);
+                    return true;
+                }
+                // Verificar foto
+                if (subConfig.folderPath) {
+                    const folderMatch = allowedPhotoCats.some(pc => {
+                        if (typeof pc === 'string') {
+                            return pc.includes(subConfig.folderPath);
+                        }
+                        return pc.name?.includes(subConfig.folderPath) || pc.id?.includes(subConfig.folderPath);
+                    });
+                    if (folderMatch) {
+                        console.log(`✅ Categoria ${categoryConfig.name} permitida via subcategoria mixed/foto: ${subConfig.folderPath}`);
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    console.log(`🚫 Categoria ${categoryConfig.name} BLOQUEADA - nenhuma subcategoria permitida`);
+    return false;
+}
+
+// ============================================
+// HELPER: Check if user has permission for a subcategory
+// ============================================
+function checkSubcategoryPermission(subcategoryConfig, allowedCatalogCats, allowedPhotoCats) {
+    // Se não tem restrições, permite tudo
+    if ((!allowedCatalogCats || allowedCatalogCats.length === 0) &&
+        (!allowedPhotoCats || allowedPhotoCats.length === 0)) {
+        return true;
+    }
+
+    // Para subcategorias de stock
+    if (subcategoryConfig.catalogCategory) {
+        return allowedCatalogCats.includes(subcategoryConfig.catalogCategory);
+    }
+
+    // Para subcategorias de foto
+    if (subcategoryConfig.viewType === 'photo' && subcategoryConfig.folderPath) {
+        return allowedPhotoCats.some(pc => {
+            if (typeof pc === 'string') {
+                return pc.includes(subcategoryConfig.folderPath);
+            }
+            return pc.name?.includes(subcategoryConfig.folderPath) || pc.id?.includes(subcategoryConfig.folderPath);
+        });
+    }
+
+    // Default: permitir se não conseguir determinar
+    return true;
+}
+
+// ============================================
 // HELPER: Sanitize product name for image path
 // Replaces characters not allowed in filenames
 // ============================================
@@ -374,10 +469,11 @@ window.CatalogState = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏠 Catalog system initializing...');
 
-    // Show homepage on load
-    setTimeout(() => {
-        showHomepage();
-    }, 100);
+    // ❌ NÃO mostrar homepage aqui - deixar loadClientDataAfterMode controlar
+    // Isso garante que as permissões são carregadas ANTES dos cards aparecerem
+    // setTimeout(() => {
+    //     showHomepage();
+    // }, 100);
 
     // ✅ Listen for catalog stock restoration (when item is removed from cart)
     window.addEventListener('catalogStockRestored', function(event) {
@@ -545,22 +641,22 @@ window.showHomepage = function() {
     CatalogState.currentView = 'homepage';
     CatalogState.currentCategory = null;
     CatalogState.currentSubcategory = null;
-    CatalogState.breadcrumbContext = null;  // ✅ Limpar contexto ao voltar para home
-    CatalogState.directGalleryCategory = null;  // ✅ Limpar estado da galeria direta
+    CatalogState.breadcrumbContext = null;
+    CatalogState.directGalleryCategory = null;
 
     // Hide photo gallery containers
     hidePhotoContainers();
 
-    // HIDE breadcrumb on homepage (unified management)
+    // HIDE breadcrumb on homepage
     setBreadcrumbVisible(false);
 
     // Remove category sidebar if present
     const sidebar = document.querySelector('.category-sidebar');
     if (sidebar) sidebar.remove();
     document.body.classList.remove('has-category-sidebar');
-    document.body.classList.remove('sidebar-collapsed'); // Also remove collapsed class
+    document.body.classList.remove('sidebar-collapsed');
 
-    // Reset sidebar collapsed state when going to homepage
+    // Reset sidebar collapsed state
     localStorage.removeItem('sidebarCollapsed');
 
     // Get or create catalog container
@@ -576,6 +672,8 @@ window.showHomepage = function() {
 
     if (!container) return;
 
+    // NÃO gerenciar loading aqui - deixar loadClientDataAfterMode controlar o timing
+    // Apenas renderizar os cards imediatamente
     container.style.display = 'block';
     container.innerHTML = renderHomepage();
 
@@ -588,8 +686,20 @@ window.showHomepage = function() {
 
 /**
  * Render homepage HTML
+ * Agora com filtro de permissões do cliente
  */
 function renderHomepage() {
+    // Obter permissões do cliente
+    const allowedCatalogCats = window.navigationState?.allowedCatalogCategories || [];
+    const allowedPhotoCats = window.navigationState?.allowedCategories || [];
+    const hasRestrictions = allowedCatalogCats.length > 0 || allowedPhotoCats.length > 0;
+
+    // DEBUG - Ver estado das permissões
+    console.log('🏠 [renderHomepage] DEBUG:');
+    console.log('   allowedCatalogCats:', allowedCatalogCats);
+    console.log('   allowedPhotoCats:', allowedPhotoCats.length, 'items');
+    console.log('   hasRestrictions:', hasRestrictions);
+
     let html = `
         <div class="catalog-homepage">
             <div class="homepage-header">
@@ -600,6 +710,16 @@ function renderHomepage() {
     `;
 
     for (const [key, category] of Object.entries(MAIN_CATEGORIES)) {
+        // ============================================
+        // VERIFICAR PERMISSÕES PARA ESTA CATEGORIA
+        // ============================================
+        if (hasRestrictions) {
+            const hasPermission = checkCategoryPermission(key, category, allowedCatalogCats, allowedPhotoCats);
+            if (!hasPermission) {
+                console.log(`🚫 Categoria ${key} oculta por restrição de permissão`);
+                continue; // Pular esta categoria
+            }
+        }
         // Check if category has a thumbnail - process for R2 in production
         const hasThumbnail = category.thumbnail ? true : false;
         const thumbnailClass = hasThumbnail ? 'has-thumbnail' : '';
@@ -876,8 +996,14 @@ function showSubcategories(categoryKey, category) {
 
 /**
  * Render subcategories HTML
+ * Agora com filtro de permissões do cliente
  */
 function renderSubcategories(categoryKey, category) {
+    // Obter permissões do cliente
+    const allowedCatalogCats = window.navigationState?.allowedCatalogCategories || [];
+    const allowedPhotoCats = window.navigationState?.allowedCategories || [];
+    const hasRestrictions = allowedCatalogCats.length > 0 || allowedPhotoCats.length > 0;
+
     let html = `
         <div class="catalog-subcategories">
             <!-- Breadcrumb integrado -->
@@ -899,6 +1025,17 @@ function renderSubcategories(categoryKey, category) {
     for (const [subKey, sub] of Object.entries(category.subcategories)) {
         // Skip hidden subcategories
         if (sub.hidden) continue;
+
+        // ============================================
+        // VERIFICAR PERMISSÕES PARA ESTA SUBCATEGORIA
+        // ============================================
+        if (hasRestrictions) {
+            const hasPermission = checkSubcategoryPermission(sub, allowedCatalogCats, allowedPhotoCats);
+            if (!hasPermission) {
+                console.log(`🚫 Subcategoria ${subKey} oculta por restrição de permissão`);
+                continue; // Pular esta subcategoria
+            }
+        }
 
         // Check if subcategory has a thumbnail - process for R2 in production
         const hasThumbnail = sub.thumbnail ? true : false;

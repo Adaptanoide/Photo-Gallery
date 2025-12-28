@@ -266,7 +266,7 @@ async function handleDirectClientLogin(e) {
     }
 
     console.log('✅ Processando código:', code);
-    showLoading(true);
+    // NÃO mostrar loading que gira - removido
 
     try {
         const response = await fetch('/api/auth/client/verify', {
@@ -327,8 +327,6 @@ async function handleDirectClientLogin(e) {
     } catch (error) {
         console.error('Error verifying access code:', error);
         showNotification('Connection error. Please try again.', 'error');
-    } finally {
-        showLoading(false);
     }
 }
 
@@ -461,40 +459,10 @@ function logout() {
     }, 1000);
 }
 
-// ===== BEAUTIFUL LOGIN TRANSITION =====
+// ===== SIMPLE LOGIN REDIRECT =====
+// Redirect direto sem toast - loading será mostrado no client.html
 function showLoginTransition(clientName) {
-    const transition = document.getElementById('loginTransition');
-    const nameElement = document.getElementById('transitionName');
-
-    if (!transition) {
-        // Fallback if transition element doesn't exist
-        showNotification(`Welcome, ${clientName}!`, 'success');
-        setTimeout(() => redirectToClient(), 1000);
-        return;
-    }
-
-    // Set the client name
-    if (nameElement) {
-        nameElement.textContent = clientName;
-    }
-
-    // Show the transition overlay
-    transition.classList.add('active');
-
-    // Reset animations by removing and re-adding classes
-    const content = transition.querySelector('.transition-content');
-    const loaderBar = transition.querySelector('.loader-bar');
-
-    if (loaderBar) {
-        loaderBar.style.animation = 'none';
-        loaderBar.offsetHeight; // Trigger reflow
-        loaderBar.style.animation = 'loadProgress 1.5s ease forwards 0.2s';
-    }
-
-    // Redirect after animation completes - 2 seconds max
-    setTimeout(() => {
-        redirectToClient();
-    }, 2000);
+    redirectToClient();
 }
 
 // ===== BEAUTIFUL ADMIN LOGIN TRANSITION - DARK THEME =====

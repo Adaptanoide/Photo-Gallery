@@ -44,23 +44,62 @@ class AdminClients {
     // ===== CLIENT ACTION MENU DROPDOWN =====
     toggleClientActionMenu(event) {
         event.stopPropagation();
+        event.preventDefault();
+
         const trigger = event.currentTarget;
         const container = trigger.closest('.client-action-menu-container');
-        const dropdown = container.querySelector('.client-action-menu-dropdown');
+
+        // Procurar dropdown no container OU no body (se já foi movido)
+        let dropdown = container.querySelector('.client-action-menu-dropdown');
+        if (!dropdown) {
+            // Se não achou no container, procurar no body com a mesma referência
+            const clientId = container.dataset.clientId;
+            dropdown = document.querySelector(`body > .client-action-menu-dropdown[data-client-id="${clientId}"]`);
+        }
+
+        if (!dropdown) {
+            console.error('❌ Dropdown não encontrado!');
+            return;
+        }
+
         const parentRow = container.closest('tr');
 
         // Close all other open menus
         document.querySelectorAll('.client-action-menu-dropdown.open').forEach(menu => {
             if (menu !== dropdown) {
-                menu.classList.remove('open');
-                const row = menu.closest('tr');
-                if (row) row.classList.remove('dropdown-active');
+                this.closeDropdown(menu);
             }
         });
 
         // Toggle this menu
         const isOpening = !dropdown.classList.contains('open');
-        dropdown.classList.toggle('open');
+
+        if (isOpening) {
+            // ✅ MOVER DROPDOWN PARA BODY IMEDIATAMENTE (fora da tabela)
+            document.body.appendChild(dropdown);
+
+            // ✅ FORÇAR ESTILOS INLINE (garante visibilidade)
+            dropdown.style.opacity = '1';
+            dropdown.style.visibility = 'visible';
+            dropdown.style.display = 'block';
+            dropdown.style.zIndex = '999999';
+
+            // Position AFTER moving to body
+            this.positionClientActionDropdown(container, dropdown);
+            dropdown.classList.add('open');
+
+            // Guardar referência ao trigger para detectar cliques
+            this._currentOpenDropdown = dropdown;
+            this._currentTrigger = trigger;
+
+            // Marcar que acabamos de abrir
+            this._justOpened = true;
+            setTimeout(() => {
+                this._justOpened = false;
+            }, 100);
+        } else {
+            this.closeDropdown(dropdown);
+        }
 
         // Add/remove active class to parent row for z-index
         if (parentRow) {
@@ -70,39 +109,96 @@ class AdminClients {
                 parentRow.classList.remove('dropdown-active');
             }
         }
+    }
 
-        if (dropdown.classList.contains('open')) {
-            this.positionClientActionDropdown(container, dropdown);
+    closeDropdown(dropdown) {
+        if (!dropdown) return;
+
+        dropdown.classList.remove('open');
+        // Resetar estilos inline
+        dropdown.style.display = 'none';
+        dropdown.style.opacity = '0';
+        dropdown.style.visibility = 'hidden';
+
+        // Mover de volta para o container original
+        const clientId = dropdown.dataset.clientId;
+        if (clientId) {
+            const originalContainer = document.querySelector(`.client-action-menu-container[data-client-id="${clientId}"]`);
+            if (originalContainer && dropdown.parentElement === document.body) {
+                originalContainer.appendChild(dropdown);
+            }
         }
+
+        const row = dropdown.closest('tr') || document.querySelector(`tr:has(.client-action-menu-container[data-client-id="${clientId}"])`);
+        if (row) row.classList.remove('dropdown-active');
     }
 
     positionClientActionDropdown(container, dropdown) {
         const containerRect = container.getBoundingClientRect();
-        const dropdownHeight = dropdown.offsetHeight || 250;
+        // Fixed dimensions for dropdown (5 items * ~44px each)
+        const dropdownHeight = 220;
+        const dropdownWidth = 180;
         const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
         const spaceBelow = viewportHeight - containerRect.bottom;
         const spaceAbove = containerRect.top;
 
-        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-            dropdown.classList.add('open-up');
+        // Fixed positioning - calculate exact position
+        let top, left;
+
+        // Vertical positioning - open up if not enough space below
+        if (spaceBelow < dropdownHeight + 20 && spaceAbove > dropdownHeight) {
+            top = containerRect.top - dropdownHeight - 6;
         } else {
-            dropdown.classList.remove('open-up');
+            top = containerRect.bottom + 6;
         }
+
+        // Horizontal positioning - align to right of button
+        left = containerRect.right - dropdownWidth;
+
+        // Ensure not off-screen to the left
+        if (left < 10) {
+            left = 10;
+        }
+
+        // Ensure not off-screen to the right
+        if (left + dropdownWidth > viewportWidth - 10) {
+            left = viewportWidth - dropdownWidth - 10;
+        }
+
+        // Apply fixed position
+        dropdown.style.top = `${top}px`;
+        dropdown.style.left = `${left}px`;
     }
 
     closeClientActionMenu(event) {
         if (event) event.stopPropagation();
         document.querySelectorAll('.client-action-menu-dropdown.open').forEach(menu => {
-            menu.classList.remove('open');
-            const row = menu.closest('tr');
-            if (row) row.classList.remove('dropdown-active');
+            this.closeDropdown(menu);
         });
     }
 
     initClientActionMenuHandler() {
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.client-action-menu-container')) {
+            // Ignorar se acabamos de abrir o menu
+            if (this._justOpened) {
+                return;
+            }
+
+            // Se não há dropdown aberto, não fazer nada
+            if (!this._currentOpenDropdown) {
+                return;
+            }
+
+            // Verificar se clicou no dropdown ou no trigger
+            const clickedOnDropdown = this._currentOpenDropdown.contains(e.target);
+            const clickedOnTrigger = this._currentTrigger && this._currentTrigger.contains(e.target);
+
+            // Se clicou FORA de ambos, fechar
+            if (!clickedOnDropdown && !clickedOnTrigger) {
                 this.closeClientActionMenu();
+                this._currentOpenDropdown = null;
+                this._currentTrigger = null;
             }
         });
     }
@@ -626,40 +722,28 @@ class AdminClients {
                     </div>
                     
                     <div class="client-modal-body">
-                        <!-- Show Prices Toggle PRIMEIRO -->
-                        <div class="form-group-clients" style="margin: 0 0 2rem 0; padding: 1.5rem; background: var(--luxury-dark); border-radius: 8px; border: 1px solid var(--border-subtle);">
-                            <label class="form-label-clients">Show Prices to Client</label>
-                            <div class="toggle-item">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="showPricesSettings" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                                <span id="showPricesSettingsLabel" style="margin-left: 10px;">Enabled</span>
-                            </div>
-                            <small style="color: var(--text-muted); margin-top: 5px; display: block;">
-                                When disabled, client will see "Contact for Price"
-                            </small>
+                        <!-- Show Prices Toggle - Compacto em linha -->
+                        <div class="price-toggle-section">
+                            <label class="form-label-clients">Show Prices:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showPricesSettings" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span id="showPricesSettingsLabel" style="font-size: 0.85rem; color: var(--text-muted);">Enabled</span>
                         </div>
 
-                        <!-- Allowed Folders DEPOIS -->
+                        <!-- Tree View - Foco Principal -->
                         <div class="form-section-clients">
-                            <h4 class="form-section-title-clients">
-                                <i class="fas fa-sitemap"></i>
-                                Select Categories to Allow
-                            </h4>
-                            
                             <!-- Tree View Container -->
-                            <div id="treeViewContainer" style="display: block; margin: 0.5rem 0; border: 1px solid var(--border-subtle); border-radius: 4px; background: var(--luxury-dark); padding: 1rem;">
+                            <div id="treeViewContainer">
                                 <div id="treeViewContent" class="tree-view-content">
                                     <!-- Tree será carregado aqui -->
                                 </div>
                             </div>
 
-                            <div class="selected-folders-container">
-                                <label class="form-label-clients">Selected Categories (<span id="settingsSelectedCount">0</span>)</label>
-                                <div id="settingsSelectedFoldersList" class="selected-folders-list">
-                                    <div class="empty-state">No categories selected</div>
-                                </div>
+                            <!-- Contador de seleção compacto -->
+                            <div class="tree-selection-summary">
+                                <span id="settingsSelectedCount">0</span> categories selected
                             </div>
                         </div>
                     </div>
@@ -1076,12 +1160,12 @@ class AdminClients {
                     </td>
                     <td class="client-actions-cell">
                         <div class="action-buttons">
-                            <div class="client-action-menu-container">
+                            <div class="client-action-menu-container" data-client-id="${client._id || client.code}">
                                 <button class="client-action-menu-trigger" onclick="adminClients.toggleClientActionMenu(event)">
                                     <span>Actions</span>
                                     <i class="fas fa-chevron-down"></i>
                                 </button>
-                                <div class="client-action-menu-dropdown">
+                                <div class="client-action-menu-dropdown" data-client-id="${client._id || client.code}">
                                     <button class="client-action-menu-item action-cart" onclick="adminClients.openCartControl('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
                                         <i class="fas fa-shopping-cart"></i>
                                         <span>Cart Control</span>
@@ -1096,7 +1180,7 @@ class AdminClients {
                                     </button>
                                     <button class="client-action-menu-item action-toggle" onclick="adminClients.toggleClientStatus('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
                                         <i class="fas fa-${client.isActive ? 'pause' : 'play'}"></i>
-                                        <span>${client.isActive ? 'Deactivate' : 'Activate'}</span>
+                                        <span>${client.isActive ? 'Deactivate Access' : 'Activate Access'}</span>
                                     </button>
                                     <button class="client-action-menu-item action-delete" onclick="adminClients.deleteClient('${client._id || client.code}'); adminClients.closeClientActionMenu(event);">
                                         <i class="fas fa-trash"></i>
@@ -2936,91 +3020,60 @@ class AdminClients {
         // Limpar seleção anterior
         this.selectedFolders = [];
 
-        // Carregar categorias salvas com dados reais
+        // Carregar categorias salvas - identificar tipo de cada uma
+        // Categorias principais: Natural Cowhides, Specialty Cowhides, etc.
+        // CatalogCategories: printed, metallic, dyed, sheepskin, etc.
+        // QB Items: 5302B BW, 5375SP, etc. (começam com número)
+        const mainCategories = ['Natural Cowhides', 'Specialty Cowhides', 'Small Accent Hides', 'Patchwork Rugs', 'Accessories', 'Furniture'];
+        const catalogCategories = ['printed', 'metallic', 'dyed', 'sheepskin', 'calfskin', 'goatskin',
+            'chevron-rugs', 'standard-patchwork', 'runner-rugs', 'bedside-rugs',
+            'pillows', 'bags-purses', 'table-kitchen', 'slippers', 'scraps-diy', 'gifts-seasonal',
+            'pouf-ottoman', 'leather-furniture', 'foot-stool'];
+
         if (client.allowedCategories && Array.isArray(client.allowedCategories)) {
-            try {
-                const token = this.getAdminToken();
+            console.log('Loading saved permissions:', client.allowedCategories.length, 'items');
 
-                // Separar QB items de outros itens
-                const qbItems = [];
-                const otherItems = [];
-
-                client.allowedCategories.forEach(cat => {
-                    // QB items são códigos alfanuméricos (5302B BW, 5375SP, etc)
-                    if (/^[0-9]/.test(cat)) {
-                        qbItems.push(cat);
-                    } else {
-                        otherItems.push(cat);
-                    }
-                });
-
-                // QB items TAMBÉM precisam de mapeamento para pegar o path correto!
-                if (qbItems.length > 0) {
-                    const qbResponse = await fetch('/api/admin/map-categories', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            items: qbItems
-                        })
+            client.allowedCategories.forEach(cat => {
+                if (mainCategories.includes(cat)) {
+                    // É uma categoria principal
+                    this.selectedFolders.push({
+                        qbItem: '',
+                        catalogCategory: '',
+                        mainCategory: cat,
+                        path: cat,
+                        type: 'main'
                     });
-
-                    const qbData = await qbResponse.json();
-                    if (qbData.success) {
-                        qbData.mapped.forEach(item => {
-                            this.selectedFolders.push({
-                                qbItem: item.qbItem || item.original,
-                                path: item.displayName || item.original
-                            });
-                        });
-                        console.log(`✅ Mapeados ${qbItems.length} QB items com paths reais`);
-                    } else {
-                        // Fallback se falhar
-                        qbItems.forEach(qb => {
-                            this.selectedFolders.push({
-                                qbItem: qb,
-                                path: qb
-                            });
-                        });
-                    }
-                }
-
-                // Mapear apenas itens que NÃO são QB (se houver)
-                if (otherItems.length > 0) {
-                    const response = await fetch('/api/admin/map-categories', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            items: otherItems
-                        })
+                } else if (catalogCategories.includes(cat)) {
+                    // É uma categoria de catálogo
+                    this.selectedFolders.push({
+                        qbItem: '',
+                        catalogCategory: cat,
+                        mainCategory: '',
+                        path: cat,
+                        type: 'stock'
                     });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        data.mapped.forEach(item => {
-                            this.selectedFolders.push({
-                                qbItem: item.qbItem || item.original,
-                                path: item.displayName || item.original
-                            });
-                        });
-                    }
-                }
-
-            } catch (error) {
-                console.error('Error loading saved categories:', error);
-                // Fallback
-                client.allowedCategories.forEach(cat => {
+                } else if (/^[0-9]/.test(cat)) {
+                    // É um QB item (começa com número)
                     this.selectedFolders.push({
                         qbItem: cat,
-                        path: cat
+                        catalogCategory: '',
+                        mainCategory: '',
+                        path: cat,
+                        type: 'photo'
                     });
-                });
-            }
+                } else {
+                    // Outro tipo - pode ser subcategoria ou path completo
+                    this.selectedFolders.push({
+                        qbItem: '',
+                        catalogCategory: '',
+                        mainCategory: '',
+                        path: cat,
+                        type: 'other'
+                    });
+                }
+            });
+
+            console.log('Loaded permissions:', this.selectedFolders.length, 'items');
         }
 
         // ===== NOVO: HABILITAR TODAS AS CATEGORIAS POR PADRÃO PARA CLIENTES NOVOS =====
@@ -3074,6 +3127,9 @@ class AdminClients {
         setTimeout(() => {
             this.markSavedCheckboxes();
 
+            // Atualizar contador após marcar checkboxes
+            this.updateSettingsFoldersList();
+
             // ===== REMOVER LOADING DEPOIS DE MARCAR =====
             setTimeout(() => {
                 const treeContainer = document.querySelector('.tree-view-container') ||
@@ -3081,7 +3137,12 @@ class AdminClients {
                 if (treeContainer) {
                     treeContainer.classList.remove('tree-view-loading');
                 }
+
+                // Atualizar contador novamente após renderização completa
+                this.updateSettingsFoldersList();
+
                 console.log('✅ Permissions loaded - ready to use!');
+                console.log('📊 Checkboxes marcados:', document.querySelectorAll('.tree-checkbox:checked').length);
             }, 300);  // Pequeno delay para suavizar
         }, 2000);
 
@@ -3098,31 +3159,43 @@ class AdminClients {
     }
 
     // Nova função para marcar checkboxes
+    // Expandido para suportar qbItem, catalogCategory e nomes de categoria principal
     markSavedCheckboxes() {
         const checkboxes = document.querySelectorAll('.tree-checkbox');
 
-        // ✅ CORREÇÃO: PRIMEIRO LIMPAR TODOS
-        console.log('🧹 Limpando todos os checkboxes antes de marcar...');
+        // PRIMEIRO LIMPAR TODOS
+        console.log('Limpando todos os checkboxes antes de marcar...');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
             checkbox.indeterminate = false;
         });
 
-        // Agora marcar apenas os que devem estar marcados
-        console.log(`✅ Marcando ${this.selectedFolders.length} checkboxes salvos...`);
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
+        // Construir set de identificadores para busca rápida
+        const savedIdentifiers = new Set();
+        this.selectedFolders.forEach(f => {
+            if (f.qbItem) savedIdentifiers.add(f.qbItem);
+            if (f.catalogCategory) savedIdentifiers.add(f.catalogCategory);
+            if (f.mainCategory) savedIdentifiers.add(f.mainCategory);
+            if (f.path) savedIdentifiers.add(f.path);
         });
 
-        // Agora marcar apenas os que devem estar marcados
-        checkboxes.forEach(checkbox => {
-            const qbItem = checkbox.dataset.qbitem;
-            const path = checkbox.dataset.path;
+        console.log(`Marcando checkboxes. Identificadores salvos:`, Array.from(savedIdentifiers));
 
-            // Verificar se está na lista de selecionados
-            const isSelected = this.selectedFolders.some(f =>
-                f.qbItem === qbItem || f.path === path || f.qbItem === path
-            );
+        // Marcar checkboxes que correspondem
+        checkboxes.forEach(checkbox => {
+            const qbItem = checkbox.dataset.qbitem || '';
+            const catalogCategory = checkbox.dataset.catalogCategory || '';
+            const path = checkbox.dataset.path || '';
+
+            // Extrair nome da categoria principal do path (primeiro segmento)
+            const mainCategoryFromPath = path.split(' → ')[0];
+
+            // Verificar se algum identificador corresponde
+            const isSelected =
+                (qbItem && savedIdentifiers.has(qbItem)) ||
+                (catalogCategory && savedIdentifiers.has(catalogCategory)) ||
+                savedIdentifiers.has(path) ||
+                savedIdentifiers.has(mainCategoryFromPath);
 
             if (isSelected) {
                 checkbox.checked = true;
@@ -3154,31 +3227,16 @@ class AdminClients {
         this.selectedFolders = [];
     }
 
-    // Atualizar lista no modal settings
+    // Atualizar contador no modal settings
+    // ATUALIZADO: Contar checkboxes marcados ao invés de selectedFolders
     updateSettingsFoldersList() {
-        const container = document.getElementById('settingsSelectedFoldersList');
         const count = document.getElementById('settingsSelectedCount');
 
-        // Verificar se elementos existem
-        if (!container || !count) {
-            console.warn('Settings elements not found');
-            return;
+        if (count) {
+            // Contar checkboxes realmente marcados na árvore
+            const checkedCount = document.querySelectorAll('.tree-checkbox:checked').length;
+            count.textContent = checkedCount;
         }
-
-        count.textContent = this.selectedFolders.length;
-
-        if (this.selectedFolders.length === 0) {
-            container.innerHTML = '<div class="empty-state">No categories selected</div>';
-            return;
-        }
-
-        container.innerHTML = this.selectedFolders.map(folder => `
-            <div class="selected-folder-item">
-                <span class="folder-qb">${folder.qbItem}</span>
-                <span class="folder-path">${folder.path}</span>
-            <button class="btn-remove-folder" onclick="adminClients.removeSettingsFolder('${folder.path.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">×</button>
-            </div>
-        `).join('');
     }
 
     // Remover folder no modal settings
@@ -3269,18 +3327,40 @@ class AdminClients {
     }
 
     // Renderizar nó da árvore
+    // Expandido para suportar categorias de catálogo (stock) além de fotos
     renderTreeNode(node, key, level) {
         const hasChildren = node.children && Object.keys(node.children).length > 0;
         const indent = level * 20;
         const nodeId = `tree-${node.fullPath || key}`.replace(/[^a-zA-Z0-9]/g, '-');
 
-        // ✅ VERIFICAR SE TEM FOTOS DISPONÍVEIS
-        const hasStock = node.photoCount > 0;
-        const emptyClass = !hasStock && !hasChildren ? 'category-empty' : '';
-        const emptyWarning = !hasStock && !hasChildren ? '<span class="no-stock-warning">⚠️ No stock</span>' : '';
+        // Determinar tipo: photo, stock, ou mixed
+        const nodeType = node.type || 'photo';
+        const isStock = nodeType === 'stock';
+        const isMixed = nodeType === 'mixed';
+
+        // Contar itens baseado no tipo
+        const photoCount = node.photoCount || 0;
+        const stockCount = node.stockCount || 0;
+        const totalItems = photoCount + stockCount;
+        const hasItems = totalItems > 0;
+
+        // Contagem para exibir - usar "items" para tudo
+        let countDisplay = '';
+        if (totalItems > 0) {
+            countDisplay = `<span class="tree-count">(${totalItems} items)</span>`;
+        } else {
+            countDisplay = `<span class="tree-count count-zero">(0 items)</span>`;
+        }
+
+        const emptyClass = !hasItems && !hasChildren ? 'category-empty' : '';
+        const emptyWarning = !hasItems && !hasChildren ? '<span class="no-stock-warning">Out of Stock</span>' : '';
+
+        // Código do item - apenas qbItem (códigos de fotos únicas)
+        const itemCode = node.qbItem || '';
+        const codeDisplay = itemCode ? `<span class="tree-qb-code">${itemCode}</span>` : '';
 
         let html = `
-            <div class="tree-node ${emptyClass}" data-node-id="${nodeId}" style="margin-left: ${indent}px;">
+            <div class="tree-node ${emptyClass}" data-node-id="${nodeId}" data-type="${nodeType}" style="margin-left: ${indent}px;">
                 <div class="tree-node-content">
                     ${hasChildren ?
                 `<span class="tree-toggle" onclick="adminClients.toggleTreeNode('${nodeId}')">
@@ -3289,15 +3369,17 @@ class AdminClients {
                 '<span class="tree-spacer"></span>'
             }
                     <label class="tree-label">
-                        <input type="checkbox" 
-                            class="tree-checkbox" 
+                        <input type="checkbox"
+                            class="tree-checkbox"
                             data-path="${(node.fullPath || key).replace(/"/g, '&quot;')}"
                             data-qbitem="${node.qbItem || ''}"
+                            data-catalog-category="${node.catalogCategory || ''}"
+                            data-type="${nodeType}"
                             data-node-id="${nodeId}"
                             onchange="adminClients.handleTreeCheckbox(this)">
-                        ${node.qbItem ? `<span class="tree-qb-code">${node.qbItem}</span>` : ''}
+                        ${codeDisplay}
                         <span class="tree-name">${key}</span>
-                        <span class="tree-count ${!hasStock ? 'count-zero' : ''}">(${node.photoCount || 0})</span>
+                        ${countDisplay}
                         ${emptyWarning}
                         <span class="tree-selection-badge" id="badge-${nodeId}" style="display:none;"></span>
                     </label>
@@ -3337,22 +3419,42 @@ class AdminClients {
     }
 
     // Handle checkbox da tree
+    // Expandido para suportar tanto qbItem (fotos) quanto catalogCategory (stock)
     handleTreeCheckbox(checkbox) {
         const path = checkbox.dataset.path;
-        const qbItem = checkbox.dataset.qbitem || 'NO-QB';
+        const qbItem = checkbox.dataset.qbitem || '';
+        const catalogCategory = checkbox.dataset.catalogCategory || '';
+        const nodeType = checkbox.dataset.type || 'photo';
 
         if (checkbox.checked) {
-            // Só adicionar se tem QB item válido (não é NO-QB ou vazio)
+            // Determinar qual identificador usar
+            // Prioridade: qbItem (fotos) > catalogCategory (stock) > path (categoria principal)
+            let identifier = '';
+            let identifierType = '';
+
             if (qbItem && qbItem !== 'NO-QB' && qbItem !== '') {
-                if (!this.selectedFolders.find(f => f.path === path)) {
-                    this.selectedFolders.push({
-                        qbItem: qbItem,
-                        path: path
-                    });
-                }
+                identifier = qbItem;
+                identifierType = 'qbItem';
+            } else if (catalogCategory && catalogCategory !== '') {
+                identifier = catalogCategory;
+                identifierType = 'catalogCategory';
+            } else if (path) {
+                // Para categorias principais sem código, usar o nome da categoria
+                identifier = path.split(' → ')[0];
+                identifierType = 'mainCategory';
             }
 
-            // Marcar todos os filhos (eles serão adicionados se tiverem QB)
+            if (identifier && !this.selectedFolders.find(f => f.path === path)) {
+                this.selectedFolders.push({
+                    qbItem: identifierType === 'qbItem' ? identifier : '',
+                    catalogCategory: identifierType === 'catalogCategory' ? identifier : '',
+                    mainCategory: identifierType === 'mainCategory' ? identifier : '',
+                    path: path,
+                    type: nodeType
+                });
+            }
+
+            // Marcar todos os filhos (eles serão adicionados com seus próprios identificadores)
             this.checkAllChildren(checkbox, true);
         } else {
             // Remover pasta
@@ -3370,6 +3472,7 @@ class AdminClients {
     }
 
     // Função para marcar/desmarcar todos os filhos
+    // Expandido para suportar tanto qbItem quanto catalogCategory
     checkAllChildren(parentCheckbox, checked) {
         const parentNode = parentCheckbox.closest('.tree-node');
         const childrenContainer = parentNode.querySelector('.tree-children');
@@ -3380,17 +3483,31 @@ class AdminClients {
                 child.checked = checked;
 
                 const childPath = child.dataset.path;
-                const childQbItem = child.dataset.qbitem || 'NO-QB';
+                const childQbItem = child.dataset.qbitem || '';
+                const childCatalogCategory = child.dataset.catalogCategory || '';
+                const childType = child.dataset.type || 'photo';
 
                 if (checked) {
-                    // Só adicionar se tem QB item válido
+                    // Determinar identificador
+                    let identifier = '';
+                    let identifierType = '';
+
                     if (childQbItem && childQbItem !== 'NO-QB' && childQbItem !== '') {
-                        if (!this.selectedFolders.find(f => f.path === childPath)) {
-                            this.selectedFolders.push({
-                                qbItem: childQbItem,
-                                path: childPath
-                            });
-                        }
+                        identifier = childQbItem;
+                        identifierType = 'qbItem';
+                    } else if (childCatalogCategory && childCatalogCategory !== '') {
+                        identifier = childCatalogCategory;
+                        identifierType = 'catalogCategory';
+                    }
+
+                    if (identifier && !this.selectedFolders.find(f => f.path === childPath)) {
+                        this.selectedFolders.push({
+                            qbItem: identifierType === 'qbItem' ? identifier : '',
+                            catalogCategory: identifierType === 'catalogCategory' ? identifier : '',
+                            mainCategory: '',
+                            path: childPath,
+                            type: childType
+                        });
                     }
                 } else {
                     // Remover
@@ -3459,8 +3576,43 @@ class AdminClients {
             return;
         }
 
-        // NOVA VALIDAÇÃO - Aviso se não selecionou nada
-        if (this.selectedFolders.length === 0) {
+        // ========================================
+        // COLETAR PERMISSÕES DOS CHECKBOXES MARCADOS
+        // (Mais confiável que selectedFolders)
+        // ========================================
+        const checkedCheckboxes = document.querySelectorAll('.tree-checkbox:checked');
+        const allowedCategories = [];
+
+        checkedCheckboxes.forEach(checkbox => {
+            const qbItem = checkbox.dataset.qbitem || '';
+            const catalogCategory = checkbox.dataset.catalogCategory || '';
+            const path = checkbox.dataset.path || '';
+
+            // Prioridade: qbItem > catalogCategory > nome da categoria principal
+            if (qbItem && qbItem !== 'NO-QB' && qbItem !== '' && /\d/.test(qbItem)) {
+                // É um QB item (tem número)
+                allowedCategories.push(qbItem);
+            } else if (catalogCategory && catalogCategory !== '') {
+                // É uma categoria de catálogo/stock
+                allowedCategories.push(catalogCategory);
+            } else if (path) {
+                // Usar o primeiro segmento do path (categoria principal)
+                const mainCat = path.split(' → ')[0];
+                if (mainCat && mainCat !== '') {
+                    allowedCategories.push(mainCat);
+                }
+            }
+        });
+
+        // Remover duplicatas e valores vazios
+        const uniqueCategories = [...new Set(allowedCategories.filter(c => c && c !== ''))];
+
+        console.log('🔍 DEBUG: Checkboxes marcados:', checkedCheckboxes.length);
+        console.log('🔍 DEBUG: Categorias extraídas:', allowedCategories.length);
+        console.log('🔍 DEBUG: Categorias únicas:', uniqueCategories.length);
+
+        // VALIDAÇÃO - Aviso se não selecionou nada
+        if (uniqueCategories.length === 0) {
             const confirmed = await this.showConfirmModal(
                 '<i class="fas fa-exclamation-triangle" style="color: #d4af37;"></i> <strong style="color: #d4af37;">No permissions selected</strong><br><br>' +
                 'Saving with no selections means the client will have <strong>FULL ACCESS</strong> to all categories.<br><br>' +
@@ -3475,24 +3627,13 @@ class AdminClients {
         try {
             const token = this.getAdminToken();
 
-            // Extrair QB items ou nomes de categorias principais
-            const allowedCategories = this.selectedFolders.map(f => {
-                // Se tem QB item válido, usar ele
-                if (f.qbItem && f.qbItem !== 'NO-QB' && f.qbItem !== 'SAVED' && f.qbItem !== 'TREE') {
-                    return f.qbItem;
-                }
-                // Senão, usar o nome da categoria principal (primeiro segmento do path)
-                const parts = f.path.split(' → ');
-                return parts[0];
-            });
-
-            // Remover duplicatas
-            const uniqueCategories = [...new Set(allowedCategories)];
-
-            // ⚠️ NOVO - Pegar valor do Show Prices
+            // Pegar valor do Show Prices
             const showPrices = document.getElementById('showPricesSettings') ?
                 document.getElementById('showPricesSettings').checked : true;
-            console.log('📁 Saving categories/QB items:', uniqueCategories);
+
+            console.log('📁 Saving permissions:', uniqueCategories);
+            console.log('📷 Photo categories (qbItems):', uniqueCategories.filter(c => /\d/.test(c)));
+            console.log('📦 Stock categories:', uniqueCategories.filter(c => !/\d/.test(c)));
             console.log('💰 Show Prices:', showPrices);
 
             const response = await fetch(`/api/admin/clients/${this.currentSettingsClient._id}/categories`, {

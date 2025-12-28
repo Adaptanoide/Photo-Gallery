@@ -67,6 +67,15 @@ const accessCodeSchema = new mongoose.Schema({
         default: true,
     },
 
+    // ===== ACESSO TOTAL ILIMITADO (AUTO-ATUALIZA COM NOVAS CATEGORIAS) =====
+    fullAccess: {
+        type: Boolean,
+        default: false,
+        // Se TRUE: Cliente tem acesso a TODAS as categorias automaticamente
+        // Incluindo novas categorias que forem criadas no futuro
+        // Não precisa atualizar allowedCategories manualmente
+    },
+
     // ===== PREFERÊNCIAS DO CLIENTE (MOEDA) =====
     preferences: {
         currency: {
