@@ -1990,7 +1990,7 @@
         max-height: calc(100vh - 160px) !important;
         max-height: calc(100dvh - 160px) !important;
         overflow-y: auto !important;
-        padding-bottom: 20px !important;
+        padding-bottom: 120px !important; /* Increased to prevent content being cut by Apply button */
     }
 
     /* Filter header - white background on mobile */
@@ -2180,6 +2180,13 @@
         background: white !important;
         border-bottom: 1px solid #e0e0e0 !important;
         padding: 10px 12px !important;
+    }
+
+    /* Dark mode for visible breadcrumb */
+    body.dark-mode .breadcrumb-container[style*="display: block"],
+    body.dark-mode .breadcrumb-container[style*="display:block"] {
+        background: #1a1a1a !important;
+        border-bottom-color: #3d3d3d !important;
     }
 
     /* Keep breadcrumb hidden when style says none */
