@@ -1990,7 +1990,8 @@
         max-height: calc(100vh - 160px) !important;
         max-height: calc(100dvh - 160px) !important;
         overflow-y: auto !important;
-        padding-bottom: 120px !important; /* Increased to prevent content being cut by Apply button */
+        padding-bottom: 90px !important; /* Space for Apply button without hiding content */
+        -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
     }
 
     /* Filter header - white background on mobile */
@@ -2187,6 +2188,31 @@
     body.dark-mode .breadcrumb-container[style*="display:block"] {
         background: #1a1a1a !important;
         border-bottom-color: #3d3d3d !important;
+    }
+
+    /* Dark mode breadcrumb text and items */
+    body.dark-mode .breadcrumb-container .breadcrumb,
+    body.dark-mode .breadcrumb {
+        background: transparent !important;
+        color: #e0e0e0 !important;
+    }
+
+    body.dark-mode .breadcrumb-item,
+    body.dark-mode .breadcrumb-item a,
+    body.dark-mode .breadcrumb span {
+        color: #e0e0e0 !important;
+    }
+
+    /* Dark mode back button - keep it visible */
+    body.dark-mode .breadcrumb .back-btn,
+    body.dark-mode .breadcrumb .breadcrumb-item.back-btn {
+        background: #B87333 !important;
+        color: white !important;
+    }
+
+    body.dark-mode .breadcrumb .back-btn i,
+    body.dark-mode .breadcrumb .breadcrumb-item.back-btn i {
+        color: white !important;
     }
 
     /* Keep breadcrumb hidden when style says none */
