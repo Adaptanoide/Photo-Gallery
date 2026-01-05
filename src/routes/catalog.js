@@ -472,8 +472,8 @@ function filterBySubcategory(products, subcategory) {
             // Excluir calfskin e goatskin
             if (name.includes('calf') || name.includes('goat')) return false;
 
-            // EXCLUIR "Rug Bedside" - estes vão para Designer Rugs
-            if (name.includes('rug bedside') || name.includes('bedside rug')) return false;
+            // EXCLUIR "Rug Bedside" - estes vão para Designer Rugs (incluindo typo "bedisde")
+            if (name.includes('rug bedside') || name.includes('bedside rug') || name.includes('bedisde')) return false;
 
             // Incluir por categoria SHEEPSKIN ou SMALL HIDES
             if (category.includes('sheepskin') || category.includes('small hides')) {
