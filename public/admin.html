@@ -14,8 +14,14 @@
     <!-- Admin Theme Toggle - Apply before render to avoid flash -->
     <script>
         (function() {
-            // Default: light theme (user requested light as default)
-            const savedTheme = localStorage.getItem('adminTheme') || 'light';
+            // Detect environment
+            const isProduction = !window.location.hostname.includes('localhost') &&
+                                 !window.location.hostname.includes('127.0.0.1');
+
+            // Default theme: dark in production (light theme still in development), light in dev (for testing)
+            const defaultTheme = isProduction ? 'dark' : 'light';
+            const savedTheme = localStorage.getItem('adminTheme') || defaultTheme;
+
             if (savedTheme === 'light') {
                 document.documentElement.classList.add('admin-light-theme-preload');
             }
@@ -1743,18 +1749,22 @@
         });
 
         function initAdminTheme() {
-            const savedTheme = localStorage.getItem('adminTheme') || 'light';
-            applyAdminTheme(savedTheme);
-
-            // Hide theme toggle button in PRODUCTION only
+            // Detect environment
             const isProduction = !window.location.hostname.includes('localhost') &&
                                  !window.location.hostname.includes('127.0.0.1');
 
+            // Default theme: dark in production, light in dev (for testing)
+            const defaultTheme = isProduction ? 'dark' : 'light';
+            const savedTheme = localStorage.getItem('adminTheme') || defaultTheme;
+
+            applyAdminTheme(savedTheme);
+
+            // Hide theme toggle button in PRODUCTION only
             if (isProduction) {
                 const themeToggleBtn = document.getElementById('themeToggleBtn');
                 if (themeToggleBtn) {
                     themeToggleBtn.style.display = 'none';
-                    console.log('[Admin] Theme toggle hidden in production');
+                    console.log('[Admin] Theme toggle hidden in production (dark mode default)');
                 }
             }
         }
