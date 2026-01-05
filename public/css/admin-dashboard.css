@@ -1217,7 +1217,7 @@ body.admin-light-theme .client-name-cell {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 14px;
+    padding: 16px 20px;
     border-radius: 8px;
     border: 1px solid var(--border-subtle);
     background: transparent;

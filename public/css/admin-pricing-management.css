@@ -3984,10 +3984,6 @@ body.admin-light-theme .subcategory-row:hover {
     background: #fafafa !important;
 }
 
-body.admin-light-theme .subcategory-row.is-mixmatch {
-    background: #fffbeb !important;
-}
-
 body.admin-light-theme .subcategory-row.is-mixmatch:hover {
     background: #fef7ed !important;
 }

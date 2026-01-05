@@ -443,7 +443,7 @@ class AdminDashboard {
             // Dados de exemplo para desenvolvimento
             return [
                 {
-                    fileName: 'couro_001.jpg',
+                    fileName: 'cuero_001.jpg',
                     category: 'Colombian Cowhides',
                     reservations: 5,
                     lastReservation: new Date(),

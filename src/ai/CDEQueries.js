@@ -863,6 +863,11 @@ class CDEQueries {
                 AND (inv.ATIPOETIQUETA IS NULL OR inv.ATIPOETIQUETA = '')
                 AND inv.AQBITEM IS NOT NULL
                 AND inv.AQBITEM != ''
+                -- ✅ EXCLUIR fotos únicas (52xxx e 53xxx)
+                AND inv.AQBITEM NOT LIKE '52%'
+                AND inv.AQBITEM NOT LIKE '53%'
+                -- ✅ EXCLUIR itens específicos
+                AND inv.AQBITEM NOT IN ('LC0100', '5475BR', '6001', '6002', '6003', '6011', '6012', '6013', '6022', '6023', 'MISC')
                 GROUP BY inv.AQBITEM, items.ADESCRIPTION, items.ACATEGORIA, items.ORIGEN
 
                 UNION ALL
@@ -885,6 +890,11 @@ class CDEQueries {
                 AND i.AQBITEM IS NOT NULL
                 AND i.AQBITEM != ''
                 AND i.AQBITEM NOT LIKE '%P'
+                -- ✅ EXCLUIR fotos únicas (52xxx e 53xxx)
+                AND i.AQBITEM NOT LIKE '52%'
+                AND i.AQBITEM NOT LIKE '53%'
+                -- ✅ EXCLUIR itens específicos
+                AND i.AQBITEM NOT IN ('LC0100', '5475BR', '6001', '6002', '6003', '6011', '6012', '6013', '6022', '6023', 'MISC')
                 AND (
                     -- Catalog items (7xxx, 6xxx)
                     i.AQBITEM LIKE '7%'

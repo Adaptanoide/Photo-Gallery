@@ -3183,7 +3183,9 @@ class AdminClients {
             if (f.path) savedIdentifiers.add(f.path);
         });
 
-        console.log(`Marcando checkboxes. Identificadores salvos:`, Array.from(savedIdentifiers));
+        console.log(`🔍 Marcando checkboxes...`);
+        console.log(`📋 Identificadores salvos (${savedIdentifiers.size}):`, Array.from(savedIdentifiers));
+        console.log(`📦 selectedFolders (${this.selectedFolders.length}):`, this.selectedFolders);
 
         // Marcar checkboxes que correspondem
         checkboxes.forEach(checkbox => {
@@ -3191,15 +3193,12 @@ class AdminClients {
             const catalogCategory = checkbox.dataset.catalogCategory || '';
             const path = checkbox.dataset.path || '';
 
-            // Extrair nome da categoria principal do path (primeiro segmento)
-            const mainCategoryFromPath = path.split(' → ')[0];
-
-            // Verificar se algum identificador corresponde
+            // Verificar se algum identificador corresponde EXATAMENTE
+            // Removido mainCategoryFromPath para evitar auto-check de subcategorias
             const isSelected =
                 (qbItem && savedIdentifiers.has(qbItem)) ||
                 (catalogCategory && savedIdentifiers.has(catalogCategory)) ||
-                savedIdentifiers.has(path) ||
-                savedIdentifiers.has(mainCategoryFromPath);
+                savedIdentifiers.has(path);
 
             if (isSelected) {
                 checkbox.checked = true;
@@ -3603,19 +3602,16 @@ class AdminClients {
             const catalogCategory = checkbox.dataset.catalogCategory || '';
             const path = checkbox.dataset.path || '';
 
-            // Prioridade: qbItem > catalogCategory > nome da categoria principal
+            // Prioridade: qbItem > catalogCategory > path completo
             if (qbItem && qbItem !== 'NO-QB' && qbItem !== '' && /\d/.test(qbItem)) {
                 // É um QB item (tem número)
                 allowedCategories.push(qbItem);
             } else if (catalogCategory && catalogCategory !== '') {
                 // É uma categoria de catálogo/stock
                 allowedCategories.push(catalogCategory);
-            } else if (path) {
-                // Usar o primeiro segmento do path (categoria principal)
-                const mainCat = path.split(' → ')[0];
-                if (mainCat && mainCat !== '') {
-                    allowedCategories.push(mainCat);
-                }
+            } else if (path && path !== '') {
+                // Salvar PATH COMPLETO para preservar subcategorias exatas
+                allowedCategories.push(path);
             }
         });
 

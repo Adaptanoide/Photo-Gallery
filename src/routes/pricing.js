@@ -2708,4 +2708,203 @@ router.post('/stock-products/sync-from-cde', authenticateToken, async (req, res)
     }
 });
 
+/**
+ * GET /api/pricing/diagnostic/stock-vs-catalog
+ * Diagnóstico: compara Stock Products vs Catalog Interface
+ * Identifica produtos que não aparecem como cards e diagnostica o motivo
+ */
+router.get('/diagnostic/stock-vs-catalog', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔍 [DIAGNOSTIC] Iniciando análise Stock vs Catalog...');
+
+        // Import de funções do catalog.js
+        const getDisplayCategory = (cdeCategory) => {
+            if (!cdeCategory) return 'accessories';
+            const upper = cdeCategory.toUpperCase();
+            if (upper.includes('DESIGNER')) return 'designer-rugs';
+            if (upper.includes('RODEO')) return 'rodeo-rugs';
+            if (upper.includes('SHEEPSKIN')) return 'sheepskin';
+            if (upper.includes('SMALL HIDES')) return 'small-hides';
+            if (upper.includes('MOBILIARIO')) return 'furniture';
+            if (upper.includes('PILLOW')) return 'accessories';
+            return 'accessories';
+        };
+
+        const testFilters = (product) => {
+            const name = (product.name || '').toLowerCase();
+            const category = (product.category || '').toUpperCase();
+            const qbItem = (product.qbItem || '').toString();
+
+            const filters = {
+                sheepskin: false,
+                calfskin: false,
+                goatskin: false,
+                'chevron-rugs': false,
+                'runner-rugs': false,
+                'bedside-rugs': false,
+                'standard-patchwork': false,
+                'rodeo-rugs': false,
+                printed: false,
+                metallic: false,
+                dyed: false,
+                accessories: false,
+                pillows: false,
+                'bags-purses': false,
+                'table-kitchen': false,
+                slippers: false,
+                'scraps-diy': false,
+                'gifts-seasonal': false,
+                furniture: false,
+                'pouf-ottoman': false
+            };
+
+            // Sheepskin
+            if (category.includes('SHEEPSKIN') || category.includes('SMALL HIDES')) {
+                if (!name.includes('calf') && !name.includes('goat') && !name.includes('bedside')) {
+                    filters.sheepskin = true;
+                }
+            }
+
+            // Patchwork Rugs
+            if (category.includes('DESIGNER RUG')) {
+                filters['chevron-rugs'] = name.includes('chevron');
+                filters['runner-rugs'] = name.includes('runner') && !name.includes('chevron');
+                filters['standard-patchwork'] = !name.includes('chevron') && !name.includes('runner') && !name.includes('bedside');
+            }
+            if (name.includes('bedside')) {
+                filters['bedside-rugs'] = category.includes('DESIGNER RUG') || category.includes('SHEEPSKIN');
+            }
+            filters['rodeo-rugs'] = category.includes('RODEO RUG');
+
+            // Specialty
+            const animalPatterns = ['zebra', 'tiger', 'leopard', 'jaguar', 'cheetah', 'giraffe'];
+            filters.printed = animalPatterns.some(p => name.includes(p));
+            filters.metallic = name.includes('metallic') || name.includes('devore');
+            if (!name.includes('devore') && !name.includes('metallic')) {
+                filters.dyed = qbItem.startsWith('6') && !qbItem.startsWith('600') && !qbItem.startsWith('601') && !qbItem.startsWith('602');
+            }
+
+            // Accessories
+            filters.pillows = name.includes('pillow');
+            filters['bags-purses'] = name.includes('bag') || name.includes('purse') || name.includes('tote');
+            filters['table-kitchen'] = name.includes('coaster') || name.includes('place mat') || name.includes('napkin');
+            filters.slippers = name.includes('slipper');
+            filters['scraps-diy'] = name.includes('scrap');
+            filters['gifts-seasonal'] = name.includes('stocking') || name.includes('moo');
+
+            // Furniture
+            const furnitureKw = ['chair', 'puff', 'ottoman', 'bench', 'sofa'];
+            filters.furniture = category.includes('MOBILIARIO') || furnitureKw.some(kw => name.includes(kw));
+            filters['pouf-ottoman'] = name.includes('pouf') || name.includes('puff') || name.includes('ottoman');
+
+            // Accessories general
+            if (!filters.furniture && (category.includes('ACCESORIO') || category.includes('PILLOW'))) {
+                filters.accessories = true;
+            }
+
+            return filters;
+        };
+
+        // 1. Buscar produtos do CDE
+        const CDEQueries = require('../ai/CDEQueries');
+        const queries = new CDEQueries();
+        const cdeProducts = await queries.getAllCatalogProducts();
+
+        console.log(`📦 ${cdeProducts.length} produtos do CDE`);
+
+        // 2. Buscar preços do MongoDB
+        const mongoProducts = await CatalogProduct.find({ isActive: true }).lean();
+        const priceMap = {};
+        mongoProducts.forEach(p => {
+            priceMap[p.qbItem] = p.basePrice || 0;
+        });
+
+        console.log(`💰 ${mongoProducts.length} preços no MongoDB`);
+
+        // 3. Analisar cada produto
+        const analysis = cdeProducts.map(product => {
+            const displayCategory = getDisplayCategory(product.category);
+            const filterResults = testFilters(product);
+            const passedFilters = Object.entries(filterResults)
+                .filter(([_, passed]) => passed)
+                .map(([filter, _]) => filter);
+
+            const hasPrice = (priceMap[product.qbItem] || 0) > 0;
+            const stock = product.stock || 0;
+
+            let status = '';
+            let issue = '';
+
+            if (passedFilters.length === 0) {
+                status = 'NO_FILTER';
+                issue = 'Não passa em nenhum filtro de subcategoria';
+            } else if (stock === 0) {
+                status = 'NO_STOCK';
+                issue = 'Sem estoque disponível';
+            } else if (!hasPrice) {
+                status = 'NO_PRICE';
+                issue = 'Sem preço definido no Price Management';
+            } else {
+                status = 'OK';
+                issue = 'Deve aparecer como card';
+            }
+
+            return {
+                qbItem: product.qbItem,
+                name: product.name,
+                category: product.category || 'NULL',
+                displayCategory,
+                stock,
+                hasPrice,
+                price: priceMap[product.qbItem] || 0,
+                passedFilters,
+                status,
+                issue
+            };
+        });
+
+        // 4. Estatísticas
+        const stats = {
+            total: analysis.length,
+            ok: analysis.filter(p => p.status === 'OK').length,
+            noFilter: analysis.filter(p => p.status === 'NO_FILTER').length,
+            noStock: analysis.filter(p => p.status === 'NO_STOCK').length,
+            noPrice: analysis.filter(p => p.status === 'NO_PRICE').length
+        };
+
+        // 5. Agrupar problemas
+        const problems = {
+            noFilter: analysis.filter(p => p.status === 'NO_FILTER'),
+            noStock: analysis.filter(p => p.status === 'NO_STOCK'),
+            noPrice: analysis.filter(p => p.status === 'NO_PRICE')
+        };
+
+        // 6. Distribuição por filtro
+        const filterCounts = {};
+        analysis.forEach(p => {
+            p.passedFilters.forEach(filter => {
+                filterCounts[filter] = (filterCounts[filter] || 0) + 1;
+            });
+        });
+
+        console.log(`✅ Análise concluída: ${stats.ok}/${stats.total} produtos OK`);
+
+        res.json({
+            success: true,
+            stats,
+            problems,
+            filterDistribution: filterCounts,
+            fullAnalysis: analysis
+        });
+
+    } catch (error) {
+        console.error('❌ [DIAGNOSTIC] Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro no diagnóstico',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

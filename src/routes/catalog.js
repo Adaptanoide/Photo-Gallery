@@ -423,10 +423,34 @@ const CATEGORY_MAP = {
 };
 
 // Mapeamento reverso: CDE category -> displayCategory
-function getDisplayCategory(cdeCategory) {
-    if (!cdeCategory) return 'accessories';
-    const upper = cdeCategory.toUpperCase();
+function getDisplayCategory(cdeCategory, productName = '') {
+    const name = (productName || '').toLowerCase();
+    const upper = (cdeCategory || '').toUpperCase();
 
+    // Se category é NULL ou ACCESORIOS, tentar detectar pelo nome
+    if (!cdeCategory || upper.includes('ACCESORIO')) {
+        // Designer rugs - detect by name
+        if (name.includes('rug designer') || name.includes('designer rug')) {
+            return 'designer-rugs';
+        }
+        // Rodeo rugs
+        if (name.includes('rodeo') && name.includes('rug')) {
+            return 'rodeo-rugs';
+        }
+        // Furniture
+        const furnitureKeywords = ['chair', 'puff', 'ottoman', 'bench', 'sofa', 'couch', 'stool'];
+        if (furnitureKeywords.some(kw => name.includes(kw))) {
+            return 'furniture';
+        }
+        // Small hides
+        if (name.includes('sheep') || name.includes('calf') || name.includes('goat')) {
+            return 'small-hides';
+        }
+        // Default to accessories if can't determine
+        return 'accessories';
+    }
+
+    // Normal category detection
     if (upper.includes('DESIGNER')) return 'designer-rugs';
     if (upper.includes('RODEO')) return 'rodeo-rugs';
     if (upper.includes('SHEEPSKIN')) return 'sheepskin';
@@ -469,9 +493,8 @@ function filterBySubcategory(products, subcategory) {
         },
         'calfskin': (p) => {
             const name = (p.name || '').toLowerCase();
-            // Calfskin = produtos com calfskin/calf no nome
-            // Exclui devore/metallic calfskins (são specialty)
-            if (name.includes('devore') || name.includes('metallic')) return false;
+            // Calfskin = TODOS os produtos com calfskin/calf no nome
+            // INCLUINDO printed, devore/metallic calfskins (agora pertencem a calfskin)
             return name.includes('calfskin') || (name.includes('calf') && name.includes('hair on'));
         },
         'goatskin': (p) => {
@@ -502,9 +525,17 @@ function filterBySubcategory(products, subcategory) {
             const category = (p.category || '').toUpperCase();
             const name = (p.name || '').toLowerCase();
 
-            // Must be from DESIGNER RUG category AND have "chevron" in name
-            if (!category.includes('DESIGNER RUG')) return false;
-            return name.includes('chevron');
+            // Must have "chevron" in name
+            if (!name.includes('chevron')) return false;
+
+            // Accept from DESIGNER RUG, NULL, or ACCESORIOS (some are miscategorized)
+            if (category.includes('DESIGNER RUG')) return true;
+            if (category === 'NULL' || category === '' || !p.category) {
+                return name.includes('rug');
+            }
+            if (category.includes('ACCESORIO')) return name.includes('rug');
+
+            return false;
         },
 
         // Standard Patchwork - regular designer rugs without chevron/runner/bedside
@@ -512,13 +543,26 @@ function filterBySubcategory(products, subcategory) {
             const category = (p.category || '').toUpperCase();
             const name = (p.name || '').toLowerCase();
 
-            // Must be from DESIGNER RUG category
-            if (!category.includes('DESIGNER RUG')) return false;
+            // Specialty patterns - straw, stripes, terni, rope, thread
+            const specialtyPatterns = ['straw', 'stripes', 'terni', 'rope', 'thread'];
+            const hasSpecialtyPattern = specialtyPatterns.some(pattern => name.includes(pattern));
 
-            // Exclude chevron, runner, and bedside
+            if (hasSpecialtyPattern && name.includes('rug')) {
+                return true;
+            }
+
+            // Must be from DESIGNER RUG category (or NULL/ACCESORIOS with "rug designer")
+            const isDesignerRug = category.includes('DESIGNER RUG') ||
+                                  (category.includes('ACCESORIO') && name.includes('rug designer')) ||
+                                  ((category === 'NULL' || category === '' || !p.category) && name.includes('rug designer'));
+
+            if (!isDesignerRug) return false;
+
+            // Exclude chevron, runner, bedside, and welcome
             if (name.includes('chevron')) return false;
             if (name.includes('runner')) return false;
             if (name.includes('bedside')) return false;
+            if (name.includes('welcome')) return false;
 
             return true;
         },
@@ -528,11 +572,18 @@ function filterBySubcategory(products, subcategory) {
             const category = (p.category || '').toUpperCase();
             const name = (p.name || '').toLowerCase();
 
-            // Must be from DESIGNER RUG category AND have "runner" in name
-            if (!category.includes('DESIGNER RUG')) return false;
+            // Must have "runner" in name but NOT chevron (chevron runners go to chevron-rugs)
+            if (!name.includes('runner')) return false;
+            if (name.includes('chevron')) return false;
 
-            // Must be a runner but NOT chevron (chevron runners go to chevron-rugs)
-            return name.includes('runner') && !name.includes('chevron');
+            // Accept from DESIGNER RUG, NULL, or ACCESORIOS (some are miscategorized)
+            if (category.includes('DESIGNER RUG')) return true;
+            if (category === 'NULL' || category === '' || !p.category) {
+                return name.includes('rug');
+            }
+            if (category.includes('ACCESORIO')) return name.includes('rug');
+
+            return false;
         },
 
         // Bedside Rugs - small bedside rugs (from DESIGNER RUG or SHEEPSKIN)
@@ -547,10 +598,22 @@ function filterBySubcategory(products, subcategory) {
             return false;
         },
 
+        // Welcome Mats - small welcome rugs with longhorn designs
+        'welcome-mats': (p) => {
+            const name = (p.name || '').toLowerCase();
+            // Welcome mats are rugs with "welcome" in the name
+            return name.includes('welcome') && name.includes('rug');
+        },
+
         // Specialty Cowhides filters - por descrição ou código QB
         'printed': (p) => {
             const name = (p.name || '').toLowerCase();
-            // Printed = estampas de animais (zebra, tiger, leopard, etc.)
+
+            // EXCLUIR calfskins e pillows (estes têm suas próprias categorias)
+            if (name.includes('calfskin') || name.includes('calf skin')) return false;
+            if (name.includes('pillow') || name.includes('cojin') || name.includes('cushion')) return false;
+
+            // Printed COWHIDES = estampas de animais (zebra, tiger, leopard, etc.)
             const animalPatterns = [
                 'zebra', 'tiger', 'leopard', 'jaguar', 'cheetah',
                 'giraffe', 'antelope', 'bengal'
@@ -559,6 +622,18 @@ function filterBySubcategory(products, subcategory) {
         },
         'metallic': (p) => {
             const name = (p.name || '').toLowerCase();
+
+            // EXCLUIR calfskins (calfskin metallic vai para categoria calfskin)
+            if (name.includes('calfskin') || name.includes('calf skin')) return false;
+
+            // EXCLUIR sheepskins (sheepskin com silver/gold no nome não é metallic)
+            if (name.includes('sheepskin') || name.includes('sheep skin')) return false;
+
+            // EXCLUIR accessories (napkin ring bronze, etc não são metallic cowhides)
+            if (name.includes('napkin') || name.includes('pillow') || name.includes('bag') ||
+                name.includes('coaster') || name.includes('slipper')) return false;
+
+            // Metallic COWHIDES = devore, gold, silver, bronze
             return name.includes('metallic') || name.includes('devore') ||
                    name.includes('gold') || name.includes('silver') || name.includes('bronze');
         },
@@ -566,8 +641,17 @@ function filterBySubcategory(products, subcategory) {
             const name = (p.name || '').toLowerCase();
             const qbCode = (p.qbItem || '').toString();
 
+            // EXCLUIR calfskins (dyed calfskin vai para categoria calfskin)
+            if (name.includes('calfskin') || name.includes('calf skin')) return false;
+
             // EXCLUIR produtos Devore/Metallic (estes têm "on Dyed Black" no final)
             if (name.includes('devore') || name.includes('metallic')) {
+                return false;
+            }
+
+            // EXCLUIR produtos Printed (ex: "Zebra on Dyed Black" vai para printed, não dyed)
+            const printedPatterns = ['zebra', 'tiger', 'leopard', 'jaguar', 'cheetah', 'giraffe', 'antelope', 'bengal'];
+            if (printedPatterns.some(pattern => name.includes(pattern))) {
                 return false;
             }
 
@@ -765,7 +849,7 @@ router.get('/products', verifyClientToken, async (req, res) => {
                 const beforeCount = products.length;
 
                 products = products.filter(p => {
-                    const productDisplayCat = getDisplayCategory(p.category);
+                    const productDisplayCat = getDisplayCategory(p.category, p.name);
                     return allowedCatalogCats.has(productDisplayCat);
                 });
 
@@ -797,7 +881,7 @@ router.get('/products', verifyClientToken, async (req, res) => {
         // Adicionar displayCategory a cada produto
         products = products.map(p => ({
             ...p,
-            displayCategory: getDisplayCategory(p.category),
+            displayCategory: getDisplayCategory(p.category, p.name),
             currentStock: p.stock || 0
         }));
 
@@ -925,7 +1009,7 @@ router.get('/products/:qbItem', verifyClientToken, async (req, res) => {
         }
 
         // Adicionar displayCategory
-        product.displayCategory = getDisplayCategory(product.category);
+        product.displayCategory = getDisplayCategory(product.category, product.name);
         product.currentStock = product.availableStock || 0;
 
         // Verificar permissão para este produto

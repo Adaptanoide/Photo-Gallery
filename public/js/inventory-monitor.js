@@ -19,7 +19,7 @@ class InventoryMonitor {
             exportBtn.addEventListener('click', () => this.exportResults());
         }
 
-        // Filtros por categoria
+        // Filtros por categoria (old filter buttons)
         const filterBtns = document.querySelectorAll('.monitor-filter-btn');
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -28,6 +28,99 @@ class InventoryMonitor {
                 this.filterByCategory(btn.dataset.category);
             });
         });
+
+        // Clickable stat cards as filters
+        const monitorCards = document.querySelectorAll('.monitor-card');
+        monitorCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const filter = card.getAttribute('data-filter');
+                if (filter) {
+                    this.applyCardFilter(filter);
+                }
+            });
+
+            // Hover effects
+            card.addEventListener('mouseenter', () => {
+                if (!card.classList.contains('active')) {
+                    card.style.background = 'rgba(255,255,255,0.1)';
+                    card.style.transform = 'translateY(-2px)';
+                }
+            });
+
+            card.addEventListener('mouseleave', () => {
+                if (!card.classList.contains('active')) {
+                    // Reset to original background
+                    const filter = card.getAttribute('data-filter');
+                    if (filter === 'critical') {
+                        card.style.background = 'rgba(244,67,54,0.1)';
+                    } else if (filter === 'warning') {
+                        card.style.background = 'rgba(255,193,7,0.1)';
+                    } else if (filter === 'standby') {
+                        card.style.background = 'rgba(96,125,139,0.1)';
+                    } else if (filter === 'noPhoto') {
+                        card.style.background = 'rgba(156,39,176,0.1)';
+                    }
+                    card.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        // Clear filter button
+        const clearFilterBtn = document.getElementById('monitorClearFilter');
+        if (clearFilterBtn) {
+            clearFilterBtn.addEventListener('click', () => this.clearFilter());
+        }
+    }
+
+    applyCardFilter(filter) {
+        console.log(`[MONITOR] Applying card filter: ${filter}`);
+
+        // Update card active states
+        const monitorCards = document.querySelectorAll('.monitor-card');
+        monitorCards.forEach(card => {
+            const cardFilter = card.getAttribute('data-filter');
+            if (cardFilter === filter) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
+        // Apply filter to table rows
+        this.filterByCategory(filter);
+
+        // Update filter indicator
+        const filterNames = {
+            'critical': 'Urgente',
+            'warning': 'Verificar',
+            'standby': 'STANDBY',
+            'noPhoto': 'Pendientes'
+        };
+
+        const filterIndicator = document.getElementById('monitorActiveFilter');
+        const filterNameEl = document.getElementById('monitorFilterName');
+
+        if (filterIndicator && filterNameEl) {
+            filterNameEl.textContent = filterNames[filter] || filter;
+            filterIndicator.style.display = 'flex';
+        }
+    }
+
+    clearFilter() {
+        console.log('[MONITOR] Clearing filter');
+
+        // Remove active state from all cards
+        const monitorCards = document.querySelectorAll('.monitor-card');
+        monitorCards.forEach(card => card.classList.remove('active'));
+
+        // Show all rows
+        this.filterByCategory('all');
+
+        // Hide filter indicator
+        const filterIndicator = document.getElementById('monitorActiveFilter');
+        if (filterIndicator) {
+            filterIndicator.style.display = 'none';
+        }
     }
 
     async scan() {
@@ -91,7 +184,7 @@ class InventoryMonitor {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 60px; color: #888;">
-                        <div style="font-size: 32px; margin-bottom: 15px;">
+                        <div style="font-size: 24px; margin-bottom: 15px;">
                             <i class="fas fa-spinner fa-spin"></i>
                         </div>
                         <div>Escaneando inventario...</div>
@@ -155,10 +248,13 @@ class InventoryMonitor {
         const totals = document.getElementById('scanTotals');
         if (totals) {
             totals.innerHTML = `
-                <span>En Galería: <strong>${summary.totalScanned}</strong></span>
-                <span>En CDE: <strong>${summary.totalCdeIngresado}</strong></span>
-                <span>Fotos R2: <strong>${summary.totalR2Photos || '-'}</strong></span>
-                <span>Tiempo: <strong>${summary.scanTime}s</strong></span>
+                <span style="color: #888; font-size: 14px;">
+                    <i class="fas fa-check-circle" style="margin-right: 6px; color: #4caf50;"></i>
+                    Galería: <strong style="color: #e0e0e0;">${summary.totalScanned}</strong> •
+                    CDE: <strong style="color: #e0e0e0;">${summary.totalCdeIngresado}</strong> •
+                    R2: <strong style="color: #e0e0e0;">${summary.totalR2Photos || '-'}</strong> •
+                    Tiempo: <strong style="color: #e0e0e0;">${summary.scanTime}s</strong>
+                </span>
             `;
         }
 
@@ -948,7 +1044,7 @@ class InventoryMonitor {
                         <span style="color: #f44336;">❌ Antiguo:</span> IDH ${data.mongoIdh} (${data.mongoQb}) → <strong>isActive: false</strong><br>
                         <span style="color: #4caf50;">✅ Nuevo:</span> IDH ${data.cdeIdh} (${data.cdeQb}) → <strong>available</strong><br><br>
 
-                        <strong style="color: #4caf50;">Resultado:</strong> El nuevo couro aparecerá disponible en la galería con el QB correcto.
+                        <strong style="color: #4caf50;">Resultado:</strong> El nuevo cuero aparecerá disponible en la galería con el QB correcto.
                     </div>
                     ` : `
                     <div style="color: #fff; font-size: 14px; line-height: 1.8;">

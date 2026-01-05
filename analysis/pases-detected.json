@@ -1,0 +1,466 @@
+{
+  "timestamp": "2026-01-03T23:02:52.090Z",
+  "totalCdePhotos": 125342,
+  "totalMongoPhotos": 6304,
+  "totalDiscrepancias": 20,
+  "categorias": [
+    {
+      "mudanca": "5205 → 5375LGT",
+      "quantidade": 2,
+      "exemplos": [
+        {
+          "photoNumber": "00376",
+          "cdeQbItem": "5375LGT",
+          "mongoQbItem": "5205",
+          "mongoCategory": "Brazil Best Sellers → Light Tones Mix ML-XL",
+          "r2Path": "Brazil Best Sellers/Light Tones Mix ML-XL/00376.webp",
+          "cdeDate": "2025-04-16T03:00:00.000Z",
+          "status": "INGRESADO"
+        },
+        {
+          "photoNumber": "00391",
+          "cdeQbItem": "5375LGT",
+          "mongoQbItem": "5205",
+          "mongoCategory": "Brazil Best Sellers → Light Tones Mix ML-XL",
+          "r2Path": "Brazil Best Sellers/Light Tones Mix ML-XL/00391.webp",
+          "cdeDate": "2025-04-16T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5301CH → 5301SP",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "02336",
+          "cdeQbItem": "5301SP",
+          "mongoQbItem": "5301CH",
+          "mongoCategory": "Brazil Top Selected Categories → Small → Salt & Pepper - Tricolor, Brown and White Small",
+          "r2Path": "Brazil Top Selected Categories/Small/Salt & Pepper - Tricolor, Brown and White Small/02336.webp",
+          "cdeDate": "2025-06-10T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5301GB → 5365",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "02391",
+          "cdeQbItem": "5365",
+          "mongoQbItem": "5301GB",
+          "mongoCategory": "Brazil Top Selected Categories → Small → Grey Beige Small",
+          "r2Path": "Brazil Top Selected Categories/Small/Grey Beige Small/02391.webp",
+          "cdeDate": "2025-06-10T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5301BW → 5365",
+      "quantidade": 2,
+      "exemplos": [
+        {
+          "photoNumber": "02411",
+          "cdeQbItem": "5365",
+          "mongoQbItem": "5301BW",
+          "mongoCategory": "Brazil Top Selected Categories → Small → Black & White Small",
+          "r2Path": "Brazil Top Selected Categories/Small/Black & White Small/02411.webp",
+          "cdeDate": "2025-06-10T03:00:00.000Z",
+          "status": "INGRESADO"
+        },
+        {
+          "photoNumber": "16897",
+          "cdeQbItem": "5365",
+          "mongoQbItem": "5301BW",
+          "mongoCategory": "Brazil Top Selected Categories → Small → Black & White Small",
+          "r2Path": "Brazil Top Selected Categories/Small/Black & White Small/16897.webp",
+          "cdeDate": "2025-07-01T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5302C GR → 5365",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "08128",
+          "cdeQbItem": "5365",
+          "mongoQbItem": "5302C GR",
+          "mongoCategory": "Brazil Top Selected Categories → Medium Large → Brindle Grey ML",
+          "r2Path": "Brazil Top Selected Categories/Medium Large/Brindle Grey ML//08128.webp",
+          "cdeDate": "2025-06-10T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5375EXO → 5302B WR",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "08343",
+          "cdeQbItem": "5302B WR",
+          "mongoQbItem": "5375EXO",
+          "mongoCategory": "Brazil Best Sellers → Exotic Tones ML-XL",
+          "r2Path": "Brazil Best Sellers/Exotic Tones ML-XL/08343.webp",
+          "cdeDate": "2025-10-01T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "6003 → 5202TRC",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "09725",
+          "cdeQbItem": "5202TRC",
+          "mongoQbItem": "6003",
+          "mongoCategory": "6003",
+          "r2Path": "Brazil Top Selected Categories/Extra Large/Grey XL/09725.webp",
+          "cdeDate": "2025-05-01T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5365 → 5301BW",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "16216",
+          "cdeQbItem": "5301BW",
+          "mongoQbItem": "5365",
+          "mongoCategory": "Brazil Best Sellers → Super Promo Small - Assorted Natural Tones",
+          "r2Path": "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/16216.webp",
+          "cdeDate": "2025-10-08T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "6003 → 5303B BW",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "16576",
+          "cdeQbItem": "5303B BW",
+          "mongoQbItem": "6003",
+          "mongoCategory": "Brazil Top Selected Categories → Extra Large → Grey XL",
+          "r2Path": "Brazil Top Selected Categories/Extra Large/Grey XL//16576.webp",
+          "cdeDate": "2025-07-14T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5375LGT → 5303B CH",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "19161",
+          "cdeQbItem": "5303B CH",
+          "mongoQbItem": "5375LGT",
+          "mongoCategory": "Brazil Best Sellers → Light Tones Mix ML-XL",
+          "r2Path": "Brazil Best Sellers/Light Tones Mix ML-XL/19161.webp",
+          "cdeDate": "2025-10-01T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5375EXO → 5303B BW",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "20437",
+          "cdeQbItem": "5303B BW",
+          "mongoQbItem": "5375EXO",
+          "mongoCategory": "Brazil Best Sellers → Exotic Tones ML-XL",
+          "r2Path": "Brazil Best Sellers/Exotic Tones ML-XL/20437.webp",
+          "cdeDate": "2025-10-01T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5375DRK → 5302B TP",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "20649",
+          "cdeQbItem": "5302B TP",
+          "mongoQbItem": "5375DRK",
+          "mongoCategory": "Brazil Best Sellers → Dark Tones Mix ML-XL",
+          "r2Path": "Brazil Best Sellers/Dark Tones Mix ML-XL/20649.webp",
+          "cdeDate": "2025-10-01T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5302C BL → 5375LGT",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "20819",
+          "cdeQbItem": "5375LGT",
+          "mongoQbItem": "5302C BL",
+          "mongoCategory": "Brazil Top Selected Categories → Medium Large → Brindle Light Grey-Beige ML",
+          "r2Path": "Brazil Top Selected Categories/Medium Large/Brindle Light Grey-Beige ML/20819.webp",
+          "cdeDate": "2025-07-28T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5205 → 5203EXO",
+      "quantidade": 3,
+      "exemplos": [
+        {
+          "photoNumber": "24931",
+          "cdeQbItem": "5203EXO",
+          "mongoQbItem": "5205",
+          "mongoCategory": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+          "r2Path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL/24931.webp",
+          "cdeDate": "2025-10-13T03:00:00.000Z",
+          "status": "INGRESADO"
+        },
+        {
+          "photoNumber": "24958",
+          "cdeQbItem": "5203EXO",
+          "mongoQbItem": "5205",
+          "mongoCategory": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+          "r2Path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL/24958.webp",
+          "cdeDate": "2025-10-14T03:00:00.000Z",
+          "status": "INGRESADO"
+        },
+        {
+          "photoNumber": "24962",
+          "cdeQbItem": "5203EXO",
+          "mongoQbItem": "5205",
+          "mongoCategory": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+          "r2Path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL/24962.webp",
+          "cdeDate": "2025-10-13T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5365 → 6002",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "32184",
+          "cdeQbItem": "6002",
+          "mongoQbItem": "5365",
+          "mongoCategory": "Brazil Best Sellers → Super Promo Small - Assorted Natural Tones",
+          "r2Path": "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/32184.webp",
+          "cdeDate": "2025-12-17T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    },
+    {
+      "mudanca": "5203BLW → 5203BRW",
+      "quantidade": 1,
+      "exemplos": [
+        {
+          "photoNumber": "35561",
+          "cdeQbItem": "5203BRW",
+          "mongoQbItem": "5203BLW",
+          "mongoCategory": "Colombian Cowhides → 3. X-Large → Black & White XL",
+          "r2Path": "Colombian Cowhides/3. X-Large/Black & White XL/35561.webp",
+          "cdeDate": "2025-12-22T03:00:00.000Z",
+          "status": "INGRESADO"
+        }
+      ]
+    }
+  ],
+  "discrepancias": [
+    {
+      "photoNumber": "00376",
+      "cdeQbItem": "5375LGT",
+      "mongoQbItem": "5205",
+      "mongoCategory": "Brazil Best Sellers → Light Tones Mix ML-XL",
+      "r2Path": "Brazil Best Sellers/Light Tones Mix ML-XL/00376.webp",
+      "cdeDate": "2025-04-16T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "00391",
+      "cdeQbItem": "5375LGT",
+      "mongoQbItem": "5205",
+      "mongoCategory": "Brazil Best Sellers → Light Tones Mix ML-XL",
+      "r2Path": "Brazil Best Sellers/Light Tones Mix ML-XL/00391.webp",
+      "cdeDate": "2025-04-16T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "02336",
+      "cdeQbItem": "5301SP",
+      "mongoQbItem": "5301CH",
+      "mongoCategory": "Brazil Top Selected Categories → Small → Salt & Pepper - Tricolor, Brown and White Small",
+      "r2Path": "Brazil Top Selected Categories/Small/Salt & Pepper - Tricolor, Brown and White Small/02336.webp",
+      "cdeDate": "2025-06-10T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "02391",
+      "cdeQbItem": "5365",
+      "mongoQbItem": "5301GB",
+      "mongoCategory": "Brazil Top Selected Categories → Small → Grey Beige Small",
+      "r2Path": "Brazil Top Selected Categories/Small/Grey Beige Small/02391.webp",
+      "cdeDate": "2025-06-10T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "02411",
+      "cdeQbItem": "5365",
+      "mongoQbItem": "5301BW",
+      "mongoCategory": "Brazil Top Selected Categories → Small → Black & White Small",
+      "r2Path": "Brazil Top Selected Categories/Small/Black & White Small/02411.webp",
+      "cdeDate": "2025-06-10T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "08128",
+      "cdeQbItem": "5365",
+      "mongoQbItem": "5302C GR",
+      "mongoCategory": "Brazil Top Selected Categories → Medium Large → Brindle Grey ML",
+      "r2Path": "Brazil Top Selected Categories/Medium Large/Brindle Grey ML//08128.webp",
+      "cdeDate": "2025-06-10T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "08343",
+      "cdeQbItem": "5302B WR",
+      "mongoQbItem": "5375EXO",
+      "mongoCategory": "Brazil Best Sellers → Exotic Tones ML-XL",
+      "r2Path": "Brazil Best Sellers/Exotic Tones ML-XL/08343.webp",
+      "cdeDate": "2025-10-01T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "09725",
+      "cdeQbItem": "5202TRC",
+      "mongoQbItem": "6003",
+      "mongoCategory": "6003",
+      "r2Path": "Brazil Top Selected Categories/Extra Large/Grey XL/09725.webp",
+      "cdeDate": "2025-05-01T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "16216",
+      "cdeQbItem": "5301BW",
+      "mongoQbItem": "5365",
+      "mongoCategory": "Brazil Best Sellers → Super Promo Small - Assorted Natural Tones",
+      "r2Path": "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/16216.webp",
+      "cdeDate": "2025-10-08T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "16576",
+      "cdeQbItem": "5303B BW",
+      "mongoQbItem": "6003",
+      "mongoCategory": "Brazil Top Selected Categories → Extra Large → Grey XL",
+      "r2Path": "Brazil Top Selected Categories/Extra Large/Grey XL//16576.webp",
+      "cdeDate": "2025-07-14T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "16897",
+      "cdeQbItem": "5365",
+      "mongoQbItem": "5301BW",
+      "mongoCategory": "Brazil Top Selected Categories → Small → Black & White Small",
+      "r2Path": "Brazil Top Selected Categories/Small/Black & White Small/16897.webp",
+      "cdeDate": "2025-07-01T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "19161",
+      "cdeQbItem": "5303B CH",
+      "mongoQbItem": "5375LGT",
+      "mongoCategory": "Brazil Best Sellers → Light Tones Mix ML-XL",
+      "r2Path": "Brazil Best Sellers/Light Tones Mix ML-XL/19161.webp",
+      "cdeDate": "2025-10-01T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "20437",
+      "cdeQbItem": "5303B BW",
+      "mongoQbItem": "5375EXO",
+      "mongoCategory": "Brazil Best Sellers → Exotic Tones ML-XL",
+      "r2Path": "Brazil Best Sellers/Exotic Tones ML-XL/20437.webp",
+      "cdeDate": "2025-10-01T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "20649",
+      "cdeQbItem": "5302B TP",
+      "mongoQbItem": "5375DRK",
+      "mongoCategory": "Brazil Best Sellers → Dark Tones Mix ML-XL",
+      "r2Path": "Brazil Best Sellers/Dark Tones Mix ML-XL/20649.webp",
+      "cdeDate": "2025-10-01T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "20819",
+      "cdeQbItem": "5375LGT",
+      "mongoQbItem": "5302C BL",
+      "mongoCategory": "Brazil Top Selected Categories → Medium Large → Brindle Light Grey-Beige ML",
+      "r2Path": "Brazil Top Selected Categories/Medium Large/Brindle Light Grey-Beige ML/20819.webp",
+      "cdeDate": "2025-07-28T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "24931",
+      "cdeQbItem": "5203EXO",
+      "mongoQbItem": "5205",
+      "mongoCategory": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+      "r2Path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL/24931.webp",
+      "cdeDate": "2025-10-13T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "24958",
+      "cdeQbItem": "5203EXO",
+      "mongoQbItem": "5205",
+      "mongoCategory": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+      "r2Path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL/24958.webp",
+      "cdeDate": "2025-10-14T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "24962",
+      "cdeQbItem": "5203EXO",
+      "mongoQbItem": "5205",
+      "mongoCategory": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+      "r2Path": "Colombian Cowhides/5. Value Tricolor Dark Tones & Creamish White L-XL/24962.webp",
+      "cdeDate": "2025-10-13T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "32184",
+      "cdeQbItem": "6002",
+      "mongoQbItem": "5365",
+      "mongoCategory": "Brazil Best Sellers → Super Promo Small - Assorted Natural Tones",
+      "r2Path": "Brazil Best Sellers/Super Promo Small - Assorted Natural Tones/32184.webp",
+      "cdeDate": "2025-12-17T03:00:00.000Z",
+      "status": "INGRESADO"
+    },
+    {
+      "photoNumber": "35561",
+      "cdeQbItem": "5203BRW",
+      "mongoQbItem": "5203BLW",
+      "mongoCategory": "Colombian Cowhides → 3. X-Large → Black & White XL",
+      "r2Path": "Colombian Cowhides/3. X-Large/Black & White XL/35561.webp",
+      "cdeDate": "2025-12-22T03:00:00.000Z",
+      "status": "INGRESADO"
+    }
+  ]
+}

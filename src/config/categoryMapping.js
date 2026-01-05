@@ -341,55 +341,124 @@ function mapProductToDisplayCategory(product) {
     const qbItem = product.qbItem || '';
 
     // ========================================
-    // SPECIALTY COWHIDES
+    // PATCHWORK RUGS - VERIFICAR MUITO CEDO!
     // ========================================
-    if (name.includes('printed') || name.includes('print cowhide')) {
-        return 'printed';
-    }
-    if (name.includes('devore') || name.includes('metallic')) {
-        return 'metallic';
-    }
-    if (name.includes('dyed') && !name.includes('dyed sheepskin')) {
-        return 'dyed';
-    }
-
-    // ========================================
-    // PATCHWORK RUGS - VERIFICAR PRIMEIRO!
-    // ========================================
-    // CRÍTICO: Verificar bedside e runner ANTES de sheepskin category
+    // CRÍTICO: Verificar bedside/runner/chevron rugs ANTES de sheepskin
     // porque produtos "Rug Bedside" têm category="SHEEPSKIN" no CDE
     // mas devem ir para bedside-rugs, não sheepskin!
 
-    // Runner rugs - aceita com ou sem "patchwork"
-    if (name.includes('runner') || name.includes('corredor')) {
-        return 'runner-rugs';
+    // Chevron rugs
+    if (name.includes('chevron') && name.includes('rug')) {
+        return 'chevron-rugs';
     }
-    // Bedside rugs - aceita com ou sem "patchwork"
-    if (name.includes('bedside') || name.includes('beside')) {
+
+    // Runner rugs - only RUG runners, not table runners
+    if ((name.includes('runner') || name.includes('corredor')) && name.includes('rug')) {
+        if (!name.includes('table runner')) {
+            return 'runner-rugs';
+        }
+    }
+
+    // Bedside rugs - ANTES de sheepskin para interceptar produtos mal categorizados
+    if ((name.includes('bedside') || name.includes('beside')) && name.includes('rug')) {
         return 'bedside-rugs';
     }
 
     // ========================================
-    // SMALL ACCENT HIDES
+    // SMALL ACCENT HIDES - VERIFICAR DEPOIS DE PATCHWORK RUGS!
     // ========================================
+    // CRÍTICO: Verificar calfskin/goatskin/sheepskin ANTES de specialty cowhides
+    // porque produtos como "Calfskin Printed" ou "Calfskin Devore Metallic"
+    // devem ir para calfskin, não para printed/metallic!
+
+    // Calfskins (including printed and metallic calfskins)
+    if (name.includes('calfskin') || name.includes('calf skin')) {
+        return 'calfskin';
+    }
+
+    // Goatskins
+    if (name.includes('goatskin') || name.includes('goat skin')) {
+        return 'goatskin';
+    }
+
+    // Sheepskins (including sheepskin rugs, mas NÃO bedside/runner rugs)
     if (name.includes('sheepskin') || name.includes('sheep skin') ||
         category.includes('sheepskin') || qbItem.startsWith('8')) {
         return 'sheepskin';
     }
-    if (name.includes('calfskin') || name.includes('calf skin')) {
-        return 'calfskin';
+
+    // ========================================
+    // ACCESSORIES - VERIFICAR ANTES DE SPECIALTY COWHIDES
+    // ========================================
+    // CRÍTICO: Verificar pillows e outros accessories ANTES de specialty cowhides
+    // porque produtos como "Pillow Zebra" devem ir para pillows, não para printed!
+
+    // Pillows (including zebra/jaguar pillows)
+    if (name.includes('pillow') || name.includes('cojin') || name.includes('cushion')) {
+        return 'pillows';
     }
-    if (name.includes('goatskin') || name.includes('goat skin')) {
-        return 'goatskin';
+
+    // Table & Kitchen items (napkin rings, coasters, etc)
+    if (name.includes('napkin') || name.includes('coaster') ||
+        name.includes('place mat') || name.includes('placemat') ||
+        name.includes('koozie') || name.includes('wine')) {
+        return 'table-kitchen';
+    }
+
+    // Scraps & DIY (swatch sets, scrap bags)
+    if (name.includes('swatch') || name.includes('sample set') || name.includes('scrap')) {
+        return 'scraps-diy';
+    }
+
+    // Bags & Purses (exclude scrap bags which were handled above)
+    if (name.includes('bag') || name.includes('purse') || name.includes('handbag') ||
+        name.includes('tote') || name.includes('duffle') || name.includes('crossbody')) {
+        return 'bags-purses';
+    }
+
+    // Slippers
+    if (name.includes('slipper') || name.includes('pantufla')) {
+        return 'slippers';
+    }
+
+    // Gifts & Seasonal
+    if (name.includes('stocking') || name.includes('ornament') ||
+        name.includes('sunshine moo') || name.includes('moo')) {
+        return 'gifts-seasonal';
+    }
+
+    // ========================================
+    // SPECIALTY COWHIDES - VERIFICAR APÓS SMALL HIDES E ACCESSORIES
+    // ========================================
+    // IMPORTANTE: Patterns de animais (zebra, leopard, etc) para COWHIDES apenas
+    // Calfskins e Pillows com estes patterns já foram filtrados acima
+
+    // Printed Cowhides - animal patterns (zebra, tiger, leopard, etc)
+    // EXCLUDE calfskin/pillow (já foram filtrados acima)
+    const printedPatterns = ['zebra', 'tiger', 'leopard', 'jaguar', 'cheetah', 'giraffe', 'antelope', 'bengal'];
+    if (name.includes('printed') || name.includes('print cowhide') ||
+        printedPatterns.some(pattern => name.includes(pattern))) {
+        return 'printed';
+    }
+
+    // Devore Metallic Cowhides
+    if (name.includes('devore') || name.includes('metallic')) {
+        return 'metallic';
+    }
+
+    // Dyed Cowhides - EXCLUDE printed patterns (zebra on dyed black, etc)
+    if (name.includes('dyed') && !name.includes('dyed sheepskin')) {
+        // Excluir produtos que são printed (ex: "Zebra on Dyed Black")
+        if (!printedPatterns.some(pattern => name.includes(pattern))) {
+            return 'dyed';
+        }
+        // Se tem pattern de animal, vai para printed (não dyed)
     }
 
     // ========================================
     // PATCHWORK RUGS - CONTINUAÇÃO
     // ========================================
-    // Chevron rugs - depois de verificar runner e bedside
-    if (name.includes('chevron')) {
-        return 'chevron-rugs';
-    }
+    // Chevron, runner e bedside já foram verificados no topo
     // Patchwork genérico (square rugs, etc)
     if (name.includes('patchwork') || name.includes('patch work') ||
         name.includes('designer rug')) {
@@ -400,31 +469,11 @@ function mapProductToDisplayCategory(product) {
     }
 
     // ========================================
-    // ACCESSORIES
+    // ACCESSORIES - FALLBACK GENÉRICO
     // ========================================
+    // Produtos com category=ACCESORIO que não foram capturados acima
+    // (verificações específicas de pillows, bags, etc já foram feitas no topo)
     if (category.includes('accesorio') || category.includes('accessory')) {
-        // Subcategorias de accessories
-        if (name.includes('pillow') || name.includes('cojin') || name.includes('cushion')) {
-            return 'pillows';
-        }
-        if (name.includes('bag') || name.includes('purse') || name.includes('handbag') ||
-            name.includes('tote') || name.includes('duffle') || name.includes('crossbody')) {
-            return 'bags-purses';
-        }
-        if (name.includes('coaster') || name.includes('placemat') || name.includes('place mat') ||
-            name.includes('napkin') || name.includes('wine') || name.includes('koozie')) {
-            return 'table-kitchen';
-        }
-        if (name.includes('slipper') || name.includes('pantufla')) {
-            return 'slippers';
-        }
-        if (name.includes('scrap') || name.includes('offcut') || name.includes('remnant')) {
-            return 'scraps-diy';
-        }
-        if (name.includes('stocking') || name.includes('ornament') || name.includes('gift')) {
-            return 'gifts-seasonal';
-        }
-        // Default accessories
         return 'accessories';
     }
 

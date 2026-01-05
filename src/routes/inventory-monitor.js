@@ -167,7 +167,7 @@ router.get('/scan', async (req, res) => {
             critical: [],      // 🔴 Risco de venda dupla
             warnings: [],      // 🟡 Requer investigação
             pendingSync: [],   // 🔄 Foto existe no R2 mas não no MongoDB
-            noPhoto: [],       // 📷 Couro sem foto
+            noPhoto: [],       // 📷 Cuero sem foto
             autoFixable: [],   // 🔧 Sync vai resolver
             pass: [],          // 🔄 Múltiplos registros (PASS)
             standby: []        // ⏸️ Fotos em STANDBY no CDE
@@ -325,12 +325,12 @@ router.get('/scan', async (req, res) => {
                         needsManualReview: false
                     });
                 } else {
-                    // 📷 SIN FOTO: Couro no warehouse sem foto
+                    // 📷 SIN FOTO: Cuero no warehouse sem foto
                     issues.noPhoto.push({
                         photoNumber: cdePhoto.ATIPOETIQUETA,
                         severity: 'nophoto',
-                        issue: 'Couro sin foto en galería',
-                        description: `La foto ${cdePhoto.ATIPOETIQUETA} está INGRESADO en CDE pero no tiene imagen en R2. El couro necesita ser fotografiado.`,
+                        issue: 'Cuero sin foto en galería',
+                        description: `La foto ${cdePhoto.ATIPOETIQUETA} está INGRESADO en CDE pero no tiene imagen en R2. El cuero necesita ser fotografiado.`,
                         mongoStatus: 'NO EXISTE',
                         cdeStatus: 'INGRESADO',
                         mongoQb: '-',

@@ -130,7 +130,16 @@
       "Bash(start /B node src/server.js)",
       "Bash(cmd /c \"taskkill /F /PID 32708\")",
       "Bash(cmd /c \"taskkill /F /PID 32708 && echo Process killed\")",
-      "Bash(cmd /c \"tasklist | findstr node.exe\")"
+      "Bash(cmd /c \"tasklist | findstr node.exe\")",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" add public/css/client/client-responsive.css)",
+      "Bash(git -C \"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\" commit -m \"$\\(cat <<''EOF''\nfix: optimize filter modal scroll and breadcrumb dark mode on mobile\n\n- Reduced filter container padding from 120px to 90px for proper content visibility\n- Added -webkit-overflow-scrolling: touch for smooth iOS scrolling\n- Fixed breadcrumb dark mode: dark background \\(#1a1a1a\\), light text \\(#e0e0e0\\)\n- Fixed Back button visibility in dark mode: copper background \\(#B87333\\) with white text\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(then grep \"MONGO\" .env)",
+      "Bash(MONGO_URI=\"mongodb+srv://easyadmin:2NwxuiOlK57wH8cY@cluster.tsbl7y8.mongodb.net/sunshine_cowhides?retryWrites=true&w=majority&appName=Cluster\" node:*)",
+      "Bash(cmd /c \"wmic process where \"\"commandline like ''%server.js%''\"\" get processid,commandline 2>nul\")",
+      "Bash(cmd /c \"del /f \"\"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\\\\public\\\\js\\\\stock.js\"\" \"\"c:\\\\Users\\\\Tiago\\\\OneDrive\\\\Área de Trabalho\\\\GALERIA\\\\src\\\\routes\\\\stock.js\"\"\")",
+      "Bash(MONGO_URI=\"mongodb+srv://easyadmin:2NwxuiOlK57wH8cY@cluster.tsbl7y8.mongodb.net/sunshine_cowhides?retryWrites=true&w=majority&appName=Cluster\" node -e \"\nconst mongoose = require\\(''mongoose''\\);\n\nasync function checkPhoto\\(\\) {\n    await mongoose.connect\\(process.env.MONGO_URI\\);\n    \n    const UnifiedProductComplete = require\\(''./src/models/UnifiedProductComplete''\\);\n    \n    const photo = await UnifiedProductComplete.findOne\\({ photoNumber: ''35561'' }\\).lean\\(\\);\n    \n    if \\(photo\\) {\n        console.log\\(''📷 FOTO 35561 - Dados MongoDB:\\\\n''\\);\n        console.log\\(''photoNumber:'', photo.photoNumber\\);\n        console.log\\(''qbItem:'', photo.qbItem\\);\n        console.log\\(''category:'', photo.category\\);\n        console.log\\(''status:'', photo.status\\);\n        console.log\\(''cdeStatus:'', photo.cdeStatus\\);\n        console.log\\(''\\\\nr2Path:'', photo.r2Path\\);\n        console.log\\(''\\\\nidhCode:'', photo.idhCode\\);\n        console.log\\(''fileName:'', photo.fileName\\);\n        console.log\\(''\\\\ndriveMetadata:'', JSON.stringify\\(photo.driveMetadata, null, 2\\)\\);\n    } else {\n        console.log\\(''❌ Foto 35561 não encontrada no MongoDB''\\);\n    }\n    \n    await mongoose.disconnect\\(\\);\n}\n\ncheckPhoto\\(\\).catch\\(console.error\\);\n\")",
+      "Bash(MONGO_URI=\"mongodb+srv://easyadmin:2NwxuiOlK57wH8cY@cluster.tsbl7y8.mongodb.net/sunshine_cowhides?retryWrites=true&w=majority&appName=Cluster\" node -e:*)",
+      "Bash(MONGO_URI=\"mongodb+srv://easyadmin:2NwxuiOlK57wH8cY@cluster.tsbl7y8.mongodb.net/sunshine_cowhides?retryWrites=true&w=majority&appName=Cluster\" node scripts/analyze-qrhistory-meaning.js:*)"
     ],
     "deny": [],
     "ask": []
