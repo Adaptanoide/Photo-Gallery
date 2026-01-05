@@ -561,7 +561,7 @@ function filterBySubcategory(products, subcategory) {
             // Exclude chevron, runner, bedside, and welcome
             if (name.includes('chevron')) return false;
             if (name.includes('runner')) return false;
-            if (name.includes('bedside')) return false;
+            if (name.includes('bedside') || name.includes('bedisde')) return false; // Include typo variant
             if (name.includes('welcome')) return false;
 
             return true;
@@ -592,7 +592,8 @@ function filterBySubcategory(products, subcategory) {
             const name = (p.name || '').toLowerCase();
 
             // Products with "bedside" in name from DESIGNER RUG or SHEEPSKIN categories
-            if (name.includes('bedside') || name.includes('rug bedside')) {
+            // INCLUIR variação com typo: "bedisde" (erro comum no CDE)
+            if (name.includes('bedside') || name.includes('rug bedside') || name.includes('bedisde')) {
                 return category.includes('DESIGNER RUG') || category.includes('SHEEPSKIN');
             }
             return false;

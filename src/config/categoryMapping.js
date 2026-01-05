@@ -360,7 +360,8 @@ function mapProductToDisplayCategory(product) {
     }
 
     // Bedside rugs - ANTES de sheepskin para interceptar produtos mal categorizados
-    if ((name.includes('bedside') || name.includes('beside')) && name.includes('rug')) {
+    // INCLUIR variações com typo: "bedisde" (erro comum no CDE)
+    if ((name.includes('bedside') || name.includes('beside') || name.includes('bedisde')) && name.includes('rug')) {
         return 'bedside-rugs';
     }
 
