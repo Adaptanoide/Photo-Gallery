@@ -341,6 +341,14 @@ function mapProductToDisplayCategory(product) {
     const qbItem = product.qbItem || '';
 
     // ========================================
+    // EXCLUSÕES GLOBAIS - VERIFICAR PRIMEIRO!
+    // ========================================
+    // EXCLUIR pillow fillers (preenchimentos) - não são produtos para venda
+    if (name.includes('filler')) {
+        return null; // Produto excluído da galeria
+    }
+
+    // ========================================
     // PATCHWORK RUGS - VERIFICAR MUITO CEDO!
     // ========================================
     // CRÍTICO: Verificar bedside/runner/chevron rugs ANTES de sheepskin

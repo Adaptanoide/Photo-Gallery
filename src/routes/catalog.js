@@ -729,9 +729,11 @@ function filterBySubcategory(products, subcategory) {
 
         // ========== ACCESSORIES SUBCATEGORIES ==========
 
-        // Pillows - cowhide pillows
+        // Pillows - cowhide pillows (EXCLUIR pillow fillers - são preenchimentos, não produtos)
         'pillows': (p) => {
             const name = (p.name || '').toLowerCase();
+            // EXCLUIR pillow fillers (ex: "Pillow Filler 20x20", "Pillow Filler 10x19in")
+            if (name.includes('filler')) return false;
             return name.includes('pillow');
         },
 
