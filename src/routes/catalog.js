@@ -570,13 +570,17 @@ function filterBySubcategory(products, subcategory) {
             return true;
         },
 
-        // Runner Rugs - long runner rugs (INCLUDES chevron runners)
+        // Runner Rugs - long runner rugs (INCLUDES chevron runners and size-based runners)
         'runner-rugs': (p) => {
             const category = (p.category || '').toUpperCase();
             const name = (p.name || '').toLowerCase();
 
-            // Must have "runner" in name (including chevron runners)
-            if (!name.includes('runner')) return false;
+            // Detect runners by name OR by size (ex: 2.5x8, 3x8, 3x10, 3x12)
+            const runnerSizePattern = /(2\.5x8|2\.5x10|2x8|2x10|3x8|3x10|3x12|2\.5x12)/i;
+            const hasRunnerInName = name.includes('runner');
+            const hasRunnerSize = runnerSizePattern.test(name);
+
+            if (!hasRunnerInName && !hasRunnerSize) return false;
 
             // Exclude table runners (these are accessories, not rugs)
             if (name.includes('table runner')) return false;

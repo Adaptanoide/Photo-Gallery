@@ -348,11 +348,13 @@ function mapProductToDisplayCategory(product) {
     // mas devem ir para bedside-rugs, não sheepskin!
 
     // Runner rugs - VERIFICAR PRIMEIRO (antes de chevron)
-    // Produtos "Runner CHEVRON" devem ir para Runner Rugs, não Chevron Rugs
-    if ((name.includes('runner') || name.includes('corredor')) && name.includes('rug')) {
-        if (!name.includes('table runner')) {
-            return 'runner-rugs';
-        }
+    // Detectar por palavra "runner" OU por dimensões de runner (ex: 2.5x8, 3x8, 3x10, 3x12)
+    const runnerSizePattern = /(2\.5x8|2\.5x10|2x8|2x10|3x8|3x10|3x12|2\.5x12)/i;
+    const hasRunnerInName = (name.includes('runner') || name.includes('corredor')) && name.includes('rug');
+    const hasRunnerSize = runnerSizePattern.test(name) && name.includes('rug');
+
+    if ((hasRunnerInName || hasRunnerSize) && !name.includes('table runner')) {
+        return 'runner-rugs';
     }
 
     // Chevron rugs - VERIFICAR DEPOIS de runner
