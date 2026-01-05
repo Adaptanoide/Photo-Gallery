@@ -347,16 +347,18 @@ function mapProductToDisplayCategory(product) {
     // porque produtos "Rug Bedside" têm category="SHEEPSKIN" no CDE
     // mas devem ir para bedside-rugs, não sheepskin!
 
-    // Chevron rugs
-    if (name.includes('chevron') && name.includes('rug')) {
-        return 'chevron-rugs';
-    }
-
-    // Runner rugs - only RUG runners, not table runners
+    // Runner rugs - VERIFICAR PRIMEIRO (antes de chevron)
+    // Produtos "Runner CHEVRON" devem ir para Runner Rugs, não Chevron Rugs
     if ((name.includes('runner') || name.includes('corredor')) && name.includes('rug')) {
         if (!name.includes('table runner')) {
             return 'runner-rugs';
         }
+    }
+
+    // Chevron rugs - VERIFICAR DEPOIS de runner
+    // Apenas chevrons quadrados (não runners) ficam aqui
+    if (name.includes('chevron') && name.includes('rug')) {
+        return 'chevron-rugs';
     }
 
     // Bedside rugs - ANTES de sheepskin para interceptar produtos mal categorizados

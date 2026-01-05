@@ -528,6 +528,9 @@ function filterBySubcategory(products, subcategory) {
             // Must have "chevron" in name
             if (!name.includes('chevron')) return false;
 
+            // EXCLUIR chevron RUNNERS - estes vão para Runner Rugs
+            if (name.includes('runner')) return false;
+
             // Accept from DESIGNER RUG, NULL, or ACCESORIOS (some are miscategorized)
             if (category.includes('DESIGNER RUG')) return true;
             if (category === 'NULL' || category === '' || !p.category) {
