@@ -18,9 +18,14 @@
             const isProduction = !window.location.hostname.includes('localhost') &&
                                  !window.location.hostname.includes('127.0.0.1');
 
-            // Default theme: dark in production (light theme still in development), light in dev (for testing)
-            const defaultTheme = isProduction ? 'dark' : 'light';
-            const savedTheme = localStorage.getItem('adminTheme') || defaultTheme;
+            // FORCE dark theme in production, allow saved theme in dev
+            let savedTheme;
+            if (isProduction) {
+                savedTheme = 'dark';
+                localStorage.setItem('adminTheme', 'dark'); // Force override any previous value
+            } else {
+                savedTheme = localStorage.getItem('adminTheme') || 'light';
+            }
 
             if (savedTheme === 'light') {
                 document.documentElement.classList.add('admin-light-theme-preload');
@@ -1753,9 +1758,14 @@
             const isProduction = !window.location.hostname.includes('localhost') &&
                                  !window.location.hostname.includes('127.0.0.1');
 
-            // Default theme: dark in production, light in dev (for testing)
-            const defaultTheme = isProduction ? 'dark' : 'light';
-            const savedTheme = localStorage.getItem('adminTheme') || defaultTheme;
+            // FORCE dark theme in production, allow saved theme in dev
+            let savedTheme;
+            if (isProduction) {
+                savedTheme = 'dark';
+                localStorage.setItem('adminTheme', 'dark'); // Force override any previous value
+            } else {
+                savedTheme = localStorage.getItem('adminTheme') || 'light';
+            }
 
             applyAdminTheme(savedTheme);
 
@@ -1764,7 +1774,7 @@
                 const themeToggleBtn = document.getElementById('themeToggleBtn');
                 if (themeToggleBtn) {
                     themeToggleBtn.style.display = 'none';
-                    console.log('[Admin] Theme toggle hidden in production (dark mode default)');
+                    console.log('[Admin] Theme toggle hidden in production (dark mode enforced)');
                 }
             }
         }
