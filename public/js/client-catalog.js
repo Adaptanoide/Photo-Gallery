@@ -21,6 +21,110 @@ const THUMBNAIL_CONFIG = {
 };
 
 /**
+ * Render Work in Progress notice for stock categories
+ * Desktop: inline message, Mobile: button with modal
+ */
+function renderWorkInProgressNotice() {
+    const lastUpdate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const estimatedCompletion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    return `
+        <div class="wip-notice">
+            <!-- Desktop: Inline message -->
+            <div class="wip-notice-desktop">
+                <div class="wip-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="wip-content">
+                    <div class="wip-title">Improving Product Selection</div>
+                    <div class="wip-text">
+                        Feel free to explore and place your order! We're enhancing this section with more details. Photos shown are samples. Chat with us to discuss pricing and find the perfect products for you.
+                    </div>
+                    <div class="wip-dates">
+                        <span class="wip-date">Last updated: ${lastUpdate}</span>
+                        <span class="wip-separator">•</span>
+                        <span class="wip-date">Est. completion: ${estimatedCompletion}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile: Button with modal -->
+            <button class="wip-notice-mobile" onclick="toggleWipModal(event)">
+                <i class="fas fa-info-circle"></i>
+                <span>Section Improvement</span>
+            </button>
+
+            <!-- Mobile Modal -->
+            <div class="wip-modal" id="wipModal" onclick="closeWipModal(event)">
+                <div class="wip-modal-content" onclick="event.stopPropagation()">
+                    <button class="wip-modal-close" onclick="closeWipModal(event)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="wip-modal-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3>Improving Product Selection</h3>
+                    <p>Browse and place your order with confidence! We're continuously enhancing this section with more product details and features.</p>
+                    <div class="wip-modal-info">
+                        <div class="wip-modal-info-item">
+                            <i class="fas fa-images"></i>
+                            <span>Photos shown are samples - actual products may vary slightly</span>
+                        </div>
+                        <div class="wip-modal-info-item">
+                            <i class="fas fa-comments"></i>
+                            <span>Chat with us to discuss pricing and options - we're here to help!</span>
+                        </div>
+                        <div class="wip-modal-info-item">
+                            <i class="fas fa-star"></i>
+                            <span>We're constantly adding new products and improving our selection for you</span>
+                        </div>
+                    </div>
+                    <div class="wip-modal-dates">
+                        <div class="wip-modal-date">
+                            <span class="wip-modal-date-label">Last Updated:</span>
+                            <span class="wip-modal-date-value">${lastUpdate}</span>
+                        </div>
+                        <div class="wip-modal-date">
+                            <span class="wip-modal-date-label">Estimated Completion:</span>
+                            <span class="wip-modal-date-value">${estimatedCompletion}</span>
+                        </div>
+                    </div>
+                    <p class="wip-modal-footer">Thank you for your patience as we enhance your shopping experience.</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Toggle WIP modal on mobile
+ */
+function toggleWipModal(event) {
+    event.stopPropagation();
+    const modal = document.getElementById('wipModal');
+    if (modal) {
+        modal.classList.toggle('active');
+        if (modal.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+}
+
+/**
+ * Close WIP modal
+ */
+function closeWipModal(event) {
+    event.stopPropagation();
+    const modal = document.getElementById('wipModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
  * Gera URL de thumbnail - usa R2 em produção, local em dev
  * @param {string} imageName - Nome da imagem (com ou sem .png)
  */
@@ -1477,6 +1581,8 @@ async function showMixedView(categoryKey, subcategoryKey, subcategory) {
                 </div>
             </div>
 
+            ${renderWorkInProgressNotice()}
+
             <div class="mixed-tabs-container">
                 <div class="mixed-tabs">
                     <button class="mixed-tab active" data-tab="stock" onclick="switchMixedTab('stock')">
@@ -1959,6 +2065,8 @@ function renderStockGrid(container, products, config, categoryKey) {
                     <p>${config.description || 'Browse our available products'}</p>
                 </div>
             </div>
+
+            ${renderWorkInProgressNotice()}
 
             <div class="stock-grid">
     `;
