@@ -1,5 +1,6 @@
 // src/server.js
 // VERSÃO 2.2 - Servidor com Validação de Ambiente e Sincronização Incremental
+// Cache cleared: 2026-01-06 - Runner products fixed
 
 const express = require('express');
 const cors = require('cors');
@@ -213,6 +214,7 @@ app.use('/api/email-config', require('./routes/email-config'));
 app.use('/api/storage', storageRoutes);
 app.use('/api/images', require('./routes/images'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/system', require('./routes/systemHealth'));
 app.use('/api/inventory-monitor', require('./routes/inventory-monitor'));
 app.use('/api/monitor-actions', require('./routes/monitor-actions'));
 app.use('/api/register', registrationRoutes);
