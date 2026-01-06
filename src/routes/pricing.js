@@ -2343,6 +2343,27 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
         // 2. SEMPRE buscar produtos do CDE (fonte de verdade para produtos/stock)
         let products = [];
 
+        // Lista de produtos excluídos do Price Management
+        const excludedQbItems = new Set([
+            '2081F',    // Pillow Filler 20x20
+            '2226',     // Place Mat Longhorn w/Leather Corners
+            '2225',     // Place Mat Star w/Leather Corners
+            '0000DYE',  // Swatch Set Dyed
+            '0000MET',  // Swatch Set Metallic
+            '0000PRI',  // Swatch Set Printed
+            '2300F',    // Pillow Filler 10x19in
+            // Leather Grain products
+            'L-GR004 10X10', 'L-GR006 10X10', 'L-GR003 10X10',
+            'L-GR006 12X12', 'L-GR002 12X12', 'L-GR003 12X12',
+            'L-GR006 24X24', 'L-GR002 24X24', 'L-GR003 24X24',
+            // Leather Marble products
+            'L-LP006 10X10', 'L-LP009 10X10', 'L-LP004 10X10', 'L-LP008 10X10',
+            'L-GR002 10X10', 'L-LP003 10X10', 'L-LP002 10X10',
+            'L-LP006 12X12', 'L-LP009 12X12', 'L-LP004 12X12', 'L-LP008 12X12', 'L-LP003 12X12',
+            'L-LP006 24X24', 'L-LP004 24X24', 'L-LP008 24X24', 'L-LP003 24X24',
+            'L-LP009 8X8'
+        ]);
+
         try {
             const CDEQueries = require('../ai/CDEQueries');
             const queries = new CDEQueries();
@@ -2350,7 +2371,7 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
 
             if (cdeProducts && cdeProducts.length > 0) {
                 // Mergear produtos do CDE com preços do MongoDB
-                products = cdeProducts.map(p => ({
+                const allProducts = cdeProducts.map(p => ({
                     qbItem: p.qbItem,
                     name: p.name,
                     category: p.category,
@@ -2360,12 +2381,16 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
                     hasPrice: (priceMap[p.qbItem] || 0) > 0
                 }));
 
-                console.log(`📦 [STOCK-PRICING] ${products.length} produtos do CDE com preços mergeados`);
+                // Filtrar produtos excluídos
+                const beforeFilter = allProducts.length;
+                products = allProducts.filter(p => !excludedQbItems.has(p.qbItem));
+
+                console.log(`📦 [STOCK-PRICING] ${products.length} produtos (${beforeFilter - products.length} excluídos)`);
             }
         } catch (cdeError) {
             console.error('❌ [STOCK-PRICING] Erro ao buscar do CDE:', cdeError.message);
             // Fallback: usar MongoDB se CDE falhar
-            products = mongoProducts.map(p => ({
+            const allProducts = mongoProducts.map(p => ({
                 qbItem: p.qbItem,
                 name: p.name,
                 category: p.category,
@@ -2374,7 +2399,10 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
                 basePrice: p.basePrice || 0,
                 hasPrice: (p.basePrice || 0) > 0
             }));
-            console.log(`📦 [STOCK-PRICING] Fallback: ${products.length} produtos do MongoDB`);
+
+            // Filtrar produtos excluídos também no fallback
+            products = allProducts.filter(p => !excludedQbItems.has(p.qbItem));
+            console.log(`📦 [STOCK-PRICING] Fallback: ${products.length} produtos do MongoDB (excluídos filtrados)`);
         }
 
         // Agrupar por categoria
