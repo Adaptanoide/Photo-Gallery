@@ -130,6 +130,12 @@ const MAIN_CATEGORY_MAPPING = {
                 catalogCategory: 'bedside-rugs'
             },
             {
+                key: 'special-patterns',
+                name: 'Special Patterns',
+                type: 'stock',
+                catalogCategory: 'special-patterns'
+            },
+            {
                 key: 'rodeo-rugs',
                 name: 'Rodeo Rugs',
                 type: 'photo',
@@ -218,7 +224,7 @@ const VALID_CATALOG_CATEGORIES = [
     // Small Accent Hides
     'sheepskin', 'calfskin', 'goatskin',
     // Patchwork Rugs
-    'chevron-rugs', 'standard-patchwork', 'runner-rugs', 'bedside-rugs',
+    'chevron-rugs', 'standard-patchwork', 'runner-rugs', 'bedside-rugs', 'special-patterns',
     // Accessories
     'pillows', 'bags-purses', 'table-kitchen', 'slippers', 'scraps-diy', 'gifts-seasonal',
     // Furniture
@@ -244,6 +250,7 @@ const CATALOG_TO_MAIN_CATEGORY = {
     'standard-patchwork': 'Patchwork Rugs',
     'runner-rugs': 'Patchwork Rugs',
     'bedside-rugs': 'Patchwork Rugs',
+    'special-patterns': 'Patchwork Rugs',
     // Accessories
     'pillows': 'Accessories',
     'bags-purses': 'Accessories',
@@ -355,7 +362,15 @@ function mapProductToDisplayCategory(product) {
     // porque produtos "Rug Bedside" têm category="SHEEPSKIN" no CDE
     // mas devem ir para bedside-rugs, não sheepskin!
 
-    // Runner rugs - VERIFICAR PRIMEIRO (antes de chevron)
+    // Special Pattern Designer Rugs - VERIFICAR PRIMEIRO!
+    // STRAW, STRIPES, TERNI, ROPE THREAD devem ir para special-patterns
+    // ANTES de verificar runner (para que ROPE THREAD não vá para runner-rugs)
+    if (name.includes('straw') || name.includes('stripe') ||
+        name.includes('terni') || name.includes('rope thread')) {
+        return 'special-patterns';
+    }
+
+    // Runner rugs - VERIFICAR DEPOIS de special patterns
     // Detectar por palavra "runner" OU por dimensões de runner (ex: 2.5x8, 3x8, 3x10, 3x12)
     const runnerSizePattern = /(2\.5x8|2\.5x10|2x8|2x10|3x8|3x10|3x12|2\.5x12)/i;
     const hasRunnerInName = (name.includes('runner') || name.includes('corredor')) && name.includes('rug');
@@ -471,8 +486,18 @@ function mapProductToDisplayCategory(product) {
     // ========================================
     // PATCHWORK RUGS - CONTINUAÇÃO
     // ========================================
-    // Chevron, runner e bedside já foram verificados no topo
-    // Patchwork genérico (square rugs, etc)
+    // Chevron, runner, bedside e special patterns já foram verificados no topo
+
+    // Square Designer Rugs - tamanhos específicos 3X5, 4X6, 6X8, 9X11
+    // Detectar por padrão "rug designer" OU "designer rug" + tamanhos quadrados
+    const squareSizePattern = /(3x5|4x6|6x8|9x11)/i;
+    const isDesignerRug = name.includes('rug designer') || name.includes('designer rug');
+
+    if (isDesignerRug && squareSizePattern.test(name) && !name.includes('chevron')) {
+        return 'standard-patchwork';
+    }
+
+    // Patchwork genérico (outros produtos patchwork)
     if (name.includes('patchwork') || name.includes('patch work') ||
         name.includes('designer rug')) {
         return 'standard-patchwork';
