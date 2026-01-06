@@ -1249,6 +1249,36 @@
                             </div>
                         </div>
 
+                        <!-- System Health Monitor -->
+                        <div class="config-section">
+                            <div class="config-section-header">
+                                <h3>
+                                    <i class="fas fa-heartbeat"></i>
+                                    System Health Monitor
+                                </h3>
+                                <p>Monitor the status of all system services</p>
+                                <button onclick="refreshSystemHealth()" class="btn btn-sm btn-secondary" id="refreshHealthBtn">
+                                    <i class="fas fa-sync"></i>
+                                    Refresh Status
+                                </button>
+                            </div>
+
+                            <!-- Health Status Cards -->
+                            <div id="healthStatusContainer" class="health-status-container">
+                                <!-- Loading -->
+                                <div class="health-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p>Checking system health...</p>
+                                </div>
+                            </div>
+
+                            <!-- Last Check Info -->
+                            <div class="health-last-check" id="healthLastCheck" style="display: none;">
+                                <i class="fas fa-clock"></i>
+                                Last checked: <span id="healthLastCheckTime">-</span>
+                            </div>
+                        </div>
+
                         <!-- Configuração SMTP -->
                         <div class="config-section">
                             <div class="config-section-header">

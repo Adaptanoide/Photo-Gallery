@@ -27,6 +27,12 @@ function getSession() {
 
 function getAuthHeaders() {
     const session = getSession();
+    if (!session || !session.token) {
+        console.warn('⚠️ Session not available yet');
+        return {
+            'Content-Type': 'application/json'
+        };
+    }
     return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.token}`
@@ -548,4 +554,281 @@ async function loadClientsWithEmailCount() {
     }
 }
 
+// ===== SYSTEM HEALTH MONITOR =====
+
+// Carregar status do sistema
+async function loadSystemHealth() {
+    const container = document.getElementById('healthStatusContainer');
+    if (!container) return;
+
+    // Verificar se tem sessão válida antes de tentar carregar
+    const session = getSession();
+    if (!session || !session.token) {
+        console.log('⏳ Aguardando autenticação para carregar System Health...');
+        container.innerHTML = `
+            <div class="health-loading">
+                <i class="fas fa-clock"></i>
+                <p>Waiting for authentication...</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Mostrar loading
+    container.innerHTML = `
+        <div class="health-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Checking system health...</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/system/health', {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch system health');
+        }
+
+        const health = await response.json();
+
+        // Renderizar cards de status
+        renderHealthCards(health);
+
+        // Atualizar timestamp
+        updateHealthTimestamp(health.timestamp);
+
+    } catch (error) {
+        console.error('Error loading system health:', error);
+        container.innerHTML = `
+            <div class="health-loading">
+                <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                <p>Failed to load system health</p>
+            </div>
+        `;
+    }
+}
+
+// Renderizar cards de status
+function renderHealthCards(health) {
+    const container = document.getElementById('healthStatusContainer');
+
+    const serviceIcons = {
+        mongodb: 'fas fa-database',
+        slack: 'fab fa-slack',
+        r2: 'fas fa-cloud',
+        cde: 'fas fa-server',
+        googleDrive: 'fab fa-google-drive'
+    };
+
+    const serviceNames = {
+        mongodb: 'MongoDB',
+        slack: 'Slack Chat',
+        r2: 'R2 Storage',
+        cde: 'CDE Database',
+        googleDrive: 'Google Drive'
+    };
+
+    let html = '';
+
+    for (const [serviceName, serviceData] of Object.entries(health.services)) {
+        const statusClass = serviceData.status;
+        const icon = serviceIcons[serviceName] || 'fas fa-circle';
+        const name = serviceNames[serviceName] || serviceName;
+
+        html += `
+            <div class="health-card">
+                <div class="health-card-header">
+                    <div class="health-card-title">
+                        <i class="${icon} health-card-icon"></i>
+                        ${name}
+                    </div>
+                    <span class="health-status-badge ${statusClass}">
+                        ${statusClass}
+                    </span>
+                </div>
+                <div class="health-card-body">
+                    <p class="health-card-message">${serviceData.message}</p>
+                    ${renderHealthDetails(serviceData)}
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+// Renderizar detalhes do serviço
+function renderHealthDetails(serviceData) {
+    let detailsHtml = '<div class="health-card-details">';
+
+    // Response Time
+    if (serviceData.responseTime) {
+        detailsHtml += `
+            <div class="health-card-detail">
+                <span class="health-card-detail-label">Response Time:</span>
+                <span class="health-card-detail-value">${serviceData.responseTime}</span>
+            </div>
+        `;
+    }
+
+    // Database/Bucket Name
+    if (serviceData.database) {
+        detailsHtml += `
+            <div class="health-card-detail">
+                <span class="health-card-detail-label">Database:</span>
+                <span class="health-card-detail-value">${serviceData.database}</span>
+            </div>
+        `;
+    }
+
+    if (serviceData.bucket) {
+        detailsHtml += `
+            <div class="health-card-detail">
+                <span class="health-card-detail-label">Bucket:</span>
+                <span class="health-card-detail-value">${serviceData.bucket}</span>
+            </div>
+        `;
+    }
+
+    // Team/User info (Slack)
+    if (serviceData.data) {
+        if (serviceData.data.team) {
+            detailsHtml += `
+                <div class="health-card-detail">
+                    <span class="health-card-detail-label">Workspace:</span>
+                    <span class="health-card-detail-value">${serviceData.data.team}</span>
+                </div>
+            `;
+        }
+        if (serviceData.data.user) {
+            detailsHtml += `
+                <div class="health-card-detail">
+                    <span class="health-card-detail-label">Bot User:</span>
+                    <span class="health-card-detail-value">${serviceData.data.user}</span>
+                </div>
+            `;
+        }
+    }
+
+    // Error message
+    if (serviceData.error && serviceData.status === 'error') {
+        detailsHtml += `
+            <div class="health-card-detail">
+                <span class="health-card-detail-label">Error:</span>
+                <span class="health-card-detail-value" style="color: #ef4444;">${serviceData.error}</span>
+            </div>
+        `;
+    }
+
+    // Note
+    if (serviceData.note) {
+        detailsHtml += `
+            <div class="health-card-detail">
+                <span class="health-card-detail-label">Note:</span>
+                <span class="health-card-detail-value">${serviceData.note}</span>
+            </div>
+        `;
+    }
+
+    detailsHtml += '</div>';
+
+    return detailsHtml;
+}
+
+// Atualizar timestamp da última verificação
+function updateHealthTimestamp(timestamp) {
+    const element = document.getElementById('healthLastCheck');
+    const timeElement = document.getElementById('healthLastCheckTime');
+
+    if (element && timeElement) {
+        const date = new Date(timestamp);
+        timeElement.textContent = date.toLocaleString();
+        element.style.display = 'block';
+    }
+}
+
+// Refresh system health
+async function refreshSystemHealth() {
+    const button = document.getElementById('refreshHealthBtn');
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+    }
+
+    await loadSystemHealth();
+
+    if (button) {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-sync"></i> Refresh Status';
+    }
+}
+
+// Função auxiliar para tentar carregar health com retry
+function tryLoadSystemHealth(maxAttempts = 5, delay = 1000) {
+    let attempts = 0;
+
+    const attemptLoad = () => {
+        attempts++;
+        const session = getSession();
+
+        if (session && session.token) {
+            console.log('✅ Session disponível, carregando System Health...');
+            loadSystemHealth();
+        } else if (attempts < maxAttempts) {
+            console.log(`⏳ Tentativa ${attempts}/${maxAttempts} - aguardando sessão...`);
+            setTimeout(attemptLoad, delay);
+        } else {
+            console.warn('⚠️ Timeout: sessão não disponível após', maxAttempts, 'tentativas');
+        }
+    };
+
+    attemptLoad();
+}
+
+// Carregar health status quando abrir a seção Settings
+const originalLoadConfigSection = window.loadConfigSection;
+window.loadConfigSection = function() {
+    if (typeof originalLoadConfigSection === 'function') {
+        originalLoadConfigSection();
+    }
+
+    // Tentar carregar system health com retry automático
+    setTimeout(() => {
+        tryLoadSystemHealth();
+    }, 500);
+};
+
+// MutationObserver para detectar quando a seção Settings fica visível
+const settingsSection = document.getElementById('section-settings');
+if (settingsSection) {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' &&
+                (mutation.attributeName === 'class' || mutation.attributeName === 'style')) {
+
+                const isVisible = settingsSection.classList.contains('active') ||
+                                 settingsSection.style.display !== 'none';
+
+                if (isVisible) {
+                    console.log('🔍 Settings section ficou visível - carregando System Health...');
+                    // Aguardar 1 segundo e então tentar carregar
+                    setTimeout(() => {
+                        tryLoadSystemHealth();
+                    }, 1000);
+                }
+            }
+        });
+    });
+
+    observer.observe(settingsSection, {
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+    console.log('👁️ MutationObserver configurado para section-settings');
+}
+
 console.log('🔧 Configuration observer configured');
+console.log('💚 System Health Monitor configured');

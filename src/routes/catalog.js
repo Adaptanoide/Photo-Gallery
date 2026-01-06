@@ -10,7 +10,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const AccessCode = require('../models/AccessCode');
-const { getAllowedCatalogCategories, isCatalogCategoryAllowed } = require('../config/categoryMapping');
+const { getAllowedCatalogCategories, isCatalogCategoryAllowed, mapProductToDisplayCategory } = require('../config/categoryMapping');
 
 // ============================================
 // MIDDLEWARE: Verificar token do cliente (opcional)
@@ -332,7 +332,10 @@ const catalogCache = {
     // Fallback: carregar produtos do MongoDB quando CDE falha
     async _loadFromMongoDB() {
         const CatalogProductModel = getCatalogProduct();
-        const products = await CatalogProductModel.find({ isActive: true })
+        const products = await CatalogProductModel.find({
+            isActive: true,
+            displayCategory: { $ne: 'other', $ne: null, $exists: true }
+        })
             .select('qbItem name category origin currentStock basePrice displayCategory availableStock')
             .lean();
 
@@ -849,6 +852,33 @@ router.get('/products', verifyClientToken, async (req, res) => {
         // Usar cache para evitar query lenta de 9.5s
         const forceRefresh = refresh === 'true';
         let products = await catalogCache.get(forceRefresh);
+
+        // ============================================
+        // FILTRO: EXCLUIR PRODUTOS OCULTOS (displayCategory: 'other' ou null)
+        // ============================================
+        const beforeHiddenFilter = products.length;
+
+        // Lista de qbItems que devem ser ocultados
+        const hiddenQbItems = new Set(['0000MET', '0000DYE', '9040', '4252']);
+
+        products = products.filter(p => {
+            // Excluir produtos na lista de ocultos
+            if (hiddenQbItems.has(p.qbItem)) {
+                return false;
+            }
+
+            const displayCat = mapProductToDisplayCategory({
+                name: p.name,
+                category: p.category || '',
+                qbItem: p.qbItem || ''
+            });
+            // Excluir produtos sem categoria (null) ou marcados como 'other'
+            return displayCat && displayCat !== 'other';
+        });
+
+        if (beforeHiddenFilter !== products.length) {
+            console.log(`[CATALOG] 🚫 Produtos ocultos removidos: ${beforeHiddenFilter} → ${products.length}`);
+        }
 
         // ============================================
         // FILTRO DE PERMISSÕES DO CLIENTE
