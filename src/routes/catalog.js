@@ -616,11 +616,16 @@ function filterBySubcategory(products, subcategory) {
         'special-patterns': (p) => {
             const name = (p.name || '').toLowerCase();
 
-            // Products with special pattern names
-            return name.includes('straw') ||
-                   name.includes('stripe') ||
-                   name.includes('terni') ||
-                   name.includes('rope thread');
+            // APENAS Designer Rugs com padrões especiais
+            const isDesignerRug = name.includes('rug designer') || name.includes('designer rug');
+            const isSpecialPattern = name.includes('straw') || name.includes('stripe') ||
+                                     name.includes('terni') || name.includes('rope thread');
+
+            // EXCLUIR zebras e pillows que possam ter "stripe" no nome
+            const isZebraOrPillow = name.includes('zebra') || name.includes('pillow') ||
+                                    name.includes('cojin') || name.includes('cushion');
+
+            return isDesignerRug && isSpecialPattern && !isZebraOrPillow;
         },
 
         // Welcome Mats - small welcome rugs with longhorn designs

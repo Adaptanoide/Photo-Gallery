@@ -365,8 +365,16 @@ function mapProductToDisplayCategory(product) {
     // Special Pattern Designer Rugs - VERIFICAR PRIMEIRO!
     // STRAW, STRIPES, TERNI, ROPE THREAD devem ir para special-patterns
     // ANTES de verificar runner (para que ROPE THREAD não vá para runner-rugs)
-    if (name.includes('straw') || name.includes('stripe') ||
-        name.includes('terni') || name.includes('rope thread')) {
+    // IMPORTANTE: Apenas DESIGNER RUGS, não zebras ou pillows!
+    const isDesignerRug = name.includes('rug designer') || name.includes('designer rug');
+    const isSpecialPattern = name.includes('straw') || name.includes('stripe') ||
+                             name.includes('terni') || name.includes('rope thread');
+
+    // EXCLUIR zebras e pillows que possam ter "stripe" no nome
+    const isZebraOrPillow = name.includes('zebra') || name.includes('pillow') ||
+                            name.includes('cojin') || name.includes('cushion');
+
+    if (isDesignerRug && isSpecialPattern && !isZebraOrPillow) {
         return 'special-patterns';
     }
 
