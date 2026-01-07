@@ -302,6 +302,13 @@ const MAIN_CATEGORIES = {
                 catalogCategory: 'bedside-rugs',
                 thumbnail: '/images/thumbnailsCards/bedside subcard.png'
             },
+            'special-patterns': {
+                name: 'Special Patterns',
+                description: 'Designer rugs with unique patterns - STRAW, STRIPES, TERNI',
+                viewType: 'stock',
+                catalogCategory: 'special-patterns',
+                thumbnail: '/images/thumbnailsCards/Squade designer subcard.png'
+            },
             'rodeo-rugs': {
                 name: 'Rodeo Rugs',
                 description: 'Handcrafted rodeo rugs with star and longhorn designs',
