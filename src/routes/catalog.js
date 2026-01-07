@@ -389,6 +389,7 @@ const CATEGORY_MAP = {
     'standard-patchwork': 'FILTER_BY_DESCRIPTION',
     'runner-rugs': 'FILTER_BY_DESCRIPTION',
     'bedside-rugs': 'FILTER_BY_DESCRIPTION',
+    'special-patterns': 'FILTER_BY_DESCRIPTION',
     'designer-rugs': 'FILTER_BY_DESCRIPTION',  // Legacy - all designer rugs
     'rodeo-rugs': ['RODEO RUG'],
 
@@ -609,6 +610,17 @@ function filterBySubcategory(products, subcategory) {
                 return category.includes('DESIGNER RUG') || category.includes('SHEEPSKIN');
             }
             return false;
+        },
+
+        // Special Patterns - Designer Rugs with unique patterns (STRAW, STRIPES, TERNI, ROPE THREAD)
+        'special-patterns': (p) => {
+            const name = (p.name || '').toLowerCase();
+
+            // Products with special pattern names
+            return name.includes('straw') ||
+                   name.includes('stripe') ||
+                   name.includes('terni') ||
+                   name.includes('rope thread');
         },
 
         // Welcome Mats - small welcome rugs with longhorn designs
