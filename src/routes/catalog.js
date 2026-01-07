@@ -141,12 +141,51 @@ const catalogCache = {
                     setTimeout(() => reject(new Error('CDE query timeout after 10s')), 10000)
                 );
 
-                const products = await Promise.race([
+                let products = await Promise.race([
                     queries.getAllCatalogProducts(),
                     timeoutPromise
                 ]);
 
                 const elapsed = Date.now() - startTime;
+
+                // MERGE: Adicionar produtos special-patterns do MongoDB que não existem no CDE
+                try {
+                    const CatalogProductModel = getCatalogProduct();
+                    const mongoSpecialPatterns = await CatalogProductModel.find({
+                        displayCategory: 'special-patterns',
+                        isActive: true
+                    })
+                        .select('qbItem name category origin currentStock basePrice displayCategory availableStock')
+                        .lean();
+
+                    if (mongoSpecialPatterns && mongoSpecialPatterns.length > 0) {
+                        // QBItems que já existem no CDE
+                        const cdeQbItems = new Set(products.map(p => p.qbItem));
+
+                        // Produtos MongoDB que NÃO existem no CDE
+                        const mongoOnly = mongoSpecialPatterns
+                            .filter(p => !cdeQbItems.has(p.qbItem))
+                            .map(p => ({
+                                qbItem: p.qbItem,
+                                name: p.name,
+                                category: p.category || 'DESIGNER RUG',
+                                origin: p.origin || 'BRA',
+                                stock: p.currentStock || 0,
+                                basePrice: p.basePrice || 0,
+                                displayCategory: p.displayCategory,
+                                availableStock: p.availableStock || p.currentStock || 0,
+                                fromMongoDB: true
+                            }));
+
+                        if (mongoOnly.length > 0) {
+                            products = [...products, ...mongoOnly];
+                            console.log(`[CACHE] ➕ Adicionados ${mongoOnly.length} produtos special-patterns do MongoDB`);
+                        }
+                    }
+                } catch (mongoError) {
+                    console.error('[CACHE] ⚠️ Erro ao mesclar special-patterns do MongoDB:', mongoError.message);
+                    // Continua sem os produtos do MongoDB
+                }
 
                 this.products = products;
                 this.timestamp = Date.now();
@@ -876,7 +915,7 @@ router.get('/products', verifyClientToken, async (req, res) => {
         const beforeHiddenFilter = products.length;
 
         // Lista de qbItems que devem ser ocultados
-        const hiddenQbItems = new Set(['0000MET', '0000DYE', '9040', '4252']);
+        const hiddenQbItems = new Set(['0000MET', '0000DYE', '9040']);
 
         products = products.filter(p => {
             // Excluir produtos na lista de ocultos
@@ -938,9 +977,14 @@ router.get('/products', verifyClientToken, async (req, res) => {
         }
 
         // Adicionar displayCategory a cada produto
+        // IMPORTANTE: Preservar displayCategory dos produtos MongoDB (já mapeados corretamente)
         products = products.map(p => ({
             ...p,
-            displayCategory: getDisplayCategory(p.category, p.name),
+            displayCategory: p.displayCategory || mapProductToDisplayCategory({
+                name: p.name,
+                category: p.category || '',
+                qbItem: p.qbItem || ''
+            }),
             currentStock: p.stock || 0
         }));
 

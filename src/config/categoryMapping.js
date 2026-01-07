@@ -499,7 +499,7 @@ function mapProductToDisplayCategory(product) {
     // Square Designer Rugs - tamanhos específicos 3X5, 4X6, 6X8, 9X11
     // Detectar por padrão "rug designer" OU "designer rug" + tamanhos quadrados
     const squareSizePattern = /(3x5|4x6|6x8|9x11)/i;
-    const isDesignerRug = name.includes('rug designer') || name.includes('designer rug');
+    // isDesignerRug já declarado no topo (linha 369)
 
     if (isDesignerRug && squareSizePattern.test(name) && !name.includes('chevron')) {
         return 'standard-patchwork';

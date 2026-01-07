@@ -59,6 +59,7 @@ const catalogProductSchema = new mongoose.Schema({
             'standard-patchwork',   // Square Rugs
             'runner-rugs',          // Runner Rugs
             'bedside-rugs',         // Bedside Rugs
+            'special-patterns',     // Special Patterns (STRAW, STRIPES, TERNI, ROPE THREAD)
 
             // Accessories
             'pillows',              // Pillows

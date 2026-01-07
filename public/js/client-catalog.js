@@ -307,7 +307,7 @@ const MAIN_CATEGORIES = {
                 description: 'Designer rugs with unique patterns - STRAW, STRIPES, TERNI',
                 viewType: 'stock',
                 catalogCategory: 'special-patterns',
-                thumbnail: '/images/thumbnailsCards/Squade designer subcard.png'
+                thumbnail: '/images/thumbnailsCards/Special Patterns.png'
             },
             'rodeo-rugs': {
                 name: 'Rodeo Rugs',
