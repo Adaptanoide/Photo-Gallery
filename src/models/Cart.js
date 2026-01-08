@@ -115,6 +115,11 @@ const cartSchema = new mongoose.Schema({
             default: null,
             comment: 'Código QB do produto de catálogo'
         },
+        catalogCategory: {
+            type: String,
+            default: null,
+            comment: 'Categoria de catálogo (goatskin, sheepskin, etc.) para tier pricing'
+        },
         productName: {
             type: String,
             default: null,

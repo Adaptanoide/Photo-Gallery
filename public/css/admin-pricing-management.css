@@ -184,8 +184,6 @@
     background: var(--bg-secondary);
     border-radius: 12px;
     border: 1px solid var(--border-subtle);
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
 }
 
 /* Stock Products Scrollbar Styling */
@@ -394,6 +392,207 @@
     background: var(--success);
     border-color: var(--success);
     color: white;
+}
+
+/* ===== STOCK PRODUCTS SECTIONS ===== */
+.stock-products-section {
+    margin-bottom: 1.5rem;
+}
+
+.stock-section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 8px 8px 0 0;
+    border: 1px solid var(--border-subtle);
+    border-bottom: none;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stock-section-title span:first-child {
+    font-size: 1.1rem;
+}
+
+.stock-section-count {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* Goatskin Header with Tier Columns */
+.goatskin-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 80px 50px;
+    gap: 12px;
+    align-items: center;
+}
+
+.header-tier {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    line-height: 1.3;
+}
+
+.header-tier small {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    text-transform: none;
+}
+
+/* Goatskin Row */
+.goatskin-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 80px 50px;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Calfskin Header with Tier Columns */
+.calfskin-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 80px 50px;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Calfskin Row */
+.calfskin-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 80px 50px;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Standard section title styling - all sections use same style */
+.stock-products-section .stock-section-title {
+    background: var(--surface-elevated, #2a2a2a);
+    border-bottom: 2px solid var(--gold-primary, #D4AF37);
+}
+
+.stock-products-section .stock-section-title .section-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary, #ffffff);
+}
+
+.stock-product-tier {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stock-product-tier .price-symbol {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.stock-product-tier .tier-input {
+    width: 60px;
+    padding: 6px 8px;
+    text-align: right;
+}
+
+.stock-product-save {
+    display: flex;
+    justify-content: center;
+}
+
+/* Unique Photos Header with 4 Tier Columns */
+.unique-photos-header {
+    display: grid;
+    grid-template-columns: 1fr 70px 70px 70px 70px 70px 50px;
+    gap: 8px;
+    align-items: center;
+}
+
+.header-photos {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+/* Unique Photo Row */
+.unique-photo-row {
+    display: grid;
+    grid-template-columns: 1fr 70px 70px 70px 70px 70px 50px;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Count badges - consistent style for both photos and stock */
+.count-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+    min-width: 36px;
+    text-align: center;
+    display: inline-block;
+}
+
+.count-badge.photos {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.count-badge.stock {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+}
+
+.count-badge.stock.out {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: #d1d5db;
+}
+
+/* Legacy support */
+.photo-count-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* Section title with icon */
+.stock-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stock-section-title i {
+    color: var(--gold-primary);
+    font-size: 1rem;
+}
+
+/* Other Stock Products Header and Row */
+.other-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 150px;
+    gap: 12px;
+    align-items: center;
+}
+
+.other-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 150px;
+    gap: 12px;
+    align-items: center;
 }
 
 /* Responsive - Stock Products */

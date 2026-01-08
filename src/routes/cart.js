@@ -496,8 +496,113 @@ router.get('/:sessionId', async (req, res) => {
         }
 
         // RECALCULAR PREÇOS DE CADA ITEM baseado em volume
+        // ⭐ SEPARAR: Produtos de catálogo vs fotos únicas
+        const catalogItems = cart.items.filter(item => item.isCatalogProduct);
+        const uniquePhotoItems = cart.items.filter(item => !item.isCatalogProduct);
+
+        console.log('🔄 [DEBUG] Recalculando preços do carrinho...');
+        console.log(`📦 [DEBUG] ${catalogItems.length} produtos de catálogo, ${uniquePhotoItems.length} fotos únicas`);
+
+        // ============================================
+        // RECALCULAR GOATSKINS (tier pricing)
+        // ============================================
+        const goatskinItems = catalogItems.filter(item =>
+            item.catalogCategory === 'goatskin' ||
+            item.qbItem?.startsWith('900') ||
+            item.productName?.toLowerCase().includes('goatskin')
+        );
+
+        if (goatskinItems.length > 0) {
+            const CatalogProduct = require('../models/CatalogProduct');
+            const totalGoatskinQty = goatskinItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+            let tierLevel, tierName;
+            if (totalGoatskinQty >= 25) {
+                tierLevel = 3; tierName = 'Gold (24+)';
+            } else if (totalGoatskinQty >= 13) {
+                tierLevel = 2; tierName = 'Silver (13-24)';
+            } else {
+                tierLevel = 1; tierName = 'Bronze (1-12)';
+            }
+
+            console.log(`🐐 [LOAD] Goatskins: ${totalGoatskinQty} total → ${tierName}`);
+
+            for (const item of goatskinItems) {
+                const catalogProduct = await CatalogProduct.findOne({ qbItem: item.qbItem });
+                if (catalogProduct) {
+                    const basePrice = catalogProduct.tier1Price || 0;
+                    let unitPrice = basePrice;
+
+                    if (tierLevel === 3) {
+                        unitPrice = catalogProduct.tier3Price || catalogProduct.tier2Price || basePrice;
+                    } else if (tierLevel === 2) {
+                        unitPrice = catalogProduct.tier2Price || basePrice;
+                    }
+
+                    const qty = item.quantity || 1;
+                    item.unitPrice = unitPrice;
+                    item.basePrice = basePrice;
+                    item.price = unitPrice * qty;
+                    item.formattedPrice = unitPrice > 0 ? `$${item.price.toFixed(2)}` : 'No price';
+                    item.tierInfo = { level: tierLevel, name: tierName, totalQty: totalGoatskinQty };
+
+                    console.log(`   🐐 ${item.productName}: ${qty} × $${unitPrice} = $${item.price}`);
+                }
+            }
+        }
+
+        // ============================================
+        // RECALCULAR CALFSKINS (tier pricing)
+        // ============================================
+        const calfskinItems = catalogItems.filter(item =>
+            item.catalogCategory === 'calfskin' ||
+            item.productName?.toLowerCase().includes('calfskin')
+        );
+
+        if (calfskinItems.length > 0) {
+            const CatalogProduct = require('../models/CatalogProduct');
+            const totalCalfskinQty = calfskinItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+            let tierLevel, tierName;
+            if (totalCalfskinQty >= 25) {
+                tierLevel = 3; tierName = 'Gold (24+)';
+            } else if (totalCalfskinQty >= 13) {
+                tierLevel = 2; tierName = 'Silver (13-24)';
+            } else {
+                tierLevel = 1; tierName = 'Bronze (1-12)';
+            }
+
+            console.log(`🐄 [LOAD] Calfskins: ${totalCalfskinQty} total → ${tierName}`);
+
+            for (const item of calfskinItems) {
+                const catalogProduct = await CatalogProduct.findOne({ qbItem: item.qbItem });
+                if (catalogProduct && (catalogProduct.tier1Price > 0 || catalogProduct.tier2Price > 0 || catalogProduct.tier3Price > 0)) {
+                    const basePrice = catalogProduct.tier1Price || 0;
+                    let unitPrice = basePrice;
+
+                    if (tierLevel === 3) {
+                        unitPrice = catalogProduct.tier3Price || catalogProduct.tier2Price || basePrice;
+                    } else if (tierLevel === 2) {
+                        unitPrice = catalogProduct.tier2Price || basePrice;
+                    }
+
+                    const qty = item.quantity || 1;
+                    item.unitPrice = unitPrice;
+                    item.basePrice = basePrice;
+                    item.price = unitPrice * qty;
+                    item.formattedPrice = unitPrice > 0 ? `$${item.price.toFixed(2)}` : 'No price';
+                    item.tierInfo = { level: tierLevel, name: tierName, totalQty: totalCalfskinQty };
+
+                    console.log(`   🐄 ${item.productName}: ${qty} × $${unitPrice} = $${item.price}`);
+                }
+            }
+        }
+
+        // ============================================
+        // RECALCULAR FOTOS ÚNICAS (por categoria)
+        // ============================================
         const itemsByCategory = {};
-        cart.items.forEach(item => {
+        uniquePhotoItems.forEach(item => {
             const categoryPath = item.category || 'Uncategorized';
             if (!itemsByCategory[categoryPath]) {
                 itemsByCategory[categoryPath] = [];
@@ -505,9 +610,7 @@ router.get('/:sessionId', async (req, res) => {
             itemsByCategory[categoryPath].push(item);
         });
 
-        // Atualizar preço de cada item baseado na quantidade da categoria
-        console.log('🔄 [DEBUG] Recalculando preços do carrinho...');
-        console.log(`📦 [DEBUG] ${Object.keys(itemsByCategory).length} categorias no carrinho`);
+        console.log(`📂 [DEBUG] ${Object.keys(itemsByCategory).length} categorias de fotos únicas`);
 
         for (const [categoryPath, items] of Object.entries(itemsByCategory)) {
             const quantity = items.length;
@@ -807,9 +910,13 @@ const CACHE_TTL_MS = 1000; // 1 segundo
 
 function getCartHash(cart) {
     if (!cart || !cart.items) return 'empty';
-    // Hash simples baseado em: clientCode + quantidade de itens + IDs dos itens
-    const itemIds = cart.items.map(i => i.driveFileId || i.qbItem || 'unknown').sort().join(',');
-    return `${cart.clientCode}_${cart.totalItems}_${itemIds}`;
+    // Hash baseado em: clientCode + quantidade de itens + IDs + quantidades (para catalog products)
+    const itemDetails = cart.items.map(i => {
+        const id = i.driveFileId || i.qbItem || 'unknown';
+        const qty = i.quantity || 1;
+        return `${id}:${qty}`;
+    }).sort().join(',');
+    return `${cart.clientCode}_${cart.totalItems}_${itemDetails}`;
 }
 
 /**
@@ -1004,7 +1111,158 @@ async function calculateCartTotals(cart) {
         // PROCESSAR PRODUTOS DE CATÁLOGO (STOCK)
         // ============================================
         if (catalogItems.length > 0) {
-            catalogItems.forEach(item => {
+            // Separar goatskins e calfskins de outros produtos de catálogo
+            const goatskinItems = catalogItems.filter(item =>
+                item.catalogCategory === 'goatskin' ||
+                item.qbItem?.startsWith('900') ||
+                item.productName?.toLowerCase().includes('goatskin')
+            );
+
+            const calfskinItems = catalogItems.filter(item =>
+                item.catalogCategory === 'calfskin' ||
+                item.productName?.toLowerCase().includes('calfskin')
+            );
+
+            const otherCatalogItems = catalogItems.filter(item =>
+                !goatskinItems.includes(item) && !calfskinItems.includes(item)
+            );
+
+            // ============================================
+            // GOATSKINS: Mix & Match entre eles (tier pricing)
+            // Tiers: 1-12 = tier1Price, 13-24 = tier2Price, 24+ = tier3Price
+            // ============================================
+            if (goatskinItems.length > 0) {
+                const CatalogProduct = require('../models/CatalogProduct');
+
+                // Calcular quantidade total de goatskins no carrinho
+                const totalGoatskinQty = goatskinItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+                // Determinar tier baseado na quantidade total
+                let tierName, tierLevel;
+                if (totalGoatskinQty >= 25) {
+                    tierLevel = 3;
+                    tierName = 'Gold (24+)';
+                } else if (totalGoatskinQty >= 13) {
+                    tierLevel = 2;
+                    tierName = 'Silver (13-24)';
+                } else {
+                    tierLevel = 1;
+                    tierName = 'Bronze (1-12)';
+                }
+
+                console.log(`🐐 [GOATSKIN MIX&MATCH] ${totalGoatskinQty} goatskins total → ${tierName}`);
+
+                for (const item of goatskinItems) {
+                    const qty = item.quantity || 1;
+
+                    // Buscar tier prices do produto
+                    const catalogProduct = await CatalogProduct.findOne({ qbItem: item.qbItem });
+
+                    let unitPrice = 0;
+                    let basePrice = 0; // Tier 1 price (para mostrar desconto)
+
+                    if (catalogProduct) {
+                        basePrice = catalogProduct.tier1Price || 0;
+
+                        // Aplicar tier baseado na quantidade total de goatskins
+                        if (tierLevel === 3) {
+                            unitPrice = catalogProduct.tier3Price || catalogProduct.tier2Price || catalogProduct.tier1Price || 0;
+                        } else if (tierLevel === 2) {
+                            unitPrice = catalogProduct.tier2Price || catalogProduct.tier1Price || 0;
+                        } else {
+                            unitPrice = catalogProduct.tier1Price || 0;
+                        }
+                    }
+
+                    const itemTotal = unitPrice * qty;
+                    const baseTotal = basePrice * qty;
+
+                    if (unitPrice > 0) {
+                        subtotalOthers += baseTotal;  // Subtotal usa preço base (tier 1)
+                        totalOthers += itemTotal;     // Total usa preço com desconto
+                        console.log(`   🐐 [GOATSKIN] ${item.productName}: ${qty} × $${unitPrice} = $${itemTotal} (base: $${basePrice})`);
+                    } else {
+                        console.log(`   🐐 [GOATSKIN] ${item.productName}: ${qty} × (sem preço) - NÃO contabilizado`);
+                    }
+
+                    // Atualizar preços do item no carrinho
+                    item.unitPrice = unitPrice;
+                    item.basePrice = basePrice;
+                    item.price = itemTotal;
+                    item.formattedPrice = unitPrice > 0 ? `$${itemTotal.toFixed(2)}` : 'No price';
+                    item.tierInfo = { level: tierLevel, name: tierName, totalQty: totalGoatskinQty };
+                }
+            }
+
+            // ============================================
+            // CALFSKINS: Mix & Match entre eles (tier pricing)
+            // Tiers: 1-12 = tier1Price, 13-24 = tier2Price, 24+ = tier3Price
+            // ============================================
+            if (calfskinItems.length > 0) {
+                const CatalogProduct = require('../models/CatalogProduct');
+
+                // Calcular quantidade total de calfskins no carrinho
+                const totalCalfskinQty = calfskinItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+                // Determinar tier baseado na quantidade total
+                let tierName, tierLevel;
+                if (totalCalfskinQty >= 25) {
+                    tierLevel = 3;
+                    tierName = 'Gold (24+)';
+                } else if (totalCalfskinQty >= 13) {
+                    tierLevel = 2;
+                    tierName = 'Silver (13-24)';
+                } else {
+                    tierLevel = 1;
+                    tierName = 'Bronze (1-12)';
+                }
+
+                console.log(`🐄 [CALFSKIN MIX&MATCH] ${totalCalfskinQty} calfskins total → ${tierName}`);
+
+                for (const item of calfskinItems) {
+                    const qty = item.quantity || 1;
+
+                    // Buscar tier prices do produto
+                    const catalogProduct = await CatalogProduct.findOne({ qbItem: item.qbItem });
+
+                    let unitPrice = 0;
+                    let basePrice = 0; // Tier 1 price (para mostrar desconto)
+
+                    if (catalogProduct) {
+                        basePrice = catalogProduct.tier1Price || 0;
+
+                        // Aplicar tier baseado na quantidade total de calfskins
+                        if (tierLevel === 3) {
+                            unitPrice = catalogProduct.tier3Price || catalogProduct.tier2Price || catalogProduct.tier1Price || 0;
+                        } else if (tierLevel === 2) {
+                            unitPrice = catalogProduct.tier2Price || catalogProduct.tier1Price || 0;
+                        } else {
+                            unitPrice = catalogProduct.tier1Price || 0;
+                        }
+                    }
+
+                    const itemTotal = unitPrice * qty;
+                    const baseTotal = basePrice * qty;
+
+                    if (unitPrice > 0) {
+                        subtotalOthers += baseTotal;  // Subtotal usa preço base (tier 1)
+                        totalOthers += itemTotal;     // Total usa preço com desconto
+                        console.log(`   🐄 [CALFSKIN] ${item.productName}: ${qty} × $${unitPrice} = $${itemTotal} (base: $${basePrice})`);
+                    } else {
+                        console.log(`   🐄 [CALFSKIN] ${item.productName}: ${qty} × (sem preço) - NÃO contabilizado`);
+                    }
+
+                    // Atualizar preços do item no carrinho
+                    item.unitPrice = unitPrice;
+                    item.basePrice = basePrice;
+                    item.price = itemTotal;
+                    item.formattedPrice = unitPrice > 0 ? `$${itemTotal.toFixed(2)}` : 'No price';
+                    item.tierInfo = { level: tierLevel, name: tierName, totalQty: totalCalfskinQty };
+                }
+            }
+
+            // Processar outros produtos de catálogo normalmente
+            otherCatalogItems.forEach(item => {
                 // Usar unitPrice do próprio item (definido quando adicionado)
                 const unitPrice = item.unitPrice || 0;
                 const qty = item.quantity || 1;
@@ -1131,6 +1389,17 @@ async function calculateCartTotals(cart) {
     console.log(`   SUBTOTAL TOTAL: $${subtotal.toFixed(2)}`);
     console.log(`   Discount: -$${discount.toFixed(2)}`);
     console.log(`   TOTAL FINAL: $${total.toFixed(2)}\n`);
+
+    // ⭐ IMPORTANTE: Salvar os preços atualizados de volta no carrinho
+    // Isso garante que os preços calculados (tier pricing) sejam persistidos
+    try {
+        if (cart.save && typeof cart.save === 'function') {
+            await cart.save();
+            console.log(`💾 [CART] Preços atualizados salvos no carrinho`);
+        }
+    } catch (saveErr) {
+        console.warn(`⚠️ [CART] Erro ao salvar preços atualizados:`, saveErr.message);
+    }
 
     const result = {
         subtotal: subtotal,

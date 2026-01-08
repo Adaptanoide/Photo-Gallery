@@ -470,6 +470,20 @@ function getDisplayCategory(cdeCategory, productName = '') {
     const name = (productName || '').toLowerCase();
     const upper = (cdeCategory || '').toUpperCase();
 
+    // PRIORITY: Check product name first for specific small hides (calfskin, goatskin, sheepskin)
+    // This ensures accurate categorization regardless of CDE category
+    if (name.includes('calfskin') || (name.includes('calf') && name.includes('hair on'))) {
+        return 'calfskin';
+    }
+    if (name.includes('goatskin') || name.includes('goat')) {
+        return 'goatskin';
+    }
+    if (name.includes('sheepskin') || name.includes('sheep') || name.includes('icelandic') ||
+        name.includes('himalayan') || name.includes('tibetan') || name.includes('british wild') ||
+        name.includes('lamb')) {
+        return 'sheepskin';
+    }
+
     // Se category é NULL ou ACCESORIOS, tentar detectar pelo nome
     if (!cdeCategory || upper.includes('ACCESORIO')) {
         // Designer rugs - detect by name
@@ -484,10 +498,6 @@ function getDisplayCategory(cdeCategory, productName = '') {
         const furnitureKeywords = ['chair', 'puff', 'ottoman', 'bench', 'sofa', 'couch', 'stool'];
         if (furnitureKeywords.some(kw => name.includes(kw))) {
             return 'furniture';
-        }
-        // Small hides
-        if (name.includes('sheep') || name.includes('calf') || name.includes('goat')) {
-            return 'small-hides';
         }
         // Default to accessories if can't determine
         return 'accessories';
@@ -997,7 +1007,7 @@ router.get('/products', verifyClientToken, async (req, res) => {
             if (qbItems.length > 0) {
                 const catalogProducts = await CatalogProductModel.find(
                     { qbItem: { $in: qbItems } },
-                    { qbItem: 1, basePrice: 1, reservedInCarts: 1, confirmedInSelections: 1, availableStock: 1 }
+                    { qbItem: 1, basePrice: 1, reservedInCarts: 1, confirmedInSelections: 1, availableStock: 1, tier1Price: 1, tier2Price: 1, tier3Price: 1, displayCategory: 1 }
                 ).lean();
 
                 // Criar mapa para lookup rápido
@@ -1007,7 +1017,11 @@ router.get('/products', verifyClientToken, async (req, res) => {
                         basePrice: cp.basePrice || 0,
                         reservedInCarts: cp.reservedInCarts || 0,
                         confirmedInSelections: cp.confirmedInSelections || 0,
-                        availableStock: cp.availableStock
+                        availableStock: cp.availableStock,
+                        tier1Price: cp.tier1Price || 0,
+                        tier2Price: cp.tier2Price || 0,
+                        tier3Price: cp.tier3Price || 0,
+                        displayCategory: cp.displayCategory || 'other'
                     };
                 });
 
@@ -1027,11 +1041,21 @@ router.get('/products', verifyClientToken, async (req, res) => {
                         availableStock = physicalStock;
                     }
 
+                    // Check if product has tier prices (for Goatskins)
+                    const hasTierPrices = catalogData && (catalogData.tier1Price > 0 || catalogData.tier2Price > 0 || catalogData.tier3Price > 0);
+
                     return {
                         ...p,
                         basePrice,
-                        hasPrice: basePrice > 0,
+                        hasPrice: basePrice > 0 || hasTierPrices,
                         formattedPrice: basePrice > 0 ? `$${basePrice.toFixed(2)}` : 'Contact for Price',
+                        // Tier prices for Mix & Match categories (Goatskins)
+                        tier1Price: catalogData?.tier1Price || 0,
+                        tier2Price: catalogData?.tier2Price || 0,
+                        tier3Price: catalogData?.tier3Price || 0,
+                        hasTierPrices,
+                        // Use MongoDB displayCategory if available
+                        displayCategory: catalogData?.displayCategory || p.displayCategory,
                         // ✅ ESTOQUE LÓGICO
                         reservedInCarts: catalogData?.reservedInCarts || 0,
                         confirmedInSelections: catalogData?.confirmedInSelections || 0,

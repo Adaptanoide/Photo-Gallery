@@ -2323,6 +2323,41 @@ router.post('/bulk-update-individual', authenticateToken, async (req, res) => {
 // ============================================
 
 /**
+ * Helper: Determine displayCategory based on product name
+ * Priority: specific small hides (calfskin, goatskin, sheepskin) first
+ */
+function getStockDisplayCategory(productName, cdeCategory, mongoCategory) {
+    const name = (productName || '').toLowerCase();
+
+    // PRIORITY: Check product name first for specific small hides
+    if (name.includes('calfskin') || (name.includes('calf') && name.includes('hair on'))) {
+        return 'calfskin';
+    }
+    if (name.includes('goatskin') || name.includes('goat')) {
+        return 'goatskin';
+    }
+    if (name.includes('sheepskin') || name.includes('sheep') || name.includes('icelandic') ||
+        name.includes('himalayan') || name.includes('tibetan') || name.includes('british wild') ||
+        name.includes('lamb')) {
+        return 'sheepskin';
+    }
+
+    // If MongoDB has a valid category, use it
+    if (mongoCategory && mongoCategory !== 'other') {
+        return mongoCategory;
+    }
+
+    // Fallback to CDE category detection
+    const upper = (cdeCategory || '').toUpperCase();
+    if (upper.includes('DESIGNER')) return 'designer-rugs';
+    if (upper.includes('RODEO')) return 'rodeo-rugs';
+    if (upper.includes('SMALL HIDES')) return 'small-hides';
+    if (upper.includes('MOBILIARIO')) return 'furniture';
+
+    return 'other';
+}
+
+/**
  * GET /api/pricing/stock-products
  * Lista todos os produtos de stock com seus preços
  * Agrupa por categoria para facilitar visualização
@@ -2335,8 +2370,16 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
         // 1. Buscar preços do MongoDB (fonte de verdade para preços)
         const mongoProducts = await CatalogProduct.find({ isActive: true }).lean();
         const priceMap = {};
+        const tierMap = {};
+        const categoryMap = {};
         mongoProducts.forEach(p => {
             priceMap[p.qbItem] = p.basePrice || 0;
+            tierMap[p.qbItem] = {
+                tier1Price: p.tier1Price || 0,
+                tier2Price: p.tier2Price || 0,
+                tier3Price: p.tier3Price || 0
+            };
+            categoryMap[p.qbItem] = p.displayCategory || 'other';
         });
         console.log(`📦 [STOCK-PRICING] ${mongoProducts.length} preços carregados do MongoDB`);
 
@@ -2371,15 +2414,24 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
 
             if (cdeProducts && cdeProducts.length > 0) {
                 // Mergear produtos do CDE com preços do MongoDB
-                const allProducts = cdeProducts.map(p => ({
-                    qbItem: p.qbItem,
-                    name: p.name,
-                    category: p.category,
-                    origin: p.origin,
-                    currentStock: p.stock || p.availableStock || 0,
-                    basePrice: priceMap[p.qbItem] || 0,
-                    hasPrice: (priceMap[p.qbItem] || 0) > 0
-                }));
+                const allProducts = cdeProducts.map(p => {
+                    const tiers = tierMap[p.qbItem] || { tier1Price: 0, tier2Price: 0, tier3Price: 0 };
+                    // Use dynamic category detection based on product name
+                    const displayCategory = getStockDisplayCategory(p.name, p.category, categoryMap[p.qbItem]);
+                    return {
+                        qbItem: p.qbItem,
+                        name: p.name,
+                        category: p.category,
+                        origin: p.origin,
+                        currentStock: p.stock || p.availableStock || 0,
+                        basePrice: priceMap[p.qbItem] || 0,
+                        tier1Price: tiers.tier1Price,
+                        tier2Price: tiers.tier2Price,
+                        tier3Price: tiers.tier3Price,
+                        displayCategory,
+                        hasPrice: (priceMap[p.qbItem] || 0) > 0 || tiers.tier1Price > 0
+                    };
+                });
 
                 // Filtrar produtos excluídos
                 const beforeFilter = allProducts.length;
@@ -2390,15 +2442,23 @@ router.get('/stock-products', authenticateToken, async (req, res) => {
         } catch (cdeError) {
             console.error('❌ [STOCK-PRICING] Erro ao buscar do CDE:', cdeError.message);
             // Fallback: usar MongoDB se CDE falhar
-            const allProducts = mongoProducts.map(p => ({
-                qbItem: p.qbItem,
-                name: p.name,
-                category: p.category,
-                origin: p.origin,
-                currentStock: p.currentStock || 0,
-                basePrice: p.basePrice || 0,
-                hasPrice: (p.basePrice || 0) > 0
-            }));
+            const allProducts = mongoProducts.map(p => {
+                // Use dynamic category detection based on product name
+                const displayCategory = getStockDisplayCategory(p.name, p.category, p.displayCategory);
+                return {
+                    qbItem: p.qbItem,
+                    name: p.name,
+                    category: p.category,
+                    origin: p.origin,
+                    currentStock: p.currentStock || 0,
+                    basePrice: p.basePrice || 0,
+                    tier1Price: p.tier1Price || 0,
+                    tier2Price: p.tier2Price || 0,
+                    tier3Price: p.tier3Price || 0,
+                    displayCategory,
+                    hasPrice: (p.basePrice || 0) > 0 || (p.tier1Price || 0) > 0
+                };
+            });
 
             // Filtrar produtos excluídos também no fallback
             products = allProducts.filter(p => !excludedQbItems.has(p.qbItem));
@@ -2649,6 +2709,216 @@ router.put('/stock-products/:qbItem', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao atualizar preço',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * PUT /api/pricing/stock-products/:qbItem/tiers
+ * Atualiza os preços por tier de um produto (usado para Goatskins e outras categorias com Mix & Match)
+ */
+router.put('/stock-products/:qbItem/tiers', authenticateToken, async (req, res) => {
+    try {
+        const { qbItem } = req.params;
+        const { tier1Price, tier2Price, tier3Price } = req.body;
+
+        console.log(`💰 [STOCK-TIERS] Atualizando tiers: ${qbItem} -> $${tier1Price} / $${tier2Price} / $${tier3Price}`);
+
+        // Validate tier prices
+        const t1 = parseFloat(tier1Price) || 0;
+        const t2 = parseFloat(tier2Price) || 0;
+        const t3 = parseFloat(tier3Price) || 0;
+
+        if (t1 < 0 || t2 < 0 || t3 < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tier prices must be >= 0'
+            });
+        }
+
+        // Update the product
+        const product = await CatalogProduct.findOneAndUpdate(
+            { qbItem: qbItem },
+            {
+                tier1Price: t1,
+                tier2Price: t2,
+                tier3Price: t3,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        console.log(`✅ [STOCK-TIERS] Tiers atualizados: ${qbItem}`);
+
+        res.json({
+            success: true,
+            message: 'Tier prices updated successfully',
+            product: {
+                qbItem: product.qbItem,
+                name: product.name,
+                tier1Price: product.tier1Price,
+                tier2Price: product.tier2Price,
+                tier3Price: product.tier3Price
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ [STOCK-TIERS] Erro ao atualizar tiers:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating tier prices',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/pricing/stock-products/apply-pdf-prices
+ * Aplica preços do PDF automaticamente para Goatskins e Calfskins
+ * Baseado nos nomes dos produtos e tabela de preços NOV 2025
+ */
+router.post('/stock-products/apply-pdf-prices', authenticateToken, async (req, res) => {
+    try {
+        console.log('💰 [APPLY-PRICES] Aplicando preços do PDF para Goatskins e Calfskins...');
+
+        // Buscar todos os produtos do CDE
+        const CDEQueries = require('../ai/CDEQueries');
+        const queries = new CDEQueries();
+        const cdeProducts = await queries.getAllCatalogProducts();
+
+        if (!cdeProducts || cdeProducts.length === 0) {
+            return res.json({
+                success: false,
+                message: 'Nenhum produto encontrado no CDE'
+            });
+        }
+
+        let updated = 0;
+        const updates = [];
+
+        // Preços do PDF NOV 2025:
+        // GOATSKINS (Size 6.0-8.0 Sqft)
+        // - Medium Solid/Exotic: $24, $22, $19
+        // - Medium Spotted: $29, $27, $24
+        // - Large Solid/Exotic: $27, $24, $22
+        // - Large Spotted: $32, $29, $27
+        // - Extra Large Solid/Exotic: $29, $27, $24
+        // - Extra Large Spotted: $35, $32, $29
+        //
+        // CALFSKINS (Size 6.0-8.0 Sqft)
+        // - Natural Tones (Black & White, Brown & White, Chocolate Brown & White): $45, $39, $35
+        // - Tricolor Exotic: $59, $55, $49
+
+        for (const product of cdeProducts) {
+            const name = (product.name || '').toLowerCase();
+            let tier1 = 0, tier2 = 0, tier3 = 0;
+            let displayCategory = null;
+
+            // CALFSKINS
+            if (name.includes('calfskin') || (name.includes('calf') && name.includes('hair on'))) {
+                displayCategory = 'calfskin';
+
+                // Tricolor Exotic calfskins
+                if (name.includes('tricolor') || name.includes('exotic')) {
+                    tier1 = 59;
+                    tier2 = 55;
+                    tier3 = 49;
+                } else {
+                    // Natural Tones (default for calfskin)
+                    tier1 = 45;
+                    tier2 = 39;
+                    tier3 = 35;
+                }
+            }
+            // GOATSKINS
+            else if (name.includes('goatskin') || name.includes('goat')) {
+                displayCategory = 'goatskin';
+
+                const isSpotted = name.includes('spotted') || name.includes('spot');
+                const isExtraLarge = name.includes('extra large') || name.includes('xl') || name.includes('x-large');
+                const isLarge = !isExtraLarge && (name.includes('large') || name.includes(' l ') || name.includes(' lg'));
+
+                if (isExtraLarge) {
+                    if (isSpotted) {
+                        tier1 = 35; tier2 = 32; tier3 = 29;
+                    } else {
+                        tier1 = 29; tier2 = 27; tier3 = 24;
+                    }
+                } else if (isLarge) {
+                    if (isSpotted) {
+                        tier1 = 32; tier2 = 29; tier3 = 27;
+                    } else {
+                        tier1 = 27; tier2 = 24; tier3 = 22;
+                    }
+                } else {
+                    // Medium (default)
+                    if (isSpotted) {
+                        tier1 = 29; tier2 = 27; tier3 = 24;
+                    } else {
+                        tier1 = 24; tier2 = 22; tier3 = 19;
+                    }
+                }
+            }
+
+            // Aplicar preços se encontrou categoria válida
+            if (displayCategory && tier1 > 0) {
+                try {
+                    const result = await CatalogProduct.findOneAndUpdate(
+                        { qbItem: product.qbItem },
+                        {
+                            $set: {
+                                name: product.name,
+                                category: product.category,
+                                displayCategory,
+                                tier1Price: tier1,
+                                tier2Price: tier2,
+                                tier3Price: tier3,
+                                basePrice: tier1,
+                                currentStock: product.stock || 0,
+                                lastCDESync: new Date(),
+                                isActive: true
+                            }
+                        },
+                        { upsert: true, new: true }
+                    );
+
+                    updated++;
+                    updates.push({
+                        qbItem: product.qbItem,
+                        name: product.name,
+                        displayCategory,
+                        tiers: [tier1, tier2, tier3]
+                    });
+
+                    console.log(`✅ ${product.qbItem}: ${displayCategory} -> $${tier1}/$${tier2}/$${tier3}`);
+                } catch (err) {
+                    console.error(`❌ Erro ao atualizar ${product.qbItem}:`, err.message);
+                }
+            }
+        }
+
+        console.log(`✅ [APPLY-PRICES] ${updated} produtos atualizados`);
+
+        res.json({
+            success: true,
+            message: `Preços aplicados para ${updated} produtos`,
+            updated,
+            details: updates
+        });
+
+    } catch (error) {
+        console.error('❌ [APPLY-PRICES] Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao aplicar preços',
             error: error.message
         });
     }

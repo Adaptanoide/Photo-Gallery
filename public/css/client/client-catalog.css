@@ -2506,6 +2506,139 @@ body.dark-mode .size-pill.out-of-stock .pill-count {
     color: #16a34a;
 }
 
+/* ===== TIER PRICES GRID (Mix & Match - Goatskins) ===== */
+.tier-prices-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 8px 0;
+    padding: 8px;
+    background: linear-gradient(135deg, #fefefe 0%, #f8f9fa 100%);
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+}
+
+.tier-price {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 4px;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid #eee;
+    transition: all 0.2s ease;
+}
+
+.tier-price:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.tier-price .tier-name {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.tier-price .tier-qty {
+    font-size: 0.6rem;
+    color: #888;
+    margin-bottom: 3px;
+}
+
+.tier-price .tier-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* Bronze Tier */
+.tier-price.bronze .tier-name {
+    color: #CD7F32;
+}
+.tier-price.bronze .tier-value {
+    color: #CD7F32;
+}
+.tier-price.bronze {
+    border-color: rgba(205, 127, 50, 0.3);
+    background: linear-gradient(135deg, #fff 0%, #fdf8f3 100%);
+}
+
+/* Silver Tier */
+.tier-price.silver .tier-name {
+    color: #A8A8A8;
+}
+.tier-price.silver .tier-value {
+    color: #6B6B6B;
+}
+.tier-price.silver {
+    border-color: rgba(168, 168, 168, 0.3);
+    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
+}
+
+/* Gold Tier */
+.tier-price.gold .tier-name {
+    color: #D4AF37;
+}
+.tier-price.gold .tier-value {
+    color: #B8963E;
+}
+.tier-price.gold {
+    border-color: rgba(212, 175, 55, 0.3);
+    background: linear-gradient(135deg, #fff 0%, #fdfbf3 100%);
+}
+
+/* Active Tier Highlighting (when items in cart) */
+.tier-price.active {
+    transform: scale(1.05);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+    border-width: 2px;
+    z-index: 1;
+    position: relative;
+}
+
+.tier-price.bronze.active {
+    border-color: #CD7F32;
+    background: linear-gradient(135deg, #fdf8f3 0%, #f5ede3 100%);
+    box-shadow: 0 3px 12px rgba(205, 127, 50, 0.3);
+}
+
+.tier-price.silver.active {
+    border-color: #A8A8A8;
+    background: linear-gradient(135deg, #f8f8f8 0%, #efefef 100%);
+    box-shadow: 0 3px 12px rgba(168, 168, 168, 0.3);
+}
+
+.tier-price.gold.active {
+    border-color: #D4AF37;
+    background: linear-gradient(135deg, #fdfbf3 0%, #f5f0dc 100%);
+    box-shadow: 0 3px 12px rgba(212, 175, 55, 0.4);
+}
+
+/* Active tier label */
+.tier-price.active::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    background: #16a34a;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Stock card with tier prices - adjust height */
+.stock-card.has-tier-prices .stock-info {
+    padding-bottom: 8px;
+}
+
 .btn-stock-add {
     padding: 6px 12px;
     background: #B87333;

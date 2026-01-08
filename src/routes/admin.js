@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const AccessCode = require('../models/AccessCode');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
+const CatalogProduct = require('../models/CatalogProduct');
 const { authenticateToken } = require('./auth');
 const CartService = require('../services/CartService');
 
@@ -1651,32 +1652,135 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
         // 🆕 BUSCAR INFO DE PREÇO/TIER para cada categoria
         const categorySummary = [];
 
+        // ============================================
+        // 🌍 PRÉ-CALCULAR QUANTIDADE GLOBAL MIX & MATCH
+        // ============================================
+        // Primeiro, identificar todas as categorias que participam do Mix & Match
+        // e calcular a quantidade total GLOBAL
+        let globalMixMatchQty = 0;
+        const mixMatchCategories = new Set();
+        const photoCategoryCache = new Map(); // Cache para evitar queries duplicadas
+
+        for (const [groupKey, catData] of categoryMap) {
+            if (catData.isCatalogProduct) continue; // Pular produtos de catálogo
+
+            const categoryPath = catData.category;
+            const normalizedPath = categoryPath.replace(/ → /g, '/').replace(/\/$/, '');
+
+            // Buscar categoria para verificar se participa do Mix & Match
+            const photoCategory = await PhotoCategory.findOne({
+                $or: [
+                    { displayName: { $regex: normalizedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+                    { googleDrivePath: { $regex: normalizedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
+                ],
+                isActive: true
+            });
+
+            // Armazenar em cache para uso posterior (evita query duplicada)
+            photoCategoryCache.set(groupKey, photoCategory);
+
+            // Verificar se participa do Mix & Match
+            const participatesMixMatch = photoCategory?.participatesInMixMatch === true;
+
+            if (participatesMixMatch) {
+                globalMixMatchQty += catData.count;
+                mixMatchCategories.add(groupKey);
+                console.log(`🌍 [MIX&MATCH] ${categoryPath}: ${catData.count} items (Global: ${globalMixMatchQty})`);
+            }
+        }
+
+        if (globalMixMatchQty > 0) {
+            console.log(`🌍 [MIX&MATCH TOTAL] ${globalMixMatchQty} items across ${mixMatchCategories.size} categories`);
+        }
+
+        // ============================================
+        // PROCESSAR CADA CATEGORIA
+        // ============================================
         for (const [groupKey, catData] of categoryMap) {
             const categoryPath = catData.category;
 
-            // Para produtos de catálogo, usar dados do próprio item
+            // Para produtos de catálogo, calcular tier prices se aplicável
             if (catData.isCatalogProduct) {
                 const firstItem = catData.items[0];
-                const totalValue = catData.items.reduce((sum, item) =>
-                    sum + ((item.unitPrice || item.price || 0) * (item.quantity || 1)), 0);
+                const qbItem = catData.qbItemFromItem || firstItem?.qbItem || '';
+
+                // Calcular quantidade total de goatskins no carrinho (para tier pricing)
+                let unitPrice = firstItem?.unitPrice || firstItem?.price || 0;
+                let basePrice = unitPrice;
+                let tierInfo = null;
+
+                // Verificar se é goatskin e aplicar tier pricing
+                const isGoatskin = firstItem?.catalogCategory === 'goatskin' ||
+                                   categoryPath.toLowerCase().includes('goatskin') ||
+                                   qbItem.startsWith('900');
+
+                if (isGoatskin) {
+                    // Calcular total de goatskins no carrinho inteiro
+                    let totalGoatskinQty = 0;
+                    for (const [gk, gd] of categoryMap) {
+                        if (gd.isCatalogProduct) {
+                            const gItem = gd.items[0];
+                            const gIsGoatskin = gItem?.catalogCategory === 'goatskin' ||
+                                               gd.category.toLowerCase().includes('goatskin') ||
+                                               (gItem?.qbItem || '').startsWith('900');
+                            if (gIsGoatskin) {
+                                totalGoatskinQty += gd.count;
+                            }
+                        }
+                    }
+
+                    // Determinar tier baseado na quantidade total
+                    let tierLevel, tierName;
+                    if (totalGoatskinQty >= 25) {
+                        tierLevel = 3;
+                        tierName = 'Gold (24+)';
+                    } else if (totalGoatskinQty >= 13) {
+                        tierLevel = 2;
+                        tierName = 'Silver (13-24)';
+                    } else {
+                        tierLevel = 1;
+                        tierName = 'Bronze (1-12)';
+                    }
+
+                    // Buscar tier prices do CatalogProduct
+                    try {
+                        const catalogProduct = await CatalogProduct.findOne({ qbItem });
+                        if (catalogProduct) {
+                            basePrice = catalogProduct.tier1Price || 0;
+                            if (tierLevel === 3) {
+                                unitPrice = catalogProduct.tier3Price || catalogProduct.tier2Price || catalogProduct.tier1Price || 0;
+                            } else if (tierLevel === 2) {
+                                unitPrice = catalogProduct.tier2Price || catalogProduct.tier1Price || 0;
+                            } else {
+                                unitPrice = catalogProduct.tier1Price || 0;
+                            }
+                            tierInfo = { level: tierLevel, name: tierName, totalQty: totalGoatskinQty };
+                            console.log(`🐐 [ADMIN] Goatskin ${qbItem}: ${catData.count} × $${unitPrice} (tier ${tierLevel}: ${tierName})`);
+                        }
+                    } catch (err) {
+                        console.warn(`⚠️ [ADMIN] Error fetching CatalogProduct for ${qbItem}:`, err.message);
+                    }
+                }
+
+                const totalValue = unitPrice * catData.count;
 
                 categorySummary.push({
                     category: categoryPath,
                     groupKey: groupKey,
                     shortName: categoryPath,
-                    qbItem: catData.qbItemFromItem || '',
+                    qbItem: qbItem,
                     count: catData.count,
-                    basePrice: firstItem?.unitPrice || firstItem?.price || 0,
-                    currentPrice: firstItem?.unitPrice || firstItem?.price || 0,
+                    basePrice: basePrice,
+                    currentPrice: unitPrice,
                     totalValue: totalValue,
-                    currentTier: null,
+                    currentTier: tierInfo,
                     nextTier: null,
                     allTiers: [],
                     isCatalogProduct: true,
                     items: catData.items.map(item => ({
                         r2Key: item.r2Key || item.driveFileId || item.thumbnailUrl,
                         name: item.productName || item.fileName || item.name || 'Unnamed',
-                        price: item.unitPrice || item.price || 0,
+                        price: unitPrice,
                         quantity: item.quantity || 1,
                         thumbnailUrl: item.thumbnailUrl
                     }))
@@ -1685,17 +1789,8 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
             }
 
             // Para fotos únicas: buscar info de preço/tier
-            // Normalizar path para busca (converter " → " para "/")
-            const normalizedPath = categoryPath.replace(/ → /g, '/').replace(/\/$/, '');
-
-            // Buscar categoria no banco
-            const photoCategory = await PhotoCategory.findOne({
-                $or: [
-                    { displayName: { $regex: normalizedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
-                    { googleDrivePath: { $regex: normalizedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
-                ],
-                isActive: true
-            });
+            // 🆕 Usar cache em vez de query duplicada
+            const photoCategory = photoCategoryCache.get(groupKey);
 
             // Extrair info de pricing
             let qbItem = '';
@@ -1717,28 +1812,38 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
                 if (volumeRule && volumeRule.priceRanges?.length > 0) {
                     priceRanges = volumeRule.priceRanges.sort((a, b) => a.min - b.min);
 
-                    // Encontrar tier atual baseado na quantidade
+                    // 🌍 USAR QUANTIDADE GLOBAL se categoria participa do Mix & Match
+                    const isMixMatchCategory = mixMatchCategories.has(groupKey);
+                    const effectiveQty = isMixMatchCategory ? globalMixMatchQty : catData.count;
+
+                    if (isMixMatchCategory) {
+                        console.log(`🌍 [MIX&MATCH] ${categoryPath}: usando qty global ${effectiveQty} (local: ${catData.count})`);
+                    }
+
+                    // Encontrar tier atual baseado na quantidade EFETIVA
                     for (let i = 0; i < priceRanges.length; i++) {
                         const tier = priceRanges[i];
                         const tierMax = tier.max || Infinity;
 
-                        if (catData.count >= tier.min && catData.count <= tierMax) {
+                        if (effectiveQty >= tier.min && effectiveQty <= tierMax) {
                             currentTier = {
                                 index: i + 1,
                                 min: tier.min,
                                 max: tier.max,
-                                price: tier.price
+                                price: tier.price,
+                                isGlobalMixMatch: isMixMatchCategory,
+                                globalQty: isMixMatchCategory ? globalMixMatchQty : null
                             };
                             currentPrice = tier.price;
 
-                            // Próximo tier
+                            // Próximo tier (baseado na quantidade global se Mix & Match)
                             if (i < priceRanges.length - 1) {
                                 const next = priceRanges[i + 1];
                                 nextTier = {
                                     index: i + 2,
                                     min: next.min,
                                     price: next.price,
-                                    itemsNeeded: next.min - catData.count
+                                    itemsNeeded: next.min - effectiveQty
                                 };
                             }
                             break;
@@ -1748,12 +1853,14 @@ router.get('/client/:code/cart', authenticateToken, async (req, res) => {
                     // Se não encontrou tier, usar o maior disponível
                     if (!currentTier && priceRanges.length > 0) {
                         const lastTier = priceRanges[priceRanges.length - 1];
-                        if (catData.count >= lastTier.min) {
+                        if (effectiveQty >= lastTier.min) {
                             currentTier = {
                                 index: priceRanges.length,
                                 min: lastTier.min,
                                 max: lastTier.max,
-                                price: lastTier.price
+                                price: lastTier.price,
+                                isGlobalMixMatch: isMixMatchCategory,
+                                globalQty: isMixMatchCategory ? globalMixMatchQty : null
                             };
                             currentPrice = lastTier.price;
                         }

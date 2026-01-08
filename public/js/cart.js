@@ -96,6 +96,136 @@ const CDE_CATEGORY_MAP = {
     'DEVORE': 'Specialty Cowhides'
 };
 
+// ===== MIX & MATCH POOLS CONFIGURATION =====
+// Define which categories have their own Mix & Match tier pricing
+const MIX_MATCH_POOLS = {
+    'natural-cowhides': {
+        id: 'natural-cowhides',
+        name: 'Natural Cowhides',
+        icon: 'fa-layer-group',
+        color: '#8B4513',
+        // Categories that belong to this pool
+        matchCategories: ['Brazil Best Sellers', 'Brazil Top Selected', 'Colombian Cowhides'],
+        matchPaths: ['NATURAL COWHIDES', 'NATURAL-COWHIDES', 'BRAZIL BEST SELLERS', 'BRAZIL TOP SELECTED', 'COLOMBIAN COWHIDES'],
+        // Tier structure (quantity-based discount from backend)
+        hasTiers: true,
+        tierType: 'quantity-discount', // Discount calculated by backend based on total quantity
+        tiers: [
+            { level: 1, name: 'Tier 1', min: 1, max: 4, color: '#CD7F32' },
+            { level: 2, name: 'Tier 2', min: 5, max: 12, color: '#A8A8A8' },
+            { level: 3, name: 'Tier 3', min: 13, max: Infinity, color: '#D4AF37' }
+        ]
+    },
+    'goatskin': {
+        id: 'goatskin',
+        name: 'Goatskins',
+        icon: 'fa-layer-group',
+        color: '#CD7F32', // Bronze base color
+        // Categories that belong to this pool
+        matchCategories: ['goatskin'],
+        matchCatalogCategory: 'goatskin',
+        matchQBPrefix: '900',
+        // Tier structure (fixed price tiers)
+        hasTiers: true,
+        tierType: 'fixed-price',
+        tiers: [
+            { level: 1, name: 'Bronze', min: 1, max: 12, color: '#CD7F32' },
+            { level: 2, name: 'Silver', min: 13, max: 24, color: '#A8A8A8' },
+            { level: 3, name: 'Gold', min: 25, max: Infinity, color: '#D4AF37' }
+        ]
+    },
+    'calfskin': {
+        id: 'calfskin',
+        name: 'Calfskins',
+        icon: 'fa-layer-group',
+        color: '#8B5A2B', // Brown base color
+        // Categories that belong to this pool
+        matchCategories: ['calfskin'],
+        matchCatalogCategory: 'calfskin',
+        // Tier structure (fixed price tiers)
+        hasTiers: true,
+        tierType: 'fixed-price',
+        tiers: [
+            { level: 1, name: 'Bronze', min: 1, max: 12, color: '#CD7F32' },
+            { level: 2, name: 'Silver', min: 13, max: 24, color: '#A8A8A8' },
+            { level: 3, name: 'Gold', min: 25, max: Infinity, color: '#D4AF37' }
+        ]
+    }
+};
+
+/**
+ * Check if an item belongs to a specific Mix & Match pool
+ * @param {object} item - Cart item
+ * @param {object} pool - Mix & Match pool configuration
+ * @returns {boolean}
+ */
+function itemBelongsToPool(item, pool) {
+    // Check catalog category
+    if (pool.matchCatalogCategory && item.catalogCategory === pool.matchCatalogCategory) {
+        return true;
+    }
+
+    // Check QB prefix
+    if (pool.matchQBPrefix && item.qbItem && item.qbItem.startsWith(pool.matchQBPrefix)) {
+        return true;
+    }
+
+    // Check product name
+    if (pool.matchCatalogCategory && item.productName &&
+        item.productName.toLowerCase().includes(pool.matchCatalogCategory)) {
+        return true;
+    }
+
+    // Check path-based matching
+    if (pool.matchPaths) {
+        const pathToCheck = (item.fullPath || item.category || '').toUpperCase();
+        for (const matchPath of pool.matchPaths) {
+            if (pathToCheck.includes(matchPath)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Get the Mix & Match pool for an item (if any)
+ * @param {object} item - Cart item
+ * @returns {object|null} - Pool configuration or null
+ */
+function getItemMixMatchPool(item) {
+    for (const poolId of Object.keys(MIX_MATCH_POOLS)) {
+        const pool = MIX_MATCH_POOLS[poolId];
+        if (itemBelongsToPool(item, pool)) {
+            return pool;
+        }
+    }
+    return null;
+}
+
+/**
+ * Get tier info for a quantity in a pool
+ * @param {object} pool - Mix & Match pool
+ * @param {number} quantity - Total quantity in pool
+ * @returns {object|null} - Tier info or null
+ */
+function getPoolTierInfo(pool, quantity) {
+    if (!pool || !pool.hasTiers || !pool.tiers) return null;
+
+    for (const tier of pool.tiers) {
+        if (quantity >= tier.min && quantity <= tier.max) {
+            return {
+                level: tier.level,
+                name: tier.name,
+                color: tier.color,
+                poolName: pool.name
+            };
+        }
+    }
+    return null;
+}
+
 /**
  * Limpar prefixos numéricos (1., 2., etc.) do texto
  * Usado apenas para exibição no cliente
@@ -694,6 +824,14 @@ window.CartSystem = {
 
                 this.updateUI();
                 this.startTimers();
+
+                // ✅ Disparar evento para atualizar tier highlighting (goatskins)
+                window.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: {
+                        itemCount: this.state.totalItems,
+                        items: this.state.items
+                    }
+                }));
             }
 
         } catch (error) {
@@ -1420,25 +1558,46 @@ window.CartSystem = {
     renderCatalogCartItem(item) {
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || 0;
-        const totalPrice = unitPrice * quantity;
+        const basePrice = item.basePrice || unitPrice;
+        const totalPrice = item.price || (unitPrice * quantity);
         const productName = item.productName || item.fileName || 'Product';
         const qbItem = item.qbItem || '';
+        const tierInfo = item.tierInfo || null;
 
         const showPrices = window.shouldShowPrices && window.shouldShowPrices();
+
+        // Check if this is a goatskin with tier pricing
+        const isGoatskin = item.catalogCategory === 'goatskin' ||
+                          productName.toLowerCase().includes('goatskin');
 
         // ✅ Determinar o que mostrar no preço
         let priceHtml = '';
         if (showPrices) {
             if (unitPrice > 0) {
+                // Check if there's a discount from tier pricing
+                const hasDiscount = basePrice > unitPrice && basePrice > 0;
+
                 priceHtml = `
                     <div class="cart-item-price" style="margin-top: 6px;">
-                        <span class="price-value" style="font-size: 0.85rem; color: #666;">
+                        ${hasDiscount ? `
+                            <span class="price-original" style="font-size: 0.75rem; color: #999; text-decoration: line-through; margin-right: 6px;">
+                                ${window.CurrencyManager ? CurrencyManager.format(basePrice) : '$' + basePrice.toFixed(2)}
+                            </span>
+                        ` : ''}
+                        <span class="price-value" style="font-size: 0.85rem; color: ${hasDiscount ? '#16a34a' : '#666'};">
                             ${window.CurrencyManager ? CurrencyManager.format(unitPrice) : '$' + unitPrice.toFixed(2)} × ${quantity} =
                         </span>
-                        <span class="cart-item-total">
+                        <span class="cart-item-total" style="${hasDiscount ? 'color: #16a34a; font-weight: 700;' : ''}">
                             ${window.CurrencyManager ? CurrencyManager.format(totalPrice) : '$' + totalPrice.toFixed(2)}
                         </span>
                     </div>
+                    ${tierInfo && isGoatskin ? `
+                        <div class="tier-badge" style="margin-top: 4px; font-size: 0.7rem; color: #666; display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-layer-group" style="color: ${tierInfo.level >= 3 ? '#D4AF37' : tierInfo.level === 2 ? '#A8A8A8' : '#CD7F32'};"></i>
+                            <span>${tierInfo.name}</span>
+                            <span style="color: #999;">(${tierInfo.totalQty} total)</span>
+                        </div>
+                    ` : ''}
                 `;
             } else {
                 // ✅ Mostrar "No price" quando não tem preço configurado
@@ -3065,7 +3224,11 @@ async function generateOrderSummary() {
 
     // Agrupar por categoria (usando nome de EXIBIÇÃO para agrupar)
     const categories = {};
-    const categoryMixMatch = {}; // Track Mix & Match status per category
+    const categoryMixMatch = {}; // Track Mix & Match pool per category
+    const categoryPoolInfo = {}; // Track pool details per category
+
+    // ===== TRACK MIX & MATCH POOLS =====
+    const poolStats = {}; // { poolId: { items: [], totalQty: 0, subtotal: 0, total: 0, discount: 0 } }
 
     items.forEach(item => {
         // ✅ MESMA ESTRATÉGIA ROBUSTA de renderCartItems
@@ -3085,21 +3248,44 @@ async function generateOrderSummary() {
         const displayCat = getCategoryDisplayName(rawCat, item);
         if (!categories[displayCat]) {
             categories[displayCat] = [];
-            // Check if this category is Mix & Match
-            // Natural Cowhides has 3 subcategories that qualify for Mix & Match:
-            // 1. Brazil Best Sellers
-            // 2. Brazil Top Selected Categories
-            // 3. Colombian Cowhides
-            const pathToCheck = (item.fullPath || item.category || rawCat || '').toUpperCase();
-            const isNaturalCowhides =
-                pathToCheck.includes('NATURAL COWHIDES') ||
-                pathToCheck.includes('NATURAL-COWHIDES') ||
-                pathToCheck.includes('BRAZIL BEST SELLERS') ||
-                pathToCheck.includes('BRAZIL TOP SELECTED') ||
-                pathToCheck.includes('COLOMBIAN COWHIDES');
-            categoryMixMatch[displayCat] = isNaturalCowhides;
         }
         categories[displayCat].push(item);
+
+        // ✅ CHECK WHICH MIX & MATCH POOL THIS ITEM BELONGS TO
+        const pool = getItemMixMatchPool(item);
+        if (pool) {
+            categoryMixMatch[displayCat] = pool;
+            categoryPoolInfo[displayCat] = pool;
+
+            // Track pool statistics
+            if (!poolStats[pool.id]) {
+                poolStats[pool.id] = {
+                    pool: pool,
+                    items: [],
+                    totalQty: 0,
+                    subtotal: 0,
+                    total: 0,
+                    discount: 0
+                };
+            }
+            const qty = item.quantity || 1;
+            poolStats[pool.id].items.push(item);
+            poolStats[pool.id].totalQty += qty;
+
+            // Calculate discount (basePrice - price)
+            if (item.basePrice && item.price && item.basePrice > item.price) {
+                poolStats[pool.id].subtotal += item.basePrice * qty;
+                poolStats[pool.id].total += item.price;
+                poolStats[pool.id].discount += (item.basePrice * qty) - item.price;
+            } else if (item.originalPrice && item.price && item.originalPrice > item.price) {
+                poolStats[pool.id].subtotal += item.originalPrice;
+                poolStats[pool.id].total += item.price;
+                poolStats[pool.id].discount += item.originalPrice - item.price;
+            } else {
+                poolStats[pool.id].total += item.price || 0;
+                poolStats[pool.id].subtotal += item.price || 0;
+            }
+        }
     });
 
     let html = '';
@@ -3125,13 +3311,14 @@ async function generateOrderSummary() {
     let grandTotal = 0;
     let grandSubtotal = 0;
     let totalItems = 0;
-    let mixMatchDiscount = 0;
-    let mixMatchItemCount = 0;
+    let totalMixMatchDiscount = 0;
 
     // ✅ ORDENAR: Mix & Match primeiro, depois outros alfabeticamente
     const sortedCategories = Object.keys(categories).sort((a, b) => {
-        const aIsMixMatch = categoryMixMatch[a] ? 1 : 0;
-        const bIsMixMatch = categoryMixMatch[b] ? 1 : 0;
+        const aPool = categoryMixMatch[a];
+        const bPool = categoryMixMatch[b];
+        const aIsMixMatch = aPool ? 1 : 0;
+        const bIsMixMatch = bPool ? 1 : 0;
         // Mix & Match vem primeiro (ordem decrescente)
         if (bIsMixMatch !== aIsMixMatch) {
             return bIsMixMatch - aIsMixMatch;
@@ -3142,7 +3329,7 @@ async function generateOrderSummary() {
 
     sortedCategories.forEach((category, index) => {
         const allCategoryItems = categories[category];
-        const isMixMatch = categoryMixMatch[category];
+        const pool = categoryMixMatch[category]; // Now returns pool object or undefined
 
         // ✅ FILTRAR GHOST ITEMS DA CATEGORIA
         const categoryItems = allCategoryItems.filter(item =>
@@ -3160,25 +3347,45 @@ async function generateOrderSummary() {
             if (item.price > 0) {
                 categorySubtotal += item.price;
                 // Track original price for discount calculation
-                if (item.originalPrice && item.originalPrice > item.price) {
+                const qty = item.quantity || 1;
+                if (item.basePrice && item.basePrice > 0 && item.unitPrice && item.basePrice > item.unitPrice) {
+                    // Goatskin-style tier discount
+                    categoryDiscount += (item.basePrice - item.unitPrice) * qty;
+                } else if (item.originalPrice && item.originalPrice > item.price) {
                     categoryDiscount += (item.originalPrice - item.price);
                 }
             }
         });
 
-        // Track Mix & Match items for total discount
-        if (isMixMatch) {
-            mixMatchItemCount += categoryItems.length;
-            mixMatchDiscount += categoryDiscount;
+        // Track Mix & Match discount total
+        if (pool) {
+            totalMixMatchDiscount += categoryDiscount;
         }
+
+        // ===== COUNT TOTAL UNITS (accounting for quantity on catalog products) =====
+        const categoryUnitCount = categoryItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
         grandSubtotal += categorySubtotal;
         grandTotal += categorySubtotal;
-        totalItems += categoryItems.length;
+        totalItems += categoryUnitCount; // Use unit count instead of item count
 
-        // Header da categoria com badge Mix & Match (clicável)
-        const mixMatchBadge = isMixMatch ?
-            '<button class="summary-mm-badge" onclick="event.stopPropagation(); if(window.openMixMatchInfoModal) window.openMixMatchInfoModal();"><i class="fas fa-layer-group"></i> Mix & Match</button>' : '';
+        // ===== BUILD MIX & MATCH BADGE WITH POOL INFO =====
+        let mixMatchBadge = '';
+        if (pool) {
+            // Get tier info for this pool - use total units for the pool
+            const poolStat = poolStats[pool.id];
+            const tierInfo = pool.tiers ? getPoolTierInfo(pool, poolStat?.totalQty || categoryUnitCount) : null;
+
+            let badgeContent = `<i class="fas ${pool.icon}"></i> ${pool.name}`;
+            let badgeStyle = `border-color: ${pool.color}; color: ${pool.color};`;
+
+            // Add tier info if available
+            if (tierInfo) {
+                badgeContent += ` <span style="background: ${tierInfo.color}; color: white; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;">${tierInfo.name}</span>`;
+            }
+
+            mixMatchBadge = `<button class="summary-mm-badge" style="${badgeStyle}" onclick="event.stopPropagation(); if(window.openMixMatchInfoModal) window.openMixMatchInfoModal();">${badgeContent}</button>`;
+        }
 
         const discountInfo = showPrices && categoryDiscount > 0 ?
             `<span class="summary-category-discount">-${window.CurrencyManager ? CurrencyManager.format(categoryDiscount) : '$' + categoryDiscount.toFixed(2)}</span>` : '';
@@ -3188,13 +3395,13 @@ async function generateOrderSummary() {
         const chevronIcon = isExpanded ? 'fa-chevron-down' : 'fa-chevron-right';
 
         html += `
-            <div class="summary-category ${isMixMatch ? 'is-mix-match' : ''}">
+            <div class="summary-category ${pool ? 'is-mix-match' : ''}">
                 <div class="summary-category-header">
                     <i class="fas ${chevronIcon} category-toggle-icon"></i>
                     <strong>${category}</strong>
                     ${mixMatchBadge}
                     <span class="summary-category-meta">
-                        ${categoryItems.length} ${categoryItems.length === 1 ? 'item' : 'items'}
+                        ${categoryUnitCount} ${categoryUnitCount === 1 ? 'unit' : 'units'}
                         ${showPrices && categorySubtotal > 0 ? `| ${window.CurrencyManager ? CurrencyManager.format(categorySubtotal) : '$' + categorySubtotal.toFixed(2)}` : ''}
                     </span>
                 </div>
@@ -3283,7 +3490,7 @@ async function generateOrderSummary() {
             </div>
         `;
 
-        // Desconto Mix & Match (se houver)
+        // Desconto Mix & Match (se houver) - Now shows breakdown by pool
         if (cartTotal.hasDiscount && cartTotal.discountAmount > 0) {
             html += `
                 <div class="summary-total-line summary-discount">
@@ -3292,14 +3499,28 @@ async function generateOrderSummary() {
                 </div>
             `;
 
-            // Info sobre Mix & Match
-            if (mixMatchItemCount > 0) {
-                html += `
-                    <div class="summary-mm-info">
-                        <i class="fas fa-info-circle"></i>
-                        ${mixMatchItemCount} items from Natural Cowhides qualify for quantity discount
-                    </div>
-                `;
+            // ===== SHOW BREAKDOWN BY POOL =====
+            const activePools = Object.values(poolStats).filter(ps => ps.discount > 0 || ps.totalQty > 0);
+            if (activePools.length > 0) {
+                let poolInfoHtml = '<div class="summary-mm-info">';
+                poolInfoHtml += '<i class="fas fa-info-circle"></i> ';
+
+                const poolDescriptions = activePools.map(ps => {
+                    const tierInfo = ps.pool.tiers ? getPoolTierInfo(ps.pool, ps.totalQty) : null;
+                    let desc = `<strong>${ps.pool.name}</strong>: ${ps.totalQty} items`;
+                    if (tierInfo) {
+                        desc += ` <span style="color: ${tierInfo.color}; font-weight: bold;">(${tierInfo.name})</span>`;
+                    }
+                    if (ps.discount > 0) {
+                        const discountFormatted = window.CurrencyManager ? CurrencyManager.format(ps.discount) : '$' + ps.discount.toFixed(2);
+                        desc += ` saving ${discountFormatted}`;
+                    }
+                    return desc;
+                });
+
+                poolInfoHtml += poolDescriptions.join(' | ');
+                poolInfoHtml += '</div>';
+                html += poolInfoHtml;
             }
         }
 

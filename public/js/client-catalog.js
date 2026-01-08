@@ -584,8 +584,154 @@ window.CatalogState = {
     itemsPerPage: 12,
     isLoading: false,
     // Contexto para breadcrumb - mantém o caminho do catálogo
-    breadcrumbContext: null  // { categoryKey, categoryName, subcategoryKey, subcategoryName }
+    breadcrumbContext: null,  // { categoryKey, categoryName, subcategoryKey, subcategoryName }
+    // Mix & Match tier tracking for highlighting
+    goatskinCartQty: 0,
+    calfskinCartQty: 0
 };
+
+/**
+ * Get the current tier level based on goatskin quantity
+ * @param {number} qty - Total goatskin quantity in cart
+ * @returns {string} - 'bronze', 'silver', or 'gold'
+ */
+function getGoatskinTierLevel(qty) {
+    if (qty >= 25) return 'gold';
+    if (qty >= 13) return 'silver';
+    if (qty >= 1) return 'bronze';
+    return null;
+}
+
+/**
+ * Update tier highlighting on all goatskin product cards
+ * Called when cart is updated
+ */
+function updateGoatskinTierHighlighting() {
+    const qty = CatalogState.goatskinCartQty || 0;
+    const currentTier = getGoatskinTierLevel(qty);
+
+    console.log(`🐐 [HIGHLIGHT] Qty: ${qty}, Target tier: ${currentTier || 'none'}`);
+
+    // Find all tier price grids
+    const grids = document.querySelectorAll('.tier-prices-grid');
+    console.log(`🐐 [HIGHLIGHT] Found ${grids.length} tier grids`);
+
+    grids.forEach((grid, gridIndex) => {
+        grid.querySelectorAll('.tier-price').forEach(tier => {
+            const wasBronze = tier.classList.contains('bronze');
+            const wasSilver = tier.classList.contains('silver');
+            const wasGold = tier.classList.contains('gold');
+            const wasActive = tier.classList.contains('active');
+
+            // Remove active class from all tiers
+            tier.classList.remove('active');
+
+            // Add active class to current tier if we have items in cart
+            if (currentTier && tier.classList.contains(currentTier)) {
+                tier.classList.add('active');
+                console.log(`🐐 [HIGHLIGHT] Grid ${gridIndex}: Activating ${currentTier} tier`);
+            }
+        });
+    });
+}
+
+/**
+ * Extract goatskin quantity from cart data
+ * @param {Object} cartData - Cart data from API
+ * @returns {number} - Total goatskin quantity
+ */
+function extractGoatskinQtyFromCart(cartData) {
+    if (!cartData || !cartData.items) {
+        console.log('🐐 [EXTRACT] No cart data or items');
+        return 0;
+    }
+
+    let total = 0;
+    cartData.items.forEach(item => {
+        // Check if item is a goatskin (multiple detection methods)
+        const byCatalogCategory = item.catalogCategory === 'goatskin';
+        const byProductName = item.productName?.toLowerCase().includes('goatskin');
+        const byFileName = item.fileName?.toLowerCase().includes('goatskin');
+        const byTierInfo = item.tierInfo && item.catalogCategory === 'goatskin';
+
+        const isGoatskin = byCatalogCategory || byProductName || byFileName;
+
+        if (isGoatskin) {
+            const qty = item.quantity || 1;
+            total += qty;
+            console.log(`🐐 [EXTRACT] Found goatskin: ${item.productName || item.fileName} × ${qty} (cat:${byCatalogCategory}, name:${byProductName}, file:${byFileName})`);
+        }
+    });
+
+    console.log(`🐐 [EXTRACT] Total goatskins in cart: ${total}`);
+    return total;
+}
+
+/**
+ * Get the current tier level based on calfskin quantity
+ * @param {number} qty - Total calfskin quantity in cart
+ * @returns {string} - 'bronze', 'silver', or 'gold'
+ */
+function getCalfskinTierLevel(qty) {
+    if (qty >= 25) return 'gold';
+    if (qty >= 13) return 'silver';
+    if (qty >= 1) return 'bronze';
+    return null;
+}
+
+/**
+ * Update tier highlighting on all calfskin product cards
+ * Called when cart is updated
+ */
+function updateCalfskinTierHighlighting() {
+    const qty = CatalogState.calfskinCartQty || 0;
+    const currentTier = getCalfskinTierLevel(qty);
+
+    console.log(`🐄 [HIGHLIGHT] Calfskin Qty: ${qty}, Target tier: ${currentTier || 'none'}`);
+
+    // Find all calfskin tier price grids
+    const grids = document.querySelectorAll('.tier-prices-grid.calfskin-tiers');
+    console.log(`🐄 [HIGHLIGHT] Found ${grids.length} calfskin tier grids`);
+
+    grids.forEach((grid, gridIndex) => {
+        grid.querySelectorAll('.tier-price').forEach(tier => {
+            tier.classList.remove('active');
+            if (currentTier && tier.classList.contains(currentTier)) {
+                tier.classList.add('active');
+                console.log(`🐄 [HIGHLIGHT] Grid ${gridIndex}: Activating ${currentTier} tier`);
+            }
+        });
+    });
+}
+
+/**
+ * Extract calfskin quantity from cart data
+ * @param {Object} cartData - Cart data from API
+ * @returns {number} - Total calfskin quantity
+ */
+function extractCalfskinQtyFromCart(cartData) {
+    if (!cartData || !cartData.items) {
+        return 0;
+    }
+
+    let total = 0;
+    cartData.items.forEach(item => {
+        const byCatalogCategory = item.catalogCategory === 'calfskin';
+        const byProductName = item.productName?.toLowerCase().includes('calfskin');
+        const byFileName = item.fileName?.toLowerCase().includes('calfskin');
+
+        const isCalfskin = byCatalogCategory || byProductName || byFileName;
+
+        if (isCalfskin) {
+            const qty = item.quantity || 1;
+            total += qty;
+            console.log(`🐄 [EXTRACT] Found calfskin: ${item.productName || item.fileName} × ${qty}`);
+        }
+    });
+
+    console.log(`🐄 [EXTRACT] Total calfskins in cart: ${total}`);
+    return total;
+}
 
 // ============================================
 // INITIALIZATION
@@ -632,6 +778,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update the card in the UI (same logic as catalogStockRestored)
             updateStockCardUI(qbItem, newStock);
         }
+    });
+
+    // ✅ Listen for cart updates to update tier highlighting (goatskins and calfskins)
+    window.addEventListener('cartUpdated', function(event) {
+        console.log('🎯 [EVENT] cartUpdated received', event.detail);
+        const cartData = event.detail?.cart || event.detail;
+
+        // Update goatskin highlighting
+        const goatskinQty = extractGoatskinQtyFromCart(cartData);
+        CatalogState.goatskinCartQty = goatskinQty;
+        updateGoatskinTierHighlighting();
+
+        // Update calfskin highlighting
+        const calfskinQty = extractCalfskinQtyFromCart(cartData);
+        CatalogState.calfskinCartQty = calfskinQty;
+        updateCalfskinTierHighlighting();
     });
 });
 
@@ -1939,8 +2101,14 @@ function renderMixedStockGrid(container, products, config) {
         if (product.name?.toLowerCase().includes('goat')) placeholderIcon = 'fa-paw';
         if (product.name?.toLowerCase().includes('calf')) placeholderIcon = 'fa-paw';
 
+        // Check if product has tier prices (Goatskins or Calfskins)
+        const isGoatskin = product.displayCategory === 'goatskin';
+        const isCalfskin = product.displayCategory === 'calfskin';
+        const hasTierPrices = (isGoatskin || isCalfskin) && (product.tier1Price > 0 || product.tier2Price > 0 || product.tier3Price > 0);
+        const tierGridClass = isGoatskin ? 'goatskin-tiers' : isCalfskin ? 'calfskin-tiers' : '';
+
         // Get price if available - use API formatted price or fallback
-        const hasPrice = product.hasPrice || (product.basePrice && product.basePrice > 0);
+        const hasPrice = product.hasPrice || (product.basePrice && product.basePrice > 0) || hasTierPrices;
         const formattedProductPrice = product.formattedPrice && product.formattedPrice !== 'Contact for Price'
             ? product.formattedPrice
             : (product.basePrice > 0
@@ -1950,8 +2118,29 @@ function renderMixedStockGrid(container, products, config) {
         // Build image path from product name - uses R2 in production
         const imagePath = getThumbnailUrl(sanitizeImageName(product.name));
 
+        // Build tier prices HTML for Mix & Match products (Bronze, Silver, Gold)
+        const tierPricesHtml = hasTierPrices ? `
+            <div class="tier-prices-grid ${tierGridClass}">
+                <div class="tier-price bronze">
+                    <span class="tier-name">Bronze</span>
+                    <span class="tier-qty">1-12</span>
+                    <span class="tier-value">$${product.tier1Price}</span>
+                </div>
+                <div class="tier-price silver">
+                    <span class="tier-name">Silver</span>
+                    <span class="tier-qty">13-24</span>
+                    <span class="tier-value">$${product.tier2Price}</span>
+                </div>
+                <div class="tier-price gold">
+                    <span class="tier-name">Gold</span>
+                    <span class="tier-qty">24+</span>
+                    <span class="tier-value">$${product.tier3Price}</span>
+                </div>
+            </div>
+        ` : '';
+
         html += `
-            <div class="stock-card ${stock === 0 ? 'out-of-stock' : ''}" onclick="viewStockProduct('${product.qbItem}')" data-price="${product.basePrice || 0}">
+            <div class="stock-card ${stock === 0 ? 'out-of-stock' : ''} ${hasTierPrices ? 'has-tier-prices' : ''}" onclick="viewStockProduct('${product.qbItem}')" data-price="${product.tier1Price || product.basePrice || 0}">
                 <div class="stock-image">
                     <img src="${imagePath}" alt="${product.name}"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
@@ -1965,9 +2154,10 @@ function renderMixedStockGrid(container, products, config) {
                     <h4>${product.name || product.qbItem}</h4>
                     <div class="stock-meta-row">
                         <span class="stock-qty"><i class="fas fa-boxes"></i> ${stock} units</span>
-                        ${!formattedProductPrice ? `<span class="contact-price-badge">Contact for Price</span>` : ''}
-                        ${formattedProductPrice ? `<span class="stock-price-inline">${formattedProductPrice}</span>` : ''}
+                        ${!hasTierPrices && !formattedProductPrice ? `<span class="contact-price-badge">Contact for Price</span>` : ''}
+                        ${!hasTierPrices && formattedProductPrice ? `<span class="stock-price-inline">${formattedProductPrice}</span>` : ''}
                     </div>
+                    ${tierPricesHtml}
                     <div class="stock-footer">
                         ${stock > 0 ? `
                         <div class="stock-action-row" onclick="event.stopPropagation()">
@@ -2095,8 +2285,14 @@ function renderStockGrid(container, products, config, categoryKey) {
             else if (cat.includes('ACCESS') || cat.includes('PILLOW')) placeholderIcon = 'fa-shopping-bag';
         }
 
+        // Check if product has tier prices (Goatskins or Calfskins)
+        const isGoatskin = product.displayCategory === 'goatskin';
+        const isCalfskin = product.displayCategory === 'calfskin';
+        const hasTierPrices = (isGoatskin || isCalfskin) && (product.tier1Price > 0 || product.tier2Price > 0 || product.tier3Price > 0);
+        const tierGridClass = isGoatskin ? 'goatskin-tiers' : isCalfskin ? 'calfskin-tiers' : '';
+
         // Get price if available - use API formatted price or fallback
-        const hasPrice = product.hasPrice || (product.basePrice && product.basePrice > 0);
+        const hasPrice = product.hasPrice || (product.basePrice && product.basePrice > 0) || hasTierPrices;
         const formattedProductPrice = product.formattedPrice && product.formattedPrice !== 'Contact for Price'
             ? product.formattedPrice
             : (product.basePrice > 0
@@ -2106,8 +2302,29 @@ function renderStockGrid(container, products, config, categoryKey) {
         // Build image path from product name - uses R2 in production
         const imagePath = getThumbnailUrl(sanitizeImageName(product.name));
 
+        // Build tier prices HTML for Mix & Match products (Bronze, Silver, Gold)
+        const tierPricesHtml = hasTierPrices ? `
+            <div class="tier-prices-grid ${tierGridClass}">
+                <div class="tier-price bronze">
+                    <span class="tier-name">Bronze</span>
+                    <span class="tier-qty">1-12</span>
+                    <span class="tier-value">$${product.tier1Price}</span>
+                </div>
+                <div class="tier-price silver">
+                    <span class="tier-name">Silver</span>
+                    <span class="tier-qty">13-24</span>
+                    <span class="tier-value">$${product.tier2Price}</span>
+                </div>
+                <div class="tier-price gold">
+                    <span class="tier-name">Gold</span>
+                    <span class="tier-qty">24+</span>
+                    <span class="tier-value">$${product.tier3Price}</span>
+                </div>
+            </div>
+        ` : '';
+
         html += `
-            <div class="stock-card ${stock === 0 ? 'out-of-stock' : ''}" onclick="viewStockProduct('${product.qbItem}')" data-price="${product.basePrice || 0}">
+            <div class="stock-card ${stock === 0 ? 'out-of-stock' : ''} ${hasTierPrices ? 'has-tier-prices' : ''}" onclick="viewStockProduct('${product.qbItem}')" data-price="${product.tier1Price || product.basePrice || 0}">
                 <div class="stock-image">
                     <img src="${imagePath}" alt="${product.name}"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
@@ -2121,9 +2338,10 @@ function renderStockGrid(container, products, config, categoryKey) {
                     <h4>${product.name || product.qbItem}</h4>
                     <div class="stock-meta-row">
                         <span class="stock-qty"><i class="fas fa-boxes"></i> ${stock} units</span>
-                        ${!formattedProductPrice ? `<span class="contact-price-badge">Contact for Price</span>` : ''}
-                        ${formattedProductPrice ? `<span class="stock-price-inline">${formattedProductPrice}</span>` : ''}
+                        ${!hasTierPrices && !formattedProductPrice ? `<span class="contact-price-badge">Contact for Price</span>` : ''}
+                        ${!hasTierPrices && formattedProductPrice ? `<span class="stock-price-inline">${formattedProductPrice}</span>` : ''}
                     </div>
+                    ${tierPricesHtml}
                     <div class="stock-footer">
                         ${stock > 0 ? `
                         <div class="stock-action-row" onclick="event.stopPropagation()">
@@ -2156,6 +2374,19 @@ function renderStockGrid(container, products, config, categoryKey) {
     `;
 
     container.innerHTML = html;
+
+    // ✅ Initialize goatskin tier highlighting after render
+    // This ensures correct tier is shown when navigating to goatskins page
+    if (config.catalogCategory === 'goatskin') {
+        console.log('🐐 [RENDER] Stock grid rendered for goatskins, initializing tier highlighting');
+
+        // Fetch current cart to get goatskin count
+        if (window.CartSystem && window.CartSystem.state && window.CartSystem.state.items) {
+            const goatskinQty = extractGoatskinQtyFromCart({ items: window.CartSystem.state.items });
+            CatalogState.goatskinCartQty = goatskinQty;
+            updateGoatskinTierHighlighting();
+        }
+    }
 }
 
 /**
@@ -2371,6 +2602,9 @@ window.addStockToCart = async function(qbItem) {
             }
             console.log(`📊 Local stock updated: ${qbItem} now has ${newStock} available`);
         }
+
+        // ✅ Tier highlighting is handled by cartUpdated event (not manual increment)
+        // The loadCart() call above will trigger cartUpdated with correct totals
 
         // ✅ REMOVIDO: Toast de sucesso (usuário prefere sem notificação)
         // O botão já mostra feedback visual "Added" temporariamente

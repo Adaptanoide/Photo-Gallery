@@ -128,6 +128,28 @@ const catalogProductSchema = new mongoose.Schema({
         min: 0
     },
 
+    // Tier prices for Mix & Match categories (e.g., Goatskins)
+    // Tier 1: 1-12 units
+    tier1Price: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
+    // Tier 2: 13-24 units
+    tier2Price: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
+    // Tier 3: 24+ units
+    tier3Price: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
     // Product image URL (optional)
     imageUrl: {
         type: String,

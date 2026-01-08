@@ -219,29 +219,11 @@ class CartService {
                 console.log(`[CART] CDE será atualizado em background com Sales Rep: ${salesRep}`);
             }
 
-            // 9. 🆕 RETORNAR DADOS DIRETOS (sem getCartSummary!)
-            const validItems = cart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
-
+            // 9. ✅ RETORNAR CART DIRETO para que calculateCartTotals possa atualizar os preços tier
             return {
                 success: true,
                 message: 'Item adicionado ao carrinho',
-                // 🆕 DADOS CALCULADOS DIRETO (sem query extra!)
-                cart: {
-                    totalItems: validItems.length,
-                    items: cart.items.map(item => ({
-                        driveFileId: item.driveFileId,
-                        fileName: item.fileName,
-                        category: item.category,
-                        thumbnailUrl: item.thumbnailUrl,
-                        price: item.price,
-                        basePrice: item.basePrice,
-                        expiresAt: item.expiresAt,
-                        timeRemaining: Math.max(0, Math.floor((new Date(item.expiresAt) - new Date()) / 1000)),
-                        ghostStatus: item.ghostStatus || null
-                    })),
-                    isEmpty: validItems.length === 0,
-                    lastActivity: cart.lastActivity
-                },
+                cart: cart,  // ✅ Retorna o documento Mongoose direto para ser modificado por calculateCartTotals
                 expiresAt,
                 timeRemaining: ttlHours * 3600
             };
@@ -379,10 +361,12 @@ class CartService {
                 console.log(`[CART] Ghost item removido - CDE mantido como ${itemToRemove.ghostReason}`);
             }
 
+            // ✅ RETORNAR CART DIRETO (igual ao addToCart) para que calculateCartTotals possa atualizar
+            // Não usar getCartSummary porque os preços tier serão calculados DEPOIS no route
             return {
                 success: true,
                 message: isGhostItem ? 'Ghost item acknowledged and removed' : 'Item removed',
-                cart: await this.getCartSummary(sessionId)
+                cart: cart  // ✅ Retorna o documento Mongoose direto para ser modificado por calculateCartTotals
             };
 
         } catch (error) {
@@ -619,6 +603,7 @@ class CartService {
                     folderId: item.folderId || '',  // ✅ NOVO: ID da pasta para rate rules
                     price: item.price,
                     basePrice: item.basePrice,
+                    unitPrice: item.unitPrice,  // ✅ IMPORTANTE: preço unitário para tier pricing
                     expiresAt: item.expiresAt,
                     timeRemaining: item.expiresAt ?
                         Math.max(0, Math.floor((new Date(item.expiresAt) - new Date()) / 1000)) : 0,
@@ -626,7 +611,14 @@ class CartService {
                     ghostReason: item.ghostReason || null,
                     ghostedAt: item.ghostedAt || null,
                     hasPrice: item.hasPrice || false,
-                    formattedPrice: item.formattedPrice || ''
+                    formattedPrice: item.formattedPrice || '',
+                    // ✅ CAMPOS PARA PRODUTOS DE CATÁLOGO (TIER PRICING)
+                    isCatalogProduct: item.isCatalogProduct || false,
+                    catalogCategory: item.catalogCategory || null,
+                    qbItem: item.qbItem || null,
+                    productName: item.productName || item.fileName,
+                    quantity: item.quantity || 1,
+                    tierInfo: item.tierInfo || null  // ✅ Info do tier (Bronze/Silver/Gold)
                 })),
                 isEmpty: validItems.length === 0, // ✅ baseado em items válidos
                 lastActivity: cart.lastActivity

@@ -618,97 +618,90 @@ class AdminPricing {
             return;
         }
 
-        let html = `<div class="bulk-categories-list">`;
+        let html = `<div class="pricing-config-content" style="display: block;">`;
 
-        // Renderizar cada grupo
+        // Renderizar cada grupo usando o mesmo estilo de Stock Products
         groups.forEach(group => {
+            const totalPhotos = group.subcategories.reduce((sum, s) => sum + (s.photoCount || 0), 0);
+
             html += `
-                <div class="category-group">
-                    <div class="category-group-header">
-                        <span class="group-name">
-                            <i class="fas fa-folder"></i>
-                            ${group.name}
-                        </span>
-                        <span class="group-count">${group.subcategories.length} subcategories</span>
+                <div class="stock-products-section unique-photos-section">
+                    <div class="stock-section-title">
+                        <i class="fas fa-folder"></i>
+                        <span>${group.name}</span>
+                        <span class="stock-section-count">${group.subcategories.length} subcategories • ${totalPhotos} photos</span>
+                    </div>
+                    <div class="stock-products-flat-list">
+                        <div class="stock-list-header unique-photos-header">
+                            <div class="header-info">
+                                <span class="header-qbitem">QB ITEM</span>
+                                <span class="header-name">SUBCATEGORY</span>
+                            </div>
+                            <div class="header-photos">PHOTOS</div>
+                            <div class="header-tier">Bronze<br><small>1-5</small></div>
+                            <div class="header-tier">Silver<br><small>6-12</small></div>
+                            <div class="header-tier">Gold<br><small>13-36</small></div>
+                            <div class="header-tier">Diamond<br><small>37+</small></div>
                         </div>
-
-                        <!-- ✅ CABEÇALHO DA TABELA -->
-                        ${group.isMixMatch ? `
-                        <div class="subcategories-table-header">
-                            <div class="col-name">SUBCATEGORY</div>
-                            <div class="col-qb">QB ITEM</div>
-                            <div class="col-tier"><span class="tier-name">Bronze</span><span class="tier-qty">1-5</span></div>
-                            <div class="col-tier"><span class="tier-name">Silver</span><span class="tier-qty">6-12</span></div>
-                            <div class="col-tier"><span class="tier-name">Gold</span><span class="tier-qty">13-36</span></div>
-                            <div class="col-tier"><span class="tier-name">Diamond</span><span class="tier-qty">37+</span></div>
-                            <div class="col-toggle">MIX & MATCH</div>
-                        </div>
-                        ` : `
-                        <div class="subcategories-table-header header-simple">
-                            <div class="col-name">SUBCATEGORY</div>
-                            <div class="col-qb">QB ITEM</div>
-                            <div class="col-price-header">BASE PRICE</div>
-                            <div class="col-toggle">MIX & MATCH</div>
-                        </div>
-                        `}
-
-                        <div class="subcategories-list">
             `;
 
             // Renderizar subcategorias
             group.subcategories.forEach(subcat => {
-                const isMixMatch = subcat.participatesInMixMatch;
                 const tier1 = subcat.volumeRules[0]?.price || subcat.basePrice || '';
                 const tier2 = subcat.volumeRules[1]?.price || '';
                 const tier3 = subcat.volumeRules[2]?.price || '';
                 const tier4 = subcat.volumeRules[3]?.price || '';
+                const hasAnyPrice = tier1 || tier2 || tier3 || tier4;
+                const rowClass = hasAnyPrice ? 'has-price' : 'no-price';
 
                 html += `
-                    <div class="subcategory-row ${isMixMatch ? 'is-mixmatch' : ''}"
+                    <div class="stock-product-item unique-photo-row ${rowClass}"
                          data-category-id="${subcat._id}"
-                         data-is-mixmatch="${isMixMatch}"
                          data-folder-name="${subcat.folderName}"
                          data-base-price="${subcat.basePrice || 0}">
-                        <div class="col-name">
-                            <span class="subcat-name">${subcat.folderName}</span>
-                            <span class="photo-count">${subcat.photoCount} photos</span>
+                        <div class="stock-product-info">
+                            <span class="stock-product-qbitem">${subcat.qbItem || '-'}</span>
+                            <span class="stock-product-name">${subcat.folderName}</span>
                         </div>
-                        <div class="col-qb">
-                            <span class="qb-code">${subcat.qbItem || '-'}</span>
+                        <div class="stock-product-stock">
+                            <span class="count-badge photos">${subcat.photoCount}</span>
                         </div>
-                        ${isMixMatch ? `
-                            <div class="col-tier">
-                                <input type="number" class="tier-price-input" data-tier="1"
-                                    data-original="${tier1}" value="${tier1}" placeholder="0" step="1" min="0">
-                            </div>
-                            <div class="col-tier">
-                                <input type="number" class="tier-price-input" data-tier="2"
-                                    data-original="${tier2}" value="${tier2}" placeholder="0" step="1" min="0">
-                            </div>
-                            <div class="col-tier">
-                                <input type="number" class="tier-price-input" data-tier="3"
-                                    data-original="${tier3}" value="${tier3}" placeholder="0" step="1" min="0">
-                            </div>
-                            <div class="col-tier">
-                                <input type="number" class="tier-price-input" data-tier="4"
-                                    data-original="${tier4}" value="${tier4}" placeholder="0" step="1" min="0">
-                            </div>
-                        ` : `
-                            <div class="col-tier col-tier-span">
-                                <span class="base-price-label">Base:</span>
-                                <input type="number" class="tier-price-input base-only" data-tier="base"
-                                    data-original="${tier1}" value="${tier1}" placeholder="0" step="1" min="0">
-                            </div>
-                        `}
-                        <div class="col-toggle">
-                            <label class="mix-match-toggle" title="${isMixMatch ? 'Disable Mix & Match' : 'Enable Mix & Match'}">
-                                <input type="checkbox" class="mix-match-checkbox"
-                                    ${isMixMatch ? 'checked' : ''}
-                                    data-category-id="${subcat._id}"
-                                    data-original="${isMixMatch}">
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span class="toggle-text">${isMixMatch ? 'ON' : 'OFF'}</span>
+                        <div class="stock-product-tier">
+                            <span class="price-symbol">$</span>
+                            <input type="number" class="stock-price-input tier-input" data-tier="1"
+                                data-category-id="${subcat._id}"
+                                data-original="${tier1}" value="${tier1}" placeholder="0" step="1" min="0"
+                                onchange="handleUniquePhotoTierChange(this)"
+                                onkeydown="handleUniquePhotoKeydown(event, this)">
+                        </div>
+                        <div class="stock-product-tier">
+                            <span class="price-symbol">$</span>
+                            <input type="number" class="stock-price-input tier-input" data-tier="2"
+                                data-category-id="${subcat._id}"
+                                data-original="${tier2}" value="${tier2}" placeholder="0" step="1" min="0"
+                                onchange="handleUniquePhotoTierChange(this)"
+                                onkeydown="handleUniquePhotoKeydown(event, this)">
+                        </div>
+                        <div class="stock-product-tier">
+                            <span class="price-symbol">$</span>
+                            <input type="number" class="stock-price-input tier-input" data-tier="3"
+                                data-category-id="${subcat._id}"
+                                data-original="${tier3}" value="${tier3}" placeholder="0" step="1" min="0"
+                                onchange="handleUniquePhotoTierChange(this)"
+                                onkeydown="handleUniquePhotoKeydown(event, this)">
+                        </div>
+                        <div class="stock-product-tier">
+                            <span class="price-symbol">$</span>
+                            <input type="number" class="stock-price-input tier-input" data-tier="4"
+                                data-category-id="${subcat._id}"
+                                data-original="${tier4}" value="${tier4}" placeholder="0" step="1" min="0"
+                                onchange="handleUniquePhotoTierChange(this)"
+                                onkeydown="handleUniquePhotoKeydown(event, this)">
+                        </div>
+                        <div class="stock-product-save">
+                            <button class="btn-save-price" onclick="quickSaveUniquePhotoTiers('${subcat._id}')" title="Save">
+                                <i class="fas fa-check"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -2795,24 +2788,240 @@ function renderStockProducts() {
         return;
     }
 
-    // Render flat list with header row
-    const html = `
-        <div class="pricing-config-content" style="display: block;">
-            <div class="stock-products-flat-list">
-                <div class="stock-list-header">
-                    <div class="header-info">
-                        <span class="header-qbitem">QB ITEM</span>
-                        <span class="header-name">PRODUCT NAME</span>
-                    </div>
-                    <div class="header-stock">STOCK</div>
-                    <div class="header-price">PRICE</div>
+    // Separate goatskins, calfskins and other products
+    const goatskins = products.filter(p => p.displayCategory === 'goatskin');
+    const calfskins = products.filter(p => p.displayCategory === 'calfskin');
+    const otherProducts = products.filter(p => p.displayCategory !== 'goatskin' && p.displayCategory !== 'calfskin');
+
+    let html = '<div class="pricing-config-content" style="display: block;">';
+
+    // Render Goatskins section with tier columns
+    if (goatskins.length > 0) {
+        html += `
+            <div class="stock-products-section goatskins-section">
+                <div class="stock-section-title">
+                    <span class="section-name">Goatskins</span>
+                    <span class="stock-section-count">${goatskins.length} products</span>
                 </div>
-                ${products.map(p => renderStockProductRow(p)).join('')}
+                <div class="stock-products-flat-list">
+                    <div class="stock-list-header goatskin-header">
+                        <div class="header-info">
+                            <span class="header-qbitem">QB ITEM</span>
+                            <span class="header-name">PRODUCT NAME</span>
+                        </div>
+                        <div class="header-stock">STOCK</div>
+                        <div class="header-tier">Bronze<br><small>1-12</small></div>
+                        <div class="header-tier">Silver<br><small>13-24</small></div>
+                        <div class="header-tier">Gold<br><small>24+</small></div>
+                    </div>
+                    ${goatskins.map(p => renderGoatskinRow(p)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Render Calfskins section with tier columns
+    if (calfskins.length > 0) {
+        html += `
+            <div class="stock-products-section calfskins-section">
+                <div class="stock-section-title">
+                    <span class="section-name">Calfskins</span>
+                    <span class="stock-section-count">${calfskins.length} products</span>
+                </div>
+                <div class="stock-products-flat-list">
+                    <div class="stock-list-header calfskin-header">
+                        <div class="header-info">
+                            <span class="header-qbitem">QB ITEM</span>
+                            <span class="header-name">PRODUCT NAME</span>
+                        </div>
+                        <div class="header-stock">STOCK</div>
+                        <div class="header-tier">Bronze<br><small>1-12</small></div>
+                        <div class="header-tier">Silver<br><small>13-24</small></div>
+                        <div class="header-tier">Gold<br><small>24+</small></div>
+                    </div>
+                    ${calfskins.map(p => renderCalfskinRow(p)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Render other products with original layout
+    if (otherProducts.length > 0) {
+        html += `
+            <div class="stock-products-section other-section">
+                <div class="stock-section-title">
+                    <span class="section-name">Other Stock Products</span>
+                    <span class="stock-section-count">${otherProducts.length} products</span>
+                </div>
+                <div class="stock-products-flat-list">
+                    <div class="stock-list-header other-header">
+                        <div class="header-info">
+                            <span class="header-qbitem">QB ITEM</span>
+                            <span class="header-name">PRODUCT NAME</span>
+                        </div>
+                        <div class="header-stock">STOCK</div>
+                        <div class="header-price">PRICE</div>
+                    </div>
+                    ${otherProducts.map(p => renderStockProductRow(p)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Render a goatskin row with tier columns
+ */
+function renderGoatskinRow(product) {
+    const isModified = stockProductsState.modifiedPrices[product.qbItem] !== undefined;
+
+    // Get tier prices (from product or modified state)
+    const tier1 = stockProductsState.modifiedPrices[`${product.qbItem}_tier1`] ?? product.tier1Price ?? '';
+    const tier2 = stockProductsState.modifiedPrices[`${product.qbItem}_tier2`] ?? product.tier2Price ?? '';
+    const tier3 = stockProductsState.modifiedPrices[`${product.qbItem}_tier3`] ?? product.tier3Price ?? '';
+
+    const hasAnyPrice = tier1 || tier2 || tier3;
+    const rowClass = isModified ? 'modified' : (hasAnyPrice ? 'has-price' : 'no-price');
+
+    const stockBadgeClass = product.currentStock > 0 ? 'count-badge stock' : 'count-badge stock out';
+
+    return `
+        <div class="stock-product-item goatskin-row ${rowClass}" data-qbitem="${product.qbItem}">
+            <div class="stock-product-info">
+                <span class="stock-product-qbitem">${product.qbItem || '-'}</span>
+                <span class="stock-product-name">${product.name || 'Unnamed Product'}</span>
+            </div>
+            <div class="stock-product-stock">
+                <span class="${stockBadgeClass}">${product.currentStock || 0}</span>
+            </div>
+            <div class="stock-product-tier">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input tier-input"
+                    data-qbitem="${product.qbItem}"
+                    data-tier="tier1"
+                    value="${tier1}"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    onchange="handleGoatskinTierChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+            </div>
+            <div class="stock-product-tier">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input tier-input"
+                    data-qbitem="${product.qbItem}"
+                    data-tier="tier2"
+                    value="${tier2}"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    onchange="handleGoatskinTierChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+            </div>
+            <div class="stock-product-tier">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input tier-input"
+                    data-qbitem="${product.qbItem}"
+                    data-tier="tier3"
+                    value="${tier3}"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    onchange="handleGoatskinTierChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+            </div>
+            <div class="stock-product-save">
+                <button class="btn-save-price" onclick="quickSaveGoatskinPrices('${product.qbItem}')" title="Save">
+                    <i class="fas fa-check"></i>
+                </button>
             </div>
         </div>
     `;
+}
 
-    container.innerHTML = html;
+/**
+ * Render a calfskin row with tier columns
+ */
+function renderCalfskinRow(product) {
+    const isModified = stockProductsState.modifiedPrices[product.qbItem] !== undefined;
+
+    // Get tier prices (from product or modified state)
+    const tier1 = stockProductsState.modifiedPrices[`${product.qbItem}_tier1`] ?? product.tier1Price ?? '';
+    const tier2 = stockProductsState.modifiedPrices[`${product.qbItem}_tier2`] ?? product.tier2Price ?? '';
+    const tier3 = stockProductsState.modifiedPrices[`${product.qbItem}_tier3`] ?? product.tier3Price ?? '';
+
+    const hasAnyPrice = tier1 || tier2 || tier3;
+    const rowClass = isModified ? 'modified' : (hasAnyPrice ? 'has-price' : 'no-price');
+
+    const stockBadgeClass = product.currentStock > 0 ? 'count-badge stock' : 'count-badge stock out';
+
+    return `
+        <div class="stock-product-item calfskin-row ${rowClass}" data-qbitem="${product.qbItem}">
+            <div class="stock-product-info">
+                <span class="stock-product-qbitem">${product.qbItem || '-'}</span>
+                <span class="stock-product-name">${product.name || 'Unnamed Product'}</span>
+            </div>
+            <div class="stock-product-stock">
+                <span class="${stockBadgeClass}">${product.currentStock || 0}</span>
+            </div>
+            <div class="stock-product-tier">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input tier-input"
+                    data-qbitem="${product.qbItem}"
+                    data-tier="tier1"
+                    value="${tier1}"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    onchange="handleCalfskinTierChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+            </div>
+            <div class="stock-product-tier">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input tier-input"
+                    data-qbitem="${product.qbItem}"
+                    data-tier="tier2"
+                    value="${tier2}"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    onchange="handleCalfskinTierChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+            </div>
+            <div class="stock-product-tier">
+                <span class="price-symbol">$</span>
+                <input type="number"
+                    class="stock-price-input tier-input"
+                    data-qbitem="${product.qbItem}"
+                    data-tier="tier3"
+                    value="${tier3}"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    onchange="handleCalfskinTierChange(this)"
+                    onkeydown="handleStockPriceKeydown(event, this)"
+                >
+            </div>
+            <div class="stock-product-save">
+                <button class="btn-save-price" onclick="quickSaveCalfskinPrices('${product.qbItem}')" title="Save">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 /**
@@ -2855,17 +3064,16 @@ function renderStockProductRow(product) {
         : (product.basePrice || '');
 
     const rowClass = isModified ? 'modified' : (hasPrice ? 'has-price' : 'no-price');
+    const stockBadgeClass = product.currentStock > 0 ? 'count-badge stock' : 'count-badge stock out';
 
     return `
-        <div class="stock-product-item ${rowClass}" data-qbitem="${product.qbItem}">
+        <div class="stock-product-item other-row ${rowClass}" data-qbitem="${product.qbItem}">
             <div class="stock-product-info">
                 <span class="stock-product-qbitem">${product.qbItem || '-'}</span>
                 <span class="stock-product-name">${product.name || 'Unnamed Product'}</span>
             </div>
             <div class="stock-product-stock">
-                <span class="stock-count ${product.currentStock > 0 ? 'in-stock' : 'out-stock'}">
-                    ${product.currentStock || 0}
-                </span>
+                <span class="${stockBadgeClass}">${product.currentStock || 0}</span>
             </div>
             <div class="stock-product-price">
                 <span class="price-symbol">$</span>
@@ -3011,6 +3219,271 @@ async function quickSaveStockPrice(qbItem) {
             window.UISystem.showToast('error', `Error saving price: ${error.message}`);
         } else {
             alert(`Error saving price: ${error.message}`);
+        }
+    }
+}
+
+/**
+ * Handle tier price change for goatskins
+ */
+function handleGoatskinTierChange(input) {
+    const qbItem = input.dataset.qbitem;
+    const tier = input.dataset.tier;
+    const value = parseFloat(input.value) || 0;
+    const key = `${qbItem}_${tier}`;
+
+    stockProductsState.modifiedPrices[key] = value;
+
+    const row = input.closest('.goatskin-row');
+    if (row) {
+        row.classList.add('modified');
+    }
+
+    updateSaveButton();
+}
+
+/**
+ * Quick save all tiers for a goatskin product
+ */
+async function quickSaveGoatskinPrices(qbItem) {
+    const tier1 = parseFloat(document.querySelector(`input[data-qbitem="${qbItem}"][data-tier="tier1"]`)?.value) || 0;
+    const tier2 = parseFloat(document.querySelector(`input[data-qbitem="${qbItem}"][data-tier="tier2"]`)?.value) || 0;
+    const tier3 = parseFloat(document.querySelector(`input[data-qbitem="${qbItem}"][data-tier="tier3"]`)?.value) || 0;
+
+    try {
+        const sessionData = localStorage.getItem('sunshineSession');
+        const token = sessionData ? JSON.parse(sessionData).token : null;
+
+        if (!token) {
+            throw new Error('Sessão expirada');
+        }
+
+        const response = await fetch(`/api/pricing/stock-products/${qbItem}/tiers`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tier1Price: tier1, tier2Price: tier2, tier3Price: tier3 })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to save tiers');
+        }
+
+        // Clear modified state
+        delete stockProductsState.modifiedPrices[`${qbItem}_tier1`];
+        delete stockProductsState.modifiedPrices[`${qbItem}_tier2`];
+        delete stockProductsState.modifiedPrices[`${qbItem}_tier3`];
+
+        // Update UI
+        const row = document.querySelector(`.goatskin-row[data-qbitem="${qbItem}"]`);
+        if (row) {
+            row.classList.remove('modified');
+            row.classList.add('has-price');
+        }
+
+        updateSaveButton();
+
+        // Show notification
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Tiers saved for ${qbItem}`, 'success');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('success', `Tiers saved for ${qbItem}`);
+        }
+
+        console.log(`✅ Saved tiers for ${qbItem}: $${tier1} / $${tier2} / $${tier3}`);
+
+    } catch (error) {
+        console.error('Error saving goatskin tiers:', error);
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Error saving tiers: ${error.message}`, 'error');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('error', `Error saving tiers: ${error.message}`);
+        } else {
+            alert(`Error saving tiers: ${error.message}`);
+        }
+    }
+}
+
+/**
+ * Handle tier price change for calfskins
+ */
+function handleCalfskinTierChange(input) {
+    const qbItem = input.dataset.qbitem;
+    const tier = input.dataset.tier;
+    const value = parseFloat(input.value) || 0;
+    const key = `${qbItem}_${tier}`;
+
+    stockProductsState.modifiedPrices[key] = value;
+
+    const row = input.closest('.calfskin-row');
+    if (row) {
+        row.classList.add('modified');
+    }
+
+    updateSaveButton();
+}
+
+/**
+ * Quick save all tiers for a calfskin product
+ */
+async function quickSaveCalfskinPrices(qbItem) {
+    const tier1 = parseFloat(document.querySelector(`input[data-qbitem="${qbItem}"][data-tier="tier1"]`)?.value) || 0;
+    const tier2 = parseFloat(document.querySelector(`input[data-qbitem="${qbItem}"][data-tier="tier2"]`)?.value) || 0;
+    const tier3 = parseFloat(document.querySelector(`input[data-qbitem="${qbItem}"][data-tier="tier3"]`)?.value) || 0;
+
+    try {
+        const sessionData = localStorage.getItem('sunshineSession');
+        const token = sessionData ? JSON.parse(sessionData).token : null;
+
+        if (!token) {
+            throw new Error('Sessão expirada');
+        }
+
+        const response = await fetch(`/api/pricing/stock-products/${qbItem}/tiers`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tier1Price: tier1, tier2Price: tier2, tier3Price: tier3 })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to save tiers');
+        }
+
+        // Clear modified state
+        delete stockProductsState.modifiedPrices[`${qbItem}_tier1`];
+        delete stockProductsState.modifiedPrices[`${qbItem}_tier2`];
+        delete stockProductsState.modifiedPrices[`${qbItem}_tier3`];
+
+        // Update UI
+        const row = document.querySelector(`.calfskin-row[data-qbitem="${qbItem}"]`);
+        if (row) {
+            row.classList.remove('modified');
+            row.classList.add('has-price');
+        }
+
+        updateSaveButton();
+
+        // Show notification
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Tiers saved for ${qbItem}`, 'success');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('success', `Tiers saved for ${qbItem}`);
+        }
+
+        console.log(`✅ Saved calfskin tiers for ${qbItem}: $${tier1} / $${tier2} / $${tier3}`);
+
+    } catch (error) {
+        console.error('Error saving calfskin tiers:', error);
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Error saving tiers: ${error.message}`, 'error');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('error', `Error saving tiers: ${error.message}`);
+        } else {
+            alert(`Error saving tiers: ${error.message}`);
+        }
+    }
+}
+
+/**
+ * Handle tier price change for Unique Photos (Natural Cowhides)
+ */
+function handleUniquePhotoTierChange(input) {
+    const categoryId = input.dataset.categoryId;
+    const row = input.closest('.stock-product-item');
+    if (row) {
+        row.classList.add('modified');
+    }
+}
+
+/**
+ * Handle keydown for Unique Photos tier inputs
+ */
+function handleUniquePhotoKeydown(event, input) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const categoryId = input.dataset.categoryId;
+        quickSaveUniquePhotoTiers(categoryId);
+    }
+}
+
+/**
+ * Quick save all tiers for a Unique Photo category
+ */
+async function quickSaveUniquePhotoTiers(categoryId) {
+    const row = document.querySelector(`.stock-product-item[data-category-id="${categoryId}"]`);
+    if (!row) return;
+
+    const tier1 = parseFloat(row.querySelector('input[data-tier="1"]')?.value) || 0;
+    const tier2 = parseFloat(row.querySelector('input[data-tier="2"]')?.value) || 0;
+    const tier3 = parseFloat(row.querySelector('input[data-tier="3"]')?.value) || 0;
+    const tier4 = parseFloat(row.querySelector('input[data-tier="4"]')?.value) || 0;
+
+    try {
+        const sessionData = localStorage.getItem('sunshineSession');
+        const token = sessionData ? JSON.parse(sessionData).token : null;
+
+        if (!token) {
+            throw new Error('Sessão expirada');
+        }
+
+        // Build volume rules
+        const volumeRules = [
+            { minQty: 1, maxQty: 5, price: tier1 },
+            { minQty: 6, maxQty: 12, price: tier2 },
+            { minQty: 13, maxQty: 36, price: tier3 },
+            { minQty: 37, maxQty: 999, price: tier4 }
+        ];
+
+        const response = await fetch(`/api/pricing/categories/${categoryId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                basePrice: tier1,
+                volumeRules: volumeRules,
+                participatesInMixMatch: true
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to save tiers');
+        }
+
+        // Update UI
+        row.classList.remove('modified');
+        row.classList.add('has-price');
+
+        // Show notification
+        const folderName = row.dataset.folderName || categoryId;
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Tiers saved for ${folderName}`, 'success');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('success', `Tiers saved for ${folderName}`);
+        }
+
+        console.log(`✅ Saved tiers for ${folderName}: $${tier1} / $${tier2} / $${tier3} / $${tier4}`);
+
+    } catch (error) {
+        console.error('Error saving unique photo tiers:', error);
+        if (window.adminPricing && adminPricing.showNotification) {
+            adminPricing.showNotification(`Error saving tiers: ${error.message}`, 'error');
+        } else if (window.UISystem && window.UISystem.showToast) {
+            window.UISystem.showToast('error', `Error saving tiers: ${error.message}`);
+        } else {
+            alert(`Error saving tiers: ${error.message}`);
         }
     }
 }
@@ -3167,3 +3640,8 @@ window.handleStockPriceChange = handleStockPriceChange;
 window.handleStockPriceKeydown = handleStockPriceKeydown;
 window.quickSaveStockPrice = quickSaveStockPrice;
 window.saveAllStockPrices = saveAllStockPrices;
+window.handleGoatskinTierChange = handleGoatskinTierChange;
+window.quickSaveGoatskinPrices = quickSaveGoatskinPrices;
+window.handleUniquePhotoTierChange = handleUniquePhotoTierChange;
+window.handleUniquePhotoKeydown = handleUniquePhotoKeydown;
+window.quickSaveUniquePhotoTiers = quickSaveUniquePhotoTiers;
